@@ -17,11 +17,17 @@ RUN apt-get -qq -y install \
 
 WORKDIR /root/
 ADD . /root/xivo-ctid
+ADD ./contribs/docker/certs /usr/share/xivo-certs
 WORKDIR /root/xivo-ctid
+
 RUN pip install -r requirements.txt
 RUN python setup.py install
 RUN cp -av etc/xivo-ctid /etc
 RUN mkdir /etc/xivo-ctid/conf.d
+RUN touch /var/log/xivo-ctid.log
+RUN chown www-data /var/log/xivo-ctid.log
+RUN mkdir /var/run/xivo-ctid/
+RUN chown www-data /var/run/xivo-ctid/
 
 WORKDIR /root
 RUN rm -fr /root/xivo-ctid
