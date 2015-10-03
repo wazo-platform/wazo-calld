@@ -1,0 +1,12 @@
+git+https://github.com/xivo-pbx/xivo-auth-client.git
+git+https://github.com/xivo-pbx/xivo-amid-client.git
+git+https://github.com/xivo-pbx/xivo-lib-python.git
+git+https://github.com/xivo-pbx/xivo-lib-rest-client.git
+cherrypy
+flask==0.10.1
+flask-restful==0.3.4
+flask-cors==1.10.3
+kombu
+pyyaml==3.10
+requests==2.0.0
+ari
