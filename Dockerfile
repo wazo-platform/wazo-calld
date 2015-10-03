@@ -26,7 +26,6 @@ RUN mkdir /etc/xivo-ctid/conf.d
 WORKDIR /root
 RUN rm -fr /root/xivo-ctid
 
-EXPOSE 5003
-EXPOSE 9495
+EXPOSE 9485
 
 CMD xivo-ctid -f -d

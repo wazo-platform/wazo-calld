@@ -23,11 +23,10 @@ rest_api:
     listen: 127.0.0.1
 
     # Listening port
-    port: 9495
+    port: 9485
 
     certificate: /usr/share/xivo-certs/server.crt
     private_key: /usr/share/xivo-certs/server.key
-    ciphers: DEFAULT_CIPHERS
 
     #CORS configuration. See Flask-CORS documentation for other values.
     cors:
@@ -58,3 +57,11 @@ bus:
     port: 5672
     exchange_name: xivo
     exchange_type: topic
+
+ari:
+  connection:
+    base_url: http://192.168.1.124:5039
+    username: xivo
+    password: Nasheow8Eag
+  apps:
+   - hello-world
