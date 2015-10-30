@@ -47,7 +47,7 @@
                 }
             }
         },
-        "/call/<call_id>": {
+        "/call/{call_id}": {
             "get": {
                 "summary": "Show a call",
                 "description": "Get infos about a call\n",
