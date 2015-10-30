@@ -65,7 +65,7 @@ class CoreRestApi(object):
 
     def run(self):
         api.add_resource(Calls, '/calls')
-        api.add_resource(Call, '/call/<call_id>')
+        api.add_resource(Call, '/calls/<call_id>')
         SwaggerResource.add_resource(api)
 
         self.api.init_app(self.app)
