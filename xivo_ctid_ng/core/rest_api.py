@@ -33,8 +33,10 @@ from contextlib import contextmanager
 from werkzeug.contrib.fixers import ProxyFix
 from xivo import http_helpers
 from xivo_amid_client import Client as AmidClient
+from xivo_ctid_ng.core import auth
 from xivo_ctid_ng.core import exceptions
 from xivo_ctid_ng.core.exceptions import APIException
+from xivo_ctid_ng.resources.api.actions import SwaggerResource
 
 VERSION = 1.0
 
@@ -64,6 +66,8 @@ class CoreRestApi(object):
     def run(self):
         api.add_resource(Calls, '/calls')
         api.add_resource(Call, '/calls/<call_id>')
+        SwaggerResource.add_resource(api)
+
         self.api.init_app(self.app)
 
         bind_addr = (self.config['listen'], self.config['port'])
@@ -95,6 +99,10 @@ class ErrorCatchingResource(Resource):
     method_decorators = [exceptions.handle_api_exception] + Resource.method_decorators
 
 
+class AuthResource(Resource):
+    method_decorators = [auth.verify_token]
+
+
 def endpoint_from_user_uuid(_):
     return 'SCCP/101'
 
@@ -122,10 +130,11 @@ class NoSuchCall(APIException):
         )
 
 
-class Calls(ErrorCatchingResource):
+class Calls(AuthResource):
 
     def post(self):
         request_body = request.json
+        token = request.headers['X-Auth-Token']
         endpoint = endpoint_from_user_uuid(request_body['source']['user'])
         call_id = '12345'
         params = {
@@ -137,12 +146,12 @@ class Calls(ErrorCatchingResource):
             'ChannelId': call_id,
         }
         with new_amid_client(current_app.config['ami']) as amid:
-            amid.action('Originate', params, token='e92c1e51-b0a9-5f95-738c-a46a47313340')
+            amid.action('Originate', params, token=token)
 
         return {'call_id': call_id}, 201
 
 
-class Call(ErrorCatchingResource):
+class Call(AuthResource):
 
     def get(self, call_id):
         with new_ari_client(current_app.config['ari']['connection']) as ari:

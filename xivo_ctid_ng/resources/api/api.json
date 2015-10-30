@@ -1,0 +1,146 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "title": "xivo-ctid-ng",
+        "description": "Control your calls from a REST API",
+        "version": "1.0.0"
+    },
+    "host": "api.xivo.io",
+    "schemes": [
+        "https"
+    ],
+    "basePath": "/1.0",
+    "produces": [
+        "application/json"
+    ],
+    "paths": {
+        "/calls": {
+            "post": {
+                "summary": "Make a new call",
+                "description": "Create a new call from a phone to an extension.\n",
+                "parameters": [
+                    {
+                        "name": "body",
+                        "in": "body",
+                        "description": "Call parameters",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/Call"
+                        }
+                    }
+                ],
+                "tags": [
+                    "calls"
+                ],
+                "responses": {
+                    "201": {
+                        "description": "The new call ID",
+                        "schema": {
+                            "type": "object",
+                            "items": {
+                                "$ref": "#/definitions/CallID"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/call/<call_id>": {
+            "get": {
+                "summary": "Show a call",
+                "description": "Get infos about a call\n",
+                "parameters": [
+                    {
+                        "name": "call_id",
+                        "in": "query",
+                        "description": "ID of the call",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "tags": [
+                    "calls"
+                ],
+                "responses": {
+                    "201": {
+                        "description": "The new call ID",
+                        "schema": {
+                            "type": "object",
+                            "items": {
+                                "$ref": "#/definitions/Call"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "No such call",
+                        "schema": {
+                            "type": "object",
+                            "items": {
+                                "$ref": "#/definitions/Error"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "CallRequest": {
+            "type": "object",
+            "properties": {
+                "destination": {
+                    "description": "Destination parameters",
+                    "type": "object",
+                    "properties": {
+                        "extension": {
+                            "type": "string"
+                        },
+                        "context": {
+                            "type": "string"
+                        },
+                        "priority": {
+                            "type": "integer"
+                        }
+                    }
+                },
+                "source": {
+                    "description": "Caller parameters",
+                    "type": "object",
+                    "properties": {
+                        "user": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "Call": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "type": "string"
+                },
+                "talking_to": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "bridges": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "CallID": {
+            "type": "object",
+            "properties": {
+                "call_id": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}

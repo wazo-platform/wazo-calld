@@ -1,7 +1,6 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2014-2015 Avencall
+# Copyright (C) 2015 Avencall
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,22 +14,3 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
-
-
-from setuptools import setup
-from setuptools import find_packages
-
-
-setup(
-    name='xivo-ctid-ng',
-    version='2.0',
-    description='XiVO CTI Server Daemon',
-    author='Avencall',
-    author_email='xivo-dev@lists.proformatique.com',
-    url='http://www.xivo.io/',
-    packages=find_packages(),
-    package_data={
-        'xivo_ctid_ng.resources.api': ['*.json'],
-    },
-    scripts=['bin/xivo-ctid-ng'],
-)
