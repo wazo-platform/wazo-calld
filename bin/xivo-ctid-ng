@@ -3,6 +3,6 @@
 
 import sys
 
-from xivo_ctid.bin.daemon import main
+from xivo_ctid_ng.bin.daemon import main
 
 main(sys.argv[1:])

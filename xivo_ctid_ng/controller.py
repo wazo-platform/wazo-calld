@@ -18,9 +18,9 @@
 import logging
 
 from multiprocessing import Process
-from xivo_ctid.core.rest_api import CoreRestApi
-from xivo_ctid.core.ari_ import CoreARI
-from xivo_ctid.core.bus import CoreBus
+from xivo_ctid_ng.core.rest_api import CoreRestApi
+from xivo_ctid_ng.core.ari_ import CoreARI
+from xivo_ctid_ng.core.bus import CoreBus
 
 logger = logging.getLogger(__name__)
 

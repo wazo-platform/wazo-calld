@@ -21,8 +21,8 @@ import sys
 from xivo.daemonize import pidfile_context
 from xivo.user_rights import change_user
 from xivo.xivo_logging import setup_logging
-from xivo_ctid.controller import Controller
-from xivo_ctid.config import load as load_config
+from xivo_ctid_ng.controller import Controller
+from xivo_ctid_ng.config import load as load_config
 
 logger = logging.getLogger(__name__)
 

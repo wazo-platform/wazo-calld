@@ -33,8 +33,8 @@ from contextlib import contextmanager
 from werkzeug.contrib.fixers import ProxyFix
 from xivo import http_helpers
 from xivo_amid_client import Client as AmidClient
-from xivo_ctid.core import exceptions
-from xivo_ctid.core.exceptions import APIException
+from xivo_ctid_ng.core import exceptions
+from xivo_ctid_ng.core.exceptions import APIException
 
 VERSION = 1.0
 
@@ -46,7 +46,7 @@ class CoreRestApi(object):
 
     def __init__(self, config):
         self.config = config
-        self.app = Flask('xivo_ctid')
+        self.app = Flask('xivo_ctid_ng')
         http_helpers.add_logger(self.app, logger)
         self.app.after_request(http_helpers.log_request)
         self.app.wsgi_app = ProxyFix(self.app.wsgi_app)
