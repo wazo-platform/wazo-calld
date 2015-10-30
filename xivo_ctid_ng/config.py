@@ -23,13 +23,13 @@ from xivo.http_helpers import DEFAULT_CIPHERS
 from xivo.xivo_logging import get_log_level_by_name
 
 _DEFAULT_CONFIG = {
-    'config_file': '/etc/xivo-ctid/config.yml',
-    'extra_config_files': '/etc/xivo-ctid/conf.d/',
+    'config_file': '/etc/xivo-ctid-ng/config.yml',
+    'extra_config_files': '/etc/xivo-ctid-ng/conf.d/',
     'debug': False,
     'log_level': 'info',
-    'log_filename': '/var/log/xivo-ctid.log',
+    'log_filename': '/var/log/xivo-ctid-ng.log',
     'foreground': False,
-    'pid_filename': '/var/run/xivo-ctid/xivo-ctid.pid',
+    'pid_filename': '/var/run/xivo-ctid-ng/xivo-ctid-ng.pid',
     'user': 'www-data',
     'rest_api': {
         'listen': '127.0.0.1',

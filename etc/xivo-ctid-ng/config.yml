@@ -4,16 +4,16 @@
 
 # Extra configuration directory where the config files overriding this file
 # should be.
-extra_config_files: /etc/xivo-ctid/conf.d/
+extra_config_files: /etc/xivo-ctid-ng/conf.d/
 
 # Change the log level to debug level.
 debug: false
 
 # Log file.
-logfile: /var/log/xivo-ctid.log
+logfile: /var/log/xivo-ctid-ng.log
 
 # PID file.
-pidfile: /var/run/xivo-ctid.pid
+pidfile: /var/run/xivo-ctid-ng.pid
 
 
 # REST API server

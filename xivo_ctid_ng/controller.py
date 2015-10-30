@@ -35,7 +35,7 @@ class Controller(object):
         self.bus = CoreBus(self.config['bus'])
 
     def run(self):
-        logger.debug('xivo-ctid-new running...')
+        logger.debug('xivo-ctid-ng running...')
         ari_process = Process(target=self.ari.run, name='ari_process')
         ari_process.start()
         bus_process = Process(target=self.bus.run, name='bus_process')

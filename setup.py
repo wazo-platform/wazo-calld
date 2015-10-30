@@ -22,7 +22,7 @@ from setuptools import find_packages
 
 
 setup(
-    name='xivo-ctid',
+    name='xivo-ctid-ng',
     version='2.0',
     description='XiVO CTI Server Daemon',
     author='Avencall',
@@ -30,7 +30,7 @@ setup(
     url='http://www.xivo.io/',
     packages=find_packages(),
     package_data={
-        'xivo_cti.swagger': ['*.json'],
+        'xivo_ctid_ng.swagger': ['*.json'],
     },
-    scripts=['bin/xivo-ctid'],
+    scripts=['bin/xivo-ctid-ng'],
 )
