@@ -5,7 +5,6 @@
         "description": "Control your calls from a REST API",
         "version": "1.0.0"
     },
-    "host": "api.xivo.io",
     "schemes": [
         "https"
     ],
