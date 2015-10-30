@@ -31,6 +31,7 @@ class Controller(object):
         self.rest_api = CoreRestApi(self.config['rest_api'])
         self.rest_api.app.config['ami'] = self.config['ami']
         self.rest_api.app.config['ari'] = self.config['ari']
+        self.rest_api.app.config['auth'] = self.config['auth']
         self.ari = CoreARI(self.config['ari'])
         self.bus = CoreBus(self.config['bus'])
 
