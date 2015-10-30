@@ -26,6 +26,9 @@
                         "schema": {
                             "$ref": "#/definitions/CallRequest"
                         }
+                    },
+                    {
+                        "$ref": "#/parameters/token"
                     }
                 ],
                 "tags": [
@@ -55,6 +58,9 @@
                         "description": "ID of the call",
                         "required": true,
                         "type": "string"
+                    },
+                    {
+                        "$ref": "#/parameters/token"
                     }
                 ],
                 "tags": [
@@ -81,6 +87,15 @@
                     }
                 }
             }
+        }
+    },
+    "parameters": {
+        "token": {
+            "required": true,
+            "name": "X-Auth-Token",
+            "in": "header",
+            "type": "string",
+            "description": "Authentication token obtained from xivo-auth."
         }
     },
     "definitions": {
