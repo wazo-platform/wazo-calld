@@ -16,7 +16,8 @@ set -e
 PATH=/sbin:/bin:/usr/sbin:/usr/bin
 DAEMONNAME=xivo-ctid-ng
 DAEMON=/usr/bin/$DAEMONNAME
-PIDFILE=/var/run/$DAEMONNAME.pid
+PIDDIR=/var/run/$DAEMONNAME
+PIDFILE=$PIDDIR/$DAEMONNAME.pid
 XIVO_DEFAULT_FILE="/etc/default/xivo"
 
 . /lib/lsb/init-functions
@@ -37,6 +38,10 @@ is_enabled() {
         fi
     fi
 }
+
+for dir in "$PIDDIR" ; do
+    [ -d "$dir" ] || install -d -o "$USER" -g "$GROUP" "$dir"
+done
 
 case "$1" in
   start)
