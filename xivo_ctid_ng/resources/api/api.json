@@ -25,7 +25,7 @@
                         "description": "Call parameters",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/Call"
+                            "$ref": "#/definitions/CallRequest"
                         }
                     }
                 ],
