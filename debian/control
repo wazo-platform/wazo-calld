@@ -1,4 +1,4 @@
-Source: xivo-ctid
+Source: xivo-ctid-ng
 Section: python
 Priority: extra
 Maintainer: XiVO Dev Team <dev@avencall.com>
@@ -8,7 +8,7 @@ Standards-Version: 3.9.4
 X-Python-Version: >= 2.7
 Homepage: http://xivo.io/
 
-Package: xivo-ctid
+Package: xivo-ctid-ng
 Architecture: all
 Depends: ${python:Depends}, ${misc:Depends}, python-asterisk-ari, xivo-amid-client
 Description: XiVO CTI server (new generation)
