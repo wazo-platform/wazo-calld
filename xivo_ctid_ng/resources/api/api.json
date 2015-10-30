@@ -47,10 +47,10 @@
                 }
             }
         },
-        "/call/{call_id}": {
+        "/calls/{call_id}": {
             "get": {
                 "summary": "Show a call",
-                "description": "Get infos about a call\n",
+                "description": "Get infos about a call",
                 "parameters": [
                     {
                         "name": "call_id",
