@@ -9,6 +9,7 @@ RUN apt-get -qq -y install \
 
 WORKDIR /usr/src/
 ADD . /usr/src/xivo-ctid-ng
+RUN mkdir /usr/share/xivo-certs
 ADD ./contribs/docker/certs /usr/share/xivo-certs
 WORKDIR /usr/src/xivo-ctid-ng
 

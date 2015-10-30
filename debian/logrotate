@@ -1,0 +1,7 @@
+/var/log/xivo-ctid-ng.log {
+    daily
+    rotate 15
+    compress
+    copytruncate
+    missingok
+}
