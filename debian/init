@@ -14,6 +14,8 @@
 set -e
 
 PATH=/sbin:/bin:/usr/sbin:/usr/bin
+USER=www-data
+GROUP=$USER
 DAEMONNAME=xivo-ctid-ng
 DAEMON=/usr/bin/$DAEMONNAME
 PIDDIR=/var/run/$DAEMONNAME
