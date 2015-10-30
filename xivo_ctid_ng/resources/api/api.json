@@ -54,7 +54,7 @@
                 "parameters": [
                     {
                         "name": "call_id",
-                        "in": "query",
+                        "in": "path",
                         "description": "ID of the call",
                         "required": true,
                         "type": "string"
