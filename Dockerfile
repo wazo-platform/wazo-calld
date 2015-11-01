@@ -2,10 +2,13 @@ FROM python:2.7
 
 ENV DEBIAN_FRONTEND noninteractive
 
-RUN apt-get -qq update
-RUN apt-get -qq -y install \
-     libpq-dev \
-     libyaml-dev
+RUN apt-get -qq update \
+    && apt-get -qq -y install \
+       libpq-dev \
+       libyaml-dev \
+       vim \
+    && apt-get -yqq autoremove
+
 
 WORKDIR /usr/src/
 ADD . /usr/src/xivo-ctid-ng

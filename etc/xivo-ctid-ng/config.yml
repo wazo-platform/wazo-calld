@@ -49,6 +49,11 @@ ami:
     port: 9491
     verify_certificate: /usr/share/xivo-certs/server.crt
 
+confd:
+    host: localhost
+    port: 9486
+    verify_certificate: /usr/share/xivo-certs/server.crt
+
 # Event bus (AMQP) connection informations
 bus:
     username: guest
@@ -63,5 +68,3 @@ ari:
     base_url: https://localhost:5040
     username: xivo
     password: opensesame
-  apps:
-   - hello-world

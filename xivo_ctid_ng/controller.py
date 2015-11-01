@@ -19,7 +19,6 @@ import logging
 
 from multiprocessing import Process
 from xivo_ctid_ng.core.rest_api import CoreRestApi
-from xivo_ctid_ng.core.ari_ import CoreARI
 from xivo_ctid_ng.core.bus import CoreBus
 
 logger = logging.getLogger(__name__)
@@ -31,14 +30,12 @@ class Controller(object):
         self.rest_api = CoreRestApi(self.config['rest_api'])
         self.rest_api.app.config['ami'] = self.config['ami']
         self.rest_api.app.config['ari'] = self.config['ari']
+        self.rest_api.app.config['confd'] = self.config['confd']
         self.rest_api.app.config['auth'] = self.config['auth']
-        self.ari = CoreARI(self.config['ari'])
         self.bus = CoreBus(self.config['bus'])
 
     def run(self):
         logger.debug('xivo-ctid-ng running...')
-        ari_process = Process(target=self.ari.run, name='ari_process')
-        ari_process.start()
         bus_process = Process(target=self.bus.run, name='bus_process')
         bus_process.start()
         self.rest_api.run()

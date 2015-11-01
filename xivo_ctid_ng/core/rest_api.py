@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 from datetime import timedelta
+import time
 
 import ari
 import logging
@@ -33,6 +34,7 @@ from contextlib import contextmanager
 from werkzeug.contrib.fixers import ProxyFix
 from xivo import http_helpers
 from xivo_amid_client import Client as AmidClient
+from xivo_confd_client import Client as ConfdClient
 from xivo_ctid_ng.core import auth
 from xivo_ctid_ng.core import exceptions
 from xivo_ctid_ng.core.exceptions import APIException
@@ -103,9 +105,21 @@ class AuthResource(Resource):
     method_decorators = [auth.verify_token]
 
 
-def endpoint_from_user_uuid(_):
-    return 'SCCP/101'
+def endpoint_from_user_uuid(uuid, token):
+    current_app.config['confd']['token'] = token
+    with new_confd_client(current_app.config['confd']) as confd:
+	user_id = confd.users.get(uuid)['id']
+	line_id = confd.users.relations(user_id).list_lines()['items'][0]['line_id']
+	line = confd.lines.get(line_id)
+	endpoint = "{}/{}".format(line['protocol'], line['name'])
+    if endpoint:
+        return endpoint
 
+    return None
+
+@contextmanager
+def new_confd_client(config):
+    yield ConfdClient(**config)
 
 @contextmanager
 def new_amid_client(config):
@@ -135,8 +149,8 @@ class Calls(AuthResource):
     def post(self):
         request_body = request.json
         token = request.headers['X-Auth-Token']
-        endpoint = endpoint_from_user_uuid(request_body['source']['user'])
-        call_id = '12345'
+        endpoint = endpoint_from_user_uuid(request_body['source']['user'], token)
+        call_id = time.time()
         params = {
             'Channel': endpoint,
             'Exten': request_body['destination']['extension'],

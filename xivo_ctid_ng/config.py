@@ -47,15 +47,17 @@ _DEFAULT_CONFIG = {
         'port': 9491,
         'verify_certificate': '/usr/share/xivo-certs/server.crt',
     },
+    'confd': {
+        'host': 'localhost',
+        'port': 9486,
+        'verify_certificate': '/usr/share/xivo-certs/server.crt',
+    },
     'ari': {
         'connection': {
             'base_url': 'http://localhost:5039',
             'username': 'xivo',
             'password': 'opensesame',
-        },
-        'apps': [
-            'hello-world',
-        ]
+        }
     },
     'bus': {
         'username': 'guest',
