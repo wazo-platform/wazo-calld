@@ -26,6 +26,7 @@ from cherrypy import wsgiserver
 from flask import current_app
 from flask import Flask
 from flask import request
+from flask import jsonify
 from flask_restful import Api
 from flask_restful import Resource
 from flask_cors import CORS
@@ -178,3 +179,12 @@ class Call(AuthResource):
             'talking_to': list(talking_to),
             'bridges': bridges,
         }
+
+    def delete(self, call_id):
+        with new_ari_client(current_app.config['ari']['connection']) as ari:
+            try:
+                channel = ari.channels.get(channelId=call_id)
+            except requests.RequestException:
+                raise NoSuchCall(call_id)
+
+        ari.channels.hangup(channelId=call_id)
