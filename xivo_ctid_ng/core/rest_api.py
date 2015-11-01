@@ -16,7 +16,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 from datetime import timedelta
-import time
 
 import ari
 import logging
@@ -33,7 +32,6 @@ from flask_cors import CORS
 from contextlib import contextmanager
 from werkzeug.contrib.fixers import ProxyFix
 from xivo import http_helpers
-from xivo_amid_client import Client as AmidClient
 from xivo_confd_client import Client as ConfdClient
 from xivo_ctid_ng.core import auth
 from xivo_ctid_ng.core import exceptions
@@ -122,11 +120,6 @@ def new_confd_client(config):
     yield ConfdClient(**config)
 
 @contextmanager
-def new_amid_client(config):
-    yield AmidClient(**config)
-
-
-@contextmanager
 def new_ari_client(config):
     yield ari.connect(**config)
 
@@ -150,19 +143,15 @@ class Calls(AuthResource):
         request_body = request.json
         token = request.headers['X-Auth-Token']
         endpoint = endpoint_from_user_uuid(request_body['source']['user'], token)
-        call_id = time.time()
-        params = {
-            'Channel': endpoint,
-            'Exten': request_body['destination']['extension'],
-            'Context': request_body['destination']['context'],
-            'Priority': request_body['destination']['priority'],
-            'Async': 'True',
-            'ChannelId': call_id,
-        }
-        with new_amid_client(current_app.config['ami']) as amid:
-            amid.action('Originate', params, token=token)
+        with new_ari_client(current_app.config['ari']['connection']) as ari:
+            call = ari.channels.originate(endpoint=endpoint,
+                                          extension=request_body['destination']['extension'],
+                                          context=request_body['destination']['context'],
+                                          priority=request_body['destination']['priority']
+                                         )
+            return {'call_id': call.id}, 201
 
-        return {'call_id': call_id}, 201
+        return None
 
 
 class Call(AuthResource):

@@ -28,7 +28,6 @@ class Controller(object):
     def __init__(self, config):
         self.config = config
         self.rest_api = CoreRestApi(self.config['rest_api'])
-        self.rest_api.app.config['ami'] = self.config['ami']
         self.rest_api.app.config['ari'] = self.config['ari']
         self.rest_api.app.config['confd'] = self.config['confd']
         self.rest_api.app.config['auth'] = self.config['auth']

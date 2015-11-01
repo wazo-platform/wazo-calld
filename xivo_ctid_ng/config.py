@@ -42,11 +42,6 @@ _DEFAULT_CONFIG = {
             'allow_headers': 'Content-Type'
         },
     },
-    'ami': {
-        'host': 'localhost',
-        'port': 9491,
-        'verify_certificate': '/usr/share/xivo-certs/server.crt',
-    },
     'confd': {
         'host': 'localhost',
         'port': 9486,
