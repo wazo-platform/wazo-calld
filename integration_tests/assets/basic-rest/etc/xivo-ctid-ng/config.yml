@@ -1,0 +1,51 @@
+# This file should not be modified as it may get changed by the maintainer.
+# Add extra configuration files in the extra_config_files directory to override
+# the content from this file
+
+# Extra configuration directory where the config files overriding this file
+# should be.
+extra_config_files: /etc/xivo-ctid-ng/conf.d/
+
+# Change the log level to debug level.
+debug: false
+
+# Log file.
+logfile: /var/log/xivo-ctid-ng.log
+
+# PID file.
+pidfile: /var/run/xivo-ctid-ng.pid
+
+
+# REST API server
+rest_api:
+
+    # Listening address
+    listen: 0.0.0.0
+
+    # Listening port
+    port: 9500
+
+    certificate: /usr/share/xivo-certs/server.crt
+    private_key: /usr/share/xivo-certs/server.key
+
+    #CORS configuration. See Flask-CORS documentation for other values.
+    cors:
+
+        #Enabled by default
+        enabled: True
+
+        #Allow JSON preflight requests
+        allow_headers: Content-Type, X-Auth-Token
+
+# xivo-auth (authentication daemon) connection informations.
+auth:
+    host: auth
+    port: 9497
+    timeout: 2
+    verify_certificate: /usr/share/xivo-certs/server.crt
+
+ari:
+  connection:
+    base_url: http://ari:5039
+    username: xivo
+    password: Nasheow8Eag

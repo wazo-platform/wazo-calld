@@ -100,8 +100,8 @@ class ErrorCatchingResource(Resource):
     method_decorators = [exceptions.handle_api_exception] + Resource.method_decorators
 
 
-class AuthResource(Resource):
-    method_decorators = [auth.verify_token]
+class AuthResource(ErrorCatchingResource):
+    method_decorators = [auth.verify_token] + ErrorCatchingResource.method_decorators
 
 
 def endpoint_from_user_uuid(uuid, token):

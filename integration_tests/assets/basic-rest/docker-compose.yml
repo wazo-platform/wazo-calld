@@ -1,0 +1,38 @@
+sync:
+    image: n3llyb0y/wait
+    links:
+        - auth
+        - ari
+        - ctid-ng
+    environment:
+        PORTS: "5039 9497 9500"
+
+ari:
+    image: xivo-ari-mock
+    expose:
+        - "5039"
+    volumes:
+        - "./ari:/usr/local/share/ari"
+        - "./ssl/ari:/usr/local/share/ari-ssl"
+    command: "python /usr/local/share/ari/mock-ari.py 5039"
+
+auth:
+    image: xivo-auth-mock
+    expose:
+        - "9497"
+    volumes:
+        - "./xivo-auth:/usr/local/share/xivo-auth"
+        - "./ssl/xivo-auth:/usr/local/share/xivo-auth-ssl"
+    command: "python /usr/local/share/xivo-auth/mock-xivo-auth.py 9497"
+
+ctid-ng:
+    image: xivo-ctid-ng-test
+    volumes:
+        - "../../..:/usr/src/xivo-ctid-ng"
+        - "./etc/xivo-ctid-ng:/etc/xivo-ctid-ng"
+        - "./ssl/localhost:/usr/share/xivo-certs"
+    ports:
+        - "9500:9500"
+    links:
+        - ari
+        - auth

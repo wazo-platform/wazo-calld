@@ -1,0 +1,6 @@
+FROM xivo/xivo-ctid-ng
+
+ADD . /usr/src/xivo-ctid-ng
+WORKDIR /usr/src/xivo-ctid-ng
+
+RUN python setup.py develop
