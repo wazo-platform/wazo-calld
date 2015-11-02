@@ -170,7 +170,7 @@ class Call(AuthResource):
             for bridge_id in bridges:
                 calls = ari.bridges.get(bridgeId=bridge_id).json['channels']
                 talking_to.update(calls)
-            talking_to.remove(call_id)
+            talking_to.discard(call_id)
 
         status = channel.json['state']
 
