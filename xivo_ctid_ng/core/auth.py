@@ -19,7 +19,6 @@ import requests
 
 from flask import current_app
 from flask import request
-from flask_restful import Resource
 from flask_restful import abort
 from functools import wraps
 from time import time

@@ -26,7 +26,6 @@ from cherrypy import wsgiserver
 from flask import current_app
 from flask import Flask
 from flask import request
-from flask import jsonify
 from flask_restful import Api
 from flask_restful import Resource
 from flask_cors import CORS
@@ -107,18 +106,20 @@ class AuthResource(ErrorCatchingResource):
 def endpoint_from_user_uuid(uuid, token):
     current_app.config['confd']['token'] = token
     with new_confd_client(current_app.config['confd']) as confd:
-	user_id = confd.users.get(uuid)['id']
-	line_id = confd.users.relations(user_id).list_lines()['items'][0]['line_id']
-	line = confd.lines.get(line_id)
-	endpoint = "{}/{}".format(line['protocol'], line['name'])
+        user_id = confd.users.get(uuid)['id']
+        line_id = confd.users.relations(user_id).list_lines()['items'][0]['line_id']
+        line = confd.lines.get(line_id)
+        endpoint = "{}/{}".format(line['protocol'], line['name'])
     if endpoint:
         return endpoint
 
     return None
 
+
 @contextmanager
 def new_confd_client(config):
     yield ConfdClient(**config)
+
 
 @contextmanager
 def new_ari_client(config):
@@ -148,8 +149,7 @@ class Calls(AuthResource):
             call = ari.channels.originate(endpoint=endpoint,
                                           extension=request_body['destination']['extension'],
                                           context=request_body['destination']['context'],
-                                          priority=request_body['destination']['priority']
-                                         )
+                                          priority=request_body['destination']['priority'])
             return {'call_id': call.id}, 201
 
         return None
