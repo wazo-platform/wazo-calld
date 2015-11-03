@@ -154,6 +154,14 @@ class Calls(AuthResource):
 
         return None
 
+def get_uuid_from_call_id(ari, call_id):
+    user_id = ari.channels.getChannelVar(channelId=call_id, variable='XIVO_USERID')['value']
+
+    with new_confd_client(current_app.config['confd']) as confd:
+        uuid = confd.users.get(user_id)['uuid']
+
+    return uuid
+
 
 class Call(AuthResource):
 
@@ -164,19 +172,22 @@ class Call(AuthResource):
             except requests.RequestException:
                 raise NoSuchCall(call_id)
 
+
             bridges = [bridge.id for bridge in ari.bridges.list() if channel.id in bridge.json['channels']]
 
-            talking_to = set()
+            talking_to = dict()
             for bridge_id in bridges:
                 calls = ari.bridges.get(bridgeId=bridge_id).json['channels']
-                talking_to.update(calls)
-            talking_to.discard(call_id)
+                for call in calls:
+                    uuid = get_uuid_from_call_id(ari, call)
+                    talking_to[call] = uuid
+            del talking_to[call_id]
 
         status = channel.json['state']
 
         return {
             'status': status,
-            'talking_to': list(talking_to),
+            'talking_to': dict(talking_to),
             'bridges': bridges,
         }
 
