@@ -159,8 +159,9 @@ def get_uuid_from_call_id(ari, call_id):
 
     with new_confd_client(current_app.config['confd']) as confd:
         uuid = confd.users.get(user_id)['uuid']
+        return uuid
 
-    return uuid
+    return None
 
 
 class Call(AuthResource):
@@ -181,7 +182,7 @@ class Call(AuthResource):
                 for call in calls:
                     uuid = get_uuid_from_call_id(ari, call)
                     talking_to[call] = uuid
-            del talking_to[call_id]
+                del talking_to[call_id]
 
         status = channel.json['state']
 
