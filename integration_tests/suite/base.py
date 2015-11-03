@@ -43,3 +43,19 @@ class IntegrationTest(AssetLaunchingTestCase):
                               headers={'X-Auth-Token': token},
                               verify=CA_CERT)
         return result
+
+    @classmethod
+    def post_calls_result(self, token=None):
+        url = u'https://localhost:9500/1.0/calls'
+        result = requests.post(url,
+                               headers={'X-Auth-Token': token},
+                               verify=CA_CERT)
+        return result
+
+    @classmethod
+    def delete_call_result(self, call_id, token=None):
+        url = u'https://localhost:9500/1.0/calls/{call_id}'
+        result = requests.delete(url.format(call_id=call_id),
+                                 headers={'X-Auth-Token': token},
+                                 verify=CA_CERT)
+        return result
