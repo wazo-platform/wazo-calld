@@ -52,3 +52,23 @@ class TestAuthenticationError(IntegrationTest):
 
         assert_that(result.status_code, equal_to(503))
         assert_that(result.json()['reason'][0], contains_string('authentication server'))
+
+
+class TestAuthenticationCoverage(IntegrationTest):
+
+    asset = 'basic-rest'
+
+    def test_auth_on_new_call(self):
+        result = self.get_call_result('my-call')
+
+        assert_that(result.status_code, equal_to(401))
+
+    def test_auth_on_get_call(self):
+        result = self.post_calls_result()
+
+        assert_that(result.status_code, equal_to(401))
+
+    def test_auth_on_hangup(self):
+        result = self.delete_call_result('my-call')
+
+        assert_that(result.status_code, equal_to(401))
