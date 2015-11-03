@@ -43,6 +43,9 @@
                                 "$ref": "#/definitions/CallID"
                             }
                         }
+                    },
+                    "503": {
+                        "$ref": "#/responses/AnotherServiceUnavailable"
                     }
                 }
             }
@@ -84,6 +87,9 @@
                                 "$ref": "#/definitions/Error"
                             }
                         }
+                    },
+                    "503": {
+                        "$ref": "#/responses/AnotherServiceUnavailable"
                     }
                 }
             },
@@ -123,8 +129,19 @@
                                 "$ref": "#/definitions/Error"
                             }
                         }
+                    },
+                    "503": {
+                        "$ref": "#/responses/AnotherServiceUnavailable"
                     }
                 }
+            }
+        }
+    },
+    "responses": {
+        "AnotherServiceUnavailable": {
+            "description": "Another service is unavailable (e.g. xivo-auth, Asterisk, ...)",
+            "schema": {
+                "$ref": "#/definitions/Error"
             }
         }
     },
@@ -192,6 +209,29 @@
             "properties": {
                 "call_id": {
                     "type": "string"
+                }
+            }
+        },
+        "Error": {
+            "title": "Error",
+            "description": "Error message for the client",
+            "properties": {
+                "message": {
+                    "description": "Human readable explanation of the error",
+                    "type": "string"
+                },
+                "error_id": {
+                    "description": "Identifier of the type of error. It is more precise than the HTTP status code.",
+                    "type": "string"
+                },
+                "details": {
+                    "description": "Additional information about the error. The keys are specific to each error.",
+                    "type": "object"
+                },
+                "timestamp": {
+                    "description": "Time when the error occured",
+                    "type": "number",
+                    "format": "timestamp"
                 }
             }
         }

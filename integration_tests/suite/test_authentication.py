@@ -19,6 +19,7 @@ from .base import IntegrationTest
 from .base import VALID_TOKEN
 
 from hamcrest import assert_that
+from hamcrest import contains_string
 from hamcrest import equal_to
 
 
@@ -40,3 +41,14 @@ class TestAuthentication(IntegrationTest):
         result = self.get_call_result('my-call', token=VALID_TOKEN)
 
         assert_that(result.status_code, equal_to(404))
+
+
+class TestAuthenticationError(IntegrationTest):
+
+    asset = 'no_auth_server'
+
+    def test_no_auth_server_gives_503(self):
+        result = self.get_call_result('my-call', token=None)
+
+        assert_that(result.status_code, equal_to(503))
+        assert_that(result.json()['reason'][0], contains_string('authentication server'))
