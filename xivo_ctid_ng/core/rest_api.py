@@ -155,7 +155,10 @@ class Calls(AuthResource):
         return None
 
 def get_uuid_from_call_id(ari, call_id):
-    user_id = ari.channels.getChannelVar(channelId=call_id, variable='XIVO_USERID')['value']
+    try:
+        user_id = ari.channels.getChannelVar(channelId=call_id, variable='XIVO_USERID')['value']
+    except:
+        return None
 
     with new_confd_client(current_app.config['confd']) as confd:
         uuid = confd.users.get(user_id)['uuid']
