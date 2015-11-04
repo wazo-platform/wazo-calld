@@ -14,6 +14,36 @@
     ],
     "paths": {
         "/calls": {
+            "get": {
+                "summary": "List calls",
+                "description": "List calls",
+                "tags": [
+                    "calls"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List call ID with user uuid",
+                        "schema": {
+                            "type": "object",
+                            "items": {
+                                "$ref": "#/definitions/Calls"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "No such call",
+                        "schema": {
+                            "type": "object",
+                            "items": {
+                                "$ref": "#/definitions/Error"
+                            }
+                        }
+                    },
+                    "503": {
+                        "$ref": "#/responses/AnotherServiceUnavailable"
+                    }
+                }
+            },
             "post": {
                 "summary": "Make a new call",
                 "description": "Create a new call from a phone to an extension.\n",
@@ -112,7 +142,7 @@
                     "calls"
                 ],
                 "responses": {
-                    "200": {
+                    "204": {
                         "description": "Call is hangup",
                         "schema": {
                             "type": "object",
@@ -208,6 +238,17 @@
             "type": "object",
             "properties": {
                 "call_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "Calls": {
+            "type": "object",
+            "properties": {
+                "call_id": {
+                    "type": "string"
+                },
+                "uuid": {
                     "type": "string"
                 }
             }
