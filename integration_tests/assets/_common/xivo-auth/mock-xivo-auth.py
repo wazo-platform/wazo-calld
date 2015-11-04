@@ -1,15 +1,12 @@
 import sys
 
 from flask import Flask, jsonify
-from OpenSSL import SSL
 
 app = Flask(__name__)
 
 port = int(sys.argv[1])
 
-context = SSL.Context(SSL.SSLv23_METHOD)
-context.use_privatekey_file('/usr/local/share/xivo-auth-ssl/server.key')
-context.use_certificate_file('/usr/local/share/xivo-auth-ssl/server.crt')
+context = ('/usr/local/share/xivo-auth-ssl/server.crt', '/usr/local/share/xivo-auth-ssl/server.key')
 
 tokens = {'valid-token': 'uuid',
           'valid-token-1': 'uuid-1',

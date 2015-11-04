@@ -8,7 +8,7 @@ sync:
         PORTS: "5039 9497 9500"
 
 ari:
-    image: xivo-ari-mock
+    image: p0bailey/docker-flask
     expose:
         - "5039"
     volumes:
@@ -17,7 +17,7 @@ ari:
     command: "python /usr/local/share/ari/mock-ari.py 5039"
 
 auth:
-    image: xivo-auth-mock
+    image: p0bailey/docker-flask
     expose:
         - "9497"
     volumes:

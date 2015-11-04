@@ -21,7 +21,6 @@ from flask import Flask
 from flask import jsonify
 from flask import make_response
 from flask import request
-# from OpenSSL import SSL
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -29,9 +28,7 @@ app = Flask(__name__)
 
 port = int(sys.argv[1])
 
-# context = SSL.Context(SSL.SSLv23_METHOD)
-# context.use_privatekey_file('/usr/local/share/asterisk-ajam-ssl/server.key')
-# context.use_certificate_file('/usr/local/share/asterisk-ajam-ssl/server.crt')
+# context = ('/usr/local/share/asterisk-ajam-ssl/server.crt', '/usr/local/share/asterisk-ajam-ssl/server.key')
 
 _requests = []
 

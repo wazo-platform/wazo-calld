@@ -1,3 +1,0 @@
-FROM nickstenning/flask
-
-RUN apt-get install python-openssl
