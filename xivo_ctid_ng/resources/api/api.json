@@ -17,6 +17,11 @@
             "get": {
                 "summary": "List calls",
                 "description": "List calls",
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/token"
+                    }
+                ],
                 "tags": [
                     "calls"
                 ],
