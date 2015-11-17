@@ -10,8 +10,8 @@ sync:
 
 ari:
   image: p0bailey/docker-flask
-  expose:
-    - "5039"
+  ports:
+    - "5039:5039"
   volumes:
     - "./ari:/usr/local/share/ari"
     - "./ssl/ari:/usr/local/share/ari-ssl"

@@ -19,6 +19,7 @@ import requests
 import os
 import logging
 
+from hamcrest import assert_that, equal_to
 from requests.packages import urllib3
 from xivo_test_helpers.asset_launching_test_case import AssetLaunchingTestCase
 
@@ -37,7 +38,21 @@ class IntegrationTest(AssetLaunchingTestCase):
     service = 'ctid-ng'
 
     @classmethod
-    def get_call_result(self, call_id, token=None):
+    def get_calls_result(cls, token=None):
+        url = u'https://localhost:9500/1.0/calls'
+        result = requests.get(url,
+                              headers={'X-Auth-Token': token},
+                              verify=CA_CERT)
+        return result
+
+    @classmethod
+    def list_calls(cls, token=VALID_TOKEN):
+        response = cls.get_calls_result(token=token)
+        assert_that(response.status_code, equal_to(200))
+        return response.json()
+
+    @classmethod
+    def get_call_result(cls, call_id, token=None):
         url = u'https://localhost:9500/1.0/calls/{call_id}'
         result = requests.get(url.format(call_id=call_id),
                               headers={'X-Auth-Token': token},
@@ -45,7 +60,7 @@ class IntegrationTest(AssetLaunchingTestCase):
         return result
 
     @classmethod
-    def post_calls_result(self, token=None):
+    def post_calls_result(cls, token=None):
         url = u'https://localhost:9500/1.0/calls'
         result = requests.post(url,
                                headers={'X-Auth-Token': token},
@@ -53,9 +68,16 @@ class IntegrationTest(AssetLaunchingTestCase):
         return result
 
     @classmethod
-    def delete_call_result(self, call_id, token=None):
+    def delete_call_result(cls, call_id, token=None):
         url = u'https://localhost:9500/1.0/calls/{call_id}'
         result = requests.delete(url.format(call_id=call_id),
                                  headers={'X-Auth-Token': token},
                                  verify=CA_CERT)
         return result
+
+    @classmethod
+    def set_ari_channels(cls, channels):
+        url = 'http://localhost:5039/_set_response'
+        body = {'response': 'channels',
+                'content': channels}
+        requests.post(url, json=body)

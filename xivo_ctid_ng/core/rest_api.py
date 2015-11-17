@@ -156,14 +156,17 @@ class Calls(AuthResource):
         token = request.headers['X-Auth-Token']
         current_app.config['confd']['token'] = token
 
+        result = []
         with new_ari_client(current_app.config['ari']['connection']) as ari:
             channels = ari.channels.list()
-            calls = dict()
             for channel in channels:
                 uuid = get_uuid_from_call_id(ari, channel.id)
-                calls[channel.id] = uuid
+                result.append({
+                    'call_id': channel.id,
+                    'xivo_uuid': uuid,
+                })
 
-        return calls, 200
+        return result, 200
 
     def post(self):
         token = request.headers['X-Auth-Token']
