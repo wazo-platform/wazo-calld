@@ -1,0 +1,23 @@
+sync:
+  image: n3llyb0y/wait
+  links:
+    - ctid-ng
+    - rabbitmq
+  environment:
+    PORTS: "5672"
+
+ctid-ng:
+  image: xivo-ctid-ng-test
+  volumes:
+    - "../../..:/usr/src/xivo-ctid-ng"
+    - "./etc/xivo-ctid-ng:/etc/xivo-ctid-ng"
+    - "./ssl_localhost:/usr/share/xivo-certs"
+  ports:
+    - "9500:9500"
+  links:
+    - rabbitmq
+
+rabbitmq:
+  image: rabbitmq
+  expose:
+    - "5672"

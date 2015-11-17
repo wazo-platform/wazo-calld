@@ -1,0 +1,17 @@
+auth:
+  host: auth
+  port: 9497
+  timeout: 2
+  verify_certificate: /usr/share/xivo-certs/server.crt
+
+ari:
+  connection:
+  base_url: http://ari:5039
+  username: xivo
+  password: Nasheow8Eag
+
+bus:
+  username: guest
+  password: guest
+  host: rabbitmq
+  port: 5672

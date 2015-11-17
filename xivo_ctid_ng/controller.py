@@ -17,7 +17,7 @@
 
 import logging
 
-from multiprocessing import Process
+from threading import Thread
 from xivo_ctid_ng.core.rest_api import CoreRestApi
 from xivo_ctid_ng.core.bus import CoreBus
 
@@ -35,6 +35,10 @@ class Controller(object):
 
     def run(self):
         logger.debug('xivo-ctid-ng running...')
-        bus_process = Process(target=self.bus.run, name='bus_process')
-        bus_process.start()
-        self.rest_api.run()
+        bus_thread = Thread(target=self.bus.run, name='bus_thread')
+        bus_thread.start()
+        try:
+            self.rest_api.run()
+        finally:
+            self.bus.should_stop = True
+            bus_thread.join()
