@@ -7,7 +7,7 @@ sync:
         PORTS: "5039 9500"
 
 ari:
-    image: xivo-ari-mock
+    image: p0bailey/docker-flask
     expose:
         - "5039"
     volumes:
