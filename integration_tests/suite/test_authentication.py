@@ -25,7 +25,7 @@ from hamcrest import equal_to
 
 class TestAuthentication(IntegrationTest):
 
-    asset = 'basic-rest'
+    asset = 'basic_rest'
 
     def test_no_auth_gives_401(self):
         result = self.get_call_result('my-call', token=None)
@@ -56,7 +56,7 @@ class TestAuthenticationError(IntegrationTest):
 
 class TestAuthenticationCoverage(IntegrationTest):
 
-    asset = 'basic-rest'
+    asset = 'basic_rest'
 
     def test_auth_on_new_call(self):
         result = self.get_call_result('my-call')
