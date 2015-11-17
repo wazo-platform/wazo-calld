@@ -29,18 +29,9 @@
                     "200": {
                         "description": "List call ID with user uuid",
                         "schema": {
-                            "type": "object",
+                            "type": "array",
                             "items": {
-                                "$ref": "#/definitions/Calls"
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "No such call",
-                        "schema": {
-                            "type": "object",
-                            "items": {
-                                "$ref": "#/definitions/Error"
+                                "$ref": "#/definitions/Call"
                             }
                         }
                     },
@@ -73,10 +64,13 @@
                     "201": {
                         "description": "The new call ID",
                         "schema": {
-                            "type": "object",
-                            "items": {
-                                "$ref": "#/definitions/CallID"
-                            }
+                            "$ref": "#/definitions/CallID"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
                         }
                     },
                     "503": {
@@ -105,22 +99,15 @@
                     "calls"
                 ],
                 "responses": {
-                    "201": {
-                        "description": "The new call ID",
+                    "200": {
                         "schema": {
-                            "type": "object",
-                            "items": {
-                                "$ref": "#/definitions/Call"
-                            }
+                            "$ref": "#/definitions/Call"
                         }
                     },
                     "404": {
                         "description": "No such call",
                         "schema": {
-                            "type": "object",
-                            "items": {
-                                "$ref": "#/definitions/Error"
-                            }
+                            "$ref": "#/definitions/Error"
                         }
                     },
                     "503": {
@@ -148,21 +135,12 @@
                 ],
                 "responses": {
                     "204": {
-                        "description": "Call is hangup",
-                        "schema": {
-                            "type": "object",
-                            "items": {
-                                "$ref": "#/definitions/Call"
-                            }
-                        }
+                        "description": "Call has been hung up"
                     },
                     "404": {
                         "description": "No such call",
                         "schema": {
-                            "type": "object",
-                            "items": {
-                                "$ref": "#/definitions/Error"
-                            }
+                            "$ref": "#/definitions/Error"
                         }
                     },
                     "503": {
@@ -222,6 +200,12 @@
         "Call": {
             "type": "object",
             "properties": {
+                "call_id": {
+                    "type": "string"
+                },
+                "xivo_uuid": {
+                    "type": "string"
+                },
                 "status": {
                     "type": "string"
                 },
@@ -243,17 +227,6 @@
             "type": "object",
             "properties": {
                 "call_id": {
-                    "type": "string"
-                }
-            }
-        },
-        "Calls": {
-            "type": "object",
-            "properties": {
-                "call_id": {
-                    "type": "string"
-                },
-                "uuid": {
                     "type": "string"
                 }
             }
