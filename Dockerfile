@@ -12,17 +12,17 @@ RUN apt-get -qq update \
 
 WORKDIR /usr/src/
 ADD . /usr/src/xivo-ctid-ng
-RUN mkdir /usr/share/xivo-certs
+RUN mkdir -p /usr/share/xivo-certs
 ADD ./contribs/docker/certs /usr/share/xivo-certs
 WORKDIR /usr/src/xivo-ctid-ng
 
 RUN pip install -r requirements.txt
 RUN python setup.py install
 RUN cp -av etc/xivo-ctid-ng /etc
-RUN mkdir /etc/xivo-ctid-ng/conf.d
+RUN mkdir -p /etc/xivo-ctid-ng/conf.d
 RUN touch /var/log/xivo-ctid-ng.log
 RUN chown www-data /var/log/xivo-ctid-ng.log
-RUN mkdir /var/run/xivo-ctid-ng/
+RUN mkdir -p /var/run/xivo-ctid-ng/
 RUN chown www-data /var/run/xivo-ctid-ng/
 
 RUN rm -fr /usr/src/xivo-ctid-ng
