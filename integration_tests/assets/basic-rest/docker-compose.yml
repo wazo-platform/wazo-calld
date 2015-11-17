@@ -4,8 +4,9 @@ sync:
     - auth
     - ari
     - ctid-ng
+    - rabbitmq
   environment:
-    PORTS: "5039 9497 9500"
+    PORTS: "5039 5672 9497 9500"
 
 ari:
   image: p0bailey/docker-flask
@@ -36,3 +37,9 @@ ctid-ng:
   links:
     - ari
     - auth
+    - rabbitmq
+
+rabbitmq:
+  image: rabbitmq
+  expose:
+    - "5672"
