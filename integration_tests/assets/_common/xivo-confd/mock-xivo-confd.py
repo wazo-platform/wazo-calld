@@ -63,7 +63,7 @@ def set_response():
     return '', 204
 
 
-@app.route('/users/<int:user_id>')
+@app.route('/1.1/users/<user_id>')
 def user(user_id):
     if user_id not in _responses['users']:
         return '', 404

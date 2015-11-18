@@ -47,6 +47,7 @@ ctid-ng:
   links:
     - ari
     - auth
+    - confd
     - rabbitmq
 
 rabbitmq:

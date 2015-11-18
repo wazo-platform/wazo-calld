@@ -43,3 +43,22 @@ class TestListCalls(IntegrationTest):
                          'user_uuid': None}),
             has_entries({'call_id': 'second-id',
                          'user_uuid': None})))
+
+    def test_given_some_calls_with_user_id_when_list_calls_then_list_calls_with_user_uuid(self):
+        self.set_ari_channels([{
+            'id': 'first-id'
+        }, {
+            'id': 'second-id'
+        }])
+        self.set_ari_channel_variable({'first-id': {'XIVO_USERID': 'user1-id'},
+                                       'second-id': {'XIVO_USERID': 'user2-id'}})
+        self.set_confd_users({'user1-id': {'uuid': 'user1-uuid'},
+                              'user2-id': {'uuid': 'user2-uuid'}})
+
+        calls = self.list_calls()
+
+        assert_that(calls, contains(
+            has_entries({'call_id': 'first-id',
+                         'user_uuid': 'user1-uuid'}),
+            has_entries({'call_id': 'second-id',
+                         'user_uuid': 'user2-uuid'})))

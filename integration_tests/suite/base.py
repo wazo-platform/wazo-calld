@@ -80,3 +80,19 @@ class IntegrationTest(AssetLaunchingTestCase):
         body = {'response': 'channels',
                 'content': channels}
         requests.post(url, json=body)
+
+    @classmethod
+    def set_ari_channel_variable(cls, variables):
+        url = 'http://localhost:5039/_set_response'
+        body = {'response': 'channel_variable',
+                'content': variables}
+        requests.post(url, json=body)
+
+    @classmethod
+    def set_confd_users(cls, users):
+        url = 'https://localhost:9486/_set_response'
+        body = {'response': 'users',
+                'content': users}
+        requests.post(url,
+                      json=body,
+                      verify=False)

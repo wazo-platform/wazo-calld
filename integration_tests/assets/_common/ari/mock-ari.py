@@ -29,7 +29,7 @@ app = Flask(__name__)
 
 port = int(sys.argv[1])
 
-# context = ('/usr/local/share/asterisk-ajam-ssl/server.crt', '/usr/local/share/asterisk-ajam-ssl/server.key')
+# context = ('/usr/local/share/ssl/ari/server.crt', '/usr/local/share/ssl/ari/server.key')
 
 _requests = []
 _responses = {
@@ -75,6 +75,14 @@ def swagger(file_name):
 @app.route('/ari/channels')
 def channels():
     return make_response(json.dumps(_responses['channels']), 200, {'Content-Type': 'application/json'})
+
+
+@app.route('/ari/channels/<channel_id>/variable')
+def channel_variable(channel_id):
+    variable = request.args['variable']
+    return jsonify({
+        'value': _responses['channel_variable'][channel_id][variable]
+    })
 
 
 if __name__ == '__main__':
