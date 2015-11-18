@@ -24,16 +24,21 @@ from flask import request
 
 logging.basicConfig(level=logging.DEBUG)
 
-app = Flask(__name__)
-
-port = int(sys.argv[1])
-
-context = ('/usr/local/share/ssl/confd/server.crt', '/usr/local/share/ssl/confd/server.key')
-
-_requests = []
-_responses = {
+_EMPTY_RESPONSES = {
     'users': {}
 }
+
+app = Flask(__name__)
+
+_requests = []
+_responses = {}
+
+
+def _reset():
+    global _requests
+    global _responses
+    _requests = []
+    _responses = dict(_EMPTY_RESPONSES)
 
 
 @app.before_request
@@ -51,6 +56,12 @@ def log_request():
 @app.route('/_requests', methods=['GET'])
 def list_requests():
     return jsonify(requests=_requests)
+
+
+@app.route('/_reset', methods=['POST'])
+def reset():
+    _reset()
+    return '', 204
 
 
 @app.route('/_set_response', methods=['POST'])
@@ -71,4 +82,8 @@ def user(user_id):
 
 
 if __name__ == '__main__':
+    _reset()
+
+    port = int(sys.argv[1])
+    context = ('/usr/local/share/ssl/confd/server.crt', '/usr/local/share/ssl/confd/server.key')
     app.run(host='0.0.0.0', port=port, ssl_context=context, debug=True)

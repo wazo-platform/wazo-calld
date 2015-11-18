@@ -93,6 +93,14 @@ class IntegrationTest(AssetLaunchingTestCase):
         url = 'https://localhost:9486/_set_response'
         body = {'response': 'users',
                 'content': users}
-        requests.post(url,
-                      json=body,
-                      verify=False)
+        requests.post(url, json=body, verify=False)
+
+    @classmethod
+    def reset_ari(cls):
+        url = 'http://localhost:5039/_reset'
+        requests.post(url)
+
+    @classmethod
+    def reset_confd(cls):
+        url = 'https://localhost:9486/_reset'
+        requests.post(url, verify=False)

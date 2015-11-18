@@ -23,18 +23,24 @@ from flask import jsonify
 from flask import make_response
 from flask import request
 
-logging.basicConfig(level=logging.DEBUG)
+_EMPTY_RESPONSES = {
+    'channels': {},
+    'channel_variable': {}
+}
 
 app = Flask(__name__)
 
-port = int(sys.argv[1])
-
-# context = ('/usr/local/share/ssl/ari/server.crt', '/usr/local/share/ssl/ari/server.key')
-
 _requests = []
-_responses = {
-    'channels': []
-}
+_responses = {}
+
+logging.basicConfig(level=logging.DEBUG)
+
+
+def _reset():
+    global _requests
+    global _responses
+    _requests = []
+    _responses = dict(_EMPTY_RESPONSES)
 
 
 @app.before_request
@@ -52,6 +58,12 @@ def log_request():
 @app.route('/_requests', methods=['GET'])
 def list_requests():
     return jsonify(requests=_requests)
+
+
+@app.route('/_reset', methods=['POST'])
+def reset():
+    _reset()
+    return '', 204
 
 
 @app.route('/_set_response', methods=['POST'])
@@ -86,5 +98,9 @@ def channel_variable(channel_id):
 
 
 if __name__ == '__main__':
-    # app.run(host='0.0.0.0', port=port, ssl_context=context, debug=True)
+    _reset()
+
+    port = int(sys.argv[1])
     app.run(host='0.0.0.0', port=port, debug=True)
+    # context = ('/usr/local/share/ssl/ari/server.crt', '/usr/local/share/ssl/ari/server.key')
+    # app.run(host='0.0.0.0', port=port, ssl_context=context, debug=True)

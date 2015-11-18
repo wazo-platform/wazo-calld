@@ -24,6 +24,11 @@ class TestListCalls(IntegrationTest):
 
     asset = 'basic_rest'
 
+    def setUp(self):
+        super(TestListCalls, self).setUp()
+        self.reset_ari()
+        self.reset_confd()
+
     def test_given_no_calls_when_list_calls_then_empty_list(self):
         calls = self.list_calls()
 
