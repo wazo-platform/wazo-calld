@@ -163,7 +163,7 @@ class Calls(AuthResource):
                 uuid = get_uuid_from_call_id(ari, channel.id)
                 result.append({
                     'call_id': channel.id,
-                    'xivo_uuid': uuid,
+                    'user_uuid': uuid,
                 })
 
         return result, 200

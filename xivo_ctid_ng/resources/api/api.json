@@ -27,7 +27,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "List call ID with user uuid",
+                        "description": "List currently active calls",
                         "schema": {
                             "type": "array",
                             "items": {
@@ -203,7 +203,7 @@
                 "call_id": {
                     "type": "string"
                 },
-                "xivo_uuid": {
+                "user_uuid": {
                     "type": "string"
                 },
                 "status": {

@@ -40,6 +40,6 @@ class TestListCalls(IntegrationTest):
 
         assert_that(calls, contains(
             has_entries({'call_id': 'first-id',
-                         'xivo_uuid': None}),
+                         'user_uuid': None}),
             has_entries({'call_id': 'second-id',
-                         'xivo_uuid': None})))
+                         'user_uuid': None})))
