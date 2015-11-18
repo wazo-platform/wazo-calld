@@ -75,10 +75,10 @@ class IntegrationTest(AssetLaunchingTestCase):
         return result
 
     @classmethod
-    def set_ari_channels(cls, channels):
+    def set_ari_channels(cls, *mock_channels):
         url = 'http://localhost:5039/_set_response'
         body = {'response': 'channels',
-                'content': channels}
+                'content': {channel.id_(): channel.to_dict() for channel in mock_channels}}
         requests.post(url, json=body)
 
     @classmethod
@@ -104,3 +104,19 @@ class IntegrationTest(AssetLaunchingTestCase):
     def reset_confd(cls):
         url = 'https://localhost:9486/_reset'
         requests.post(url, verify=False)
+
+
+class MockChannel(object):
+
+    def __init__(self, id, state='Ringing'):
+        self._id = id
+        self._state = state
+
+    def id_(self):
+        return self._id
+
+    def to_dict(self):
+        return {
+            'id': self._id,
+            'state': self._state
+        }

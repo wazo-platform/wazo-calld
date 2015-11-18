@@ -163,6 +163,7 @@ class Calls(AuthResource):
                 uuid = get_uuid_from_call_id(ari, channel.id)
                 result.append({
                     'call_id': channel.id,
+                    'status': channel.json['state'],
                     'user_uuid': uuid,
                 })
 

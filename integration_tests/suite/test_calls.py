@@ -15,9 +15,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
-from hamcrest import assert_that, contains, has_entries
+from hamcrest import assert_that
+from hamcrest import contains
+from hamcrest import contains_inanyorder
+from hamcrest import has_entries
 
 from .base import IntegrationTest
+from .base import MockChannel
 
 
 class TestListCalls(IntegrationTest):
@@ -35,26 +39,20 @@ class TestListCalls(IntegrationTest):
         assert_that(calls, contains())
 
     def test_given_some_calls_and_no_user_id_when_list_calls_then_list_calls_with_no_user_uuid(self):
-        self.set_ari_channels([{
-            'id': 'first-id'
-        }, {
-            'id': 'second-id'
-        }])
+        self.set_ari_channels(MockChannel(id='first-id'),
+                              MockChannel(id='second-id'))
 
         calls = self.list_calls()
 
-        assert_that(calls, contains(
+        assert_that(calls, contains_inanyorder(
             has_entries({'call_id': 'first-id',
                          'user_uuid': None}),
             has_entries({'call_id': 'second-id',
                          'user_uuid': None})))
 
     def test_given_some_calls_with_user_id_when_list_calls_then_list_calls_with_user_uuid(self):
-        self.set_ari_channels([{
-            'id': 'first-id'
-        }, {
-            'id': 'second-id'
-        }])
+        self.set_ari_channels(MockChannel(id='first-id'),
+                              MockChannel(id='second-id'))
         self.set_ari_channel_variable({'first-id': {'XIVO_USERID': 'user1-id'},
                                        'second-id': {'XIVO_USERID': 'user2-id'}})
         self.set_confd_users({'user1-id': {'uuid': 'user1-uuid'},
@@ -62,8 +60,20 @@ class TestListCalls(IntegrationTest):
 
         calls = self.list_calls()
 
-        assert_that(calls, contains(
+        assert_that(calls, contains_inanyorder(
             has_entries({'call_id': 'first-id',
                          'user_uuid': 'user1-uuid'}),
             has_entries({'call_id': 'second-id',
                          'user_uuid': 'user2-uuid'})))
+
+    def test_given_some_calls_when_list_calls_then_list_calls_with_status(self):
+        self.set_ari_channels(MockChannel(id='first-id', state='Up'),
+                              MockChannel(id='second-id', state='Ringing'))
+
+        calls = self.list_calls()
+
+        assert_that(calls, contains_inanyorder(
+            has_entries({'call_id': 'first-id',
+                         'status': 'Up'}),
+            has_entries({'call_id': 'second-id',
+                         'status': 'Ringing'})))

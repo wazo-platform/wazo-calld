@@ -86,12 +86,17 @@ def swagger(file_name):
 
 @app.route('/ari/channels')
 def channels():
-    return make_response(json.dumps(_responses['channels']), 200, {'Content-Type': 'application/json'})
+    result = [channel for channel in _responses['channels'].itervalues()]
+    return make_response(json.dumps(result), 200, {'Content-Type': 'application/json'})
 
 
 @app.route('/ari/channels/<channel_id>/variable')
 def channel_variable(channel_id):
     variable = request.args['variable']
+    if channel_id not in _responses['channel_variable']:
+        return '', 404
+    if variable not in _responses['channel_variable'][channel_id]:
+        return '', 404
     return jsonify({
         'value': _responses['channel_variable'][channel_id][variable]
     })
