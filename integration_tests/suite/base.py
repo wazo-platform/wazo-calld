@@ -28,7 +28,6 @@ logger = logging.getLogger(__name__)
 urllib3.disable_warnings()
 
 ASSET_ROOT = os.path.join(os.path.dirname(__file__), '..', 'assets')
-CA_CERT = os.path.join(ASSET_ROOT, '_common', 'ssl', 'localhost', 'server.crt')
 VALID_TOKEN = 'valid-token'
 
 
@@ -42,7 +41,7 @@ class IntegrationTest(AssetLaunchingTestCase):
         url = u'https://localhost:9500/1.0/calls'
         result = requests.get(url,
                               headers={'X-Auth-Token': token},
-                              verify=CA_CERT)
+                              verify=False)
         return result
 
     @classmethod
@@ -56,7 +55,7 @@ class IntegrationTest(AssetLaunchingTestCase):
         url = u'https://localhost:9500/1.0/calls/{call_id}'
         result = requests.get(url.format(call_id=call_id),
                               headers={'X-Auth-Token': token},
-                              verify=CA_CERT)
+                              verify=False)
         return result
 
     @classmethod
@@ -64,7 +63,7 @@ class IntegrationTest(AssetLaunchingTestCase):
         url = u'https://localhost:9500/1.0/calls'
         result = requests.post(url,
                                headers={'X-Auth-Token': token},
-                               verify=CA_CERT)
+                               verify=False)
         return result
 
     @classmethod
@@ -72,7 +71,7 @@ class IntegrationTest(AssetLaunchingTestCase):
         url = u'https://localhost:9500/1.0/calls/{call_id}'
         result = requests.delete(url.format(call_id=call_id),
                                  headers={'X-Auth-Token': token},
-                                 verify=CA_CERT)
+                                 verify=False)
         return result
 
     @classmethod

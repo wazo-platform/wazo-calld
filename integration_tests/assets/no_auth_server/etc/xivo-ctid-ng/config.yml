@@ -7,8 +7,8 @@ pidfile: /var/run/xivo-ctid-ng.pid
 rest_api:
   listen: 0.0.0.0
   port: 9500
-  certificate: /usr/share/xivo-certs/server.crt
-  private_key: /usr/share/xivo-certs/server.key
+  certificate: /usr/local/share/ssl/ctid-ng/server.crt
+  private_key: /usr/local/share/ssl/ctid-ng/server.key
   cors:
     enabled: True
     allow_headers: Content-Type, X-Auth-Token
@@ -17,7 +17,7 @@ auth:
   host: inexisting-auth-server
   port: 9497
   timeout: 2
-  verify_certificate: /usr/share/xivo-certs/server.crt
+  verify_certificate: /usr/local/share/ssl/auth/server.crt
 
 ari:
   connection:

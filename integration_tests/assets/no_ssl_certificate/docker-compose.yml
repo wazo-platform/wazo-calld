@@ -11,7 +11,7 @@ ctid-ng:
   volumes:
     - "../../..:/usr/src/xivo-ctid-ng"
     - "./etc/xivo-ctid-ng:/etc/xivo-ctid-ng"
-    - "./ssl_localhost:/usr/share/xivo-certs"
+    - "./ssl-ctid-ng:/usr/share/xivo-certs"
   ports:
     - "9500:9500"
   links:
