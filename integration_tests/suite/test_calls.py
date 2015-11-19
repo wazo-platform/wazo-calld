@@ -92,3 +92,20 @@ class TestListCalls(IntegrationTest):
                          'bridges': ['first-bridge']}),
             has_entries({'call_id': 'second-id',
                          'bridges': ['second-bridge']})))
+
+    def test_given_some_calls_when_list_calls_then_list_calls_with_talking_channels_and_users(self):
+        self.set_ari_channels(MockChannel(id='first-id'),
+                              MockChannel(id='second-id'))
+        self.set_ari_bridges(MockBridge(id='bridge-id', channels=['first-id', 'second-id']))
+        self.set_ari_channel_variable({'first-id': {'XIVO_USERID': 'user1-id'},
+                                       'second-id': {'XIVO_USERID': 'user2-id'}})
+        self.set_confd_users({'user1-id': {'uuid': 'user1-uuid'},
+                              'user2-id': {'uuid': 'user2-uuid'}})
+
+        calls = self.list_calls()
+
+        assert_that(calls, contains_inanyorder(
+            has_entries({'call_id': 'first-id',
+                         'talking_to': {'second-id': 'user2-uuid'}}),
+            has_entries({'call_id': 'second-id',
+                         'talking_to': {'first-id': 'user1-uuid'}})))

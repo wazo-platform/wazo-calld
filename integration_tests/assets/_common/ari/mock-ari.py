@@ -97,6 +97,11 @@ def bridges():
     return make_response(json.dumps(result), 200, {'Content-Type': 'application/json'})
 
 
+@app.route('/ari/bridges/<bridge_id>')
+def bridge(bridge_id):
+    return jsonify(_responses['bridges'][bridge_id])
+
+
 @app.route('/ari/channels/<channel_id>/variable')
 def channel_variable(channel_id):
     variable = request.args['variable']

@@ -124,6 +124,7 @@ def endpoint_from_user_uuid(uuid):
 
     return None
 
+
 def get_uuid_from_call_id(ari, call_id):
     try:
         user_id = ari.channels.getChannelVar(channelId=call_id, variable='XIVO_USERID')['value']
@@ -135,6 +136,18 @@ def get_uuid_from_call_id(ari, call_id):
         return uuid
 
     return None
+
+
+def get_channel_ids_from_bridges(ari, bridges):
+    result = set()
+    for bridge_id in bridges:
+        try:
+            calls = ari.bridges.get(bridgeId=bridge_id).json['channels']
+        except requests.RequestException as e:
+            logger.error(e)
+            calls = set()
+        result.update(calls)
+    return result
 
 
 class NoSuchCall(APIException):
@@ -162,10 +175,18 @@ class Calls(AuthResource):
             for channel in channels:
                 uuid = get_uuid_from_call_id(ari, channel.id)
                 bridges = [bridge.id for bridge in ari.bridges.list() if channel.id in bridge.json['channels']]
+
+                talking_to = dict()
+                for channel_id in get_channel_ids_from_bridges(ari, bridges):
+                    uuid = get_uuid_from_call_id(ari, channel_id)
+                    talking_to[channel_id] = uuid
+                talking_to.pop(channel.id, None)
+
                 result.append({
                     'bridges': bridges,
                     'call_id': channel.id,
                     'status': channel.json['state'],
+                    'talking_to': talking_to,
                     'user_uuid': uuid,
                 })
 
@@ -186,6 +207,7 @@ class Calls(AuthResource):
 
         return None
 
+
 class Call(AuthResource):
 
     def get(self, call_id):
@@ -197,7 +219,6 @@ class Call(AuthResource):
                 channel = ari.channels.get(channelId=call_id)
             except requests.RequestException:
                 raise NoSuchCall(call_id)
-
 
             bridges = [bridge.id for bridge in ari.bridges.list() if channel.id in bridge.json['channels']]
 
