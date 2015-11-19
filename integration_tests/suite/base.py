@@ -59,6 +59,12 @@ class IntegrationTest(AssetLaunchingTestCase):
         return result
 
     @classmethod
+    def get_call(cls, call_id, token=VALID_TOKEN):
+        response = cls.get_call_result(call_id, token=token)
+        assert_that(response.status_code, equal_to(200))
+        return response.json()
+
+    @classmethod
     def post_calls_result(cls, token=None):
         url = u'https://localhost:9500/1.0/calls'
         result = requests.post(url,

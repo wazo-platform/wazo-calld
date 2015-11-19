@@ -18,11 +18,13 @@
 from hamcrest import assert_that
 from hamcrest import contains
 from hamcrest import contains_inanyorder
+from hamcrest import equal_to
 from hamcrest import has_entries
 
 from .base import IntegrationTest
 from .base import MockBridge
 from .base import MockChannel
+from .base import VALID_TOKEN
 
 
 class TestListCalls(IntegrationTest):
@@ -109,3 +111,41 @@ class TestListCalls(IntegrationTest):
                          'talking_to': {'second-id': 'user2-uuid'}}),
             has_entries({'call_id': 'second-id',
                          'talking_to': {'first-id': 'user1-uuid'}})))
+
+
+class TestGetCall(IntegrationTest):
+
+    asset = 'basic_rest'
+
+    def setUp(self):
+        super(TestGetCall, self).setUp()
+        self.reset_ari()
+        self.reset_confd()
+
+    def test_given_no_calls_when_get_call_then_404(self):
+        call_id = 'missing'
+
+        result = self.get_call_result(call_id, token=VALID_TOKEN)
+
+        assert_that(result.status_code, equal_to(404))
+
+    def test_given_one_call_when_get_call_then_get_call(self):
+        self.set_ari_channels(MockChannel(id='first-id', state='Up'),
+                              MockChannel(id='second-id'))
+        self.set_ari_bridges(MockBridge(id='bridge-id', channels=['first-id', 'second-id']))
+        self.set_ari_channel_variable({'first-id': {'XIVO_USERID': 'user1-id'},
+                                       'second-id': {'XIVO_USERID': 'user2-id'}})
+        self.set_confd_users({'user1-id': {'uuid': 'user1-uuid'},
+                              'user2-id': {'uuid': 'user2-uuid'}})
+
+        call = self.get_call('first-id')
+
+        assert_that(call, has_entries({
+            'call_id': 'first-id',
+            'user_uuid': 'user1-uuid',
+            'status': 'Up',
+            'talking_to': {
+                'second-id': 'user2-uuid'
+            },
+            'bridges': contains('bridge-id')
+        }))

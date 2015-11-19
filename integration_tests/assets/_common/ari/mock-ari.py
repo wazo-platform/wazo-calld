@@ -91,6 +91,11 @@ def channels():
     return make_response(json.dumps(result), 200, {'Content-Type': 'application/json'})
 
 
+@app.route('/ari/channels/<channel_id>')
+def channel(channel_id):
+    return jsonify(_responses['channels'][channel_id])
+
+
 @app.route('/ari/bridges')
 def bridges():
     result = [bridge for bridge in _responses['bridges'].itervalues()]

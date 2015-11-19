@@ -173,13 +173,13 @@ class Calls(AuthResource):
         with new_ari_client(current_app.config['ari']['connection']) as ari:
             channels = ari.channels.list()
             for channel in channels:
-                uuid = get_uuid_from_call_id(ari, channel.id)
+                user_uuid = get_uuid_from_call_id(ari, channel.id)
                 bridges = [bridge.id for bridge in ari.bridges.list() if channel.id in bridge.json['channels']]
 
                 talking_to = dict()
                 for channel_id in get_channel_ids_from_bridges(ari, bridges):
-                    uuid = get_uuid_from_call_id(ari, channel_id)
-                    talking_to[channel_id] = uuid
+                    talking_to_user_uuid = get_uuid_from_call_id(ari, channel_id)
+                    talking_to[channel_id] = talking_to_user_uuid
                 talking_to.pop(channel.id, None)
 
                 result.append({
@@ -187,7 +187,7 @@ class Calls(AuthResource):
                     'call_id': channel.id,
                     'status': channel.json['state'],
                     'talking_to': talking_to,
-                    'user_uuid': uuid,
+                    'user_uuid': user_uuid,
                 })
 
         return result, 200
@@ -219,6 +219,7 @@ class Call(AuthResource):
                 channel = ari.channels.get(channelId=call_id)
             except requests.RequestException:
                 raise NoSuchCall(call_id)
+            user_uuid = get_uuid_from_call_id(ari, call_id)
 
             bridges = [bridge.id for bridge in ari.bridges.list() if channel.id in bridge.json['channels']]
 
@@ -226,16 +227,18 @@ class Call(AuthResource):
             for bridge_id in bridges:
                 calls = ari.bridges.get(bridgeId=bridge_id).json['channels']
                 for call in calls:
-                    uuid = get_uuid_from_call_id(ari, call)
-                    talking_to[call] = uuid
+                    talking_to_user_uuid = get_uuid_from_call_id(ari, call)
+                    talking_to[call] = talking_to_user_uuid
                 del talking_to[call_id]
 
         status = channel.json['state']
 
         return {
+            'bridges': bridges,
+            'call_id': channel.id,
             'status': status,
             'talking_to': dict(talking_to),
-            'bridges': bridges,
+            'user_uuid': user_uuid,
         }
 
     def delete(self, call_id):
