@@ -64,7 +64,7 @@ class TestAuthenticationCoverage(IntegrationTest):
         assert_that(result.status_code, equal_to(401))
 
     def test_auth_on_get_call(self):
-        result = self.post_calls_result()
+        result = self.post_call_result(source=None, priority=None, extension=None, context=None)
 
         assert_that(result.status_code, equal_to(401))
 
