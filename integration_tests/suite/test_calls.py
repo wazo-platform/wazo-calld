@@ -26,6 +26,8 @@ from hamcrest import has_item
 from .base import IntegrationTest
 from .base import MockBridge
 from .base import MockChannel
+from .base import MockUser
+from .base import MockLine
 from .base import VALID_TOKEN
 
 
@@ -60,8 +62,8 @@ class TestListCalls(IntegrationTest):
                               MockChannel(id='second-id'))
         self.set_ari_channel_variable({'first-id': {'XIVO_USERID': 'user1-id'},
                                        'second-id': {'XIVO_USERID': 'user2-id'}})
-        self.set_confd_users({'user1-id': {'uuid': 'user1-uuid'},
-                              'user2-id': {'uuid': 'user2-uuid'}})
+        self.set_confd_users(MockUser(id='user1-id', uuid='user1-uuid'),
+                             MockUser(id='user2-id', uuid='user2-uuid'))
 
         calls = self.list_calls()
 
@@ -103,8 +105,8 @@ class TestListCalls(IntegrationTest):
         self.set_ari_bridges(MockBridge(id='bridge-id', channels=['first-id', 'second-id']))
         self.set_ari_channel_variable({'first-id': {'XIVO_USERID': 'user1-id'},
                                        'second-id': {'XIVO_USERID': 'user2-id'}})
-        self.set_confd_users({'user1-id': {'uuid': 'user1-uuid'},
-                              'user2-id': {'uuid': 'user2-uuid'}})
+        self.set_confd_users(MockUser(id='user1-id', uuid='user1-uuid'),
+                             MockUser(id='user2-id', uuid='user2-uuid'))
 
         calls = self.list_calls()
 
@@ -137,8 +139,8 @@ class TestGetCall(IntegrationTest):
         self.set_ari_bridges(MockBridge(id='bridge-id', channels=['first-id', 'second-id']))
         self.set_ari_channel_variable({'first-id': {'XIVO_USERID': 'user1-id'},
                                        'second-id': {'XIVO_USERID': 'user2-id'}})
-        self.set_confd_users({'user1-id': {'uuid': 'user1-uuid'},
-                              'user2-id': {'uuid': 'user2-uuid'}})
+        self.set_confd_users(MockUser(id='user1-id', uuid='user1-uuid'),
+                             MockUser(id='user2-id', uuid='user2-uuid'))
 
         call = self.get_call('first-id')
 
@@ -178,4 +180,32 @@ class TestDeleteCall(IntegrationTest):
         assert_that(self.ari_requests(), has_entry('requests', has_item(has_entries({
             'method': 'DELETE',
             'path': '/ari/channels/call-id',
+        }))))
+
+
+class TestCreateCall(IntegrationTest):
+
+    asset = 'basic_rest'
+
+    def setUp(self):
+        super(TestCreateCall, self).setUp()
+        self.reset_ari()
+        self.reset_confd()
+
+    def test_create_call_with_correct_values(self):
+        user_uuid = 'user-uuid'
+        self.set_confd_users(MockUser(id='user-id', uuid='user-uuid'))
+        self.set_confd_lines(MockLine(id='line-id', name='line-name', protocol='sip'))
+        self.set_confd_user_lines(('user-id', 'line-id'))
+        self.set_ari_originates(MockChannel(id='new-call-id'))
+
+        result = self.originate(source=user_uuid,
+                                priority='my-priority',
+                                extension='my-extension',
+                                context='my-context')
+
+        assert_that(result, has_entry('call_id', 'new-call-id'))
+        assert_that(self.ari_requests(), has_entry('requests', has_item(has_entries({
+            'method': 'POST',
+            'path': '/ari/channels',
         }))))

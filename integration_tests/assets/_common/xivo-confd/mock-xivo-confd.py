@@ -25,7 +25,9 @@ from flask import request
 logging.basicConfig(level=logging.DEBUG)
 
 _EMPTY_RESPONSES = {
-    'users': {}
+    'users': {},
+    'lines': {},
+    'user_lines': {},
 }
 
 app = Flask(__name__)
@@ -79,6 +81,25 @@ def user(user_id):
     if user_id not in _responses['users']:
         return '', 404
     return jsonify(_responses['users'][user_id])
+
+
+@app.route('/1.1/lines/<line_id>')
+def line(line_id):
+    if line_id not in _responses['lines']:
+        return '', 404
+    return jsonify(_responses['lines'][line_id])
+
+
+@app.route('/1.1/users/<user_id>/lines')
+def lines_of_user(user_id):
+    if user_id not in [user for user, _ in _responses['user_lines']]:
+        return '', 404
+
+    return jsonify({
+        'items': [
+            {'user_id': user, 'line_id': line} for (user, line) in _responses['user_lines']
+        ]
+    })
 
 
 if __name__ == '__main__':

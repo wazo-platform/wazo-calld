@@ -197,7 +197,7 @@ class Calls(AuthResource):
         current_app.config['confd']['token'] = token
 
         request_body = request.json
-        endpoint = endpoint_from_user_uuid(request_body['source']['user'], token)
+        endpoint = endpoint_from_user_uuid(request_body['source']['user'])
         with new_ari_client(current_app.config['ari']['connection']) as ari:
             call = ari.channels.originate(endpoint=endpoint,
                                           extension=request_body['destination']['extension'],

@@ -65,12 +65,28 @@ class IntegrationTest(AssetLaunchingTestCase):
         return response.json()
 
     @classmethod
-    def post_calls_result(cls, token=None):
+    def post_call_result(cls, source, priority, extension, context, token=None):
         url = u'https://localhost:9500/1.0/calls'
+        body = {
+            'source': {
+                'user': source,
+            }, 'destination': {
+                'priority': priority,
+                'extension': extension,
+                'context': context,
+            }
+        }
         result = requests.post(url,
+                               json=body,
                                headers={'X-Auth-Token': token},
                                verify=False)
         return result
+
+    @classmethod
+    def originate(cls, source, priority, extension, context, token=VALID_TOKEN):
+        response = cls.post_call_result(source, priority, extension, context, token=token)
+        assert_that(response.status_code, equal_to(201))
+        return response.json()
 
     @classmethod
     def delete_call_result(cls, call_id, token=None):
@@ -100,6 +116,13 @@ class IntegrationTest(AssetLaunchingTestCase):
         requests.post(url, json=body)
 
     @classmethod
+    def set_ari_originates(cls, *mock_channels):
+        url = 'http://localhost:5039/_set_response'
+        body = {'response': 'originates',
+                'content': [channel.to_dict() for channel in mock_channels]}
+        requests.post(url, json=body)
+
+    @classmethod
     def set_ari_channel_variable(cls, variables):
         url = 'http://localhost:5039/_set_response'
         body = {'response': 'channel_variable',
@@ -107,10 +130,28 @@ class IntegrationTest(AssetLaunchingTestCase):
         requests.post(url, json=body)
 
     @classmethod
-    def set_confd_users(cls, users):
+    def set_confd_users(cls, *mock_users):
         url = 'https://localhost:9486/_set_response'
+        content = {}
+        for user in mock_users:
+            content[user.id_()] = user.to_dict()
+            content[user.uuid()] = user.to_dict()
         body = {'response': 'users',
-                'content': users}
+                'content': content}
+        requests.post(url, json=body, verify=False)
+
+    @classmethod
+    def set_confd_lines(cls, *mock_lines):
+        url = 'https://localhost:9486/_set_response'
+        body = {'response': 'lines',
+                'content': {line.id_(): line.to_dict() for line in mock_lines}}
+        requests.post(url, json=body, verify=False)
+
+    @classmethod
+    def set_confd_user_lines(cls, *user_lines):
+        url = 'https://localhost:9486/_set_response'
+        body = {'response': 'user_lines',
+                'content': user_lines}
         requests.post(url, json=body, verify=False)
 
     @classmethod
@@ -158,4 +199,45 @@ class MockBridge(object):
         return {
             'id': self._id,
             'channels': self._channels
+        }
+
+
+class MockUser(object):
+
+    def __init__(self, id, uuid=None):
+        self._id = id
+        self._uuid = uuid
+
+    def id_(self):
+        return self._id
+
+    def uuid(self):
+        return self._uuid
+
+    def to_dict(self):
+        return {
+            'id': self._id,
+            'uuid': self._uuid,
+        }
+
+
+class MockLine(object):
+
+    def __init__(self, id, name=None, protocol=None, users=None):
+        self._id = id
+        self._name = name
+        self._protocol = protocol
+        self._users = users or []
+
+    def id_(self):
+        return self._id
+
+    def users(self):
+        return self._users
+
+    def to_dict(self):
+        return {
+            'id': self._id,
+            'name': self._name,
+            'protocol': self._protocol,
         }

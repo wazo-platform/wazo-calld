@@ -26,7 +26,8 @@ from flask import request
 _EMPTY_RESPONSES = {
     'bridges': {},
     'channels': {},
-    'channel_variable': {}
+    'channel_variable': {},
+    'originates': [],
 }
 
 app = Flask(__name__)
@@ -85,10 +86,15 @@ def swagger(file_name):
         return make_response(swagger_spec, 200, {'Content-Type': 'application/json'})
 
 
-@app.route('/ari/channels')
-def channels():
+@app.route('/ari/channels', methods=['GET'])
+def get_channels():
     result = [channel for channel in _responses['channels'].itervalues()]
     return make_response(json.dumps(result), 200, {'Content-Type': 'application/json'})
+
+
+@app.route('/ari/channels', methods=['POST'])
+def originate():
+    return jsonify(_responses['originates'].pop())
 
 
 @app.route('/ari/channels/<channel_id>', methods=['GET'])
