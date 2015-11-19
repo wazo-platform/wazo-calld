@@ -24,6 +24,7 @@ from flask import make_response
 from flask import request
 
 _EMPTY_RESPONSES = {
+    'bridges': {},
     'channels': {},
     'channel_variable': {}
 }
@@ -87,6 +88,12 @@ def swagger(file_name):
 @app.route('/ari/channels')
 def channels():
     result = [channel for channel in _responses['channels'].itervalues()]
+    return make_response(json.dumps(result), 200, {'Content-Type': 'application/json'})
+
+
+@app.route('/ari/bridges')
+def bridges():
+    result = [bridge for bridge in _responses['bridges'].itervalues()]
     return make_response(json.dumps(result), 200, {'Content-Type': 'application/json'})
 
 

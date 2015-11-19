@@ -82,6 +82,13 @@ class IntegrationTest(AssetLaunchingTestCase):
         requests.post(url, json=body)
 
     @classmethod
+    def set_ari_bridges(cls, *mock_bridges):
+        url = 'http://localhost:5039/_set_response'
+        body = {'response': 'bridges',
+                'content': {bridge.id_(): bridge.to_dict() for bridge in mock_bridges}}
+        requests.post(url, json=body)
+
+    @classmethod
     def set_ari_channel_variable(cls, variables):
         url = 'http://localhost:5039/_set_response'
         body = {'response': 'channel_variable',
@@ -119,4 +126,20 @@ class MockChannel(object):
         return {
             'id': self._id,
             'state': self._state
+        }
+
+
+class MockBridge(object):
+
+    def __init__(self, id, channels=None):
+        self._id = id
+        self._channels = channels or []
+
+    def id_(self):
+        return self._id
+
+    def to_dict(self):
+        return {
+            'id': self._id,
+            'channels': self._channels
         }

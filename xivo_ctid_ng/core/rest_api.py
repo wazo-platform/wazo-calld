@@ -161,7 +161,9 @@ class Calls(AuthResource):
             channels = ari.channels.list()
             for channel in channels:
                 uuid = get_uuid_from_call_id(ari, channel.id)
+                bridges = [bridge.id for bridge in ari.bridges.list() if channel.id in bridge.json['channels']]
                 result.append({
+                    'bridges': bridges,
                     'call_id': channel.id,
                     'status': channel.json['state'],
                     'user_uuid': uuid,

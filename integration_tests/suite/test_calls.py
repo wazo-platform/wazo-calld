@@ -21,6 +21,7 @@ from hamcrest import contains_inanyorder
 from hamcrest import has_entries
 
 from .base import IntegrationTest
+from .base import MockBridge
 from .base import MockChannel
 
 
@@ -77,3 +78,17 @@ class TestListCalls(IntegrationTest):
                          'status': 'Up'}),
             has_entries({'call_id': 'second-id',
                          'status': 'Ringing'})))
+
+    def test_given_some_calls_when_list_calls_then_list_calls_with_bridges(self):
+        self.set_ari_channels(MockChannel(id='first-id'),
+                              MockChannel(id='second-id'))
+        self.set_ari_bridges(MockBridge(id='first-bridge', channels=['first-id']),
+                             MockBridge(id='second-bridge', channels=['second-id']))
+
+        calls = self.list_calls()
+
+        assert_that(calls, contains_inanyorder(
+            has_entries({'call_id': 'first-id',
+                         'bridges': ['first-bridge']}),
+            has_entries({'call_id': 'second-id',
+                         'bridges': ['second-bridge']})))
