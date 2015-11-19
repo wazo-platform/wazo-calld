@@ -81,6 +81,11 @@ class IntegrationTest(AssetLaunchingTestCase):
         return result
 
     @classmethod
+    def hangup_call(cls, call_id, token=VALID_TOKEN):
+        response = cls.delete_call_result(call_id, token=token)
+        assert_that(response.status_code, equal_to(204))
+
+    @classmethod
     def set_ari_channels(cls, *mock_channels):
         url = 'http://localhost:5039/_set_response'
         body = {'response': 'channels',
@@ -117,6 +122,11 @@ class IntegrationTest(AssetLaunchingTestCase):
     def reset_confd(cls):
         url = 'https://localhost:9486/_reset'
         requests.post(url, verify=False)
+
+    @classmethod
+    def ari_requests(cls):
+        url = 'http://localhost:5039/_requests'
+        return requests.get(url).json()
 
 
 class MockChannel(object):

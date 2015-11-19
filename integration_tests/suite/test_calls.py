@@ -20,6 +20,8 @@ from hamcrest import contains
 from hamcrest import contains_inanyorder
 from hamcrest import equal_to
 from hamcrest import has_entries
+from hamcrest import has_entry
+from hamcrest import has_item
 
 from .base import IntegrationTest
 from .base import MockBridge
@@ -123,7 +125,7 @@ class TestGetCall(IntegrationTest):
         self.reset_confd()
 
     def test_given_no_calls_when_get_call_then_404(self):
-        call_id = 'missing'
+        call_id = 'not-found'
 
         result = self.get_call_result(call_id, token=VALID_TOKEN)
 
@@ -149,3 +151,31 @@ class TestGetCall(IntegrationTest):
             },
             'bridges': contains('bridge-id')
         }))
+
+
+class TestDeleteCall(IntegrationTest):
+
+    asset = 'basic_rest'
+
+    def setUp(self):
+        super(TestDeleteCall, self).setUp()
+        self.reset_ari()
+        self.reset_confd()
+
+    def test_given_no_calls_when_delete_call_then_404(self):
+        call_id = 'not-found'
+
+        result = self.delete_call_result(call_id, token=VALID_TOKEN)
+
+        assert_that(result.status_code, equal_to(404))
+
+    def test_given_one_call_when_delete_call_then_call_hungup(self):
+        call_id = 'call-id'
+        self.set_ari_channels(MockChannel(id=call_id, state='Up'))
+
+        self.hangup_call(call_id)
+
+        assert_that(self.ari_requests(), has_entry('requests', has_item(has_entries({
+            'method': 'DELETE',
+            'path': '/ari/channels/call-id',
+        }))))

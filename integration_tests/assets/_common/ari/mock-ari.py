@@ -46,7 +46,7 @@ def _reset():
 
 @app.before_request
 def log_request():
-    if not request.path.startswith('/_requests'):
+    if not request.path.startswith('/_'):
         path = request.path
         log = {'method': request.method,
                'path': path,
@@ -58,7 +58,7 @@ def log_request():
 
 @app.route('/_requests', methods=['GET'])
 def list_requests():
-    return jsonify(requests=_requests)
+    return jsonify({'requests': _requests})
 
 
 @app.route('/_reset', methods=['POST'])
@@ -91,9 +91,19 @@ def channels():
     return make_response(json.dumps(result), 200, {'Content-Type': 'application/json'})
 
 
-@app.route('/ari/channels/<channel_id>')
-def channel(channel_id):
+@app.route('/ari/channels/<channel_id>', methods=['GET'])
+def get_channel(channel_id):
+    if channel_id not in _responses['channels']:
+        return '', 404
     return jsonify(_responses['channels'][channel_id])
+
+
+@app.route('/ari/channels/<channel_id>', methods=['DELETE'])
+def delete_channel(channel_id):
+    if channel_id not in _responses['channels']:
+        return '', 404
+    del _responses['channels'][channel_id]
+    return '', 204
 
 
 @app.route('/ari/bridges')
