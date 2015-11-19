@@ -210,9 +210,11 @@
                     "type": "string"
                 },
                 "talking_to": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
+                    "type": "object",
+                    "properties": {
+                        "<channel_id>": {
+                            "type": "string"
+                        }
                     }
                 },
                 "bridges": {
