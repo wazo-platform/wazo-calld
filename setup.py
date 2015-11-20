@@ -35,7 +35,7 @@ setup(
     scripts=['bin/xivo-ctid-ng'],
     entry_points={
         'xivo_ctid_ng.plugins': [
-            'plugin_list = xivo_ctid_ng.plugins.plugin_list:Plugin',
+            'api = xivo_ctid_ng.plugins.api.plugin:Plugin',
             'calls = xivo_ctid_ng.plugins.calls.plugin:Plugin',
         ]
     }
