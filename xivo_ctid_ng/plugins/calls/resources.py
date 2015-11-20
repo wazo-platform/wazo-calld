@@ -23,8 +23,9 @@ from flask import request
 from contextlib import contextmanager
 
 from xivo_confd_client import Client as ConfdClient
-from xivo_ctid_ng.core.exceptions import APIException
 from xivo_ctid_ng.core.rest_api import AuthResource
+
+from .exceptions import XiVOConfdUnreachable, NoSuchCall
 
 logger = logging.getLogger(__name__)
 
@@ -41,10 +42,13 @@ def new_ari_client(config):
 
 def endpoint_from_user_uuid(uuid):
     with new_confd_client(current_app.config['confd']) as confd:
-        user_id = confd.users.get(uuid)['id']
-        line_id = confd.users.relations(user_id).list_lines()['items'][0]['line_id']
-        line = confd.lines.get(line_id)
-        endpoint = "{}/{}".format(line['protocol'], line['name'])
+        try:
+            user_id = confd.users.get(uuid)['id']
+            line_id = confd.users.relations(user_id).list_lines()['items'][0]['line_id']
+            line = confd.lines.get(line_id)
+        except requests.RequestException as e:
+            raise XiVOConfdUnreachable(current_app.config['confd'], e)
+    endpoint = "{}/{}".format(line['protocol'], line['name'])
     if endpoint:
         return endpoint
 
@@ -54,12 +58,19 @@ def endpoint_from_user_uuid(uuid):
 def get_uuid_from_call_id(ari, call_id):
     try:
         user_id = ari.channels.getChannelVar(channelId=call_id, variable='XIVO_USERID')['value']
-    except:
-        return None
+    except requests.HTTPError as e:
+        if e.response is not None and e.response.status_code == 404:
+            return None
+        raise
 
     with new_confd_client(current_app.config['confd']) as confd:
-        uuid = confd.users.get(user_id)['uuid']
-        return uuid
+        try:
+            uuid = confd.users.get(user_id)['uuid']
+            return uuid
+        except requests.HTTPError as e:
+            logger.error('Error fetching user %s from xivo-confd (%s): %s', user_id, current_app.config['confd'], e)
+        except requests.RequestException as e:
+            raise XiVOConfdUnreachable(current_app.config['confd'], e)
 
     return None
 
@@ -74,19 +85,6 @@ def get_channel_ids_from_bridges(ari, bridges):
             calls = set()
         result.update(calls)
     return result
-
-
-class NoSuchCall(APIException):
-
-    def __init__(self, call_id):
-        super(NoSuchCall, self).__init__(
-            status_code=404,
-            message='No such call',
-            error_id='no-such-call',
-            details={
-                'call_id': call_id
-            }
-        )
 
 
 class Calls(AuthResource):

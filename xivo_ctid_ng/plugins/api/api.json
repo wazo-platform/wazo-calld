@@ -152,7 +152,7 @@
     },
     "responses": {
         "AnotherServiceUnavailable": {
-            "description": "Another service is unavailable (e.g. xivo-auth, Asterisk, ...)",
+            "description": "Another service is unavailable (e.g. xivo-auth, xivo-confd, Asterisk, ...)",
             "schema": {
                 "$ref": "#/definitions/Error"
             }

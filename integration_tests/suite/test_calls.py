@@ -209,3 +209,41 @@ class TestCreateCall(IntegrationTest):
             'method': 'POST',
             'path': '/ari/channels',
         }))))
+
+
+class TestNoConfd(IntegrationTest):
+
+    asset = 'no_confd'
+
+    def setUp(self):
+        super(TestNoConfd, self).setUp()
+        self.reset_ari()
+
+    def test_given_some_calls_and_no_confd_when_list_calls_then_503(self):
+        self.set_ari_channels(MockChannel(id='first-id'),
+                              MockChannel(id='second-id'))
+        self.set_ari_channel_variable({'first-id': {'XIVO_USERID': 'user1-id'},
+                                       'second-id': {'XIVO_USERID': 'user2-id'}})
+
+        result = self.get_calls_result(token=VALID_TOKEN)
+
+        assert_that(result.status_code, equal_to(503))
+
+    def test_given_some_calls_and_no_confd_when_get_call_then_503(self):
+        self.set_ari_channels(MockChannel(id='first-id'),
+                              MockChannel(id='second-id'))
+        self.set_ari_channel_variable({'first-id': {'XIVO_USERID': 'user1-id'},
+                                       'second-id': {'XIVO_USERID': 'user2-id'}})
+
+        result = self.get_call_result('first-id', token=VALID_TOKEN)
+
+        assert_that(result.status_code, equal_to(503))
+
+    def test_given_no_confd_when_originate_then_503(self):
+        result = self.post_call_result(source='user-uuid-not-found',
+                                       priority=None,
+                                       extension=None,
+                                       context=None,
+                                       token=VALID_TOKEN)
+
+        assert_that(result.status_code, equal_to(503))
