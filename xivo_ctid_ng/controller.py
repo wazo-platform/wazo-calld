@@ -34,11 +34,12 @@ class Controller(object):
         self.bus = CoreBus(config['bus'])
 
     def run(self):
-        logger.debug('xivo-ctid-ng running...')
+        logger.info('xivo-ctid-ng starting...')
         bus_thread = Thread(target=self.bus.run, name='bus_thread')
         bus_thread.start()
         try:
             self.rest_api.run()
         finally:
+            logger.info('xivo-ctid-ng stopping...')
             self.bus.should_stop = True
             bus_thread.join()

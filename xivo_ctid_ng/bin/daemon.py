@@ -20,7 +20,7 @@ import sys
 
 from xivo.daemonize import pidfile_context
 from xivo.user_rights import change_user
-from xivo.xivo_logging import setup_logging
+from xivo import xivo_logging
 from xivo_ctid_ng.controller import Controller
 from xivo_ctid_ng.config import load as load_config
 
@@ -33,7 +33,8 @@ def main(argv):
     if config['user']:
         change_user(config['user'])
 
-    setup_logging(config['log_filename'], config['foreground'], config['debug'], config['log_level'])
+    xivo_logging.setup_logging(config['log_filename'], config['foreground'], config['debug'], config['log_level'])
+    xivo_logging.silence_loggers(['amqp', 'Flask-Cors', 'kombu', 'swaggerpy', 'urllib3'], logging.WARNING)
 
     controller = Controller(config)
 
