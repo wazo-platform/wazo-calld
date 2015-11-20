@@ -18,6 +18,7 @@
 import logging
 
 from threading import Thread
+from xivo_ctid_ng.core.rest_api import app
 from xivo_ctid_ng.core.rest_api import CoreRestApi
 from xivo_ctid_ng.core.bus import CoreBus
 
@@ -26,12 +27,11 @@ logger = logging.getLogger(__name__)
 
 class Controller(object):
     def __init__(self, config):
-        self.config = config
-        self.rest_api = CoreRestApi(self.config['rest_api'])
-        self.rest_api.app.config['ari'] = self.config['ari']
-        self.rest_api.app.config['confd'] = self.config['confd']
-        self.rest_api.app.config['auth'] = self.config['auth']
-        self.bus = CoreBus(self.config['bus'])
+        app.config['ari'] = config['ari']
+        app.config['confd'] = config['confd']
+        app.config['auth'] = config['auth']
+        self.rest_api = CoreRestApi(config['rest_api'], config['enabled_plugins'])
+        self.bus = CoreBus(config['bus'])
 
     def run(self):
         logger.debug('xivo-ctid-ng running...')

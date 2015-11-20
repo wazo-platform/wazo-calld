@@ -30,7 +30,13 @@ setup(
     url='http://www.xivo.io/',
     packages=find_packages(),
     package_data={
-        'xivo_ctid_ng.resources.api': ['*.json'],
+        'xivo_ctid_ng.plugins.api': ['*.json'],
     },
     scripts=['bin/xivo-ctid-ng'],
+    entry_points={
+        'xivo_ctid_ng.plugins': [
+            'plugin_list = xivo_ctid_ng.plugins.plugin_list:Plugin',
+            'calls = xivo_ctid_ng.plugins.calls.plugin:Plugin',
+        ]
+    }
 )

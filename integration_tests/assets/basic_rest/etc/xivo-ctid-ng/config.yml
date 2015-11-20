@@ -35,3 +35,6 @@ confd:
   host: confd
   port: 9486
   verify_certificate: /usr/local/share/ssl/confd/server.crt
+
+enabled_plugins:
+  - calls

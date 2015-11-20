@@ -30,3 +30,6 @@ bus:
   password: guest
   host: rabbitmq
   port: 5672
+
+enabled_plugins:
+  - calls

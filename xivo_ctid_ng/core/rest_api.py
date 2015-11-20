@@ -17,71 +17,66 @@
 
 from datetime import timedelta
 
-import ari
 import logging
 import os
-import requests
 
 from cherrypy import wsgiserver
-from flask import current_app
 from flask import Flask
-from flask import request
 from flask_restful import Api
 from flask_restful import Resource
 from flask_cors import CORS
-from contextlib import contextmanager
 from werkzeug.contrib.fixers import ProxyFix
 from xivo import http_helpers
-from xivo_confd_client import Client as ConfdClient
 from xivo_ctid_ng.core import auth
 from xivo_ctid_ng.core import exceptions
-from xivo_ctid_ng.core.exceptions import APIException
-from xivo_ctid_ng.resources.api.actions import SwaggerResource
+from xivo_ctid_ng.core import plugin_manager
 
 VERSION = 1.0
 
 logger = logging.getLogger(__name__)
+app = Flask('xivo_ctid_ng')
 api = Api(prefix='/{}'.format(VERSION))
 
 
 class CoreRestApi(object):
 
-    def __init__(self, config):
+    def __init__(self, config, plugins):
         self.config = config
-        self.app = Flask('xivo_ctid_ng')
-        http_helpers.add_logger(self.app, logger)
-        self.app.after_request(http_helpers.log_request)
-        self.app.wsgi_app = ProxyFix(self.app.wsgi_app)
-        self.app.secret_key = os.urandom(24)
-        self.app.permanent_session_lifetime = timedelta(minutes=5)
-        self.load_cors()
-        self.api = api
+        http_helpers.add_logger(app, logger)
+        app.after_request(http_helpers.log_request)
+        app.wsgi_app = ProxyFix(app.wsgi_app)
+        app.secret_key = os.urandom(24)
+        app.permanent_session_lifetime = timedelta(minutes=5)
+        self._load_cors()
+        self._load_plugins(plugins)
+        api.init_app(app)
 
-    def load_cors(self):
+    def _load_cors(self):
         cors_config = dict(self.config.get('cors', {}))
         enabled = cors_config.pop('enabled', False)
         if enabled:
-            CORS(self.app, **cors_config)
+            CORS(app, **cors_config)
+
+    def _load_plugins(self, plugins):
+        load_args = [{
+            'config': self.config,
+            'api': api,
+        }]
+        plugin_manager.load_plugins(plugins, load_args)
 
     def run(self):
-        api.add_resource(Calls, '/calls')
-        api.add_resource(Call, '/calls/<call_id>')
-        SwaggerResource.add_resource(api)
-
-        self.api.init_app(self.app)
-
         bind_addr = (self.config['listen'], self.config['port'])
 
         _check_file_readable(self.config['certificate'])
         _check_file_readable(self.config['private_key'])
-        wsgi_app = wsgiserver.WSGIPathInfoDispatcher({'/': self.app})
+        wsgi_app = wsgiserver.WSGIPathInfoDispatcher({'/': app})
         server = wsgiserver.CherryPyWSGIServer(bind_addr=bind_addr,
                                                wsgi_app=wsgi_app)
         server.ssl_adapter = http_helpers.ssl_adapter(self.config['certificate'],
                                                       self.config['private_key'],
                                                       self.config.get('ciphers'))
         logger.debug('WSGIServer starting... uid: %s, listen: %s:%s', os.getuid(), bind_addr[0], bind_addr[1])
-        for route in http_helpers.list_routes(self.app):
+        for route in http_helpers.list_routes(app):
             logger.debug(route)
 
         try:
@@ -101,153 +96,3 @@ class ErrorCatchingResource(Resource):
 
 class AuthResource(ErrorCatchingResource):
     method_decorators = [auth.verify_token] + ErrorCatchingResource.method_decorators
-
-
-@contextmanager
-def new_confd_client(config):
-    yield ConfdClient(**config)
-
-
-@contextmanager
-def new_ari_client(config):
-    yield ari.connect(**config)
-
-
-def endpoint_from_user_uuid(uuid):
-    with new_confd_client(current_app.config['confd']) as confd:
-        user_id = confd.users.get(uuid)['id']
-        line_id = confd.users.relations(user_id).list_lines()['items'][0]['line_id']
-        line = confd.lines.get(line_id)
-        endpoint = "{}/{}".format(line['protocol'], line['name'])
-    if endpoint:
-        return endpoint
-
-    return None
-
-
-def get_uuid_from_call_id(ari, call_id):
-    try:
-        user_id = ari.channels.getChannelVar(channelId=call_id, variable='XIVO_USERID')['value']
-    except:
-        return None
-
-    with new_confd_client(current_app.config['confd']) as confd:
-        uuid = confd.users.get(user_id)['uuid']
-        return uuid
-
-    return None
-
-
-def get_channel_ids_from_bridges(ari, bridges):
-    result = set()
-    for bridge_id in bridges:
-        try:
-            calls = ari.bridges.get(bridgeId=bridge_id).json['channels']
-        except requests.RequestException as e:
-            logger.error(e)
-            calls = set()
-        result.update(calls)
-    return result
-
-
-class NoSuchCall(APIException):
-
-    def __init__(self, call_id):
-        super(NoSuchCall, self).__init__(
-            status_code=404,
-            message='No such call',
-            error_id='no-such-call',
-            details={
-                'call_id': call_id
-            }
-        )
-
-
-class Calls(AuthResource):
-
-    def get(self):
-        token = request.headers['X-Auth-Token']
-        current_app.config['confd']['token'] = token
-
-        result = []
-        with new_ari_client(current_app.config['ari']['connection']) as ari:
-            channels = ari.channels.list()
-            for channel in channels:
-                user_uuid = get_uuid_from_call_id(ari, channel.id)
-                bridges = [bridge.id for bridge in ari.bridges.list() if channel.id in bridge.json['channels']]
-
-                talking_to = dict()
-                for channel_id in get_channel_ids_from_bridges(ari, bridges):
-                    talking_to_user_uuid = get_uuid_from_call_id(ari, channel_id)
-                    talking_to[channel_id] = talking_to_user_uuid
-                talking_to.pop(channel.id, None)
-
-                result.append({
-                    'bridges': bridges,
-                    'call_id': channel.id,
-                    'status': channel.json['state'],
-                    'talking_to': talking_to,
-                    'user_uuid': user_uuid,
-                })
-
-        return result, 200
-
-    def post(self):
-        token = request.headers['X-Auth-Token']
-        current_app.config['confd']['token'] = token
-
-        request_body = request.json
-        endpoint = endpoint_from_user_uuid(request_body['source']['user'])
-        with new_ari_client(current_app.config['ari']['connection']) as ari:
-            call = ari.channels.originate(endpoint=endpoint,
-                                          extension=request_body['destination']['extension'],
-                                          context=request_body['destination']['context'],
-                                          priority=request_body['destination']['priority'])
-            return {'call_id': call.id}, 201
-
-        return None
-
-
-class Call(AuthResource):
-
-    def get(self, call_id):
-        token = request.headers['X-Auth-Token']
-        current_app.config['confd']['token'] = token
-
-        with new_ari_client(current_app.config['ari']['connection']) as ari:
-            try:
-                channel = ari.channels.get(channelId=call_id)
-            except requests.RequestException:
-                raise NoSuchCall(call_id)
-            user_uuid = get_uuid_from_call_id(ari, call_id)
-
-            bridges = [bridge.id for bridge in ari.bridges.list() if channel.id in bridge.json['channels']]
-
-            talking_to = dict()
-            for bridge_id in bridges:
-                calls = ari.bridges.get(bridgeId=bridge_id).json['channels']
-                for call in calls:
-                    talking_to_user_uuid = get_uuid_from_call_id(ari, call)
-                    talking_to[call] = talking_to_user_uuid
-                del talking_to[call_id]
-
-        status = channel.json['state']
-
-        return {
-            'bridges': bridges,
-            'call_id': channel.id,
-            'status': status,
-            'talking_to': dict(talking_to),
-            'user_uuid': user_uuid,
-        }
-
-    def delete(self, call_id):
-        with new_ari_client(current_app.config['ari']['connection']) as ari:
-            try:
-                channel = ari.channels.get(channelId=call_id)
-            except requests.RequestException:
-                raise NoSuchCall(call_id)
-
-        ari.channels.hangup(channelId=call_id)
-
-        return None, 204

@@ -42,6 +42,7 @@ _DEFAULT_CONFIG = {
             'allow_headers': 'Content-Type'
         },
     },
+    'enabled_plugins': [],
     'confd': {
         'host': 'localhost',
         'port': 9486,

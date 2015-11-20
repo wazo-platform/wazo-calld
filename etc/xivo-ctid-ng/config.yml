@@ -63,3 +63,7 @@ ari:
   base_url: http://localhost:5039
   username: xivo
   password: Nasheow8Eag
+
+enabled_plugins:
+  - api
+  - calls
