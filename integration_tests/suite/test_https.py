@@ -25,7 +25,7 @@ class TestHTTPSMissingCertificate(IntegrationTest):
     asset = 'no_ssl_certificate'
 
     def test_given_inexisting_SSL_certificate_when_dird_starts_then_dird_stops(self):
-        for _ in range(5):
+        for _ in range(10):
             status = self.service_status()
             if not status['State']['Running']:
                 break
@@ -41,7 +41,7 @@ class TestHTTPSMissingPrivateKey(IntegrationTest):
     asset = 'no_ssl_private_key'
 
     def test_given_inexisting_SSL_private_key_when_dird_starts_then_dird_stops(self):
-        for _ in range(2):
+        for _ in range(10):
             status = self.service_status()
             if not status['State']['Running']:
                 break
