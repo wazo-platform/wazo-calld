@@ -58,6 +58,11 @@ class TestAuthenticationCoverage(IntegrationTest):
 
     asset = 'basic_rest'
 
+    def test_auth_on_list_calls(self):
+        result = self.get_calls_result()
+
+        assert_that(result.status_code, equal_to(401))
+
     def test_auth_on_new_call(self):
         result = self.get_call_result('my-call')
 
@@ -70,5 +75,10 @@ class TestAuthenticationCoverage(IntegrationTest):
 
     def test_auth_on_hangup(self):
         result = self.delete_call_result('my-call')
+
+        assert_that(result.status_code, equal_to(401))
+
+    def test_auth_on_list_plugins(self):
+        result = self.get_plugins_result()
 
         assert_that(result.status_code, equal_to(401))

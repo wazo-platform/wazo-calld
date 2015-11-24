@@ -103,6 +103,14 @@ class IntegrationTest(AssetLaunchingTestCase):
         assert_that(response.status_code, equal_to(204))
 
     @classmethod
+    def get_plugins_result(cls, token=None):
+        url = u'https://localhost:9500/1.0/plugins'
+        result = requests.get(url,
+                              headers={'X-Auth-Token': token},
+                              verify=False)
+        return result
+
+    @classmethod
     def set_ari_channels(cls, *mock_channels):
         url = 'http://localhost:5039/_set_response'
         body = {'response': 'channels',

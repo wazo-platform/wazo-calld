@@ -30,7 +30,7 @@ class Controller(object):
         app.config['ari'] = config['ari']
         app.config['confd'] = config['confd']
         app.config['auth'] = config['auth']
-        self.rest_api = CoreRestApi(config['rest_api'], config['enabled_plugins'])
+        self.rest_api = CoreRestApi(config)
         self.bus = CoreBus(config['bus'])
 
     def run(self):

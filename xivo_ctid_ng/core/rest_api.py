@@ -40,15 +40,15 @@ api = Api(prefix='/{}'.format(VERSION))
 
 class CoreRestApi(object):
 
-    def __init__(self, config, plugins):
-        self.config = config
+    def __init__(self, global_config):
+        self.config = global_config['rest_api']
         http_helpers.add_logger(app, logger)
         app.after_request(http_helpers.log_request)
         app.wsgi_app = ProxyFix(app.wsgi_app)
         app.secret_key = os.urandom(24)
         app.permanent_session_lifetime = timedelta(minutes=5)
         self._load_cors()
-        self._load_plugins(plugins)
+        self._load_plugins(global_config)
         api.init_app(app)
 
     def _load_cors(self):
@@ -57,12 +57,12 @@ class CoreRestApi(object):
         if enabled:
             CORS(app, **cors_config)
 
-    def _load_plugins(self, plugins):
+    def _load_plugins(self, global_config):
         load_args = [{
-            'config': self.config,
+            'config': global_config,
             'api': api,
         }]
-        plugin_manager.load_plugins(plugins, load_args)
+        plugin_manager.load_plugins(global_config['enabled_plugins'], load_args)
 
     def run(self):
         bind_addr = (self.config['listen'], self.config['port'])
