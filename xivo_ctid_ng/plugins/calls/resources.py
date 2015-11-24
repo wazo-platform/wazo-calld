@@ -55,9 +55,9 @@ def endpoint_from_user_uuid(uuid):
     return None
 
 
-def get_uuid_from_call_id(ari, call_id):
+def get_uuid_from_channel_id(ari, channel_id):
     try:
-        user_id = ari.channels.getChannelVar(channelId=call_id, variable='XIVO_USERID')['value']
+        user_id = ari.channels.getChannelVar(channelId=channel_id, variable='XIVO_USERID')['value']
     except requests.HTTPError as e:
         if e.response is not None and e.response.status_code == 404:
             return None
@@ -79,11 +79,11 @@ def get_channel_ids_from_bridges(ari, bridges):
     result = set()
     for bridge_id in bridges:
         try:
-            calls = ari.bridges.get(bridgeId=bridge_id).json['channels']
+            channels = ari.bridges.get(bridgeId=bridge_id).json['channels']
         except requests.RequestException as e:
             logger.error(e)
-            calls = set()
-        result.update(calls)
+            channels = set()
+        result.update(channels)
     return result
 
 
@@ -97,12 +97,12 @@ class Calls(AuthResource):
         with new_ari_client(current_app.config['ari']['connection']) as ari:
             channels = ari.channels.list()
             for channel in channels:
-                user_uuid = get_uuid_from_call_id(ari, channel.id)
+                user_uuid = get_uuid_from_channel_id(ari, channel.id)
                 bridges = [bridge.id for bridge in ari.bridges.list() if channel.id in bridge.json['channels']]
 
                 talking_to = dict()
                 for channel_id in get_channel_ids_from_bridges(ari, bridges):
-                    talking_to_user_uuid = get_uuid_from_call_id(ari, channel_id)
+                    talking_to_user_uuid = get_uuid_from_channel_id(ari, channel_id)
                     talking_to[channel_id] = talking_to_user_uuid
                 talking_to.pop(channel.id, None)
 
@@ -123,11 +123,11 @@ class Calls(AuthResource):
         request_body = request.json
         endpoint = endpoint_from_user_uuid(request_body['source']['user'])
         with new_ari_client(current_app.config['ari']['connection']) as ari:
-            call = ari.channels.originate(endpoint=endpoint,
+            channel = ari.channels.originate(endpoint=endpoint,
                                           extension=request_body['destination']['extension'],
                                           context=request_body['destination']['context'],
                                           priority=request_body['destination']['priority'])
-            return {'call_id': call.id}, 201
+            return {'call_id': channel.id}, 201
 
         return None
 
@@ -135,25 +135,26 @@ class Calls(AuthResource):
 class Call(AuthResource):
 
     def get(self, call_id):
+        channel_id = call_id
         token = request.headers['X-Auth-Token']
         current_app.config['confd']['token'] = token
 
         with new_ari_client(current_app.config['ari']['connection']) as ari:
             try:
-                channel = ari.channels.get(channelId=call_id)
+                channel = ari.channels.get(channelId=channel_id)
             except requests.RequestException:
-                raise NoSuchCall(call_id)
-            user_uuid = get_uuid_from_call_id(ari, call_id)
+                raise NoSuchCall(channel_id)
+            user_uuid = get_uuid_from_channel_id(ari, channel_id)
 
             bridges = [bridge.id for bridge in ari.bridges.list() if channel.id in bridge.json['channels']]
 
             talking_to = dict()
             for bridge_id in bridges:
-                calls = ari.bridges.get(bridgeId=bridge_id).json['channels']
-                for call in calls:
-                    talking_to_user_uuid = get_uuid_from_call_id(ari, call)
-                    talking_to[call] = talking_to_user_uuid
-                del talking_to[call_id]
+                talking_to_channel_ids = ari.bridges.get(bridgeId=bridge_id).json['channels']
+                for talking_to_channel_id in talking_to_channel_ids:
+                    talking_to_user_uuid = get_uuid_from_channel_id(ari, talking_to_channel_id)
+                    talking_to[talking_to_channel_id] = talking_to_user_uuid
+            del talking_to[channel_id]
 
         status = channel.json['state']
 
@@ -166,12 +167,13 @@ class Call(AuthResource):
         }
 
     def delete(self, call_id):
+        channel_id = call_id
         with new_ari_client(current_app.config['ari']['connection']) as ari:
             try:
-                channel = ari.channels.get(channelId=call_id)
-            except requests.RequestException:
-                raise NoSuchCall(call_id)
+                channel = ari.channels.get(channelId=channel_id)
+            except requests.RequestException as e:
+                raise NoSuchCall(channel_id)
 
-        ari.channels.hangup(channelId=call_id)
+        ari.channels.hangup(channelId=channel_id)
 
         return None, 204
