@@ -210,6 +210,16 @@ class TestCreateCall(IntegrationTest):
             'path': '/ari/channels',
         }))))
 
+    def test_create_call_with_invalid_user(self):
+        user_uuid = 'user-uuid-not-found'
+
+        result = self.post_call_result(source=user_uuid,
+                                       priority='my-priority',
+                                       extension='my-extension',
+                                       context='my-context', token=VALID_TOKEN)
+
+        assert_that(result.status_code, equal_to(400))
+
 
 class TestNoConfd(IntegrationTest):
 

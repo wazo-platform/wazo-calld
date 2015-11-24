@@ -26,6 +26,8 @@ from xivo_confd_client import Client as ConfdClient
 from xivo_ctid_ng.core.rest_api import AuthResource
 
 from .exceptions import AsteriskARIUnreachable
+from .exceptions import CallCreationError
+from .exceptions import InvalidUserUUID
 from .exceptions import NoSuchCall
 from .exceptions import XiVOConfdUnreachable
 
@@ -51,6 +53,10 @@ def endpoint_from_user_uuid(uuid):
             user_id = confd.users.get(uuid)['id']
             line_id = confd.users.relations(user_id).list_lines()['items'][0]['line_id']
             line = confd.lines.get(line_id)
+        except requests.HTTPError as e:
+            if e.response is not None and e.response.status_code == 404:
+                raise InvalidUserUUID(uuid)
+
         except requests.RequestException as e:
             raise XiVOConfdUnreachable(current_app.config['confd'], e)
     endpoint = "{}/{}".format(line['protocol'], line['name'])
@@ -130,7 +136,12 @@ class Calls(AuthResource):
         current_app.config['confd']['token'] = token
 
         request_body = request.json
-        endpoint = endpoint_from_user_uuid(request_body['source']['user'])
+        source_user = request_body['source']['user']
+        try:
+            endpoint = endpoint_from_user_uuid(source_user)
+        except InvalidUserUUID as e:
+            raise CallCreationError('Wrong source user', {'source': {'user': source_user}})
+
         with new_ari_client(current_app.config['ari']['connection']) as ari:
             try:
                 channel = ari.channels.originate(endpoint=endpoint,
