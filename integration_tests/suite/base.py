@@ -149,21 +149,14 @@ class IntegrationTest(AssetLaunchingTestCase):
         requests.post(url, json=body, verify=False)
 
     @classmethod
-    def set_confd_user_lines(cls, *mock_user_lines):
-        content = defaultdict(list)
-        for user_line in mock_user_lines:
-            content[user_line.user_id()].append(user_line.to_dict())
+    def set_confd_user_lines(cls, set_user_lines):
+        content = {}
+        for user, user_lines in set_user_lines.iteritems():
+            content[user] = [user_line.to_dict() for user_line in user_lines]
 
         url = 'https://localhost:9486/_set_response'
         body = {'response': 'user_lines',
                 'content': content}
-        requests.post(url, json=body, verify=False)
-
-    @classmethod
-    def set_confd_empty_user_lines(cls, *user_ids):
-        url = 'https://localhost:9486/_set_response'
-        body = {'response': 'user_lines',
-                'content': {user_id: [] for user_id in user_ids}}
         requests.post(url, json=body, verify=False)
 
     @classmethod

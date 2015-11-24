@@ -198,7 +198,7 @@ class TestCreateCall(IntegrationTest):
         user_uuid = 'user-uuid'
         self.set_confd_users(MockUser(id='user-id', uuid='user-uuid'))
         self.set_confd_lines(MockLine(id='line-id', name='line-name', protocol='sip'))
-        self.set_confd_user_lines(MockUserLine('user-id', 'line-id'))
+        self.set_confd_user_lines({'user-id': [MockUserLine('user-id', 'line-id')]})
         self.set_ari_originates(MockChannel(id='new-call-id'))
 
         result = self.originate(source=user_uuid,
@@ -216,8 +216,8 @@ class TestCreateCall(IntegrationTest):
         user_uuid = 'user-uuid'
         self.set_confd_users(MockUser(id='user-id', uuid='user-uuid'))
         self.set_confd_lines(MockLine(id='line-id', name='line-name', protocol='sip'))
-        self.set_confd_user_lines(MockUserLine('user-id', 'line-id2', main_line=False),
-                                  MockUserLine('user-id', 'line-id', main_line=True))
+        self.set_confd_user_lines({'user-id': [MockUserLine('user-id', 'line-id2', main_line=False),
+                                               MockUserLine('user-id', 'line-id', main_line=True)]})
         self.set_ari_originates(MockChannel(id='new-call-id'))
 
         result = self.originate(source=user_uuid,
@@ -234,7 +234,7 @@ class TestCreateCall(IntegrationTest):
     def test_create_call_with_no_lines(self):
         user_uuid = 'user-uuid'
         self.set_confd_users(MockUser(id='user-id', uuid='user-uuid'))
-        self.set_confd_empty_user_lines('user-id')
+        self.set_confd_user_lines({'user-id': []})
 
         result = self.post_call_result(source=user_uuid,
                                        priority='my-priority',
@@ -314,7 +314,7 @@ class _BaseNoARI(IntegrationTest):
     def test_given_no_ari_when_originate_then_503(self):
         self.set_confd_users(MockUser(id='user-id', uuid='user-uuid'))
         self.set_confd_lines(MockLine(id='line-id', name='line-name', protocol='sip'))
-        self.set_confd_user_lines(MockUserLine('user-id', 'line-id'))
+        self.set_confd_user_lines({'user-id': [MockUserLine('user-id', 'line-id')]})
         result = self.post_call_result(source='user-uuid',
                                        priority='priority',
                                        extension='extension',
