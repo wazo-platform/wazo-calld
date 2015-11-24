@@ -42,3 +42,17 @@ class XiVOConfdUnreachable(APIException):
                 'original_error': str(error),
             }
         )
+
+
+class AsteriskARIUnreachable(APIException):
+
+    def __init__(self, asterisk_ari_config, error):
+        super(AsteriskARIUnreachable, self).__init__(
+            status_code=503,
+            message='Asterisk ARI server unreachable',
+            error_id='asterisk-ari-unreachable',
+            details={
+                'asterisk_ari_config': asterisk_ari_config,
+                'original_error': str(error),
+            }
+        )

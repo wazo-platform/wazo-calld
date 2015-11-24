@@ -240,10 +240,54 @@ class TestNoConfd(IntegrationTest):
         assert_that(result.status_code, equal_to(503))
 
     def test_given_no_confd_when_originate_then_503(self):
-        result = self.post_call_result(source='user-uuid-not-found',
+        result = self.post_call_result(source='user-uuid',
                                        priority=None,
                                        extension=None,
                                        context=None,
                                        token=VALID_TOKEN)
 
         assert_that(result.status_code, equal_to(503))
+
+
+class _BaseNoARI(IntegrationTest):
+
+    def setUp(self):
+        super(_BaseNoARI, self).setUp()
+        self.reset_confd()
+
+    def test_given_no_ari_when_list_calls_then_503(self):
+        result = self.get_calls_result(token=VALID_TOKEN)
+
+        assert_that(result.status_code, equal_to(503))
+
+    def test_given_no_ari_when_get_call_then_503(self):
+        result = self.get_call_result('first-id', token=VALID_TOKEN)
+
+        assert_that(result.status_code, equal_to(503))
+
+    def test_given_no_ari_when_originate_then_503(self):
+        self.set_confd_users(MockUser(id='user-id', uuid='user-uuid'))
+        self.set_confd_lines(MockLine(id='line-id', name='line-name', protocol='sip'))
+        self.set_confd_user_lines(('user-id', 'line-id'))
+        result = self.post_call_result(source='user-uuid',
+                                       priority='priority',
+                                       extension='extension',
+                                       context='context',
+                                       token=VALID_TOKEN)
+
+        assert_that(result.status_code, equal_to(503))
+
+    def test_given_no_ari_when_delete_call_then_503(self):
+        result = self.delete_call_result('call-id', token=VALID_TOKEN)
+
+        assert_that(result.status_code, equal_to(503))
+
+
+class TestNoARI(_BaseNoARI):
+
+    asset = 'no_ari'
+
+
+class TestFailingARI(_BaseNoARI):
+
+    asset = 'failing_ari'

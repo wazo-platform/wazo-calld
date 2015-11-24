@@ -25,7 +25,9 @@ from contextlib import contextmanager
 from xivo_confd_client import Client as ConfdClient
 from xivo_ctid_ng.core.rest_api import AuthResource
 
-from .exceptions import XiVOConfdUnreachable, NoSuchCall
+from .exceptions import AsteriskARIUnreachable
+from .exceptions import NoSuchCall
+from .exceptions import XiVOConfdUnreachable
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +39,10 @@ def new_confd_client(config):
 
 @contextmanager
 def new_ari_client(config):
-    yield ari.connect(**config)
+    try:
+        yield ari.connect(**config)
+    except requests.ConnectionError as e:
+        raise AsteriskARIUnreachable(config, e)
 
 
 def endpoint_from_user_uuid(uuid):
@@ -95,7 +100,11 @@ class Calls(AuthResource):
 
         result = []
         with new_ari_client(current_app.config['ari']['connection']) as ari:
-            channels = ari.channels.list()
+            try:
+                channels = ari.channels.list()
+            except requests.RequestException as e:
+                raise AsteriskARIUnreachable(current_app.config['ari']['connection'], e)
+
             for channel in channels:
                 user_uuid = get_uuid_from_channel_id(ari, channel.id)
                 bridges = [bridge.id for bridge in ari.bridges.list() if channel.id in bridge.json['channels']]
@@ -123,10 +132,14 @@ class Calls(AuthResource):
         request_body = request.json
         endpoint = endpoint_from_user_uuid(request_body['source']['user'])
         with new_ari_client(current_app.config['ari']['connection']) as ari:
-            channel = ari.channels.originate(endpoint=endpoint,
-                                          extension=request_body['destination']['extension'],
-                                          context=request_body['destination']['context'],
-                                          priority=request_body['destination']['priority'])
+            try:
+                channel = ari.channels.originate(endpoint=endpoint,
+                                                 extension=request_body['destination']['extension'],
+                                                 context=request_body['destination']['context'],
+                                                 priority=request_body['destination']['priority'])
+            except requests.RequestException as e:
+                raise AsteriskARIUnreachable(current_app.config['ari']['connection'], e)
+
             return {'call_id': channel.id}, 201
 
         return None
@@ -142,8 +155,10 @@ class Call(AuthResource):
         with new_ari_client(current_app.config['ari']['connection']) as ari:
             try:
                 channel = ari.channels.get(channelId=channel_id)
-            except requests.RequestException:
-                raise NoSuchCall(channel_id)
+            except requests.HTTPError as e:
+                if e.response is not None and e.response.status_code == 404:
+                    raise NoSuchCall(channel_id)
+                raise AsteriskARIUnreachable(current_app.config['ari']['connection'], e)
             user_uuid = get_uuid_from_channel_id(ari, channel_id)
 
             bridges = [bridge.id for bridge in ari.bridges.list() if channel.id in bridge.json['channels']]
@@ -171,8 +186,10 @@ class Call(AuthResource):
         with new_ari_client(current_app.config['ari']['connection']) as ari:
             try:
                 channel = ari.channels.get(channelId=channel_id)
-            except requests.RequestException as e:
-                raise NoSuchCall(channel_id)
+            except requests.HTTPError as e:
+                if e.response is not None and e.response.status_code == 404:
+                    raise NoSuchCall(channel_id)
+                raise AsteriskARIUnreachable(current_app.config['ari']['connection'], e)
 
         ari.channels.hangup(channelId=channel_id)
 

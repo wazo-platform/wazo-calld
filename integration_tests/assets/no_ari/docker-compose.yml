@@ -1,0 +1,45 @@
+sync:
+  image: n3llyb0y/wait
+  links:
+    - auth
+    - confd
+    - ctid-ng
+    - rabbitmq
+  environment:
+    PORTS: "5672 9486 9497 9500"
+
+auth:
+  image: p0bailey/docker-flask
+  expose:
+    - "9497"
+  volumes:
+    - "./xivo-auth:/usr/local/share/xivo-auth"
+    - "./ssl:/usr/local/share/ssl"
+  command: "python /usr/local/share/xivo-auth/mock-xivo-auth.py 9497"
+
+confd:
+  image: p0bailey/docker-flask
+  ports:
+    - "9486:9486"
+  volumes:
+    - "./xivo-confd:/usr/local/share/xivo-confd"
+    - "./ssl:/usr/local/share/ssl"
+  command: "python /usr/local/share/xivo-confd/mock-xivo-confd.py 9486"
+
+ctid-ng:
+  image: xivo-ctid-ng-test
+  volumes:
+    - "../../..:/usr/src/xivo-ctid-ng"
+    - "./etc/xivo-ctid-ng:/etc/xivo-ctid-ng"
+    - "./ssl:/usr/local/share/ssl"
+  ports:
+    - "9500:9500"
+  links:
+    - auth
+    - confd
+    - rabbitmq
+
+rabbitmq:
+  image: rabbitmq
+  expose:
+    - "5672"
