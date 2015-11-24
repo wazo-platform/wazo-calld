@@ -63,11 +63,15 @@ class CallCreationError(APIException):
     def __init__(self, message, details):
         super(CallCreationError, self).__init__(
             status_code=400,
-            message='Wrong source user',
+            message=message,
             error_id='call-creation',
             details=details
         )
 
 
 class InvalidUserUUID(ValueError):
+    pass
+
+
+class UserHasNoLine(ValueError):
     pass

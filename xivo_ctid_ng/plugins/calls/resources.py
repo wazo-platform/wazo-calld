@@ -29,6 +29,7 @@ from .exceptions import AsteriskARIUnreachable
 from .exceptions import CallCreationError
 from .exceptions import InvalidUserUUID
 from .exceptions import NoSuchCall
+from .exceptions import UserHasNoLine
 from .exceptions import XiVOConfdUnreachable
 
 logger = logging.getLogger(__name__)
@@ -51,14 +52,20 @@ def endpoint_from_user_uuid(uuid):
     with new_confd_client(current_app.config['confd']) as confd:
         try:
             user_id = confd.users.get(uuid)['id']
-            line_id = confd.users.relations(user_id).list_lines()['items'][0]['line_id']
-            line = confd.lines.get(line_id)
+            user_lines_of_user = confd.users.relations(user_id).list_lines()['items']
         except requests.HTTPError as e:
             if e.response is not None and e.response.status_code == 404:
                 raise InvalidUserUUID(uuid)
-
+            raise
         except requests.RequestException as e:
             raise XiVOConfdUnreachable(current_app.config['confd'], e)
+
+        main_line_ids = [user_line['line_id'] for user_line in user_lines_of_user if user_line['main_line'] is True]
+        if not main_line_ids:
+            raise UserHasNoLine(uuid)
+        line_id = main_line_ids[0]
+        line = confd.lines.get(line_id)
+
     endpoint = "{}/{}".format(line['protocol'], line['name'])
     if endpoint:
         return endpoint
@@ -139,8 +146,10 @@ class Calls(AuthResource):
         source_user = request_body['source']['user']
         try:
             endpoint = endpoint_from_user_uuid(source_user)
-        except InvalidUserUUID as e:
+        except InvalidUserUUID:
             raise CallCreationError('Wrong source user', {'source': {'user': source_user}})
+        except UserHasNoLine:
+            raise CallCreationError('User has no line', {'source': {'user': source_user}})
 
         with new_ari_client(current_app.config['ari']['connection']) as ari:
             try:

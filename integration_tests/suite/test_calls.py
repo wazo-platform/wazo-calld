@@ -22,12 +22,14 @@ from hamcrest import equal_to
 from hamcrest import has_entries
 from hamcrest import has_entry
 from hamcrest import has_item
+from hamcrest import contains_string
 
 from .base import IntegrationTest
 from .base import MockBridge
 from .base import MockChannel
-from .base import MockUser
 from .base import MockLine
+from .base import MockUser
+from .base import MockUserLine
 from .base import VALID_TOKEN
 
 
@@ -196,7 +198,7 @@ class TestCreateCall(IntegrationTest):
         user_uuid = 'user-uuid'
         self.set_confd_users(MockUser(id='user-id', uuid='user-uuid'))
         self.set_confd_lines(MockLine(id='line-id', name='line-name', protocol='sip'))
-        self.set_confd_user_lines(('user-id', 'line-id'))
+        self.set_confd_user_lines(MockUserLine('user-id', 'line-id'))
         self.set_ari_originates(MockChannel(id='new-call-id'))
 
         result = self.originate(source=user_uuid,
@@ -210,6 +212,39 @@ class TestCreateCall(IntegrationTest):
             'path': '/ari/channels',
         }))))
 
+    def test_create_call_with_multiple_lines(self):
+        user_uuid = 'user-uuid'
+        self.set_confd_users(MockUser(id='user-id', uuid='user-uuid'))
+        self.set_confd_lines(MockLine(id='line-id', name='line-name', protocol='sip'))
+        self.set_confd_user_lines(MockUserLine('user-id', 'line-id2', main_line=False),
+                                  MockUserLine('user-id', 'line-id', main_line=True))
+        self.set_ari_originates(MockChannel(id='new-call-id'))
+
+        result = self.originate(source=user_uuid,
+                                priority='my-priority',
+                                extension='my-extension',
+                                context='my-context')
+
+        assert_that(result, has_entry('call_id', 'new-call-id'))
+        assert_that(self.ari_requests(), has_entry('requests', has_item(has_entries({
+            'method': 'POST',
+            'path': '/ari/channels',
+        }))))
+
+    def test_create_call_with_no_lines(self):
+        user_uuid = 'user-uuid'
+        self.set_confd_users(MockUser(id='user-id', uuid='user-uuid'))
+        self.set_confd_empty_user_lines('user-id')
+
+        result = self.post_call_result(source=user_uuid,
+                                       priority='my-priority',
+                                       extension='my-extension',
+                                       context='my-context',
+                                       token=VALID_TOKEN)
+
+        assert_that(result.status_code, equal_to(400))
+        assert_that(result.json(), has_entry('message', contains_string('line')))
+
     def test_create_call_with_invalid_user(self):
         user_uuid = 'user-uuid-not-found'
 
@@ -219,6 +254,7 @@ class TestCreateCall(IntegrationTest):
                                        context='my-context', token=VALID_TOKEN)
 
         assert_that(result.status_code, equal_to(400))
+        assert_that(result.json(), has_entry('message', contains_string('user')))
 
 
 class TestNoConfd(IntegrationTest):
@@ -278,7 +314,7 @@ class _BaseNoARI(IntegrationTest):
     def test_given_no_ari_when_originate_then_503(self):
         self.set_confd_users(MockUser(id='user-id', uuid='user-uuid'))
         self.set_confd_lines(MockLine(id='line-id', name='line-name', protocol='sip'))
-        self.set_confd_user_lines(('user-id', 'line-id'))
+        self.set_confd_user_lines(MockUserLine('user-id', 'line-id'))
         result = self.post_call_result(source='user-uuid',
                                        priority='priority',
                                        extension='extension',

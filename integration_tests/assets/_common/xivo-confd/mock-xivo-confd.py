@@ -92,13 +92,11 @@ def line(line_id):
 
 @app.route('/1.1/users/<user_id>/lines')
 def lines_of_user(user_id):
-    if user_id not in [user for user, _ in _responses['user_lines']]:
+    if user_id not in _responses['user_lines']:
         return '', 404
 
     return jsonify({
-        'items': [
-            {'user_id': user, 'line_id': line} for (user, line) in _responses['user_lines']
-        ]
+        'items': _responses['user_lines'][user_id]
     })
 
 

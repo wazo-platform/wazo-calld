@@ -15,10 +15,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
-import requests
 import os
 import logging
+import requests
 
+from collections import defaultdict
 from hamcrest import assert_that, equal_to
 from requests.packages import urllib3
 from xivo_test_helpers.asset_launching_test_case import AssetLaunchingTestCase
@@ -148,10 +149,21 @@ class IntegrationTest(AssetLaunchingTestCase):
         requests.post(url, json=body, verify=False)
 
     @classmethod
-    def set_confd_user_lines(cls, *user_lines):
+    def set_confd_user_lines(cls, *mock_user_lines):
+        content = defaultdict(list)
+        for user_line in mock_user_lines:
+            content[user_line.user_id()].append(user_line.to_dict())
+
         url = 'https://localhost:9486/_set_response'
         body = {'response': 'user_lines',
-                'content': user_lines}
+                'content': content}
+        requests.post(url, json=body, verify=False)
+
+    @classmethod
+    def set_confd_empty_user_lines(cls, *user_ids):
+        url = 'https://localhost:9486/_set_response'
+        body = {'response': 'user_lines',
+                'content': {user_id: [] for user_id in user_ids}}
         requests.post(url, json=body, verify=False)
 
     @classmethod
@@ -240,4 +252,22 @@ class MockLine(object):
             'id': self._id,
             'name': self._name,
             'protocol': self._protocol,
+        }
+
+
+class MockUserLine(object):
+
+    def __init__(self, user_id, line_id, main_line=True):
+        self._user_id = user_id
+        self._line_id = line_id
+        self._main_line = main_line
+
+    def user_id(self):
+        return self._user_id
+
+    def to_dict(self):
+        return {
+            'user_id': self._user_id,
+            'line_id': self._line_id,
+            'main_line': self._main_line
         }
