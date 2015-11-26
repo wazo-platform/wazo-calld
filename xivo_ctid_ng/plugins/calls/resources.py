@@ -157,7 +157,7 @@ class Calls(AuthResource):
                                                  extension=request_body['destination']['extension'],
                                                  context=request_body['destination']['context'],
                                                  priority=request_body['destination']['priority'],
-                                                 variables={'variables': request_body['variables']})
+                                                 variables={'variables': request_body.get('variables', {})})
             except requests.RequestException as e:
                 raise AsteriskARIUnreachable(current_app.config['ari']['connection'], e)
 

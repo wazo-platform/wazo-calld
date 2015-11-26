@@ -282,6 +282,24 @@ class TestCreateCall(IntegrationTest):
         assert_that(result.status_code, equal_to(400))
         assert_that(result.json(), has_entry('message', contains_string('user')))
 
+    def test_when_create_call_with_no_variables_then_ari_variables_are_empty(self):
+        user_uuid = 'user-uuid'
+        self.set_confd_users(MockUser(id='user-id', uuid='user-uuid'))
+        self.set_confd_lines(MockLine(id='line-id', name='line-name', protocol='sip'))
+        self.set_confd_user_lines({'user-id': [MockUserLine('user-id', 'line-id')]})
+        self.set_ari_originates(MockChannel(id='new-call-id'))
+
+        self.originate(source=user_uuid,
+                       priority='my-priority',
+                       extension='my-extension',
+                       context='my-context')
+
+        assert_that(self.ari_requests(), has_entry('requests', has_item(has_entries({
+            'method': 'POST',
+            'path': '/ari/channels',
+            'json': has_entries({'variables': {}}),
+        }))))
+
 
 class TestNoConfd(IntegrationTest):
 

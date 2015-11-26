@@ -77,8 +77,9 @@ class IntegrationTest(AssetLaunchingTestCase):
                 'extension': extension,
                 'context': context,
             },
-            'variables': variables or {},
         }
+        if variables:
+            body.update({'variables': variables})
         result = requests.post(url,
                                json=body,
                                headers={'X-Auth-Token': token},
