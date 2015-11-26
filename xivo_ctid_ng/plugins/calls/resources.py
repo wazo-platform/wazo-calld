@@ -93,6 +93,27 @@ def get_uuid_from_channel_id(ari, channel_id):
     return None
 
 
+class Call(object):
+
+    def __init__(self, id_, creation_time):
+        self.id_ = id_
+        self.creation_time = creation_time
+        self.bridges = []
+        self.status = 'Down'
+        self.talking_to = []
+        self.user_uuid = None
+
+    def to_dict(self):
+        return {
+            'bridges': self.bridges,
+            'call_id': self.id_,
+            'creation_time': self.creation_time,
+            'status': self.status,
+            'talking_to': self.talking_to,
+            'user_uuid': self.user_uuid,
+        }
+
+
 def get_channel_ids_from_bridges(ari, bridges):
     result = set()
     for bridge_id in bridges:
@@ -105,7 +126,7 @@ def get_channel_ids_from_bridges(ari, bridges):
     return result
 
 
-class Calls(AuthResource):
+class CallsResource(AuthResource):
 
     def get(self):
         token = request.headers['X-Auth-Token']
@@ -119,22 +140,18 @@ class Calls(AuthResource):
                 raise AsteriskARIUnreachable(current_app.config['ari']['connection'], e)
 
             for channel in channels:
-                user_uuid = get_uuid_from_channel_id(ari, channel.id)
-                bridges = [bridge.id for bridge in ari.bridges.list() if channel.id in bridge.json['channels']]
+                result_call = Call(channel.id, channel.json['creationtime'])
+                result_call.status = channel.json['state']
+                result_call.user_uuid = get_uuid_from_channel_id(ari, channel.id)
+                result_call.bridges = [bridge.id for bridge in ari.bridges.list() if channel.id in bridge.json['channels']]
 
-                talking_to = dict()
-                for channel_id in get_channel_ids_from_bridges(ari, bridges):
+                result_call.talking_to = dict()
+                for channel_id in get_channel_ids_from_bridges(ari, result_call.bridges):
                     talking_to_user_uuid = get_uuid_from_channel_id(ari, channel_id)
-                    talking_to[channel_id] = talking_to_user_uuid
-                talking_to.pop(channel.id, None)
+                    result_call.talking_to[channel_id] = talking_to_user_uuid
+                result_call.talking_to.pop(channel.id, None)
 
-                result.append({
-                    'bridges': bridges,
-                    'call_id': channel.id,
-                    'status': channel.json['state'],
-                    'talking_to': talking_to,
-                    'user_uuid': user_uuid,
-                })
+                result.append(result_call.to_dict())
 
         return result, 200
 
@@ -166,7 +183,7 @@ class Calls(AuthResource):
         return None
 
 
-class Call(AuthResource):
+class CallResource(AuthResource):
 
     def get(self, call_id):
         channel_id = call_id
@@ -180,33 +197,26 @@ class Call(AuthResource):
                 if e.response is not None and e.response.status_code == 404:
                     raise NoSuchCall(channel_id)
                 raise AsteriskARIUnreachable(current_app.config['ari']['connection'], e)
-            user_uuid = get_uuid_from_channel_id(ari, channel_id)
 
-            bridges = [bridge.id for bridge in ari.bridges.list() if channel.id in bridge.json['channels']]
-
-            talking_to = dict()
-            for bridge_id in bridges:
+            result = Call(channel.id, channel.json['creationtime'])
+            result.status = channel.json['state']
+            result.user_uuid = get_uuid_from_channel_id(ari, channel_id)
+            result.bridges = [bridge.id for bridge in ari.bridges.list() if channel.id in bridge.json['channels']]
+            result.talking_to = dict()
+            for bridge_id in result.bridges:
                 talking_to_channel_ids = ari.bridges.get(bridgeId=bridge_id).json['channels']
                 for talking_to_channel_id in talking_to_channel_ids:
                     talking_to_user_uuid = get_uuid_from_channel_id(ari, talking_to_channel_id)
-                    talking_to[talking_to_channel_id] = talking_to_user_uuid
-            del talking_to[channel_id]
+                    result.talking_to[talking_to_channel_id] = talking_to_user_uuid
+            del result.talking_to[channel_id]
 
-        status = channel.json['state']
-
-        return {
-            'bridges': bridges,
-            'call_id': channel.id,
-            'status': status,
-            'talking_to': dict(talking_to),
-            'user_uuid': user_uuid,
-        }
+        return result.to_dict()
 
     def delete(self, call_id):
         channel_id = call_id
         with new_ari_client(current_app.config['ari']['connection']) as ari:
             try:
-                channel = ari.channels.get(channelId=channel_id)
+                ari.channels.get(channelId=channel_id)
             except requests.HTTPError as e:
                 if e.response is not None and e.response.status_code == 404:
                     raise NoSuchCall(channel_id)

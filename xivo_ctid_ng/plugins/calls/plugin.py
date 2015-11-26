@@ -16,12 +16,12 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-from .resources import Call, Calls
+from .resources import CallResource, CallsResource
 
 
 class Plugin(object):
 
     def load(self, dependencies):
         api = dependencies['api']
-        api.add_resource(Calls, '/calls')
-        api.add_resource(Call, '/calls/<call_id>')
+        api.add_resource(CallsResource, '/calls')
+        api.add_resource(CallResource, '/calls/<call_id>')

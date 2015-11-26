@@ -188,9 +188,10 @@ class IntegrationTest(AssetLaunchingTestCase):
 
 class MockChannel(object):
 
-    def __init__(self, id, state='Ringing'):
+    def __init__(self, id, state='Ringing', creation_time='2015-01-01T00:00:00.0-0500'):
         self._id = id
         self._state = state
+        self._creation_time = creation_time
 
     def id_(self):
         return self._id
@@ -198,7 +199,8 @@ class MockChannel(object):
     def to_dict(self):
         return {
             'id': self._id,
-            'state': self._state
+            'state': self._state,
+            'creationtime': self._creation_time
         }
 
 

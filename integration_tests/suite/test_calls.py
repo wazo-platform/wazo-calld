@@ -119,6 +119,18 @@ class TestListCalls(IntegrationTest):
             has_entries({'call_id': 'second-id',
                          'talking_to': {'first-id': 'user1-uuid'}})))
 
+    def test_given_some_calls_when_list_calls_then_list_calls_with_creation_time(self):
+        self.set_ari_channels(MockChannel(id='first-id', creation_time='first-time'),
+                              MockChannel(id='second-id', creation_time='second-time'))
+
+        calls = self.list_calls()
+
+        assert_that(calls, contains_inanyorder(
+            has_entries({'call_id': 'first-id',
+                         'creation_time': 'first-time'}),
+            has_entries({'call_id': 'second-id',
+                         'creation_time': 'second-time'})))
+
 
 class TestGetCall(IntegrationTest):
 
@@ -137,7 +149,7 @@ class TestGetCall(IntegrationTest):
         assert_that(result.status_code, equal_to(404))
 
     def test_given_one_call_when_get_call_then_get_call(self):
-        self.set_ari_channels(MockChannel(id='first-id', state='Up'),
+        self.set_ari_channels(MockChannel(id='first-id', state='Up', creation_time='first-time'),
                               MockChannel(id='second-id'))
         self.set_ari_bridges(MockBridge(id='bridge-id', channels=['first-id', 'second-id']))
         self.set_ari_channel_variable({'first-id': {'XIVO_USERID': 'user1-id'},
@@ -154,7 +166,8 @@ class TestGetCall(IntegrationTest):
             'talking_to': {
                 'second-id': 'user2-uuid'
             },
-            'bridges': contains('bridge-id')
+            'bridges': contains('bridge-id'),
+            'creation_time': 'first-time'
         }))
 
 
