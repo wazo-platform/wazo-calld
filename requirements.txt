@@ -1,4 +1,5 @@
 ari
+git+https://github.com/digium/swagger-py.git  # the latest release has blocking bugs, so we need master
 git+https://github.com/xivo-pbx/xivo-auth-client.git
 git+https://github.com/xivo-pbx/xivo-confd-client.git
 git+https://github.com/xivo-pbx/xivo-lib-python.git

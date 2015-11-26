@@ -194,6 +194,10 @@
                             "type": "string"
                         }
                     }
+                },
+                "variables": {
+                    "description": "Channel variables to set",
+                    "type": "object"
                 }
             }
         },

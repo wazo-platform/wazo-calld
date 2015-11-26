@@ -22,6 +22,7 @@ from hamcrest import equal_to
 from hamcrest import has_entries
 from hamcrest import has_entry
 from hamcrest import has_item
+from hamcrest import has_items
 from hamcrest import contains_string
 
 from .base import IntegrationTest
@@ -210,6 +211,31 @@ class TestCreateCall(IntegrationTest):
         assert_that(self.ari_requests(), has_entry('requests', has_item(has_entries({
             'method': 'POST',
             'path': '/ari/channels',
+        }))))
+
+    def test_when_create_call_then_ari_arguments_are_correct(self):
+        user_uuid = 'user-uuid'
+        self.set_confd_users(MockUser(id='user-id', uuid='user-uuid'))
+        self.set_confd_lines(MockLine(id='line-id', name='line-name', protocol='sip'))
+        self.set_confd_user_lines({'user-id': [MockUserLine('user-id', 'line-id')]})
+        self.set_ari_originates(MockChannel(id='new-call-id'))
+
+        self.originate(source=user_uuid,
+                       priority='my-priority',
+                       extension='my-extension',
+                       context='my-context',
+                       variables={'MY_VARIABLE': 'my-value',
+                                  'SECOND_VARIABLE': 'my-second-value'})
+
+        assert_that(self.ari_requests(), has_entry('requests', has_item(has_entries({
+            'method': 'POST',
+            'path': '/ari/channels',
+            'query': has_items(['priority', 'my-priority'],
+                               ['extension', 'my-extension'],
+                               ['context', 'my-context'],
+                               ['endpoint', 'sip/line-name']),
+            'json': has_entries({'variables': {'MY_VARIABLE': 'my-value',
+                                               'SECOND_VARIABLE': 'my-second-value'}}),
         }))))
 
     def test_create_call_with_multiple_lines(self):

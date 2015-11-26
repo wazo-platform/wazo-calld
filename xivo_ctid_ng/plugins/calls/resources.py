@@ -156,7 +156,8 @@ class Calls(AuthResource):
                 channel = ari.channels.originate(endpoint=endpoint,
                                                  extension=request_body['destination']['extension'],
                                                  context=request_body['destination']['context'],
-                                                 priority=request_body['destination']['priority'])
+                                                 priority=request_body['destination']['priority'],
+                                                 variables={'variables': request_body['variables']})
             except requests.RequestException as e:
                 raise AsteriskARIUnreachable(current_app.config['ari']['connection'], e)
 

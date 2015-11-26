@@ -66,16 +66,18 @@ class IntegrationTest(AssetLaunchingTestCase):
         return response.json()
 
     @classmethod
-    def post_call_result(cls, source, priority, extension, context, token=None):
+    def post_call_result(cls, source, priority, extension, context, variables=None, token=None):
         url = u'https://localhost:9500/1.0/calls'
         body = {
             'source': {
                 'user': source,
-            }, 'destination': {
+            },
+            'destination': {
                 'priority': priority,
                 'extension': extension,
                 'context': context,
-            }
+            },
+            'variables': variables or {},
         }
         result = requests.post(url,
                                json=body,
@@ -84,8 +86,8 @@ class IntegrationTest(AssetLaunchingTestCase):
         return result
 
     @classmethod
-    def originate(cls, source, priority, extension, context, token=VALID_TOKEN):
-        response = cls.post_call_result(source, priority, extension, context, token=token)
+    def originate(cls, source, priority, extension, context, variables=None, token=VALID_TOKEN):
+        response = cls.post_call_result(source, priority, extension, context, variables, token=token)
         assert_that(response.status_code, equal_to(201))
         return response.json()
 

@@ -53,6 +53,7 @@ def log_request():
                'path': path,
                'query': request.args.items(multi=True),
                'body': request.data,
+               'json': request.json,
                'headers': dict(request.headers)}
         _requests.append(log)
 
