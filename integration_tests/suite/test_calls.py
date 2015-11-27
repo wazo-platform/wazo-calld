@@ -46,7 +46,7 @@ class TestListCalls(IntegrationTest):
     def test_given_no_calls_when_list_calls_then_empty_list(self):
         calls = self.list_calls()
 
-        assert_that(calls, contains())
+        assert_that(calls, has_entry('items', contains()))
 
     def test_given_some_calls_and_no_user_id_when_list_calls_then_list_calls_with_no_user_uuid(self):
         self.set_ari_channels(MockChannel(id='first-id'),
@@ -54,11 +54,11 @@ class TestListCalls(IntegrationTest):
 
         calls = self.list_calls()
 
-        assert_that(calls, contains_inanyorder(
+        assert_that(calls, has_entry('items', contains_inanyorder(
             has_entries({'call_id': 'first-id',
                          'user_uuid': None}),
             has_entries({'call_id': 'second-id',
-                         'user_uuid': None})))
+                         'user_uuid': None}))))
 
     def test_given_some_calls_with_user_id_when_list_calls_then_list_calls_with_user_uuid(self):
         self.set_ari_channels(MockChannel(id='first-id'),
@@ -70,11 +70,11 @@ class TestListCalls(IntegrationTest):
 
         calls = self.list_calls()
 
-        assert_that(calls, contains_inanyorder(
+        assert_that(calls, has_entry('items', contains_inanyorder(
             has_entries({'call_id': 'first-id',
                          'user_uuid': 'user1-uuid'}),
             has_entries({'call_id': 'second-id',
-                         'user_uuid': 'user2-uuid'})))
+                         'user_uuid': 'user2-uuid'}))))
 
     def test_given_some_calls_when_list_calls_then_list_calls_with_status(self):
         self.set_ari_channels(MockChannel(id='first-id', state='Up'),
@@ -82,11 +82,11 @@ class TestListCalls(IntegrationTest):
 
         calls = self.list_calls()
 
-        assert_that(calls, contains_inanyorder(
+        assert_that(calls, has_entry('items', contains_inanyorder(
             has_entries({'call_id': 'first-id',
                          'status': 'Up'}),
             has_entries({'call_id': 'second-id',
-                         'status': 'Ringing'})))
+                         'status': 'Ringing'}))))
 
     def test_given_some_calls_when_list_calls_then_list_calls_with_bridges(self):
         self.set_ari_channels(MockChannel(id='first-id'),
@@ -96,11 +96,11 @@ class TestListCalls(IntegrationTest):
 
         calls = self.list_calls()
 
-        assert_that(calls, contains_inanyorder(
+        assert_that(calls, has_entry('items', contains_inanyorder(
             has_entries({'call_id': 'first-id',
                          'bridges': ['first-bridge']}),
             has_entries({'call_id': 'second-id',
-                         'bridges': ['second-bridge']})))
+                         'bridges': ['second-bridge']}))))
 
     def test_given_some_calls_when_list_calls_then_list_calls_with_talking_channels_and_users(self):
         self.set_ari_channels(MockChannel(id='first-id'),
@@ -113,11 +113,11 @@ class TestListCalls(IntegrationTest):
 
         calls = self.list_calls()
 
-        assert_that(calls, contains_inanyorder(
+        assert_that(calls, has_entry('items', contains_inanyorder(
             has_entries({'call_id': 'first-id',
                          'talking_to': {'second-id': 'user2-uuid'}}),
             has_entries({'call_id': 'second-id',
-                         'talking_to': {'first-id': 'user1-uuid'}})))
+                         'talking_to': {'first-id': 'user1-uuid'}}))))
 
     def test_given_some_calls_when_list_calls_then_list_calls_with_creation_time(self):
         self.set_ari_channels(MockChannel(id='first-id', creation_time='first-time'),
@@ -125,11 +125,11 @@ class TestListCalls(IntegrationTest):
 
         calls = self.list_calls()
 
-        assert_that(calls, contains_inanyorder(
+        assert_that(calls, has_entry('items', contains_inanyorder(
             has_entries({'call_id': 'first-id',
                          'creation_time': 'first-time'}),
             has_entries({'call_id': 'second-id',
-                         'creation_time': 'second-time'})))
+                         'creation_time': 'second-time'}))))
 
 
 class TestGetCall(IntegrationTest):
@@ -193,7 +193,7 @@ class TestDeleteCall(IntegrationTest):
 
         self.hangup_call(call_id)
 
-        assert_that(self.ari_requests(), has_entry('requests', has_item(has_entries({
+        assert_that(self.ari_requests(), has_entry('requests', has_entry(has_entries({
             'method': 'DELETE',
             'path': '/ari/channels/call-id',
         }))))

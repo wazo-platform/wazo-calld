@@ -132,7 +132,7 @@ class CallsResource(AuthResource):
         token = request.headers['X-Auth-Token']
         current_app.config['confd']['token'] = token
 
-        result = []
+        calls = []
         with new_ari_client(current_app.config['ari']['connection']) as ari:
             try:
                 channels = ari.channels.list()
@@ -151,9 +151,11 @@ class CallsResource(AuthResource):
                     result_call.talking_to[channel_id] = talking_to_user_uuid
                 result_call.talking_to.pop(channel.id, None)
 
-                result.append(result_call.to_dict())
+                calls.append(result_call)
 
-        return result, 200
+        return {
+            'items': [call.to_dict() for call in calls],
+        }, 200
 
     def post(self):
         token = request.headers['X-Auth-Token']

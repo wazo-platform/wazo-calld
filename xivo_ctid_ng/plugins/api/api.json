@@ -29,9 +29,14 @@
                     "200": {
                         "description": "List currently active calls",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/Call"
+                            "type": "object",
+                            "properties": {
+                                "items": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/definitions/Call"
+                                    }
+                                }
                             }
                         }
                     },
