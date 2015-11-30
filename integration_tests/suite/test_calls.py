@@ -193,7 +193,7 @@ class TestDeleteCall(IntegrationTest):
 
         self.hangup_call(call_id)
 
-        assert_that(self.ari_requests(), has_entry('requests', has_entry(has_entries({
+        assert_that(self.ari_requests(), has_entry('requests', has_item(has_entries({
             'method': 'DELETE',
             'path': '/ari/channels/call-id',
         }))))
