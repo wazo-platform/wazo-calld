@@ -6,7 +6,6 @@ RUN apt-get -qq update \
     && apt-get -qq -y install \
        libpq-dev \
        libyaml-dev \
-       vim \
     && apt-get -yqq autoremove
 
 
@@ -25,7 +24,9 @@ RUN chown www-data /var/log/xivo-ctid-ng.log
 RUN mkdir -p /var/run/xivo-ctid-ng/
 RUN chown www-data /var/run/xivo-ctid-ng/
 
+RUN apt-get clean
 RUN rm -fr /usr/src/xivo-ctid-ng
+RUN rm -fr /var/lib/apt/lists/*
 
 EXPOSE 9500
 
