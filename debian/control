@@ -10,7 +10,18 @@ Homepage: http://xivo.io/
 
 Package: xivo-ctid-ng
 Architecture: all
-Depends: ${python:Depends}, ${misc:Depends}, python-asterisk-ari, xivo-confd-client
+Depends: ${python:Depends},
+         ${misc:Depends},
+         python-asterisk-ari,
+         xivo-confd-client,
+         xivo-auth-client,
+         xivo-lib-python,
+         python-cherrypy3,
+         python-flask,
+         python-flask-restful,
+         python-flask-cors,
+         python-stevedore,
+         python-kombu
 Description: XiVO CTI server (new generation)
  XiVO is a system based on a powerful IPBX, to bring an easy to
  install solution for telephony and related services.
