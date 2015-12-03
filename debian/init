@@ -4,8 +4,8 @@
 # Provides:          xivo-ctid-ng
 # Required-Start:    $local_fs $remote_fs $network $syslog
 # Required-Stop:     $local_fs $remote_fs $network $syslog
-# Should-Start:      asterisk xivo-agentd rabbitmq-server
-# Should-Stop:       asterisk xivo-agentd rabbitmq-server
+# Should-Start:      asterisk rabbitmq-server xivo-auth xivo-confd
+# Should-Stop:       asterisk rabbitmq-server xivo-auth xivo-confd
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
 # Short-Description: Startup daemon script for xivo-ctid-ng
