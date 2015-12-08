@@ -1,7 +1,7 @@
 {
     "swagger": "2.0",
     "info": {
-        "title": "xivo-ctid-ng",
+        "title": "XiVO CTId ng",
         "description": "Control your calls from a REST API",
         "version": "1.0.0"
     },
