@@ -18,6 +18,7 @@
 from hamcrest import assert_that
 from hamcrest import contains
 from hamcrest import contains_inanyorder
+from hamcrest import empty
 from hamcrest import equal_to
 from hamcrest import has_entries
 from hamcrest import has_entry
@@ -143,6 +144,14 @@ class TestListCalls(IntegrationTest):
         assert_that(calls, has_entry('items', contains_inanyorder(
             has_entries({'call_id': 'first-id'}),
             has_entries({'call_id': 'third-id'}))))
+
+    def test_given_some_calls_and_no_applications_when_list_calls_by_application_then_no_calls(self):
+        self.set_ari_channels(MockChannel(id='first-id'),
+                              MockChannel(id='second-id'))
+
+        calls = self.list_calls(application='my-app', token=VALID_TOKEN)
+
+        assert_that(calls, has_entry('items', empty()))
 
 
 class TestGetCall(IntegrationTest):

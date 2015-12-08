@@ -24,6 +24,7 @@ from flask import make_response
 from flask import request
 
 _EMPTY_RESPONSES = {
+    'applications': {},
     'bridges': {},
     'channels': {},
     'channel_variable': {},
@@ -89,7 +90,8 @@ def swagger(file_name):
 
 @app.route('/ari/applications/<application_name>', methods=['GET'])
 def get_application(application_name):
-    result = [application for application in _responses['applications'].itervalues()]
+    if application_name not in _responses['applications']:
+        return '', 404
     return jsonify(_responses['applications'][application_name])
 
 

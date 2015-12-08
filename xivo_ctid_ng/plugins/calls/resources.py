@@ -144,8 +144,10 @@ class CallsResource(AuthResource):
             if application_filter:
                 try:
                     channel_ids = ari.applications.get(applicationName=application_filter)['channel_ids']
-                except requests.RequestException as e:
-                    raise AsteriskARIUnreachable(current_app.config['ari']['connection'], e)
+                except requests.HTTPError as e:
+                    if e.response is not None and e.response.status_code == 404:
+                        channel_ids = []
+
                 channels = [channel for channel in channels if channel.id in channel_ids]
 
             for channel in channels:
