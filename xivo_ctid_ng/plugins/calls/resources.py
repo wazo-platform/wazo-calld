@@ -31,6 +31,7 @@ from .exceptions import InvalidUserUUID
 from .exceptions import NoSuchCall
 from .exceptions import UserHasNoLine
 from .exceptions import XiVOConfdUnreachable
+from . import validator
 
 logger = logging.getLogger(__name__)
 
@@ -162,6 +163,7 @@ class CallsResource(AuthResource):
         current_app.config['confd']['token'] = token
 
         request_body = request.json
+        validator.validate_originate(request_body)
         source_user = request_body['source']['user']
         try:
             endpoint = endpoint_from_user_uuid(source_user)
