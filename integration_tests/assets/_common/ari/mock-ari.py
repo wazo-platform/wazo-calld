@@ -87,6 +87,12 @@ def swagger(file_name):
         return make_response(swagger_spec, 200, {'Content-Type': 'application/json'})
 
 
+@app.route('/ari/applications/<application_name>', methods=['GET'])
+def get_application(application_name):
+    result = [application for application in _responses['applications'].itervalues()]
+    return jsonify(_responses['applications'][application_name])
+
+
 @app.route('/ari/channels', methods=['GET'])
 def get_channels():
     result = [channel for channel in _responses['channels'].itervalues()]

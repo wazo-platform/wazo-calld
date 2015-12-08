@@ -26,6 +26,7 @@ from hamcrest import has_items
 from hamcrest import contains_string
 
 from .base import IntegrationTest
+from .base import MockApplication
 from .base import MockBridge
 from .base import MockChannel
 from .base import MockLine
@@ -130,6 +131,18 @@ class TestListCalls(IntegrationTest):
                          'creation_time': 'first-time'}),
             has_entries({'call_id': 'second-id',
                          'creation_time': 'second-time'}))))
+
+    def test_given_some_calls_when_list_calls_by_application_then_list_of_calls_is_filtered(self):
+        self.set_ari_channels(MockChannel(id='first-id'),
+                              MockChannel(id='second-id'),
+                              MockChannel(id='third-id'))
+        self.set_ari_applications(MockApplication(name='my-app', channels=['first-id', 'third-id']))
+
+        calls = self.list_calls(application='my-app')
+
+        assert_that(calls, has_entry('items', contains_inanyorder(
+            has_entries({'call_id': 'first-id'}),
+            has_entries({'call_id': 'third-id'}))))
 
 
 class TestGetCall(IntegrationTest):

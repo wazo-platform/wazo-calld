@@ -21,6 +21,18 @@
                 "description": "List calls",
                 "parameters": [
                     {
+                        "name": "application",
+                        "description": "Filter calls by application, e.g. switchboard",
+                        "in": "query",
+                        "type": "string"
+                    },
+                    {
+                        "name": "application_instance",
+                        "description": "Filter calls by application instance, e.g. switchboard-sales",
+                        "in": "query",
+                        "type": "string"
+                    },
+                    {
                         "$ref": "#/parameters/token"
                     }
                 ],
