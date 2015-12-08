@@ -12,6 +12,8 @@
     "produces": [
         "application/json"
     ],
+    "x-xivo-port": 9500,
+    "x-xivo-name": "ctid-ng",
     "paths": {
         "/calls": {
             "get": {
