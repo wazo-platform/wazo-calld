@@ -38,11 +38,13 @@ class IntegrationTest(AssetLaunchingTestCase):
     service = 'ctid-ng'
 
     @classmethod
-    def get_calls_result(cls, application=None, token=None):
+    def get_calls_result(cls, application=None, application_instance=None, token=None):
         url = u'https://localhost:9500/1.0/calls'
         params = {}
         if application:
             params['application'] = application
+            if application_instance:
+                params['application_instance'] = application_instance
         result = requests.get(url,
                               params=params,
                               headers={'X-Auth-Token': token},
@@ -50,8 +52,8 @@ class IntegrationTest(AssetLaunchingTestCase):
         return result
 
     @classmethod
-    def list_calls(cls, application=None, token=VALID_TOKEN):
-        response = cls.get_calls_result(application=application, token=token)
+    def list_calls(cls, application=None, application_instance=None, token=VALID_TOKEN):
+        response = cls.get_calls_result(application, application_instance, token)
         assert_that(response.status_code, equal_to(200))
         return response.json()
 

@@ -153,6 +153,22 @@ class TestListCalls(IntegrationTest):
 
         assert_that(calls, has_entry('items', empty()))
 
+    def test_given_some_calls_when_list_calls_by_application_instance_then_list_of_calls_is_filtered(self):
+        self.set_ari_channels(MockChannel(id='first-id'),
+                              MockChannel(id='second-id'),
+                              MockChannel(id='third-id'),
+                              MockChannel(id='fourth-id'))
+        self.set_ari_applications(MockApplication(name='my-app', channels=['first-id', 'second-id', 'third-id']))
+        self.set_ari_channel_variable({'first-id': {'XIVO_STASIS_ARGS': 'appX'},
+                                       'second-id': {'XIVO_STASIS_ARGS': 'appY'},
+                                       'third-id': {'XIVO_STASIS_ARGS': 'appX'}})
+
+        calls = self.list_calls(application='my-app', application_instance='appX')
+
+        assert_that(calls, has_entry('items', contains_inanyorder(
+            has_entries({'call_id': 'first-id'}),
+            has_entries({'call_id': 'third-id'}))))
+
 
 class TestGetCall(IntegrationTest):
 

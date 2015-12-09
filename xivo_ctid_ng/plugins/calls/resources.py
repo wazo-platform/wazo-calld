@@ -34,8 +34,9 @@ class CallsResource(AuthResource):
         token = request.headers['X-Auth-Token']
         self.calls_service.set_confd_token(token)
         application_filter = request.args.get('application')
+        application_instance_filter = request.args.get('application_instance')
 
-        calls = self.calls_service.list_calls(application_filter)
+        calls = self.calls_service.list_calls(application_filter, application_instance_filter)
 
         return {
             'items': [call.to_dict() for call in calls],

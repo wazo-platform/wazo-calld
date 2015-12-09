@@ -42,7 +42,7 @@ class CallsService(object):
     def set_confd_token(self, confd_token):
         self._confd_config['token'] = confd_token
 
-    def list_calls(self, application=None):
+    def list_calls(self, application_filter=None, application_instance_filter=None):
         calls = []
         with new_ari_client(self._ari_config) as ari:
             try:
@@ -50,9 +50,9 @@ class CallsService(object):
             except requests.RequestException as e:
                 raise AsteriskARIUnreachable(self._ari_config, e)
 
-            if application:
+            if application_filter:
                 try:
-                    channel_ids = ari.applications.get(applicationName=application)['channel_ids']
+                    channel_ids = ari.applications.get(applicationName=application_filter)['channel_ids']
                 except requests.HTTPError as e:
                     if e.response is not None and e.response.status_code == 404:
                         channel_ids = []
@@ -60,6 +60,19 @@ class CallsService(object):
                         raise
 
                 channels = [channel for channel in channels if channel.id in channel_ids]
+
+                if application_instance_filter:
+                    app_instance_channels = []
+                    for channel in channels:
+                        try:
+                            channel_app_instance = ari.channels.getChannelVar(channelId=channel.id, variable='XIVO_STASIS_ARGS')['value']
+                        except requests.HTTPError as e:
+                            if e.response is not None and e.response.status_code == 404:
+                                continue
+                            raise
+                        if channel_app_instance == application_instance_filter:
+                            app_instance_channels.append(channel)
+                    channels = app_instance_channels
 
             for channel in channels:
                 result_call = Call(channel.id, channel.json['creationtime'])
