@@ -56,6 +56,8 @@ class CallsService(object):
                 except requests.HTTPError as e:
                     if e.response is not None and e.response.status_code == 404:
                         channel_ids = []
+                    else:
+                        raise
 
                 channels = [channel for channel in channels if channel.id in channel_ids]
 
