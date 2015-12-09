@@ -31,8 +31,6 @@ class CallsResource(AuthResource):
         self.calls_service = calls_service
 
     def get(self):
-        token = request.headers['X-Auth-Token']
-        self.calls_service.set_confd_token(token)
         application_filter = request.args.get('application')
         application_instance_filter = request.args.get('application_instance')
 
@@ -43,8 +41,6 @@ class CallsResource(AuthResource):
         }, 200
 
     def post(self):
-        token = request.headers['X-Auth-Token']
-        self.calls_service.set_confd_token(token)
         request_body = request.json
 
         validator.validate_originate_body(request_body)
@@ -60,9 +56,6 @@ class CallResource(AuthResource):
         self.calls_service = calls_service
 
     def get(self, call_id):
-        token = request.headers['X-Auth-Token']
-        self.calls_service.set_confd_token(token)
-
         call = self.calls_service.get(call_id)
 
         return call.to_dict()

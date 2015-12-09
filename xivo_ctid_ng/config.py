@@ -18,7 +18,7 @@
 import argparse
 
 from xivo.chain_map import ChainMap
-from xivo.config_helper import read_config_file_hierarchy
+from xivo.config_helper import read_config_file_hierarchy, parse_config_file
 from xivo.http_helpers import DEFAULT_CIPHERS
 from xivo.xivo_logging import get_log_level_by_name
 
@@ -43,17 +43,18 @@ _DEFAULT_CONFIG = {
         },
     },
     'enabled_plugins': [],
-    'confd': {
-        'host': 'localhost',
-        'port': 9486,
-        'verify_certificate': '/usr/share/xivo-certs/server.crt',
-    },
     'ari': {
         'connection': {
             'base_url': 'http://localhost:5039',
             'username': 'xivo',
             'password': 'opensesame',
         }
+    },
+    'auth': {
+        'host': 'localhost',
+        'port': 9497,
+        'verify_certificate': '/usr/share/xivo-certs/server.crt',
+        'key_file': '/var/lib/xivo-auth-keys/xivo-ctid-ng-key.yml',
     },
     'bus': {
         'username': 'guest',
@@ -64,6 +65,11 @@ _DEFAULT_CONFIG = {
         'exchange_type': 'topic',
         'exchange_durable': True,
     },
+    'confd': {
+        'host': 'localhost',
+        'port': 9486,
+        'verify_certificate': '/usr/share/xivo-certs/server.crt',
+    },
 }
 
 
@@ -71,7 +77,8 @@ def load(argv):
     cli_config = _parse_cli_args(argv)
     file_config = read_config_file_hierarchy(ChainMap(cli_config, _DEFAULT_CONFIG))
     reinterpreted_config = _get_reinterpreted_raw_values(ChainMap(cli_config, file_config, _DEFAULT_CONFIG))
-    return ChainMap(reinterpreted_config, cli_config, file_config, _DEFAULT_CONFIG)
+    service_key = _load_key_file(ChainMap(cli_config, file_config, _DEFAULT_CONFIG))
+    return ChainMap(reinterpreted_config, cli_config, service_key, file_config, _DEFAULT_CONFIG)
 
 
 def _parse_cli_args(argv):
@@ -112,6 +119,12 @@ def _parse_cli_args(argv):
         result['user'] = parsed_args.user
 
     return result
+
+
+def _load_key_file(config):
+    key_file = parse_config_file(config['auth']['key_file'])
+    return {'auth': {'username': key_file['service_id'],
+                     'password': key_file['service_key']}}
 
 
 def _get_reinterpreted_raw_values(config):

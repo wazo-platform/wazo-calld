@@ -24,7 +24,11 @@ class Plugin(object):
 
     def load(self, dependencies):
         api = dependencies['api']
-        calls_service = CallsService(ari_config=dependencies['config']['ari']['connection'],
-                                     confd_config=dependencies['config']['confd'])
+        token_changed_subscribe = dependencies['token_changed_subscribe']
+        config = dependencies['config']
+
+        calls_service = CallsService(ari_config=config['ari']['connection'], confd_config=config['confd'])
+        token_changed_subscribe(calls_service.set_confd_token)
+
         api.add_resource(CallsResource, '/calls', resource_class_args=[calls_service])
         api.add_resource(CallResource, '/calls/<call_id>', resource_class_args=[calls_service])

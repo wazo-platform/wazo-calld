@@ -43,6 +43,7 @@ auth:
   port: 9497
   timeout: 2
   verify_certificate: /usr/share/xivo-certs/server.crt
+  key_file: /var/lib/xivo-auth-keys/xivo-ctid-ng-key.yml
 
 confd:
   host: localhost
