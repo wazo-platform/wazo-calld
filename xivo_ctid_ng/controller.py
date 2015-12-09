@@ -27,8 +27,6 @@ logger = logging.getLogger(__name__)
 
 class Controller(object):
     def __init__(self, config):
-        app.config['ari'] = config['ari']
-        app.config['confd'] = config['confd']
         app.config['auth'] = config['auth']
         self.rest_api = CoreRestApi(config)
         self.bus = CoreBus(config['bus'])

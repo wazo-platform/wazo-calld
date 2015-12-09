@@ -16,7 +16,6 @@
 
 import logging
 
-from flask import current_app
 from flask import request
 
 from xivo_ctid_ng.core.rest_api import AuthResource
@@ -33,7 +32,7 @@ class CallsResource(AuthResource):
 
     def get(self):
         token = request.headers['X-Auth-Token']
-        current_app.config['confd']['token'] = token
+        self.calls_service.set_confd_token(token)
         application_filter = request.args.get('application')
 
         calls = self.calls_service.list_calls(application_filter)
@@ -44,9 +43,9 @@ class CallsResource(AuthResource):
 
     def post(self):
         token = request.headers['X-Auth-Token']
-        current_app.config['confd']['token'] = token
-
+        self.calls_service.set_confd_token(token)
         request_body = request.json
+
         validator.validate_originate_body(request_body)
 
         call_id = self.calls_service.originate(request_body)
@@ -61,7 +60,7 @@ class CallResource(AuthResource):
 
     def get(self, call_id):
         token = request.headers['X-Auth-Token']
-        current_app.config['confd']['token'] = token
+        self.calls_service.set_confd_token(token)
 
         call = self.calls_service.get(call_id)
 
