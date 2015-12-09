@@ -17,11 +17,13 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 from .resources import CallResource, CallsResource
+from .services import CallsService
 
 
 class Plugin(object):
 
     def load(self, dependencies):
         api = dependencies['api']
-        api.add_resource(CallsResource, '/calls')
-        api.add_resource(CallResource, '/calls/<call_id>')
+        calls_service = CallsService()
+        api.add_resource(CallsResource, '/calls', resource_class_args=[calls_service])
+        api.add_resource(CallResource, '/calls/<call_id>', resource_class_args=[calls_service])
