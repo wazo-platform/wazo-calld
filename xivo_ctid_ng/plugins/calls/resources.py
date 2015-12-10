@@ -18,6 +18,7 @@ import logging
 
 from flask import request
 
+from xivo_ctid_ng.core.auth import required_acl
 from xivo_ctid_ng.core.rest_api import AuthResource
 
 from . import validator
@@ -30,6 +31,7 @@ class CallsResource(AuthResource):
     def __init__(self, calls_service):
         self.calls_service = calls_service
 
+    @required_acl('ctid-ng.calls.list')
     def get(self):
         application_filter = request.args.get('application')
         application_instance_filter = request.args.get('application_instance')
@@ -40,6 +42,7 @@ class CallsResource(AuthResource):
             'items': [call.to_dict() for call in calls],
         }, 200
 
+    @required_acl('ctid-ng.calls.originate')
     def post(self):
         request_body = request.json
 
@@ -55,11 +58,13 @@ class CallResource(AuthResource):
     def __init__(self, calls_service):
         self.calls_service = calls_service
 
+    @required_acl('ctid-ng.calls.get')
     def get(self, call_id):
         call = self.calls_service.get(call_id)
 
         return call.to_dict()
 
+    @required_acl('ctid-ng.calls.hangup')
     def delete(self, call_id):
         self.calls_service.hangup(call_id)
 

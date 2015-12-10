@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 from .base import IntegrationTest
-from .base import VALID_TOKEN
+from .base import INVALID_ACL_TOKEN, VALID_TOKEN
 
 from hamcrest import assert_that
 from hamcrest import contains_string
@@ -34,6 +34,11 @@ class TestAuthentication(IntegrationTest):
 
     def test_invalid_auth_gives_401(self):
         result = self.get_call_result('my-call', token='invalid-token')
+
+        assert_that(result.status_code, equal_to(401))
+
+    def test_invalid_acl_gives_401(self):
+        result = self.get_call_result('my-call', token=INVALID_ACL_TOKEN)
 
         assert_that(result.status_code, equal_to(401))
 

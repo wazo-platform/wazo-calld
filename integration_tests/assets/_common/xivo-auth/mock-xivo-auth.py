@@ -16,8 +16,13 @@ tokens = {'valid-token': 'uuid',
 @app.route("/0.1/token/valid-token", methods=['HEAD'])
 @app.route("/0.1/token/valid-token-1", methods=['HEAD'])
 @app.route("/0.1/token/valid-token-2", methods=['HEAD'])
-def token_head():
+def token_head_ok():
     return '', 204
+
+
+@app.route("/0.1/token/invalid-acl-token", methods=['HEAD'])
+def token_head_forbidden():
+    return '', 403
 
 
 @app.route("/0.1/token/<token>", methods=['GET'])
@@ -29,6 +34,16 @@ def token_get(token):
         'data': {
             'auth_id': tokens[token],
             'token': token
+        }
+    })
+
+
+@app.route("/0.1/token", methods=['POST'])
+def token_post():
+    return jsonify({
+        'data': {
+            'auth_id': tokens['valid-token'],
+            'token': 'valid-token',
         }
     })
 

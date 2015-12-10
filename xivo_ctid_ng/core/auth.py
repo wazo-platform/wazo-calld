@@ -27,6 +27,13 @@ from xivo_auth_client import Client
 logger = logging.getLogger(__name__)
 
 
+def required_acl(acl):
+    def wrapper(func):
+        func.acl = acl
+        return func
+    return wrapper
+
+
 class AuthVerifier(object):
 
     def __init__(self):
@@ -47,7 +54,8 @@ class AuthVerifier(object):
             assert self._auth_client, 'AuthVerifier is not configured'
 
             try:
-                token_is_valid = self._auth_client.token.is_valid(token)
+                required_acl = getattr(func, 'acl', '').format(**kwargs)
+                token_is_valid = self._auth_client.token.is_valid(token, required_acl)
             except requests.RequestException as e:
                 auth_host = self._auth_config['host']
                 auth_port = self._auth_config['port']
