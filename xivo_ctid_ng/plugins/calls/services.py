@@ -77,8 +77,6 @@ class CallsService(object):
             for channel in channels:
                 result_call = Call(channel.id, channel.json['creationtime'])
                 result_call.status = channel.json['state']
-                result_call.caller_id_name = channel.json['caller']['name']
-                result_call.caller_id_number = channel.json['caller']['number']
                 result_call.user_uuid = self._get_uuid_from_channel_id(ari, channel.id)
                 result_call.bridges = [bridge.id for bridge in ari.bridges.list() if channel.id in bridge.json['channels']]
 
@@ -123,8 +121,6 @@ class CallsService(object):
 
             result = Call(channel.id, channel.json['creationtime'])
             result.status = channel.json['state']
-            result.caller_id_name = channel.json['caller']['name']
-            result.caller_id_number = channel.json['caller']['number']
             result.user_uuid = self._get_uuid_from_channel_id(ari, channel_id)
             result.bridges = [bridge.id for bridge in ari.bridges.list() if channel.id in bridge.json['channels']]
             result.talking_to = dict()
