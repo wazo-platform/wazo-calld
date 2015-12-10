@@ -11,11 +11,15 @@ class Call(object):
         self.status = 'Down'
         self.talking_to = []
         self.user_uuid = None
+        self.caller_id_name = ''
+        self.caller_id_number = ''
 
     def to_dict(self):
         return {
             'bridges': self.bridges,
             'call_id': self.id_,
+            'caller_id_name': self.caller_id_name,
+            'caller_id_number': self.caller_id_number,
             'creation_time': self.creation_time,
             'status': self.status,
             'talking_to': self.talking_to,

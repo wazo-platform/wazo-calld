@@ -133,6 +133,20 @@ class TestListCalls(IntegrationTest):
             has_entries({'call_id': 'second-id',
                          'creation_time': 'second-time'}))))
 
+    def test_given_some_calls_when_list_calls_then_list_calls_with_caller_id(self):
+        self.set_ari_channels(MockChannel(id='first-id', caller_id_name='Weber', caller_id_number='4185556666'),
+                              MockChannel(id='second-id', caller_id_name='Denis', caller_id_number='4185557777'))
+
+        calls = self.list_calls()
+
+        assert_that(calls, has_entry('items', contains_inanyorder(
+            has_entries({'call_id': 'first-id',
+                         'caller_id_number': '4185556666',
+                         'caller_id_name': 'Weber'}),
+            has_entries({'call_id': 'second-id',
+                         'caller_id_number': '4185557777',
+                         'caller_id_name': 'Denis'}))))
+
     def test_given_some_calls_when_list_calls_by_application_then_list_of_calls_is_filtered(self):
         self.set_ari_channels(MockChannel(id='first-id'),
                               MockChannel(id='second-id'),
@@ -187,7 +201,7 @@ class TestGetCall(IntegrationTest):
         assert_that(result.status_code, equal_to(404))
 
     def test_given_one_call_when_get_call_then_get_call(self):
-        self.set_ari_channels(MockChannel(id='first-id', state='Up', creation_time='first-time'),
+        self.set_ari_channels(MockChannel(id='first-id', state='Up', creation_time='first-time', caller_id_name='Weber', caller_id_number='4185559999'),
                               MockChannel(id='second-id'))
         self.set_ari_bridges(MockBridge(id='bridge-id', channels=['first-id', 'second-id']))
         self.set_ari_channel_variable({'first-id': {'XIVO_USERID': 'user1-id'},
@@ -205,7 +219,9 @@ class TestGetCall(IntegrationTest):
                 'second-id': 'user2-uuid'
             },
             'bridges': contains('bridge-id'),
-            'creation_time': 'first-time'
+            'creation_time': 'first-time',
+            'caller_id_name': 'Weber',
+            'caller_id_number': '4185559999',
         }))
 
 
@@ -352,8 +368,6 @@ class TestCreateCall(IntegrationTest):
         assert_that(result.json(), has_entry('message', contains_string('user')))
 
     def test_create_call_with_missing_source(self):
-        user_uuid = 'user-uuid-not-found'
-
         body = {'destination': {'priority': '1',
                                 'extension': 'myexten',
                                 'context': 'mycontext'}}
