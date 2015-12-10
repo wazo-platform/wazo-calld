@@ -223,10 +223,17 @@ class MockApplication(object):
 
 class MockChannel(object):
 
-    def __init__(self, id, state='Ringing', creation_time='2015-01-01T00:00:00.0-0500'):
+    def __init__(self,
+                 id,
+                 state='Ringing',
+                 creation_time='2015-01-01T00:00:00.0-0500',
+                 caller_id_name='someone',
+                 caller_id_number='somewhere'):
         self._id = id
         self._state = state
         self._creation_time = creation_time
+        self._caller_id_name = caller_id_name
+        self._caller_id_number = caller_id_number
 
     def id_(self):
         return self._id
@@ -235,7 +242,11 @@ class MockChannel(object):
         return {
             'id': self._id,
             'state': self._state,
-            'creationtime': self._creation_time
+            'creationtime': self._creation_time,
+            'caller': {
+                'name': self._caller_id_name,
+                'number': self._caller_id_number
+            },
         }
 
 

@@ -249,6 +249,12 @@
                 "creation_time": {
                     "type": "string",
                     "format": "date-time"
+                },
+                "caller_id_name": {
+                    "type": "string"
+                },
+                "caller_id_number": {
+                    "type": "string"
                 }
             }
         },
