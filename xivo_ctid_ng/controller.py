@@ -21,7 +21,6 @@ from threading import Thread
 from xivo.auth_helpers import TokenRenewer
 from xivo_auth_client import Client as AuthClient
 
-from xivo_ctid_ng.core.rest_api import app
 from xivo_ctid_ng.core.rest_api import CoreRestApi
 from xivo_ctid_ng.core.bus import CoreBus
 
@@ -34,7 +33,7 @@ class Controller(object):
         auth_config = dict(config['auth'])
         auth_config.pop('key_file', None)
         auth_client = AuthClient(**auth_config)
-        self.token_renewer = TokenRenewer(auth_client, expiration=10)
+        self.token_renewer = TokenRenewer(auth_client)
         self.rest_api = CoreRestApi(config, self.token_renewer.subscribe_to_token_change)
         self.bus = CoreBus(config['bus'])
 
