@@ -21,6 +21,18 @@
                 "description": "List calls",
                 "parameters": [
                     {
+                        "name": "application",
+                        "description": "Filter calls by Stasis application, e.g. switchboard.",
+                        "in": "query",
+                        "type": "string"
+                    },
+                    {
+                        "name": "application_instance",
+                        "description": "Filter calls by Stasis application instance, e.g. switchboard-sales,green. This value filters on the channel variable XIVO_STASIS_ARGS. Args should be separated by commas (,).",
+                        "in": "query",
+                        "type": "string"
+                    },
+                    {
                         "$ref": "#/parameters/token"
                     }
                 ],

@@ -5,7 +5,7 @@
 from .exceptions import CallCreationError
 
 
-def validate_originate(body):
+def validate_originate_body(body):
     try:
         body['source']
         body['destination']

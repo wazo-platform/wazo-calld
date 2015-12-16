@@ -12,6 +12,7 @@ from flask import make_response
 from flask import request
 
 _EMPTY_RESPONSES = {
+    'applications': {},
     'bridges': {},
     'channels': {},
     'channel_variable': {},
@@ -73,6 +74,13 @@ def swagger(file_name):
         swagger_spec = swagger_file.read()
         swagger_spec = swagger_spec.replace('localhost:8088', 'ari:{port}'.format(port=port))
         return make_response(swagger_spec, 200, {'Content-Type': 'application/json'})
+
+
+@app.route('/ari/applications/<application_name>', methods=['GET'])
+def get_application(application_name):
+    if application_name not in _responses['applications']:
+        return '', 404
+    return jsonify(_responses['applications'][application_name])
 
 
 @app.route('/ari/channels', methods=['GET'])

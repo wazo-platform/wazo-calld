@@ -26,16 +26,22 @@ class IntegrationTest(AssetLaunchingTestCase):
     service = 'ctid-ng'
 
     @classmethod
-    def get_calls_result(cls, token=None):
+    def get_calls_result(cls, application=None, application_instance=None, token=None):
         url = u'https://localhost:9500/1.0/calls'
+        params = {}
+        if application:
+            params['application'] = application
+            if application_instance:
+                params['application_instance'] = application_instance
         result = requests.get(url,
+                              params=params,
                               headers={'X-Auth-Token': token},
                               verify=False)
         return result
 
     @classmethod
-    def list_calls(cls, token=VALID_TOKEN):
-        response = cls.get_calls_result(token=token)
+    def list_calls(cls, application=None, application_instance=None, token=VALID_TOKEN):
+        response = cls.get_calls_result(application, application_instance, token)
         assert_that(response.status_code, equal_to(200))
         return response.json()
 
@@ -108,6 +114,13 @@ class IntegrationTest(AssetLaunchingTestCase):
         return result
 
     @classmethod
+    def set_ari_applications(cls, *mock_applications):
+        url = 'http://localhost:5039/_set_response'
+        body = {'response': 'applications',
+                'content': {application.name(): application.to_dict() for application in mock_applications}}
+        requests.post(url, json=body)
+
+    @classmethod
     def set_ari_channels(cls, *mock_channels):
         url = 'http://localhost:5039/_set_response'
         body = {'response': 'channels',
@@ -178,6 +191,22 @@ class IntegrationTest(AssetLaunchingTestCase):
     def ari_requests(cls):
         url = 'http://localhost:5039/_requests'
         return requests.get(url).json()
+
+
+class MockApplication(object):
+
+    def __init__(self, name, channels=None):
+        self._name = name
+        self._channels = channels or []
+
+    def name(self):
+        return self._name
+
+    def to_dict(self):
+        return {
+            'name': self._name,
+            'channel_ids': self._channels,
+        }
 
 
 class MockChannel(object):

@@ -15,24 +15,24 @@ class TestCallsValidator(TestCase):
     def tearDown(self):
         pass
 
-    def test_validate_originate_with_no_source_key(self):
+    def test_validate_originate_body_with_no_source_key(self):
         body = {
             'destination': {'priority': '1',
                             'extension': 'my-exten',
                             'context': 'my-context'}
         }
 
-        self.assertRaises(CallCreationError, validator.validate_originate, body)
+        self.assertRaises(CallCreationError, validator.validate_originate_body, body)
 
 
-    def test_validate_originate_with_no_destination_key(self):
+    def test_validate_originate_body_with_no_destination_key(self):
         body = {
             'source': {'user': 'abcd'}
         }
 
-        self.assertRaises(CallCreationError, validator.validate_originate, body)
+        self.assertRaises(CallCreationError, validator.validate_originate_body, body)
 
-    def test_validate_originate_with_no_source_user(self):
+    def test_validate_originate_body_with_no_source_user(self):
         body = {
             'destination': {'priority': '1',
                             'extension': 'my-exten',
@@ -40,31 +40,31 @@ class TestCallsValidator(TestCase):
             'source': {}
         }
 
-        self.assertRaises(CallCreationError, validator.validate_originate, body)
+        self.assertRaises(CallCreationError, validator.validate_originate_body, body)
 
-    def test_validate_originate_with_no_destination_priority(self):
+    def test_validate_originate_body_with_no_destination_priority(self):
         body = {
             'destination': {'extension': 'my-exten',
                             'context': 'my-context'},
             'source': {'user': 'abcd'}
         }
 
-        self.assertRaises(CallCreationError, validator.validate_originate, body)
+        self.assertRaises(CallCreationError, validator.validate_originate_body, body)
 
-    def test_validate_originate_with_no_destination_extension(self):
+    def test_validate_originate_body_with_no_destination_extension(self):
         body = {
             'destination': {'priority': '1',
                             'context': 'my-context'},
             'source': {'user': 'abcd'}
         }
 
-        self.assertRaises(CallCreationError, validator.validate_originate, body)
+        self.assertRaises(CallCreationError, validator.validate_originate_body, body)
 
-    def test_validate_originate_with_no_destination_context(self):
+    def test_validate_originate_body_with_no_destination_context(self):
         body = {
             'destination': {'priority': '1',
                             'extension': 'my-exten'},
             'source': {'user': 'abcd'}
         }
 
-        self.assertRaises(CallCreationError, validator.validate_originate, body)
+        self.assertRaises(CallCreationError, validator.validate_originate_body, body)
