@@ -7,7 +7,6 @@ import os
 import logging
 import requests
 
-from collections import defaultdict
 from hamcrest import assert_that, equal_to
 from requests.packages import urllib3
 from xivo_test_helpers.asset_launching_test_case import AssetLaunchingTestCase
@@ -17,6 +16,7 @@ logger = logging.getLogger(__name__)
 urllib3.disable_warnings()
 
 ASSET_ROOT = os.path.join(os.path.dirname(__file__), '..', 'assets')
+INVALID_ACL_TOKEN = 'invalid-acl-token'
 VALID_TOKEN = 'valid-token'
 
 
