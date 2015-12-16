@@ -10,5 +10,5 @@ flask-restful==0.3.4
 flask-cors==1.10.3
 kombu
 pyyaml==3.10
-requests==2.0.0
+requests==2.4.3
 stevedore==0.14.1
