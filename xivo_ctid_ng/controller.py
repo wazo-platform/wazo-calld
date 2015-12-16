@@ -8,7 +8,6 @@ from threading import Thread
 from xivo.auth_helpers import TokenRenewer
 from xivo_auth_client import Client as AuthClient
 
-from xivo_ctid_ng.core.rest_api import app
 from xivo_ctid_ng.core.rest_api import CoreRestApi
 from xivo_ctid_ng.core.bus import CoreBus
 
