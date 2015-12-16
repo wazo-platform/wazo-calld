@@ -80,6 +80,12 @@ class IntegrationTest(AssetLaunchingTestCase):
         }
         if variables:
             body.update({'variables': variables})
+
+        return cls.post_call_raw(body, token)
+
+    @classmethod
+    def post_call_raw(cls, body, token=None):
+        url = u'https://localhost:9500/1.0/calls'
         result = requests.post(url,
                                json=body,
                                headers={'X-Auth-Token': token},

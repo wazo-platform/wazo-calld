@@ -60,7 +60,8 @@ class AsteriskARIUnreachable(APIException):
 
 class CallCreationError(APIException):
 
-    def __init__(self, message, details):
+    def __init__(self, message, details=None):
+        details = details or {}
         super(CallCreationError, self).__init__(
             status_code=400,
             message=message,
