@@ -12,7 +12,7 @@ from .base import IntegrationTest
 class TestHTTPSMissingCertificate(IntegrationTest):
     asset = 'no_ssl_certificate'
 
-    def test_given_inexisting_SSL_certificate_when_dird_starts_then_dird_stops(self):
+    def test_given_inexisting_SSL_certificate_when_ctid_ng_starts_then_ctid_ng_stops(self):
         for _ in range(10):
             status = self.service_status()
             if not status['State']['Running']:
@@ -28,7 +28,7 @@ class TestHTTPSMissingCertificate(IntegrationTest):
 class TestHTTPSMissingPrivateKey(IntegrationTest):
     asset = 'no_ssl_private_key'
 
-    def test_given_inexisting_SSL_private_key_when_dird_starts_then_dird_stops(self):
+    def test_given_inexisting_SSL_private_key_when_ctid_ng_starts_then_ctid_ng_stops(self):
         for _ in range(10):
             status = self.service_status()
             if not status['State']['Running']:

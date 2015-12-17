@@ -1,10 +1,22 @@
 sync:
   image: n3llyb0y/wait
   links:
+    - ari
     - ctid-ng
     - rabbitmq
   environment:
-    PORTS: "5672"
+    PORTS: "5039 5672"
+
+ari:
+  image: ari-mock
+  ports:
+    - "5039:5039"
+  volumes:
+    - "./ari:/usr/local/share/ari"
+    - "./ssl/ari:/usr/local/share/ari-ssl"
+  environment:
+    PYTHONPATH: "/usr/local/share/ari"
+  command: "gunicorn -b 0.0.0.0:5039 -k flask_sockets.worker mock_ari:app"
 
 ctid-ng:
   image: xivo-ctid-ng-test
@@ -15,6 +27,7 @@ ctid-ng:
   ports:
     - "9500:9500"
   links:
+    - ari
     - rabbitmq
 
 rabbitmq:

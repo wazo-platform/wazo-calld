@@ -16,7 +16,10 @@
 
 import ari
 import logging
+import requests
 import socket
+
+from .exceptions import ARIUnreachable
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +27,11 @@ logger = logging.getLogger(__name__)
 class CoreCallControl(object):
 
     def __init__(self, config):
-        self.client = ari.connect(**config['connection'])
+        try:
+            self.client = ari.connect(**config['connection'])
+        except requests.ConnectionError:
+            logger.critical('ARI config: %s', config['connection'])
+            raise ARIUnreachable()
         self.callcontrol = CallControl(self.client)
 
     def run(self):

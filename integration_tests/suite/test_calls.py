@@ -3,6 +3,8 @@
 # SPDX-License-Identifier: GPL-3.0+
 
 
+import time
+
 from hamcrest import assert_that
 from hamcrest import contains
 from hamcrest import contains_inanyorder
@@ -404,10 +406,29 @@ class TestNoConfd(IntegrationTest):
         assert_that(result.status_code, equal_to(503))
 
 
-class _BaseNoARI(IntegrationTest):
+class TestNoARI(IntegrationTest):
+
+    asset = 'no_ari'
+
+    def test_given_no_ari_when_ctid_ng_starts_then_ctid_ng_stops(self):
+        for _ in range(10):
+            status = self.service_status()
+            if not status['State']['Running']:
+                break
+            time.sleep(1)
+        else:
+            self.fail('xivo-ctid-ng did not stop while starting with no ARI')
+
+        log = self.service_logs()
+        assert_that(log, contains_string("ARI server unreachable... stopping"))
+
+
+class TestFailingARI(IntegrationTest):
+
+    asset = 'failing_ari'
 
     def setUp(self):
-        super(_BaseNoARI, self).setUp()
+        super(TestFailingARI, self).setUp()
         self.reset_confd()
 
     def test_given_no_ari_when_list_calls_then_503(self):
@@ -436,20 +457,6 @@ class _BaseNoARI(IntegrationTest):
         result = self.delete_call_result('call-id', token=VALID_TOKEN)
 
         assert_that(result.status_code, equal_to(503))
-
-
-class TestNoARI(_BaseNoARI):
-
-    asset = 'no_ari'
-
-    # Tests in base class
-
-
-class TestFailingARI(_BaseNoARI):
-
-    asset = 'failing_ari'
-
-    # Tests in base class
 
 
 class TestConnectUser(IntegrationTest):

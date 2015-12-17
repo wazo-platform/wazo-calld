@@ -33,3 +33,9 @@ def handle_api_exception(func):
             logger.error('%s: %s', error.message, error.details)
             return response, error.status_code
     return wrapper
+
+
+class ARIUnreachable(Exception):
+
+    def __init__(self):
+        super(ARIUnreachable, self).__init__('ARI server unreachable... stopping')
