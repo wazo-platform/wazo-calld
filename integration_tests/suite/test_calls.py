@@ -411,13 +411,11 @@ class TestNoARI(IntegrationTest):
     asset = 'no_ari'
 
     def test_given_no_ari_when_ctid_ng_starts_then_ctid_ng_stops(self):
-        for _ in range(10):
+        def ctid_ng_is_stopped():
             status = self.service_status()
-            if not status['State']['Running']:
-                break
-            time.sleep(1)
-        else:
-            self.fail('xivo-ctid-ng did not stop while starting with no ARI')
+            return not status['State']['Running']
+
+        until.true(ctid_ng_is_stopped, tries=10, message='xivo-ctid-ng did not stop while starting with no ARI')
 
         log = self.service_logs()
         assert_that(log, contains_string("ARI server unreachable... stopping"))
