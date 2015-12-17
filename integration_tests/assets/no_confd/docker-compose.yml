@@ -9,13 +9,15 @@ sync:
     PORTS: "5039 5672 9497 9500"
 
 ari:
-  image: p0bailey/docker-flask
+  image: ari-mock
   ports:
     - "5039:5039"
   volumes:
     - "./ari:/usr/local/share/ari"
     - "./ssl/ari:/usr/local/share/ari-ssl"
-  command: "python /usr/local/share/ari/mock-ari.py 5039"
+  environment:
+    PYTHONPATH: "/usr/local/share/ari"
+  command: "gunicorn -b 0.0.0.0:5039 -k flask_sockets.worker mock_ari:app"
 
 auth:
   image: p0bailey/docker-flask

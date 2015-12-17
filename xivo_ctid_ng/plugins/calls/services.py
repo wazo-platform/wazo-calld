@@ -133,7 +133,7 @@ class CallsService(object):
                 for talking_to_channel_id in talking_to_channel_ids:
                     talking_to_user_uuid = self._get_uuid_from_channel_id(ari, talking_to_channel_id)
                     result.talking_to[talking_to_channel_id] = talking_to_user_uuid
-            del result.talking_to[channel_id]
+            result.talking_to.pop(channel_id, None)
 
         return result
 
@@ -148,6 +148,15 @@ class CallsService(object):
                 raise AsteriskARIUnreachable(self._ari_config, e)
 
         ari.channels.hangup(channelId=channel_id)
+
+    def connect_user(self, call_id, user_id):
+        channel_id = call_id
+        endpoint = self._endpoint_from_user_uuid(user_id)
+        with new_ari_client(self._ari_config) as ari:
+            new_channel = ari.channels.originate(endpoint=endpoint,
+                                                 app='callcontrol',
+                                                 appArgs=['dialed_from', channel_id])
+            return new_channel.id
 
     def _endpoint_from_user_uuid(self, uuid):
         with new_confd_client(self._confd_config) as confd:

@@ -13,6 +13,7 @@ from hamcrest import has_entry
 from hamcrest import has_item
 from hamcrest import has_items
 from hamcrest import contains_string
+from xivo_test_helpers import until
 
 from .base import IntegrationTest
 from .base import MockApplication
@@ -441,7 +442,55 @@ class TestNoARI(_BaseNoARI):
 
     asset = 'no_ari'
 
+    # Tests in base class
+
 
 class TestFailingARI(_BaseNoARI):
 
     asset = 'failing_ari'
+
+    # Tests in base class
+
+
+class TestConnectUser(IntegrationTest):
+
+    asset = 'basic_rest'
+
+    def setUp(self):
+        super(TestConnectUser, self).setUp()
+        self.reset_ari()
+        self.reset_confd()
+
+    def test_given_one_call_and_one_user_when_connect_user_then_the_two_are_talking(self):
+        self.set_ari_channels(MockChannel(id='call-id'),
+                              MockChannel(id='new-call-id', ))
+        self.set_ari_channel_variable({'new-call-id': {'XIVO_USERID': 'user-id'}})
+        self.set_confd_users(MockUser(id='user-id', uuid='user-uuid'))
+        self.set_confd_lines(MockLine(id='line-id', name='line-name', protocol='sip'))
+        self.set_confd_user_lines({'user-id': [MockUserLine('user-id', 'line-id')]})
+        self.set_ari_originates(MockChannel(id='new-call-id'))
+
+        new_call = self.connect_user('call-id', 'user-id')
+
+        assert_that(new_call, has_entries({
+            'call_id': 'new-call-id'
+        }))
+
+        self.answer_connect(from_='call-id', new_call_id='new-call-id')
+
+        def assert_function():
+            assert_that(self.ari_requests(), has_entry('requests', has_items(has_entries({
+                'method': 'POST',
+                'path': '/ari/bridges/bridge-id/addChannel',
+                'query': [['channel', 'call-id']],
+            }), has_entries({
+                'method': 'POST',
+                'path': '/ari/bridges/bridge-id/addChannel',
+                'query': [['channel', 'new-call-id']],
+            }), has_entries({
+                'method': 'POST',
+                'path': '/ari/bridges',
+                'query': [['type', 'mixing']],
+            }))))
+
+        until.assert_(assert_function, tries=5)

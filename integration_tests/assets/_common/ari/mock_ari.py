@@ -7,6 +7,7 @@ import logging
 import sys
 
 from flask import Flask
+from flask_sockets import Sockets
 from flask import jsonify
 from flask import make_response
 from flask import request
@@ -20,6 +21,8 @@ _EMPTY_RESPONSES = {
 }
 
 app = Flask(__name__)
+sockets = Sockets(app)
+websocket = None
 
 _requests = []
 _responses = {}
@@ -68,11 +71,17 @@ def set_response():
     return '', 204
 
 
+@app.route('/_send_ws_event', methods=['POST'])
+def send_event():
+    websocket.send(request.data)
+    return '', 201
+
+
 @app.route('/ari/api-docs/<path:file_name>')
 def swagger(file_name):
     with open('/usr/local/share/ari/api-docs/{file_name}'.format(file_name=file_name), 'r') as swagger_file:
         swagger_spec = swagger_file.read()
-        swagger_spec = swagger_spec.replace('localhost:8088', 'ari:{port}'.format(port=port))
+        swagger_spec = swagger_spec.replace('localhost:8088', 'ari:{port}'.format(port=request.environ['SERVER_PORT']))
         return make_response(swagger_spec, 200, {'Content-Type': 'application/json'})
 
 
@@ -110,14 +119,33 @@ def delete_channel(channel_id):
 
 
 @app.route('/ari/bridges')
-def bridges():
+def list_bridges():
     result = [bridge for bridge in _responses['bridges'].itervalues()]
     return make_response(json.dumps(result), 200, {'Content-Type': 'application/json'})
 
 
 @app.route('/ari/bridges/<bridge_id>')
-def bridge(bridge_id):
+def get_bridge(bridge_id):
     return jsonify(_responses['bridges'][bridge_id])
+
+
+@app.route('/ari/bridges', methods=['POST'])
+def post_bridge():
+    new_bridge = {
+        'id': 'bridge-id',
+        'technology': 'stasis',
+        'bridge_type': 'mixing',
+        'creator': 'stasis',
+        'bridge_class': 'stasis',
+        'name': '',
+        'channels': []
+    }
+    return jsonify(new_bridge), 200
+
+
+@app.route('/ari/bridges/<bridge_id>/addChannel', methods=['POST'])
+def add_channel_to_bridge(bridge_id):
+    return '', 204
 
 
 @app.route('/ari/channels/<channel_id>/variable')
@@ -132,9 +160,21 @@ def channel_variable(channel_id):
     })
 
 
-if __name__ == '__main__':
-    _reset()
+@sockets.route('/ari/events')
+def echo_socket(ws):
+    global websocket
+    websocket = ws
+    while True:
+        try:
+            ws.receive()
+        except Exception:
+            websocket = None
+            raise
 
+_reset()
+
+
+if __name__ == '__main__':
     port = int(sys.argv[1])
     app.run(host='0.0.0.0', port=port, debug=True)
     # context = ('/usr/local/share/ssl/ari/server.crt', '/usr/local/share/ssl/ari/server.key')

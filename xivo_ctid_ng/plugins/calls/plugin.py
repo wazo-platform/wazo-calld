@@ -3,7 +3,9 @@
 # SPDX-License-Identifier: GPL-3.0+
 
 
-from .resources import CallResource, CallsResource
+from .resources import CallResource
+from .resources import CallsResource
+from .resources import ConnectCallToUserResource
 from .services import CallsService
 
 
@@ -19,3 +21,4 @@ class Plugin(object):
 
         api.add_resource(CallsResource, '/calls', resource_class_args=[calls_service])
         api.add_resource(CallResource, '/calls/<call_id>', resource_class_args=[calls_service])
+        api.add_resource(ConnectCallToUserResource, '/calls/<call_id>/user/<user_id>', resource_class_args=[calls_service])

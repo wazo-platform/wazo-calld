@@ -114,6 +114,20 @@ class IntegrationTest(AssetLaunchingTestCase):
         return result
 
     @classmethod
+    def put_call_user(cls, call_id, user_id, token):
+        url = u'https://localhost:9500/1.0/calls/{call_id}/user/{user_id}'
+        result = requests.put(url.format(call_id=call_id, user_id=user_id),
+                              headers={'X-Auth-Token': token},
+                              verify=False)
+        return result
+
+    @classmethod
+    def connect_user(cls, call_id, user_id):
+        response = cls.put_call_user(call_id, user_id, token=VALID_TOKEN)
+        assert_that(response.status_code, equal_to(200))
+        return response.json()
+
+    @classmethod
     def set_ari_applications(cls, *mock_applications):
         url = 'http://localhost:5039/_set_response'
         body = {'response': 'applications',
@@ -191,6 +205,43 @@ class IntegrationTest(AssetLaunchingTestCase):
     def ari_requests(cls):
         url = 'http://localhost:5039/_requests'
         return requests.get(url).json()
+
+    @classmethod
+    def answer_connect(cls, from_, new_call_id):
+        url = 'http://localhost:5039/_send_ws_event'
+        body = {
+            "application": "my-app",
+            "args": [
+                "dialed_from",
+                from_
+            ],
+            "channel": {
+                "accountcode": "",
+                "caller": {
+                    "name": "my-name",
+                    "number": "my-number"
+                },
+                "connected": {
+                    "name": "",
+                    "number": ""
+                },
+                "creationtime": "2015-12-16T15:13:59.526-0500",
+                "dialplan": {
+                    "context": "default",
+                    "exten": "",
+                    "priority": 1
+                },
+                "id": new_call_id,
+                "language": "en_US",
+                "name": "SIP/my-sip-00000020",
+                "state": "Up"
+            },
+            "timestamp": "2015-12-16T15:14:04.269-0500",
+            "type": "StasisStart"
+        }
+
+        response = requests.post(url, json=body)
+        assert_that(response.status_code, equal_to(201))
 
 
 class MockApplication(object):
