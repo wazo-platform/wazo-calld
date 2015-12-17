@@ -58,9 +58,27 @@ class CallCreationError(APIException):
         )
 
 
-class InvalidUserUUID(ValueError):
-    pass
+class InvalidUserUUID(APIException):
+
+    def __init__(self, user_id):
+        super(InvalidUserUUID, self).__init__(
+            status_code=400,
+            message='Invalid user: not found',
+            error_id='invalid-user',
+            details={
+                'user_id': user_id
+            }
+        )
 
 
-class UserHasNoLine(ValueError):
-    pass
+class UserHasNoLine(APIException):
+
+    def __init__(self, user_id):
+        super(UserHasNoLine, self).__init__(
+            status_code=400,
+            message='Invalid user: user has no line',
+            error_id='user-has-no-line',
+            details={
+                'user_id': user_id
+            }
+        )

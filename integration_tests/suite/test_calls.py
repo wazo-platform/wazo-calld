@@ -494,3 +494,30 @@ class TestConnectUser(IntegrationTest):
             }))))
 
         until.assert_(assert_function, tries=5)
+
+    def test_given_no_user_when_connect_user_then_400(self):
+        self.set_ari_channels(MockChannel(id='call-id'))
+
+        result = self.put_call_user_result('call-id', 'user-id', token=VALID_TOKEN)
+
+        assert_that(result.status_code, equal_to(400))
+        assert_that(result.json(), has_entry('message', contains_string('user')))
+
+    def test_given_user_has_no_line_when_connect_user_then_400(self):
+        self.set_ari_channels(MockChannel(id='call-id'))
+        self.set_confd_users(MockUser(id='user-id', uuid='user-uuid'))
+
+        result = self.put_call_user_result('call-id', 'user-id', token=VALID_TOKEN)
+
+        assert_that(result.status_code, equal_to(400))
+        assert_that(result.json(), has_entry('message', contains_string('user')))
+
+    def test_given_no_call_when_connect_user_then_404(self):
+        self.set_confd_users(MockUser(id='user-id', uuid='user-uuid'))
+        self.set_confd_lines(MockLine(id='line-id', name='line-name', protocol='sip'))
+        self.set_confd_user_lines({'user-id': [MockUserLine('user-id', 'line-id')]})
+
+        result = self.put_call_user_result('call-id', 'user-id', token=VALID_TOKEN)
+
+        assert_that(result.status_code, equal_to(404))
+        assert_that(result.json(), has_entry('message', contains_string('call')))

@@ -11,7 +11,6 @@ from xivo_confd_client import Client as ConfdClient
 
 from .call import Call
 from .exceptions import AsteriskARIUnreachable
-from .exceptions import CallCreationError
 from .exceptions import InvalidUserUUID
 from .exceptions import NoSuchCall
 from .exceptions import UserHasNoLine
@@ -93,12 +92,7 @@ class CallsService(object):
 
     def originate(self, request):
         source_user = request['source']['user']
-        try:
-            endpoint = self._endpoint_from_user_uuid(source_user)
-        except InvalidUserUUID:
-            raise CallCreationError('Wrong source user', {'source': {'user': source_user}})
-        except UserHasNoLine:
-            raise CallCreationError('User has no line', {'source': {'user': source_user}})
+        endpoint = self._endpoint_from_user_uuid(source_user)
 
         with new_ari_client(self._ari_config) as ari:
             try:
@@ -152,6 +146,14 @@ class CallsService(object):
     def connect_user(self, call_id, user_id):
         channel_id = call_id
         endpoint = self._endpoint_from_user_uuid(user_id)
+
+        with new_ari_client(self._ari_config) as ari:
+            try:
+                ari.channels.get(channelId=channel_id)
+            except requests.HTTPError as e:
+                if e.response is not None and e.response.status_code == 404:
+                    raise NoSuchCall(channel_id)
+
         with new_ari_client(self._ari_config) as ari:
             new_channel = ari.channels.originate(endpoint=endpoint,
                                                  app='callcontrol',

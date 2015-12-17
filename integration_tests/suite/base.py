@@ -61,7 +61,6 @@ class IntegrationTest(AssetLaunchingTestCase):
 
     @classmethod
     def post_call_result(cls, source, priority, extension, context, variables=None, token=None):
-        url = u'https://localhost:9500/1.0/calls'
         body = {
             'source': {
                 'user': source,
@@ -114,7 +113,7 @@ class IntegrationTest(AssetLaunchingTestCase):
         return result
 
     @classmethod
-    def put_call_user(cls, call_id, user_id, token):
+    def put_call_user_result(cls, call_id, user_id, token):
         url = u'https://localhost:9500/1.0/calls/{call_id}/user/{user_id}'
         result = requests.put(url.format(call_id=call_id, user_id=user_id),
                               headers={'X-Auth-Token': token},
@@ -123,7 +122,7 @@ class IntegrationTest(AssetLaunchingTestCase):
 
     @classmethod
     def connect_user(cls, call_id, user_id):
-        response = cls.put_call_user(call_id, user_id, token=VALID_TOKEN)
+        response = cls.put_call_user_result(call_id, user_id, token=VALID_TOKEN)
         assert_that(response.status_code, equal_to(200))
         return response.json()
 
