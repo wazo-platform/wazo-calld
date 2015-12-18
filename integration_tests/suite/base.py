@@ -206,7 +206,7 @@ class IntegrationTest(AssetLaunchingTestCase):
         return requests.get(url).json()
 
     @classmethod
-    def answer_connect(cls, from_, new_call_id):
+    def event_answer_connect(cls, from_, new_call_id):
         url = 'http://localhost:5039/_send_ws_event'
         body = {
             "application": "my-app",
@@ -237,6 +237,39 @@ class IntegrationTest(AssetLaunchingTestCase):
             },
             "timestamp": "2015-12-16T15:14:04.269-0500",
             "type": "StasisStart"
+        }
+
+        response = requests.post(url, json=body)
+        assert_that(response.status_code, equal_to(201))
+
+    @classmethod
+    def event_hangup(cls, call_id):
+        url = 'http://localhost:5039/_send_ws_event'
+        body = {
+            "application": "callcontrol",
+            "channel": {
+                "accountcode": "code",
+                "caller": {
+                    "name": "my-name",
+                    "number": "my-number"
+                },
+                "connected": {
+                    "name": "",
+                    "number": ""
+                },
+                "creationtime": "2015-12-18T15:40:32.439-0500",
+                "dialplan": {
+                    "context": "default",
+                    "exten": "my-exten",
+                    "priority": 1
+                },
+                "id": call_id,
+                "language": "fr_FR",
+                "name": "my-name",
+                "state": "Ring"
+            },
+            "timestamp": "2015-12-18T15:40:39.073-0500",
+            "type": "StasisEnd"
         }
 
         response = requests.post(url, json=body)

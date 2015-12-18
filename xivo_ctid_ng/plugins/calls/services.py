@@ -6,7 +6,6 @@ import logging
 import requests
 
 from contextlib import contextmanager
-
 from xivo_confd_client import Client as ConfdClient
 
 from .call import Call
@@ -34,9 +33,10 @@ def new_ari_client(config):
 
 class CallsService(object):
 
-    def __init__(self, ari_config, confd_config):
+    def __init__(self, ari_config, confd_config, callcontrol):
         self._ari_config = ari_config
         self._confd_config = confd_config
+        self._callcontrol = callcontrol
 
     def set_confd_token(self, confd_token):
         self._confd_config['token'] = confd_token
@@ -147,18 +147,24 @@ class CallsService(object):
         channel_id = call_id
         endpoint = self._endpoint_from_user_uuid(user_id)
 
-        with new_ari_client(self._ari_config) as ari:
-            try:
-                ari.channels.get(channelId=channel_id)
-            except requests.HTTPError as e:
-                if e.response is not None and e.response.status_code == 404:
-                    raise NoSuchCall(channel_id)
+        ari = self._callcontrol.ari
+        try:
+            channel = ari.channels.get(channelId=channel_id)
+        except requests.HTTPError as e:
+            if e.response is not None and e.response.status_code == 404:
+                raise NoSuchCall(channel_id)
 
-        with new_ari_client(self._ari_config) as ari:
-            new_channel = ari.channels.originate(endpoint=endpoint,
-                                                 app='callcontrol',
-                                                 appArgs=['dialed_from', channel_id])
-            return new_channel.id
+        new_channel = ari.channels.originate(endpoint=endpoint,
+                                             app='callcontrol',
+                                             appArgs=['dialed_from', channel_id])
+
+        # if the caller hangs up, we cancel our originate
+        originate_canceller = channel.on_event('StasisEnd', lambda _, __: self.hangup(new_channel.id))
+        # if the callee accepts, we don't have to cancel anything
+        new_channel.on_event('StasisStart', lambda _, __: originate_canceller.close())
+        # if the callee refuses, leave the caller as it is
+
+        return new_channel.id
 
     def _endpoint_from_user_uuid(self, uuid):
         with new_confd_client(self._confd_config) as confd:

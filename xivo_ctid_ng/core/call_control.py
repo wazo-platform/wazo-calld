@@ -28,21 +28,21 @@ class CoreCallControl(object):
 
     def __init__(self, config):
         try:
-            self.client = ari.connect(**config['connection'])
+            self.ari = ari.connect(**config['connection'])
         except requests.ConnectionError:
             logger.critical('ARI config: %s', config['connection'])
             raise ARIUnreachable()
-        self.callcontrol = CallControl(self.client)
+        self.callcontrol = CallControl(self.ari)
 
     def run(self):
         try:
-            self.client.run(apps=['callcontrol'])
+            self.ari.run(apps=['callcontrol'])
         except socket.error as e:
             logger.error('Error while listening for ARI events: %s', e)  # bug in ari-py when calling client.close()
 
     def stop(self):
         try:
-            self.client.close()
+            self.ari.close()
         except RuntimeError:
             pass  # bug in ari-py when calling client.close()
 

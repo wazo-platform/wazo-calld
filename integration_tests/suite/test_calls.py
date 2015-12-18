@@ -3,8 +3,6 @@
 # SPDX-License-Identifier: GPL-3.0+
 
 
-import time
-
 from hamcrest import assert_that
 from hamcrest import contains
 from hamcrest import contains_inanyorder
@@ -480,25 +478,11 @@ class TestConnectUser(IntegrationTest):
         assert_that(new_call, has_entries({
             'call_id': 'new-call-id'
         }))
-
-        self.answer_connect(from_='call-id', new_call_id='new-call-id')
-
-        def assert_function():
-            assert_that(self.ari_requests(), has_entry('requests', has_items(has_entries({
-                'method': 'POST',
-                'path': '/ari/bridges/bridge-id/addChannel',
-                'query': [['channel', 'call-id']],
-            }), has_entries({
-                'method': 'POST',
-                'path': '/ari/bridges/bridge-id/addChannel',
-                'query': [['channel', 'new-call-id']],
-            }), has_entries({
-                'method': 'POST',
-                'path': '/ari/bridges',
-                'query': [['type', 'mixing']],
-            }))))
-
-        until.assert_(assert_function, tries=5)
+        assert_that(self.ari_requests(), has_entry('requests', has_items(has_entries({
+            'method': 'POST',
+            'path': '/ari/channels',
+            'query': contains_inanyorder(['app', 'callcontrol'], ['endpoint', 'sip/line-name'], ['appArgs', 'dialed_from,call-id']),
+        }))))
 
     def test_given_no_user_when_connect_user_then_400(self):
         self.set_ari_channels(MockChannel(id='call-id'))

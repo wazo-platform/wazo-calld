@@ -8,9 +8,10 @@ from threading import Thread
 from xivo.auth_helpers import TokenRenewer
 from xivo_auth_client import Client as AuthClient
 
+from xivo_ctid_ng.core import plugin_manager
 from xivo_ctid_ng.core.bus import CoreBus
 from xivo_ctid_ng.core.call_control import CoreCallControl
-from xivo_ctid_ng.core.rest_api import CoreRestApi
+from xivo_ctid_ng.core.rest_api import api, CoreRestApi
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +25,8 @@ class Controller(object):
         self.token_renewer = TokenRenewer(auth_client)
         self.bus = CoreBus(config['bus'])
         self.call_control = CoreCallControl(config['ari'])
-        self.rest_api = CoreRestApi(config, self.token_renewer.subscribe_to_token_change)
+        self.rest_api = CoreRestApi(config)
+        self._load_plugins(config)
 
     def run(self):
         logger.info('xivo-ctid-ng starting...')
@@ -41,3 +43,12 @@ class Controller(object):
             self.call_control.stop()
             bus_thread.join()
             callcontrol_thread.join()
+
+    def _load_plugins(self, global_config):
+        load_args = [{
+            'config': global_config,
+            'api': api,
+            'token_changed_subscribe': self.token_renewer.subscribe_to_token_change,
+            'call_control': self.call_control,
+        }]
+        plugin_manager.load_plugins(global_config['enabled_plugins'], load_args)

@@ -13,10 +13,11 @@ class Plugin(object):
 
     def load(self, dependencies):
         api = dependencies['api']
+        callcontrol = dependencies['call_control']
         token_changed_subscribe = dependencies['token_changed_subscribe']
         config = dependencies['config']
 
-        calls_service = CallsService(ari_config=config['ari']['connection'], confd_config=config['confd'])
+        calls_service = CallsService(config['ari']['connection'], config['confd'], callcontrol)
         token_changed_subscribe(calls_service.set_confd_token)
 
         api.add_resource(CallsResource, '/calls', resource_class_args=[calls_service])
