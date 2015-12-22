@@ -1,7 +1,6 @@
 # Copyright 2015 by Avencall
 # SPDX-License-Identifier: GPL-3.0+
 
-import ari
 import logging
 import requests
 
@@ -25,14 +24,6 @@ def new_confd_client(config):
     yield ConfdClient(**config)
 
 
-@contextmanager
-def new_ari_client(config):
-    try:
-        yield ari.connect(**config)
-    except requests.ConnectionError as e:
-        raise AsteriskARIUnreachable(config, e)
-
-
 class CallsService(object):
 
     def __init__(self, ari_config, confd_config, ari):
@@ -45,103 +36,103 @@ class CallsService(object):
 
     def list_calls(self, application_filter=None, application_instance_filter=None):
         calls = []
-        with new_ari_client(self._ari_config) as ari:
+        ari = self._ari.client
+        try:
+            channels = ari.channels.list()
+        except requests.RequestException as e:
+            raise AsteriskARIUnreachable(self._ari_config, e)
+
+        if application_filter:
             try:
-                channels = ari.channels.list()
-            except requests.RequestException as e:
-                raise AsteriskARIUnreachable(self._ari_config, e)
+                channel_ids = ari.applications.get(applicationName=application_filter)['channel_ids']
+            except requests.HTTPError as e:
+                if e.response is not None and e.response.status_code == 404:
+                    channel_ids = []
+                else:
+                    raise
 
-            if application_filter:
-                try:
-                    channel_ids = ari.applications.get(applicationName=application_filter)['channel_ids']
-                except requests.HTTPError as e:
-                    if e.response is not None and e.response.status_code == 404:
-                        channel_ids = []
-                    else:
+            channels = [channel for channel in channels if channel.id in channel_ids]
+
+            if application_instance_filter:
+                app_instance_channels = []
+                for channel in channels:
+                    try:
+                        channel_app_instance = ari.channels.getChannelVar(channelId=channel.id, variable='XIVO_STASIS_ARGS')['value']
+                    except requests.HTTPError as e:
+                        if e.response is not None and e.response.status_code == 404:
+                            continue
                         raise
+                    if channel_app_instance == application_instance_filter:
+                        app_instance_channels.append(channel)
+                channels = app_instance_channels
 
-                channels = [channel for channel in channels if channel.id in channel_ids]
+        for channel in channels:
+            result_call = Call(channel.id, channel.json['creationtime'])
+            result_call.status = channel.json['state']
+            result_call.caller_id_name = channel.json['caller']['name']
+            result_call.caller_id_number = channel.json['caller']['number']
+            result_call.user_uuid = self._get_uuid_from_channel_id(ari, channel.id)
+            result_call.bridges = [bridge.id for bridge in ari.bridges.list() if channel.id in bridge.json['channels']]
 
-                if application_instance_filter:
-                    app_instance_channels = []
-                    for channel in channels:
-                        try:
-                            channel_app_instance = ari.channels.getChannelVar(channelId=channel.id, variable='XIVO_STASIS_ARGS')['value']
-                        except requests.HTTPError as e:
-                            if e.response is not None and e.response.status_code == 404:
-                                continue
-                            raise
-                        if channel_app_instance == application_instance_filter:
-                            app_instance_channels.append(channel)
-                    channels = app_instance_channels
+            result_call.talking_to = dict()
+            for channel_id in self._get_channel_ids_from_bridges(ari, result_call.bridges):
+                talking_to_user_uuid = self._get_uuid_from_channel_id(ari, channel_id)
+                result_call.talking_to[channel_id] = talking_to_user_uuid
+            result_call.talking_to.pop(channel.id, None)
 
-            for channel in channels:
-                result_call = Call(channel.id, channel.json['creationtime'])
-                result_call.status = channel.json['state']
-                result_call.caller_id_name = channel.json['caller']['name']
-                result_call.caller_id_number = channel.json['caller']['number']
-                result_call.user_uuid = self._get_uuid_from_channel_id(ari, channel.id)
-                result_call.bridges = [bridge.id for bridge in ari.bridges.list() if channel.id in bridge.json['channels']]
-
-                result_call.talking_to = dict()
-                for channel_id in self._get_channel_ids_from_bridges(ari, result_call.bridges):
-                    talking_to_user_uuid = self._get_uuid_from_channel_id(ari, channel_id)
-                    result_call.talking_to[channel_id] = talking_to_user_uuid
-                result_call.talking_to.pop(channel.id, None)
-
-                calls.append(result_call)
+            calls.append(result_call)
         return calls
 
     def originate(self, request):
         source_user = request['source']['user']
         endpoint = self._endpoint_from_user_uuid(source_user)
 
-        with new_ari_client(self._ari_config) as ari:
-            try:
-                channel = ari.channels.originate(endpoint=endpoint,
-                                                 extension=request['destination']['extension'],
-                                                 context=request['destination']['context'],
-                                                 priority=request['destination']['priority'],
-                                                 variables={'variables': request.get('variables', {})})
-                return channel.id
-            except requests.RequestException as e:
-                raise AsteriskARIUnreachable(self._ari_config, e)
+        ari = self._ari.client
+        try:
+            channel = ari.channels.originate(endpoint=endpoint,
+                                             extension=request['destination']['extension'],
+                                             context=request['destination']['context'],
+                                             priority=request['destination']['priority'],
+                                             variables={'variables': request.get('variables', {})})
+            return channel.id
+        except requests.RequestException as e:
+            raise AsteriskARIUnreachable(self._ari_config, e)
 
     def get(self, call_id):
         channel_id = call_id
-        with new_ari_client(self._ari_config) as ari:
-            try:
-                channel = ari.channels.get(channelId=channel_id)
-            except requests.HTTPError as e:
-                if e.response is not None and e.response.status_code == 404:
-                    raise NoSuchCall(channel_id)
-                raise AsteriskARIUnreachable(self._ari_config, e)
+        ari = self._ari.client
+        try:
+            channel = ari.channels.get(channelId=channel_id)
+        except requests.HTTPError as e:
+            if e.response is not None and e.response.status_code == 404:
+                raise NoSuchCall(channel_id)
+            raise AsteriskARIUnreachable(self._ari_config, e)
 
-            result = Call(channel.id, channel.json['creationtime'])
-            result.status = channel.json['state']
-            result.caller_id_name = channel.json['caller']['name']
-            result.caller_id_number = channel.json['caller']['number']
-            result.user_uuid = self._get_uuid_from_channel_id(ari, channel_id)
-            result.bridges = [bridge.id for bridge in ari.bridges.list() if channel.id in bridge.json['channels']]
-            result.talking_to = dict()
-            for bridge_id in result.bridges:
-                talking_to_channel_ids = ari.bridges.get(bridgeId=bridge_id).json['channels']
-                for talking_to_channel_id in talking_to_channel_ids:
-                    talking_to_user_uuid = self._get_uuid_from_channel_id(ari, talking_to_channel_id)
-                    result.talking_to[talking_to_channel_id] = talking_to_user_uuid
-            result.talking_to.pop(channel_id, None)
+        result = Call(channel.id, channel.json['creationtime'])
+        result.status = channel.json['state']
+        result.caller_id_name = channel.json['caller']['name']
+        result.caller_id_number = channel.json['caller']['number']
+        result.user_uuid = self._get_uuid_from_channel_id(ari, channel_id)
+        result.bridges = [bridge.id for bridge in ari.bridges.list() if channel.id in bridge.json['channels']]
+        result.talking_to = dict()
+        for bridge_id in result.bridges:
+            talking_to_channel_ids = ari.bridges.get(bridgeId=bridge_id).json['channels']
+            for talking_to_channel_id in talking_to_channel_ids:
+                talking_to_user_uuid = self._get_uuid_from_channel_id(ari, talking_to_channel_id)
+                result.talking_to[talking_to_channel_id] = talking_to_user_uuid
+        result.talking_to.pop(channel_id, None)
 
         return result
 
     def hangup(self, call_id):
         channel_id = call_id
-        with new_ari_client(self._ari_config) as ari:
-            try:
-                ari.channels.get(channelId=channel_id)
-            except requests.HTTPError as e:
-                if e.response is not None and e.response.status_code == 404:
-                    raise NoSuchCall(channel_id)
-                raise AsteriskARIUnreachable(self._ari_config, e)
+        ari = self._ari.client
+        try:
+            ari.channels.get(channelId=channel_id)
+        except requests.HTTPError as e:
+            if e.response is not None and e.response.status_code == 404:
+                raise NoSuchCall(channel_id)
+            raise AsteriskARIUnreachable(self._ari_config, e)
 
         ari.channels.hangup(channelId=channel_id)
 
