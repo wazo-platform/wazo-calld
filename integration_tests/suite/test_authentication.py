@@ -2,7 +2,6 @@
 # Copyright 2015 by Avencall
 # SPDX-License-Identifier: GPL-3.0+
 
-
 from .base import IntegrationTest
 from .base import INVALID_ACL_TOKEN, VALID_TOKEN
 
