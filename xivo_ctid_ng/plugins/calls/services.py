@@ -24,6 +24,10 @@ def new_confd_client(config):
     yield ConfdClient(**config)
 
 
+def not_found(error):
+    return error.response is not None and error.response.status_code == 404
+
+
 class CallsService(object):
 
     def __init__(self, ari_config, confd_config, ari):
@@ -46,7 +50,7 @@ class CallsService(object):
             try:
                 channel_ids = ari.applications.get(applicationName=application_filter)['channel_ids']
             except requests.HTTPError as e:
-                if e.response is not None and e.response.status_code == 404:
+                if not_found(e):
                     channel_ids = []
                 else:
                     raise
@@ -59,7 +63,7 @@ class CallsService(object):
                     try:
                         channel_app_instance = ari.channels.getChannelVar(channelId=channel.id, variable='XIVO_STASIS_ARGS')['value']
                     except requests.HTTPError as e:
-                        if e.response is not None and e.response.status_code == 404:
+                        if not_found(e):
                             continue
                         raise
                     if channel_app_instance == application_instance_filter:
@@ -104,7 +108,7 @@ class CallsService(object):
         try:
             channel = ari.channels.get(channelId=channel_id)
         except requests.HTTPError as e:
-            if e.response is not None and e.response.status_code == 404:
+            if not_found(e):
                 raise NoSuchCall(channel_id)
             raise AsteriskARIUnreachable(self._ari_config, e)
 
@@ -130,7 +134,7 @@ class CallsService(object):
         try:
             ari.channels.get(channelId=channel_id)
         except requests.HTTPError as e:
-            if e.response is not None and e.response.status_code == 404:
+            if not_found(e):
                 raise NoSuchCall(channel_id)
             raise AsteriskARIUnreachable(self._ari_config, e)
 
@@ -144,7 +148,7 @@ class CallsService(object):
         try:
             channel = ari.channels.get(channelId=channel_id)
         except requests.HTTPError as e:
-            if e.response is not None and e.response.status_code == 404:
+            if not_found(e):
                 raise NoSuchCall(channel_id)
 
         new_channel = ari.channels.originate(endpoint=endpoint,
@@ -165,7 +169,7 @@ class CallsService(object):
                 user_id = confd.users.get(uuid)['id']
                 user_lines_of_user = confd.users.relations(user_id).list_lines()['items']
             except requests.HTTPError as e:
-                if e.response is not None and e.response.status_code == 404:
+                if not_found(e):
                     raise InvalidUserUUID(uuid)
                 raise
             except requests.RequestException as e:
@@ -187,7 +191,7 @@ class CallsService(object):
         try:
             user_id = ari.channels.getChannelVar(channelId=channel_id, variable='XIVO_USERID')['value']
         except requests.HTTPError as e:
-            if e.response is not None and e.response.status_code == 404:
+            if not_found(e):
                 return None
             raise
 
