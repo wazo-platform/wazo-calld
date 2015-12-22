@@ -8,6 +8,8 @@ import requests
 from contextlib import contextmanager
 from xivo_confd_client import Client as ConfdClient
 
+from xivo_ctid_ng.core.ari_ import APPLICATION_NAME
+
 from .call import Call
 from .exceptions import AsteriskARIUnreachable
 from .exceptions import InvalidUserUUID
@@ -33,10 +35,10 @@ def new_ari_client(config):
 
 class CallsService(object):
 
-    def __init__(self, ari_config, confd_config, callcontrol):
+    def __init__(self, ari_config, confd_config, ari):
         self._ari_config = ari_config
         self._confd_config = confd_config
-        self._callcontrol = callcontrol
+        self._ari = ari
 
     def set_confd_token(self, confd_token):
         self._confd_config['token'] = confd_token
@@ -147,7 +149,7 @@ class CallsService(object):
         channel_id = call_id
         endpoint = self._endpoint_from_user_uuid(user_id)
 
-        ari = self._callcontrol.ari
+        ari = self._ari.client
         try:
             channel = ari.channels.get(channelId=channel_id)
         except requests.HTTPError as e:
@@ -155,7 +157,7 @@ class CallsService(object):
                 raise NoSuchCall(channel_id)
 
         new_channel = ari.channels.originate(endpoint=endpoint,
-                                             app='callcontrol',
+                                             app=APPLICATION_NAME,
                                              appArgs=['dialed_from', channel_id])
 
         # if the caller hangs up, we cancel our originate

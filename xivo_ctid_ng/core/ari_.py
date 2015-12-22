@@ -23,43 +23,26 @@ from .exceptions import ARIUnreachable
 
 logger = logging.getLogger(__name__)
 
+APPLICATION_NAME = 'callcontrol'
 
-class CoreCallControl(object):
+
+class CoreARI(object):
 
     def __init__(self, config):
         try:
-            self.ari = ari.connect(**config['connection'])
+            self.client = ari.connect(**config['connection'])
         except requests.ConnectionError:
             logger.critical('ARI config: %s', config['connection'])
             raise ARIUnreachable()
-        self.callcontrol = CallControl(self.ari)
 
     def run(self):
         try:
-            self.ari.run(apps=['callcontrol'])
+            self.client.run(apps=[APPLICATION_NAME])
         except socket.error as e:
             logger.error('Error while listening for ARI events: %s', e)  # bug in ari-py when calling client.close()
 
     def stop(self):
         try:
-            self.ari.close()
+            self.client.close()
         except RuntimeError:
             pass  # bug in ari-py when calling client.close()
-
-
-class CallControl(object):
-
-    def __init__(self, ari_client):
-        self.ari = ari_client
-        self.ari.on_channel_event('StasisStart', self.on_channel_event_start)
-
-    def on_channel_event_start(self, event_objects, event):
-        if not event.get('args'):
-            return
-
-        if event['args'][0] == 'dialed_from':
-            originator_channel_id = event['args'][1]
-            this_channel_id = event_objects['channel'].id
-            bridge = self.ari.bridges.create(type='mixing')
-            bridge.addChannel(channel=originator_channel_id)
-            bridge.addChannel(channel=this_channel_id)

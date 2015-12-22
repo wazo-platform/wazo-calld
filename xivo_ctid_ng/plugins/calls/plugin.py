@@ -7,18 +7,22 @@ from .resources import CallResource
 from .resources import CallsResource
 from .resources import ConnectCallToUserResource
 from .services import CallsService
+from .stasis import CallsStasis
 
 
 class Plugin(object):
 
     def load(self, dependencies):
         api = dependencies['api']
-        callcontrol = dependencies['call_control']
+        ari = dependencies['ari']
         token_changed_subscribe = dependencies['token_changed_subscribe']
         config = dependencies['config']
 
-        calls_service = CallsService(config['ari']['connection'], config['confd'], callcontrol)
+        calls_service = CallsService(config['ari']['connection'], config['confd'], ari)
         token_changed_subscribe(calls_service.set_confd_token)
+
+        calls_stasis = CallsStasis(ari.client)
+        calls_stasis.subscribe()
 
         api.add_resource(CallsResource, '/calls', resource_class_args=[calls_service])
         api.add_resource(CallResource, '/calls/<call_id>', resource_class_args=[calls_service])
