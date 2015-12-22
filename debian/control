@@ -3,7 +3,7 @@ Section: python
 Priority: extra
 Maintainer: XiVO Dev Team <dev@avencall.com>
 Uploaders: XiVO Builder Team <release@xivo.io>
-Build-Depends: debhelper (>= 8), dh-python, python-all (>= 2.7), python-setuptools
+Build-Depends: debhelper (>= 9), dh-python, python-all (>= 2.7), python-setuptools
 Standards-Version: 3.9.4
 X-Python-Version: >= 2.7
 Homepage: http://xivo.io/
