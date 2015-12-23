@@ -5,6 +5,7 @@
 import os
 import logging
 import requests
+import yaml
 
 from hamcrest import assert_that, equal_to
 from requests.packages import urllib3
@@ -17,6 +18,7 @@ urllib3.disable_warnings()
 ASSET_ROOT = os.path.join(os.path.dirname(__file__), '..', 'assets')
 INVALID_ACL_TOKEN = 'invalid-acl-token'
 VALID_TOKEN = 'valid-token'
+XIVO_UUID = yaml.load(open(os.path.join(ASSET_ROOT, '_common', 'etc', 'xivo-ctid-ng', 'conf.d', 'uuid.yml'), 'r'))['uuid']
 
 
 class IntegrationTest(AssetLaunchingTestCase):
