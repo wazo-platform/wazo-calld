@@ -32,5 +32,5 @@ ctid-ng:
 
 rabbitmq:
   image: rabbitmq
-  expose:
-    - "5672"
+  ports:
+    - "5672:5672"
