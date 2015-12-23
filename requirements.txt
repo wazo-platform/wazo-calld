@@ -1,14 +1,14 @@
-ari
 git+https://github.com/digium/swagger-py.git  # the release 0.2.1 has blocking bugs, so we need master
 git+https://github.com/xivo-pbx/xivo-auth-client.git
 git+https://github.com/xivo-pbx/xivo-confd-client.git
 git+https://github.com/xivo-pbx/xivo-lib-python.git
 git+https://github.com/xivo-pbx/xivo-lib-rest-client.git
-cherrypy
+ari==0.1.3
+cherrypy==3.7.0
 flask==0.10.1
 flask-restful==0.3.4
 flask-cors==1.10.3
-kombu
+kombu==3.0.26
 pyyaml==3.10
 requests==2.4.3
 stevedore==0.14.1
