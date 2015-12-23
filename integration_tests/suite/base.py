@@ -19,6 +19,7 @@ ASSET_ROOT = os.path.join(os.path.dirname(__file__), '..', 'assets')
 INVALID_ACL_TOKEN = 'invalid-acl-token'
 VALID_TOKEN = 'valid-token'
 XIVO_UUID = yaml.load(open(os.path.join(ASSET_ROOT, '_common', 'etc', 'xivo-ctid-ng', 'conf.d', 'uuid.yml'), 'r'))['uuid']
+STASIS_APP_NAME = 'callcontrol'
 
 
 class IntegrationTest(AssetLaunchingTestCase):
@@ -210,7 +211,7 @@ class IntegrationTest(AssetLaunchingTestCase):
     def event_answer_connect(cls, from_, new_call_id):
         url = 'http://localhost:5039/_send_ws_event'
         body = {
-            "application": "my-app",
+            "application": STASIS_APP_NAME,
             "args": [
                 "dialed_from",
                 from_
@@ -244,10 +245,10 @@ class IntegrationTest(AssetLaunchingTestCase):
         assert_that(response.status_code, equal_to(201))
 
     @classmethod
-    def event_hangup(cls, call_id):
+    def event_hangup(cls, channel_id):
         url = 'http://localhost:5039/_send_ws_event'
         body = {
-            "application": "callcontrol",
+            "application": STASIS_APP_NAME,
             "channel": {
                 "accountcode": "code",
                 "caller": {
@@ -264,7 +265,7 @@ class IntegrationTest(AssetLaunchingTestCase):
                     "exten": "my-exten",
                     "priority": 1
                 },
-                "id": call_id,
+                "id": channel_id,
                 "language": "fr_FR",
                 "name": "my-name",
                 "state": "Ring"
