@@ -277,6 +277,11 @@ class IntegrationTest(AssetLaunchingTestCase):
         assert_that(response.status_code, equal_to(201))
 
 
+    @classmethod
+    def new_call_id(cls):
+        return format(time.time(), '.2f')
+
+
 class MockApplication(object):
 
     def __init__(self, name, channels=None):

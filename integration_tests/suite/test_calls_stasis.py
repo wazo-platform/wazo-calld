@@ -25,19 +25,21 @@ class TestDialedFrom(IntegrationTest):
         self.reset_confd()
 
     def test_given_dialed_from_when_answer_then_the_two_are_talking(self):
-        self.set_ari_channels(MockChannel(id='call-id'), MockChannel(id='new-call-id'))
+        call_id = self.new_call_id()
+        new_call_id = self.new_call_id()
+        self.set_ari_channels(MockChannel(id=call_id), MockChannel(id=new_call_id))
 
-        self.event_answer_connect(from_='call-id', new_call_id='new-call-id')
+        self.event_answer_connect(from_=call_id, new_call_id=new_call_id)
 
         def assert_function():
             assert_that(self.ari_requests(), has_entry('requests', has_items(has_entries({
                 'method': 'POST',
                 'path': '/ari/bridges/bridge-id/addChannel',
-                'query': [['channel', 'call-id']],
+                'query': [['channel', call_id]],
             }), has_entries({
                 'method': 'POST',
                 'path': '/ari/bridges/bridge-id/addChannel',
-                'query': [['channel', 'new-call-id']],
+                'query': [['channel', new_call_id]],
             }), has_entries({
                 'method': 'POST',
                 'path': '/ari/bridges',
@@ -47,22 +49,24 @@ class TestDialedFrom(IntegrationTest):
         until.assert_(assert_function, tries=5)
 
     def test_given_dialed_from_when_originator_hangs_up_then_user_stops_ringing(self):
-        self.set_ari_channels(MockChannel(id='call-id'),
-                              MockChannel(id='new-call-id', ))
-        self.set_ari_channel_variable({'new-call-id': {'XIVO_USERID': 'user-id'}})
+        call_id = self.new_call_id()
+        new_call_id = self.new_call_id()
+        self.set_ari_channels(MockChannel(id=call_id),
+                              MockChannel(id=new_call_id, ))
+        self.set_ari_channel_variable({new_call_id: {'XIVO_USERID': 'user-id'}})
         self.set_confd_users(MockUser(id='user-id', uuid='user-uuid'))
         self.set_confd_lines(MockLine(id='line-id', name='line-name', protocol='sip'))
         self.set_confd_user_lines({'user-id': [MockUserLine('user-id', 'line-id')]})
-        self.set_ari_originates(MockChannel(id='new-call-id'))
+        self.set_ari_originates(MockChannel(id=new_call_id))
 
-        self.connect_user('call-id', 'user-id')
+        self.connect_user(call_id, 'user-id')
 
-        self.event_hangup('call-id')
+        self.event_hangup(call_id)
 
         def assert_function():
             assert_that(self.ari_requests(), has_entry('requests', has_items(has_entries({
                 'method': 'DELETE',
-                'path': '/ari/channels/new-call-id',
+                'path': '/ari/channels/{call_id}'.format(call_id=new_call_id),
             }))))
 
         until.assert_(assert_function, tries=5)
