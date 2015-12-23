@@ -39,7 +39,7 @@ class Controller(object):
                 self.rest_api.run()
         finally:
             logger.info('xivo-ctid-ng stopping...')
-            self.bus.should_stop = True
+            self.bus.stop()
             self.ari.stop()
             bus_thread.join()
             ari_thread.join()
