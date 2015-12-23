@@ -3,11 +3,18 @@
 # SPDX-License-Identifier: GPL-3.0+
 
 import os
+import json
 import logging
 import requests
+import time
 import yaml
 
 from hamcrest import assert_that, equal_to
+from kombu import Connection
+from kombu import Consumer
+from kombu import Exchange
+from kombu import Queue
+from kombu.exceptions import TimeoutError
 from requests.packages import urllib3
 from xivo_test_helpers.asset_launching_test_case import AssetLaunchingTestCase
 
@@ -18,6 +25,10 @@ urllib3.disable_warnings()
 ASSET_ROOT = os.path.join(os.path.dirname(__file__), '..', 'assets')
 INVALID_ACL_TOKEN = 'invalid-acl-token'
 VALID_TOKEN = 'valid-token'
+BUS_EXCHANGE_NAME = 'xivo'
+BUS_EXCHANGE_TYPE = 'topic'
+BUS_URL = 'amqp://guest:guest@localhost:5672//'
+BUS_QUEUE_NAME = 'integration'
 XIVO_UUID = yaml.load(open(os.path.join(ASSET_ROOT, '_common', 'etc', 'xivo-ctid-ng', 'conf.d', 'uuid.yml'), 'r'))['uuid']
 STASIS_APP_NAME = 'callcontrol'
 
@@ -277,6 +288,98 @@ class IntegrationTest(AssetLaunchingTestCase):
         response = requests.post(url, json=body)
         assert_that(response.status_code, equal_to(201))
 
+    @classmethod
+    def event_new_channel(cls, channel_id):
+        url = 'http://localhost:5039/_send_ws_event'
+        body = {
+            "application": STASIS_APP_NAME,
+            "args": [],
+            "channel": {
+                "accountcode": "",
+                "caller": {
+                    "name": "my-name",
+                    "number": "my-number"
+                },
+                "connected": {
+                    "name": "",
+                    "number": ""
+                },
+                "creationtime": "2015-12-16T15:13:59.526-0500",
+                "dialplan": {
+                    "context": "default",
+                    "exten": "",
+                    "priority": 1
+                },
+                "id": channel_id,
+                "language": "en_US",
+                "name": "SIP/my-sip-00000020",
+                "state": "Up"
+            },
+            "timestamp": "2015-12-16T15:14:04.269-0500",
+            "type": "StasisStart"
+        }
+
+        response = requests.post(url, json=body)
+        assert_that(response.status_code, equal_to(201))
+
+    @classmethod
+    def event_channel_updated(cls, channel_id, state='Ring'):
+        url = 'http://localhost:5039/_send_ws_event'
+        body = {
+            "application": STASIS_APP_NAME,
+            "channel": {
+                "accountcode": "code",
+                "caller": {
+                    "name": "my-name",
+                    "number": "my-number"
+                },
+                "connected": {
+                    "name": "",
+                    "number": ""
+                },
+                "creationtime": "2015-12-18T15:40:32.439-0500",
+                "dialplan": {
+                    "context": "default",
+                    "exten": "my-exten",
+                    "priority": 1
+                },
+                "id": channel_id,
+                "language": "fr_FR",
+                "name": "my-name",
+                "state": state
+            },
+            "timestamp": "2015-12-18T15:40:39.073-0500",
+            "type": "ChannelStateChange"
+        }
+
+        response = requests.post(url, json=body)
+        assert_that(response.status_code, equal_to(201))
+
+    @classmethod
+    def listen_bus_events(cls, routing_key):
+        exchange = Exchange(BUS_EXCHANGE_NAME, type=BUS_EXCHANGE_TYPE)
+        with Connection(BUS_URL) as conn:
+            queue = Queue(BUS_QUEUE_NAME, exchange=exchange, routing_key=routing_key, channel=conn.channel())
+            queue.declare()
+            queue.purge()
+            cls.bus_queue = queue
+
+    @classmethod
+    def bus_events(cls):
+        events = []
+
+        def on_event(body, message):
+            events.append(json.loads(body))
+            message.ack()
+
+        with Connection(BUS_URL) as conn:
+            with Consumer(conn, cls.bus_queue, callbacks=[on_event]):
+                try:
+                    conn.drain_events(timeout=0.5)
+                except TimeoutError:
+                    pass
+
+        return events
 
     @classmethod
     def new_call_id(cls):

@@ -51,7 +51,6 @@ _DEFAULT_CONFIG = {
         'port': 5672,
         'exchange_name': 'xivo',
         'exchange_type': 'topic',
-        'exchange_durable': True,
     },
     'confd': {
         'host': 'localhost',

@@ -23,7 +23,7 @@ class Controller(object):
         auth_config.pop('key_file', None)
         auth_client = AuthClient(**auth_config)
         self.token_renewer = TokenRenewer(auth_client)
-        self.bus = CoreBus(config['bus'])
+        self.bus = CoreBus(config)
         self.ari = CoreARI(config['ari'])
         self.rest_api = CoreRestApi(config)
         self._load_plugins(config)
@@ -46,9 +46,10 @@ class Controller(object):
 
     def _load_plugins(self, global_config):
         load_args = [{
-            'config': global_config,
             'api': api,
-            'token_changed_subscribe': self.token_renewer.subscribe_to_token_change,
             'ari': self.ari,
+            'bus': self.bus,
+            'config': global_config,
+            'token_changed_subscribe': self.token_renewer.subscribe_to_token_change,
         }]
         plugin_manager.load_plugins(global_config['enabled_plugins'], load_args)

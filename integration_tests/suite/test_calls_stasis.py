@@ -5,6 +5,7 @@
 from hamcrest import assert_that
 from hamcrest import has_entries
 from hamcrest import has_entry
+from hamcrest import has_item
 from hamcrest import has_items
 from xivo_test_helpers import until
 
@@ -13,6 +14,7 @@ from .base import MockChannel
 from .base import MockLine
 from .base import MockUser
 from .base import MockUserLine
+from .base import XIVO_UUID
 
 
 class TestDialedFrom(IntegrationTest):
@@ -68,5 +70,53 @@ class TestDialedFrom(IntegrationTest):
                 'method': 'DELETE',
                 'path': '/ari/channels/{call_id}'.format(call_id=new_call_id),
             }))))
+
+        until.assert_(assert_function, tries=5)
+
+    def test_when_channel_ended_then_bus_event(self):
+        call_id = self.new_call_id()
+        self.set_ari_channels(MockChannel(id=call_id))
+        self.listen_bus_events(routing_key='calls.call.ended')
+
+        self.event_hangup(call_id)
+
+        def assert_function():
+            assert_that(self.bus_events(), has_item(has_entries({
+                'name': 'call_ended',
+                'origin_uuid': XIVO_UUID,
+                'data': has_entry('call_id', call_id)
+            })))
+
+        until.assert_(assert_function, tries=5)
+
+    def test_when_channel_created_then_bus_event(self):
+        call_id = self.new_call_id()
+        self.set_ari_channels(MockChannel(id=call_id))
+        self.listen_bus_events(routing_key='calls.call.created')
+
+        self.event_new_channel(call_id)
+
+        def assert_function():
+            assert_that(self.bus_events(), has_item(has_entries({
+                'name': 'call_created',
+                'origin_uuid': XIVO_UUID,
+                'data': has_entry('call_id', call_id)
+            })))
+
+        until.assert_(assert_function, tries=5)
+
+    def test_when_channel_updated_then_bus_event(self):
+        call_id = self.new_call_id()
+        self.set_ari_channels(MockChannel(id=call_id, state='Ring'))
+        self.listen_bus_events(routing_key='calls.call.updated')
+
+        self.event_channel_updated(call_id, state='Up')
+
+        def assert_function():
+            assert_that(self.bus_events(), has_item(has_entries({
+                'name': 'call_updated',
+                'origin_uuid': XIVO_UUID,
+                'data': has_entries({'call_id': call_id, 'status': 'Up'})
+            })))
 
         until.assert_(assert_function, tries=5)
