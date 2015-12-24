@@ -39,7 +39,6 @@ class CallsService(object):
         self._confd_config['token'] = confd_token
 
     def list_calls(self, application_filter=None, application_instance_filter=None):
-        calls = []
         ari = self._ari.client
         try:
             channels = ari.channels.list()
@@ -70,22 +69,7 @@ class CallsService(object):
                         app_instance_channels.append(channel)
                 channels = app_instance_channels
 
-        for channel in channels:
-            result_call = Call(channel.id, channel.json['creationtime'])
-            result_call.status = channel.json['state']
-            result_call.caller_id_name = channel.json['caller']['name']
-            result_call.caller_id_number = channel.json['caller']['number']
-            result_call.user_uuid = self._get_uuid_from_channel_id(ari, channel.id)
-            result_call.bridges = [bridge.id for bridge in ari.bridges.list() if channel.id in bridge.json['channels']]
-
-            result_call.talking_to = dict()
-            for channel_id in self._get_channel_ids_from_bridges(ari, result_call.bridges):
-                talking_to_user_uuid = self._get_uuid_from_channel_id(ari, channel_id)
-                result_call.talking_to[channel_id] = talking_to_user_uuid
-            result_call.talking_to.pop(channel.id, None)
-
-            calls.append(result_call)
-        return calls
+        return [self.make_call_from_channel(ari, channel) for channel in channels]
 
     def originate(self, request):
         source_user = request['source']['user']
@@ -112,21 +96,7 @@ class CallsService(object):
                 raise NoSuchCall(channel_id)
             raise AsteriskARIUnreachable(self._ari_config, e)
 
-        result = Call(channel.id, channel.json['creationtime'])
-        result.status = channel.json['state']
-        result.caller_id_name = channel.json['caller']['name']
-        result.caller_id_number = channel.json['caller']['number']
-        result.user_uuid = self._get_uuid_from_channel_id(ari, channel_id)
-        result.bridges = [bridge.id for bridge in ari.bridges.list() if channel.id in bridge.json['channels']]
-        result.talking_to = dict()
-        for bridge_id in result.bridges:
-            talking_to_channel_ids = ari.bridges.get(bridgeId=bridge_id).json['channels']
-            for talking_to_channel_id in talking_to_channel_ids:
-                talking_to_user_uuid = self._get_uuid_from_channel_id(ari, talking_to_channel_id)
-                result.talking_to[talking_to_channel_id] = talking_to_user_uuid
-        result.talking_to.pop(channel_id, None)
-
-        return result
+        return self.make_call_from_channel(ari, channel)
 
     def hangup(self, call_id):
         channel_id = call_id
@@ -162,6 +132,22 @@ class CallsService(object):
         # if the callee refuses, leave the caller as it is
 
         return new_channel.id
+
+    def make_call_from_channel(self, ari, channel):
+        call = Call(channel.id, channel.json['creationtime'])
+        call.status = channel.json['state']
+        call.caller_id_name = channel.json['caller']['name']
+        call.caller_id_number = channel.json['caller']['number']
+        call.user_uuid = self._get_uuid_from_channel_id(ari, channel.id)
+        call.bridges = [bridge.id for bridge in ari.bridges.list() if channel.id in bridge.json['channels']]
+
+        call.talking_to = dict()
+        for channel_id in self._get_channel_ids_from_bridges(ari, call.bridges):
+            talking_to_user_uuid = self._get_uuid_from_channel_id(ari, channel_id)
+            call.talking_to[channel_id] = talking_to_user_uuid
+        call.talking_to.pop(channel.id, None)
+
+        return call
 
     def _endpoint_from_user_uuid(self, uuid):
         with new_confd_client(self._confd_config) as confd:
