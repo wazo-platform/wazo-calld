@@ -7,6 +7,7 @@ from unittest import TestCase
 from ..exceptions import CallCreationError
 from .. import validator
 
+
 class TestCallsValidator(TestCase):
 
     def setUp(self):
@@ -23,7 +24,6 @@ class TestCallsValidator(TestCase):
         }
 
         self.assertRaises(CallCreationError, validator.validate_originate_body, body)
-
 
     def test_validate_originate_body_with_no_destination_key(self):
         body = {

@@ -6,15 +6,18 @@ sync:
     - rabbitmq
   environment:
     PORTS: "5039 5672 9500"
+    TIMEOUT: "5"
 
 ari:
-  image: p0bailey/docker-flask
+  image: ari-mock
   expose:
     - "5039"
   volumes:
     - "./ari:/usr/local/share/ari"
     - "./ssl:/usr/local/share/ssl"
-  command: "python /usr/local/share/ari/mock-ari.py 5039"
+  environment:
+    PYTHONPATH: "/usr/local/share/ari"
+  command: "gunicorn -b 0.0.0.0:5039 -k flask_sockets.worker mock_ari:app"
 
 ctid-ng:
   image: xivo-ctid-ng-test

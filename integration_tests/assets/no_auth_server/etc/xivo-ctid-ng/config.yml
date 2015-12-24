@@ -22,9 +22,9 @@ auth:
 
 ari:
   connection:
-  base_url: http://ari:5039
-  username: xivo
-  password: Nasheow8Eag
+    base_url: http://ari:5039
+    username: xivo
+    password: Nasheow8Eag
 
 bus:
   username: guest

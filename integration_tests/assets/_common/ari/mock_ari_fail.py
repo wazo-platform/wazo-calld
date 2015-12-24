@@ -2,14 +2,12 @@
 # Copyright 2015 by Avencall
 # SPDX-License-Identifier: GPL-3.0+
 
-import json
 import logging
 import sys
 
 from flask import Flask
 from flask import jsonify
 from flask import make_response
-from flask import request
 
 app = Flask(__name__)
 

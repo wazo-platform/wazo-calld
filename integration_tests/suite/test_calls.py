@@ -2,7 +2,6 @@
 # Copyright 2015 by Avencall
 # SPDX-License-Identifier: GPL-3.0+
 
-
 from hamcrest import assert_that
 from hamcrest import contains
 from hamcrest import contains_inanyorder
@@ -13,6 +12,7 @@ from hamcrest import has_entry
 from hamcrest import has_item
 from hamcrest import has_items
 from hamcrest import contains_string
+from xivo_test_helpers import until
 
 from .base import IntegrationTest
 from .base import MockApplication
@@ -403,10 +403,27 @@ class TestNoConfd(IntegrationTest):
         assert_that(result.status_code, equal_to(503))
 
 
-class _BaseNoARI(IntegrationTest):
+class TestNoARI(IntegrationTest):
+
+    asset = 'no_ari'
+
+    def test_given_no_ari_when_ctid_ng_starts_then_ctid_ng_stops(self):
+        def ctid_ng_is_stopped():
+            status = self.service_status()
+            return not status['State']['Running']
+
+        until.true(ctid_ng_is_stopped, tries=10, message='xivo-ctid-ng did not stop while starting with no ARI')
+
+        log = self.service_logs()
+        assert_that(log, contains_string("ARI server unreachable... stopping"))
+
+
+class TestFailingARI(IntegrationTest):
+
+    asset = 'failing_ari'
 
     def setUp(self):
-        super(_BaseNoARI, self).setUp()
+        super(TestFailingARI, self).setUp()
         self.reset_confd()
 
     def test_given_no_ari_when_list_calls_then_503(self):
@@ -437,11 +454,58 @@ class _BaseNoARI(IntegrationTest):
         assert_that(result.status_code, equal_to(503))
 
 
-class TestNoARI(_BaseNoARI):
+class TestConnectUser(IntegrationTest):
 
-    asset = 'no_ari'
+    asset = 'basic_rest'
 
+    def setUp(self):
+        super(TestConnectUser, self).setUp()
+        self.reset_ari()
+        self.reset_confd()
 
-class TestFailingARI(_BaseNoARI):
+    def test_given_one_call_and_one_user_when_connect_user_then_the_two_are_talking(self):
+        self.set_ari_channels(MockChannel(id='call-id'),
+                              MockChannel(id='new-call-id', ))
+        self.set_ari_channel_variable({'new-call-id': {'XIVO_USERID': 'user-id'}})
+        self.set_confd_users(MockUser(id='user-id', uuid='user-uuid'))
+        self.set_confd_lines(MockLine(id='line-id', name='line-name', protocol='sip'))
+        self.set_confd_user_lines({'user-id': [MockUserLine('user-id', 'line-id')]})
+        self.set_ari_originates(MockChannel(id='new-call-id'))
 
-    asset = 'failing_ari'
+        new_call = self.connect_user('call-id', 'user-id')
+
+        assert_that(new_call, has_entries({
+            'call_id': 'new-call-id'
+        }))
+        assert_that(self.ari_requests(), has_entry('requests', has_items(has_entries({
+            'method': 'POST',
+            'path': '/ari/channels',
+            'query': contains_inanyorder(['app', 'callcontrol'], ['endpoint', 'sip/line-name'], ['appArgs', 'dialed_from,call-id']),
+        }))))
+
+    def test_given_no_user_when_connect_user_then_400(self):
+        self.set_ari_channels(MockChannel(id='call-id'))
+
+        result = self.put_call_user_result('call-id', 'user-id', token=VALID_TOKEN)
+
+        assert_that(result.status_code, equal_to(400))
+        assert_that(result.json(), has_entry('message', contains_string('user')))
+
+    def test_given_user_has_no_line_when_connect_user_then_400(self):
+        self.set_ari_channels(MockChannel(id='call-id'))
+        self.set_confd_users(MockUser(id='user-id', uuid='user-uuid'))
+
+        result = self.put_call_user_result('call-id', 'user-id', token=VALID_TOKEN)
+
+        assert_that(result.status_code, equal_to(400))
+        assert_that(result.json(), has_entry('message', contains_string('user')))
+
+    def test_given_no_call_when_connect_user_then_404(self):
+        self.set_confd_users(MockUser(id='user-id', uuid='user-uuid'))
+        self.set_confd_lines(MockLine(id='line-id', name='line-name', protocol='sip'))
+        self.set_confd_user_lines({'user-id': [MockUserLine('user-id', 'line-id')]})
+
+        result = self.put_call_user_result('call-id', 'user-id', token=VALID_TOKEN)
+
+        assert_that(result.status_code, equal_to(404))
+        assert_that(result.json(), has_entry('message', contains_string('call')))
