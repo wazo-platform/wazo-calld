@@ -118,11 +118,6 @@ def delete_channel(channel_id):
     return '', 204
 
 
-@app.route('/ari/channels/<channel_id>/answer', methods=['POST'])
-def answer(channel_id):
-    return '', 204
-
-
 @app.route('/ari/bridges')
 def list_bridges():
     result = [bridge for bridge in _responses['bridges'].itervalues()]
