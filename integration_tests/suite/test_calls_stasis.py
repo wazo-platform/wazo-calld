@@ -37,10 +37,10 @@ class TestDialedFrom(IntegrationTest):
         def assert_function():
             assert_that(self.ari.requests(), has_entry('requests', has_items(has_entries({
                 'method': 'POST',
-                'path': '/ari/channels/{channel_id}/answer'.format(channel_id='call-id'),
+                'path': '/ari/channels/{channel_id}/answer'.format(channel_id=call_id),
             }), has_entries({
                 'method': 'POST',
-                'path': '/ari/channels/{channel_id}/answer'.format(channel_id='new-call-id'),
+                'path': '/ari/channels/{channel_id}/answer'.format(channel_id=new_call_id_),
             }), has_entries({
                 'method': 'POST',
                 'path': '/ari/bridges/bridge-id/addChannel',
