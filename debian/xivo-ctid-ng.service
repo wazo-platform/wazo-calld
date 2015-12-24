@@ -1,0 +1,14 @@
+[Unit]
+Description=xivo-ctid-ng server
+ConditionPathExists=!/var/lib/xivo/disabled
+After=network.target asterisk.service rabbitmq-server.service xivo-auth.service xivo-confd.service
+Wants=asterisk.service rabbitmq-server.service xivo-auth.service xivo-confd.service
+
+[Service]
+Type=forking
+ExecStartPre=/usr/bin/install -d -o www-data -g www-data /var/run/xivo-ctid-ng
+ExecStart=/usr/bin/xivo-ctid-ng
+PIDFile=/var/run/xivo-ctid-ng/xivo-ctid-ng.pid
+
+[Install]
+WantedBy=multi-user.target
