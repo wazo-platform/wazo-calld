@@ -6,7 +6,7 @@ from hamcrest import assert_that
 from hamcrest import contains_string
 from xivo_test_helpers import until
 
-from .base import IntegrationTest
+from .test_api.base import IntegrationTest
 
 
 class TestHTTPSMissingCertificate(IntegrationTest):
