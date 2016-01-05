@@ -168,7 +168,7 @@
                 }
             }
         },
-        "/calls/{call_id}/user/{user_id}": {
+        "/calls/{call_id}/user/{user_uuid}": {
             "put": {
                 "summary": "Connect a call to a user",
                 "parameters": [
@@ -180,7 +180,7 @@
                         "type": "string"
                     },
                     {
-                        "name": "user_id",
+                        "name": "user_uuid",
                         "in": "path",
                         "description": "UUID of the user",
                         "required": true,

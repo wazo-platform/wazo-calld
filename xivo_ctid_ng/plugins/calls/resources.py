@@ -65,8 +65,8 @@ class ConnectCallToUserResource(AuthResource):
         self.calls_service = calls_service
 
     @required_acl('ctid-ng.calls.connect_user')
-    def put(self, call_id, user_id):
-        new_call_id = self.calls_service.connect_user(call_id, user_id)
+    def put(self, call_id, user_uuid):
+        new_call_id = self.calls_service.connect_user(call_id, user_uuid)
         new_call = self.calls_service.get(new_call_id)
 
         return new_call.to_dict()

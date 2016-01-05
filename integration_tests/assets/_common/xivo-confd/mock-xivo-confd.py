@@ -64,11 +64,11 @@ def set_response():
     return '', 204
 
 
-@app.route('/1.1/users/<user_id>')
-def user(user_id):
-    if user_id not in _responses['users']:
+@app.route('/1.1/users/<user_uuid>')
+def user(user_uuid):
+    if user_uuid not in _responses['users']:
         return '', 404
-    return jsonify(_responses['users'][user_id])
+    return jsonify(_responses['users'][user_uuid])
 
 
 @app.route('/1.1/lines/<line_id>')
@@ -78,13 +78,13 @@ def line(line_id):
     return jsonify(_responses['lines'][line_id])
 
 
-@app.route('/1.1/users/<user_id>/lines')
-def lines_of_user(user_id):
-    if user_id not in _responses['user_lines']:
+@app.route('/1.1/users/<user_uuid>/lines')
+def lines_of_user(user_uuid):
+    if user_uuid not in _responses['user_lines']:
         return '', 404
 
     return jsonify({
-        'items': _responses['user_lines'][user_id]
+        'items': _responses['user_lines'][user_uuid]
     })
 
 

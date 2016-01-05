@@ -110,9 +110,9 @@ class CallsService(object):
 
         ari.channels.hangup(channelId=channel_id)
 
-    def connect_user(self, call_id, user_id):
+    def connect_user(self, call_id, user_uuid):
         channel_id = call_id
-        endpoint = self._endpoint_from_user_uuid(user_id)
+        endpoint = self._endpoint_from_user_uuid(user_uuid)
 
         ari = self._ari.client
         try:
@@ -152,8 +152,7 @@ class CallsService(object):
     def _endpoint_from_user_uuid(self, uuid):
         with new_confd_client(self._confd_config) as confd:
             try:
-                user_id = confd.users.get(uuid)['id']
-                user_lines_of_user = confd.users.relations(user_id).list_lines()['items']
+                user_lines_of_user = confd.users.relations(uuid).list_lines()['items']
             except requests.HTTPError as e:
                 if not_found(e):
                     raise InvalidUserUUID(uuid)
@@ -175,22 +174,12 @@ class CallsService(object):
 
     def _get_uuid_from_channel_id(self, ari, channel_id):
         try:
-            user_id = ari.channels.getChannelVar(channelId=channel_id, variable='XIVO_USERID')['value']
+            uuid = ari.channels.getChannelVar(channelId=channel_id, variable='XIVO_USERUUID')['value']
+            return uuid
         except requests.HTTPError as e:
             if not_found(e):
                 return None
             raise
-
-        with new_confd_client(self._confd_config) as confd:
-            try:
-                uuid = confd.users.get(user_id)['uuid']
-                return uuid
-            except requests.HTTPError as e:
-                logger.error('Error fetching user %s from xivo-confd (%s): %s', user_id, self._confd_config, e)
-            except requests.RequestException as e:
-                raise XiVOConfdUnreachable(self._confd_config, e)
-
-        return None
 
     def _get_channel_ids_from_bridges(self, ari, bridges):
         result = set()

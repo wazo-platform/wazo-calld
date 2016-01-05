@@ -81,17 +81,17 @@ class MockLine(object):
 
 class MockUserLine(object):
 
-    def __init__(self, user_id, line_id, main_line=True):
-        self._user_id = user_id
+    def __init__(self, user_uuid, line_id, main_line=True):
+        self._user_uuid = user_uuid
         self._line_id = line_id
         self._main_line = main_line
 
-    def user_id(self):
-        return self._user_id
+    def user_uuid(self):
+        return self._user_uuid
 
     def to_dict(self):
         return {
-            'user_id': self._user_id,
+            'user_uuid': self._user_uuid,
             'line_id': self._line_id,
             'main_line': self._main_line
         }
