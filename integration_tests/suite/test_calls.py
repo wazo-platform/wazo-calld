@@ -53,10 +53,10 @@ class TestListCalls(IntegrationTest):
     def test_given_some_calls_with_user_id_when_list_calls_then_list_calls_with_user_uuid(self):
         self.ari.set_channels(MockChannel(id='first-id'),
                               MockChannel(id='second-id'))
-        self.ari.set_channel_variable({'first-id': {'XIVO_USERID': 'user1-id'},
-                                       'second-id': {'XIVO_USERID': 'user2-id'}})
-        self.confd.set_users(MockUser(id='user1-id', uuid='user1-uuid'),
-                             MockUser(id='user2-id', uuid='user2-uuid'))
+        self.ari.set_channel_variable({'first-id': {'XIVO_USERUUID': 'user1-uuid'},
+                                       'second-id': {'XIVO_USERUUID': 'user2-uuid'}})
+        self.confd.set_users(MockUser(uuid='user1-uuid'),
+                             MockUser(uuid='user2-uuid'))
 
         calls = self.ctid_ng.list_calls()
 
@@ -96,10 +96,10 @@ class TestListCalls(IntegrationTest):
         self.ari.set_channels(MockChannel(id='first-id'),
                               MockChannel(id='second-id'))
         self.ari.set_bridges(MockBridge(id='bridge-id', channels=['first-id', 'second-id']))
-        self.ari.set_channel_variable({'first-id': {'XIVO_USERID': 'user1-id'},
-                                       'second-id': {'XIVO_USERID': 'user2-id'}})
-        self.confd.set_users(MockUser(id='user1-id', uuid='user1-uuid'),
-                             MockUser(id='user2-id', uuid='user2-uuid'))
+        self.ari.set_channel_variable({'first-id': {'XIVO_USERUUID': 'user1-uuid'},
+                                       'second-id': {'XIVO_USERUUID': 'user2-uuid'}})
+        self.confd.set_users(MockUser(uuid='user1-uuid'),
+                             MockUser(uuid='user2-uuid'))
 
         calls = self.ctid_ng.list_calls()
 
@@ -192,10 +192,10 @@ class TestGetCall(IntegrationTest):
         self.ari.set_channels(MockChannel(id='first-id', state='Up', creation_time='first-time', caller_id_name='Weber', caller_id_number='4185559999'),
                               MockChannel(id='second-id'))
         self.ari.set_bridges(MockBridge(id='bridge-id', channels=['first-id', 'second-id']))
-        self.ari.set_channel_variable({'first-id': {'XIVO_USERID': 'user1-id'},
-                                       'second-id': {'XIVO_USERID': 'user2-id'}})
-        self.confd.set_users(MockUser(id='user1-id', uuid='user1-uuid'),
-                             MockUser(id='user2-id', uuid='user2-uuid'))
+        self.ari.set_channel_variable({'first-id': {'XIVO_USERUUID': 'user1-uuid'},
+                                       'second-id': {'XIVO_USERUUID': 'user2-uuid'}})
+        self.confd.set_users(MockUser(uuid='user1-uuid'),
+                             MockUser(uuid='user2-uuid'))
 
         call = self.ctid_ng.get_call('first-id')
 
@@ -252,15 +252,15 @@ class TestCreateCall(IntegrationTest):
 
     def test_create_call_with_correct_values(self):
         user_uuid = 'user-uuid'
-        self.confd.set_users(MockUser(id='user-id', uuid='user-uuid'))
+        self.confd.set_users(MockUser(uuid='user-uuid'))
         self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip'))
-        self.confd.set_user_lines({'user-id': [MockUserLine('user-id', 'line-id')]})
+        self.confd.set_user_lines({'user-uuid': [MockUserLine('line-id')]})
         self.ari.set_originates(MockChannel(id='new-call-id'))
 
         result = self.ctid_ng.originate(source=user_uuid,
-                                priority='my-priority',
-                                extension='my-extension',
-                                context='my-context')
+                                        priority='my-priority',
+                                        extension='my-extension',
+                                        context='my-context')
 
         assert_that(result, has_entry('call_id', 'new-call-id'))
         assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
@@ -270,17 +270,17 @@ class TestCreateCall(IntegrationTest):
 
     def test_when_create_call_then_ari_arguments_are_correct(self):
         user_uuid = 'user-uuid'
-        self.confd.set_users(MockUser(id='user-id', uuid='user-uuid'))
+        self.confd.set_users(MockUser(uuid='user-uuid'))
         self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip'))
-        self.confd.set_user_lines({'user-id': [MockUserLine('user-id', 'line-id')]})
-        self.ari.set_originates(MockChannel(id='new-call-id'))
+        self.confd.set_user_lines({'user-uuid': [MockUserLine('line-id')]})
+        self.ari.set_originates(MockChannel('new-call-id'))
 
         self.ctid_ng.originate(source=user_uuid,
-                       priority='my-priority',
-                       extension='my-extension',
-                       context='my-context',
-                       variables={'MY_VARIABLE': 'my-value',
-                                  'SECOND_VARIABLE': 'my-second-value'})
+                               priority='my-priority',
+                               extension='my-extension',
+                               context='my-context',
+                               variables={'MY_VARIABLE': 'my-value',
+                                          'SECOND_VARIABLE': 'my-second-value'})
 
         assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
             'method': 'POST',
@@ -295,15 +295,15 @@ class TestCreateCall(IntegrationTest):
 
     def test_when_create_call_with_no_variables_then_ari_variables_are_empty(self):
         user_uuid = 'user-uuid'
-        self.confd.set_users(MockUser(id='user-id', uuid='user-uuid'))
+        self.confd.set_users(MockUser(uuid='user-uuid'))
         self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip'))
-        self.confd.set_user_lines({'user-id': [MockUserLine('user-id', 'line-id')]})
+        self.confd.set_user_lines({'user-uuid': [MockUserLine('line-id')]})
         self.ari.set_originates(MockChannel(id='new-call-id'))
 
         self.ctid_ng.originate(source=user_uuid,
-                       priority='my-priority',
-                       extension='my-extension',
-                       context='my-context')
+                               priority='my-priority',
+                               extension='my-extension',
+                               context='my-context')
 
         assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
             'method': 'POST',
@@ -313,16 +313,16 @@ class TestCreateCall(IntegrationTest):
 
     def test_create_call_with_multiple_lines(self):
         user_uuid = 'user-uuid'
-        self.confd.set_users(MockUser(id='user-id', uuid='user-uuid'))
+        self.confd.set_users(MockUser(uuid='user-uuid'))
         self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip'))
-        self.confd.set_user_lines({'user-id': [MockUserLine('user-id', 'line-id2', main_line=False),
-                                               MockUserLine('user-id', 'line-id', main_line=True)]})
+        self.confd.set_user_lines({'user-uuid': [MockUserLine('line-id2', main_line=False),
+                                                 MockUserLine('line-id', main_line=True)]})
         self.ari.set_originates(MockChannel(id='new-call-id'))
 
         result = self.ctid_ng.originate(source=user_uuid,
-                                priority='my-priority',
-                                extension='my-extension',
-                                context='my-context')
+                                        priority='my-priority',
+                                        extension='my-extension',
+                                        context='my-context')
 
         assert_that(result, has_entry('call_id', 'new-call-id'))
         assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
@@ -332,14 +332,14 @@ class TestCreateCall(IntegrationTest):
 
     def test_create_call_with_no_lines(self):
         user_uuid = 'user-uuid'
-        self.confd.set_users(MockUser(id='user-id', uuid='user-uuid'))
-        self.confd.set_user_lines({'user-id': []})
+        self.confd.set_users(MockUser(uuid='user-uuid'))
+        self.confd.set_user_lines({'user-uuid': []})
 
         result = self.ctid_ng.post_call_result(source=user_uuid,
-                                       priority='my-priority',
-                                       extension='my-extension',
-                                       context='my-context',
-                                       token=VALID_TOKEN)
+                                               priority='my-priority',
+                                               extension='my-extension',
+                                               context='my-context',
+                                               token=VALID_TOKEN)
 
         assert_that(result.status_code, equal_to(400))
         assert_that(result.json(), has_entry('message', contains_string('line')))
@@ -348,9 +348,9 @@ class TestCreateCall(IntegrationTest):
         user_uuid = 'user-uuid-not-found'
 
         result = self.ctid_ng.post_call_result(source=user_uuid,
-                                       priority='my-priority',
-                                       extension='my-extension',
-                                       context='my-context', token=VALID_TOKEN)
+                                               priority='my-priority',
+                                               extension='my-extension',
+                                               context='my-context', token=VALID_TOKEN)
 
         assert_that(result.status_code, equal_to(400))
         assert_that(result.json(), has_entry('message', contains_string('user')))
@@ -373,32 +373,19 @@ class TestNoConfd(IntegrationTest):
         super(TestNoConfd, self).setUp()
         self.ari.reset()
 
-    def test_given_some_calls_and_no_confd_when_list_calls_then_503(self):
-        self.ari.set_channels(MockChannel(id='first-id'),
-                              MockChannel(id='second-id'))
-        self.ari.set_channel_variable({'first-id': {'XIVO_USERID': 'user1-id'},
-                                       'second-id': {'XIVO_USERID': 'user2-id'}})
-
-        result = self.ctid_ng.get_calls_result(token=VALID_TOKEN)
-
-        assert_that(result.status_code, equal_to(503))
-
-    def test_given_some_calls_and_no_confd_when_get_call_then_503(self):
-        self.ari.set_channels(MockChannel(id='first-id'),
-                              MockChannel(id='second-id'))
-        self.ari.set_channel_variable({'first-id': {'XIVO_USERID': 'user1-id'},
-                                       'second-id': {'XIVO_USERID': 'user2-id'}})
-
-        result = self.ctid_ng.get_call_result('first-id', token=VALID_TOKEN)
-
-        assert_that(result.status_code, equal_to(503))
-
     def test_given_no_confd_when_originate_then_503(self):
         result = self.ctid_ng.post_call_result(source='user-uuid',
-                                       priority=None,
-                                       extension=None,
-                                       context=None,
-                                       token=VALID_TOKEN)
+                                               priority=None,
+                                               extension=None,
+                                               context=None,
+                                               token=VALID_TOKEN)
+
+        assert_that(result.status_code, equal_to(503))
+
+    def test_given_no_confd_when_connect_user_then_503(self):
+        result = self.ctid_ng.put_call_user_result(call_id='call-id',
+                                                   user_uuid='user-uuid',
+                                                   token=VALID_TOKEN)
 
         assert_that(result.status_code, equal_to(503))
 
@@ -437,14 +424,14 @@ class TestFailingARI(IntegrationTest):
         assert_that(result.status_code, equal_to(503))
 
     def test_given_no_ari_when_originate_then_503(self):
-        self.confd.set_users(MockUser(id='user-id', uuid='user-uuid'))
+        self.confd.set_users(MockUser(uuid='user-uuid'))
         self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip'))
-        self.confd.set_user_lines({'user-id': [MockUserLine('user-id', 'line-id')]})
+        self.confd.set_user_lines({'user-uuid': [MockUserLine('line-id')]})
         result = self.ctid_ng.post_call_result(source='user-uuid',
-                                       priority='priority',
-                                       extension='extension',
-                                       context='context',
-                                       token=VALID_TOKEN)
+                                               priority='priority',
+                                               extension='extension',
+                                               context='context',
+                                               token=VALID_TOKEN)
 
         assert_that(result.status_code, equal_to(503))
 
@@ -466,13 +453,13 @@ class TestConnectUser(IntegrationTest):
     def test_given_one_call_and_one_user_when_connect_user_then_the_two_are_talking(self):
         self.ari.set_channels(MockChannel(id='call-id'),
                               MockChannel(id='new-call-id', ))
-        self.ari.set_channel_variable({'new-call-id': {'XIVO_USERID': 'user-id'}})
-        self.confd.set_users(MockUser(id='user-id', uuid='user-uuid'))
+        self.ari.set_channel_variable({'new-call-id': {'XIVO_USERUUID': 'user-uuid'}})
+        self.confd.set_users(MockUser(uuid='user-uuid'))
         self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip'))
-        self.confd.set_user_lines({'user-id': [MockUserLine('user-id', 'line-id')]})
+        self.confd.set_user_lines({'user-uuid': [MockUserLine('line-id')]})
         self.ari.set_originates(MockChannel(id='new-call-id'))
 
-        new_call = self.ctid_ng.connect_user('call-id', 'user-id')
+        new_call = self.ctid_ng.connect_user('call-id', 'user-uuid')
 
         assert_that(new_call, has_entries({
             'call_id': 'new-call-id'
@@ -486,26 +473,26 @@ class TestConnectUser(IntegrationTest):
     def test_given_no_user_when_connect_user_then_400(self):
         self.ari.set_channels(MockChannel(id='call-id'))
 
-        result = self.ctid_ng.put_call_user_result('call-id', 'user-id', token=VALID_TOKEN)
+        result = self.ctid_ng.put_call_user_result('call-id', 'user-uuid', token=VALID_TOKEN)
 
         assert_that(result.status_code, equal_to(400))
         assert_that(result.json(), has_entry('message', contains_string('user')))
 
     def test_given_user_has_no_line_when_connect_user_then_400(self):
         self.ari.set_channels(MockChannel(id='call-id'))
-        self.confd.set_users(MockUser(id='user-id', uuid='user-uuid'))
+        self.confd.set_users(MockUser(uuid='user-uuid'))
 
-        result = self.ctid_ng.put_call_user_result('call-id', 'user-id', token=VALID_TOKEN)
+        result = self.ctid_ng.put_call_user_result('call-id', 'user-uuid', token=VALID_TOKEN)
 
         assert_that(result.status_code, equal_to(400))
         assert_that(result.json(), has_entry('message', contains_string('user')))
 
     def test_given_no_call_when_connect_user_then_404(self):
-        self.confd.set_users(MockUser(id='user-id', uuid='user-uuid'))
+        self.confd.set_users(MockUser(uuid='user-uuid'))
         self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip'))
-        self.confd.set_user_lines({'user-id': [MockUserLine('user-id', 'line-id')]})
+        self.confd.set_user_lines({'user-uuid': [MockUserLine('line-id')]})
 
-        result = self.ctid_ng.put_call_user_result('call-id', 'user-id', token=VALID_TOKEN)
+        result = self.ctid_ng.put_call_user_result('call-id', 'user-uuid', token=VALID_TOKEN)
 
         assert_that(result.status_code, equal_to(404))
         assert_that(result.json(), has_entry('message', contains_string('call')))
