@@ -77,6 +77,14 @@ def send_event():
     return '', 201
 
 
+@app.route('/_websockets')
+def websockets():
+    result = []
+    if websocket:
+        result.append(id(websocket))
+    return make_response(json.dumps(result), 200, {'Content-Type': 'application/json'})
+
+
 @app.route('/ari/api-docs/<path:file_name>')
 def swagger(file_name):
     with open('/usr/local/share/ari/api-docs/{file_name}'.format(file_name=file_name), 'r') as swagger_file:
