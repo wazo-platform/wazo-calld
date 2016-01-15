@@ -89,15 +89,15 @@ class CtidNgClient(object):
                               verify=False)
         return result
 
-    def put_call_user_result(self, call_id, user_id, token):
-        url = u'https://localhost:9500/1.0/calls/{call_id}/user/{user_id}'
-        result = requests.put(url.format(call_id=call_id, user_id=user_id),
+    def put_call_user_result(self, call_id, user_uuid, token):
+        url = u'https://localhost:9500/1.0/calls/{call_id}/user/{user_uuid}'
+        result = requests.put(url.format(call_id=call_id, user_uuid=user_uuid),
                               headers={'X-Auth-Token': token},
                               verify=False)
         return result
 
-    def connect_user(self, call_id, user_id):
-        response = self.put_call_user_result(call_id, user_id, token=VALID_TOKEN)
+    def connect_user(self, call_id, user_uuid):
+        response = self.put_call_user_result(call_id, user_uuid, token=VALID_TOKEN)
         assert_that(response.status_code, equal_to(200))
         return response.json()
 

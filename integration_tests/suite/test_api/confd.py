@@ -9,12 +9,8 @@ class ConfdClient(object):
 
     def set_users(self, *mock_users):
         url = 'https://localhost:9486/_set_response'
-        content = {}
-        for user in mock_users:
-            content[user.id_()] = user.to_dict()
-            content[user.uuid()] = user.to_dict()
         body = {'response': 'users',
-                'content': content}
+                'content': {user.uuid(): user.to_dict() for user in mock_users}}
         requests.post(url, json=body, verify=False)
 
     def set_lines(self, *mock_lines):
@@ -40,19 +36,14 @@ class ConfdClient(object):
 
 class MockUser(object):
 
-    def __init__(self, id, uuid=None):
-        self._id = id
+    def __init__(self, uuid):
         self._uuid = uuid
-
-    def id_(self):
-        return self._id
 
     def uuid(self):
         return self._uuid
 
     def to_dict(self):
         return {
-            'id': self._id,
             'uuid': self._uuid,
         }
 
@@ -81,17 +72,13 @@ class MockLine(object):
 
 class MockUserLine(object):
 
-    def __init__(self, user_id, line_id, main_line=True):
-        self._user_id = user_id
+    def __init__(self, line_id, main_line=True):
         self._line_id = line_id
         self._main_line = main_line
 
-    def user_id(self):
-        return self._user_id
-
     def to_dict(self):
         return {
-            'user_id': self._user_id,
+            'user_id': None,
             'line_id': self._line_id,
             'main_line': self._main_line
         }

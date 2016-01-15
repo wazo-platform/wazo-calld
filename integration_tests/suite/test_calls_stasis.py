@@ -62,13 +62,13 @@ class TestDialedFrom(IntegrationTest):
         new_call_id_ = new_call_id()
         self.ari.set_channels(MockChannel(id=call_id),
                               MockChannel(id=new_call_id_, ))
-        self.ari.set_channel_variable({new_call_id_: {'XIVO_USERID': 'user-id'}})
-        self.confd.set_users(MockUser(id='user-id', uuid='user-uuid'))
+        self.ari.set_channel_variable({new_call_id_: {'XIVO_USERUUID': 'user-uuid'}})
+        self.confd.set_users(MockUser(uuid='user-uuid'))
         self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip'))
-        self.confd.set_user_lines({'user-id': [MockUserLine('user-id', 'line-id')]})
+        self.confd.set_user_lines({'user-uuid': [MockUserLine('line-id')]})
         self.ari.set_originates(MockChannel(id=new_call_id_))
 
-        self.ctid_ng.connect_user(call_id, 'user-id')
+        self.ctid_ng.connect_user(call_id, 'user-uuid')
 
         self.stasis.event_hangup(call_id)
 
