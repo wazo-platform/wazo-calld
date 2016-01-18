@@ -45,14 +45,12 @@ class CoreRestApi(object):
     def run(self):
         bind_addr = (self.config['listen'], self.config['port'])
 
-        _check_file_readable(self.config['certificate'])
-        _check_file_readable(self.config['private_key'])
         wsgi_app = wsgiserver.WSGIPathInfoDispatcher({'/': app})
         server = wsgiserver.CherryPyWSGIServer(bind_addr=bind_addr,
                                                wsgi_app=wsgi_app)
         server.ssl_adapter = http_helpers.ssl_adapter(self.config['certificate'],
                                                       self.config['private_key'],
-                                                      self.config.get('ciphers'))
+                                                      self.config['ciphers'])
         logger.debug('WSGIServer starting... uid: %s, listen: %s:%s', os.getuid(), bind_addr[0], bind_addr[1])
         for route in http_helpers.list_routes(app):
             logger.debug(route)
@@ -61,11 +59,6 @@ class CoreRestApi(object):
             server.start()
         except KeyboardInterrupt:
             server.stop()
-
-
-def _check_file_readable(file_path):
-    with open(file_path, 'r'):
-        pass
 
 
 class ErrorCatchingResource(Resource):
