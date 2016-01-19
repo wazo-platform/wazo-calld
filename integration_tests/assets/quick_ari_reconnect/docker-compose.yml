@@ -1,0 +1,48 @@
+sync:
+  image: n3llyb0y/wait
+  links:
+    - auth
+    - ari
+    - ctid-ng
+    - rabbitmq
+  environment:
+    PORTS: "5039 5672 9497 9500"
+    TIMEOUT: "5"
+
+ari:
+  image: ari-mock
+  ports:
+    - "5039:5039"
+  volumes:
+    - "./ari:/usr/local/share/ari"
+    - "./ssl/ari:/usr/local/share/ari-ssl"
+  environment:
+    PYTHONPATH: "/usr/local/share/ari"
+  command: "gunicorn -b 0.0.0.0:5039 -k flask_sockets.worker mock_ari:app"
+
+auth:
+  image: p0bailey/docker-flask
+  expose:
+    - "9497"
+  volumes:
+    - "./xivo-auth:/usr/local/share/xivo-auth"
+    - "./ssl:/usr/local/share/ssl"
+  command: "python /usr/local/share/xivo-auth/mock-xivo-auth.py 9497"
+
+ctid-ng:
+  image: xivo-ctid-ng-test
+  volumes:
+    - "../../..:/usr/src/xivo-ctid-ng"
+    - "./etc/xivo-ctid-ng:/etc/xivo-ctid-ng"
+    - "./ssl:/usr/local/share/ssl"
+  ports:
+    - "9500:9500"
+  links:
+    - ari
+    - auth
+    - rabbitmq
+
+rabbitmq:
+  image: rabbitmq
+  ports:
+    - "5672:5672"

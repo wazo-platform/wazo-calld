@@ -45,6 +45,10 @@ class ARIClient(object):
         url = 'http://localhost:5039/_requests'
         return requests.get(url).json()
 
+    def websockets(self):
+        url = 'http://localhost:5039/_websockets'
+        return requests.get(url).json()
+
 
 class MockApplication(object):
 

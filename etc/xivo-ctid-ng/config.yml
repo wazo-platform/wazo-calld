@@ -65,6 +65,9 @@ ari:
     username: xivo
     password: Nasheow8Eag
 
+  # How many seconds between each try to reconnect to ARI
+  reconnection_delay: 10
+
 enabled_plugins:
   - api
   - calls

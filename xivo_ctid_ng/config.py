@@ -36,7 +36,8 @@ _DEFAULT_CONFIG = {
             'base_url': 'http://localhost:5039',
             'username': 'xivo',
             'password': 'opensesame',
-        }
+        },
+        'reconnection_delay': 10,
     },
     'auth': {
         'host': 'localhost',

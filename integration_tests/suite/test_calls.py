@@ -390,21 +390,6 @@ class TestNoConfd(IntegrationTest):
         assert_that(result.status_code, equal_to(503))
 
 
-class TestNoARI(IntegrationTest):
-
-    asset = 'no_ari'
-
-    def test_given_no_ari_when_ctid_ng_starts_then_ctid_ng_stops(self):
-        def ctid_ng_is_stopped():
-            status = self.service_status()
-            return not status['State']['Running']
-
-        until.true(ctid_ng_is_stopped, tries=10, message='xivo-ctid-ng did not stop while starting with no ARI')
-
-        log = self.service_logs()
-        assert_that(log, contains_string("ARI server unreachable... stopping"))
-
-
 class TestFailingARI(IntegrationTest):
 
     asset = 'failing_ari'
