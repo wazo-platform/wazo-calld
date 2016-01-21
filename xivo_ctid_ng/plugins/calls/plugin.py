@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: GPL-3.0+
 
 
+from .bus_consume import CallsBusEventHandler
 from .resources import CallResource
 from .resources import CallsResource
 from .resources import ConnectCallToUserResource
@@ -15,15 +16,19 @@ class Plugin(object):
     def load(self, dependencies):
         api = dependencies['api']
         ari = dependencies['ari']
-        bus = dependencies['bus']
+        bus_consumer = dependencies['bus_consumer']
+        bus_publisher = dependencies['bus_publisher']
         token_changed_subscribe = dependencies['token_changed_subscribe']
         config = dependencies['config']
 
         calls_service = CallsService(config['ari']['connection'], config['confd'], ari)
         token_changed_subscribe(calls_service.set_confd_token)
 
-        calls_stasis = CallsStasis(ari.client, bus, calls_service)
+        calls_stasis = CallsStasis(ari.client, bus_publisher, calls_service)
         calls_stasis.subscribe()
+
+        calls_bus_event_handler = CallsBusEventHandler(ari.client, bus_publisher, calls_service)
+        calls_bus_event_handler.subscribe(bus_consumer)
 
         api.add_resource(CallsResource, '/calls', resource_class_args=[calls_service])
         api.add_resource(CallResource, '/calls/<call_id>', resource_class_args=[calls_service])

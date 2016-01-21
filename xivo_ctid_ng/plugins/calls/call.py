@@ -5,9 +5,9 @@
 
 class Call(object):
 
-    def __init__(self, id_, creation_time):
+    def __init__(self, id_):
         self.id_ = id_
-        self.creation_time = creation_time
+        self.creation_time = None
         self.bridges = []
         self.status = 'Down'
         self.talking_to = []

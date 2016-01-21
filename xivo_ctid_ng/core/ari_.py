@@ -19,6 +19,10 @@ logger = logging.getLogger(__name__)
 APPLICATION_NAME = 'callcontrol'
 
 
+def not_found(error):
+    return error.response is not None and error.response.status_code == 404
+
+
 class CoreARI(object):
 
     def __init__(self, config):
