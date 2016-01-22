@@ -8,7 +8,7 @@ import requests
 from contextlib import contextmanager
 from xivo_confd_client import Client as ConfdClient
 
-from xivo_ctid_ng.core.ari_ import APPLICATION_NAME
+from xivo_ctid_ng.core.ari_ import APPLICATION_NAME, not_found
 
 from .call import Call
 from .exceptions import AsteriskARIUnreachable
@@ -23,10 +23,6 @@ logger = logging.getLogger(__name__)
 @contextmanager
 def new_confd_client(config):
     yield ConfdClient(**config)
-
-
-def not_found(error):
-    return error.response is not None and error.response.status_code == 404
 
 
 class CallsService(object):
@@ -135,7 +131,8 @@ class CallsService(object):
         return new_channel.id
 
     def make_call_from_channel(self, ari, channel):
-        call = Call(channel.id, channel.json['creationtime'])
+        call = Call(channel.id)
+        call.creation_time = channel.json['creationtime']
         call.status = channel.json['state']
         call.caller_id_name = channel.json['caller']['name']
         call.caller_id_number = channel.json['caller']['number']
@@ -147,6 +144,17 @@ class CallsService(object):
             talking_to_user_uuid = self._get_uuid_from_channel_id(ari, channel_id)
             call.talking_to[channel_id] = talking_to_user_uuid
         call.talking_to.pop(channel.id, None)
+
+        return call
+
+    def make_call_from_ami_event(self, event):
+        call = Call(event['Uniqueid'])
+        call.status = event['ChannelStateDesc']
+        call.caller_id_name = event['CallerIDName']
+        call.caller_id_number = event['CallerIDNum']
+        call.user_uuid = None
+        call.bridges = []
+        call.talking_to = {}
 
         return call
 

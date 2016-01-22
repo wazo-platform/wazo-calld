@@ -18,7 +18,8 @@ class TestCall(TestCase):
         pass
 
     def test_to_dict(self):
-        call = Call(s.call_id, s.creation_time)
+        call = Call(s.call_id)
+        call.creation_time = s.creation_time
         call.bridges = s.bridges
         call.status = s.status
         call.talking_to = s.talking_to

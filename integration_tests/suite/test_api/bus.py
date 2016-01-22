@@ -7,6 +7,7 @@ import json
 from kombu import Connection
 from kombu import Consumer
 from kombu import Exchange
+from kombu import Producer
 from kombu import Queue
 from kombu.exceptions import TimeoutError
 
@@ -43,3 +44,40 @@ class BusClient(object):
                     pass
 
         return events
+
+    @classmethod
+    def send_event(cls, event, routing_key):
+        bus_exchange = Exchange(BUS_EXCHANGE_NAME, type=BUS_EXCHANGE_TYPE)
+        with Connection(BUS_URL) as connection:
+            producer = Producer(connection, exchange=bus_exchange, auto_declare=True)
+            producer.publish(json.dumps(event), routing_key=routing_key)
+
+    @classmethod
+    def send_ami_newchannel_event(cls, channel_id):
+        cls.send_event({
+            'data': {
+                'Event': 'Newchannel',
+                'Uniqueid': channel_id,
+            }
+        }, 'ami.Newchannel')
+
+    @classmethod
+    def send_ami_newstate_event(cls, channel_id):
+        cls.send_event({
+            'data': {
+                'Event': 'Newstate',
+                'Uniqueid': channel_id,
+            }
+        }, 'ami.Newstate')
+
+    @classmethod
+    def send_ami_hangup_event(cls, channel_id):
+        cls.send_event({
+            'data': {
+                'Event': 'Hangup',
+                'Uniqueid': channel_id,
+                'ChannelStateDesc': 'Up',
+                'CallerIDName': 'my-caller-id-name',
+                'CallerIDNum': 'my-caller-id-num',
+            }
+        }, 'ami.Hangup')
