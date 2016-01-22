@@ -13,16 +13,16 @@ from flask import Flask
 from flask_restful import Api
 from flask_restful import Resource
 from flask_cors import CORS
+from xivo import auth_helpers
 from xivo import http_helpers
-from xivo_ctid_ng.core.auth import AuthVerifier
-from xivo_ctid_ng.core import exceptions
+from xivo import rest_api_helpers
 
 VERSION = 1.0
 
 logger = logging.getLogger(__name__)
 app = Flask('xivo_ctid_ng')
 api = Api(app, prefix='/{}'.format(VERSION))
-auth_verifier = AuthVerifier()
+auth_verifier = auth_helpers.AuthVerifier()
 
 
 class CoreRestApi(object):
@@ -62,7 +62,7 @@ class CoreRestApi(object):
 
 
 class ErrorCatchingResource(Resource):
-    method_decorators = [exceptions.handle_api_exception] + Resource.method_decorators
+    method_decorators = [rest_api_helpers.handle_api_exception] + Resource.method_decorators
 
 
 class AuthResource(ErrorCatchingResource):

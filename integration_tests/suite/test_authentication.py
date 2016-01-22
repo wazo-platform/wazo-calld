@@ -43,7 +43,7 @@ class TestAuthenticationError(IntegrationTest):
         result = self.ctid_ng.get_call_result('my-call', token=None)
 
         assert_that(result.status_code, equal_to(503))
-        assert_that(result.json()['reason'][0], contains_string('authentication server'))
+        assert_that(result.json()['message'], contains_string('Authentication server'))
 
 
 class TestAuthenticationCoverage(IntegrationTest):
