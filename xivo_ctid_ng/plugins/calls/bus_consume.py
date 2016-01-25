@@ -17,10 +17,12 @@ logger = logging.getLogger(__name__)
 
 class CallsBusEventHandler(object):
 
-    def __init__(self, ari, bus_publisher, services):
+    def __init__(self, ari, bus_collectd_publisher, bus_publisher, services, xivo_uuid):
         self.ari = ari
+        self.bus_collectd_publisher = bus_collectd_publisher
         self.bus_publisher = bus_publisher
         self.services = services
+        self.xivo_uuid = xivo_uuid
 
     def subscribe(self, bus_consumer):
         bus_consumer.on_ami_event('Newchannel', self._channel_created)
@@ -34,6 +36,10 @@ class CallsBusEventHandler(object):
         call = self.services.make_call_from_channel(self.ari, channel)
         bus_event = CreateCallEvent(call.to_dict())
         self.bus_publisher.publish(bus_event)
+
+        bus_event = 'PUTVAL {xivo_uuid}/calls-callcontrol.sw1/counter-created interval=1 N:{increment}'
+        bus_event = bus_event.format(increment=1, xivo_uuid=self.xivo_uuid)
+        self.bus_collectd_publisher.publish(bus_event)
 
     def _channel_updated(self, event):
         channel_id = event['Uniqueid']

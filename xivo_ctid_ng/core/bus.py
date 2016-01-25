@@ -65,6 +65,60 @@ class CoreBusPublisher(object):
             self._should_stop = True
 
 
+class CoreBusCollectdPublisher(object):
+
+    def __init__(self, global_config):
+        self.config = global_config['bus_collectd']
+        self._queue = Queue.Queue()
+        self._running = False
+        self._should_stop = False
+        self._uuid = global_config['uuid']
+        self._bus_producer = None
+
+    def run(self):
+        logger.info("Running AMQP collectd producer")
+
+        self._running = True
+        while not self._should_stop:
+            try:
+                message = self._queue.get(timeout=0.1)
+                self._send_message(message)
+            except Queue.Empty:
+                pass
+        self._running = False
+        self._should_stop = False
+
+    def _send_message(self, message):
+        if self._bus_producer is None:
+            self._bus_producer, self._publish = self._make_producer()
+
+        self._publish(message, content_type='text/collectd', routing_key='collectd.calls')
+
+    def _make_producer(self):
+        bus_url = 'amqp://{username}:{password}@{host}:{port}//'.format(**self.config)
+        bus_connection = Connection(bus_url)
+        bus_exchange = Exchange(self.config['exchange_name'], type=self.config['exchange_type'])
+        bus_producer = Producer(bus_connection, exchange=bus_exchange, auto_declare=False)
+        publish = bus_connection.ensure(bus_producer,
+                                        bus_producer.publish,
+                                        errback=_on_publish_error,
+                                        max_retries=2,
+                                        interval_start=1)
+        return bus_producer, publish
+
+    def publish(self, event):
+        self._queue.put(event)
+
+    def stop(self):
+        if self._running:
+            self._should_stop = True
+
+
+def _on_publish_error(self, exc, interval):
+    logger.error('Error: %s', exc, exc_info=1)
+    logger.info('Retry in %s seconds...', interval)
+
+
 class CoreBusConsumer(ConsumerMixin):
     _KEY = 'ami.*'
 
