@@ -4,8 +4,8 @@
 
 import logging
 
-from xivo import auth_helpers
+from xivo import auth_verifier
 
 logger = logging.getLogger(__name__)
 
-required_acl = auth_helpers.required_acl
+required_acl = auth_verifier.required_acl

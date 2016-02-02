@@ -5,7 +5,7 @@
 import logging
 
 from threading import Thread
-from xivo.auth_helpers import TokenRenewer
+from xivo.token_renewer import TokenRenewer
 from xivo_auth_client import Client as AuthClient
 
 from xivo_ctid_ng.core import plugin_manager

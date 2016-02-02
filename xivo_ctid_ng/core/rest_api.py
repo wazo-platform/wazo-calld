@@ -13,7 +13,7 @@ from flask import Flask
 from flask_restful import Api
 from flask_restful import Resource
 from flask_cors import CORS
-from xivo import auth_helpers
+from xivo.auth_verifier import AuthVerifier
 from xivo import http_helpers
 from xivo import rest_api_helpers
 
@@ -22,7 +22,7 @@ VERSION = 1.0
 logger = logging.getLogger(__name__)
 app = Flask('xivo_ctid_ng')
 api = Api(app, prefix='/{}'.format(VERSION))
-auth_verifier = auth_helpers.AuthVerifier()
+auth_verifier = AuthVerifier()
 
 
 class CoreRestApi(object):
