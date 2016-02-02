@@ -10,6 +10,7 @@ flask==0.10.1
 flask-restful==0.3.5
 flask-cors==1.10.3
 kombu==3.0.26
+pyopenssl==0.14  # from xivo-lib-python
 pyyaml==3.10
 requests==2.4.3
 stevedore==0.14.1
