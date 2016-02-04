@@ -32,7 +32,7 @@ class TestCollectd(IntegrationTest):
         self.stasis.event_stasis_start(channel_id=call_id)
 
         def assert_function():
-            expected_message = 'PUTVAL [^/]+/calls-{app}.{app_instance}/counter-start .* N:1'
+            expected_message = 'PUTVAL [^/]+/calls-{app}\.{app_instance}\.[^/]+/counter-start .* N:1'
             expected_message = expected_message.format(app=STASIS_APP_NAME, app_instance=STASIS_APP_ARGS[0])
             assert_that(self.bus.text_events(), has_item(matches_regexp(expected_message)))
 
@@ -47,7 +47,7 @@ class TestCollectd(IntegrationTest):
         self.stasis.event_channel_destroyed(channel_id=call_id)
 
         def assert_function():
-            expected_message = 'PUTVAL [^/]+/calls-{app}.{app_instance}/counter-end .* N:1'
+            expected_message = 'PUTVAL [^/]+/calls-{app}\.{app_instance}\.[^/]+/counter-end .* N:1'
             expected_message = expected_message.format(app=STASIS_APP_NAME, app_instance=STASIS_APP_ARGS[0])
             assert_that(self.bus.text_events(), has_item(matches_regexp(expected_message)))
 
@@ -64,7 +64,7 @@ class TestCollectd(IntegrationTest):
                                             timestamp='2016-02-01T16:00:00.000-0500')
 
         def assert_function():
-            expected_message = 'PUTVAL [^/]+/calls-{app}.{app_instance}/gauge-duration .* N:3600'
+            expected_message = 'PUTVAL [^/]+/calls-{app}\.{app_instance}\.[^/]+/gauge-duration .* N:3600'
             expected_message = expected_message.format(app=STASIS_APP_NAME, app_instance=STASIS_APP_ARGS[0])
             assert_that(self.bus.text_events(), has_item(matches_regexp(expected_message)))
 
@@ -80,7 +80,7 @@ class TestCollectd(IntegrationTest):
                                             connected_number='another-number')
 
         def assert_function():
-            expected_message = 'PUTVAL [^/]+/calls-{app}.{app_instance}/counter-abandoned .* N:1'
+            expected_message = 'PUTVAL [^/]+/calls-{app}\.{app_instance}\.[^/]+/counter-abandoned .* N:1'
             expected_message = expected_message.format(app=STASIS_APP_NAME, app_instance=STASIS_APP_ARGS[0])
             assert_that(self.bus.text_events(), not_(has_item(matches_regexp(expected_message))))
 
@@ -95,7 +95,7 @@ class TestCollectd(IntegrationTest):
         self.stasis.event_channel_destroyed(channel_id=call_id)
 
         def assert_function():
-            expected_message = 'PUTVAL [^/]+/calls-{app}.{app_instance}/counter-abandoned .* N:1'
+            expected_message = 'PUTVAL [^/]+/calls-{app}\.{app_instance}\.[^/]+/counter-abandoned .* N:1'
             expected_message = expected_message.format(app=STASIS_APP_NAME, app_instance=STASIS_APP_ARGS[0])
             assert_that(self.bus.text_events(), has_item(matches_regexp(expected_message)))
 
@@ -109,7 +109,7 @@ class TestCollectd(IntegrationTest):
         self.stasis.event_stasis_start(channel_id=call_id, stasis_args=['dialed_from', 'another-channel'])
 
         def assert_function():
-            expected_message = 'PUTVAL [^/]+/calls-{app}.{app_instance}/counter-connect .* N:1'
+            expected_message = 'PUTVAL [^/]+/calls-{app}\.{app_instance}\.[^/]+/counter-connect .* N:1'
             expected_message = expected_message.format(app=STASIS_APP_NAME, app_instance=STASIS_APP_ARGS[0])
             assert_that(self.bus.text_events(), not_(has_item(matches_regexp(expected_message))))
 

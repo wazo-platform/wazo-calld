@@ -32,13 +32,8 @@ bus:
   host: rabbitmq
   port: 5672
 
-bus_collectd:
-  username: guest
-  password: guest
-  host: rabbitmq
-  port: 5672
+collectd:
   exchange_name: collectd
-  exchange_type: topic
 
 confd:
   host: confd
