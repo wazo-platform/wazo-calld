@@ -1,0 +1,116 @@
+# -*- coding: utf-8 -*-
+# Copyright 2015 by Avencall
+# SPDX-License-Identifier: GPL-3.0+
+
+from hamcrest import assert_that
+from hamcrest import has_item
+from hamcrest import matches_regexp
+from hamcrest import not_
+from xivo_test_helpers import until
+
+from .test_api.ari import MockChannel
+from .test_api.base import IntegrationTest
+from .test_api.constants import STASIS_APP_NAME
+from .test_api.constants import STASIS_APP_ARGS
+from .test_api.ctid_ng import new_call_id
+
+
+class TestCollectd(IntegrationTest):
+
+    asset = 'basic_rest'
+
+    def setUp(self):
+        super(TestCollectd, self).setUp()
+        self.ari.reset()
+        self.confd.reset()
+
+    def test_when_new_stasis_channel_then_stat_call_start(self):
+        call_id = new_call_id()
+        self.ari.set_channels(MockChannel(id=call_id))
+        self.bus.listen_events(routing_key='collectd.calls', exchange='collectd')
+
+        self.stasis.event_stasis_start(channel_id=call_id)
+
+        def assert_function():
+            expected_message = 'PUTVAL [^/]+/calls-{app}.{app_instance}/counter-start .* N:1'
+            expected_message = expected_message.format(app=STASIS_APP_NAME, app_instance=STASIS_APP_ARGS[0])
+            assert_that(self.bus.text_events(), has_item(matches_regexp(expected_message)))
+
+        until.assert_(assert_function, tries=5)
+
+    def test_when_stasis_channel_destroyed_then_stat_call_end(self):
+        call_id = new_call_id()
+        self.ari.set_channels(MockChannel(id=call_id))
+        self.bus.listen_events(routing_key='collectd.calls', exchange='collectd')
+
+        self.stasis.event_stasis_start(channel_id=call_id)
+        self.stasis.event_channel_destroyed(channel_id=call_id)
+
+        def assert_function():
+            expected_message = 'PUTVAL [^/]+/calls-{app}.{app_instance}/counter-end .* N:1'
+            expected_message = expected_message.format(app=STASIS_APP_NAME, app_instance=STASIS_APP_ARGS[0])
+            assert_that(self.bus.text_events(), has_item(matches_regexp(expected_message)))
+
+        until.assert_(assert_function, tries=5)
+
+    def test_when_stasis_channel_destroyed_then_stat_call_duration(self):
+        call_id = new_call_id()
+        self.ari.set_channels(MockChannel(id=call_id))
+        self.bus.listen_events(routing_key='collectd.calls', exchange='collectd')
+
+        self.stasis.event_stasis_start(channel_id=call_id)
+        self.stasis.event_channel_destroyed(channel_id=call_id,
+                                            creation_time='2016-02-01T15:00:00.000-0500',
+                                            timestamp='2016-02-01T16:00:00.000-0500')
+
+        def assert_function():
+            expected_message = 'PUTVAL [^/]+/calls-{app}.{app_instance}/gauge-duration .* N:3600'
+            expected_message = expected_message.format(app=STASIS_APP_NAME, app_instance=STASIS_APP_ARGS[0])
+            assert_that(self.bus.text_events(), has_item(matches_regexp(expected_message)))
+
+        until.assert_(assert_function, tries=5)
+
+    def test_given_connected_when_stasis_channel_destroyed_then_do_not_stat_abandoned_call(self):
+        call_id = new_call_id()
+        self.ari.set_channels(MockChannel(id=call_id))
+        self.bus.listen_events(routing_key='collectd.calls', exchange='collectd')
+
+        self.stasis.event_stasis_start(channel_id=call_id)
+        self.stasis.event_channel_destroyed(channel_id=call_id,
+                                            connected_number='another-number')
+
+        def assert_function():
+            expected_message = 'PUTVAL [^/]+/calls-{app}.{app_instance}/counter-abandoned .* N:1'
+            expected_message = expected_message.format(app=STASIS_APP_NAME, app_instance=STASIS_APP_ARGS[0])
+            assert_that(self.bus.text_events(), not_(has_item(matches_regexp(expected_message))))
+
+        until.assert_(assert_function, tries=3)
+
+    def test_given_not_connected_when_stasis_channel_destroyed_then_stat_abandoned_call(self):
+        call_id = new_call_id()
+        self.ari.set_channels(MockChannel(id=call_id))
+        self.bus.listen_events(routing_key='collectd.calls', exchange='collectd')
+
+        self.stasis.event_stasis_start(channel_id=call_id)
+        self.stasis.event_channel_destroyed(channel_id=call_id)
+
+        def assert_function():
+            expected_message = 'PUTVAL [^/]+/calls-{app}.{app_instance}/counter-abandoned .* N:1'
+            expected_message = expected_message.format(app=STASIS_APP_NAME, app_instance=STASIS_APP_ARGS[0])
+            assert_that(self.bus.text_events(), has_item(matches_regexp(expected_message)))
+
+        until.assert_(assert_function, tries=5)
+
+    def test_when_connect_then_stat_connect(self):
+        call_id = new_call_id()
+        self.ari.set_channels(MockChannel(id=call_id))
+        self.bus.listen_events(routing_key='collectd.calls', exchange='collectd')
+
+        self.stasis.event_stasis_start(channel_id=call_id, stasis_args=['dialed_from', 'another-channel'])
+
+        def assert_function():
+            expected_message = 'PUTVAL [^/]+/calls-{app}.{app_instance}/counter-connect .* N:1'
+            expected_message = expected_message.format(app=STASIS_APP_NAME, app_instance=STASIS_APP_ARGS[0])
+            assert_that(self.bus.text_events(), not_(has_item(matches_regexp(expected_message))))
+
+        until.assert_(assert_function, tries=3)

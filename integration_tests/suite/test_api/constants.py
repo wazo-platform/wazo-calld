@@ -13,4 +13,5 @@ BUS_EXCHANGE_TYPE = 'topic'
 BUS_URL = 'amqp://guest:guest@localhost:5672//'
 BUS_QUEUE_NAME = 'integration'
 XIVO_UUID = yaml.load(open(os.path.join(ASSET_ROOT, '_common', 'etc', 'xivo-ctid-ng', 'conf.d', 'uuid.yml'), 'r'))['uuid']
+STASIS_APP_ARGS = ['sw1']
 STASIS_APP_NAME = 'callcontrol'
