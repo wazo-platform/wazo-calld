@@ -5,6 +5,7 @@
 import datetime
 import logging
 
+from functools import partial
 from xivo_bus.collectd.calls.event import CallAbandonedCollectdEvent
 from xivo_bus.collectd.calls.event import CallConnectCollectdEvent
 from xivo_bus.collectd.calls.event import CallDurationCollectdEvent
@@ -61,24 +62,25 @@ class CallsStasis(object):
         if is_connect_event(event):
             return
 
+        app, app_instance = get_stasis_start_app(event)
         channel = event_objects['channel']
-        channel.on_event('ChannelDestroyed', self.stat_end_call)
-        channel.on_event('ChannelDestroyed', self.stat_call_duration)
-        channel.on_event('ChannelDestroyed', self.stat_abandoned_call)
-        bus_event = 'PUTVAL {xivo_uuid}/calls-callcontrol.sw1/counter-start interval=1 N:{increment}'
-        bus_event = bus_event.format(increment=1, xivo_uuid=self.xivo_uuid)
-        self.collectd.publish(CallStartCollectdEvent('callcontrol', 'sw1', event_objects['channel'].id))
+        channel.on_event('ChannelDestroyed', partial(self.stat_end_call, app, app_instance))
+        channel.on_event('ChannelDestroyed', partial(self.stat_call_duration, app, app_instance))
+        channel.on_event('ChannelDestroyed', partial(self.stat_abandoned_call, app, app_instance))
+        app, app_instance = get_stasis_start_app(event)
+        self.collectd.publish(CallStartCollectdEvent(app, app_instance, event_objects['channel'].id))
 
     def stat_connect_call(self, event_objects, event):
         if not is_connect_event(event):
             return
 
-        self.collectd.publish(CallConnectCollectdEvent('callcontrol', 'sw1', event_objects['channel'].id))
+        app, app_instance = get_stasis_start_app(event)
+        self.collectd.publish(CallConnectCollectdEvent(app, app_instance, event_objects['channel'].id))
 
-    def stat_end_call(self, channel, event):
-        self.collectd.publish(CallEndCollectdEvent('callcontrol', 'sw1', channel.id))
+    def stat_end_call(self, app, app_instance, channel, event):
+        self.collectd.publish(CallEndCollectdEvent(app, app_instance, channel.id))
 
-    def stat_call_duration(self, channel, event):
+    def stat_call_duration(self, app, app_instance, channel, event):
         start_time = channel.json['creationtime']
         start_datetime = datetime.datetime.strptime(start_time, "%Y-%m-%dT%H:%M:%S.%f-0500")
 
@@ -86,25 +88,33 @@ class CallsStasis(object):
         end_datetime = datetime.datetime.strptime(end_time, "%Y-%m-%dT%H:%M:%S.%f-0500")
 
         duration = (end_datetime - start_datetime).seconds
-        self.collectd.publish(CallDurationCollectdEvent('callcontrol', 'sw1', channel.id, duration))
+        self.collectd.publish(CallDurationCollectdEvent(app, app_instance, channel.id, duration))
 
-    def stat_abandoned_call(self, channel, event):
+    def stat_abandoned_call(self, app, app_instance, channel, event):
         connected = channel.json['connected']
         if not connected.get('number'):
-            self.collectd.publish(CallAbandonedCollectdEvent('callcontrol', 'sw1', channel.id))
+            self.collectd.publish(CallAbandonedCollectdEvent(app, app_instance, channel.id))
+
+
+def get_stasis_start_app(event):
+    if 'args' not in event:
+        return None, None
+    if len(event['args']) < 1:
+        return None, None
+    return event['application'], event['args'][0]
 
 
 def is_connect_event(event):
     if 'args' not in event:
         return False
-    if len(event['args']) < 1:
+    if len(event['args']) < 2:
         return False
-    return event['args'][0] == 'dialed_from'
+    return event['args'][1] == 'dialed_from'
 
 
 def connect_event_originator(event):
     if 'args' not in event:
         return None
-    if len(event['args']) < 1:
+    if len(event['args']) < 3:
         return None
-    return event['args'][1]
+    return event['args'][2]

@@ -82,3 +82,16 @@ class UserHasNoLine(APIException):
                 'user_uuid': user_uuid
             }
         )
+
+
+class CallConnectError(APIException):
+
+    def __init__(self, call_id):
+        super(CallConnectError, self).__init__(
+            status_code=400,
+            message='Could not connect call: call has no application instance',
+            error_id='call-connect-error',
+            details={
+                'call_id': call_id
+            }
+        )

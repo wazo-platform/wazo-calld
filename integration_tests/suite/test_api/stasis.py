@@ -7,6 +7,7 @@ import requests
 from hamcrest import assert_that, equal_to
 
 from .constants import STASIS_APP_ARGS
+from .constants import STASIS_APP_INSTANCE_NAME
 from .constants import STASIS_APP_NAME
 
 
@@ -17,6 +18,7 @@ class StasisClient(object):
         body = {
             "application": STASIS_APP_NAME,
             "args": [
+                STASIS_APP_INSTANCE_NAME,
                 "dialed_from",
                 from_
             ],

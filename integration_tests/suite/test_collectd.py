@@ -11,7 +11,7 @@ from xivo_test_helpers import until
 from .test_api.ari import MockChannel
 from .test_api.base import IntegrationTest
 from .test_api.constants import STASIS_APP_NAME
-from .test_api.constants import STASIS_APP_ARGS
+from .test_api.constants import STASIS_APP_INSTANCE_NAME
 from .test_api.ctid_ng import new_call_id
 
 
@@ -34,7 +34,7 @@ class TestCollectd(IntegrationTest):
         def assert_function():
             expected_message = 'PUTVAL [^/]+/calls-{app}\.{app_instance}\.{call_id}/counter-start .* N:1'
             expected_message = expected_message.format(app=STASIS_APP_NAME,
-                                                       app_instance=STASIS_APP_ARGS[0],
+                                                       app_instance=STASIS_APP_INSTANCE_NAME,
                                                        call_id=call_id)
             assert_that(self.bus.text_events(), has_item(matches_regexp(expected_message)))
 
@@ -51,7 +51,7 @@ class TestCollectd(IntegrationTest):
         def assert_function():
             expected_message = 'PUTVAL [^/]+/calls-{app}\.{app_instance}\.{call_id}/counter-end .* N:1'
             expected_message = expected_message.format(app=STASIS_APP_NAME,
-                                                       app_instance=STASIS_APP_ARGS[0],
+                                                       app_instance=STASIS_APP_INSTANCE_NAME,
                                                        call_id=call_id)
             assert_that(self.bus.text_events(), has_item(matches_regexp(expected_message)))
 
@@ -70,7 +70,7 @@ class TestCollectd(IntegrationTest):
         def assert_function():
             expected_message = 'PUTVAL [^/]+/calls-{app}\.{app_instance}\.{call_id}/gauge-duration .* N:3600'
             expected_message = expected_message.format(app=STASIS_APP_NAME,
-                                                       app_instance=STASIS_APP_ARGS[0],
+                                                       app_instance=STASIS_APP_INSTANCE_NAME,
                                                        call_id=call_id)
             assert_that(self.bus.text_events(), has_item(matches_regexp(expected_message)))
 
@@ -88,7 +88,7 @@ class TestCollectd(IntegrationTest):
         def assert_function():
             expected_message = 'PUTVAL [^/]+/calls-{app}\.{app_instance}\.{call_id}/counter-abandoned .* N:1'
             expected_message = expected_message.format(app=STASIS_APP_NAME,
-                                                       app_instance=STASIS_APP_ARGS[0],
+                                                       app_instance=STASIS_APP_INSTANCE_NAME,
                                                        call_id=call_id)
             assert_that(self.bus.text_events(), not_(has_item(matches_regexp(expected_message))))
 
@@ -105,7 +105,7 @@ class TestCollectd(IntegrationTest):
         def assert_function():
             expected_message = 'PUTVAL [^/]+/calls-{app}\.{app_instance}\.{call_id}/counter-abandoned .* N:1'
             expected_message = expected_message.format(app=STASIS_APP_NAME,
-                                                       app_instance=STASIS_APP_ARGS[0],
+                                                       app_instance=STASIS_APP_INSTANCE_NAME,
                                                        call_id=call_id)
             assert_that(self.bus.text_events(), has_item(matches_regexp(expected_message)))
 
@@ -121,7 +121,7 @@ class TestCollectd(IntegrationTest):
         def assert_function():
             expected_message = 'PUTVAL [^/]+/calls-{app}\.{app_instance}\.{call_id}/counter-connect .* N:1'
             expected_message = expected_message.format(app=STASIS_APP_NAME,
-                                                       app_instance=STASIS_APP_ARGS[0],
+                                                       app_instance=STASIS_APP_INSTANCE_NAME,
                                                        call_id=call_id)
             assert_that(self.bus.text_events(), not_(has_item(matches_regexp(expected_message))))
 
