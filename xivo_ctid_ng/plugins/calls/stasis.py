@@ -40,33 +40,40 @@ class CallsStasis(object):
         self.ari.applications.subscribe(applicationName='callcontrol', eventSource='channel:')
 
     def bridge_connect_user(self, event_objects, event):
-        if not event.get('args'):
+        if not is_connect_event(event):
             return
 
         channel = event_objects['channel']
-        if event['args'][0] == 'dialed_from':
-            originator_channel_id = event['args'][1]
-            originator_channel = self.ari.channels.get(channelId=originator_channel_id)
-            channel.answer()
-            originator_channel.answer()
-            this_channel_id = channel.id
-            bridge = self.ari.bridges.create(type='mixing')
-            bridge.addChannel(channel=originator_channel_id)
-            bridge.addChannel(channel=this_channel_id)
+        originator_channel_id = connect_event_originator(event)
+        if not originator_channel_id:
+            logger.error('tried to connect call %s but no originator found', channel.id)
+            return
+
+        originator_channel = self.ari.channels.get(channelId=originator_channel_id)
+        channel.answer()
+        originator_channel.answer()
+        this_channel_id = channel.id
+        bridge = self.ari.bridges.create(type='mixing')
+        bridge.addChannel(channel=originator_channel_id)
+        bridge.addChannel(channel=this_channel_id)
 
     def stat_new_call(self, event_objects, event):
-        if event['args'][0] != 'dialed_from':
-            channel = event_objects['channel']
-            channel.on_event('ChannelDestroyed', self.stat_end_call)
-            channel.on_event('ChannelDestroyed', self.stat_call_duration)
-            channel.on_event('ChannelDestroyed', self.stat_abandoned_call)
-            bus_event = 'PUTVAL {xivo_uuid}/calls-callcontrol.sw1/counter-start interval=1 N:{increment}'
-            bus_event = bus_event.format(increment=1, xivo_uuid=self.xivo_uuid)
-            self.collectd.publish(CallStartCollectdEvent('callcontrol', 'sw1', event_objects['channel'].id))
+        if is_connect_event(event):
+            return
+
+        channel = event_objects['channel']
+        channel.on_event('ChannelDestroyed', self.stat_end_call)
+        channel.on_event('ChannelDestroyed', self.stat_call_duration)
+        channel.on_event('ChannelDestroyed', self.stat_abandoned_call)
+        bus_event = 'PUTVAL {xivo_uuid}/calls-callcontrol.sw1/counter-start interval=1 N:{increment}'
+        bus_event = bus_event.format(increment=1, xivo_uuid=self.xivo_uuid)
+        self.collectd.publish(CallStartCollectdEvent('callcontrol', 'sw1', event_objects['channel'].id))
 
     def stat_connect_call(self, event_objects, event):
-        if event['args'][0] == 'dialed_from':
-            self.collectd.publish(CallConnectCollectdEvent('callcontrol', 'sw1', event_objects['channel'].id))
+        if not is_connect_event(event):
+            return
+
+        self.collectd.publish(CallConnectCollectdEvent('callcontrol', 'sw1', event_objects['channel'].id))
 
     def stat_end_call(self, channel, event):
         self.collectd.publish(CallEndCollectdEvent('callcontrol', 'sw1', channel.id))
@@ -85,3 +92,19 @@ class CallsStasis(object):
         connected = channel.json['connected']
         if not connected.get('number'):
             self.collectd.publish(CallAbandonedCollectdEvent('callcontrol', 'sw1', channel.id))
+
+
+def is_connect_event(event):
+    if 'args' not in event:
+        return False
+    if len(event['args']) < 1:
+        return False
+    return event['args'][0] == 'dialed_from'
+
+
+def connect_event_originator(event):
+    if 'args' not in event:
+        return None
+    if len(event['args']) < 1:
+        return None
+    return event['args'][1]
