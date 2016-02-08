@@ -45,7 +45,6 @@ ctid-ng:
     - "../../..:/usr/src/xivo-ctid-ng"
     - "./etc/xivo-ctid-ng:/etc/xivo-ctid-ng"
     - "./ssl:/usr/local/share/ssl"
-    - "/home/seb/data/git/bus/xivo_bus:/usr/local/lib/python2.7/site-packages/xivo_bus"
   ports:
     - "9500:9500"
   links:
