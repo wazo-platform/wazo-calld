@@ -31,8 +31,9 @@ class CallsStasis(object):
         self.subscribe_all_channels_handle = NullHandle()
 
     def subscribe(self):
-        self.ari.on_channel_event('StasisStart', self.bridge_connect_user)
         self.ari.on_channel_event('StasisStart', self.stat_new_call)
+        self.ari.on_channel_event('StasisStart', self.register_end_call_callbacks)
+        self.ari.on_channel_event('StasisStart', self.bridge_connect_user)
         self.ari.on_channel_event('StasisStart', self.stat_connect_call)
         self.subscribe_all_channels_handle = self.ari.on_channel_event('StasisStart', self.subscribe_to_all_channel_events)
 
@@ -63,12 +64,17 @@ class CallsStasis(object):
             return
 
         app, app_instance = get_stasis_start_app(event)
+        self.collectd.publish(CallStartCollectdEvent(app, app_instance, event_objects['channel'].id))
+
+    def register_end_call_callbacks(self, event_objects, event):
+        if is_connect_event(event):
+            return
+
+        app, app_instance = get_stasis_start_app(event)
         channel = event_objects['channel']
         channel.on_event('ChannelDestroyed', partial(self.stat_end_call, app, app_instance))
         channel.on_event('ChannelDestroyed', partial(self.stat_call_duration, app, app_instance))
         channel.on_event('ChannelDestroyed', partial(self.stat_abandoned_call, app, app_instance))
-        app, app_instance = get_stasis_start_app(event)
-        self.collectd.publish(CallStartCollectdEvent(app, app_instance, event_objects['channel'].id))
 
     def stat_connect_call(self, event_objects, event):
         if not is_connect_event(event):
