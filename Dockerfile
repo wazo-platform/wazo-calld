@@ -30,4 +30,4 @@ RUN rm -fr /var/lib/apt/lists/*
 
 EXPOSE 9500
 
-CMD xivo-ctid-ng -f -d
+CMD ["xivo-ctid-ng", "-fd"]
