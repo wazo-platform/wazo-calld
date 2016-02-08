@@ -53,6 +53,7 @@ class CallsStasis(object):
             logger.error('tried to connect call %s but no originator found', channel.id)
             return
 
+        logger.debug('connecting originator %s with callee %s', originator_channel_id, channel.id)
         originator_channel = self.ari.channels.get(channelId=originator_channel_id)
         channel.answer()
         originator_channel.answer()
@@ -66,7 +67,9 @@ class CallsStasis(object):
             return
 
         app, app_instance = get_stasis_start_app(event)
-        self.collectd.publish(CallStartCollectdEvent(app, app_instance, event_objects['channel'].id))
+        channel = event_objects['channel']
+        logger.debug('sending stat for new call %s', channel.id)
+        self.collectd.publish(CallStartCollectdEvent(app, app_instance, channel.id))
 
     def register_end_call_callbacks(self, event_objects, event):
         if is_connect_event(event):
@@ -74,6 +77,7 @@ class CallsStasis(object):
 
         app, app_instance = get_stasis_start_app(event)
         channel = event_objects['channel']
+        logger.debug('registering end callbacks for call %s', channel.id)
         channel.on_event('ChannelDestroyed', partial(self.stat_end_call, app, app_instance))
         channel.on_event('ChannelDestroyed', partial(self.stat_call_duration, app, app_instance))
         channel.on_event('ChannelDestroyed', partial(self.stat_abandoned_call, app, app_instance))
@@ -83,9 +87,12 @@ class CallsStasis(object):
             return
 
         app, app_instance = get_stasis_start_app(event)
-        self.collectd.publish(CallConnectCollectdEvent(app, app_instance, event_objects['channel'].id))
+        channel = event_objects['channel']
+        logger.debug('sending stat for connecting call %s', channel.id)
+        self.collectd.publish(CallConnectCollectdEvent(app, app_instance, channel.id))
 
     def stat_end_call(self, app, app_instance, channel, event):
+        logger.debug('sending stat for ended call %s', channel.id)
         self.collectd.publish(CallEndCollectdEvent(app, app_instance, channel.id))
 
     def stat_call_duration(self, app, app_instance, channel, event):
@@ -95,12 +102,14 @@ class CallsStasis(object):
         end_time = event['timestamp']
         end_datetime = datetime.datetime.strptime(end_time, "%Y-%m-%dT%H:%M:%S.%f-0500")
 
+        logger.debug('sending stat for duration of call %s', channel.id)
         duration = (end_datetime - start_datetime).seconds
         self.collectd.publish(CallDurationCollectdEvent(app, app_instance, channel.id, duration))
 
     def stat_abandoned_call(self, app, app_instance, channel, event):
         connected = channel.json['connected']
         if not connected.get('number'):
+            logger.debug('sending stat for abandoned call %s', channel.id)
             self.collectd.publish(CallAbandonedCollectdEvent(app, app_instance, channel.id))
 
 
