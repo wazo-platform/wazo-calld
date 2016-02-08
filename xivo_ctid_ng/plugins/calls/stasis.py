@@ -12,6 +12,8 @@ from xivo_bus.collectd.calls.event import CallDurationCollectdEvent
 from xivo_bus.collectd.calls.event import CallEndCollectdEvent
 from xivo_bus.collectd.calls.event import CallStartCollectdEvent
 
+from xivo_ctid_ng.core.ari_ import APPLICATION_NAME
+
 logger = logging.getLogger(__name__)
 
 
@@ -39,7 +41,7 @@ class CallsStasis(object):
 
     def subscribe_to_all_channel_events(self, event_objects, event):
         self.subscribe_all_channels_handle.close()
-        self.ari.applications.subscribe(applicationName='callcontrol', eventSource='channel:')
+        self.ari.applications.subscribe(applicationName=APPLICATION_NAME, eventSource='channel:')
 
     def bridge_connect_user(self, event_objects, event):
         if not is_connect_event(event):
