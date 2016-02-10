@@ -32,21 +32,21 @@ class TestARIReconnection(IntegrationTest):
     asset = 'quick_ari_reconnect'
 
     def test_when_asterisk_restart_then_ctid_ng_reconnects(self):
-        assert_that(self.ari.websockets(), has_length(1))
+        until.assert_(self._ctid_ng_is_connected, tries=3)
 
         self.restart_service('ari')
 
         assert_that(self.service_logs(), contains_string("ARI connection error"))
 
-        def ctid_ng_has_reconnected():
-            try:
-                ws = self.ari.websockets()
-            except requests.ConnectionError:
-                ws = []
+        until.assert_(self._ctid_ng_is_connected, tries=3)
 
-            assert_that(ws, has_length(1))
+    def _ctid_ng_is_connected(self):
+        try:
+            ws = self.ari.websockets()
+        except requests.ConnectionError:
+            ws = []
 
-        until.assert_(ctid_ng_has_reconnected, tries=3)
+        assert_that(ws, has_length(1))
 
     '''Other tests I don't know how to implement:
 
