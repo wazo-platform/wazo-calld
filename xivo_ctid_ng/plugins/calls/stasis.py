@@ -4,6 +4,7 @@
 
 import datetime
 import logging
+import iso8601
 
 from functools import partial
 from xivo_bus.collectd.calls.event import CallAbandonedCollectdEvent
@@ -97,10 +98,10 @@ class CallsStasis(object):
 
     def stat_call_duration(self, app, app_instance, channel, event):
         start_time = channel.json['creationtime']
-        start_datetime = datetime.datetime.strptime(start_time, "%Y-%m-%dT%H:%M:%S.%f-0500")
+        start_datetime = iso8601.parse_date(start_time)
 
         end_time = event['timestamp']
-        end_datetime = datetime.datetime.strptime(end_time, "%Y-%m-%dT%H:%M:%S.%f-0500")
+        end_datetime = iso8601.parse_date(end_time)
 
         logger.debug('sending stat for duration of call %s', channel.id)
         duration = (end_datetime - start_datetime).seconds

@@ -16,6 +16,8 @@ from .test_api.constants import STASIS_APP_NAME
 from .test_api.constants import STASIS_APP_INSTANCE_NAME
 from .test_api.ctid_ng import new_call_id
 
+ONE_HOUR = 3600
+
 
 class TestCollectd(IntegrationTest):
 
@@ -74,6 +76,27 @@ class TestCollectd(IntegrationTest):
             expected_message = expected_message.format(app=STASIS_APP_NAME,
                                                        app_instance=STASIS_APP_INSTANCE_NAME,
                                                        call_id=call_id)
+            assert_that(self.bus.events(), has_item(matches_regexp(expected_message)))
+
+        until.assert_(assert_function, tries=5)
+
+    def test_given_different_timezones_when_stasis_channel_destroyed_then_duration_is_correct(self):
+        call_id = new_call_id()
+        self.ari.set_channels(MockChannel(id=call_id))
+        self.bus.listen_events(routing_key='collectd.calls', exchange='collectd')
+
+        self.stasis.event_stasis_start(channel_id=call_id)
+        self.stasis.event_channel_destroyed(channel_id=call_id,
+                                            creation_time='2016-02-01T15:00:00.000+0500',
+                                            timestamp='2016-02-01T16:00:00.000-0500')
+
+        def assert_function():
+            expected_duration = 11 * ONE_HOUR
+            expected_message = 'PUTVAL [^/]+/calls-{app}!{app_instance}!{call_id}/gauge-duration .* N:{duration}'
+            expected_message = expected_message.format(app=STASIS_APP_NAME,
+                                                       app_instance=STASIS_APP_INSTANCE_NAME,
+                                                       call_id=call_id,
+                                                       duration=expected_duration)
             assert_that(self.bus.events(), has_item(matches_regexp(expected_message)))
 
         until.assert_(assert_function, tries=5)

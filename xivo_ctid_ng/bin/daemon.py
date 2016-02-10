@@ -22,7 +22,7 @@ def main(argv):
         change_user(config['user'])
 
     xivo_logging.setup_logging(config['log_filename'], config['foreground'], config['debug'], config['log_level'])
-    xivo_logging.silence_loggers(['amqp', 'Flask-Cors', 'kombu', 'swaggerpy', 'urllib3'], logging.WARNING)
+    xivo_logging.silence_loggers(['amqp', 'Flask-Cors', 'iso8601', 'kombu', 'swaggerpy', 'urllib3'], logging.WARNING)
 
     controller = Controller(config)
 
