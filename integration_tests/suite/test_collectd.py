@@ -38,7 +38,7 @@ class TestCollectd(IntegrationTest):
             expected_message = expected_message.format(app=STASIS_APP_NAME,
                                                        app_instance=STASIS_APP_INSTANCE_NAME,
                                                        call_id=call_id)
-            assert_that(self.bus.text_events(), has_item(matches_regexp(expected_message)))
+            assert_that(self.bus.events(), has_item(matches_regexp(expected_message)))
 
         until.assert_(assert_function, tries=5)
 
@@ -55,7 +55,7 @@ class TestCollectd(IntegrationTest):
             expected_message = expected_message.format(app=STASIS_APP_NAME,
                                                        app_instance=STASIS_APP_INSTANCE_NAME,
                                                        call_id=call_id)
-            assert_that(self.bus.text_events(), has_item(matches_regexp(expected_message)))
+            assert_that(self.bus.events(), has_item(matches_regexp(expected_message)))
 
         until.assert_(assert_function, tries=5)
 
@@ -74,7 +74,7 @@ class TestCollectd(IntegrationTest):
             expected_message = expected_message.format(app=STASIS_APP_NAME,
                                                        app_instance=STASIS_APP_INSTANCE_NAME,
                                                        call_id=call_id)
-            assert_that(self.bus.text_events(), has_item(matches_regexp(expected_message)))
+            assert_that(self.bus.events(), has_item(matches_regexp(expected_message)))
 
         until.assert_(assert_function, tries=5)
 
@@ -92,7 +92,7 @@ class TestCollectd(IntegrationTest):
             expected_message = expected_message.format(app=STASIS_APP_NAME,
                                                        app_instance=STASIS_APP_INSTANCE_NAME,
                                                        call_id=call_id)
-            assert_that(self.bus.text_events(), not_(has_item(matches_regexp(expected_message))))
+            assert_that(self.bus.events(), not_(has_item(matches_regexp(expected_message))))
 
         until.assert_(assert_function, tries=3)
 
@@ -109,7 +109,7 @@ class TestCollectd(IntegrationTest):
             expected_message = expected_message.format(app=STASIS_APP_NAME,
                                                        app_instance=STASIS_APP_INSTANCE_NAME,
                                                        call_id=call_id)
-            assert_that(self.bus.text_events(), has_item(matches_regexp(expected_message)))
+            assert_that(self.bus.events(), has_item(matches_regexp(expected_message)))
 
         until.assert_(assert_function, tries=5)
 
@@ -125,15 +125,28 @@ class TestCollectd(IntegrationTest):
             expected_message = expected_message.format(app=STASIS_APP_NAME,
                                                        app_instance=STASIS_APP_INSTANCE_NAME,
                                                        call_id=call_id)
-            assert_that(self.bus.text_events(), not_(has_item(matches_regexp(expected_message))))
+            assert_that(self.bus.events(), not_(has_item(matches_regexp(expected_message))))
 
         until.assert_(assert_function, tries=3)
+
+
+class TestCollectdFirstStasisStart(IntegrationTest):
+
+    asset = 'basic_rest'
+
+    def setUp(self):
+        super(TestCollectdFirstStasisStart, self).setUp()
+        self.ari.reset()
+        self.confd.reset()
 
     def test_when_new_stasis_channel_then_subscribe_to_all_channel_events(self):
         self.stasis.event_stasis_start(channel_id=new_call_id())
 
-        assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
-            'method': 'POST',
-            'path': '/ari/applications/callcontrol/subscription',
-            'query': [['eventSource', 'channel:']]
-        }))))
+        def assert_function():
+            assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
+                'method': 'POST',
+                'path': '/ari/applications/callcontrol/subscription',
+                'query': [['eventSource', 'channel:']]
+            }))))
+
+        until.assert_(assert_function, tries=3)

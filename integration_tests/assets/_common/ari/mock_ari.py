@@ -173,6 +173,11 @@ def channel_variable(channel_id):
     })
 
 
+@app.route('/ari/applications/<application_name>/subscription', methods=['POST'])
+def subscribe_application(application_name):
+    return jsonify({}), 200
+
+
 @sockets.route('/ari/events')
 def echo_socket(ws):
     global websocket
@@ -183,6 +188,7 @@ def echo_socket(ws):
         except Exception:
             websocket = None
             raise
+
 
 _reset()
 

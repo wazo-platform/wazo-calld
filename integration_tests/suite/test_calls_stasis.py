@@ -56,15 +56,16 @@ class TestDialedFrom(IntegrationTest):
         until.assert_(assert_function, tries=5)
 
     def test_given_dialed_from_when_originator_hangs_up_then_user_stops_ringing(self):
-        call_id = new_call_id()
-        new_call_id_ = new_call_id()
+        call_id = 'call-id'
+        new_call_id = 'new-call-id'
         self.ari.set_channels(MockChannel(id=call_id),
-                              MockChannel(id=new_call_id_, ))
-        self.ari.set_channel_variable({new_call_id_: {'XIVO_USERUUID': 'user-uuid'}})
+                              MockChannel(id=new_call_id, ))
+        self.ari.set_channel_variable({call_id: {'XIVO_STASIS_ARGS': 'sw1'},
+                                       new_call_id: {'XIVO_USERUUID': 'user-uuid'}})
         self.confd.set_users(MockUser(uuid='user-uuid'))
         self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip'))
         self.confd.set_user_lines({'user-uuid': [MockUserLine('line-id')]})
-        self.ari.set_originates(MockChannel(id=new_call_id_))
+        self.ari.set_originates(MockChannel(id=new_call_id))
 
         self.ctid_ng.connect_user(call_id, 'user-uuid')
 
@@ -73,7 +74,7 @@ class TestDialedFrom(IntegrationTest):
         def assert_function():
             assert_that(self.ari.requests(), has_entry('requests', has_items(has_entries({
                 'method': 'DELETE',
-                'path': '/ari/channels/{call_id}'.format(call_id=new_call_id_),
+                'path': '/ari/channels/{call_id}'.format(call_id=new_call_id),
             }))))
 
         until.assert_(assert_function, tries=5)

@@ -12,7 +12,6 @@ from hamcrest import has_entry
 from hamcrest import has_item
 from hamcrest import has_items
 from hamcrest import contains_string
-from xivo_test_helpers import until
 
 from .test_api.ari import MockApplication
 from .test_api.ari import MockBridge
@@ -438,7 +437,8 @@ class TestConnectUser(IntegrationTest):
     def test_given_one_call_and_one_user_when_connect_user_then_the_two_are_talking(self):
         self.ari.set_channels(MockChannel(id='call-id'),
                               MockChannel(id='new-call-id', ))
-        self.ari.set_channel_variable({'new-call-id': {'XIVO_USERUUID': 'user-uuid'}})
+        self.ari.set_channel_variable({'call-id': {'XIVO_STASIS_ARGS': 'sw1'},
+                                       'new-call-id': {'XIVO_USERUUID': 'user-uuid'}})
         self.confd.set_users(MockUser(uuid='user-uuid'))
         self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip'))
         self.confd.set_user_lines({'user-uuid': [MockUserLine('line-id')]})
@@ -452,7 +452,7 @@ class TestConnectUser(IntegrationTest):
         assert_that(self.ari.requests(), has_entry('requests', has_items(has_entries({
             'method': 'POST',
             'path': '/ari/channels',
-            'query': contains_inanyorder(['app', 'callcontrol'], ['endpoint', 'sip/line-name'], ['appArgs', 'dialed_from,call-id']),
+            'query': contains_inanyorder(['app', 'callcontrol'], ['endpoint', 'sip/line-name'], ['appArgs', 'sw1,dialed_from,call-id']),
         }))))
 
     def test_given_no_user_when_connect_user_then_400(self):

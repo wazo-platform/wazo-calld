@@ -53,6 +53,9 @@ _DEFAULT_CONFIG = {
         'exchange_name': 'xivo',
         'exchange_type': 'topic',
     },
+    'collectd': {
+        'exchange_name': 'collectd',
+    },
     'confd': {
         'host': 'localhost',
         'port': 9486,

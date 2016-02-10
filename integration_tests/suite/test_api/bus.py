@@ -29,22 +29,11 @@ class BusClient(object):
             cls.bus_queue = queue
 
     @classmethod
-    def json_events(cls):
+    def events(cls):
         events = []
 
         def on_event(body, message):
-            events.append(json.loads(body))
-            message.ack()
-
-        cls._drain_events(on_event=on_event)
-
-        return events
-
-    @classmethod
-    def text_events(cls):
-        events = []
-
-        def on_event(body, message):
+            # events are already decoded, thanks to the content-type
             events.append(body)
             message.ack()
 
