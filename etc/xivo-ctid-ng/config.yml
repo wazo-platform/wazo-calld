@@ -59,6 +59,11 @@ bus:
   exchange_name: xivo
   exchange_type: topic
 
+# Event bus exchange for collectd (statistics)
+collectd:
+  exchange_name: collectd
+
+# Asterisk ARI connection informations
 ari:
   connection:
     base_url: http://localhost:5039

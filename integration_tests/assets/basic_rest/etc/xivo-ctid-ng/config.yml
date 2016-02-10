@@ -32,6 +32,9 @@ bus:
   host: rabbitmq
   port: 5672
 
+collectd:
+  exchange_name: collectd
+
 confd:
   host: confd
   port: 9486

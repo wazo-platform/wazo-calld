@@ -18,16 +18,17 @@ class Plugin(object):
         ari = dependencies['ari']
         bus_consumer = dependencies['bus_consumer']
         bus_publisher = dependencies['bus_publisher']
+        collectd = dependencies['collectd']
         token_changed_subscribe = dependencies['token_changed_subscribe']
         config = dependencies['config']
 
         calls_service = CallsService(config['ari']['connection'], config['confd'], ari)
         token_changed_subscribe(calls_service.set_confd_token)
 
-        calls_stasis = CallsStasis(ari.client, bus_publisher, calls_service)
+        calls_stasis = CallsStasis(ari.client, collectd, bus_publisher, calls_service, config['uuid'])
         calls_stasis.subscribe()
 
-        calls_bus_event_handler = CallsBusEventHandler(ari.client, bus_publisher, calls_service)
+        calls_bus_event_handler = CallsBusEventHandler(ari.client, collectd, bus_publisher, calls_service, config['uuid'])
         calls_bus_event_handler.subscribe(bus_consumer)
 
         api.add_resource(CallsResource, '/calls', resource_class_args=[calls_service])

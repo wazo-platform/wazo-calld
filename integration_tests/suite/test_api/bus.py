@@ -20,8 +20,8 @@ from .constants import BUS_QUEUE_NAME
 class BusClient(object):
 
     @classmethod
-    def listen_events(cls, routing_key):
-        exchange = Exchange(BUS_EXCHANGE_NAME, type=BUS_EXCHANGE_TYPE)
+    def listen_events(cls, routing_key, exchange=BUS_EXCHANGE_NAME):
+        exchange = Exchange(exchange, type=BUS_EXCHANGE_TYPE)
         with Connection(BUS_URL) as conn:
             queue = Queue(BUS_QUEUE_NAME, exchange=exchange, routing_key=routing_key, channel=conn.channel())
             queue.declare()
@@ -33,17 +33,23 @@ class BusClient(object):
         events = []
 
         def on_event(body, message):
-            events.append(json.loads(body))
+            # events are already decoded, thanks to the content-type
+            events.append(body)
             message.ack()
 
+        cls._drain_events(on_event=on_event)
+
+        return events
+
+    @classmethod
+    def _drain_events(cls, on_event):
         with Connection(BUS_URL) as conn:
             with Consumer(conn, cls.bus_queue, callbacks=[on_event]):
                 try:
-                    conn.drain_events(timeout=0.5)
+                    while True:
+                        conn.drain_events(timeout=0.5)
                 except TimeoutError:
                     pass
-
-        return events
 
     @classmethod
     def send_event(cls, event, routing_key):

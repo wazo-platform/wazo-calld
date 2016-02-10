@@ -5,7 +5,6 @@
 import json
 import kombu
 import logging
-import Queue
 
 from collections import defaultdict
 from kombu import Connection
@@ -15,6 +14,7 @@ from kombu.mixins import ConsumerMixin
 
 from xivo_bus import Marshaler
 from xivo_bus import Publisher
+from xivo_bus import PublishingQueue
 
 
 logger = logging.getLogger(__name__)
@@ -24,30 +24,13 @@ class CoreBusPublisher(object):
 
     def __init__(self, global_config):
         self.config = global_config['bus']
-        self._queue = Queue.Queue()
-        self._running = False
-        self._should_stop = False
         self._uuid = global_config['uuid']
-        self._bus_publisher = None
+        self._publisher = PublishingQueue(self._make_publisher)
 
     def run(self):
         logger.info("Running AMQP publisher")
 
-        self._running = True
-        while not self._should_stop:
-            try:
-                message = self._queue.get(timeout=0.1)
-                self._send_message(message)
-            except Queue.Empty:
-                pass
-        self._running = False
-        self._should_stop = False
-
-    def _send_message(self, message):
-        if self._bus_publisher is None:
-            self._bus_publisher = self._make_publisher()
-
-        self._bus_publisher.publish(message)
+        self._publisher.run()
 
     def _make_publisher(self):
         bus_url = 'amqp://{username}:{password}@{host}:{port}//'.format(**self.config)
@@ -58,11 +41,10 @@ class CoreBusPublisher(object):
         return Publisher(bus_producer, bus_marshaler)
 
     def publish(self, event):
-        self._queue.put(event)
+        self._publisher.publish(event)
 
     def stop(self):
-        if self._running:
-            self._should_stop = True
+        self._publisher.stop()
 
 
 class CoreBusConsumer(ConsumerMixin):
