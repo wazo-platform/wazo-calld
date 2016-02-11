@@ -6,6 +6,7 @@ import logging
 
 from requests.exceptions import HTTPError
 from xivo_bus.collectd.channels.event import ChannelCreatedCollectdEvent
+from xivo_bus.collectd.channels.event import ChannelEndedCollectdEvent
 from xivo_bus.resources.calls.event import CreateCallEvent
 from xivo_bus.resources.calls.event import EndCallEvent
 from xivo_bus.resources.calls.event import UpdateCallEvent
@@ -30,6 +31,7 @@ class CallsBusEventHandler(object):
         bus_consumer.on_ami_event('Newchannel', self._collectd_channel_created)
         bus_consumer.on_ami_event('Newstate', self._relay_channel_updated)
         bus_consumer.on_ami_event('Hangup', self._relay_channel_hung_up)
+        bus_consumer.on_ami_event('Hangup', self._collectd_channel_ended)
 
     def _relay_channel_created(self, event):
         channel_id = event['Uniqueid']
@@ -40,8 +42,7 @@ class CallsBusEventHandler(object):
         self.bus_publisher.publish(bus_event)
 
     def _collectd_channel_created(self, event):
-        channel_id = event['Uniqueid']
-        self.collectd.publish(ChannelCreatedCollectdEvent(channel_id))
+        self.collectd.publish(ChannelCreatedCollectdEvent())
 
     def _relay_channel_updated(self, event):
         channel_id = event['Uniqueid']
@@ -62,3 +63,6 @@ class CallsBusEventHandler(object):
         call = self.services.make_call_from_ami_event(event)
         bus_event = EndCallEvent(call.to_dict())
         self.bus_publisher.publish(bus_event)
+
+    def _collectd_channel_ended(self, event):
+        self.collectd.publish(ChannelEndedCollectdEvent())

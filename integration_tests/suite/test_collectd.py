@@ -2,6 +2,8 @@
 # Copyright 2015 by Avencall
 # SPDX-License-Identifier: GPL-3.0+
 
+import time
+
 from hamcrest import assert_that
 from hamcrest import has_entries
 from hamcrest import has_entry
@@ -23,10 +25,39 @@ class TestCollectd(IntegrationTest):
 
     asset = 'basic_rest'
 
+    @classmethod
+    def setUpClass(cls):
+        super(TestCollectd, cls).setUpClass()
+        time.sleep(3)  # wait for xivo-ctid-ng to connect to the bus
+
     def setUp(self):
         super(TestCollectd, self).setUp()
         self.ari.reset()
         self.confd.reset()
+
+    def test_when_new_channel_then_stat_channel_start(self):
+        channel_id = 'channel-id'
+        self.bus.listen_events(routing_key='collectd.channels', exchange='collectd')
+
+        self.bus.send_ami_newchannel_event(channel_id=channel_id)
+
+        def assert_function():
+            expected_message = 'PUTVAL [^/]+/channels-global/counter-created .* N:1'
+            assert_that(self.bus.events(), has_item(matches_regexp(expected_message)))
+
+        until.assert_(assert_function, tries=5)
+
+    def test_when_channel_ends_then_stat_channel_ended(self):
+        channel_id = 'channel-id'
+        self.bus.listen_events(routing_key='collectd.channels', exchange='collectd')
+
+        self.bus.send_ami_hangup_event(channel_id=channel_id)
+
+        def assert_function():
+            expected_message = 'PUTVAL [^/]+/channels-global/counter-ended .* N:1'
+            assert_that(self.bus.events(), has_item(matches_regexp(expected_message)))
+
+        until.assert_(assert_function, tries=5)
 
     def test_when_new_stasis_channel_then_stat_call_start(self):
         call_id = new_call_id()
