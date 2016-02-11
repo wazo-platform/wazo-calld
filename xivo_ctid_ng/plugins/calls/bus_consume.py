@@ -42,6 +42,8 @@ class CallsBusEventHandler(object):
         self.bus_publisher.publish(bus_event)
 
     def _collectd_channel_created(self, event):
+        channel_id = event['Uniqueid']
+        logger.debug('sending stat for new channel %s', channel_id)
         self.collectd.publish(ChannelCreatedCollectdEvent())
 
     def _relay_channel_updated(self, event):
@@ -65,4 +67,6 @@ class CallsBusEventHandler(object):
         self.bus_publisher.publish(bus_event)
 
     def _collectd_channel_ended(self, event):
+        channel_id = event['Uniqueid']
+        logger.debug('sending stat for channel ended %s', channel_id)
         self.collectd.publish(ChannelEndedCollectdEvent())
