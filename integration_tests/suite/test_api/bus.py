@@ -56,7 +56,7 @@ class BusClient(object):
         bus_exchange = Exchange(BUS_EXCHANGE_NAME, type=BUS_EXCHANGE_TYPE)
         with Connection(BUS_URL) as connection:
             producer = Producer(connection, exchange=bus_exchange, auto_declare=True)
-            producer.publish(json.dumps(event), routing_key=routing_key)
+            producer.publish(json.dumps(event), routing_key=routing_key, content_type='application/json')
 
     @classmethod
     def send_ami_newchannel_event(cls, channel_id):
