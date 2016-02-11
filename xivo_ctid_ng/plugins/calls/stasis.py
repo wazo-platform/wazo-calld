@@ -2,9 +2,8 @@
 # Copyright 2015 by Avencall
 # SPDX-License-Identifier: GPL-3.0+
 
-import datetime
-import logging
 import iso8601
+import logging
 
 from functools import partial
 from xivo_bus.collectd.calls.event import CallAbandonedCollectdEvent
@@ -70,7 +69,7 @@ class CallsStasis(object):
         app, app_instance = get_stasis_start_app(event)
         channel = event_objects['channel']
         logger.debug('sending stat for new call %s', channel.id)
-        self.collectd.publish(CallStartCollectdEvent(app, app_instance, channel.id))
+        self.collectd.publish(CallStartCollectdEvent(app, app_instance))
 
     def register_end_call_callbacks(self, event_objects, event):
         if is_connect_event(event):
@@ -90,11 +89,11 @@ class CallsStasis(object):
         app, app_instance = get_stasis_start_app(event)
         channel = event_objects['channel']
         logger.debug('sending stat for connecting call %s', channel.id)
-        self.collectd.publish(CallConnectCollectdEvent(app, app_instance, channel.id))
+        self.collectd.publish(CallConnectCollectdEvent(app, app_instance))
 
     def stat_end_call(self, app, app_instance, channel, event):
         logger.debug('sending stat for ended call %s', channel.id)
-        self.collectd.publish(CallEndCollectdEvent(app, app_instance, channel.id))
+        self.collectd.publish(CallEndCollectdEvent(app, app_instance))
 
     def stat_call_duration(self, app, app_instance, channel, event):
         start_time = channel.json['creationtime']
@@ -105,13 +104,13 @@ class CallsStasis(object):
 
         logger.debug('sending stat for duration of call %s', channel.id)
         duration = (end_datetime - start_datetime).seconds
-        self.collectd.publish(CallDurationCollectdEvent(app, app_instance, channel.id, duration))
+        self.collectd.publish(CallDurationCollectdEvent(app, app_instance, duration))
 
     def stat_abandoned_call(self, app, app_instance, channel, event):
         connected = channel.json['connected']
         if not connected.get('number'):
             logger.debug('sending stat for abandoned call %s', channel.id)
-            self.collectd.publish(CallAbandonedCollectdEvent(app, app_instance, channel.id))
+            self.collectd.publish(CallAbandonedCollectdEvent(app, app_instance))
 
 
 def get_stasis_start_app(event):

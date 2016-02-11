@@ -67,10 +67,9 @@ class TestCollectd(IntegrationTest):
         self.stasis.event_stasis_start(channel_id=call_id)
 
         def assert_function():
-            expected_message = 'PUTVAL [^/]+/calls-{app}!{app_instance}!{call_id}/counter-start .* N:1'
+            expected_message = 'PUTVAL [^/]+/calls-{app}.{app_instance}/counter-start .* N:1'
             expected_message = expected_message.format(app=STASIS_APP_NAME,
-                                                       app_instance=STASIS_APP_INSTANCE_NAME,
-                                                       call_id=call_id)
+                                                       app_instance=STASIS_APP_INSTANCE_NAME)
             assert_that(self.bus.events(), has_item(matches_regexp(expected_message)))
 
         until.assert_(assert_function, tries=5)
@@ -84,10 +83,9 @@ class TestCollectd(IntegrationTest):
         self.stasis.event_channel_destroyed(channel_id=call_id)
 
         def assert_function():
-            expected_message = 'PUTVAL [^/]+/calls-{app}!{app_instance}!{call_id}/counter-end .* N:1'
+            expected_message = 'PUTVAL [^/]+/calls-{app}.{app_instance}/counter-end .* N:1'
             expected_message = expected_message.format(app=STASIS_APP_NAME,
-                                                       app_instance=STASIS_APP_INSTANCE_NAME,
-                                                       call_id=call_id)
+                                                       app_instance=STASIS_APP_INSTANCE_NAME)
             assert_that(self.bus.events(), has_item(matches_regexp(expected_message)))
 
         until.assert_(assert_function, tries=5)
@@ -103,10 +101,9 @@ class TestCollectd(IntegrationTest):
                                             timestamp='2016-02-01T16:00:00.000-0500')
 
         def assert_function():
-            expected_message = 'PUTVAL [^/]+/calls-{app}!{app_instance}!{call_id}/gauge-duration .* N:3600'
+            expected_message = 'PUTVAL [^/]+/calls-{app}.{app_instance}/gauge-duration .* N:3600'
             expected_message = expected_message.format(app=STASIS_APP_NAME,
-                                                       app_instance=STASIS_APP_INSTANCE_NAME,
-                                                       call_id=call_id)
+                                                       app_instance=STASIS_APP_INSTANCE_NAME)
             assert_that(self.bus.events(), has_item(matches_regexp(expected_message)))
 
         until.assert_(assert_function, tries=5)
@@ -123,10 +120,9 @@ class TestCollectd(IntegrationTest):
 
         def assert_function():
             expected_duration = 11 * ONE_HOUR
-            expected_message = 'PUTVAL [^/]+/calls-{app}!{app_instance}!{call_id}/gauge-duration .* N:{duration}'
+            expected_message = 'PUTVAL [^/]+/calls-{app}.{app_instance}/gauge-duration .* N:{duration}'
             expected_message = expected_message.format(app=STASIS_APP_NAME,
                                                        app_instance=STASIS_APP_INSTANCE_NAME,
-                                                       call_id=call_id,
                                                        duration=expected_duration)
             assert_that(self.bus.events(), has_item(matches_regexp(expected_message)))
 
@@ -142,10 +138,9 @@ class TestCollectd(IntegrationTest):
                                             connected_number='another-number')
 
         def assert_function():
-            expected_message = 'PUTVAL [^/]+/calls-{app}!{app_instance}!{call_id}/counter-abandoned .* N:1'
+            expected_message = 'PUTVAL [^/]+/calls-{app}.{app_instance}/counter-abandoned .* N:1'
             expected_message = expected_message.format(app=STASIS_APP_NAME,
-                                                       app_instance=STASIS_APP_INSTANCE_NAME,
-                                                       call_id=call_id)
+                                                       app_instance=STASIS_APP_INSTANCE_NAME)
             assert_that(self.bus.events(), not_(has_item(matches_regexp(expected_message))))
 
         until.assert_(assert_function, tries=3)
@@ -159,10 +154,9 @@ class TestCollectd(IntegrationTest):
         self.stasis.event_channel_destroyed(channel_id=call_id)
 
         def assert_function():
-            expected_message = 'PUTVAL [^/]+/calls-{app}!{app_instance}!{call_id}/counter-abandoned .* N:1'
+            expected_message = 'PUTVAL [^/]+/calls-{app}.{app_instance}/counter-abandoned .* N:1'
             expected_message = expected_message.format(app=STASIS_APP_NAME,
-                                                       app_instance=STASIS_APP_INSTANCE_NAME,
-                                                       call_id=call_id)
+                                                       app_instance=STASIS_APP_INSTANCE_NAME)
             assert_that(self.bus.events(), has_item(matches_regexp(expected_message)))
 
         until.assert_(assert_function, tries=5)
@@ -175,10 +169,9 @@ class TestCollectd(IntegrationTest):
         self.stasis.event_stasis_start(channel_id=call_id, stasis_args=['dialed_from', 'another-channel'])
 
         def assert_function():
-            expected_message = 'PUTVAL [^/]+/calls-{app}!{app_instance}!{call_id}/counter-connect .* N:1'
+            expected_message = 'PUTVAL [^/]+/calls-{app}.{app_instance}/counter-connect .* N:1'
             expected_message = expected_message.format(app=STASIS_APP_NAME,
-                                                       app_instance=STASIS_APP_INSTANCE_NAME,
-                                                       call_id=call_id)
+                                                       app_instance=STASIS_APP_INSTANCE_NAME)
             assert_that(self.bus.events(), not_(has_item(matches_regexp(expected_message))))
 
         until.assert_(assert_function, tries=3)
