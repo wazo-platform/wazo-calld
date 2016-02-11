@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015 by Avencall
+# Copyright 2015-2016 by Avencall
 # SPDX-License-Identifier: GPL-3.0+
 
-import json
 import kombu
 import logging
 
@@ -72,8 +71,7 @@ class CoreBusConsumer(ConsumerMixin):
         self._callbacks[event_type].append(callback)
 
     def _on_bus_message(self, body, message):
-        msg = json.loads(body)
-        event = msg['data']
+        event = body['data']
         event_type = event['Event']
         for callback in self._callbacks[event_type]:
             try:
