@@ -23,7 +23,7 @@ class TestDialedFrom(IntegrationTest):
     @classmethod
     def setUpClass(cls):
         super(TestDialedFrom, cls).setUpClass()
-        time.sleep(3)  # wait for xivo-ctid-ng to connect to the bus
+        time.sleep(4)  # wait for xivo-ctid-ng to connect to the bus
 
     def setUp(self):
         super(TestDialedFrom, self).setUp()

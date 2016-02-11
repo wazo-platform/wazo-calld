@@ -28,7 +28,7 @@ class TestCollectd(IntegrationTest):
     @classmethod
     def setUpClass(cls):
         super(TestCollectd, cls).setUpClass()
-        time.sleep(3)  # wait for xivo-ctid-ng to connect to the bus
+        time.sleep(4)  # wait for xivo-ctid-ng to connect to the bus
 
     def setUp(self):
         super(TestCollectd, self).setUp()
