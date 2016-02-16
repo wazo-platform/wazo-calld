@@ -16,7 +16,8 @@ _EMPTY_RESPONSES = {
     'applications': {},
     'bridges': {},
     'channels': {},
-    'channel_variable': {},
+    'channel_variables': {},
+    'global_variables': {},
     'originates': [],
 }
 
@@ -153,7 +154,7 @@ def post_bridge():
         'name': '',
         'channels': []
     }
-    return jsonify(new_bridge), 200
+    return jsonify(new_bridge)
 
 
 @app.route('/ari/bridges/<bridge_id>/addChannel', methods=['POST'])
@@ -164,18 +165,36 @@ def add_channel_to_bridge(bridge_id):
 @app.route('/ari/channels/<channel_id>/variable')
 def channel_variable(channel_id):
     variable = request.args['variable']
-    if channel_id not in _responses['channel_variable']:
+    if channel_id not in _responses['channel_variables']:
         return '', 404
-    if variable not in _responses['channel_variable'][channel_id]:
+    if variable not in _responses['channel_variables'][channel_id]:
         return '', 404
     return jsonify({
-        'value': _responses['channel_variable'][channel_id][variable]
+        'value': _responses['channel_variables'][channel_id][variable]
     })
 
 
 @app.route('/ari/applications/<application_name>/subscription', methods=['POST'])
 def subscribe_application(application_name):
-    return jsonify({}), 200
+    return jsonify({})
+
+
+@app.route('/ari/asterisk/variable', methods=['GET'])
+def get_global_variable():
+    variable = request.args['variable']
+    if variable not in _responses['global_variables']:
+        return '', 404
+    return jsonify({
+        'value': _responses['global_variables'][variable]
+    })
+
+
+@app.route('/ari/asterisk/variable', methods=['POST'])
+def set_global_variable():
+    variable = request.args['variable']
+    value = request.args['value']
+    _responses['global_variables'][variable] = value
+    return ''
 
 
 @sockets.route('/ari/events')
