@@ -97,9 +97,13 @@ class CallConnectError(APIException):
         )
 
 
-class InvalidConnectCallEvent(RuntimeError):
+class InvalidCallEvent(RuntimeError):
     pass
 
 
-class InvalidStartCallEvent(RuntimeError):
+class InvalidStartCallEvent(InvalidCallEvent):
+    pass
+
+
+class InvalidConnectCallEvent(InvalidStartCallEvent):
     pass

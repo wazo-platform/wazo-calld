@@ -16,6 +16,7 @@ from xivo_bus.collectd.calls.event import CallStartCollectdEvent
 from xivo_ctid_ng.core.ari_ import APPLICATION_NAME
 from xivo_ctid_ng.core.ari_ import not_found
 
+from .exceptions import InvalidCallEvent
 from .exceptions import InvalidConnectCallEvent
 from .exceptions import InvalidStartCallEvent
 
@@ -149,7 +150,10 @@ class CallEvent(object):
         self.app, self.app_instance = self._get_app()
 
     def _get_app(self):
-        cache_entry = self._state_persistor.get(self.channel.id)
+        try:
+            cache_entry = self._state_persistor.get(self.channel.id)
+        except KeyError:
+            raise InvalidCallEvent()
         return cache_entry.app, cache_entry.app_instance
 
     def duration(self):
@@ -163,9 +167,6 @@ class CallEvent(object):
 
 
 class StartCallEvent(CallEvent):
-
-    def __init__(self, channel, event, state_persistor):
-        super(StartCallEvent, self).__init__(channel, event, state_persistor)
 
     def _get_app(self):
         if 'args' not in self._event:
@@ -205,6 +206,8 @@ class StateFactory(object):
 
     def __init__(self, ari=None, stat_sender=None):
         self._state_constructors = {}
+        self._ari = ari
+        self._stat_sender = stat_sender
 
     def set_dependencies(self, ari, stat_sender):
         self._ari = ari
