@@ -95,3 +95,11 @@ class CallConnectError(APIException):
                 'call_id': call_id
             }
         )
+
+
+class InvalidConnectCallEvent(RuntimeError):
+    pass
+
+
+class InvalidStartCallEvent(RuntimeError):
+    pass

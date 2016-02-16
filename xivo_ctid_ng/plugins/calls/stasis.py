@@ -16,6 +16,9 @@ from xivo_bus.collectd.calls.event import CallStartCollectdEvent
 from xivo_ctid_ng.core.ari_ import APPLICATION_NAME
 from xivo_ctid_ng.core.ari_ import not_found
 
+from .exceptions import InvalidConnectCallEvent
+from .exceptions import InvalidStartCallEvent
+
 logger = logging.getLogger(__name__)
 
 
@@ -166,14 +169,10 @@ class StartCallEvent(CallEvent):
 
     def _get_app(self):
         if 'args' not in self._event:
-            return None, None
+            raise InvalidStartCallEvent()
         if len(self._event['args']) < 1:
-            return None, None
+            raise InvalidStartCallEvent()
         return self._event['application'], self._event['args'][0]
-
-
-class InvalidConnectCallEvent(RuntimeError):
-    pass
 
 
 class ConnectCallEvent(StartCallEvent):
@@ -197,8 +196,6 @@ class ConnectCallEvent(StartCallEvent):
         return event['args'][1] == 'dialed_from'
 
     def _originator_channel_id(self, event):
-        if 'args' not in event:
-            raise InvalidConnectCallEvent()
         if len(event['args']) < 3:
             raise InvalidConnectCallEvent()
         return event['args'][2]
