@@ -194,7 +194,7 @@ def set_global_variable():
     variable = request.args['variable']
     value = request.args['value']
     _responses['global_variables'][variable] = value
-    return ''
+    return '', 204
 
 
 @sockets.route('/ari/events')
