@@ -2,14 +2,18 @@
 # Copyright 2015 by Avencall
 # SPDX-License-Identifier: GPL-3.0+
 
+import json
+
 from hamcrest import assert_that
 from hamcrest import has_entries
 from hamcrest import has_entry
 from hamcrest import has_items
 from xivo_test_helpers import until
 
-from .test_api.base import IntegrationTest
 from .test_api.ari import MockChannel
+from .test_api.base import IntegrationTest
+from .test_api.constants import STASIS_APP_NAME
+from .test_api.constants import STASIS_APP_INSTANCE_NAME
 from .test_api.ctid_ng import new_call_id
 from .test_api.confd import MockLine
 from .test_api.confd import MockUser
@@ -29,6 +33,9 @@ class TestDialedFrom(IntegrationTest):
         call_id = new_call_id()
         new_call_id_ = new_call_id()
         self.ari.set_channels(MockChannel(id=call_id), MockChannel(id=new_call_id_))
+        self.ari.set_global_variables({'XIVO_CALLCONTROL': json.dumps({call_id: {'state': 'ringing',
+                                                                                 'app': STASIS_APP_NAME,
+                                                                                 'app_instance': STASIS_APP_INSTANCE_NAME}})})
 
         self.stasis.event_answer_connect(from_=call_id, new_call_id=new_call_id_)
 

@@ -33,7 +33,13 @@ class ARIClient(object):
 
     def set_channel_variable(self, variables):
         url = 'http://localhost:5039/_set_response'
-        body = {'response': 'channel_variable',
+        body = {'response': 'channel_variables',
+                'content': variables}
+        requests.post(url, json=body)
+
+    def set_global_variables(self, variables):
+        url = 'http://localhost:5039/_set_response'
+        body = {'response': 'global_variables',
                 'content': variables}
         requests.post(url, json=body)
 
