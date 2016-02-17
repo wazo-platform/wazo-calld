@@ -18,7 +18,7 @@ class TestStateFactory(TestCase):
     def test_make_before_set_dependencies(self):
         factory = StateFactory()
 
-        assert_that(calling(factory.make).with_args('state-name'), raises(AssertionError))
+        assert_that(calling(factory.make).with_args('state-name'), raises(RuntimeError))
 
     def test_make_unknown_state(self):
         factory = StateFactory()

@@ -19,7 +19,8 @@ class StateFactory(object):
         self._stat_sender = stat_sender
 
     def make(self, state_name):
-        assert self._ari and self._stat_sender, 'StateFactory is not configured'
+        if not self._ari or not self._stat_sender:
+            raise RuntimeError('StateFactory is not configured')
         return self._state_constructors[state_name](self._ari, self._stat_sender)
 
     def state(self, wrapped_class):
