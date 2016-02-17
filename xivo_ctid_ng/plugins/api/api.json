@@ -14,6 +14,18 @@
     ],
     "x-xivo-port": 9500,
     "x-xivo-name": "ctid-ng",
+    "securityDefinitions": {
+        "xivo_auth_token": {
+            "type": "apiKey",
+            "name": "X-Auth-Token",
+            "in": "header"
+        }
+    },
+    "security": [
+        {
+            "xivo_auth_token": []
+        }
+    ],
     "paths": {
         "/calls": {
             "get": {
@@ -31,9 +43,6 @@
                         "description": "Filter calls by Stasis application instance, e.g. switchboard-sales,green. This value filters on the channel variable XIVO_STASIS_ARGS. Args should be separated by commas (,).",
                         "in": "query",
                         "type": "string"
-                    },
-                    {
-                        "$ref": "#/parameters/token"
                     }
                 ],
                 "tags": [
@@ -71,9 +80,6 @@
                         "schema": {
                             "$ref": "#/definitions/CallRequest"
                         }
-                    },
-                    {
-                        "$ref": "#/parameters/token"
                     }
                 ],
                 "tags": [
@@ -109,9 +115,6 @@
                         "description": "ID of the call",
                         "required": true,
                         "type": "string"
-                    },
-                    {
-                        "$ref": "#/parameters/token"
                     }
                 ],
                 "tags": [
@@ -144,9 +147,6 @@
                         "description": "ID of the call",
                         "required": true,
                         "type": "string"
-                    },
-                    {
-                        "$ref": "#/parameters/token"
                     }
                 ],
                 "tags": [
@@ -185,9 +185,6 @@
                         "description": "UUID of the user",
                         "required": true,
                         "type": "string"
-                    },
-                    {
-                        "$ref": "#/parameters/token"
                     }
                 ],
                 "tags": [
@@ -213,15 +210,6 @@
             "schema": {
                 "$ref": "#/definitions/Error"
             }
-        }
-    },
-    "parameters": {
-        "token": {
-            "required": true,
-            "name": "X-Auth-Token",
-            "in": "header",
-            "type": "string",
-            "description": "Authentication token obtained from xivo-auth."
         }
     },
     "definitions": {
