@@ -56,6 +56,10 @@ class Controller(object):
             collectd_thread.join()
             bus_producer_thread.join()
 
+    def stop(self, reason):
+        logger.warning('Stopping xivo-ctid-ng: %s', reason)
+        self.rest_api.stop()
+
     def _load_plugins(self, global_config):
         load_args = [{
             'api': api,

@@ -4,7 +4,10 @@
 
 
 import logging
+import signal
 import sys
+
+from functools import partial
 
 from xivo.daemonize import pidfile_context
 from xivo.user_rights import change_user
@@ -25,9 +28,14 @@ def main(argv):
     xivo_logging.silence_loggers(['amqp', 'Flask-Cors', 'iso8601', 'kombu', 'swaggerpy', 'urllib3'], logging.WARNING)
 
     controller = Controller(config)
+    signal.signal(signal.SIGTERM, partial(sigterm, controller))
 
     with pidfile_context(config['pid_filename'], config['foreground']):
         controller.run()
+
+
+def sigterm(controller, signum, frame):
+    controller.stop(reason='SIGTERM')
 
 
 if __name__ == '__main__':

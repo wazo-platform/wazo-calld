@@ -2,13 +2,11 @@
 # Copyright 2015 by Avencall
 # SPDX-License-Identifier: GPL-3.0+
 
-
-from datetime import timedelta
-
 import logging
 import os
 
 from cherrypy import wsgiserver
+from datetime import timedelta
 from flask import Flask
 from flask_restful import Api
 from flask_restful import Resource
@@ -35,6 +33,7 @@ class CoreRestApi(object):
         app.permanent_session_lifetime = timedelta(minutes=5)
         auth_verifier.set_config(global_config['auth'])
         self._load_cors()
+        self.server = None
 
     def _load_cors(self):
         cors_config = dict(self.config.get('cors', {}))
@@ -46,19 +45,23 @@ class CoreRestApi(object):
         bind_addr = (self.config['listen'], self.config['port'])
 
         wsgi_app = wsgiserver.WSGIPathInfoDispatcher({'/': app})
-        server = wsgiserver.CherryPyWSGIServer(bind_addr=bind_addr,
-                                               wsgi_app=wsgi_app)
-        server.ssl_adapter = http_helpers.ssl_adapter(self.config['certificate'],
-                                                      self.config['private_key'],
-                                                      self.config['ciphers'])
+        self.server = wsgiserver.CherryPyWSGIServer(bind_addr=bind_addr,
+                                                    wsgi_app=wsgi_app)
+        self.server.ssl_adapter = http_helpers.ssl_adapter(self.config['certificate'],
+                                                           self.config['private_key'],
+                                                           self.config['ciphers'])
         logger.debug('WSGIServer starting... uid: %s, listen: %s:%s', os.getuid(), bind_addr[0], bind_addr[1])
         for route in http_helpers.list_routes(app):
             logger.debug(route)
 
         try:
-            server.start()
+            self.server.start()
         except KeyboardInterrupt:
-            server.stop()
+            self.server.stop()
+
+    def stop(self):
+        if self.server:
+            self.server.stop()
 
 
 class ErrorCatchingResource(Resource):
