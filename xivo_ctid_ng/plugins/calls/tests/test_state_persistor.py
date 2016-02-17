@@ -117,9 +117,8 @@ class TestStatePersistor(TestCase):
 
     def assert_set_global_var(self, variable_name, expected):
         calls = self.ari.asterisk.setGlobalVar.call_args_list
-        print calls
         for args, kwargs in calls:
             value = json.loads(kwargs['value'])
             if kwargs['variable'] == variable_name and expected == value:
                 return
-        self.fail('no call to setGlobalVar({}, {})'.format(variable_name, expected))
+        self.fail('no call to setGlobalVar({}, {})\n\tgot: {}'.format(variable_name, expected, calls))
