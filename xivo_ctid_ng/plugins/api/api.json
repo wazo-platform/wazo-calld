@@ -30,7 +30,7 @@
         "/calls": {
             "get": {
                 "summary": "List calls",
-                "description": "**Required ACL:** `ctid-ng.calls.read`\n\nList calls",
+                "description": "**Required ACL:** `ctid-ng.calls.read`",
                 "parameters": [
                     {
                         "name": "application",
@@ -107,7 +107,7 @@
         "/calls/{call_id}": {
             "get": {
                 "summary": "Show a call",
-                "description": "**Required ACL:** `ctid-ng.calls.{call_id}.read`\n\nGet infos about a call",
+                "description": "**Required ACL:** `ctid-ng.calls.{call_id}.read`",
                 "parameters": [
                     {
                         "name": "call_id",
@@ -139,7 +139,7 @@
             },
             "delete": {
                 "summary": "Hangup a call",
-                "description": "**Required ACL:** `ctid-ng.calls.{call_id}.delete`\n\nHangup a call",
+                "description": "**Required ACL:** `ctid-ng.calls.{call_id}.delete`",
                 "parameters": [
                     {
                         "name": "call_id",
