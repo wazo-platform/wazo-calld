@@ -30,7 +30,7 @@
         "/calls": {
             "get": {
                 "summary": "List calls",
-                "description": "List calls",
+                "description": "**Required ACL:** `ctid-ng.calls.read`",
                 "parameters": [
                     {
                         "name": "application",
@@ -70,7 +70,7 @@
             },
             "post": {
                 "summary": "Make a new call",
-                "description": "Create a new call from a phone to an extension.\n",
+                "description": "**Required ACL:** `ctid-ng.calls.create`\n\nCreate a new call from a phone to an extension.\n",
                 "parameters": [
                     {
                         "name": "body",
@@ -107,7 +107,7 @@
         "/calls/{call_id}": {
             "get": {
                 "summary": "Show a call",
-                "description": "Get infos about a call",
+                "description": "**Required ACL:** `ctid-ng.calls.{call_id}.read`",
                 "parameters": [
                     {
                         "name": "call_id",
@@ -139,7 +139,7 @@
             },
             "delete": {
                 "summary": "Hangup a call",
-                "description": "Hangup a call",
+                "description": "**Required ACL:** `ctid-ng.calls.{call_id}.delete`",
                 "parameters": [
                     {
                         "name": "call_id",
@@ -171,6 +171,7 @@
         "/calls/{call_id}/user/{user_uuid}": {
             "put": {
                 "summary": "Connect a call to a user",
+                "description": "**Required ACL:** `ctid-ng.calls.{call_id}.user.{user_uuid}.update`",
                 "parameters": [
                     {
                         "name": "call_id",
