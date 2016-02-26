@@ -5,8 +5,8 @@
 import logging
 
 from requests.exceptions import HTTPError
-from xivo_bus.collectd.channels.event import ChannelCreatedCollectdEvent
-from xivo_bus.collectd.channels.event import ChannelEndedCollectdEvent
+from xivo_bus.collectd.channels import ChannelCreatedCollectdEvent
+from xivo_bus.collectd.channels import ChannelEndedCollectdEvent
 from xivo_bus.resources.calls.event import CreateCallEvent
 from xivo_bus.resources.calls.event import EndCallEvent
 from xivo_bus.resources.calls.event import UpdateCallEvent
