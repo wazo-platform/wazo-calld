@@ -4,11 +4,11 @@
 
 import logging
 
-from xivo_bus.collectd.calls.event import CallAbandonedCollectdEvent
-from xivo_bus.collectd.calls.event import CallConnectCollectdEvent
-from xivo_bus.collectd.calls.event import CallDurationCollectdEvent
-from xivo_bus.collectd.calls.event import CallEndCollectdEvent
-from xivo_bus.collectd.calls.event import CallStartCollectdEvent
+from xivo_bus.collectd.calls import CallAbandonedCollectdEvent
+from xivo_bus.collectd.calls import CallConnectCollectdEvent
+from xivo_bus.collectd.calls import CallDurationCollectdEvent
+from xivo_bus.collectd.calls import CallEndCollectdEvent
+from xivo_bus.collectd.calls import CallStartCollectdEvent
 
 logger = logging.getLogger(__name__)
 
