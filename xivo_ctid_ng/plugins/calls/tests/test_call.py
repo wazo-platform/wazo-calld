@@ -11,12 +11,6 @@ from ..call import Call
 
 class TestCall(TestCase):
 
-    def setUp(self):
-        pass
-
-    def tearDown(self):
-        pass
-
     def test_to_dict(self):
         call = Call(s.call_id)
         call.creation_time = s.creation_time
