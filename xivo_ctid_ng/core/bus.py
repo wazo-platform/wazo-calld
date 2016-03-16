@@ -52,6 +52,7 @@ class CoreBusConsumer(ConsumerMixin):
     def __init__(self, global_config):
         self._bus_url = 'amqp://{username}:{password}@{host}:{port}//'.format(**global_config['bus'])
         self._callbacks = defaultdict(list)
+        self._userevent_callbacks = defaultdict(list)
         exchange = Exchange(global_config['bus']['exchange_name'],
                             type=global_config['bus']['exchange_type'])
         self._queue = kombu.Queue(exchange=exchange, routing_key=self._KEY, exclusive=True)
@@ -70,12 +71,31 @@ class CoreBusConsumer(ConsumerMixin):
     def on_ami_event(self, event_type, callback):
         self._callbacks[event_type].append(callback)
 
+    def on_ami_userevent(self, userevent_type, callback):
+        self._userevent_callbacks[userevent_type].append(callback)
+
     def _on_bus_message(self, body, message):
         event = body['data']
+        self._on_ami_event(event)
+
+        event_type = event['Event']
+        if event_type == 'UserEvent':
+            self._on_ami_userevent(event)
+
+        message.ack()
+
+    def _on_ami_event(self, event):
         event_type = event['Event']
         for callback in self._callbacks[event_type]:
             try:
                 callback(event)
             except Exception as e:
                 logger.exception(e)
-        message.ack()
+
+    def _on_ami_userevent(self, event):
+        event_type = event['UserEvent']
+        for callback in self._userevent_callbacks[event_type]:
+            try:
+                callback(event)
+            except Exception as e:
+                logger.exception(e)

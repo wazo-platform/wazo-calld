@@ -30,7 +30,7 @@ class CallsBusEventHandler(object):
         bus_consumer.on_ami_event('Newchannel', self._relay_channel_created)
         bus_consumer.on_ami_event('Newchannel', self._collectd_channel_created)
         bus_consumer.on_ami_event('Newstate', self._relay_channel_updated)
-        bus_consumer.on_ami_event('Hangup', self._relay_channel_hung_up)
+        bus_consumer.on_ami_userevent('Hangup', self._relay_channel_hung_up)
         bus_consumer.on_ami_event('Hangup', self._collectd_channel_ended)
 
     def _relay_channel_created(self, event):
