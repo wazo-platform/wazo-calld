@@ -34,7 +34,7 @@ class TestDialedFrom(IntegrationTest):
         call_id = new_call_id()
         self.bus.listen_events(routing_key='calls.call.ended')
 
-        self.bus.send_ami_hangup_event(call_id)
+        self.bus.send_ami_hangup_userevent(call_id)
 
         def assert_function():
             assert_that(self.bus.events(), has_item(has_entries({

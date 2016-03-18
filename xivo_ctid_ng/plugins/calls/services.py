@@ -161,7 +161,7 @@ class CallsService(object):
         call.status = event['ChannelStateDesc']
         call.caller_id_name = event['CallerIDName']
         call.caller_id_number = event['CallerIDNum']
-        call.user_uuid = None
+        call.user_uuid = event.get('XIVO_USERUUID') or None
         call.bridges = []
         call.talking_to = {}
 

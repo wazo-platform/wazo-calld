@@ -87,3 +87,17 @@ class BusClient(object):
                 'CallerIDNum': 'my-caller-id-num',
             }
         }, 'ami.Hangup')
+
+    @classmethod
+    def send_ami_hangup_userevent(cls, channel_id):
+        cls.send_event({
+            'data': {
+                'Event': 'UserEvent',
+                'UserEvent': 'Hangup',
+                'Uniqueid': channel_id,
+                'ChannelStateDesc': 'Up',
+                'CallerIDName': 'my-caller-id-name',
+                'CallerIDNum': 'my-caller-id-num',
+                'XIVO_USERUUID': 'my-uuid',
+            }
+        }, 'ami.UserEvent')
