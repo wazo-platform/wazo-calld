@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015 by Avencall
+# Copyright 2015-2016 by Avencall
 # SPDX-License-Identifier: GPL-3.0+
 
 import ari
@@ -63,7 +63,7 @@ class CoreARI(object):
             logger.warning('Reconnecting to ARI in %s seconds', delay)
             time.sleep(delay)
 
-    def sync(self):
+    def _sync(self):
         '''self.sync() should be called before calling self.stop(), in case the
         ari client does not have the websocket yet'''
 
@@ -73,6 +73,7 @@ class CoreARI(object):
     def stop(self):
         try:
             self._should_reconnect = False
+            self._sync()
             self.client.close()
         except RuntimeError:
             pass  # bug in ari-py when calling client.close()

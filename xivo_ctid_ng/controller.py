@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015 by Avencall
+# Copyright 2015-2016 by Avencall
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
@@ -42,7 +42,6 @@ class Controller(object):
         bus_consumer_thread.start()
         ari_thread = Thread(target=self.ari.run, name='ari_thread')
         ari_thread.start()
-        self.ari.sync()
         try:
             with self.token_renewer:
                 self.rest_api.run()
