@@ -18,19 +18,14 @@ class TransfersStasis(object):
     def __init__(self, ari_client, services, xivo_uuid):
         self.ari = ari_client
         self.services = services
-        # self.state_factory = state_factory
-        # self.state_factory.set_dependencies(ari_client, self.stat_sender)
         self.xivo_uuid = xivo_uuid
         self.stasis_start_pubsub = Pubsub()
 
     def subscribe(self):
-        logger.debug('SUBSCRIBE')
         self.ari.on_channel_event('StasisStart', self.stasis_start)
         self.stasis_start_pubsub.subscribe('transfer_recipient_called', self.transfer_recipient_called)
-        # self.ari.on_channel_event('ChannelDestroyed', self.channel_destroyed)
 
     def stasis_start(self, event_objects, event):
-        logger.debug('STASIS START')
         channel = event_objects['channel']
         try:
             app_action = event['args'][1]
