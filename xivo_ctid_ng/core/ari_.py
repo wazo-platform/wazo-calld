@@ -23,17 +23,43 @@ def not_found(error):
     return error.response is not None and error.response.status_code == 404
 
 
+def server_error(error):
+    return error.response is not None and error.response.status_code == 503
+
+
+def asterisk_is_loading(error):
+    return not_found(error) or server_error(error)
+
+
 class CoreARI(object):
 
     def __init__(self, config):
         self.config = config
         self._running = False
         self._should_reconnect = True
-        try:
-            self.client = ari.connect(**config['connection'])
-        except requests.ConnectionError:
-            logger.critical('ARI config: %s', config['connection'])
+        self.client = None
+
+        connect_tries = 0
+        while not self.client and connect_tries < config['startup_connection_tries']:
+            self.client = self._new_ari_client(config['connection'])
+            if not self.client:
+                logger.info('ARI is not ready yet, retrying...')
+                connect_tries += 1
+                time.sleep(config['startup_connection_delay'])
+
+        if not self.client:
             raise ARIUnreachable()
+
+    def _new_ari_client(self, ari_config):
+        try:
+            return ari.connect(**ari_config)
+        except requests.ConnectionError:
+            logger.critical('ARI config: %s', ari_config)
+            raise ARIUnreachable()
+        except requests.HTTPError as e:
+            if asterisk_is_loading(e):
+                return None
+            raise
 
     def run(self):
         logger.debug('ARI client listening...')

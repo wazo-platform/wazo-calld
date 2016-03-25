@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015 by Avencall
+# Copyright (C) 2015-2016 Avencall
 # SPDX-License-Identifier: GPL-3.0+
 
 
@@ -38,6 +38,8 @@ _DEFAULT_CONFIG = {
             'password': 'opensesame',
         },
         'reconnection_delay': 10,
+        'startup_connection_tries': 5,
+        'startup_connection_delay': 1,
     },
     'auth': {
         'host': 'localhost',
