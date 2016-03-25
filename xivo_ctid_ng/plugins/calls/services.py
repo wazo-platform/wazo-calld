@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015 by Avencall
+# Copyright (C) 2015-2016 Avencall
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
@@ -129,7 +129,8 @@ class CallsService(object):
 
         new_channel = ari.channels.originate(endpoint=endpoint,
                                              app=APPLICATION_NAME,
-                                             appArgs=[app_instance, 'dialed_from', channel_id])
+                                             appArgs=[app_instance, 'dialed_from', channel_id],
+                                             variables={'variables': {'XIVO_STASIS_ARGS': app_instance}})
 
         # if the caller hangs up, we cancel our originate
         originate_canceller = channel.on_event('StasisEnd', lambda _, __: self.hangup(new_channel.id))
