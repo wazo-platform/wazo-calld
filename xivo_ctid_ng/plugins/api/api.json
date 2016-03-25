@@ -203,6 +203,34 @@
                     }
                 }
             }
+        },
+        "/transfers": {
+            "post": {
+                "summary": "Initiate a transfer",
+                "description": "**Required ACL:** `ctid-ng.transfers.create`",
+                "parameters": [
+                    {
+                        "name": "body",
+                        "in": "body",
+                        "description": "Parameters of the transfer",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/TransferRequest"
+                        }
+                    }
+                ],
+                "tags": [
+                    "transfers"
+                ],
+                "responses": {
+                    "201": {
+                        "description": "The new transfer",
+                        "schema": {
+                            "$ref": "#/definitions/Transfer"
+                        }
+                    }
+                }
+            }
         }
     },
     "responses": {
@@ -313,6 +341,56 @@
                     "description": "Time when the error occured",
                     "type": "number",
                     "format": "timestamp"
+                }
+            }
+        },
+        "TransferRequest": {
+            "type": "object",
+            "properties": {
+                "transferred_call": {
+                    "description": "Call ID of the call being transferred to someone else",
+                    "type": "string"
+                },
+                "initiator_call": {
+                    "description": "Call ID of the transfer initiator",
+                    "type": "string"
+                },
+                "context": {
+                    "description": "Context of the recipient of the transfer",
+                    "type": "string"
+                },
+                "exten": {
+                    "description": "Extension of the recipient of the transfer",
+                    "type": "string"
+                }
+            }
+        },
+        "Transfer": {
+            "type": "object",
+            "properties": {
+                "uuid": {
+                    "description": "Unique identifier of the transfer",
+                    "type": "string"
+                },
+                "transferred_call": {
+                    "description": "Call ID of the call being transferred to someone else",
+                    "type": "string"
+                },
+                "initiator_call": {
+                    "description": "Call ID of the transfer initiator",
+                    "type": "string"
+                },
+                "recipient_call": {
+                    "description": "Call ID of the recipient of the transfer",
+                    "type": "string"
+                },
+                "context": {
+                    "description": "Context of the recipient of the transfer",
+                    "type": "string"
+                },
+                "exten": {
+                    "description": "Extension of the recipient of the transfer",
+                    "type": "string"
                 }
             }
         }
