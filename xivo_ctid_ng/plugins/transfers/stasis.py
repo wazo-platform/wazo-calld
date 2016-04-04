@@ -39,6 +39,5 @@ class TransfersStasis(object):
         except InvalidTransferRecipientCalledEvent:
             logger.error('invalid stasis event received: %s', event)
             return
-        pretransfer_bridge = self.ari.bridges.create(type='mixing')
-        pretransfer_bridge.addChannel(channel=event.initiator_call)
-        pretransfer_bridge.addChannel(channel=channel.id)
+        transfer_bridge = self.ari.bridges.get(bridgeId=event.transfer_bridge)
+        transfer_bridge.addChannel(channel=channel.id)

@@ -18,16 +18,35 @@ class TransfersResource(AuthResource):
     @required_acl('ctid-ng.transfers.create')
     def post(self):
         request_body = request.json
-        recipient_call = self._transfers_service.create(request_body['transferred_call'],
-                                                        request_body['initiator_call'],
-                                                        request_body['context'],
-                                                        request_body['exten'])
-        result = {
-            'uuid': str(uuid.uuid4()),
-            'transferred_call': request_body['transferred_call'],
-            'initiator_call': request_body['initiator_call'],
-            'recipient_call': recipient_call,
-            'context': request_body['context'],
-            'exten': request_body['exten'],
-        }
-        return result, 201
+        transfer = self._transfers_service.create(request_body['transferred_call'],
+                                                  request_body['initiator_call'],
+                                                  request_body['context'],
+                                                  request_body['exten'])
+        return transfer.to_dict(), 201
+
+
+class TransferResource(AuthResource):
+
+    def __init__(self, transfers_service):
+        self._transfers_service = transfers_service
+
+    @required_acl('ctid-ng.transfers.{transfer_id}.read')
+    def get(self, transfer_id):
+        transfer = self._transfers_service.get(transfer_id)
+        return transfer.to_dict(), 200
+
+    @required_acl('ctid-ng.transfers.{transfer_id}.delete')
+    def delete(self, transfer_id):
+        self._transfers_service.cancel(transfer_id)
+        return '', 204
+
+
+class TransferCompleteResource(AuthResource):
+
+    def __init__(self, transfers_service):
+        self._transfers_service = transfers_service
+
+    @required_acl('ctid-ng.transfers.{transfer_id}.complete.update')
+    def put(self, transfer_id):
+        self._transfers_service.complete(transfer_id)
+        return '', 204

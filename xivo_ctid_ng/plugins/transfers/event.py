@@ -9,6 +9,6 @@ class TransferRecipientCalledEvent(object):
 
     def __init__(self, event):
         try:
-            self.initiator_call = event['args'][2]
+            self.transfer_bridge = event['args'][2]
         except (KeyError, IndexError):
             raise InvalidTransferRecipientCalledEvent(event)

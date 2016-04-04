@@ -142,11 +142,9 @@
                 "description": "**Required ACL:** `ctid-ng.calls.{call_id}.delete`",
                 "parameters": [
                     {
-                        "name": "call_id",
-                        "in": "path",
-                        "description": "ID of the call",
-                        "required": true,
-                        "type": "string"
+                        "schema": {
+                            "$ref": "#/parameters/TransferID"
+                        }
                     }
                 ],
                 "tags": [
@@ -228,6 +226,49 @@
                         "schema": {
                             "$ref": "#/definitions/Transfer"
                         }
+                    }
+                }
+            }
+        },
+        "/transfers/{transfer_id}": {
+            "get": {
+                "summary": "Get details of a transfer",
+                "description": "**Required ACL:** `ctid-ng.transfers.{transfer_id}.read`",
+                "parameters": [
+                    {
+                        "schema": {
+                            "$ref": "#/description/TransferID"
+                        }
+                    }
+                ],
+                "tags": [
+                    "transfers"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The details of the transfer",
+                        "schema": {
+                            "$ref": "#/definitions/Transfer"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "summary": "Cancel a transfer",
+                "description": "**Required ACL:** `ctid-ng.transfers.{transfer_id}.delete`",
+                "parameters": [
+                    {
+                        "schema": {
+                            "$ref": "#/description/TransferID"
+                        }
+                    }
+                ],
+                "tags": [
+                    "transfers"
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Transfer cancelled"
                     }
                 }
             }
@@ -368,7 +409,7 @@
         "Transfer": {
             "type": "object",
             "properties": {
-                "uuid": {
+                "id": {
                     "description": "Unique identifier of the transfer",
                     "type": "string"
                 },
@@ -384,15 +425,20 @@
                     "description": "Call ID of the recipient of the transfer",
                     "type": "string"
                 },
-                "context": {
-                    "description": "Context of the recipient of the transfer",
-                    "type": "string"
-                },
-                "exten": {
-                    "description": "Extension of the recipient of the transfer",
+                "status": {
+                    "description": "The current step of the transfer",
                     "type": "string"
                 }
             }
+        }
+    },
+    "parameters": {
+        "TransferID": {
+            "name": "transfer_id",
+            "in": "path",
+            "description": "the transfer id",
+            "required": true,
+            "type": "string"
         }
     }
 }

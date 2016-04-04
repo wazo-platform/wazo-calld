@@ -2,9 +2,11 @@
 # Copyright 2016 by Avencall
 # SPDX-License-Identifier: GPL-3.0+
 
+from .resources import TransferResource
+from .resources import TransferCompleteResource
+from .resources import TransfersResource
 from .services import TransfersService
 from .stasis import TransfersStasis
-from .resources import TransfersResource
 
 
 class Plugin(object):
@@ -19,3 +21,5 @@ class Plugin(object):
         transfers_stasis.subscribe()
 
         api.add_resource(TransfersResource, '/transfers', resource_class_args=[transfers_service])
+        api.add_resource(TransferResource, '/transfers/<transfer_id>', resource_class_args=[transfers_service])
+        api.add_resource(TransferCompleteResource, '/transfers/<transfer_id>/complete', resource_class_args=[transfers_service])
