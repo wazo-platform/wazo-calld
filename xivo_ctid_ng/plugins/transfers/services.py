@@ -41,7 +41,11 @@ class TransfersService(object):
             import uuid
             transfer_id = str(uuid.uuid4())
             self.convert_transfer_to_stasis(transferred_call, initiator_call, context, exten, transfer_id)
-            return Transfer(transfer_id)
+            transfer = Transfer(transfer_id)
+            transfer.initiator_call = initiator_call
+            transfer.transferred_call = transferred_call
+            transfer.status = 'starting'
+            return transfer
         else:
             transfer_bridge = self.ari.bridges.create(type='mixing', name='transfer')
             self.ari.channels.setChannelVar(channelId=transferred_call, variable='XIVO_TRANSFER', value='transferred')
@@ -197,7 +201,7 @@ class TransfersService(object):
 
             destination = {'Channel': transferred_call,
                            'ExtraChannel': initiator_call,
-                           'Context': 'convert_channel_to_stasis',
-                           'Exten': 's',
+                           'Context': 'convert_to_stasis',
+                           'Exten': 'transfer',
                            'Priority': 1}
             ami.action('Redirect', destination, token=self.auth_token)

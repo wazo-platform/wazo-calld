@@ -1,4 +1,5 @@
 git+https://github.com/digium/swagger-py.git  # the release 0.2.1 has blocking bugs, so we need master
+git+https://github.com/xivo-pbx/xivo-amid-client.git
 git+https://github.com/xivo-pbx/xivo-auth-client.git
 git+https://github.com/xivo-pbx/xivo-bus.git
 git+https://github.com/xivo-pbx/xivo-confd-client.git

@@ -13,7 +13,9 @@ from hamcrest import is_in
 from hamcrest import has_entry
 from hamcrest import has_entries
 from hamcrest import has_key
+from hamcrest import instance_of
 from hamcrest import not_
+from requests.exceptions import HTTPError
 
 from xivo_test_helpers import until
 
@@ -67,6 +69,18 @@ class TestTransfers(IntegrationTest):
     def is_hungup(self):
         return not_(is_in(channel.id for channel in self.ari.channels.list()))
 
+    def has_variable(self, variable, expected_value):
+        channels = self.ari.channels.list()
+        candidates = []
+        for channel in channels:
+            try:
+                value = channel.getChannelVar(variable=variable)['value']
+            except HTTPError:
+                return False
+            if value == expected_value:
+                candidates.append(channel.id)
+        return is_in(candidates)
+
     def bridged_call_stasis(self):
         caller = self.ari.channels.originate(endpoint=ENDPOINT,
                                              app=STASIS_APP,
@@ -84,6 +98,15 @@ class TestTransfers(IntegrationTest):
         until.true(channel_is_up, callee.id)
         bridge.addChannel(channel=callee.id)
         return caller.id, callee.id
+
+    def bridged_call_not_stasis(self):
+        caller = self.ari.channels.originate(endpoint=ENDPOINT, context='local', extension='dial', priority=1)
+
+        bridge = next(bridge for bridge in self.ari.bridges.list()
+                      if caller.id in bridge.json['channels'])
+        callee_id = next(channel_id for channel_id in bridge.json['channels']
+                         if channel_id != caller.id)
+        return caller.id, callee_id
 
     def answered_transfer(self):
         transferred_channel_id, initiator_channel_id = self.bridged_call_stasis()
@@ -177,3 +200,35 @@ class TestTransfers(IntegrationTest):
             assert_that(recipient_channel_id, self.is_hungup(), 'recipient channel is still talking')
 
         until.assert_(transfer_is_cancelled, tries=3)
+
+    def test_given_state_ready_from_not_stasis_when_transfer_start_and_answer_then_state_answered(self):
+        transferred_channel_id, initiator_channel_id = self.bridged_call_not_stasis()
+
+        response = self.ctid_ng.create_transfer(transferred_channel_id,
+                                                initiator_channel_id,
+                                                **RECIPIENT)
+
+        assert_that(response, all_of(has_entries({'id': instance_of(unicode),
+                                                  'transferred_call': transferred_channel_id,
+                                                  'initiator_call': initiator_channel_id,
+                                                  'recipient_call': None})))
+
+        transfer_bridge_id = response['id']
+
+        def transfer_is_answered():
+            try:
+                transfer_bridge = self.ari.bridges.get(bridgeId=transfer_bridge_id)
+            except HTTPError:
+                raise AssertionError('no such bridge: id {}'.format(transfer_bridge_id))
+            assert_that(transfer_bridge.json,
+                        has_entry('channels',
+                                  contains_inanyorder(
+                                      transferred_channel_id,
+                                      initiator_channel_id,
+                                      instance_of(unicode)
+                                  )))
+            for channel_id in transfer_bridge.json['channels']:
+                assert_that(channel_id, self.is_talking(), 'channel not talking')
+                assert_that(channel_id, self.has_variable('XIVO_TRANSFER_ID', transfer_bridge_id))
+
+        until.assert_(transfer_is_answered, tries=3)

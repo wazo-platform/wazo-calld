@@ -1,0 +1,20 @@
+rest_api:
+  https:
+    certificate: /usr/local/share/ssl/amid/server.crt
+    private_key: /usr/local/share/ssl/amid/server.key
+
+ami:
+  host: ari
+  username: xivo_amid
+  password: opensesame
+
+ajam:
+  host: ari
+  verify_certificate: /usr/local/share/ssl/ari/server.crt
+  username: xivo_amid
+  password: opensesame
+
+auth:
+  host: auth
+
+publish_ami_events: False
