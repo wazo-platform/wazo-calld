@@ -13,6 +13,10 @@ class InvalidTransferRecipientCalledEvent(ValueError):
     pass
 
 
+class InvalidCreateTransferEvent(ValueError):
+    pass
+
+
 class TransferError(Exception):
     pass
 

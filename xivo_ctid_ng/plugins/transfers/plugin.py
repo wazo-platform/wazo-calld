@@ -15,8 +15,10 @@ class Plugin(object):
         api = dependencies['api']
         ari = dependencies['ari']
         config = dependencies['config']
+        token_changed_subscribe = dependencies['token_changed_subscribe']
 
-        transfers_service = TransfersService(ari.client)
+        transfers_service = TransfersService(ari.client, config['amid'])
+        token_changed_subscribe(transfers_service.set_token)
         transfers_stasis = TransfersStasis(ari.client, transfers_service, config['uuid'])
         transfers_stasis.subscribe()
 

@@ -23,6 +23,10 @@ def not_found(error):
     return error.response is not None and error.response.status_code == 404
 
 
+def not_in_stasis(error):
+    return error.response is not None and error.response.status_code == 409
+
+
 def server_error(error):
     return error.response is not None and error.response.status_code == 503
 

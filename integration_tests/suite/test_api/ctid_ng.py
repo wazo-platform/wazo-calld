@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015 by Avencall
+# Copyright (C) 2015-2016 Avencall
 # SPDX-License-Identifier: GPL-3.0+
 
 import requests
@@ -128,6 +128,30 @@ class CtidNgClient(object):
                                              token=VALID_TOKEN)
         assert_that(response.status_code, equal_to(201))
         return response.json()
+
+    def put_complete_transfer_result(self, transfer_id, token=None):
+        url = u'https://localhost:9500/1.0/transfers/{transfer_id}/complete'
+        result = requests.put(url.format(transfer_id=transfer_id),
+                              headers={'X-Auth-Token': token},
+                              verify=False)
+        return result
+
+    def complete_transfer(self, transfer_id):
+        response = self.put_complete_transfer_result(transfer_id,
+                                                     token=VALID_TOKEN)
+        assert_that(response.status_code, equal_to(204))
+
+    def delete_transfer_result(self, transfer_id, token=None):
+        url = u'https://localhost:9500/1.0/transfers/{transfer_id}'
+        result = requests.delete(url.format(transfer_id=transfer_id),
+                                 headers={'X-Auth-Token': token},
+                                 verify=False)
+        return result
+
+    def cancel_transfer(self, transfer_id):
+        response = self.delete_transfer_result(transfer_id,
+                                               token=VALID_TOKEN)
+        assert_that(response.status_code, equal_to(204))
 
 
 def new_call_id():

@@ -2,11 +2,14 @@
 # Copyright 2016 by Avencall
 # SPDX-License-Identifier: GPL-3.0+
 
+from contextlib import contextmanager
 import logging
 import requests
 
+from xivo_amid_client import Client as AmidClient
 from xivo_ctid_ng.core.ari_ import APPLICATION_NAME
 from xivo_ctid_ng.core.ari_ import not_found
+from xivo_ctid_ng.core.ari_ import not_in_stasis
 
 from .exceptions import NoSuchTransfer
 from .exceptions import TransferError
@@ -15,9 +18,18 @@ from .transfer import Transfer
 logger = logging.getLogger(__name__)
 
 
+@contextmanager
+def new_amid_client(config):
+    yield AmidClient(**config)
+
+
 class TransfersService(object):
-    def __init__(self, ari):
+    def __init__(self, ari, amid_config):
         self.ari = ari
+        self.amid_config = amid_config
+
+    def set_token(self, auth_token):
+        self.auth_token = auth_token
 
     def create(self,
                transferred_call,
@@ -25,17 +37,23 @@ class TransfersService(object):
                context,
                exten):
 
-        self.ari.channels.setChannelVar(channelId=transferred_call, variable='XIVO_TRANSFER', value='transferred')
-        self.ari.channels.setChannelVar(channelId=initiator_call, variable='XIVO_TRANSFER', value='initiator')
+        if not (self.is_in_stasis(transferred_call) and self.is_in_stasis(initiator_call)):
+            import uuid
+            transfer_id = str(uuid.uuid4())
+            self.convert_transfer_to_stasis(transferred_call, initiator_call, context, exten, transfer_id)
+            return Transfer(transfer_id)
+        else:
+            transfer_bridge = self.ari.bridges.create(type='mixing', name='transfer')
+            self.ari.channels.setChannelVar(channelId=transferred_call, variable='XIVO_TRANSFER', value='transferred')
+            self.ari.channels.setChannelVar(channelId=initiator_call, variable='XIVO_TRANSFER', value='initiator')
+            transfer_bridge.addChannel(channel=transferred_call)
+            transfer_bridge.addChannel(channel=initiator_call)
+            return self.create_transfer_with_bridge(transferred_call, initiator_call, context, exten, transfer_bridge)
 
-        transfer_bridge = self.ari.bridges.create(type='mixing', name='transfer')
-        transfer_bridge.addChannel(channel=transferred_call)
-
+    def create_transfer_with_bridge(self, transferred_call, initiator_call, context, exten, transfer_bridge):
         self.ari.channels.mute(channelId=transferred_call, direction='in')
         self.ari.channels.hold(channelId=transferred_call)
         self.ari.channels.startMoh(channelId=transferred_call)
-
-        transfer_bridge.addChannel(channel=initiator_call)
 
         try:
             app_instance = self.ari.channels.getChannelVar(channelId=initiator_call, variable='XIVO_STASIS_ARGS')['value']
@@ -45,10 +63,12 @@ class TransfersService(object):
             raise
         recipient_endpoint = 'Local/{exten}@{context}'.format(exten=exten, context=context)
         app_args = [app_instance, 'transfer_recipient_called', transfer_bridge.id]
+        originate_variables = {'XIVO_TRANSFER': 'recipient',
+                               'XIVO_TRANSFER_ID': transfer_bridge.id}
         recipient_channel = self.ari.channels.originate(endpoint=recipient_endpoint,
                                                         app=APPLICATION_NAME,
                                                         appArgs=app_args,
-                                                        variables={'variables': {'XIVO_TRANSFER': 'recipient'}})
+                                                        variables={'variables': originate_variables})
         transfer = Transfer(transfer_bridge.id)
         transfer.transferred_call = transferred_call
         transfer.initiator_call = initiator_call
@@ -66,6 +86,7 @@ class TransfersService(object):
         channels = [self.ari.channels.get(channelId=channel_id) for channel_id in bridge.json['channels']]
         for channel in channels:
             value = self.ari.channels.getChannelVar(channelId=channel.id, variable='XIVO_TRANSFER')['value']
+            print(channel.id, value)
             if value == 'transferred':
                 transfer.transferred_call = channel.id
             elif value == 'initiator':
@@ -76,6 +97,32 @@ class TransfersService(object):
                     transfer.status = 'ringback'
                 else:
                     transfer.status = 'answered'
+
+        if not transfer.recipient_call:
+            channel_transferid_role = []
+            for channel in self.ari.channels.list():
+                try:
+                    transfer_id = self.ari.channels.getChannelVar(channelId=channel.id, variable='XIVO_TRANSFER_ID')['value']
+                except requests.exceptions.HTTPError as e:
+                    if not_found(e):
+                        transfer_id = None
+                    else:
+                        raise
+                try:
+                    transfer_role = self.ari.channels.getChannelVar(channelId=channel.id, variable='XIVO_TRANSFER')['value']
+                except requests.exceptions.HTTPError as e:
+                    if not_found(e):
+                        transfer_role = None
+                    else:
+                        raise
+                channel_transferid_role.append((channel.id, transfer_id, transfer_role))
+
+            try:
+                transfer.recipient_call = next(channel_id for channel_id, transfer_id, transfer_role in channel_transferid_role
+                                               if transfer_id == transfer.id and transfer_role == 'recipient')
+            except StopIteration:
+                transfer.recipient_call = None
+
         # TODO: transfer is invalid if NOT 3 channels or NOT transferred + initiator + recipient
         return transfer
 
@@ -94,11 +141,63 @@ class TransfersService(object):
     def cancel(self, transfer_id):
         transfer = self.get(transfer_id)
 
-        self.ari.channels.hangup(channelId=transfer.recipient_call)
+        if transfer.recipient_call:
+            self.ari.channels.hangup(channelId=transfer.recipient_call)
 
         self.ari.channels.unmute(channelId=transfer.transferred_call, direction='in')
         self.ari.channels.unhold(channelId=transfer.transferred_call)
         self.ari.channels.stopMoh(channelId=transfer.transferred_call)
 
         self.ari.channels.setChannelVar(channelId=transfer.transferred_call, variable='XIVO_TRANSFER', value='')
-        self.ari.channels.setChannelVar(channelId=transfer.recipient_call, variable='XIVO_TRANSFER', value='')
+        self.ari.channels.setChannelVar(channelId=transfer.initiator_call, variable='XIVO_TRANSFER', value='')
+
+    def is_in_stasis(self, call_id):
+        try:
+            self.ari.channels.setChannelVar(channelId=call_id, variable='XIVO_TEST_STASIS')
+            return True
+        except requests.exceptions.HTTPError as e:
+            if not_in_stasis(e):
+                return False
+            raise
+
+    def convert_transfer_to_stasis(self, transferred_call, initiator_call, context, exten, transfer_id):
+        with new_amid_client(self.amid_config) as ami:
+            ami.action('Setvar', {'Channel': transferred_call,
+                                  'Variable': 'XIVO_TRANSFER',
+                                  'Value': 'transferred'},
+                       token=self.auth_token)
+            ami.action('Setvar', {'Channel': transferred_call,
+                                  'Variable': 'XIVO_TRANSFER_ID',
+                                  'Value': transfer_id},
+                       token=self.auth_token)
+            ami.action('Setvar', {'Channel': transferred_call,
+                                  'Variable': 'XIVO_TRANSFER_DESTINATION_CONTEXT',
+                                  'Value': context},
+                       token=self.auth_token)
+            ami.action('Setvar', {'Channel': transferred_call,
+                                  'Variable': 'XIVO_TRANSFER_DESTINATION_EXTEN',
+                                  'Value': exten},
+                       token=self.auth_token)
+            ami.action('Setvar', {'Channel': initiator_call,
+                                  'Variable': 'XIVO_TRANSFER',
+                                  'Value': 'initiator'},
+                       token=self.auth_token)
+            ami.action('Setvar', {'Channel': initiator_call,
+                                  'Variable': 'XIVO_TRANSFER_ID',
+                                  'Value': transfer_id},
+                       token=self.auth_token)
+            ami.action('Setvar', {'Channel': initiator_call,
+                                  'Variable': 'XIVO_TRANSFER_DESTINATION_CONTEXT',
+                                  'Value': context},
+                       token=self.auth_token)
+            ami.action('Setvar', {'Channel': initiator_call,
+                                  'Variable': 'XIVO_TRANSFER_DESTINATION_EXTEN',
+                                  'Value': exten},
+                       token=self.auth_token)
+
+            destination = {'Channel': transferred_call,
+                           'ExtraChannel': initiator_call,
+                           'Context': 'convert_channel_to_stasis',
+                           'Exten': 's',
+                           'Priority': 1}
+            ami.action('Redirect', destination, token=self.auth_token)
