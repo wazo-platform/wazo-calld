@@ -118,8 +118,12 @@ class TestTransfers(IntegrationTest):
         assert_that(transferred_channel_id, self.h.is_talking(), 'transferred channel not talking')
         assert_that(initiator_channel_id, self.h.is_talking(), 'initiator channel is not talking')
         assert_that(recipient_channel_id, self.h.is_hungup(), 'recipient channel is still talking')
+        assert_that(recipient_channel_id, self.h.has_variable('XIVO_TRANSFER_ID', ''), 'variable not unset')
+        assert_that(transferred_channel_id, self.h.has_variable('XIVO_TRANSFER_ID', ''), 'variable not unset')
+        assert_that(recipient_channel_id, self.h.has_variable('XIVO_TRANSFER_ROLE', ''), 'variable not unset')
+        assert_that(transferred_channel_id, self.h.has_variable('XIVO_TRANSFER_ROLE', ''), 'variable not unset')
 
-    def transfer_is_completed(self, transfer_id, transferred_channel_id, initiator_channel_id, recipient_channel_id):
+    def assert_transfer_is_completed(self, transfer_id, transferred_channel_id, initiator_channel_id, recipient_channel_id):
         transfer_bridge = self.ari.bridges.get(bridgeId=transfer_id)
         assert_that(transfer_bridge.json,
                     has_entry('channels',
@@ -130,6 +134,10 @@ class TestTransfers(IntegrationTest):
         assert_that(transferred_channel_id, self.h.is_talking(), 'transferred channel not talking')
         assert_that(recipient_channel_id, self.h.is_talking(), 'recipient channel not talking')
         assert_that(initiator_channel_id, self.h.is_hungup(), 'initiator channel is still talking')
+        assert_that(initiator_channel_id, self.h.has_variable('XIVO_TRANSFER_ID', ''), 'variable not unset')
+        assert_that(transferred_channel_id, self.h.has_variable('XIVO_TRANSFER_ID', ''), 'variable not unset')
+        assert_that(initiator_channel_id, self.h.has_variable('XIVO_TRANSFER_ROLE', ''), 'variable not unset')
+        assert_that(transferred_channel_id, self.h.has_variable('XIVO_TRANSFER_ROLE', ''), 'variable not unset')
 
 
 class TestTransferFromStasis(TestTransfers):
@@ -159,7 +167,7 @@ class TestTransferFromStasis(TestTransfers):
 
         self.ctid_ng.complete_transfer(transfer_id)
 
-        until.assert_(self.transfer_is_completed,
+        until.assert_(self.assert_transfer_is_completed,
                       transfer_id,
                       transferred_channel_id,
                       initiator_channel_id,

@@ -147,7 +147,9 @@ class TransfersService(object):
         self.ari.channels.hangup(channelId=transfer.initiator_call)
         self.unhold_transferred_call(transfer.transferred_call)
 
+        self.ari.channels.setChannelVar(channelId=transfer.transferred_call, variable='XIVO_TRANSFER_ID', value='')
         self.ari.channels.setChannelVar(channelId=transfer.transferred_call, variable='XIVO_TRANSFER_ROLE', value='')
+        self.ari.channels.setChannelVar(channelId=transfer.recipient_call, variable='XIVO_TRANSFER_ID', value='')
         self.ari.channels.setChannelVar(channelId=transfer.recipient_call, variable='XIVO_TRANSFER_ROLE', value='')
 
     def cancel(self, transfer_id):
@@ -157,7 +159,9 @@ class TransfersService(object):
             self.ari.channels.hangup(channelId=transfer.recipient_call)
         self.unhold_transferred_call(transfer.transferred_call)
 
+        self.ari.channels.setChannelVar(channelId=transfer.transferred_call, variable='XIVO_TRANSFER_ID', value='')
         self.ari.channels.setChannelVar(channelId=transfer.transferred_call, variable='XIVO_TRANSFER_ROLE', value='')
+        self.ari.channels.setChannelVar(channelId=transfer.initiator_call, variable='XIVO_TRANSFER_ID', value='')
         self.ari.channels.setChannelVar(channelId=transfer.initiator_call, variable='XIVO_TRANSFER_ROLE', value='')
 
     def is_in_stasis(self, call_id):
