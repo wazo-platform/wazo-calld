@@ -82,7 +82,7 @@ class TestTransfers(IntegrationTest):
                 candidates.append(channel.id)
         return is_in(candidates)
 
-    def bridged_call_stasis(self):
+    def given_bridged_call_stasis(self):
         caller = self.ari.channels.originate(endpoint=ENDPOINT,
                                              app=STASIS_APP,
                                              variables={'variables': {'XIVO_STASIS_ARGS': STASIS_APP_INSTANCE}})
@@ -100,7 +100,7 @@ class TestTransfers(IntegrationTest):
         bridge.addChannel(channel=callee.id)
         return caller.id, callee.id
 
-    def bridged_call_not_stasis(self):
+    def given_bridged_call_not_stasis(self):
         caller = self.ari.channels.originate(endpoint=ENDPOINT, context='local', extension='dial', priority=1)
 
         bridge = next(bridge for bridge in self.ari.bridges.list()
@@ -109,8 +109,8 @@ class TestTransfers(IntegrationTest):
                          if channel_id != caller.id)
         return caller.id, callee_id
 
-    def answered_transfer(self):
-        transferred_channel_id, initiator_channel_id = self.bridged_call_stasis()
+    def given_answered_transfer(self):
+        transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()
         response = self.ctid_ng.create_transfer(transferred_channel_id,
                                                 initiator_channel_id,
                                                 **RECIPIENT)
@@ -143,7 +143,7 @@ class TestTransfers(IntegrationTest):
         assert_that(transfer_roles, contains_inanyorder('transferred', 'initiator', 'recipient'))
 
     def test_given_state_ready_when_transfer_start_and_answer_then_state_answered(self):
-        transferred_channel_id, initiator_channel_id = self.bridged_call_stasis()
+        transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()
 
         response = self.ctid_ng.create_transfer(transferred_channel_id,
                                                 initiator_channel_id,
@@ -162,7 +162,7 @@ class TestTransfers(IntegrationTest):
         (transferred_channel_id,
          initiator_channel_id,
          recipient_channel_id,
-         transfer_id) = self.answered_transfer()
+         transfer_id) = self.given_answered_transfer()
 
         self.ctid_ng.complete_transfer(transfer_id)
 
@@ -184,7 +184,7 @@ class TestTransfers(IntegrationTest):
         (transferred_channel_id,
          initiator_channel_id,
          recipient_channel_id,
-         transfer_id) = self.answered_transfer()
+         transfer_id) = self.given_answered_transfer()
 
         self.ctid_ng.cancel_transfer(transfer_id)
 
@@ -203,7 +203,7 @@ class TestTransfers(IntegrationTest):
         until.assert_(transfer_is_cancelled, tries=3)
 
     def test_given_state_ready_from_not_stasis_when_transfer_start_and_answer_then_state_answered(self):
-        transferred_channel_id, initiator_channel_id = self.bridged_call_not_stasis()
+        transferred_channel_id, initiator_channel_id = self.given_bridged_call_not_stasis()
 
         response = self.ctid_ng.create_transfer(transferred_channel_id,
                                                 initiator_channel_id,
