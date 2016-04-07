@@ -165,39 +165,20 @@ class TransfersService(object):
             raise
 
     def convert_transfer_to_stasis(self, transferred_call, initiator_call, context, exten, transfer_id):
+        set_variables = [(transferred_call, 'XIVO_TRANSFER', 'transferred'),
+                         (transferred_call, 'XIVO_TRANSFER_ID', transfer_id),
+                         (transferred_call, 'XIVO_TRANSFER_DESTINATION_CONTEXT', context),
+                         (transferred_call, 'XIVO_TRANSFER_DESTINATION_EXTEN', exten),
+                         (initiator_call, 'XIVO_TRANSFER', 'initiator'),
+                         (initiator_call, 'XIVO_TRANSFER_ID', transfer_id),
+                         (initiator_call, 'XIVO_TRANSFER_DESTINATION_CONTEXT', context),
+                         (initiator_call, 'XIVO_TRANSFER_DESTINATION_EXTEN', exten)]
         with new_amid_client(self.amid_config) as ami:
-            ami.action('Setvar', {'Channel': transferred_call,
-                                  'Variable': 'XIVO_TRANSFER',
-                                  'Value': 'transferred'},
-                       token=self.auth_token)
-            ami.action('Setvar', {'Channel': transferred_call,
-                                  'Variable': 'XIVO_TRANSFER_ID',
-                                  'Value': transfer_id},
-                       token=self.auth_token)
-            ami.action('Setvar', {'Channel': transferred_call,
-                                  'Variable': 'XIVO_TRANSFER_DESTINATION_CONTEXT',
-                                  'Value': context},
-                       token=self.auth_token)
-            ami.action('Setvar', {'Channel': transferred_call,
-                                  'Variable': 'XIVO_TRANSFER_DESTINATION_EXTEN',
-                                  'Value': exten},
-                       token=self.auth_token)
-            ami.action('Setvar', {'Channel': initiator_call,
-                                  'Variable': 'XIVO_TRANSFER',
-                                  'Value': 'initiator'},
-                       token=self.auth_token)
-            ami.action('Setvar', {'Channel': initiator_call,
-                                  'Variable': 'XIVO_TRANSFER_ID',
-                                  'Value': transfer_id},
-                       token=self.auth_token)
-            ami.action('Setvar', {'Channel': initiator_call,
-                                  'Variable': 'XIVO_TRANSFER_DESTINATION_CONTEXT',
-                                  'Value': context},
-                       token=self.auth_token)
-            ami.action('Setvar', {'Channel': initiator_call,
-                                  'Variable': 'XIVO_TRANSFER_DESTINATION_EXTEN',
-                                  'Value': exten},
-                       token=self.auth_token)
+            for channel_id, variable, value in set_variables:
+                parameters = {'Channel': channel_id,
+                              'Variable': variable,
+                              'Value': value}
+                ami.action('Setvar', parameters, token=self.auth_token)
 
             destination = {'Channel': transferred_call,
                            'ExtraChannel': initiator_call,
