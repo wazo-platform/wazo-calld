@@ -48,17 +48,33 @@ class TransfersService(object):
             return transfer
         else:
             transfer_bridge = self.ari.bridges.create(type='mixing', name='transfer')
+            transfer_id = transfer_bridge.id
             self.ari.channels.setChannelVar(channelId=transferred_call, variable='XIVO_TRANSFER_ROLE', value='transferred')
             self.ari.channels.setChannelVar(channelId=initiator_call, variable='XIVO_TRANSFER_ROLE', value='initiator')
             transfer_bridge.addChannel(channel=transferred_call)
             transfer_bridge.addChannel(channel=initiator_call)
-            return self.create_transfer_with_bridge(transferred_call, initiator_call, context, exten, transfer_bridge)
 
-    def create_transfer_with_bridge(self, transferred_call, initiator_call, context, exten, transfer_bridge):
+            self.hold_transferred_call(transferred_call)
+            recipient_call = self.originate_recipient(initiator_call, context, exten, transfer_id)
+
+            transfer = Transfer(transfer_id)
+            transfer.transferred_call = transferred_call
+            transfer.initiator_call = initiator_call
+            transfer.recipient_call = recipient_call
+            transfer.status = TransferStatus.ringback
+            return transfer
+
+    def hold_transferred_call(self, transferred_call):
         self.ari.channels.mute(channelId=transferred_call, direction='in')
         self.ari.channels.hold(channelId=transferred_call)
         self.ari.channels.startMoh(channelId=transferred_call)
 
+    def unhold_transferred_call(self, transferred_call):
+        self.ari.channels.unmute(channelId=transferred_call, direction='in')
+        self.ari.channels.unhold(channelId=transferred_call)
+        self.ari.channels.stopMoh(channelId=transferred_call)
+
+    def originate_recipient(self, initiator_call, context, exten, transfer_id):
         try:
             app_instance = self.ari.channels.getChannelVar(channelId=initiator_call, variable='XIVO_STASIS_ARGS')['value']
         except requests.HTTPError as e:
@@ -66,19 +82,14 @@ class TransfersService(object):
                 raise TransferError('{call}: no app_instance found'.format(call=initiator_call))
             raise
         recipient_endpoint = 'Local/{exten}@{context}'.format(exten=exten, context=context)
-        app_args = [app_instance, 'transfer_recipient_called', transfer_bridge.id]
+        app_args = [app_instance, 'transfer_recipient_called', transfer_id]
         originate_variables = {'XIVO_TRANSFER_ROLE': 'recipient',
-                               'XIVO_TRANSFER_ID': transfer_bridge.id}
-        recipient_channel = self.ari.channels.originate(endpoint=recipient_endpoint,
-                                                        app=APPLICATION_NAME,
-                                                        appArgs=app_args,
-                                                        variables={'variables': originate_variables})
-        transfer = Transfer(transfer_bridge.id)
-        transfer.transferred_call = transferred_call
-        transfer.initiator_call = initiator_call
-        transfer.recipient_call = recipient_channel.id
-        transfer.status = TransferStatus.ringback
-        return transfer
+                               'XIVO_TRANSFER_ID': transfer_id}
+        recipient_call = self.ari.channels.originate(endpoint=recipient_endpoint,
+                                                     app=APPLICATION_NAME,
+                                                     appArgs=app_args,
+                                                     variables={'variables': originate_variables})
+        return recipient_call.id
 
     def get(self, transfer_id):
         bridges = self.ari.bridges.list()
@@ -134,10 +145,7 @@ class TransfersService(object):
         transfer = self.get(transfer_id)
 
         self.ari.channels.hangup(channelId=transfer.initiator_call)
-
-        self.ari.channels.unmute(channelId=transfer.transferred_call, direction='in')
-        self.ari.channels.unhold(channelId=transfer.transferred_call)
-        self.ari.channels.stopMoh(channelId=transfer.transferred_call)
+        self.unhold_transferred_call(transfer.transferred_call)
 
         self.ari.channels.setChannelVar(channelId=transfer.transferred_call, variable='XIVO_TRANSFER_ROLE', value='')
         self.ari.channels.setChannelVar(channelId=transfer.recipient_call, variable='XIVO_TRANSFER_ROLE', value='')
@@ -147,10 +155,7 @@ class TransfersService(object):
 
         if transfer.recipient_call:
             self.ari.channels.hangup(channelId=transfer.recipient_call)
-
-        self.ari.channels.unmute(channelId=transfer.transferred_call, direction='in')
-        self.ari.channels.unhold(channelId=transfer.transferred_call)
-        self.ari.channels.stopMoh(channelId=transfer.transferred_call)
+        self.unhold_transferred_call(transfer.transferred_call)
 
         self.ari.channels.setChannelVar(channelId=transfer.transferred_call, variable='XIVO_TRANSFER_ROLE', value='')
         self.ari.channels.setChannelVar(channelId=transfer.initiator_call, variable='XIVO_TRANSFER_ROLE', value='')

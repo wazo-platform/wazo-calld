@@ -66,4 +66,5 @@ class TransfersStasis(object):
             initiator_call = next(channel_id for (channel_id, transfer_role) in channel_role if transfer_role == 'initiator')
             context = self.ari.channels.getChannelVar(channelId=initiator_call, variable='XIVO_TRANSFER_DESTINATION_CONTEXT')['value']
             exten = self.ari.channels.getChannelVar(channelId=initiator_call, variable='XIVO_TRANSFER_DESTINATION_EXTEN')['value']
-            self.services.create_transfer_with_bridge(transferred_call, initiator_call, context, exten, bridge)
+            self.services.hold_transferred_call(transferred_call)
+            self.services.originate_recipient(initiator_call, context, exten, event.transfer_id)
