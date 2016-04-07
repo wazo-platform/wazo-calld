@@ -13,7 +13,7 @@ from xivo_ctid_ng.core.ari_ import not_in_stasis
 
 from .exceptions import NoSuchTransfer
 from .exceptions import TransferError
-from .transfer import Transfer
+from .transfer import Transfer, TransferStatus
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +44,7 @@ class TransfersService(object):
             transfer = Transfer(transfer_id)
             transfer.initiator_call = initiator_call
             transfer.transferred_call = transferred_call
-            transfer.status = 'starting'
+            transfer.status = TransferStatus.starting
             return transfer
         else:
             transfer_bridge = self.ari.bridges.create(type='mixing', name='transfer')
@@ -77,7 +77,7 @@ class TransfersService(object):
         transfer.transferred_call = transferred_call
         transfer.initiator_call = initiator_call
         transfer.recipient_call = recipient_channel.id
-        transfer.status = 'ringback'
+        transfer.status = TransferStatus.ringback
         return transfer
 
     def get(self, transfer_id):
@@ -98,9 +98,9 @@ class TransfersService(object):
             elif value == 'recipient':
                 transfer.recipient_call = channel.id
                 if channel.json['state'] == 'Ringing':
-                    transfer.status = 'ringback'
+                    transfer.status = TransferStatus.ringback
                 else:
-                    transfer.status = 'answered'
+                    transfer.status = TransferStatus.answered
 
         if not transfer.recipient_call:
             channel_transferid_role = []

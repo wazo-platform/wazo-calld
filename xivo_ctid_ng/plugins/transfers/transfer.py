@@ -20,3 +20,9 @@ class Transfer(object):
             'recipient_call': self.recipient_call,
             'status': self.status,
         }
+
+
+class TransferStatus(object):
+    starting = 'starting'
+    ringback = 'ringback'
+    answered = 'answered'
