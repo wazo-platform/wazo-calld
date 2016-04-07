@@ -13,6 +13,7 @@ from hamcrest import is_in
 from hamcrest import has_entry
 from hamcrest import has_entries
 from hamcrest import has_key
+from hamcrest import has_length
 from hamcrest import instance_of
 from hamcrest import not_
 from requests.exceptions import HTTPError
@@ -127,6 +128,20 @@ class TestTransfers(IntegrationTest):
                 recipient_channel_id,
                 transfer_id)
 
+    def assert_transfer_is_answered(self, transfer_id):
+        try:
+            transfer_bridge = self.ari.bridges.get(bridgeId=transfer_id)
+        except HTTPError:
+            raise AssertionError('no such bridge: id {}'.format(transfer_id))
+        channel_ids = transfer_bridge.json['channels']
+        assert_that(channel_ids, has_length(3))
+        for channel_id in channel_ids:
+            assert_that(channel_id, self.is_talking(), 'channel not talking')
+            assert_that(channel_id, self.has_variable('XIVO_TRANSFER_ID', transfer_id))
+        transfer_roles = (self.ari.channels.getChannelVar(channelId=channel_id, variable='XIVO_TRANSFER')['value']
+                          for channel_id in transfer_bridge.json['channels'])
+        assert_that(transfer_roles, contains_inanyorder('transferred', 'initiator', 'recipient'))
+
     def test_given_state_ready_when_transfer_start_and_answer_then_state_answered(self):
         transferred_channel_id, initiator_channel_id = self.bridged_call_stasis()
 
@@ -139,23 +154,9 @@ class TestTransfers(IntegrationTest):
                                      has_key('id'),
                                      has_key('recipient_call')))
 
-        transfer_bridge_id = response['id']
-        recipient_channel_id = response['recipient_call']
+        transfer_id = response['id']
 
-        def transfer_is_answered():
-            transfer_bridge = self.ari.bridges.get(bridgeId=transfer_bridge_id)
-            assert_that(transfer_bridge.json,
-                        has_entry('channels',
-                                  contains_inanyorder(
-                                      transferred_channel_id,
-                                      initiator_channel_id,
-                                      recipient_channel_id
-                                  )))
-            assert_that(transferred_channel_id, self.is_talking(), 'transferred channel not talking')
-            assert_that(initiator_channel_id, self.is_talking(), 'initiator channel not talking')
-            assert_that(recipient_channel_id, self.is_talking(), 'recipient channel not talking')
-
-        until.assert_(transfer_is_answered, tries=3)
+        until.assert_(self.assert_transfer_is_answered, transfer_id, tries=3)
 
     def test_given_state_ready_when_transfer_start_and_complete_then_state_completed(self):
         (transferred_channel_id,
@@ -214,21 +215,4 @@ class TestTransfers(IntegrationTest):
                                                   'recipient_call': None})))
 
         transfer_bridge_id = response['id']
-
-        def transfer_is_answered():
-            try:
-                transfer_bridge = self.ari.bridges.get(bridgeId=transfer_bridge_id)
-            except HTTPError:
-                raise AssertionError('no such bridge: id {}'.format(transfer_bridge_id))
-            assert_that(transfer_bridge.json,
-                        has_entry('channels',
-                                  contains_inanyorder(
-                                      transferred_channel_id,
-                                      initiator_channel_id,
-                                      instance_of(unicode)
-                                  )))
-            for channel_id in transfer_bridge.json['channels']:
-                assert_that(channel_id, self.is_talking(), 'channel not talking')
-                assert_that(channel_id, self.has_variable('XIVO_TRANSFER_ID', transfer_bridge_id))
-
-        until.assert_(transfer_is_answered, tries=3)
+        until.assert_(self.assert_transfer_is_answered, transfer_bridge_id, tries=3)
