@@ -224,7 +224,7 @@
                 ],
                 "responses": {
                     "201": {
-                        "description": "The new transfer",
+                        "description": "The transfer being created",
                         "schema": {
                             "$ref": "#/definitions/Transfer"
                         }
@@ -238,9 +238,7 @@
                 "description": "**Required ACL:** `ctid-ng.transfers.{transfer_id}.read`",
                 "parameters": [
                     {
-                        "schema": {
-                            "$ref": "#/description/TransferID"
-                        }
+                        "$ref": "#/parameters/TransferID"
                     }
                 ],
                 "tags": [
@@ -260,9 +258,7 @@
                 "description": "**Required ACL:** `ctid-ng.transfers.{transfer_id}.delete`",
                 "parameters": [
                     {
-                        "schema": {
-                            "$ref": "#/description/TransferID"
-                        }
+                        "$ref": "#/parameters/TransferID"
                     }
                 ],
                 "tags": [
@@ -424,12 +420,18 @@
                     "type": "string"
                 },
                 "recipient_call": {
-                    "description": "Call ID of the recipient of the transfer",
+                    "description": "Call ID of the recipient of the transfer. May be null when the transfer is 'starting'.",
                     "type": "string"
                 },
                 "status": {
                     "description": "The current step of the transfer",
-                    "type": "string"
+                    "type": "string",
+                    "enum": [
+                        "starting",
+                        "ringback",
+                        "answered"
+                    ]
+
                 }
             }
         }
@@ -438,7 +440,7 @@
         "TransferID": {
             "name": "transfer_id",
             "in": "path",
-            "description": "the transfer id",
+            "description": "Unique identifier of the transfer",
             "required": true,
             "type": "string"
         }
