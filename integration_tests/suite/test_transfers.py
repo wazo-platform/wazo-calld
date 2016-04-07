@@ -142,7 +142,8 @@ class TestTransferFromStasis(TestTransfers):
                                                 **RECIPIENT)
 
         assert_that(response, all_of(has_entries({'transferred_call': transferred_channel_id,
-                                                  'initiator_call': initiator_channel_id}),
+                                                  'initiator_call': initiator_channel_id,
+                                                  'status': 'ringback'}),
                                      has_key('id'),
                                      has_key('recipient_call')))
 
@@ -193,7 +194,8 @@ class TestTransferFromNonStasis(TestTransfers):
         assert_that(response, all_of(has_entries({'id': instance_of(unicode),
                                                   'transferred_call': transferred_channel_id,
                                                   'initiator_call': initiator_channel_id,
-                                                  'recipient_call': None})))
+                                                  'recipient_call': None,
+                                                  'status': 'starting'})))
 
         transfer_bridge_id = response['id']
         until.assert_(self.assert_transfer_is_answered, transfer_bridge_id, tries=3)

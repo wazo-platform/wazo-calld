@@ -77,6 +77,7 @@ class TransfersService(object):
         transfer.transferred_call = transferred_call
         transfer.initiator_call = initiator_call
         transfer.recipient_call = recipient_channel.id
+        transfer.status = 'ringback'
         return transfer
 
     def get(self, transfer_id):
