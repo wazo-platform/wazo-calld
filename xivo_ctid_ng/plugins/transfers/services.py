@@ -91,7 +91,6 @@ class TransfersService(object):
         channels = [self.ari.channels.get(channelId=channel_id) for channel_id in bridge.json['channels']]
         for channel in channels:
             value = self.ari.channels.getChannelVar(channelId=channel.id, variable='XIVO_TRANSFER')['value']
-            print(channel.id, value)
             if value == 'transferred':
                 transfer.transferred_call = channel.id
             elif value == 'initiator':

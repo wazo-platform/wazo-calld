@@ -24,6 +24,5 @@ class CreateTransferEvent(object):
     def __init__(self, event):
         try:
             self.transfer_id = event['args'][2]
-            logger.critical(self.transfer_id)
         except (KeyError, IndexError):
             raise InvalidCreateTransferEvent(event)
