@@ -48,8 +48,8 @@ class TransfersService(object):
             return transfer
         else:
             transfer_bridge = self.ari.bridges.create(type='mixing', name='transfer')
-            self.ari.channels.setChannelVar(channelId=transferred_call, variable='XIVO_TRANSFER', value='transferred')
-            self.ari.channels.setChannelVar(channelId=initiator_call, variable='XIVO_TRANSFER', value='initiator')
+            self.ari.channels.setChannelVar(channelId=transferred_call, variable='XIVO_TRANSFER_ROLE', value='transferred')
+            self.ari.channels.setChannelVar(channelId=initiator_call, variable='XIVO_TRANSFER_ROLE', value='initiator')
             transfer_bridge.addChannel(channel=transferred_call)
             transfer_bridge.addChannel(channel=initiator_call)
             return self.create_transfer_with_bridge(transferred_call, initiator_call, context, exten, transfer_bridge)
@@ -67,7 +67,7 @@ class TransfersService(object):
             raise
         recipient_endpoint = 'Local/{exten}@{context}'.format(exten=exten, context=context)
         app_args = [app_instance, 'transfer_recipient_called', transfer_bridge.id]
-        originate_variables = {'XIVO_TRANSFER': 'recipient',
+        originate_variables = {'XIVO_TRANSFER_ROLE': 'recipient',
                                'XIVO_TRANSFER_ID': transfer_bridge.id}
         recipient_channel = self.ari.channels.originate(endpoint=recipient_endpoint,
                                                         app=APPLICATION_NAME,
@@ -90,7 +90,7 @@ class TransfersService(object):
         transfer = Transfer(transfer_id)
         channels = [self.ari.channels.get(channelId=channel_id) for channel_id in bridge.json['channels']]
         for channel in channels:
-            value = self.ari.channels.getChannelVar(channelId=channel.id, variable='XIVO_TRANSFER')['value']
+            value = self.ari.channels.getChannelVar(channelId=channel.id, variable='XIVO_TRANSFER_ROLE')['value']
             if value == 'transferred':
                 transfer.transferred_call = channel.id
             elif value == 'initiator':
@@ -113,7 +113,7 @@ class TransfersService(object):
                     else:
                         raise
                 try:
-                    transfer_role = self.ari.channels.getChannelVar(channelId=channel.id, variable='XIVO_TRANSFER')['value']
+                    transfer_role = self.ari.channels.getChannelVar(channelId=channel.id, variable='XIVO_TRANSFER_ROLE')['value']
                 except requests.exceptions.HTTPError as e:
                     if not_found(e):
                         transfer_role = None
@@ -139,8 +139,8 @@ class TransfersService(object):
         self.ari.channels.unhold(channelId=transfer.transferred_call)
         self.ari.channels.stopMoh(channelId=transfer.transferred_call)
 
-        self.ari.channels.setChannelVar(channelId=transfer.transferred_call, variable='XIVO_TRANSFER', value='')
-        self.ari.channels.setChannelVar(channelId=transfer.recipient_call, variable='XIVO_TRANSFER', value='')
+        self.ari.channels.setChannelVar(channelId=transfer.transferred_call, variable='XIVO_TRANSFER_ROLE', value='')
+        self.ari.channels.setChannelVar(channelId=transfer.recipient_call, variable='XIVO_TRANSFER_ROLE', value='')
 
     def cancel(self, transfer_id):
         transfer = self.get(transfer_id)
@@ -152,8 +152,8 @@ class TransfersService(object):
         self.ari.channels.unhold(channelId=transfer.transferred_call)
         self.ari.channels.stopMoh(channelId=transfer.transferred_call)
 
-        self.ari.channels.setChannelVar(channelId=transfer.transferred_call, variable='XIVO_TRANSFER', value='')
-        self.ari.channels.setChannelVar(channelId=transfer.initiator_call, variable='XIVO_TRANSFER', value='')
+        self.ari.channels.setChannelVar(channelId=transfer.transferred_call, variable='XIVO_TRANSFER_ROLE', value='')
+        self.ari.channels.setChannelVar(channelId=transfer.initiator_call, variable='XIVO_TRANSFER_ROLE', value='')
 
     def is_in_stasis(self, call_id):
         try:
@@ -165,11 +165,11 @@ class TransfersService(object):
             raise
 
     def convert_transfer_to_stasis(self, transferred_call, initiator_call, context, exten, transfer_id):
-        set_variables = [(transferred_call, 'XIVO_TRANSFER', 'transferred'),
+        set_variables = [(transferred_call, 'XIVO_TRANSFER_ROLE', 'transferred'),
                          (transferred_call, 'XIVO_TRANSFER_ID', transfer_id),
                          (transferred_call, 'XIVO_TRANSFER_DESTINATION_CONTEXT', context),
                          (transferred_call, 'XIVO_TRANSFER_DESTINATION_EXTEN', exten),
-                         (initiator_call, 'XIVO_TRANSFER', 'initiator'),
+                         (initiator_call, 'XIVO_TRANSFER_ROLE', 'initiator'),
                          (initiator_call, 'XIVO_TRANSFER_ID', transfer_id),
                          (initiator_call, 'XIVO_TRANSFER_DESTINATION_CONTEXT', context),
                          (initiator_call, 'XIVO_TRANSFER_DESTINATION_EXTEN', exten)]

@@ -103,7 +103,7 @@ class TestTransfers(IntegrationTest):
         for channel_id in channel_ids:
             assert_that(channel_id, self.h.is_talking(), 'channel not talking')
             assert_that(channel_id, self.h.has_variable('XIVO_TRANSFER_ID', transfer_id))
-        transfer_roles = (self.ari.channels.getChannelVar(channelId=channel_id, variable='XIVO_TRANSFER')['value']
+        transfer_roles = (self.ari.channels.getChannelVar(channelId=channel_id, variable='XIVO_TRANSFER_ROLE')['value']
                           for channel_id in transfer_bridge.json['channels'])
         assert_that(transfer_roles, contains_inanyorder('transferred', 'initiator', 'recipient'))
 

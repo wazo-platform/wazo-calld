@@ -60,7 +60,7 @@ class TransfersStasis(object):
         bridge.addChannel(channel=channel.id)
         bridge = self.ari.bridges.get(bridgeId=bridge.id)
         if len(bridge.json['channels']) == 2:
-            channel_role = [(channel_id, self.ari.channels.getChannelVar(channelId=channel_id, variable='XIVO_TRANSFER')['value'])
+            channel_role = [(channel_id, self.ari.channels.getChannelVar(channelId=channel_id, variable='XIVO_TRANSFER_ROLE')['value'])
                             for channel_id in bridge.json['channels']]
             transferred_call = next(channel_id for (channel_id, transfer_role) in channel_role if transfer_role == 'transferred')
             initiator_call = next(channel_id for (channel_id, transfer_role) in channel_role if transfer_role == 'initiator')
