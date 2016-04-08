@@ -101,7 +101,7 @@ class TransfersService(object):
         transfer = Transfer(transfer_id)
         channels = [self.ari.channels.get(channelId=channel_id) for channel_id in bridge.json['channels']]
         for channel in channels:
-            value = self.ari.channels.getChannelVar(channelId=channel.id, variable='XIVO_TRANSFER_ROLE')['value']
+            value = channel.getChannelVar(variable='XIVO_TRANSFER_ROLE')['value']
             if value == 'transferred':
                 transfer.transferred_call = channel.id
             elif value == 'initiator':
@@ -117,14 +117,14 @@ class TransfersService(object):
             channel_transferid_role = []
             for channel in self.ari.channels.list():
                 try:
-                    transfer_id = self.ari.channels.getChannelVar(channelId=channel.id, variable='XIVO_TRANSFER_ID')['value']
+                    transfer_id = channel.getChannelVar(variable='XIVO_TRANSFER_ID')['value']
                 except requests.exceptions.HTTPError as e:
                     if not_found(e):
                         transfer_id = None
                     else:
                         raise
                 try:
-                    transfer_role = self.ari.channels.getChannelVar(channelId=channel.id, variable='XIVO_TRANSFER_ROLE')['value']
+                    transfer_role = channel.getChannelVar(variable='XIVO_TRANSFER_ROLE')['value']
                 except requests.exceptions.HTTPError as e:
                     if not_found(e):
                         transfer_role = None

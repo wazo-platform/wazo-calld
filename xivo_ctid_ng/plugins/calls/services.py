@@ -58,7 +58,7 @@ class CallsService(object):
                 app_instance_channels = []
                 for channel in channels:
                     try:
-                        channel_app_instance = ari.channels.getChannelVar(channelId=channel.id, variable='XIVO_STASIS_ARGS')['value']
+                        channel_app_instance = channel.getChannelVar(variable='XIVO_STASIS_ARGS')['value']
                     except requests.HTTPError as e:
                         if not_found(e):
                             continue
@@ -121,7 +121,7 @@ class CallsService(object):
             raise
 
         try:
-            app_instance = ari.channels.getChannelVar(channelId=channel.id, variable='XIVO_STASIS_ARGS')['value']
+            app_instance = channel.getChannelVar(variable='XIVO_STASIS_ARGS')['value']
         except requests.HTTPError as e:
             if not_found(e):
                 raise CallConnectError(call_id)
