@@ -190,7 +190,7 @@ class TestTransferFromStasis(TestTransfers):
                       recipient_channel_id,
                       tries=3)
 
-    def test_given_state_ready_when_transfer_start_and_cancel_then_state_completed(self):
+    def test_given_state_ready_when_transfer_start_and_cancel_then_state_cancelled(self):
         (transferred_channel_id,
          initiator_channel_id,
          recipient_channel_id,
