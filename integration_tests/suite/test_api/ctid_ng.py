@@ -153,6 +153,18 @@ class CtidNgClient(object):
                                                token=VALID_TOKEN)
         assert_that(response.status_code, equal_to(204))
 
+    def get_transfer_result(self, transfer_id, token=None):
+        url = u'https://localhost:9500/1.0/transfers/{transfer_id}'
+        result = requests.get(url.format(transfer_id=transfer_id),
+                              headers={'X-Auth-Token': token},
+                              verify=False)
+        return result
+
+    def get_transfer(self, transfer_id, token=VALID_TOKEN):
+        response = self.get_transfer_result(transfer_id, token=token)
+        assert_that(response.status_code, equal_to(200))
+        return response.json()
+
 
 def new_call_id():
     return format(time.time(), '.2f')

@@ -9,6 +9,7 @@ import logging
 from hamcrest import all_of
 from hamcrest import assert_that
 from hamcrest import contains_inanyorder
+from hamcrest import equal_to
 from hamcrest import has_entry
 from hamcrest import has_entries
 from hamcrest import has_key
@@ -19,6 +20,7 @@ from requests.exceptions import HTTPError
 from xivo_test_helpers import until
 
 from .test_api.base import IntegrationTest
+from .test_api.constants import VALID_TOKEN
 from .test_api.hamcrest_ import HamcrestARIChannel
 
 RECIPIENT = {
@@ -106,6 +108,14 @@ class TestTransfers(IntegrationTest):
         transfer_roles = (self.ari.channels.getChannelVar(channelId=channel_id, variable='XIVO_TRANSFER_ROLE')['value']
                           for channel_id in transfer_bridge.json['channels'])
         assert_that(transfer_roles, contains_inanyorder('transferred', 'initiator', 'recipient'))
+        transfer = self.ctid_ng.get_transfer(transfer_id)
+        assert_that(transfer, has_entries({
+            'id': transfer_id,
+            'transferred_call': instance_of(unicode),
+            'initiator_call': instance_of(unicode),
+            'recipient_call': instance_of(unicode),
+            'status': 'answered'
+        }))
 
     def assert_transfer_is_cancelled(self, transfer_id, transferred_channel_id, initiator_channel_id, recipient_channel_id):
         transfer_bridge = self.ari.bridges.get(bridgeId=transfer_id)
@@ -123,6 +133,9 @@ class TestTransfers(IntegrationTest):
         assert_that(recipient_channel_id, self.h.has_variable('XIVO_TRANSFER_ROLE', ''), 'variable not unset')
         assert_that(transferred_channel_id, self.h.has_variable('XIVO_TRANSFER_ROLE', ''), 'variable not unset')
 
+        result = self.ctid_ng.get_transfer_result(transfer_id, token=VALID_TOKEN)
+        assert_that(result.status_code, equal_to(404))
+
     def assert_transfer_is_completed(self, transfer_id, transferred_channel_id, initiator_channel_id, recipient_channel_id):
         transfer_bridge = self.ari.bridges.get(bridgeId=transfer_id)
         assert_that(transfer_bridge.json,
@@ -138,6 +151,9 @@ class TestTransfers(IntegrationTest):
         assert_that(transferred_channel_id, self.h.has_variable('XIVO_TRANSFER_ID', ''), 'variable not unset')
         assert_that(initiator_channel_id, self.h.has_variable('XIVO_TRANSFER_ROLE', ''), 'variable not unset')
         assert_that(transferred_channel_id, self.h.has_variable('XIVO_TRANSFER_ROLE', ''), 'variable not unset')
+
+        result = self.ctid_ng.get_transfer_result(transfer_id, token=VALID_TOKEN)
+        assert_that(result.status_code, equal_to(404))
 
 
 class TestTransferFromStasis(TestTransfers):

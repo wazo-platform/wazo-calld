@@ -94,12 +94,17 @@ class TransfersService(object):
         return recipient_call.id
 
     def get(self, transfer_id):
-        bridges = self.ari.bridges.list()
         try:
-            bridge = next(bridge for bridge in bridges
-                          if bridge.json['name'] == 'transfer' and bridge.id == transfer_id)
-        except StopIteration:
+            self.state_persistor.get(transfer_id)
+        except KeyError:
             raise NoSuchTransfer(transfer_id)
+
+        try:
+            bridge = self.ari.bridges.get(bridgeId=transfer_id)
+        except HTTPError as e:
+            if not_found(e):
+                raise NoSuchTransfer(transfer_id)
+            raise
         transfer = Transfer(transfer_id)
         channels = [self.ari.channels.get(channelId=channel_id) for channel_id in bridge.json['channels']]
         for channel in channels:
