@@ -3,7 +3,7 @@ git+https://github.com/xivo-pbx/xivo-amid-client.git
 git+https://github.com/xivo-pbx/xivo-auth-client.git
 git+https://github.com/xivo-pbx/xivo-bus.git
 git+https://github.com/xivo-pbx/xivo-confd-client.git
-git+https://github.com/xivo-pbx/xivo-lib-python.git
+git+https://github.com/xivo-pbx/xivo-lib-python.git@6164-attended-transfers
 git+https://github.com/xivo-pbx/xivo-lib-rest-client.git
 ari==0.1.3
 cherrypy==3.7.0

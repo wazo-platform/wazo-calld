@@ -50,7 +50,9 @@ class TransfersService(object):
             transfer_bridge = self.ari.bridges.create(type='mixing', name='transfer')
             transfer_id = transfer_bridge.id
             self.ari.channels.setChannelVar(channelId=transferred_call, variable='XIVO_TRANSFER_ROLE', value='transferred')
+            self.ari.channels.setChannelVar(channelId=transferred_call, variable='XIVO_TRANSFER_ID', value=transfer_id)
             self.ari.channels.setChannelVar(channelId=initiator_call, variable='XIVO_TRANSFER_ROLE', value='initiator')
+            self.ari.channels.setChannelVar(channelId=initiator_call, variable='XIVO_TRANSFER_ID', value=transfer_id)
             transfer_bridge.addChannel(channel=transferred_call)
             transfer_bridge.addChannel(channel=initiator_call)
 

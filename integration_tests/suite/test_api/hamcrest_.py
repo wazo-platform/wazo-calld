@@ -41,7 +41,15 @@ class HamcrestARIChannel(object):
             try:
                 value = channel.getChannelVar(variable=variable)['value']
             except HTTPError:
-                return False
+                continue
             if value == expected_value:
                 candidates.append(channel.id)
         return is_in(candidates)
+
+
+class HamcrestARIBridge(object):
+    def __init__(self, ari):
+        self._ari = ari
+
+    def is_found(self):
+        return is_in(bridge.id for bridge in self._ari.bridges.list())

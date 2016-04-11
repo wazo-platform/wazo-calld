@@ -4,7 +4,10 @@
 
 import logging
 
+from requests import HTTPError
 from xivo.pubsub import Pubsub
+
+from xivo_ctid_ng.core.ari_ import not_found
 
 from .event import TransferRecipientCalledEvent
 from .event import CreateTransferEvent
@@ -31,6 +34,7 @@ class TransfersStasis(object):
         self.stasis_start_pubsub.subscribe('transfer_recipient_called', self.transfer_recipient_called)
         self.stasis_start_pubsub.subscribe('create_transfer', self.create_transfer)
         self.ari.on_channel_event('StasisEnd', self.hangup)
+        self.ari.on_channel_event('ChannelLeftBridge', self.clean_bridge)
         self.ari.on_channel_event('ChannelDestroyed', self.hangup)
         self.hangup_pubsub.subscribe(TransferRole.recipient, self.recipient_hangup)
         self.hangup_pubsub.subscribe(TransferRole.initiator, self.initiator_hangup)
@@ -99,3 +103,30 @@ class TransfersStasis(object):
 
     def transferred_hangup(self, transfer):
         self.services.abandon(transfer.id)
+
+    def clean_bridge(self, channel, event):
+        try:
+            bridge = self.ari.bridges.get(bridgeId=event['bridge']['id'])
+        except HTTPError as e:
+            if not_found(e):
+                return
+            raise
+        logger.debug('cleaning bridge %s', bridge.id)
+        try:
+            self.ari.channels.get(channelId=channel.id)
+            channel_is_hungup = False
+        except HTTPError as e:
+            if not_found(e):
+                channel_is_hungup = True
+            else:
+                raise
+
+        if len(bridge.json['channels']) == 1 and channel_is_hungup:
+            logger.debug('emptying bridge %s', bridge.id)
+            lone_channel_id = bridge.json['channels'][0]
+            self.ari.channels.hangup(channelId=lone_channel_id)
+
+        bridge = bridge.get()
+        if len(bridge.json['channels']) == 0:
+            logger.debug('destroying bridge %s', bridge.id)
+            bridge.destroy()
