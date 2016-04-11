@@ -8,8 +8,7 @@ from xivo.pubsub import Pubsub
 
 from .event import TransferRecipientCalledEvent
 from .event import CreateTransferEvent
-from .exceptions import InvalidTransferRecipientCalledEvent
-from .exceptions import InvalidCreateTransferEvent
+from .exceptions import InvalidEvent
 
 logger = logging.getLogger(__name__)
 
@@ -21,36 +20,36 @@ class TransfersStasis(object):
         self.services = services
         self.xivo_uuid = xivo_uuid
         self.stasis_start_pubsub = Pubsub()
+        self.stasis_start_pubsub.set_exception_handler(self.invalid_event)
 
     def subscribe(self):
         self.ari.on_channel_event('StasisStart', self.stasis_start)
         self.stasis_start_pubsub.subscribe('transfer_recipient_called', self.transfer_recipient_called)
         self.stasis_start_pubsub.subscribe('create_transfer', self.create_transfer)
 
+    def invalid_event(self, _, __, exception):
+        if isinstance(exception, InvalidEvent):
+            event = exception.event
+            logger.error('invalid stasis event received: %s', event)
+        else:
+            raise
+
     def stasis_start(self, event_objects, event):
         channel = event_objects['channel']
         try:
             app_action = event['args'][1]
-        except (IndexError):
+        except IndexError:
+            logger.debug('ignoring StasisStart event: %s', event)
             return
         self.stasis_start_pubsub.publish(app_action, (channel, event))
 
     def transfer_recipient_called(self, (channel, event)):
-        try:
-            event = TransferRecipientCalledEvent(event)
-        except InvalidTransferRecipientCalledEvent:
-            logger.error('invalid stasis event received: %s', event)
-            return
+        event = TransferRecipientCalledEvent(event)
         transfer_bridge = self.ari.bridges.get(bridgeId=event.transfer_bridge)
         transfer_bridge.addChannel(channel=channel.id)
 
     def create_transfer(self, (channel, event)):
-        try:
-            event = CreateTransferEvent(event)
-        except InvalidCreateTransferEvent:
-            logger.error('invalid stasis event received: %s', event)
-            return
-
+        event = CreateTransferEvent(event)
         candidates = [candidate for candidate in self.ari.bridges.list() if candidate.id == event.transfer_id]
         if not candidates:
             bridge = self.ari.bridges.createWithId(type='mixing', name='transfer', bridgeId=event.transfer_id)

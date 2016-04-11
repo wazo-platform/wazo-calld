@@ -5,19 +5,13 @@
 from xivo_ctid_ng.core.exceptions import APIException
 
 
-class TranferError(RuntimeError):
-    pass
+class InvalidEvent(ValueError):
+
+    def __init__(self, event):
+        self.event = event
 
 
-class InvalidTransferRecipientCalledEvent(ValueError):
-    pass
-
-
-class InvalidCreateTransferEvent(ValueError):
-    pass
-
-
-class TransferError(Exception):
+class TransferError(RuntimeError):
     pass
 
 

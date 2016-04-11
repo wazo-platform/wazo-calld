@@ -4,8 +4,7 @@
 
 import logging
 
-from .exceptions import InvalidTransferRecipientCalledEvent
-from .exceptions import InvalidCreateTransferEvent
+from .exceptions import InvalidEvent
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +15,7 @@ class TransferRecipientCalledEvent(object):
         try:
             self.transfer_bridge = event['args'][2]
         except (KeyError, IndexError):
-            raise InvalidTransferRecipientCalledEvent(event)
+            raise InvalidEvent(event)
 
 
 class CreateTransferEvent(object):
@@ -25,4 +24,4 @@ class CreateTransferEvent(object):
         try:
             self.transfer_id = event['args'][2]
         except (KeyError, IndexError):
-            raise InvalidCreateTransferEvent(event)
+            raise InvalidEvent(event)
