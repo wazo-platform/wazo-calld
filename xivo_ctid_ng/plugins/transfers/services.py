@@ -146,7 +146,8 @@ class TransfersService(object):
     def complete(self, transfer_id):
         transfer = self.get(transfer_id)
 
-        self.ari.channels.hangup(channelId=transfer.initiator_call)
+        if transfer.initiator_call:
+            self.ari.channels.hangup(channelId=transfer.initiator_call)
         self.unhold_transferred_call(transfer.transferred_call)
 
         self.ari.channels.setChannelVar(channelId=transfer.transferred_call, variable='XIVO_TRANSFER_ID', value='')

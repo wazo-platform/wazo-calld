@@ -9,7 +9,7 @@ from xivo.pubsub import Pubsub
 from .event import TransferRecipientCalledEvent
 from .event import CreateTransferEvent
 from .exceptions import InvalidEvent
-from .transfer import TransferStatus
+from .transfer import TransferStatus, TransferRole
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +31,8 @@ class TransfersStasis(object):
         self.stasis_start_pubsub.subscribe('transfer_recipient_called', self.transfer_recipient_called)
         self.stasis_start_pubsub.subscribe('create_transfer', self.create_transfer)
         self.ari.on_channel_event('StasisEnd', self.stasis_end)
-        self.stasis_end_pubsub.subscribe('recipient', self.recipient_hangup)
+        self.stasis_end_pubsub.subscribe(TransferRole.recipient, self.recipient_hangup)
+        self.stasis_end_pubsub.subscribe(TransferRole.initiator, self.initiator_hangup)
 
     def invalid_event(self, _, __, exception):
         if isinstance(exception, InvalidEvent):
@@ -86,3 +87,6 @@ class TransfersStasis(object):
 
     def recipient_hangup(self, transfer):
         self.services.cancel(transfer.id)
+
+    def initiator_hangup(self, transfer):
+        self.services.complete(transfer.id)
