@@ -33,6 +33,7 @@ class TransfersStasis(object):
         self.ari.on_channel_event('StasisEnd', self.stasis_end)
         self.stasis_end_pubsub.subscribe(TransferRole.recipient, self.recipient_hangup)
         self.stasis_end_pubsub.subscribe(TransferRole.initiator, self.initiator_hangup)
+        self.stasis_end_pubsub.subscribe(TransferRole.transferred, self.transferred_hangup)
 
     def invalid_event(self, _, __, exception):
         if isinstance(exception, InvalidEvent):
@@ -51,7 +52,11 @@ class TransfersStasis(object):
         self.stasis_start_pubsub.publish(app_action, (channel, event))
 
     def stasis_end(self, channel, event):
-        transfer = self.state_persistor.get_by_channel(channel.id)
+        try:
+            transfer = self.state_persistor.get_by_channel(channel.id)
+        except KeyError:
+            logger.debug('ignoring StasisEnd event: %s', event)
+            return
         transfer_role = transfer.role(channel.id)
         self.stasis_end_pubsub.publish(transfer_role, transfer)
 
@@ -90,3 +95,6 @@ class TransfersStasis(object):
 
     def initiator_hangup(self, transfer):
         self.services.complete(transfer.id)
+
+    def transferred_hangup(self, transfer):
+        self.services.abandon(transfer.id)
