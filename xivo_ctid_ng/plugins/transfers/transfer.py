@@ -21,6 +21,25 @@ class Transfer(object):
             'status': self.status,
         }
 
+    @classmethod
+    def from_dict(cls, dict_):
+        transfer = cls(dict_['id'])
+        transfer.transferred_call = dict_['transferred_call']
+        transfer.initiator_call = dict_['initiator_call']
+        transfer.recipient_call = dict_['recipient_call']
+        transfer.status = dict_['status']
+        return transfer
+
+    def role(self, call_id):
+        if call_id == self.transferred_call:
+            return 'transferred'
+        elif call_id == self.initiator_call:
+            return 'initiator'
+        elif call_id == self.recipient_call:
+            return 'recipient'
+        else:
+            raise KeyError(call_id)
+
 
 class TransferStatus(object):
     starting = 'starting'

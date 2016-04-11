@@ -24,9 +24,10 @@ def new_amid_client(config):
 
 
 class TransfersService(object):
-    def __init__(self, ari, amid_config):
+    def __init__(self, ari, amid_config, state_persistor):
         self.ari = ari
         self.amid_config = amid_config
+        self.state_persistor = state_persistor
 
     def set_token(self, auth_token):
         self.auth_token = auth_token
@@ -45,7 +46,6 @@ class TransfersService(object):
             transfer.initiator_call = initiator_call
             transfer.transferred_call = transferred_call
             transfer.status = TransferStatus.starting
-            return transfer
         else:
             transfer_bridge = self.ari.bridges.create(type='mixing', name='transfer')
             transfer_id = transfer_bridge.id
@@ -62,7 +62,9 @@ class TransfersService(object):
             transfer.initiator_call = initiator_call
             transfer.recipient_call = recipient_call
             transfer.status = TransferStatus.ringback
-            return transfer
+
+        self.state_persistor.upsert(transfer)
+        return transfer
 
     def hold_transferred_call(self, transferred_call):
         self.ari.channels.mute(channelId=transferred_call, direction='in')
