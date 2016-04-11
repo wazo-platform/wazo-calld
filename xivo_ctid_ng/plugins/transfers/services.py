@@ -2,10 +2,10 @@
 # Copyright 2016 by Avencall
 # SPDX-License-Identifier: GPL-3.0+
 
-from contextlib import contextmanager
 import logging
-import requests
 
+from contextlib import contextmanager
+from requests import HTTPError
 from xivo_amid_client import Client as AmidClient
 from xivo_ctid_ng.core.ari_ import APPLICATION_NAME
 from xivo_ctid_ng.core.ari_ import not_found
@@ -79,7 +79,7 @@ class TransfersService(object):
     def originate_recipient(self, initiator_call, context, exten, transfer_id):
         try:
             app_instance = self.ari.channels.getChannelVar(channelId=initiator_call, variable='XIVO_STASIS_ARGS')['value']
-        except requests.HTTPError as e:
+        except HTTPError as e:
             if not_found(e):
                 raise TransferError('{call}: no app_instance found'.format(call=initiator_call))
             raise
@@ -120,14 +120,14 @@ class TransfersService(object):
             for channel in self.ari.channels.list():
                 try:
                     transfer_id = channel.getChannelVar(variable='XIVO_TRANSFER_ID')['value']
-                except requests.exceptions.HTTPError as e:
+                except HTTPError as e:
                     if not_found(e):
                         transfer_id = None
                     else:
                         raise
                 try:
                     transfer_role = channel.getChannelVar(variable='XIVO_TRANSFER_ROLE')['value']
-                except requests.exceptions.HTTPError as e:
+                except HTTPError as e:
                     if not_found(e):
                         transfer_role = None
                     else:
@@ -185,7 +185,7 @@ class TransfersService(object):
         try:
             self.ari.channels.setChannelVar(channelId=call_id, variable='XIVO_TEST_STASIS')
             return True
-        except requests.exceptions.HTTPError as e:
+        except HTTPError as e:
             if not_in_stasis(e):
                 return False
             raise
