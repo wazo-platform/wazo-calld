@@ -22,18 +22,19 @@ class TransfersStasis(object):
         self.xivo_uuid = xivo_uuid
         self.stasis_start_pubsub = Pubsub()
         self.stasis_start_pubsub.set_exception_handler(self.invalid_event)
-        self.stasis_end_pubsub = Pubsub()
-        self.stasis_end_pubsub.set_exception_handler(self.invalid_event)
+        self.hangup_pubsub = Pubsub()
+        self.hangup_pubsub.set_exception_handler(self.invalid_event)
         self.state_persistor = state_persistor
 
     def subscribe(self):
         self.ari.on_channel_event('StasisStart', self.stasis_start)
         self.stasis_start_pubsub.subscribe('transfer_recipient_called', self.transfer_recipient_called)
         self.stasis_start_pubsub.subscribe('create_transfer', self.create_transfer)
-        self.ari.on_channel_event('StasisEnd', self.stasis_end)
-        self.stasis_end_pubsub.subscribe(TransferRole.recipient, self.recipient_hangup)
-        self.stasis_end_pubsub.subscribe(TransferRole.initiator, self.initiator_hangup)
-        self.stasis_end_pubsub.subscribe(TransferRole.transferred, self.transferred_hangup)
+        self.ari.on_channel_event('StasisEnd', self.hangup)
+        self.ari.on_channel_event('ChannelDestroyed', self.hangup)
+        self.hangup_pubsub.subscribe(TransferRole.recipient, self.recipient_hangup)
+        self.hangup_pubsub.subscribe(TransferRole.initiator, self.initiator_hangup)
+        self.hangup_pubsub.subscribe(TransferRole.transferred, self.transferred_hangup)
 
     def invalid_event(self, _, __, exception):
         if isinstance(exception, InvalidEvent):
@@ -51,14 +52,14 @@ class TransfersStasis(object):
             return
         self.stasis_start_pubsub.publish(app_action, (channel, event))
 
-    def stasis_end(self, channel, event):
+    def hangup(self, channel, event):
         try:
             transfer = self.state_persistor.get_by_channel(channel.id)
         except KeyError:
             logger.debug('ignoring StasisEnd event: %s', event)
             return
         transfer_role = transfer.role(channel.id)
-        self.stasis_end_pubsub.publish(transfer_role, transfer)
+        self.hangup_pubsub.publish(transfer_role, transfer)
 
     def transfer_recipient_called(self, (channel, event)):
         event = TransferRecipientCalledEvent(event)
@@ -81,14 +82,14 @@ class TransfersStasis(object):
         bridge.addChannel(channel=channel.id)
         channel_ids = self.ari.bridges.get(bridgeId=bridge.id).json['channels']
         if len(channel_ids) == 2:
-            channel_role = [(channel_id, self.ari.channels.getChannelVar(channelId=channel_id, variable='XIVO_TRANSFER_ROLE')['value'])
-                            for channel_id in channel_ids]
-            transferred_call = next(channel_id for (channel_id, transfer_role) in channel_role if transfer_role == 'transferred')
-            initiator_call = next(channel_id for (channel_id, transfer_role) in channel_role if transfer_role == 'initiator')
+            transfer = self.state_persistor.get(event.transfer_id)
+            transferred_call = transfer.transferred_call
+            initiator_call = transfer.initiator_call
             context = self.ari.channels.getChannelVar(channelId=initiator_call, variable='XIVO_TRANSFER_DESTINATION_CONTEXT')['value']
             exten = self.ari.channels.getChannelVar(channelId=initiator_call, variable='XIVO_TRANSFER_DESTINATION_EXTEN')['value']
             self.services.hold_transferred_call(transferred_call)
-            self.services.originate_recipient(initiator_call, context, exten, event.transfer_id)
+            transfer.recipient_call = self.services.originate_recipient(initiator_call, context, exten, event.transfer_id)
+            self.state_persistor.upsert(transfer)
 
     def recipient_hangup(self, transfer):
         self.services.cancel(transfer.id)
