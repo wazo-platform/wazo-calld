@@ -207,7 +207,7 @@
         "/transfers": {
             "post": {
                 "summary": "Initiate a transfer",
-                "description": "**Required ACL:** `ctid-ng.transfers.create`",
+                "description": "**Required ACL:** `ctid-ng.transfers.create`\n\nThe only way to cancel the transfer from the initiator is to use `DELETE /transfers/<id>` (i.e. sending DTMF `*0` will not work).",
                 "parameters": [
                     {
                         "name": "body",
