@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: GPL-3.0+
 
 import ari
+import json
 import logging
 
 from hamcrest import all_of
@@ -67,6 +68,16 @@ class TestTransfers(IntegrationTest):
         self.ari = ari.connect(**ARI_CONFIG)
         self.b = HamcrestARIBridge(self.ari)
         self.c = HamcrestARIChannel(self.ari)
+
+    def tearDown(self):
+        self.clear_channels()
+
+    def clear_channels(self):
+        for channel in self.ari.channels.list():
+            try:
+                channel.hangup()
+            except HTTPError:
+                pass
 
     def given_bridged_call_stasis(self):
         caller = self.ari.channels.originate(endpoint=ENDPOINT,
@@ -163,6 +174,8 @@ class TestTransfers(IntegrationTest):
             'recipient_call': instance_of(unicode),
             'status': 'answered'
         }))
+        cached_transfers = json.loads(self.ari.asterisk.getGlobalVar(variable='XIVO_TRANSFERS')['value'])
+        assert_that(cached_transfers, has_length(1))
 
     def assert_transfer_is_cancelled(self, transfer_id, transferred_channel_id, initiator_channel_id, recipient_channel_id):
         transfer_bridge = self.ari.bridges.get(bridgeId=transfer_id)
@@ -184,6 +197,7 @@ class TestTransfers(IntegrationTest):
 
         result = self.ctid_ng.get_transfer_result(transfer_id, token=VALID_TOKEN)
         assert_that(result.status_code, equal_to(404))
+        assert_that(self.ari.asterisk.getGlobalVar(variable='XIVO_TRANSFERS'), has_entry('value', '{}'))
 
     def assert_transfer_is_completed(self, transfer_id, transferred_channel_id, initiator_channel_id, recipient_channel_id):
         transfer_bridge = self.ari.bridges.get(bridgeId=transfer_id)
@@ -205,6 +219,7 @@ class TestTransfers(IntegrationTest):
 
         result = self.ctid_ng.get_transfer_result(transfer_id, token=VALID_TOKEN)
         assert_that(result.status_code, equal_to(404))
+        assert_that(self.ari.asterisk.getGlobalVar(variable='XIVO_TRANSFERS'), has_entry('value', '{}'))
 
     def assert_transfer_is_abandoned(self, transfer_id, transferred_channel_id, initiator_channel_id, recipient_channel_id):
         transfer_bridge = self.ari.bridges.get(bridgeId=transfer_id)
@@ -226,6 +241,7 @@ class TestTransfers(IntegrationTest):
 
         result = self.ctid_ng.get_transfer_result(transfer_id, token=VALID_TOKEN)
         assert_that(result.status_code, equal_to(404))
+        assert_that(self.ari.asterisk.getGlobalVar(variable='XIVO_TRANSFERS'), has_entry('value', '{}'))
 
     def assert_transfer_is_hungup(self, transfer_id, transferred_channel_id, initiator_channel_id, recipient_channel_id):
         assert_that(transfer_id, not_(self.b.is_found()), 'transfer still exists')
@@ -236,6 +252,7 @@ class TestTransfers(IntegrationTest):
 
         result = self.ctid_ng.get_transfer_result(transfer_id, token=VALID_TOKEN)
         assert_that(result.status_code, equal_to(404))
+        assert_that(self.ari.asterisk.getGlobalVar(variable='XIVO_TRANSFERS'), has_entry('value', '{}'))
 
 
 class TestTransferFromStasis(TestTransfers):

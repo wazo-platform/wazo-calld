@@ -12,6 +12,9 @@ from xivo_ctid_ng.core.ari_ import not_found
 from .event import TransferRecipientCalledEvent
 from .event import CreateTransferEvent
 from .exceptions import InvalidEvent
+from .exceptions import TransferCreationError
+from .exceptions import TransferCancellationError
+from .exceptions import TransferCompletionError
 from .transfer import TransferStatus, TransferRole
 
 logger = logging.getLogger(__name__)
@@ -72,8 +75,14 @@ class TransfersStasis(object):
 
     def transfer_recipient_called(self, (channel, event)):
         event = TransferRecipientCalledEvent(event)
-        transfer_bridge = self.ari.bridges.get(bridgeId=event.transfer_bridge)
-        transfer_bridge.addChannel(channel=channel.id)
+        try:
+            transfer_bridge = self.ari.bridges.get(bridgeId=event.transfer_bridge)
+            transfer_bridge.addChannel(channel=channel.id)
+        except HTTPError as e:
+            if not_found(e):
+                logger.error('recipient answered, but transfer was hung up')
+            else:
+                raise
 
         try:
             transfer = self.state_persistor.get(event.transfer_bridge)
@@ -88,31 +97,58 @@ class TransfersStasis(object):
 
     def create_transfer(self, (channel, event)):
         event = CreateTransferEvent(event)
-        candidates = [candidate for candidate in self.ari.bridges.list() if candidate.id == event.transfer_id]
-        if not candidates:
-            bridge = self.ari.bridges.createWithId(type='mixing', name='transfer', bridgeId=event.transfer_id)
-        else:
-            bridge = candidates[0]
+        try:
+            bridge = self.ari.bridges.get(bridgeId=event.transfer_id)
+        except HTTPError as e:
+            if not_found(e):
+                bridge = self.ari.bridges.createWithId(type='mixing', name='transfer', bridgeId=event.transfer_id)
+            else:
+                raise
 
         bridge.addChannel(channel=channel.id)
-        channel_ids = self.ari.bridges.get(bridgeId=bridge.id).json['channels']
+        channel_ids = bridge.get().json['channels']
         if len(channel_ids) == 2:
             transfer = self.state_persistor.get(event.transfer_id)
             transferred_call = transfer.transferred_call
             initiator_call = transfer.initiator_call
-            context = self.ari.channels.getChannelVar(channelId=initiator_call, variable='XIVO_TRANSFER_DESTINATION_CONTEXT')['value']
-            exten = self.ari.channels.getChannelVar(channelId=initiator_call, variable='XIVO_TRANSFER_DESTINATION_EXTEN')['value']
-            self.services.hold_transferred_call(transferred_call)
-            transfer.recipient_call = self.services.originate_recipient(initiator_call, context, exten, event.transfer_id)
+            try:
+                context = self.ari.channels.getChannelVar(channelId=initiator_call, variable='XIVO_TRANSFER_DESTINATION_CONTEXT')['value']
+                exten = self.ari.channels.getChannelVar(channelId=initiator_call, variable='XIVO_TRANSFER_DESTINATION_EXTEN')['value']
+            except HTTPError as e:
+                if not_found(e):
+                    logger.error('initiator hung up while creating transfer')
+                else:
+                    raise
+            try:
+                self.services.hold_transferred_call(transferred_call)
+            except HTTPError as e:
+                if not_found(e):
+                    pass
+                else:
+                    raise
+            try:
+                transfer.recipient_call = self.services.originate_recipient(initiator_call, context, exten, event.transfer_id)
+            except TransferCreationError as e:
+                logger.error(e.message, e.details)
+
             self.state_persistor.upsert(transfer)
 
     def recipient_hangup(self, transfer):
-        self.services.cancel(transfer.id)
+        logger.debug('recipient hangup = cancel transfer %s', transfer.id)
+        try:
+            self.services.cancel(transfer.id)
+        except TransferCancellationError as e:
+            logger.error(e.message, e.details)
 
     def initiator_hangup(self, transfer):
-        self.services.complete(transfer.id)
+        logger.debug('initiator hangup = complete transfer %s', transfer.id)
+        try:
+            self.services.complete(transfer.id)
+        except TransferCompletionError as e:
+            logger.error(e.message, e.details)
 
     def transferred_hangup(self, transfer):
+        logger.debug('transferred hangup = abandon transfer %s', transfer.id)
         self.services.abandon(transfer.id)
 
     def clean_bridge(self, channel, event):
@@ -147,9 +183,20 @@ class TransfersStasis(object):
 
             if not channel_is_locked:
                 logger.debug('emptying bridge %s', bridge.id)
-                self.ari.channels.hangup(channelId=lone_channel_id)
+                try:
+                    self.ari.channels.hangup(channelId=lone_channel_id)
+                except HTTPError as e:
+                    if not_found(e):
+                        pass
+                    else:
+                        raise
 
-        bridge = bridge.get()
+        try:
+            bridge = bridge.get()
+        except HTTPError as e:
+            if not_found(e):
+                return
+            raise
         if len(bridge.json['channels']) == 0:
             logger.debug('destroying bridge %s', bridge.id)
             bridge.destroy()
@@ -157,20 +204,29 @@ class TransfersStasis(object):
     def release_hangup_lock(self, channel, event):
         logger.debug('releasing hangup lock')
         lock_source = channel
+
         try:
-            lock_target_id = channel.getChannelVar(variable='XIVO_HANGUP_LOCK_TARGET')['value']
+            lock_target_id = lock_source.getChannelVar(variable='XIVO_HANGUP_LOCK_TARGET')['value']
         except HTTPError as e:
             if not_found(e):
                 return
             raise
-        lock_source.setChannelVar(variable='XIVO_HANGUP_LOCK_TARGET', value='')
+
+        try:
+            lock_source.setChannelVar(variable='XIVO_HANGUP_LOCK_TARGET', value='')
+        except HTTPError as e:
+            if not_found(e):
+                pass
+            else:
+                raise
+
         try:
             lock_target = self.ari.channels.get(channelId=lock_target_id)
+            lock_target.setChannelVar(variable='XIVO_HANGUP_LOCK_SOURCE', value='')
         except HTTPError as e:
             if not_found(e):
                 return
             raise
-        lock_target.setChannelVar(variable='XIVO_HANGUP_LOCK_SOURCE', value='')
 
     def kill_hangup_lock(self, channel, event):
         logger.debug('killing hangup lock')
@@ -191,4 +247,10 @@ class TransfersStasis(object):
         lock_target = lock_source_to_target.get(lock_source.id)
         if lock_target:
             logger.debug('hanging up lock target %s', lock_target.id)
-            lock_target.hangup()
+            try:
+                lock_target.hangup()
+            except HTTPError as e:
+                if not_found(e):
+                    pass
+                else:
+                    raise
