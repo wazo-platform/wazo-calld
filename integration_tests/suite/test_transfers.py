@@ -33,6 +33,10 @@ RECIPIENT_RINGING = {
     'context': 'local',
     'exten': 'ring',
 }
+RECIPIENT_RINGING_ANSWER = {
+    'context': 'local',
+    'exten': 'ringAnswer',
+}
 RECIPIENT_BUSY = {
     'context': 'local',
     'exten': 'busy',
@@ -96,6 +100,20 @@ class TestTransfers(IntegrationTest):
         response = self.ctid_ng.create_transfer(transferred_channel_id,
                                                 initiator_channel_id,
                                                 **RECIPIENT_RINGING)
+
+        transfer_id = response['id']
+        recipient_channel_id = response['recipient_call']
+
+        return (transferred_channel_id,
+                initiator_channel_id,
+                recipient_channel_id,
+                transfer_id)
+
+    def given_ringing_and_answer_transfer(self):
+        transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()
+        response = self.ctid_ng.create_transfer(transferred_channel_id,
+                                                initiator_channel_id,
+                                                **RECIPIENT_RINGING_ANSWER)
 
         transfer_id = response['id']
         recipient_channel_id = response['recipient_call']
@@ -209,6 +227,16 @@ class TestTransfers(IntegrationTest):
         result = self.ctid_ng.get_transfer_result(transfer_id, token=VALID_TOKEN)
         assert_that(result.status_code, equal_to(404))
 
+    def assert_transfer_is_hungup(self, transfer_id, transferred_channel_id, initiator_channel_id, recipient_channel_id):
+        assert_that(transfer_id, not_(self.b.is_found()), 'transfer still exists')
+
+        assert_that(transferred_channel_id, self.c.is_hungup(), 'transferred channel is still talking')
+        assert_that(initiator_channel_id, self.c.is_hungup(), 'initiator channel is still talking')
+        assert_that(recipient_channel_id, self.c.is_hungup(), 'recipient channel is still talking')
+
+        result = self.ctid_ng.get_transfer_result(transfer_id, token=VALID_TOKEN)
+        assert_that(result.status_code, equal_to(404))
+
 
 class TestTransferFromStasis(TestTransfers):
 
@@ -285,6 +313,37 @@ class TestTransferFromStasis(TestTransfers):
         self.ari.channels.hangup(channelId=recipient_channel_id)
 
         until.assert_(self.assert_transfer_is_cancelled,
+                      transfer_id,
+                      transferred_channel_id,
+                      initiator_channel_id,
+                      recipient_channel_id,
+                      tries=3)
+
+    def test_given_state_ringback_when_transferred_hangup_and_recipient_answers_then_state_abandoned(self):
+        (transferred_channel_id,
+         initiator_channel_id,
+         recipient_channel_id,
+         transfer_id) = self.given_ringing_and_answer_transfer()
+
+        self.ari.channels.hangup(channelId=transferred_channel_id)
+
+        until.assert_(self.assert_transfer_is_abandoned,
+                      transfer_id,
+                      transferred_channel_id,
+                      initiator_channel_id,
+                      recipient_channel_id,
+                      tries=3)
+
+    def test_given_state_ringback_when_transferred_hangup_and_recipient_hangup_then_state_hungup(self):
+        (transferred_channel_id,
+         initiator_channel_id,
+         recipient_channel_id,
+         transfer_id) = self.given_ringing_transfer()
+
+        self.ari.channels.hangup(channelId=transferred_channel_id)
+        self.ari.channels.hangup(channelId=recipient_channel_id)
+
+        until.assert_(self.assert_transfer_is_hungup,
                       transfer_id,
                       transferred_channel_id,
                       initiator_channel_id,
@@ -383,11 +442,12 @@ class TestTransferFromStasis(TestTransfers):
 
         self.ari.channels.hangup(channelId=initiator_channel_id)
 
-        def recipient_is_hungup():
-            assert_that(recipient_channel_id, self.c.is_hungup())
-            assert_that(transfer_id, not_(self.b.is_found()))
-
-        until.assert_(recipient_is_hungup, tries=3)
+        until.assert_(self.assert_transfer_is_hungup,
+                      transfer_id,
+                      transferred_channel_id,
+                      initiator_channel_id,
+                      recipient_channel_id,
+                      tries=3)
 
     def test_given_state_completed_when_recipient_hangup_then_everybody_hungup(self):
         (transferred_channel_id,
@@ -406,11 +466,12 @@ class TestTransferFromStasis(TestTransfers):
 
         self.ari.channels.hangup(channelId=recipient_channel_id)
 
-        def initiator_is_hungup():
-            assert_that(initiator_channel_id, self.c.is_hungup())
-            assert_that(transfer_id, not_(self.b.is_found()))
-
-        until.assert_(initiator_is_hungup, tries=3)
+        until.assert_(self.assert_transfer_is_hungup,
+                      transfer_id,
+                      transferred_channel_id,
+                      initiator_channel_id,
+                      recipient_channel_id,
+                      tries=3)
 
 
 class TestTransferFromNonStasis(TestTransfers):

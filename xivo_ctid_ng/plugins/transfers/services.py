@@ -88,12 +88,15 @@ class TransfersService(object):
         recipient_endpoint = 'Local/{exten}@{context}'.format(exten=exten, context=context)
         app_args = [app_instance, 'transfer_recipient_called', transfer_id]
         originate_variables = {'XIVO_TRANSFER_ROLE': 'recipient',
-                               'XIVO_TRANSFER_ID': transfer_id}
-        recipient_call = self.ari.channels.originate(endpoint=recipient_endpoint,
-                                                     app=APPLICATION_NAME,
-                                                     appArgs=app_args,
-                                                     variables={'variables': originate_variables})
-        return recipient_call.id
+                               'XIVO_TRANSFER_ID': transfer_id,
+                               'XIVO_HANGUP_LOCK_TARGET': initiator_call}
+        new_channel = self.ari.channels.originate(endpoint=recipient_endpoint,
+                                                  app=APPLICATION_NAME,
+                                                  appArgs=app_args,
+                                                  variables={'variables': originate_variables})
+        recipient_call = new_channel.id
+        self.ari.channels.setChannelVar(channelId=initiator_call, variable='XIVO_HANGUP_LOCK_SOURCE', value=recipient_call)
+        return recipient_call
 
     def get(self, transfer_id):
         try:
@@ -153,40 +156,46 @@ class TransfersService(object):
     def complete(self, transfer_id):
         transfer = self.get(transfer_id)
 
+        self.ari.channels.setChannelVar(channelId=transfer.transferred_call, variable='XIVO_TRANSFER_ID', value='')
+        self.ari.channels.setChannelVar(channelId=transfer.transferred_call, variable='XIVO_TRANSFER_ROLE', value='')
+        self.ari.channels.setChannelVar(channelId=transfer.recipient_call, variable='XIVO_TRANSFER_ID', value='')
+        self.ari.channels.setChannelVar(channelId=transfer.recipient_call, variable='XIVO_TRANSFER_ROLE', value='')
+
+        self.state_persistor.remove(transfer_id)
         if transfer.initiator_call:
             self.ari.channels.hangup(channelId=transfer.initiator_call)
         self.unhold_transferred_call(transfer.transferred_call)
 
-        self.ari.channels.setChannelVar(channelId=transfer.transferred_call, variable='XIVO_TRANSFER_ID', value='')
-        self.ari.channels.setChannelVar(channelId=transfer.transferred_call, variable='XIVO_TRANSFER_ROLE', value='')
-        self.ari.channels.setChannelVar(channelId=transfer.recipient_call, variable='XIVO_TRANSFER_ID', value='')
-        self.ari.channels.setChannelVar(channelId=transfer.recipient_call, variable='XIVO_TRANSFER_ROLE', value='')
-        self.state_persistor.remove(transfer_id)
-
     def cancel(self, transfer_id):
         transfer = self.get(transfer_id)
 
+        self.ari.channels.setChannelVar(channelId=transfer.transferred_call, variable='XIVO_TRANSFER_ID', value='')
+        self.ari.channels.setChannelVar(channelId=transfer.transferred_call, variable='XIVO_TRANSFER_ROLE', value='')
+        self.ari.channels.setChannelVar(channelId=transfer.initiator_call, variable='XIVO_TRANSFER_ID', value='')
+        self.ari.channels.setChannelVar(channelId=transfer.initiator_call, variable='XIVO_TRANSFER_ROLE', value='')
+
+        self.state_persistor.remove(transfer_id)
         if transfer.recipient_call:
             self.ari.channels.hangup(channelId=transfer.recipient_call)
         self.unhold_transferred_call(transfer.transferred_call)
 
-        self.ari.channels.setChannelVar(channelId=transfer.transferred_call, variable='XIVO_TRANSFER_ID', value='')
-        self.ari.channels.setChannelVar(channelId=transfer.transferred_call, variable='XIVO_TRANSFER_ROLE', value='')
-        self.ari.channels.setChannelVar(channelId=transfer.initiator_call, variable='XIVO_TRANSFER_ID', value='')
-        self.ari.channels.setChannelVar(channelId=transfer.initiator_call, variable='XIVO_TRANSFER_ROLE', value='')
-        self.state_persistor.remove(transfer_id)
-
     def abandon(self, transfer_id):
         transfer = self.get(transfer_id)
 
-        if transfer.transferred_call:
-            self.ari.channels.hangup(channelId=transfer.transferred_call)
-
-        self.ari.channels.setChannelVar(channelId=transfer.recipient_call, variable='XIVO_TRANSFER_ID', value='')
-        self.ari.channels.setChannelVar(channelId=transfer.recipient_call, variable='XIVO_TRANSFER_ROLE', value='')
+        try:
+            self.ari.channels.setChannelVar(channelId=transfer.recipient_call, variable='XIVO_TRANSFER_ID', value='')
+            self.ari.channels.setChannelVar(channelId=transfer.recipient_call, variable='XIVO_TRANSFER_ROLE', value='')
+        except HTTPError as e:
+            if not_in_stasis(e):
+                pass
+            else:
+                raise
         self.ari.channels.setChannelVar(channelId=transfer.initiator_call, variable='XIVO_TRANSFER_ID', value='')
         self.ari.channels.setChannelVar(channelId=transfer.initiator_call, variable='XIVO_TRANSFER_ROLE', value='')
+
         self.state_persistor.remove(transfer_id)
+        if transfer.transferred_call:
+            self.ari.channels.hangup(channelId=transfer.transferred_call)
 
     def is_in_stasis(self, call_id):
         try:
