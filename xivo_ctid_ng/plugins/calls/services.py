@@ -9,14 +9,13 @@ from contextlib import contextmanager
 from xivo_confd_client import Client as ConfdClient
 
 from xivo_ctid_ng.core.ari_ import APPLICATION_NAME, not_found
+from xivo_ctid_ng.core.exceptions import AsteriskARIUnreachable, XiVOConfdUnreachable
 
 from .call import Call
-from .exceptions import AsteriskARIUnreachable
 from .exceptions import CallConnectError
 from .exceptions import InvalidUserUUID
 from .exceptions import NoSuchCall
 from .exceptions import UserHasNoLine
-from .exceptions import XiVOConfdUnreachable
 
 logger = logging.getLogger(__name__)
 

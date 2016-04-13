@@ -3,11 +3,14 @@
 # SPDX-License-Identifier: GPL-3.0+
 
 import json
+import logging
 
 from requests.exceptions import HTTPError
 from xivo_ctid_ng.core.ari_ import not_found
 
 from .transfer import Transfer
+
+logger = logging.getLogger(__name__)
 
 
 class StatePersistor(object):

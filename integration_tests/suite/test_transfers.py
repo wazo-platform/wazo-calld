@@ -16,6 +16,7 @@ from hamcrest import has_entries
 from hamcrest import has_key
 from hamcrest import has_length
 from hamcrest import instance_of
+from hamcrest import matches_regexp
 from hamcrest import not_
 from requests.exceptions import HTTPError
 
@@ -26,6 +27,12 @@ from .test_api.constants import VALID_TOKEN
 from .test_api.hamcrest_ import HamcrestARIBridge
 from .test_api.hamcrest_ import HamcrestARIChannel
 
+ARI_CONFIG = {
+    'base_url': 'http://localhost:5039',
+    'username': 'xivo',
+    'password': 'xivo',
+}
+ENDPOINT = 'Local/answer@local'
 RECIPIENT = {
     'context': 'local',
     'exten': 'answer',
@@ -46,14 +53,10 @@ RECIPIENT_NOT_FOUND = {
     'context': 'local',
     'exten': 'extenNotFound',
 }
-ENDPOINT = 'Local/answer@local'
+SOME_CHANNEL_ID = '123456789.123'
+SOME_TRANSFER_ID = '123456789.123'
 STASIS_APP = 'callcontrol'
 STASIS_APP_INSTANCE = 'integration-tests'
-ARI_CONFIG = {
-    'base_url': 'http://localhost:5039',
-    'username': 'xivo',
-    'password': 'xivo',
-}
 
 logging.getLogger('swaggerpy.client').setLevel(logging.INFO)
 logging.getLogger('requests.packages.urllib3.connectionpool').setLevel(logging.INFO)
@@ -508,3 +511,37 @@ class TestTransferFromNonStasis(TestTransfers):
 
         transfer_bridge_id = response['id']
         until.assert_(self.assert_transfer_is_answered, transfer_bridge_id, tries=3)
+
+
+class TestTransferFailingARI(IntegrationTest):
+
+    asset = 'failing_ari'
+
+    def test_given_no_ari_when_transfer_start_then_error_503(self):
+        transferred_channel_id = SOME_CHANNEL_ID
+        initiator_channel_id = SOME_CHANNEL_ID
+        response = self.ctid_ng.post_transfer_result(transferred_channel_id,
+                                                     initiator_channel_id,
+                                                     token=VALID_TOKEN,
+                                                     **RECIPIENT)
+
+        assert_that(response.status_code, equal_to(503))
+        assert_that(response.json(), has_entry('message', matches_regexp(r'.*ARI.*')))
+
+    def test_given_no_ari_when_get_transfer_then_error_503(self):
+        response = self.ctid_ng.get_transfer_result(SOME_TRANSFER_ID, token=VALID_TOKEN)
+
+        assert_that(response.status_code, equal_to(503))
+        assert_that(response.json(), has_entry('message', matches_regexp(r'.*ARI.*')))
+
+    def test_given_no_ari_when_delete_transfer_then_error_503(self):
+        response = self.ctid_ng.delete_transfer_result(SOME_TRANSFER_ID, token=VALID_TOKEN)
+
+        assert_that(response.status_code, equal_to(503))
+        assert_that(response.json(), has_entry('message', matches_regexp(r'.*ARI.*')))
+
+    def test_given_no_ari_when_complete_transfer_then_error_503(self):
+        response = self.ctid_ng.put_complete_transfer_result(SOME_TRANSFER_ID, token=VALID_TOKEN)
+
+        assert_that(response.status_code, equal_to(503))
+        assert_that(response.json(), has_entry('message', matches_regexp(r'.*ARI.*')))
