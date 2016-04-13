@@ -4,11 +4,10 @@
 
 import logging
 
-from requests import HTTPError
 from xivo.pubsub import Pubsub
 
-from xivo_ctid_ng.core.ari_ import not_found
 from xivo_ctid_ng.core.exceptions import ARINotFound
+from xivo_ctid_ng.core.ari.exceptions import ARINotInStasis
 
 from .event import TransferRecipientCalledEvent
 from .event import CreateTransferEvent
@@ -175,7 +174,10 @@ class TransfersStasis(object):
             return
         if len(bridge.json['channels']) == 0:
             logger.debug('destroying bridge %s', bridge.id)
-            bridge.destroy()
+            try:
+                bridge.destroy()
+            except ARINotInStasis:
+                pass
 
     def release_hangup_lock(self, channel, event):
         logger.debug('releasing hangup lock')

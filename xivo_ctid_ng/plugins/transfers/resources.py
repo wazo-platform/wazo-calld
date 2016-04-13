@@ -2,8 +2,6 @@
 # Copyright 2016 by Avencall
 # SPDX-License-Identifier: GPL-3.0+
 
-import uuid
-
 from flask import request
 
 from xivo_ctid_ng.core.auth import required_acl
