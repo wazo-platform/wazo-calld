@@ -9,8 +9,8 @@ from contextlib import contextmanager
 from requests import RequestException
 from xivo_amid_client import Client as AmidClient
 from xivo_ctid_ng.core.ari_ import APPLICATION_NAME
-from xivo_ctid_ng.core.exceptions import ARINotFound
-from xivo_ctid_ng.core.exceptions import ARINotInStasis
+from ari.exceptions import ARINotFound
+from ari.exceptions import ARINotInStasis
 
 from .exceptions import NoSuchTransfer
 from .exceptions import TransferCreationError

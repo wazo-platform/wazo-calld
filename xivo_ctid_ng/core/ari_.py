@@ -9,11 +9,9 @@ import requests
 import socket
 import time
 
-from requests.exceptions import HTTPError, RequestException
+from requests.exceptions import HTTPError
 from websocket import WebSocketException
 
-from .exceptions import ARINotFound
-from .exceptions import ARINotInStasis
 from .exceptions import ARIUnreachable
 
 logger = logging.getLogger(__name__)
@@ -62,7 +60,7 @@ class CoreARI(object):
 
     def _new_ari_client(self, ari_config):
         try:
-            return ARIClientBetterExceptionsProxy(ari.connect(**ari_config), ari_config)
+            return ari.connect(**ari_config)
         except requests.ConnectionError:
             logger.critical('ARI config: %s', ari_config)
             raise ARIUnreachable(ari_config)
@@ -113,38 +111,3 @@ class CoreARI(object):
             self.client.close()
         except RuntimeError:
             pass  # bug in ari-py when calling client.close()
-
-
-class ARIClientBetterExceptionsProxy(object):
-
-    def __init__(self, real_ari_client, ari_config):
-        self.ari = real_ari_client
-        self.ari_config = ari_config
-
-    def __getattr__(self, attribute):
-        return ARIClientAttributeBetterExceptionsProxy(getattr(self.ari, attribute), self.ari_config)
-
-
-class ARIClientAttributeBetterExceptionsProxy(object):
-
-    def __init__(self, real_ari_attribute, ari_config):
-        self.attribute = real_ari_attribute
-        self.ari_config = ari_config
-
-    def __getattr__(self, sub_attribute):
-        return ARIClientAttributeBetterExceptionsProxy(getattr(self.attribute, sub_attribute), self.ari_config)
-
-    def __call__(self, *args, **kwargs):
-        try:
-            return self.attribute(*args, **kwargs)
-        except HTTPError as e:
-            if not_found(e):
-                raise ARINotFound(e)
-            elif not_in_stasis(e):
-                raise ARINotInStasis(e)
-            elif server_error(e):
-                raise ARIUnreachable(self.ari_config, e)
-            else:
-                raise
-        except RequestException as e:
-            raise ARIUnreachable(self.ari_config, e)

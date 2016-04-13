@@ -6,8 +6,8 @@ import logging
 
 from xivo.pubsub import Pubsub
 
-from xivo_ctid_ng.core.exceptions import ARINotFound
-from xivo_ctid_ng.core.ari.exceptions import ARINotInStasis
+from ari.exceptions import ARINotFound
+from ari.exceptions import ARINotInStasis
 
 from .event import TransferRecipientCalledEvent
 from .event import CreateTransferEvent

@@ -10,7 +10,7 @@ from requests import HTTPError
 from xivo_confd_client import Client as ConfdClient
 
 from xivo_ctid_ng.core.ari_ import APPLICATION_NAME, not_found
-from xivo_ctid_ng.core.exceptions import ARINotFound
+from ari.exceptions import ARINotFound
 
 from .call import Call
 from .exceptions import CallConnectError
@@ -44,11 +44,8 @@ class CallsService(object):
         if application_filter:
             try:
                 channel_ids = ari.applications.get(applicationName=application_filter)['channel_ids']
-            except requests.HTTPError as e:
-                if not_found(e):
-                    channel_ids = []
-                else:
-                    raise
+            except ARINotFound:
+                channel_ids = []
 
             channels = [channel for channel in channels if channel.id in channel_ids]
 
@@ -57,10 +54,8 @@ class CallsService(object):
                 for channel in channels:
                     try:
                         channel_app_instance = channel.getChannelVar(variable='XIVO_STASIS_ARGS')['value']
-                    except requests.HTTPError as e:
-                        if not_found(e):
-                            continue
-                        raise
+                    except ARINotFound:
+                        continue
                     if channel_app_instance == application_instance_filter:
                         app_instance_channels.append(channel)
                 channels = app_instance_channels

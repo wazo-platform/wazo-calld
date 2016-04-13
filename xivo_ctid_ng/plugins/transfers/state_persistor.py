@@ -5,8 +5,7 @@
 import json
 import logging
 
-from requests.exceptions import HTTPError
-from xivo_ctid_ng.core.ari_ import not_found
+from ari.exceptions import ARINotFound
 
 from .transfer import Transfer
 
@@ -45,10 +44,8 @@ class StatePersistor(object):
     def _cache(self):
         try:
             cache_str = self._ari.asterisk.getGlobalVar(variable=self.global_var_name)['value']
-        except HTTPError as e:
-            if not_found(e):
-                return {}
-            raise
+        except ARINotFound:
+            return {}
         if not cache_str:
             return {}
         return json.loads(cache_str)

@@ -4,7 +4,6 @@
 
 import logging
 
-from requests import HTTPError
 from xivo import rest_api_helpers
 
 logger = logging.getLogger(__name__)
@@ -19,19 +18,6 @@ class ARIUnreachable(Exception):
         super(ARIUnreachable, self).__init__('ARI server unreachable... stopping')
         self.ari_config = ari_config
         self.original_error = original_error
-
-
-class ARIHTTPError(HTTPError):
-    def __init__(self, http_error):
-        self.response = http_error.response
-
-
-class ARINotFound(ARIHTTPError):
-    pass
-
-
-class ARINotInStasis(ARIHTTPError):
-    pass
 
 
 class AsteriskARIUnreachable(APIException):

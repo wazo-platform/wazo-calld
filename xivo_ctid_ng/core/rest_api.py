@@ -5,6 +5,8 @@
 import logging
 import os
 
+from ari.exceptions import ARIException
+from ari.exceptions import ARIServerError
 from cherrypy import wsgiserver
 from datetime import timedelta
 from flask import Flask
@@ -16,7 +18,7 @@ from xivo.auth_verifier import AuthVerifier
 from xivo import http_helpers
 from xivo import rest_api_helpers
 
-from .exceptions import ARIUnreachable, AsteriskARIUnreachable
+from .exceptions import AsteriskARIUnreachable
 
 VERSION = 1.0
 
@@ -72,8 +74,8 @@ def handle_ari_exception(func):
     def wrapper(*args, **kwargs):
         try:
             return func(*args, **kwargs)
-        except ARIUnreachable as e:
-            raise AsteriskARIUnreachable(e.ari_config, e.original_error)
+        except (ARIServerError, ARIException) as e:
+            raise AsteriskARIUnreachable({'base_url': e.client.base_url}, e.original_error)
     return wrapper
 
 
