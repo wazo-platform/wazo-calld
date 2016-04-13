@@ -11,6 +11,8 @@ from xivo_amid_client import Client as AmidClient
 from xivo_ctid_ng.core.ari_ import APPLICATION_NAME
 from xivo_ctid_ng.core.ari_ import not_found
 from xivo_ctid_ng.core.ari_ import not_in_stasis
+from xivo_ctid_ng.core.exceptions import ARINotFound
+from xivo_ctid_ng.core.exceptions import ARINotInStasis
 
 from .exceptions import NoSuchTransfer
 from .exceptions import TransferCreationError
@@ -58,17 +60,13 @@ class TransfersService(object):
                 self.ari.channels.setChannelVar(channelId=initiator_call, variable='XIVO_TRANSFER_ID', value=transfer_id)
                 transfer_bridge.addChannel(channel=transferred_call)
                 transfer_bridge.addChannel(channel=initiator_call)
-            except HTTPError as e:
-                if not_found(e):
-                    raise TransferCreationError('some channel got hung up')
-                raise
+            except ARINotFound:
+                raise TransferCreationError('some channel got hung up')
 
             try:
                 self.hold_transferred_call(transferred_call)
-            except HTTPError as e:
-                if not_found(e):
-                    raise TransferCreationError('transferred call hung up')
-                raise
+            except ARINotFound:
+                raise TransferCreationError('transferred call hung up')
 
             recipient_call = self.originate_recipient(initiator_call, context, exten, transfer_id)
 
@@ -94,10 +92,8 @@ class TransfersService(object):
     def originate_recipient(self, initiator_call, context, exten, transfer_id):
         try:
             app_instance = self.ari.channels.getChannelVar(channelId=initiator_call, variable='XIVO_STASIS_ARGS')['value']
-        except HTTPError as e:
-            if not_found(e):
-                raise TransferCreationError('{call}: no app_instance found'.format(call=initiator_call))
-            raise
+        except ARINotFound:
+            raise TransferCreationError('{call}: no app_instance found'.format(call=initiator_call))
         recipient_endpoint = 'Local/{exten}@{context}'.format(exten=exten, context=context)
         app_args = [app_instance, 'transfer_recipient_called', transfer_id]
         originate_variables = {'XIVO_TRANSFER_ROLE': 'recipient',
@@ -110,9 +106,8 @@ class TransfersService(object):
         recipient_call = new_channel.id
         try:
             self.ari.channels.setChannelVar(channelId=initiator_call, variable='XIVO_HANGUP_LOCK_SOURCE', value=recipient_call)
-        except HTTPError as e:
-            if not_found(e):
-                raise TransferCreationError('initiator hung up')
+        except ARINotFound:
+            raise TransferCreationError('initiator hung up')
         return recipient_call
 
     def get(self, transfer_id):
@@ -127,38 +122,27 @@ class TransfersService(object):
         try:
             self.ari.channels.setChannelVar(channelId=transfer.transferred_call, variable='XIVO_TRANSFER_ID', value='')
             self.ari.channels.setChannelVar(channelId=transfer.transferred_call, variable='XIVO_TRANSFER_ROLE', value='')
-        except HTTPError as e:
-            if not_found(e):
-                pass
-            else:
-                raise
+        except ARINotFound:
+            pass
 
         try:
             self.ari.channels.setChannelVar(channelId=transfer.recipient_call, variable='XIVO_TRANSFER_ID', value='')
             self.ari.channels.setChannelVar(channelId=transfer.recipient_call, variable='XIVO_TRANSFER_ROLE', value='')
-        except HTTPError as e:
-            if not_in_stasis(e):
-                pass
-            elif not_found(e):
-                raise TransferCompletionError(transfer_id, 'transfer recipient hung up')
-            else:
-                raise
+        except ARINotInStasis:
+            pass
+        except ARINotFound:
+            raise TransferCompletionError(transfer_id, 'transfer recipient hung up')
 
         self.state_persistor.remove(transfer_id)
         if transfer.initiator_call:
             try:
                 self.ari.channels.hangup(channelId=transfer.initiator_call)
-            except HTTPError as e:
-                if not_found(e):
-                    pass
-                else:
-                    raise
+            except ARINotFound:
+                pass
         try:
             self.unhold_transferred_call(transfer.transferred_call)
-        except HTTPError as e:
-            if not_found(e):
-                raise TransferCompletionError(transfer_id, 'transferred hung up')
-            raise
+        except ARINotFound:
+            raise TransferCompletionError(transfer_id, 'transferred hung up')
 
     def cancel(self, transfer_id):
         transfer = self.get(transfer_id)
@@ -166,37 +150,26 @@ class TransfersService(object):
         try:
             self.ari.channels.setChannelVar(channelId=transfer.transferred_call, variable='XIVO_TRANSFER_ID', value='')
             self.ari.channels.setChannelVar(channelId=transfer.transferred_call, variable='XIVO_TRANSFER_ROLE', value='')
-        except HTTPError as e:
-            if not_found(e):
-                pass
-            else:
-                raise
+        except ARINotFound:
+            pass
 
         try:
             self.ari.channels.setChannelVar(channelId=transfer.initiator_call, variable='XIVO_TRANSFER_ID', value='')
             self.ari.channels.setChannelVar(channelId=transfer.initiator_call, variable='XIVO_TRANSFER_ROLE', value='')
-        except HTTPError as e:
-            if not_found(e):
-                raise TransferCancellationError(transfer_id, 'initiator hung up')
-            else:
-                raise
+        except ARINotFound:
+            raise TransferCancellationError(transfer_id, 'initiator hung up')
 
         self.state_persistor.remove(transfer_id)
         if transfer.recipient_call:
             try:
                 self.ari.channels.hangup(channelId=transfer.recipient_call)
-            except HTTPError as e:
-                if not_found(e):
-                    pass
-                else:
-                    raise
+            except ARINotFound:
+                pass
 
         try:
             self.unhold_transferred_call(transfer.transferred_call)
-        except HTTPError as e:
-            if not_found(e):
-                raise TransferCancellationError(transfer_id, 'transferred hung up')
-            raise
+        except ARINotFound:
+            raise TransferCancellationError(transfer_id, 'transferred hung up')
 
     def abandon(self, transfer_id):
         transfer = self.get(transfer_id)
@@ -204,38 +177,27 @@ class TransfersService(object):
         try:
             self.ari.channels.setChannelVar(channelId=transfer.recipient_call, variable='XIVO_TRANSFER_ID', value='')
             self.ari.channels.setChannelVar(channelId=transfer.recipient_call, variable='XIVO_TRANSFER_ROLE', value='')
-        except HTTPError as e:
-            if not_in_stasis(e) or not_found(e):
-                pass
-            else:
-                raise
+        except (ARINotFound, ARINotInStasis):
+            pass
         try:
             self.ari.channels.setChannelVar(channelId=transfer.initiator_call, variable='XIVO_TRANSFER_ID', value='')
             self.ari.channels.setChannelVar(channelId=transfer.initiator_call, variable='XIVO_TRANSFER_ROLE', value='')
-        except HTTPError as e:
-            if not_found(e):
-                pass
-            else:
-                raise
+        except ARINotFound:
+            pass
 
         self.state_persistor.remove(transfer_id)
         if transfer.transferred_call:
             try:
                 self.ari.channels.hangup(channelId=transfer.transferred_call)
-            except HTTPError as e:
-                if not_found(e):
-                    pass
-                else:
-                    raise
+            except ARINotFound:
+                pass
 
     def is_in_stasis(self, call_id):
         try:
             self.ari.channels.setChannelVar(channelId=call_id, variable='XIVO_TEST_STASIS')
             return True
-        except HTTPError as e:
-            if not_in_stasis(e):
-                return False
-            raise
+        except ARINotInStasis:
+            return False
 
     def convert_transfer_to_stasis(self, transferred_call, initiator_call, context, exten, transfer_id):
         set_variables = [(transferred_call, 'XIVO_TRANSFER_ROLE', 'transferred'),
