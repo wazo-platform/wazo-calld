@@ -6,11 +6,9 @@ import logging
 import uuid
 
 from contextlib import contextmanager
-from requests import HTTPError
+from requests import RequestException
 from xivo_amid_client import Client as AmidClient
 from xivo_ctid_ng.core.ari_ import APPLICATION_NAME
-from xivo_ctid_ng.core.ari_ import not_found
-from xivo_ctid_ng.core.ari_ import not_in_stasis
 from xivo_ctid_ng.core.exceptions import ARINotFound
 from xivo_ctid_ng.core.exceptions import ARINotInStasis
 
@@ -18,6 +16,7 @@ from .exceptions import NoSuchTransfer
 from .exceptions import TransferCreationError
 from .exceptions import TransferCancellationError
 from .exceptions import TransferCompletionError
+from .exceptions import XiVOAmidUnreachable
 from .transfer import Transfer, TransferStatus
 
 logger = logging.getLogger(__name__)
@@ -209,15 +208,18 @@ class TransfersService(object):
                          (initiator_call, 'XIVO_TRANSFER_DESTINATION_CONTEXT', context),
                          (initiator_call, 'XIVO_TRANSFER_DESTINATION_EXTEN', exten)]
         with new_amid_client(self.amid_config) as ami:
-            for channel_id, variable, value in set_variables:
-                parameters = {'Channel': channel_id,
-                              'Variable': variable,
-                              'Value': value}
-                ami.action('Setvar', parameters, token=self.auth_token)
+            try:
+                for channel_id, variable, value in set_variables:
+                    parameters = {'Channel': channel_id,
+                                  'Variable': variable,
+                                  'Value': value}
+                    ami.action('Setvar', parameters, token=self.auth_token)
 
-            destination = {'Channel': transferred_call,
-                           'ExtraChannel': initiator_call,
-                           'Context': 'convert_to_stasis',
-                           'Exten': 'transfer',
-                           'Priority': 1}
-            ami.action('Redirect', destination, token=self.auth_token)
+                destination = {'Channel': transferred_call,
+                               'ExtraChannel': initiator_call,
+                               'Context': 'convert_to_stasis',
+                               'Exten': 'transfer',
+                               'Priority': 1}
+                ami.action('Redirect', destination, token=self.auth_token)
+            except RequestException as e:
+                raise XiVOAmidUnreachable(self.amid_config, e)

@@ -5,6 +5,20 @@
 from xivo_ctid_ng.core.exceptions import APIException
 
 
+class XiVOAmidUnreachable(APIException):
+
+    def __init__(self, xivo_amid_config, error):
+        super(XiVOAmidUnreachable, self).__init__(
+            status_code=503,
+            message='xivo-amid server unreachable',
+            error_id='xivo-amid-unreachable',
+            details={
+                'xivo_amid_config': xivo_amid_config,
+                'original_error': str(error),
+            }
+        )
+
+
 class InvalidEvent(ValueError):
 
     def __init__(self, event):

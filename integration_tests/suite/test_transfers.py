@@ -545,3 +545,19 @@ class TestTransferFailingARI(IntegrationTest):
 
         assert_that(response.status_code, equal_to(503))
         assert_that(response.json(), has_entry('message', matches_regexp(r'.*ARI.*')))
+
+
+class TestNoAmid(TestTransfers):
+
+    asset = 'real_asterisk_no_amid'
+
+    def test_given_no_amid_when_create_transfer_from_non_stasis_then_503(self):
+        transferred_channel_id, initiator_channel_id = self.given_bridged_call_not_stasis()
+
+        response = self.ctid_ng.post_transfer_result(transferred_channel_id,
+                                                     initiator_channel_id,
+                                                     token=VALID_TOKEN,
+                                                     **RECIPIENT)
+
+        assert_that(response.status_code, equal_to(503))
+        assert_that(response.json(), has_entry('message', matches_regexp(r'.*xivo-amid.*')))

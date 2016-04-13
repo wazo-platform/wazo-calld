@@ -34,20 +34,6 @@ class ARINotInStasis(ARIHTTPError):
     pass
 
 
-class XiVOConfdUnreachable(APIException):
-
-    def __init__(self, xivo_confd_config, error):
-        super(XiVOConfdUnreachable, self).__init__(
-            status_code=503,
-            message='xivo-confd server unreachable',
-            error_id='xivo-confd-unreachable',
-            details={
-                'xivo_confd_config': xivo_confd_config,
-                'original_error': str(error),
-            }
-        )
-
-
 class AsteriskARIUnreachable(APIException):
 
     def __init__(self, asterisk_ari_config, error):
