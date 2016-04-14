@@ -8,13 +8,14 @@ import json
 import logging
 
 from hamcrest import all_of
+from hamcrest import anything
 from hamcrest import assert_that
+from hamcrest import contains
 from hamcrest import contains_inanyorder
 from hamcrest import equal_to
 from hamcrest import has_entry
 from hamcrest import has_entries
 from hamcrest import has_key
-from hamcrest import has_length
 from hamcrest import instance_of
 from hamcrest import matches_regexp
 from hamcrest import not_
@@ -156,29 +157,46 @@ class TestTransfers(IntegrationTest):
                 recipient_channel_id,
                 transfer_id)
 
-    def assert_transfer_is_answered(self, transfer_id):
+    def assert_transfer_is_answered(self, transfer_id, transferred_channel_id, initiator_channel_id, recipient_channel_id=None):
         try:
             transfer_bridge = self.ari.bridges.get(bridgeId=transfer_id)
         except HTTPError:
-            raise AssertionError('no such bridge: id {}'.format(transfer_id))
-        channel_ids = transfer_bridge.json['channels']
-        assert_that(channel_ids, has_length(3))
-        for channel_id in channel_ids:
-            assert_that(channel_id, self.c.is_talking(), 'channel not talking')
-            assert_that(channel_id, self.c.has_variable('XIVO_TRANSFER_ID', transfer_id), 'variable XIVO_TRANSFER_ID is wrong')
-        transfer_roles = (self.ari.channels.getChannelVar(channelId=channel_id, variable='XIVO_TRANSFER_ROLE')['value']
-                          for channel_id in transfer_bridge.json['channels'])
-        assert_that(transfer_roles, contains_inanyorder('transferred', 'initiator', 'recipient'))
+            raise AssertionError('no transfer bridge')
+        assert_that(transfer_bridge.json,
+                    has_entry('channels',
+                              contains_inanyorder(
+                                  transferred_channel_id,
+                                  initiator_channel_id,
+                                  anything(),
+                              )))
+        try:
+            recipient_channel_id = next(channel_id for channel_id in transfer_bridge.json['channels']
+                                        if channel_id not in (transferred_channel_id, initiator_channel_id))
+        except StopIteration:
+            raise AssertionError('no recipient channel in bridge')
+
+        assert_that(transferred_channel_id, self.c.is_talking(), 'transferred channel not talking')
+        assert_that(transferred_channel_id, self.c.has_variable('XIVO_TRANSFER_ID', transfer_id), 'variable not set')
+        assert_that(transferred_channel_id, self.c.has_variable('XIVO_TRANSFER_ROLE', 'transferred'), 'variable not set')
+
+        assert_that(initiator_channel_id, self.c.is_talking(), 'initiator channel is not talking')
+        assert_that(initiator_channel_id, self.c.has_variable('XIVO_TRANSFER_ID', transfer_id), 'variable not set')
+        assert_that(initiator_channel_id, self.c.has_variable('XIVO_TRANSFER_ROLE', 'initiator'), 'variable not set')
+
+        assert_that(recipient_channel_id, self.c.is_talking(), 'recipient channel is not talking')
+        assert_that(recipient_channel_id, self.c.has_variable('XIVO_TRANSFER_ID', transfer_id), 'variable not set')
+        assert_that(recipient_channel_id, self.c.has_variable('XIVO_TRANSFER_ROLE', 'recipient'), 'variable not set')
+
         transfer = self.ctid_ng.get_transfer(transfer_id)
         assert_that(transfer, has_entries({
             'id': transfer_id,
-            'transferred_call': instance_of(unicode),
-            'initiator_call': instance_of(unicode),
-            'recipient_call': instance_of(unicode),
+            'transferred_call': transferred_channel_id,
+            'initiator_call': initiator_channel_id,
+            'recipient_call': recipient_channel_id,
             'status': 'answered'
         }))
         cached_transfers = json.loads(self.ari.asterisk.getGlobalVar(variable='XIVO_TRANSFERS')['value'])
-        assert_that(cached_transfers, has_length(1))
+        assert_that(cached_transfers, contains(transfer_id))
 
     def assert_transfer_is_cancelled(self, transfer_id, transferred_channel_id, initiator_channel_id, recipient_channel_id):
         transfer_bridge = self.ari.bridges.get(bridgeId=transfer_id)
@@ -274,8 +292,13 @@ class TestTransferFromStasis(TestTransfers):
                                      has_key('recipient_call')))
 
         transfer_id = response['id']
-
-        until.assert_(self.assert_transfer_is_answered, transfer_id, tries=3)
+        recipient_channel_id = response['recipient_call']
+        until.assert_(self.assert_transfer_is_answered,
+                      transfer_id,
+                      transferred_channel_id,
+                      initiator_channel_id,
+                      recipient_channel_id,
+                      tries=3)
 
     def test_given_state_ready_when_start_and_recipient_busy_then_state_cancelled(self):
         transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()
@@ -510,7 +533,11 @@ class TestTransferFromNonStasis(TestTransfers):
                                                   'status': 'starting'})))
 
         transfer_bridge_id = response['id']
-        until.assert_(self.assert_transfer_is_answered, transfer_bridge_id, tries=3)
+        until.assert_(self.assert_transfer_is_answered,
+                      transfer_bridge_id,
+                      transferred_channel_id,
+                      initiator_channel_id,
+                      tries=3)
 
 
 class TestTransferFailingARI(IntegrationTest):
