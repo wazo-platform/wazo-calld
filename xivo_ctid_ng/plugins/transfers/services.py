@@ -7,6 +7,7 @@ import uuid
 
 from contextlib import contextmanager
 from requests import RequestException
+from xivo.caller_id import assemble_caller_id
 from xivo_amid_client import Client as AmidClient
 from xivo_ctid_ng.core.ari_ import APPLICATION_NAME
 from ari.exceptions import ARINotFound
@@ -93,6 +94,8 @@ class TransfersService(object):
             app_instance = self.ari.channels.getChannelVar(channelId=initiator_call, variable='XIVO_STASIS_ARGS')['value']
         except ARINotFound:
             raise TransferCreationError('{call}: no app_instance found'.format(call=initiator_call))
+        initiator_channel = self.ari.channels.get(channelId=initiator_call)
+        caller_id = assemble_caller_id(initiator_channel.json['caller']['name'], initiator_channel.json['caller']['number'])
         recipient_endpoint = 'Local/{exten}@{context}'.format(exten=exten, context=context)
         app_args = [app_instance, 'transfer_recipient_called', transfer_id]
         originate_variables = {'XIVO_TRANSFER_ROLE': 'recipient',
@@ -101,10 +104,13 @@ class TransfersService(object):
         new_channel = self.ari.channels.originate(endpoint=recipient_endpoint,
                                                   app=APPLICATION_NAME,
                                                   appArgs=app_args,
+                                                  callerId=caller_id,
                                                   variables={'variables': originate_variables})
         recipient_call = new_channel.id
         try:
-            self.ari.channels.setChannelVar(channelId=initiator_call, variable='XIVO_HANGUP_LOCK_SOURCE', value=recipient_call)
+            initiator_channel.setChannelVar(variable='CONNECTEDLINE(name)', value=new_channel.json['caller']['name'])
+            initiator_channel.setChannelVar(variable='CONNECTEDLINE(num)', value=new_channel.json['caller']['number'])
+            initiator_channel.setChannelVar(variable='XIVO_HANGUP_LOCK_SOURCE', value=recipient_call)
         except ARINotFound:
             raise TransferCreationError('initiator hung up')
         return recipient_call
