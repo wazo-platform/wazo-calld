@@ -32,3 +32,14 @@ class AsteriskARIUnreachable(APIException):
                 'original_error': str(error),
             }
         )
+
+
+class ValidationError(APIException):
+
+    def __init__(self, errors):
+        super(ValidationError, self).__init__(
+            status_code=400,
+            message='Sent data is invalid',
+            error_id='invalid-data',
+            details=errors
+        )

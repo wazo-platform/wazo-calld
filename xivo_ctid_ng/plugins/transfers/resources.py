@@ -3,9 +3,19 @@
 # SPDX-License-Identifier: GPL-3.0+
 
 from flask import request
+from marshmallow import Schema, fields
 
 from xivo_ctid_ng.core.auth import required_acl
 from xivo_ctid_ng.core.rest_api import AuthResource
+
+
+class TransferRequestSchema(Schema):
+    transferred_call = fields.Str(required=True)
+    initiator_call = fields.Str(required=True)
+    context = fields.Str(required=True)
+    exten = fields.Str(required=True)
+
+transfer_request_schema = TransferRequestSchema(strict=True)
 
 
 class TransfersResource(AuthResource):
@@ -15,7 +25,7 @@ class TransfersResource(AuthResource):
 
     @required_acl('ctid-ng.transfers.create')
     def post(self):
-        request_body = request.json
+        request_body = transfer_request_schema.load(request.json).data
         transfer = self._transfers_service.create(request_body['transferred_call'],
                                                   request_body['initiator_call'],
                                                   request_body['context'],

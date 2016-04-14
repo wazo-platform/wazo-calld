@@ -12,12 +12,12 @@ from hamcrest import anything
 from hamcrest import assert_that
 from hamcrest import contains
 from hamcrest import contains_inanyorder
+from hamcrest import contains_string
 from hamcrest import equal_to
 from hamcrest import has_entry
 from hamcrest import has_entries
 from hamcrest import has_key
 from hamcrest import instance_of
-from hamcrest import matches_regexp
 from hamcrest import not_
 from requests.exceptions import HTTPError
 
@@ -274,6 +274,41 @@ class TestTransfers(IntegrationTest):
         result = self.ctid_ng.get_transfer_result(transfer_id, token=VALID_TOKEN)
         assert_that(result.status_code, equal_to(404))
         assert_that(self.ari.asterisk.getGlobalVar(variable='XIVO_TRANSFERS'), has_entry('value', '{}'))
+
+
+class TestCreateTransfer(TestTransfers):
+
+    def test_given_missing_keys_when_create_then_error_400(self):
+        response = self.ctid_ng.post_transfer_result(body={}, token=VALID_TOKEN)
+
+        assert_that(response.status_code, equal_to(400))
+        assert_that(response.json(), has_entry('message', contains_string('invalid')))
+
+    def test_given_transferred_not_found_when_create_then_error_400(self):
+        transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()
+        body = {
+            'transferred_call': 'not-found',
+            'initiator_call': initiator_channel_id,
+        }
+        body.update(RECIPIENT)
+
+        response = self.ctid_ng.post_transfer_result(body=body, token=VALID_TOKEN)
+
+        assert_that(response.status_code, equal_to(400))
+        assert_that(response.json(), has_entry('message', contains_string('creation')))
+
+    def test_given_initiator_not_found_when_create_then_error_400(self):
+        transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()
+        body = {
+            'transferred_call': initiator_channel_id,
+            'initiator_call': 'not-found',
+        }
+        body.update(RECIPIENT)
+
+        response = self.ctid_ng.post_transfer_result(body=body, token=VALID_TOKEN)
+
+        assert_that(response.status_code, equal_to(400))
+        assert_that(response.json(), has_entry('message', contains_string('creation')))
 
 
 class TestTransferFromStasis(TestTransfers):
@@ -553,25 +588,25 @@ class TestTransferFailingARI(IntegrationTest):
                                                      **RECIPIENT)
 
         assert_that(response.status_code, equal_to(503))
-        assert_that(response.json(), has_entry('message', matches_regexp(r'.*ARI.*')))
+        assert_that(response.json(), has_entry('message', contains_string('ARI')))
 
     def test_given_no_ari_when_get_transfer_then_error_503(self):
         response = self.ctid_ng.get_transfer_result(SOME_TRANSFER_ID, token=VALID_TOKEN)
 
         assert_that(response.status_code, equal_to(503))
-        assert_that(response.json(), has_entry('message', matches_regexp(r'.*ARI.*')))
+        assert_that(response.json(), has_entry('message', contains_string('ARI')))
 
     def test_given_no_ari_when_delete_transfer_then_error_503(self):
         response = self.ctid_ng.delete_transfer_result(SOME_TRANSFER_ID, token=VALID_TOKEN)
 
         assert_that(response.status_code, equal_to(503))
-        assert_that(response.json(), has_entry('message', matches_regexp(r'.*ARI.*')))
+        assert_that(response.json(), has_entry('message', contains_string('ARI')))
 
     def test_given_no_ari_when_complete_transfer_then_error_503(self):
         response = self.ctid_ng.put_complete_transfer_result(SOME_TRANSFER_ID, token=VALID_TOKEN)
 
         assert_that(response.status_code, equal_to(503))
-        assert_that(response.json(), has_entry('message', matches_regexp(r'.*ARI.*')))
+        assert_that(response.json(), has_entry('message', contains_string('ARI')))
 
 
 class TestNoAmid(TestTransfers):
@@ -587,4 +622,4 @@ class TestNoAmid(TestTransfers):
                                                      **RECIPIENT)
 
         assert_that(response.status_code, equal_to(503))
-        assert_that(response.json(), has_entry('message', matches_regexp(r'.*xivo-amid.*')))
+        assert_that(response.json(), has_entry('message', contains_string('xivo-amid')))

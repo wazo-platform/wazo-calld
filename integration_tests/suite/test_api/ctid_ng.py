@@ -101,31 +101,21 @@ class CtidNgClient(object):
         assert_that(response.status_code, equal_to(200))
         return response.json()
 
-    def post_transfer_result(self,
-                             transferred_call,
-                             initiator_call,
-                             context,
-                             exten,
-                             token=None):
-        url = u'https://localhost:9500/1.0/transfers'
-        body = {
-            'transferred_call': transferred_call,
-            'initiator_call': initiator_call,
-            'context': context,
-            'exten': exten,
-        }
-        result = requests.post(url,
+    def post_transfer_result(self, body, token=None):
+        result = requests.post('https://localhost:9500/1.0/transfers',
                                json=body,
                                headers={'X-Auth-Token': token},
                                verify=False)
         return result
 
     def create_transfer(self, transferred_call, initiator_call, context, exten):
-        response = self.post_transfer_result(transferred_call,
-                                             initiator_call,
-                                             context,
-                                             exten,
-                                             token=VALID_TOKEN)
+        body = {
+            'transferred_call': transferred_call,
+            'initiator_call': initiator_call,
+            'context': context,
+            'exten': exten,
+        }
+        response = self.post_transfer_result(body, token=VALID_TOKEN)
         assert_that(response.status_code, equal_to(201))
         return response.json()
 
