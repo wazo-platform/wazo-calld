@@ -38,12 +38,14 @@ class TransfersService(object):
         self.auth_token = auth_token
 
     def create(self, transferred_call, initiator_call, context, exten):
+
         try:
             transferred_channel = self.ari.channels.get(channelId=transferred_call)
             initiator_channel = self.ari.channels.get(channelId=initiator_call)
         except ARINotFound:
             raise TransferCreationError('channel not found')
-        except ARINotInStasis:
+
+        if not (self.is_in_stasis(transferred_call) and self.is_in_stasis(initiator_call)):
             transfer_id = str(uuid.uuid4())
             self.convert_transfer_to_stasis(transferred_call, initiator_call, context, exten, transfer_id)
             transfer = Transfer(transfer_id)
@@ -196,6 +198,13 @@ class TransfersService(object):
                 self.ari.channels.hangup(channelId=transfer.transferred_call)
             except ARINotFound:
                 pass
+
+    def is_in_stasis(self, call_id):
+        try:
+            self.ari.channels.setChannelVar(channelId=call_id, variable='XIVO_TEST_STASIS')
+            return True
+        except ARINotInStasis:
+            return False
 
     def convert_transfer_to_stasis(self, transferred_call, initiator_call, context, exten, transfer_id):
         set_variables = [(transferred_call, 'XIVO_TRANSFER_ROLE', 'transferred'),

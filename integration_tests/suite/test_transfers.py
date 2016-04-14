@@ -582,10 +582,12 @@ class TestTransferFailingARI(IntegrationTest):
     def test_given_no_ari_when_transfer_start_then_error_503(self):
         transferred_channel_id = SOME_CHANNEL_ID
         initiator_channel_id = SOME_CHANNEL_ID
-        response = self.ctid_ng.post_transfer_result(transferred_channel_id,
-                                                     initiator_channel_id,
-                                                     token=VALID_TOKEN,
-                                                     **RECIPIENT)
+        body = {
+            'transferred_call': transferred_channel_id,
+            'initiator_call': initiator_channel_id,
+        }
+        body.update(RECIPIENT)
+        response = self.ctid_ng.post_transfer_result(body, token=VALID_TOKEN)
 
         assert_that(response.status_code, equal_to(503))
         assert_that(response.json(), has_entry('message', contains_string('ARI')))
@@ -616,10 +618,12 @@ class TestNoAmid(TestTransfers):
     def test_given_no_amid_when_create_transfer_from_non_stasis_then_503(self):
         transferred_channel_id, initiator_channel_id = self.given_bridged_call_not_stasis()
 
-        response = self.ctid_ng.post_transfer_result(transferred_channel_id,
-                                                     initiator_channel_id,
-                                                     token=VALID_TOKEN,
-                                                     **RECIPIENT)
+        body = {
+            'transferred_call': transferred_channel_id,
+            'initiator_call': initiator_channel_id,
+        }
+        body.update(RECIPIENT)
+        response = self.ctid_ng.post_transfer_result(body, token=VALID_TOKEN)
 
         assert_that(response.status_code, equal_to(503))
         assert_that(response.json(), has_entry('message', contains_string('xivo-amid')))
