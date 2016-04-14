@@ -9,7 +9,7 @@ from .exceptions import InvalidEvent
 logger = logging.getLogger(__name__)
 
 
-class TransferRecipientCalledEvent(object):
+class TransferRecipientAnsweredEvent(object):
 
     def __init__(self, event):
         try:

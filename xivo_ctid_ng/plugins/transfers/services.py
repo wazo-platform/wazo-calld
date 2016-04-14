@@ -70,6 +70,11 @@ class TransfersService(object):
             except ARINotFound:
                 raise TransferCreationError('transferred call hung up')
 
+            try:
+                self.ari.channels.ring(channelId=initiator_call)
+            except ARINotFound:
+                raise TransferCreationError('initiator call hung up')
+
             recipient_call = self.originate_recipient(initiator_call, context, exten, transfer_id)
 
             transfer = Transfer(transfer_id)
@@ -177,6 +182,11 @@ class TransfersService(object):
             self.unhold_transferred_call(transfer.transferred_call)
         except ARINotFound:
             raise TransferCancellationError(transfer_id, 'transferred hung up')
+
+        try:
+            self.ari.channels.ringStop(channelId=transfer.initiator_call)
+        except ARINotFound:
+            raise TransferCancellationError(transfer_id, 'initiator_call hung up')
 
     def abandon(self, transfer_id):
         transfer = self.get(transfer_id)

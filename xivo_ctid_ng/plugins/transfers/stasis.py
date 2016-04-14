@@ -9,7 +9,7 @@ from xivo.pubsub import Pubsub
 from ari.exceptions import ARINotFound
 from ari.exceptions import ARINotInStasis
 
-from .event import TransferRecipientCalledEvent
+from .event import TransferRecipientAnsweredEvent
 from .event import CreateTransferEvent
 from .exceptions import InvalidEvent
 from .exceptions import TransferCreationError
@@ -39,7 +39,7 @@ class TransfersStasis(object):
         self.ari.on_channel_event('ChannelLeftBridge', self.clean_bridge)
 
         self.ari.on_channel_event('StasisStart', self.stasis_start)
-        self.stasis_start_pubsub.subscribe('transfer_recipient_called', self.transfer_recipient_called)
+        self.stasis_start_pubsub.subscribe('transfer_recipient_called', self.transfer_recipient_answered)
         self.stasis_start_pubsub.subscribe('create_transfer', self.create_transfer)
 
         self.ari.on_channel_event('ChannelDestroyed', self.hangup)
@@ -73,13 +73,21 @@ class TransfersStasis(object):
         transfer_role = transfer.role(channel.id)
         self.hangup_pubsub.publish(transfer_role, transfer)
 
-    def transfer_recipient_called(self, (channel, event)):
-        event = TransferRecipientCalledEvent(event)
+    def transfer_recipient_answered(self, (channel, event)):
+        event = TransferRecipientAnsweredEvent(event)
+
         try:
             transfer_bridge = self.ari.bridges.get(bridgeId=event.transfer_bridge)
             transfer_bridge.addChannel(channel=channel.id)
         except ARINotFound:
             logger.error('recipient answered, but transfer was hung up')
+            return
+
+        for channel_id in transfer_bridge.json['channels']:
+            try:
+                self.ari.channels.ringStop(channelId=channel_id)
+            except ARINotFound:
+                pass
 
         try:
             transfer = self.state_persistor.get(event.transfer_bridge)
@@ -110,10 +118,17 @@ class TransfersStasis(object):
                 exten = self.ari.channels.getChannelVar(channelId=initiator_call, variable='XIVO_TRANSFER_DESTINATION_EXTEN')['value']
             except ARINotFound:
                 logger.error('initiator hung up while creating transfer')
+
             try:
                 self.services.hold_transferred_call(transferred_call)
             except ARINotFound:
                 pass
+
+            try:
+                self.ari.channels.ring(channelId=initiator_call)
+            except ARINotFound:
+                logger.error('initiator hung up while creating transfer')
+
             try:
                 transfer.recipient_call = self.services.originate_recipient(initiator_call, context, exten, event.transfer_id)
             except TransferCreationError as e:
