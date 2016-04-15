@@ -7,7 +7,7 @@ import os
 import marshmallow
 
 from ari.exceptions import ARIException
-from ari.exceptions import ARIServerError
+from ari.exceptions import ARIHTTPError
 from cherrypy import wsgiserver
 from datetime import timedelta
 from flask import Flask
@@ -20,6 +20,7 @@ from xivo import http_helpers
 from xivo import rest_api_helpers
 
 from .exceptions import AsteriskARIUnreachable
+from .exceptions import AsteriskARIError
 from .exceptions import ValidationError
 
 VERSION = 1.0
@@ -76,7 +77,9 @@ def handle_ari_exception(func):
     def wrapper(*args, **kwargs):
         try:
             return func(*args, **kwargs)
-        except (ARIServerError, ARIException) as e:
+        except ARIHTTPError as e:
+            raise AsteriskARIError({'base_url': e.client.base_url}, e.original_error)
+        except ARIException as e:
             raise AsteriskARIUnreachable({'base_url': e.client.base_url}, e.original_error)
     return wrapper
 

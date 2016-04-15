@@ -34,6 +34,20 @@ class AsteriskARIUnreachable(APIException):
         )
 
 
+class AsteriskARIError(APIException):
+
+    def __init__(self, asterisk_ari_config, error):
+        super(AsteriskARIError, self).__init__(
+            status_code=503,
+            message='Asterisk ARI internal error',
+            error_id='asterisk-ari-error',
+            details={
+                'asterisk_ari_config': asterisk_ari_config,
+                'original_error': str(error),
+            }
+        )
+
+
 class ValidationError(APIException):
 
     def __init__(self, errors):
