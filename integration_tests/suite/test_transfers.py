@@ -95,9 +95,9 @@ class TestTransfers(IntegrationTest):
         def channel_is_up(channel_id):
             return self.ari.channels.get(channelId=channel_id).json['state'] == 'Up'
 
-        until.true(channel_is_up, caller.id)
+        until.true(channel_is_up, caller.id, tries=2)
         bridge.addChannel(channel=caller.id)
-        until.true(channel_is_up, callee.id)
+        until.true(channel_is_up, callee.id, tries=2)
         bridge.addChannel(channel=callee.id)
         return caller.id, callee.id
 
