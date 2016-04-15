@@ -196,24 +196,19 @@ class TransfersStasis(object):
                 pass
 
     def release_hangup_lock(self, channel, event):
-        logger.debug('releasing hangup lock')
-        lock_source = channel
+        logger.debug('releasing hangup lock for %s', channel.json['name'])
+        one_lock_source = channel
 
         try:
-            lock_target_id = lock_source.getChannelVar(variable='XIVO_HANGUP_LOCK_TARGET')['value']
+            lock_target_id = one_lock_source.getChannelVar(variable='XIVO_HANGUP_LOCK_TARGET')['value']
         except ARINotFound:
             return
 
-        try:
-            lock_source.setChannelVar(variable='XIVO_HANGUP_LOCK_TARGET', value='')
-        except ARINotFound:
-            pass
+        for lock_source in self.ari.channels.list():
+            logger.debug('unsetting lock target for %s', channel.json['name'])
+            self.services.unset_variable(lock_source.id, 'XIVO_HANGUP_LOCK_TARGET')
 
-        try:
-            lock_target = self.ari.channels.get(channelId=lock_target_id)
-            lock_target.setChannelVar(variable='XIVO_HANGUP_LOCK_SOURCE', value='')
-        except ARINotFound:
-            return
+        self.services.unset_variable(lock_target_id, 'XIVO_HANGUP_LOCK_SOURCE')
 
     def bypass_hangup_lock_from_source(self, channel, event):
         logger.debug('bypassing hangup lock due to source hangup')
