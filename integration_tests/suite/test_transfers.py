@@ -10,12 +10,12 @@ import logging
 from hamcrest import all_of
 from hamcrest import anything
 from hamcrest import assert_that
-from hamcrest import contains
 from hamcrest import contains_inanyorder
 from hamcrest import contains_string
 from hamcrest import equal_to
 from hamcrest import has_entry
 from hamcrest import has_entries
+from hamcrest import has_item
 from hamcrest import has_key
 from hamcrest import instance_of
 from hamcrest import not_
@@ -196,7 +196,7 @@ class TestTransfers(IntegrationTest):
             'status': 'answered'
         }))
         cached_transfers = json.loads(self.ari.asterisk.getGlobalVar(variable='XIVO_TRANSFERS')['value'])
-        assert_that(cached_transfers, contains(transfer_id))
+        assert_that(cached_transfers, has_item(transfer_id))
 
     def assert_transfer_is_cancelled(self, transfer_id, transferred_channel_id, initiator_channel_id, recipient_channel_id):
         transfer_bridge = self.ari.bridges.get(bridgeId=transfer_id)
@@ -218,7 +218,8 @@ class TestTransfers(IntegrationTest):
 
         result = self.ctid_ng.get_transfer_result(transfer_id, token=VALID_TOKEN)
         assert_that(result.status_code, equal_to(404))
-        assert_that(self.ari.asterisk.getGlobalVar(variable='XIVO_TRANSFERS'), has_entry('value', '{}'))
+        cached_transfers = json.loads(self.ari.asterisk.getGlobalVar(variable='XIVO_TRANSFERS')['value'])
+        assert_that(cached_transfers, not_(has_item(transfer_id)))
 
     def assert_transfer_is_completed(self, transfer_id, transferred_channel_id, initiator_channel_id, recipient_channel_id):
         transfer_bridge = self.ari.bridges.get(bridgeId=transfer_id)
@@ -240,7 +241,8 @@ class TestTransfers(IntegrationTest):
 
         result = self.ctid_ng.get_transfer_result(transfer_id, token=VALID_TOKEN)
         assert_that(result.status_code, equal_to(404))
-        assert_that(self.ari.asterisk.getGlobalVar(variable='XIVO_TRANSFERS'), has_entry('value', '{}'))
+        cached_transfers = json.loads(self.ari.asterisk.getGlobalVar(variable='XIVO_TRANSFERS')['value'])
+        assert_that(cached_transfers, not_(has_item(transfer_id)))
 
     def assert_transfer_is_abandoned(self, transfer_id, transferred_channel_id, initiator_channel_id, recipient_channel_id):
         transfer_bridge = self.ari.bridges.get(bridgeId=transfer_id)
@@ -262,7 +264,8 @@ class TestTransfers(IntegrationTest):
 
         result = self.ctid_ng.get_transfer_result(transfer_id, token=VALID_TOKEN)
         assert_that(result.status_code, equal_to(404))
-        assert_that(self.ari.asterisk.getGlobalVar(variable='XIVO_TRANSFERS'), has_entry('value', '{}'))
+        cached_transfers = json.loads(self.ari.asterisk.getGlobalVar(variable='XIVO_TRANSFERS')['value'])
+        assert_that(cached_transfers, not_(has_item(transfer_id)))
 
     def assert_transfer_is_hungup(self, transfer_id, transferred_channel_id, initiator_channel_id, recipient_channel_id):
         assert_that(transfer_id, not_(self.b.is_found()), 'transfer still exists')
@@ -273,7 +276,8 @@ class TestTransfers(IntegrationTest):
 
         result = self.ctid_ng.get_transfer_result(transfer_id, token=VALID_TOKEN)
         assert_that(result.status_code, equal_to(404))
-        assert_that(self.ari.asterisk.getGlobalVar(variable='XIVO_TRANSFERS'), has_entry('value', '{}'))
+        cached_transfers = json.loads(self.ari.asterisk.getGlobalVar(variable='XIVO_TRANSFERS')['value'])
+        assert_that(cached_transfers, not_(has_item(transfer_id)))
 
 
 class TestCreateTransfer(TestTransfers):
@@ -565,6 +569,34 @@ class TestTransferFromStasis(TestTransfers):
                       transferred_channel_id,
                       initiator_channel_id,
                       recipient_channel_id,
+                      tries=3)
+
+    def test_that_XIVO_TRANSFER_TARGET_is_not_reset_for_other_transfers(self):
+        (transferred_channel_id1,
+         initiator_channel_id1,
+         recipient_channel_id1,
+         transfer_id1) = self.given_ringing_and_answer_transfer()
+
+        (transferred_channel_id2,
+         initiator_channel_id2,
+         recipient_channel_id2,
+         transfer_id2) = self.given_ringing_transfer()
+
+        until.assert_(self.assert_transfer_is_answered,
+                      transfer_id1,
+                      transferred_channel_id1,
+                      initiator_channel_id1,
+                      recipient_channel_id1,
+                      tries=3)
+
+        self.ari.channels.hangup(channelId=transferred_channel_id2)
+        self.ari.channels.hangup(channelId=initiator_channel_id2)
+
+        until.assert_(self.assert_transfer_is_hungup,
+                      transfer_id2,
+                      transferred_channel_id2,
+                      initiator_channel_id2,
+                      recipient_channel_id2,
                       tries=3)
 
 

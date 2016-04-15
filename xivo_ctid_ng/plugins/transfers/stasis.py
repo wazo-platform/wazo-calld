@@ -208,8 +208,13 @@ class TransfersStasis(object):
 
         logger.debug('releasing hangup lock from source %s', channel.json['name'])
 
-        for lock_source in self.ari.channels.list():
-            self.services.unset_variable(lock_source.id, 'XIVO_HANGUP_LOCK_TARGET')
+        for lock_source_candidate in self.ari.channels.list():
+            try:
+                lock_target_candidate_id = lock_source_candidate.getChannelVar(variable='XIVO_HANGUP_LOCK_TARGET')['value']
+            except ARINotFound:
+                continue
+            if lock_target_candidate_id == lock_target_id:
+                self.services.unset_variable(lock_source_candidate.id, 'XIVO_HANGUP_LOCK_TARGET')
 
         if lock_target_id:
             self.services.unset_variable(lock_target_id, 'XIVO_HANGUP_LOCK_SOURCE')
