@@ -428,6 +428,22 @@ class TestTransferFromStasis(TestTransfers):
                       recipient_channel_id,
                       tries=3)
 
+    def test_given_state_ringback_when_transferred_hangup_and_initiator_hangup_then_state_hungup(self):
+        (transferred_channel_id,
+         initiator_channel_id,
+         recipient_channel_id,
+         transfer_id) = self.given_ringing_transfer()
+
+        self.ari.channels.hangup(channelId=transferred_channel_id)
+        self.ari.channels.hangup(channelId=initiator_channel_id)
+
+        until.assert_(self.assert_transfer_is_hungup,
+                      transfer_id,
+                      transferred_channel_id,
+                      initiator_channel_id,
+                      recipient_channel_id,
+                      tries=3)
+
     def test_given_state_answered_when_complete_then_state_completed(self):
         (transferred_channel_id,
          initiator_channel_id,
