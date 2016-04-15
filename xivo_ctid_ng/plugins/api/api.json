@@ -228,6 +228,9 @@
                         "schema": {
                             "$ref": "#/definitions/Transfer"
                         }
+                    },
+                    "503": {
+                        "$ref": "#/responses/AnotherServiceUnavailable"
                     }
                 }
             }
@@ -250,6 +253,12 @@
                         "schema": {
                             "$ref": "#/definitions/Transfer"
                         }
+                    },
+                    "404": {
+                        "$ref": "#/responses/NoSuchTransfer"
+                    },
+                    "503": {
+                        "$ref": "#/responses/AnotherServiceUnavailable"
                     }
                 }
             },
@@ -267,6 +276,37 @@
                 "responses": {
                     "204": {
                         "description": "Transfer cancelled"
+                    },
+                    "404": {
+                        "$ref": "#/responses/NoSuchTransfer"
+                    },
+                    "503": {
+                        "$ref": "#/responses/AnotherServiceUnavailable"
+                    }
+                }
+            }
+        },
+        "/transfers/{transfer_id}/complete": {
+            "put": {
+                "summary": "Complete a transfer",
+                "description": "**Required ACL:** `ctid-ng.transfers.{transfer_id}.complete.update`",
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/TransferID"
+                    }
+                ],
+                "tags": [
+                    "transfers"
+                ],
+                "responses": {
+                    "204": {
+                        "description": "The transfer was completed"
+                    },
+                    "404": {
+                        "$ref": "#/responses/NoSuchTransfer"
+                    },
+                    "503": {
+                        "$ref": "#/responses/AnotherServiceUnavailable"
                     }
                 }
             }
