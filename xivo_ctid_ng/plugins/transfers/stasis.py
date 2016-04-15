@@ -61,7 +61,10 @@ class TransfersStasis(object):
         try:
             app_action = event['args'][1]
         except IndexError:
-            logger.debug('ignoring StasisStart event: %s', event)
+            logger.debug('ignoring StasisStart event: channel %s, app %s, args %s',
+                         event['channel']['name'],
+                         event['application'],
+                         event['args'])
             return
         self.stasis_start_pubsub.publish(app_action, (channel, event))
 
@@ -69,7 +72,7 @@ class TransfersStasis(object):
         try:
             transfer = self.state_persistor.get_by_channel(channel.id)
         except KeyError:
-            logger.debug('ignoring StasisEnd event: %s', event)
+            logger.debug('ignoring StasisEnd event: channel %s, app %s', event['channel']['name'], event['application'])
             return
         transfer_role = transfer.role(channel.id)
         self.hangup_pubsub.publish(transfer_role, transfer)
@@ -196,7 +199,6 @@ class TransfersStasis(object):
                 pass
 
     def release_hangup_lock(self, channel, event):
-        logger.debug('releasing hangup lock for %s', channel.json['name'])
         one_lock_source = channel
 
         try:
@@ -204,15 +206,15 @@ class TransfersStasis(object):
         except ARINotFound:
             return
 
+        logger.debug('releasing hangup lock from source %s', channel.json['name'])
+
         for lock_source in self.ari.channels.list():
-            logger.debug('unsetting lock target for %s', channel.json['name'])
             self.services.unset_variable(lock_source.id, 'XIVO_HANGUP_LOCK_TARGET')
 
         if lock_target_id:
             self.services.unset_variable(lock_target_id, 'XIVO_HANGUP_LOCK_SOURCE')
 
     def bypass_hangup_lock_from_source(self, channel, event):
-        logger.debug('bypassing hangup lock due to source hangup')
         lock_source = channel
         lone_channel_ids = [bridge.json['channels'][0] for bridge in self.ari.bridges.list()
                             if len(bridge.json['channels']) == 1]
@@ -232,7 +234,8 @@ class TransfersStasis(object):
                     pass
 
     def bypass_hangup_lock_from_target(self, channel, event):
-        logger.debug('bypassing hangup lock due to target hangup')
+        logger.debug('bypassing hangup lock due to target hangup %s', channel.json['name'])
+
         lock_target = channel
         for lock_source_candidate in self.ari.channels.list():
             try:
@@ -240,7 +243,7 @@ class TransfersStasis(object):
             except ARINotFound:
                 continue
             if lock_target_candidate_id == lock_target.id:
-                logger.debug('hanging up lock source %s', lock_target.id)
+                logger.debug('hanging up lock source %s', lock_source_candidate.json['name'])
                 try:
                     lock_source_candidate.hangup()
                 except ARINotFound:
