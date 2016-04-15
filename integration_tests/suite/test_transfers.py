@@ -315,6 +315,30 @@ class TestCreateTransfer(TestTransfers):
         assert_that(response.json(), has_entry('message', contains_string('creation')))
 
 
+class TestGetTransfer(TestTransfers):
+
+    def test_given_no_transfer_when_get_then_error_404(self):
+        response = self.ctid_ng.get_transfer_result(transfer_id='not-found', token=VALID_TOKEN)
+
+        assert_that(response.status_code, equal_to(404))
+
+
+class TestCancelTransfer(TestTransfers):
+
+    def test_given_no_transfer_when_cancel_transfer_then_error_404(self):
+        response = self.ctid_ng.delete_transfer_result(transfer_id='not-found', token=VALID_TOKEN)
+
+        assert_that(response.status_code, equal_to(404))
+
+
+class TestCompleteTransfer(TestTransfers):
+
+    def test_given_no_transfer_when_complete_transfer_then_error_404(self):
+        response = self.ctid_ng.put_complete_transfer_result(transfer_id='not-found', token=VALID_TOKEN)
+
+        assert_that(response.status_code, equal_to(404))
+
+
 class TestTransferFromStasis(TestTransfers):
 
     def test_given_state_ready_when_transfer_start_and_answer_then_state_answered(self):
