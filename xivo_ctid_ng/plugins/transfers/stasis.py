@@ -94,8 +94,8 @@ class TransfersStasis(object):
             transfer = self.state_persistor.get(event.transfer_bridge)
         except KeyError:
             logger.debug('recipient answered, but transfer was abandoned')
-            channel.setChannelVar(variable='XIVO_TRANSFER_ID', value='')
-            channel.setChannelVar(variable='XIVO_TRANSFER_ROLE', value='')
+            self.services.unset_variable(channel.id, 'XIVO_TRANSFER_ID')
+            self.services.unset_variable(channel.id, 'XIVO_TRANSFER_ROLE')
         else:
             transfer.recipient_call = channel.id
             transfer.status = TransferStatus.answered

@@ -131,19 +131,10 @@ class TransfersService(object):
     def complete(self, transfer_id):
         transfer = self.get(transfer_id)
 
-        try:
-            self.ari.channels.setChannelVar(channelId=transfer.transferred_call, variable='XIVO_TRANSFER_ID', value='')
-            self.ari.channels.setChannelVar(channelId=transfer.transferred_call, variable='XIVO_TRANSFER_ROLE', value='')
-        except ARINotFound:
-            pass
-
-        try:
-            self.ari.channels.setChannelVar(channelId=transfer.recipient_call, variable='XIVO_TRANSFER_ID', value='')
-            self.ari.channels.setChannelVar(channelId=transfer.recipient_call, variable='XIVO_TRANSFER_ROLE', value='')
-        except ARINotInStasis:
-            pass
-        except ARINotFound:
-            raise TransferCompletionError(transfer_id, 'transfer recipient hung up')
+        self.unset_variable(transfer.transferred_call, 'XIVO_TRANSFER_ID')
+        self.unset_variable(transfer.transferred_call, 'XIVO_TRANSFER_ROLE')
+        self.unset_variable(transfer.recipient_call, 'XIVO_TRANSFER_ID')
+        self.unset_variable(transfer.recipient_call, 'XIVO_TRANSFER_ROLE')
 
         self.state_persistor.remove(transfer_id)
         if transfer.initiator_call:
@@ -159,17 +150,10 @@ class TransfersService(object):
     def cancel(self, transfer_id):
         transfer = self.get(transfer_id)
 
-        try:
-            self.ari.channels.setChannelVar(channelId=transfer.transferred_call, variable='XIVO_TRANSFER_ID', value='')
-            self.ari.channels.setChannelVar(channelId=transfer.transferred_call, variable='XIVO_TRANSFER_ROLE', value='')
-        except ARINotFound:
-            pass
-
-        try:
-            self.ari.channels.setChannelVar(channelId=transfer.initiator_call, variable='XIVO_TRANSFER_ID', value='')
-            self.ari.channels.setChannelVar(channelId=transfer.initiator_call, variable='XIVO_TRANSFER_ROLE', value='')
-        except ARINotFound:
-            raise TransferCancellationError(transfer_id, 'initiator hung up')
+        self.unset_variable(transfer.transferred_call, 'XIVO_TRANSFER_ID')
+        self.unset_variable(transfer.transferred_call, 'XIVO_TRANSFER_ROLE')
+        self.unset_variable(transfer.initiator_call, 'XIVO_TRANSFER_ID')
+        self.unset_variable(transfer.initiator_call, 'XIVO_TRANSFER_ROLE')
 
         self.state_persistor.remove(transfer_id)
         if transfer.recipient_call:
@@ -186,21 +170,15 @@ class TransfersService(object):
         try:
             self.ari.channels.ringStop(channelId=transfer.initiator_call)
         except ARINotFound:
-            raise TransferCancellationError(transfer_id, 'initiator_call hung up')
+            raise TransferCancellationError(transfer_id, 'initiator hung up')
 
     def abandon(self, transfer_id):
         transfer = self.get(transfer_id)
 
-        try:
-            self.ari.channels.setChannelVar(channelId=transfer.recipient_call, variable='XIVO_TRANSFER_ID', value='')
-            self.ari.channels.setChannelVar(channelId=transfer.recipient_call, variable='XIVO_TRANSFER_ROLE', value='')
-        except (ARINotFound, ARINotInStasis):
-            pass
-        try:
-            self.ari.channels.setChannelVar(channelId=transfer.initiator_call, variable='XIVO_TRANSFER_ID', value='')
-            self.ari.channels.setChannelVar(channelId=transfer.initiator_call, variable='XIVO_TRANSFER_ROLE', value='')
-        except ARINotFound:
-            pass
+        self.unset_variable(transfer.recipient_call, 'XIVO_TRANSFER_ID')
+        self.unset_variable(transfer.recipient_call, 'XIVO_TRANSFER_ROLE')
+        self.unset_variable(transfer.initiator_call, 'XIVO_TRANSFER_ID')
+        self.unset_variable(transfer.initiator_call, 'XIVO_TRANSFER_ROLE')
 
         self.state_persistor.remove(transfer_id)
         if transfer.transferred_call:
@@ -239,5 +217,23 @@ class TransfersService(object):
                                'Exten': 'transfer',
                                'Priority': 1}
                 ami.action('Redirect', destination, token=self.auth_token)
+            except RequestException as e:
+                raise XiVOAmidUnreachable(self.amid_config, e)
+
+    def unset_variable(self, channel_id, variable):
+        try:
+            self.ari.channels.setChannelVar(channelId=channel_id, variable=variable, value='')
+        except ARINotFound:
+            pass
+        except ARINotInStasis:
+            self.unset_variable_ami(channel_id, variable)
+
+    def unset_variable_ami(self, channel_id, variable):
+        with new_amid_client(self.amid_config) as ami:
+            try:
+                parameters = {'Channel': channel_id,
+                              'Variable': variable,
+                              'Value': ''}
+                ami.action('Setvar', parameters, token=self.auth_token)
             except RequestException as e:
                 raise XiVOAmidUnreachable(self.amid_config, e)
