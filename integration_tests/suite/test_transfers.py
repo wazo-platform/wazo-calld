@@ -114,7 +114,7 @@ class TestTransfers(IntegrationTest):
             except StopIteration:
                 return None
 
-        callee_id = until.true(channels_are_talking, tries=2)
+        callee_id = until.true(channels_are_talking, caller.id, tries=2)
         return caller.id, callee_id
 
     def given_ringing_transfer(self):
