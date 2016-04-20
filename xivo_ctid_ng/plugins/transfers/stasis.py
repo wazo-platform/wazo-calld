@@ -87,19 +87,24 @@ class TransfersStasis(object):
             logger.error('recipient answered, but transfer was hung up')
             return
 
-        for channel_id in transfer_bridge.json['channels']:
-            try:
-                self.ari.channels.ringStop(channelId=channel_id)
-            except ARINotFound:
-                pass
-
         try:
             transfer = self.state_persistor.get(event.transfer_bridge)
         except KeyError:
             logger.debug('recipient answered, but transfer was abandoned')
             self.services.unset_variable(channel.id, 'XIVO_TRANSFER_ID')
             self.services.unset_variable(channel.id, 'XIVO_TRANSFER_ROLE')
+
+            for channel_id in transfer_bridge.json['channels']:
+                try:
+                    self.unring_initiator_call(channel_id)
+                except ARINotFound:
+                    pass
         else:
+            logger.debug('recipient answered, transfer continues normally')
+            try:
+                self.unring_initiator_call(transfer.initiator_call)
+            except ARINotFound:
+                pass
             transfer.recipient_call = channel.id
             transfer.status = TransferStatus.answered
             self.state_persistor.upsert(transfer)

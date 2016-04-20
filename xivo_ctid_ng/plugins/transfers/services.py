@@ -96,6 +96,10 @@ class TransfersService(object):
         self.ari.channels.unhold(channelId=transferred_call)
         self.ari.channels.stopMoh(channelId=transferred_call)
 
+    def unring_initiator_call(self, initiator_call):
+        self.ari.channels.stopMoh(channelId=initiator_call)  # workaround for SCCP bug on ringStop
+        self.ari.channels.ringStop(channelId=initiator_call)
+
     def originate_recipient(self, initiator_call, context, exten, transfer_id):
         try:
             app_instance = self.ari.channels.getChannelVar(channelId=initiator_call, variable='XIVO_STASIS_ARGS')['value']
@@ -168,7 +172,7 @@ class TransfersService(object):
             raise TransferCancellationError(transfer_id, 'transferred hung up')
 
         try:
-            self.ari.channels.ringStop(channelId=transfer.initiator_call)
+            self.unring_initiator_call(transfer.initiator_call)
         except ARINotFound:
             raise TransferCancellationError(transfer_id, 'initiator hung up')
 
