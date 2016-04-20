@@ -18,14 +18,6 @@ class HamcrestARIChannel(object):
         channel_ids = (channel_id for bridge in bridges for channel_id in bridge.json['channels'])
         return is_in(list(channel_ids))
 
-    def is_talking_to(self, channel_id):
-        bridges = self._ari.bridges.list()
-        bridges = (bridge for bridge in bridges
-                   if (channel_id in bridge.json['channels'] and
-                       bridge.json['bridge_type'] == 'mixing'))
-        channel_ids = (channel_id for bridge in bridges for channel_id in bridge.json['channels'])
-        return is_in(channel_ids)
-
     def is_talking(self):
         channels = self._ari.channels.list()
         channel_ids = (channel.id for channel in channels if channel.json['state'] == 'Up')
