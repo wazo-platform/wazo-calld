@@ -96,13 +96,13 @@ class TransfersStasis(object):
 
             for channel_id in transfer_bridge.json['channels']:
                 try:
-                    self.unring_initiator_call(channel_id)
+                    self.services.unring_initiator_call(channel_id)
                 except ARINotFound:
                     pass
         else:
             logger.debug('recipient answered, transfer continues normally')
             try:
-                self.unring_initiator_call(transfer.initiator_call)
+                self.services.unring_initiator_call(transfer.initiator_call)
             except ARINotFound:
                 pass
             transfer.recipient_call = channel.id
