@@ -4,7 +4,6 @@
 # SPDX-License-Identifier: GPL-3.0+
 
 
-
 from setuptools import setup
 from setuptools import find_packages
 
@@ -25,6 +24,7 @@ setup(
         'xivo_ctid_ng.plugins': [
             'api = xivo_ctid_ng.plugins.api.plugin:Plugin',
             'calls = xivo_ctid_ng.plugins.calls.plugin:Plugin',
+            'transfers = xivo_ctid_ng.plugins.transfers.plugin:Plugin',
             'plugin_list = xivo_ctid_ng.plugins.plugin_list.plugin:Plugin',
         ]
     }

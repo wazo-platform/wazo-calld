@@ -1,21 +1,8 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015 by Avencall
+# Copyright (C) 2015-2016 Avencall
 # SPDX-License-Identifier: GPL-3.0+
 
 from xivo_ctid_ng.core.exceptions import APIException
-
-
-class NoSuchCall(APIException):
-
-    def __init__(self, call_id):
-        super(NoSuchCall, self).__init__(
-            status_code=404,
-            message='No such call',
-            error_id='no-such-call',
-            details={
-                'call_id': call_id
-            }
-        )
 
 
 class XiVOConfdUnreachable(APIException):
@@ -32,16 +19,15 @@ class XiVOConfdUnreachable(APIException):
         )
 
 
-class AsteriskARIUnreachable(APIException):
+class NoSuchCall(APIException):
 
-    def __init__(self, asterisk_ari_config, error):
-        super(AsteriskARIUnreachable, self).__init__(
-            status_code=503,
-            message='Asterisk ARI server unreachable',
-            error_id='asterisk-ari-unreachable',
+    def __init__(self, call_id):
+        super(NoSuchCall, self).__init__(
+            status_code=404,
+            message='No such call',
+            error_id='no-such-call',
             details={
-                'asterisk_ari_config': asterisk_ari_config,
-                'original_error': str(error),
+                'call_id': call_id
             }
         )
 

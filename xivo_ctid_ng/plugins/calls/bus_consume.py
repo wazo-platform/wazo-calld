@@ -4,14 +4,12 @@
 
 import logging
 
-from requests.exceptions import HTTPError
+from ari.exceptions import ARINotFound
 from xivo_bus.collectd.channels import ChannelCreatedCollectdEvent
 from xivo_bus.collectd.channels import ChannelEndedCollectdEvent
 from xivo_bus.resources.calls.event import CreateCallEvent
 from xivo_bus.resources.calls.event import EndCallEvent
 from xivo_bus.resources.calls.event import UpdateCallEvent
-
-from xivo_ctid_ng.core.ari_ import not_found
 
 
 logger = logging.getLogger(__name__)
@@ -38,11 +36,9 @@ class CallsBusEventHandler(object):
         logger.debug('Relaying to bus: channel %s created', channel_id)
         try:
             channel = self.ari.channels.get(channelId=channel_id)
-        except HTTPError as e:
-            if not_found(e):
-                logger.debug('channel %s not found', channel_id)
-                return
-            raise
+        except ARINotFound:
+            logger.debug('channel %s not found', channel_id)
+            return
         call = self.services.make_call_from_channel(self.ari, channel)
         bus_event = CreateCallEvent(call.to_dict())
         self.bus_publisher.publish(bus_event)
@@ -57,11 +53,9 @@ class CallsBusEventHandler(object):
         logger.debug('Relaying to bus: channel %s updated', channel_id)
         try:
             channel = self.ari.channels.get(channelId=channel_id)
-        except HTTPError as e:
-            if not_found(e):
-                logger.debug('channel %s not found', channel_id)
-                return
-            raise
+        except ARINotFound:
+            logger.debug('channel %s not found', channel_id)
+            return
         call = self.services.make_call_from_channel(self.ari, channel)
         bus_event = UpdateCallEvent(call.to_dict())
         self.bus_publisher.publish(bus_event)

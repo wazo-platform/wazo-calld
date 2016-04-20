@@ -13,6 +13,7 @@ Architecture: all
 Depends: ${python:Depends},
          ${misc:Depends},
          python-asterisk-ari,
+         xivo-amid-client,
          xivo-auth-client,
          xivo-bus (>> 15.19),
          xivo-confd-client,
@@ -23,6 +24,7 @@ Depends: ${python:Depends},
          python-flask-cors,
          python-iso8601,
          python-kombu,
+         python-marshmallow,
          python-stevedore
 Description: XiVO CTI server (new generation)
  XiVO is a system based on a powerful IPBX, to bring an easy to

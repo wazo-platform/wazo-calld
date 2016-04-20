@@ -2,6 +2,7 @@
 # Copyright 2016 by Avencall
 # SPDX-License-Identifier: GPL-3.0+
 
+from ari.exceptions import ARINotFound
 from hamcrest import assert_that
 from hamcrest import calling
 from hamcrest import equal_to
@@ -9,7 +10,6 @@ from hamcrest import is_
 from hamcrest import raises
 from mock import Mock
 from mock import sentinel as s
-from requests.exceptions import HTTPError
 from unittest import TestCase
 
 from ..exceptions import InvalidCallEvent
@@ -121,7 +121,7 @@ class TestConnectCallEvent(TestCase):
             'args': ['red', 'dialed_from', 'channel-id']
         }
         ari = Mock()
-        ari.channels.get.side_effect = HTTPError(response=Mock(status_code=404))
+        ari.channels.get.side_effect = ARINotFound(Mock(), Mock())
 
         assert_that(calling(ConnectCallEvent).with_args(channel=Mock(),
                                                         event=event,

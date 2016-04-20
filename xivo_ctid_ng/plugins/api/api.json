@@ -203,6 +203,113 @@
                     }
                 }
             }
+        },
+        "/transfers": {
+            "post": {
+                "summary": "Initiate a transfer",
+                "description": "**Required ACL:** `ctid-ng.transfers.create`\n\nThe only way to cancel the transfer from the initiator is to use `DELETE /transfers/<id>` (i.e. sending DTMF `*0` will not work).",
+                "parameters": [
+                    {
+                        "name": "body",
+                        "in": "body",
+                        "description": "Parameters of the transfer",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/TransferRequest"
+                        }
+                    }
+                ],
+                "tags": [
+                    "transfers"
+                ],
+                "responses": {
+                    "201": {
+                        "description": "The transfer being created",
+                        "schema": {
+                            "$ref": "#/definitions/Transfer"
+                        }
+                    },
+                    "503": {
+                        "$ref": "#/responses/AnotherServiceUnavailable"
+                    }
+                }
+            }
+        },
+        "/transfers/{transfer_id}": {
+            "get": {
+                "summary": "Get details of a transfer",
+                "description": "**Required ACL:** `ctid-ng.transfers.{transfer_id}.read`",
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/TransferID"
+                    }
+                ],
+                "tags": [
+                    "transfers"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The details of the transfer",
+                        "schema": {
+                            "$ref": "#/definitions/Transfer"
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/responses/NoSuchTransfer"
+                    },
+                    "503": {
+                        "$ref": "#/responses/AnotherServiceUnavailable"
+                    }
+                }
+            },
+            "delete": {
+                "summary": "Cancel a transfer",
+                "description": "**Required ACL:** `ctid-ng.transfers.{transfer_id}.delete`",
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/TransferID"
+                    }
+                ],
+                "tags": [
+                    "transfers"
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Transfer cancelled"
+                    },
+                    "404": {
+                        "$ref": "#/responses/NoSuchTransfer"
+                    },
+                    "503": {
+                        "$ref": "#/responses/AnotherServiceUnavailable"
+                    }
+                }
+            }
+        },
+        "/transfers/{transfer_id}/complete": {
+            "put": {
+                "summary": "Complete a transfer",
+                "description": "**Required ACL:** `ctid-ng.transfers.{transfer_id}.complete.update`",
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/TransferID"
+                    }
+                ],
+                "tags": [
+                    "transfers"
+                ],
+                "responses": {
+                    "204": {
+                        "description": "The transfer was completed"
+                    },
+                    "404": {
+                        "$ref": "#/responses/NoSuchTransfer"
+                    },
+                    "503": {
+                        "$ref": "#/responses/AnotherServiceUnavailable"
+                    }
+                }
+            }
         }
     },
     "responses": {
@@ -315,6 +422,67 @@
                     "format": "timestamp"
                 }
             }
+        },
+        "TransferRequest": {
+            "type": "object",
+            "properties": {
+                "transferred_call": {
+                    "description": "Call ID of the call being transferred to someone else",
+                    "type": "string"
+                },
+                "initiator_call": {
+                    "description": "Call ID of the transfer initiator",
+                    "type": "string"
+                },
+                "context": {
+                    "description": "Context of the recipient of the transfer",
+                    "type": "string"
+                },
+                "exten": {
+                    "description": "Extension of the recipient of the transfer",
+                    "type": "string"
+                }
+            }
+        },
+        "Transfer": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "description": "Unique identifier of the transfer",
+                    "type": "string"
+                },
+                "transferred_call": {
+                    "description": "Call ID of the call being transferred to someone else",
+                    "type": "string"
+                },
+                "initiator_call": {
+                    "description": "Call ID of the transfer initiator",
+                    "type": "string"
+                },
+                "recipient_call": {
+                    "description": "Call ID of the recipient of the transfer. May be null when the transfer is 'starting'.",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "The current step of the transfer",
+                    "type": "string",
+                    "enum": [
+                        "starting",
+                        "ringback",
+                        "answered"
+                    ]
+
+                }
+            }
+        }
+    },
+    "parameters": {
+        "TransferID": {
+            "name": "transfer_id",
+            "in": "path",
+            "description": "Unique identifier of the transfer",
+            "required": true,
+            "type": "string"
         }
     }
 }

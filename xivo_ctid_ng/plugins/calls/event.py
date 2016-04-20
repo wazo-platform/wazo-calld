@@ -4,9 +4,7 @@
 
 import iso8601
 
-from requests.exceptions import HTTPError
-
-from xivo_ctid_ng.core.ari_ import not_found
+from ari.exceptions import ARINotFound
 
 from .exceptions import InvalidCallEvent
 from .exceptions import InvalidConnectCallEvent
@@ -55,10 +53,8 @@ class ConnectCallEvent(StartCallEvent):
         originator_channel_id = self._originator_channel_id(event)
         try:
             self.originator_channel = ari.channels.get(channelId=originator_channel_id)
-        except HTTPError as e:
-            if not_found(e):
-                raise InvalidConnectCallEvent()
-            raise
+        except ARINotFound:
+            raise InvalidConnectCallEvent()
 
     @classmethod
     def is_connect_event(self, event):

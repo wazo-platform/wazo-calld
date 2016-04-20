@@ -76,7 +76,10 @@ class CallsStasis(object):
                                                                   state=new_state.name))
 
     def channel_destroyed(self, channel, event):
-        state_name = self.state_persistor.get(channel.id).state
+        try:
+            state_name = self.state_persistor.get(channel.id).state
+        except KeyError:
+            return
 
         state = self.state_factory.make(state_name)
         state.hangup(CallEvent(channel, event, self.state_persistor))

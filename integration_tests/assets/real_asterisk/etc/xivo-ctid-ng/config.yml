@@ -1,0 +1,51 @@
+extra_config_files: /etc/xivo-ctid-ng/conf.d/
+
+debug: false
+logfile: /var/log/xivo-ctid-ng.log
+pidfile: /var/run/xivo-ctid-ng.pid
+
+rest_api:
+  listen: 0.0.0.0
+  port: 9500
+  certificate: /usr/local/share/ssl/ctid-ng/server.crt
+  private_key: /usr/local/share/ssl/ctid-ng/server.key
+  cors:
+    enabled: True
+    allow_headers: Content-Type, X-Auth-Token
+
+amid:
+    host: amid
+    port: 9491
+    verify_certificate: /usr/local/share/ssl/amid/server.crt
+
+auth:
+  host: auth
+  port: 9497
+  timeout: 2
+  verify_certificate: /usr/local/share/ssl/auth/server.crt
+  key_file: /etc/xivo-ctid-ng/key.yml
+
+ari:
+  connection:
+    base_url: http://ari:5039
+    username: xivo
+    password: xivo
+
+bus:
+  username: guest
+  password: guest
+  host: rabbitmq
+  port: 5672
+
+collectd:
+  exchange_name: collectd
+
+confd:
+  host: confd
+  port: 9486
+  verify_certificate: /usr/local/share/ssl/confd/server.crt
+
+enabled_plugins:
+  - calls
+  - plugin_list
+  - transfers
