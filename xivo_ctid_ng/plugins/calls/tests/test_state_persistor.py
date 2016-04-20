@@ -4,13 +4,13 @@
 
 import json
 
+from ari.exceptions import ARINotFound
 from hamcrest import assert_that
 from hamcrest import calling
 from hamcrest import equal_to
 from hamcrest import raises
 from mock import Mock
 from mock import sentinel as s
-from requests.exceptions import HTTPError
 from unittest import TestCase
 
 from ..state_persistor import ChannelCacheEntry
@@ -42,7 +42,7 @@ class TestStatePersistor(TestCase):
         self.ari = Mock()
 
     def test_given_no_cache_when_get_then_raise_keyerror(self):
-        self.ari.asterisk.getGlobalVar.side_effect = HTTPError(response=Mock(status_code=404))
+        self.ari.asterisk.getGlobalVar.side_effect = ARINotFound(Mock(), Mock())
         persistor = StatePersistor(self.ari)
 
         assert_that(calling(persistor.get).with_args('unknown-channel-id'), raises(KeyError))
