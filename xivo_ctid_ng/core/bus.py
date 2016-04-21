@@ -9,7 +9,7 @@ from kombu import Connection
 from kombu import Exchange
 from kombu import Producer
 from kombu.mixins import ConsumerMixin
-from xivo.pubsub import ExceptionLoggingPubsub
+from xivo.pubsub import Pubsub
 from xivo_bus import Marshaler
 from xivo_bus import Publisher
 from xivo_bus import PublishingQueue
@@ -49,8 +49,8 @@ class CoreBusConsumer(ConsumerMixin):
     _KEY = 'ami.*'
 
     def __init__(self, global_config):
-        self._events_pubsub = ExceptionLoggingPubsub()
-        self._userevent_pubsub = ExceptionLoggingPubsub()
+        self._events_pubsub = Pubsub()
+        self._userevent_pubsub = Pubsub()
         self._events_pubsub.subscribe('UserEvent',
                                       lambda message: self._userevent_pubsub.publish(message['UserEvent'], message))
 
