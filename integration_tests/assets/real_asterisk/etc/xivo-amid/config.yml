@@ -16,5 +16,6 @@ ajam:
 
 auth:
   host: auth
+  verify_certificate: /usr/local/share/ssl/auth/server.crt
 
 publish_ami_events: False

@@ -1,2 +1,0 @@
-!exec
-command: xivo-confgen xivo/uuid.yml

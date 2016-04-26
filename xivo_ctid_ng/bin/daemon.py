@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015 by Avencall
+# Copyright (C) 2015-2016 Avencall
 # SPDX-License-Identifier: GPL-3.0+
 
 
@@ -14,6 +14,7 @@ from xivo.user_rights import change_user
 from xivo import xivo_logging
 from xivo_ctid_ng.controller import Controller
 from xivo_ctid_ng.config import load as load_config
+from xivo_ctid_ng.config import set_xivo_uuid
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +27,8 @@ def main(argv):
 
     xivo_logging.setup_logging(config['log_filename'], config['foreground'], config['debug'], config['log_level'])
     xivo_logging.silence_loggers(['amqp', 'Flask-Cors', 'iso8601', 'kombu', 'swaggerpy', 'urllib3', 'ari.model'], logging.WARNING)
+
+    set_xivo_uuid(config, logger)
 
     controller = Controller(config)
     signal.signal(signal.SIGTERM, partial(sigterm, controller))

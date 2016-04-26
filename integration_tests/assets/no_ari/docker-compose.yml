@@ -35,6 +35,8 @@ ctid-ng:
     - "./ssl:/usr/local/share/ssl"
   ports:
     - "9500:9500"
+  environment:
+    XIVO_UUID: "08c56466-8f29-45c7-9856-92bf1ba89b92"
   links:
     - auth
     - confd
