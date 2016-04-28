@@ -1,5 +1,5 @@
 # -*- coding: UTF-8 -*-
-# Copyright 2015 by Avencall
+# Copyright (C) 2015-2016 Avencall
 # SPDX-License-Identifier: GPL-3.0+
 
 
@@ -22,7 +22,7 @@ class Plugin(object):
         token_changed_subscribe = dependencies['token_changed_subscribe']
         config = dependencies['config']
 
-        calls_service = CallsService(config['ari']['connection'], config['confd'], ari)
+        calls_service = CallsService(config['ari']['connection'], config['confd'], ari.client)
         token_changed_subscribe(calls_service.set_confd_token)
 
         calls_stasis = CallsStasis(ari.client, collectd, bus_publisher, calls_service, config['uuid'])

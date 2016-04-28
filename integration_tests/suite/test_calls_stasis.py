@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015 by Avencall
+# Copyright (C) 2015-2016 Avencall
 # SPDX-License-Identifier: GPL-3.0+
 
 import json
@@ -67,8 +67,10 @@ class TestDialedFrom(IntegrationTest):
         new_call_id = 'new-call-id'
         self.ari.set_channels(MockChannel(id=call_id),
                               MockChannel(id=new_call_id, ))
-        self.ari.set_channel_variable({call_id: {'XIVO_STASIS_ARGS': 'sw1'},
-                                       new_call_id: {'XIVO_USERUUID': 'user-uuid'}})
+        self.ari.set_channel_variable({new_call_id: {'XIVO_USERUUID': 'user-uuid'}})
+        self.ari.set_global_variables({'XIVO_CALLCONTROL': json.dumps({call_id: {'app': 'my-app',
+                                                                                 'app_instance': 'sw1',
+                                                                                 'state': 'ringing'}})})
         self.confd.set_users(MockUser(uuid='user-uuid'))
         self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip'))
         self.confd.set_user_lines({'user-uuid': [MockUserLine('line-id')]})
