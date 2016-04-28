@@ -1,0 +1,1 @@
+rm_conffile /etc/xivo-ctid-ng/conf.d/050-xivo-uuid.yml 16.05
