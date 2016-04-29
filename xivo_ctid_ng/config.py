@@ -4,6 +4,8 @@
 
 
 import argparse
+import os
+import sys
 
 from xivo.chain_map import ChainMap
 from xivo.config_helper import read_config_file_hierarchy, parse_config_file
@@ -133,3 +135,11 @@ def _get_reinterpreted_raw_values(config):
         result['log_level'] = get_log_level_by_name(log_level)
 
     return result
+
+
+def set_xivo_uuid(config, logger):
+    xivo_uuid = os.getenv('XIVO_UUID')
+    if not xivo_uuid:
+        logger.error('undefined environment variable XIVO_UUID')
+        sys.exit(1)
+    config['uuid'] = xivo_uuid
