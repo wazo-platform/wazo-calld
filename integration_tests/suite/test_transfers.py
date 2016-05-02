@@ -86,10 +86,10 @@ class TestTransfers(IntegrationTest):
     def given_bridged_call_stasis(self):
         caller = self.ari.channels.originate(endpoint=ENDPOINT,
                                              app=STASIS_APP,
-                                             variables={'variables': {'XIVO_STASIS_ARGS': STASIS_APP_INSTANCE}})
+                                             appArgs=[STASIS_APP_INSTANCE])
         callee = self.ari.channels.originate(endpoint=ENDPOINT,
                                              app=STASIS_APP,
-                                             variables={'variables': {'XIVO_STASIS_ARGS': STASIS_APP_INSTANCE}})
+                                             appArgs=[STASIS_APP_INSTANCE])
         bridge = self.ari.bridges.create(type='mixing')
 
         def channel_is_up(channel_id):

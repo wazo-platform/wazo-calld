@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015 by Avencall
+# Copyright (C) 2015-2016 Avencall
 # SPDX-License-Identifier: GPL-3.0+
+
+import json
 
 from hamcrest import assert_that
 from hamcrest import contains
@@ -160,9 +162,15 @@ class TestListCalls(IntegrationTest):
                               MockChannel(id='third-id'),
                               MockChannel(id='fourth-id'))
         self.ari.set_applications(MockApplication(name='my-app', channels=['first-id', 'second-id', 'third-id']))
-        self.ari.set_channel_variable({'first-id': {'XIVO_STASIS_ARGS': 'appX'},
-                                       'second-id': {'XIVO_STASIS_ARGS': 'appY'},
-                                       'third-id': {'XIVO_STASIS_ARGS': 'appX'}})
+        self.ari.set_global_variables({'XIVO_CALLCONTROL': json.dumps({'first-id': {'app': 'my-app',
+                                                                                    'app_instance': 'appX',
+                                                                                    'state': 'talking'},
+                                                                       'second-id': {'app': 'my-app',
+                                                                                     'app_instance': 'appY',
+                                                                                     'state': 'talking'},
+                                                                       'third-id': {'app': 'my-app',
+                                                                                    'app_instance': 'appX',
+                                                                                    'state': 'talking'}})})
 
         calls = self.ctid_ng.list_calls(application='my-app', application_instance='appX')
 
@@ -437,8 +445,10 @@ class TestConnectUser(IntegrationTest):
     def test_given_one_call_and_one_user_when_connect_user_then_the_two_are_talking(self):
         self.ari.set_channels(MockChannel(id='call-id'),
                               MockChannel(id='new-call-id', ))
-        self.ari.set_channel_variable({'call-id': {'XIVO_STASIS_ARGS': 'sw1'},
-                                       'new-call-id': {'XIVO_USERUUID': 'user-uuid'}})
+        self.ari.set_channel_variable({'new-call-id': {'XIVO_USERUUID': 'user-uuid'}})
+        self.ari.set_global_variables({'XIVO_CALLCONTROL': json.dumps({'call-id': {'app': 'sw',
+                                                                                   'app_instance': 'sw1',
+                                                                                   'state': 'ringing'}})})
         self.confd.set_users(MockUser(uuid='user-uuid'))
         self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip'))
         self.confd.set_user_lines({'user-uuid': [MockUserLine('line-id')]})

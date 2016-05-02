@@ -25,7 +25,7 @@ class ChannelCacheEntry(object):
                    state=dict_['state'])
 
 
-class StatePersistor(object):
+class ReadOnlyStatePersistor(object):
     global_var_name = 'XIVO_CALLCONTROL'
 
     def __init__(self, ari):
@@ -33,6 +33,18 @@ class StatePersistor(object):
 
     def get(self, channel_id):
         return ChannelCacheEntry.from_dict(self._cache()[channel_id])
+
+    def _cache(self):
+        try:
+            cache_str = self._ari.asterisk.getGlobalVar(variable=self.global_var_name)['value']
+        except ARINotFound:
+            return {}
+        if not cache_str:
+            return {}
+        return json.loads(cache_str)
+
+
+class StatePersistor(ReadOnlyStatePersistor):
 
     def upsert(self, channel_id, entry):
         cache = self._cache()
@@ -43,15 +55,6 @@ class StatePersistor(object):
         cache = self._cache()
         cache.pop(channel_id, None)
         self._set_cache(cache)
-
-    def _cache(self):
-        try:
-            cache_str = self._ari.asterisk.getGlobalVar(variable=self.global_var_name)['value']
-        except ARINotFound:
-            return {}
-        if not cache_str:
-            return {}
-        return json.loads(cache_str)
 
     def _set_cache(self, cache):
         self._ari.asterisk.setGlobalVar(variable=self.global_var_name,

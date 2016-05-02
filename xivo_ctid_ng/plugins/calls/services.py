@@ -18,6 +18,7 @@ from .exceptions import InvalidUserUUID
 from .exceptions import NoSuchCall
 from .exceptions import UserHasNoLine
 from .exceptions import XiVOConfdUnreachable
+from .state_persistor import ReadOnlyStatePersistor
 
 logger = logging.getLogger(__name__)
 
@@ -33,17 +34,17 @@ class CallsService(object):
         self._ari_config = ari_config
         self._confd_config = confd_config
         self._ari = ari
+        self._state_persistor = ReadOnlyStatePersistor(self._ari)
 
     def set_confd_token(self, confd_token):
         self._confd_config['token'] = confd_token
 
     def list_calls(self, application_filter=None, application_instance_filter=None):
-        ari = self._ari.client
-        channels = ari.channels.list()
+        channels = self._ari.channels.list()
 
         if application_filter:
             try:
-                channel_ids = ari.applications.get(applicationName=application_filter)['channel_ids']
+                channel_ids = self._ari.applications.get(applicationName=application_filter)['channel_ids']
             except ARINotFound:
                 channel_ids = []
 
@@ -53,66 +54,61 @@ class CallsService(object):
                 app_instance_channels = []
                 for channel in channels:
                     try:
-                        channel_app_instance = channel.getChannelVar(variable='XIVO_STASIS_ARGS')['value']
-                    except ARINotFound:
+                        channel_app_instance = self._state_persistor.get(channel.id).app_instance
+                    except KeyError:
                         continue
                     if channel_app_instance == application_instance_filter:
                         app_instance_channels.append(channel)
                 channels = app_instance_channels
 
-        return [self.make_call_from_channel(ari, channel) for channel in channels]
+        return [self.make_call_from_channel(self._ari, channel) for channel in channels]
 
     def originate(self, request):
         source_user = request['source']['user']
         endpoint = self._endpoint_from_user_uuid(source_user)
 
-        ari = self._ari.client
-        channel = ari.channels.originate(endpoint=endpoint,
-                                         extension=request['destination']['extension'],
-                                         context=request['destination']['context'],
-                                         priority=request['destination']['priority'],
-                                         variables={'variables': request.get('variables', {})})
+        channel = self._ari.channels.originate(endpoint=endpoint,
+                                               extension=request['destination']['extension'],
+                                               context=request['destination']['context'],
+                                               priority=request['destination']['priority'],
+                                               variables={'variables': request.get('variables', {})})
         return channel.id
 
     def get(self, call_id):
         channel_id = call_id
-        ari = self._ari.client
         try:
-            channel = ari.channels.get(channelId=channel_id)
+            channel = self._ari.channels.get(channelId=channel_id)
         except ARINotFound:
             raise NoSuchCall(channel_id)
 
-        return self.make_call_from_channel(ari, channel)
+        return self.make_call_from_channel(self._ari, channel)
 
     def hangup(self, call_id):
         channel_id = call_id
-        ari = self._ari.client
         try:
-            ari.channels.get(channelId=channel_id)
+            self._ari.channels.get(channelId=channel_id)
         except ARINotFound:
             raise NoSuchCall(channel_id)
 
-        ari.channels.hangup(channelId=channel_id)
+        self._ari.channels.hangup(channelId=channel_id)
 
     def connect_user(self, call_id, user_uuid):
         channel_id = call_id
         endpoint = self._endpoint_from_user_uuid(user_uuid)
 
-        ari = self._ari.client
         try:
-            channel = ari.channels.get(channelId=channel_id)
+            channel = self._ari.channels.get(channelId=channel_id)
         except ARINotFound:
             raise NoSuchCall(channel_id)
 
         try:
-            app_instance = channel.getChannelVar(variable='XIVO_STASIS_ARGS')['value']
-        except ARINotFound:
+            app_instance = self._state_persistor.get(channel_id).app_instance
+        except KeyError:
             raise CallConnectError(call_id)
 
-        new_channel = ari.channels.originate(endpoint=endpoint,
-                                             app=APPLICATION_NAME,
-                                             appArgs=[app_instance, 'dialed_from', channel_id],
-                                             variables={'variables': {'XIVO_STASIS_ARGS': app_instance}})
+        new_channel = self._ari.channels.originate(endpoint=endpoint,
+                                                   app=APPLICATION_NAME,
+                                                   appArgs=[app_instance, 'dialed_from', channel_id])
 
         # if the caller hangs up, we cancel our originate
         originate_canceller = channel.on_event('StasisEnd', lambda _, __: self.hangup(new_channel.id))

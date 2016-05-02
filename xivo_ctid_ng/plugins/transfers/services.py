@@ -12,6 +12,7 @@ from xivo_amid_client import Client as AmidClient
 from xivo_ctid_ng.core.ari_ import APPLICATION_NAME
 from ari.exceptions import ARINotFound
 from ari.exceptions import ARINotInStasis
+from xivo_ctid_ng.plugins.calls.state_persistor import ReadOnlyStatePersistor as ReadOnlyCallStates
 
 from .exceptions import NoSuchTransfer
 from .exceptions import TransferCreationError
@@ -33,6 +34,7 @@ class TransfersService(object):
         self.ari = ari
         self.amid_config = amid_config
         self.state_persistor = state_persistor
+        self.call_states = ReadOnlyCallStates(self.ari)
 
     def set_token(self, auth_token):
         self.auth_token = auth_token
@@ -102,8 +104,8 @@ class TransfersService(object):
 
     def originate_recipient(self, initiator_call, context, exten, transfer_id):
         try:
-            app_instance = self.ari.channels.getChannelVar(channelId=initiator_call, variable='XIVO_STASIS_ARGS')['value']
-        except ARINotFound:
+            app_instance = self.call_states.get(initiator_call).app_instance
+        except KeyError:
             raise TransferCreationError('{call}: no app_instance found'.format(call=initiator_call))
         initiator_channel = self.ari.channels.get(channelId=initiator_call)
         caller_id = assemble_caller_id(initiator_channel.json['caller']['name'], initiator_channel.json['caller']['number'])
