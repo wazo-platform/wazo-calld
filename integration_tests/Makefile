@@ -5,6 +5,7 @@ test-setup: build-ctid-ng
 	docker pull p0bailey/docker-flask
 	docker pull n3llyb0y/wait
 	docker pull quintana/asterisk
+	docker pull xivo/xivo-amid
 	docker build -t ari-mock -f docker/Dockerfile-ari-mock .
 
 build-ctid-ng: egg-info
