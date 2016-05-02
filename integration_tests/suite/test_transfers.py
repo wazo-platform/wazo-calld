@@ -7,6 +7,8 @@ import ari
 import json
 import logging
 
+from ari.exceptions import ARINotFound
+
 from hamcrest import all_of
 from hamcrest import anything
 from hamcrest import assert_that
@@ -80,7 +82,7 @@ class TestTransfers(IntegrationTest):
         for channel in self.ari.channels.list():
             try:
                 channel.hangup()
-            except HTTPError:
+            except ARINotFound:
                 pass
 
     def given_bridged_call_stasis(self):
