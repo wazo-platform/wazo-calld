@@ -11,7 +11,7 @@ from hamcrest import has_item
 from xivo_test_helpers import until
 
 from .test_api.base import IntegrationTest
-from .test_api.ari import MockChannel
+from .test_api.ari_ import MockChannel
 from .test_api.ctid_ng import new_call_id
 from .test_api.constants import XIVO_UUID
 

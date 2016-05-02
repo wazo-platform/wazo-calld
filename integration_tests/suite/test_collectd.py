@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015 by Avencall
+# Copyright 2015-2016 by Avencall
 # SPDX-License-Identifier: GPL-3.0+
 
 import time
@@ -12,7 +12,7 @@ from hamcrest import matches_regexp
 from hamcrest import not_
 from xivo_test_helpers import until
 
-from .test_api.ari import MockChannel
+from .test_api.ari_ import MockChannel
 from .test_api.base import IntegrationTest
 from .test_api.constants import STASIS_APP_NAME
 from .test_api.constants import STASIS_APP_INSTANCE_NAME

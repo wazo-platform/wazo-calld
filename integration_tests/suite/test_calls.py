@@ -15,9 +15,9 @@ from hamcrest import has_item
 from hamcrest import has_items
 from hamcrest import contains_string
 
-from .test_api.ari import MockApplication
-from .test_api.ari import MockBridge
-from .test_api.ari import MockChannel
+from .test_api.ari_ import MockApplication
+from .test_api.ari_ import MockBridge
+from .test_api.ari_ import MockChannel
 from .test_api.base import IntegrationTest
 from .test_api.confd import MockLine
 from .test_api.confd import MockUser
