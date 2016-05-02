@@ -21,7 +21,6 @@ from hamcrest import has_item
 from hamcrest import has_key
 from hamcrest import instance_of
 from hamcrest import not_
-from requests.exceptions import HTTPError
 
 from xivo_test_helpers import until
 
@@ -169,7 +168,7 @@ class TestTransfers(IntegrationTest):
     def assert_transfer_is_answered(self, transfer_id, transferred_channel_id, initiator_channel_id, recipient_channel_id=None):
         try:
             transfer_bridge = self.ari.bridges.get(bridgeId=transfer_id)
-        except HTTPError:
+        except ARINotFound:
             raise AssertionError('no transfer bridge')
         assert_that(transfer_bridge.json,
                     has_entry('channels',

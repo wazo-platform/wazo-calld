@@ -4,7 +4,8 @@
 
 from hamcrest import is_in
 from hamcrest import not_
-from requests.exceptions import HTTPError
+
+from ari.exceptions import ARINotFound
 
 
 class HamcrestARIChannel(object):
@@ -32,7 +33,7 @@ class HamcrestARIChannel(object):
         for channel in channels:
             try:
                 value = channel.getChannelVar(variable=variable)['value']
-            except HTTPError:
+            except ARINotFound:
                 continue
             if value == expected_value:
                 candidates.append(channel.id)

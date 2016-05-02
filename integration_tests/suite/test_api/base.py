@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015 by Avencall
+# Copyright 2015-2016 by Avencall
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
@@ -9,7 +9,7 @@ from xivo_test_helpers.asset_launching_test_case import AssetLaunchingTestCase
 
 from .constants import ASSET_ROOT
 from .ctid_ng import CtidNgClient
-from .ari import ARIClient
+from .ari_ import ARIClient
 from .bus import BusClient
 from .confd import ConfdClient
 from .stasis import StasisClient
