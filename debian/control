@@ -12,7 +12,7 @@ Package: xivo-ctid-ng
 Architecture: all
 Depends: ${python:Depends},
          ${misc:Depends},
-         python-asterisk-ari,
+         python-asterisk-ari (>= 0.2.0),
          xivo-amid-client,
          xivo-auth-client,
          xivo-bus (>> 15.19),
