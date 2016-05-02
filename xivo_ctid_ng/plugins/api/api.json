@@ -450,6 +450,15 @@
                 "exten": {
                     "description": "Extension of the recipient of the transfer",
                     "type": "string"
+                },
+                "flow": {
+                    "description": "Behavior of the transfer. `attended` allows the initiator to talk to the recipient. `blind` does not."
+                    "type": "string",
+                    "default": "attended",
+                    "enum": [
+                        "attended",
+                        "blind"
+                    ]
                 }
             }
         },
@@ -480,7 +489,6 @@
                         "ringback",
                         "answered"
                     ]
-
                 }
             }
         }
