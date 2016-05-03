@@ -137,10 +137,12 @@ class TransfersStasis(object):
 
     def initiator_hangup(self, transfer):
         logger.debug('initiator hangup = complete transfer %s', transfer.id)
+        transfer_state = self.state_factory.make(transfer)
         try:
-            self.services.complete(transfer.id)
+            transfer_state.complete()
         except TransferCompletionError as e:
             logger.error(e.message, e.details)
+        self.state_persistor.remove(transfer.id)
 
     def transferred_hangup(self, transfer):
         logger.debug('transferred hangup = abandon transfer %s', transfer.id)

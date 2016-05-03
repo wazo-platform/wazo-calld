@@ -114,21 +114,9 @@ class TransfersService(object):
     def complete(self, transfer_id):
         transfer = self.get(transfer_id)
 
-        self.unset_variable(transfer.transferred_call, 'XIVO_TRANSFER_ID')
-        self.unset_variable(transfer.transferred_call, 'XIVO_TRANSFER_ROLE')
-        self.unset_variable(transfer.recipient_call, 'XIVO_TRANSFER_ID')
-        self.unset_variable(transfer.recipient_call, 'XIVO_TRANSFER_ROLE')
-
+        transfer_state = self.state_factory.make(transfer)
+        transfer_state.complete()
         self.state_persistor.remove(transfer_id)
-        if transfer.initiator_call:
-            try:
-                self.ari.channels.hangup(channelId=transfer.initiator_call)
-            except ARINotFound:
-                pass
-        try:
-            self.unhold_transferred_call(transfer.transferred_call)
-        except ARINotFound:
-            raise TransferCompletionError(transfer_id, 'transferred hung up')
 
     def cancel(self, transfer_id):
         transfer = self.get(transfer_id)

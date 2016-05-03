@@ -10,6 +10,7 @@ from ari.exceptions import ARINotFound
 from .exceptions import TransferAnswerError
 from .exceptions import TransferCreationError
 from .exceptions import TransferCancellationError
+from .exceptions import TransferCompletionError
 from .transfer import Transfer, TransferStatus
 
 logger = logging.getLogger(__name__)
@@ -236,6 +237,21 @@ class TransferStateAnswered(TransferState):
         return self.cancel()
 
     def complete(self):
+        self._services.unset_variable(self.transfer.transferred_call, 'XIVO_TRANSFER_ID')
+        self._services.unset_variable(self.transfer.transferred_call, 'XIVO_TRANSFER_ROLE')
+        self._services.unset_variable(self.transfer.recipient_call, 'XIVO_TRANSFER_ID')
+        self._services.unset_variable(self.transfer.recipient_call, 'XIVO_TRANSFER_ROLE')
+
+        if self.transfer.initiator_call:
+            try:
+                self._ari.channels.hangup(channelId=self.transfer.initiator_call)
+            except ARINotFound:
+                pass
+        try:
+            self._services.unhold_transferred_call(self.transfer.transferred_call)
+        except ARINotFound:
+            raise TransferCompletionError(self.transfer.id, 'transferred hung up')
+
         return TransferStateReadyStasis.from_state(self)
 
     def cancel(self):
