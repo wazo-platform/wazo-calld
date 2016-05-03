@@ -131,7 +131,25 @@ class TransferStateStarting(TransferState):
 
     name = 'starting'
 
-    def start(self):
+    def start(self, transfer, context, exten):
+        try:
+            self._services.hold_transferred_call(transfer.transferred_call)
+        except ARINotFound:
+            pass
+
+        try:
+            self._ari.channels.ring(channelId=transfer.initiator_call)
+        except ARINotFound:
+            logger.error('initiator hung up while creating transfer')
+
+        try:
+            transfer.recipient_call = self._services.originate_recipient(transfer.initiator_call,
+                                                                         context,
+                                                                         exten,
+                                                                         transfer.id)
+        except TransferCreationError as e:
+            logger.error(e.message, e.details)
+
         return TransferStateRingback.from_state(self)
 
 

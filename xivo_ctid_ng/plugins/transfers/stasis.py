@@ -12,9 +12,9 @@ from ari.exceptions import ARINotInStasis
 from .event import TransferRecipientAnsweredEvent
 from .event import CreateTransferEvent
 from .exceptions import InvalidEvent
-from .exceptions import TransferCreationError
 from .exceptions import TransferCancellationError
 from .exceptions import TransferCompletionError
+from .state import TransferStateStarting
 from .transfer import TransferStatus, TransferRole
 
 logger = logging.getLogger(__name__)
@@ -120,30 +120,16 @@ class TransfersStasis(object):
         channel_ids = bridge.get().json['channels']
         if len(channel_ids) == 2:
             transfer = self.state_persistor.get(event.transfer_id)
-            transferred_call = transfer.transferred_call
-            initiator_call = transfer.initiator_call
             try:
-                context = self.ari.channels.getChannelVar(channelId=initiator_call, variable='XIVO_TRANSFER_DESTINATION_CONTEXT')['value']
-                exten = self.ari.channels.getChannelVar(channelId=initiator_call, variable='XIVO_TRANSFER_DESTINATION_EXTEN')['value']
+                context = self.ari.channels.getChannelVar(channelId=transfer.initiator_call, variable='XIVO_TRANSFER_DESTINATION_CONTEXT')['value']
+                exten = self.ari.channels.getChannelVar(channelId=transfer.initiator_call, variable='XIVO_TRANSFER_DESTINATION_EXTEN')['value']
             except ARINotFound:
                 logger.error('initiator hung up while creating transfer')
 
-            try:
-                self.services.hold_transferred_call(transferred_call)
-            except ARINotFound:
-                pass
+            transfer_state = TransferStateStarting(self.ari, self.services, transfer)
+            new_state = transfer_state.start(transfer, context, exten)
 
-            try:
-                self.ari.channels.ring(channelId=initiator_call)
-            except ARINotFound:
-                logger.error('initiator hung up while creating transfer')
-
-            try:
-                transfer.recipient_call = self.services.originate_recipient(initiator_call, context, exten, event.transfer_id)
-            except TransferCreationError as e:
-                logger.error(e.message, e.details)
-
-            self.state_persistor.upsert(transfer)
+            self.state_persistor.upsert(new_state.transfer)
 
     def recipient_hangup(self, transfer):
         logger.debug('recipient hangup = cancel transfer %s', transfer.id)
