@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 class TransfersStasis(object):
 
-    def __init__(self, ari_client, services, state_persistor, xivo_uuid):
+    def __init__(self, ari_client, services, state_factory, state_persistor, xivo_uuid):
         self.ari = ari_client
         self.services = services
         self.xivo_uuid = xivo_uuid
@@ -30,6 +30,7 @@ class TransfersStasis(object):
         self.stasis_start_pubsub.set_exception_handler(self.invalid_event)
         self.hangup_pubsub = Pubsub()
         self.hangup_pubsub.set_exception_handler(self.invalid_event)
+        self.state_factory = state_factory
         self.state_persistor = state_persistor
 
     def subscribe(self):
@@ -147,7 +148,9 @@ class TransfersStasis(object):
 
     def transferred_hangup(self, transfer):
         logger.debug('transferred hangup = abandon transfer %s', transfer.id)
-        self.services.abandon(transfer.id)
+        transfer_state = self.state_factory.make(transfer)
+        transfer_state.transferred_hangup()
+        self.state_persistor.remove(transfer.id)
 
     def clean_bridge(self, channel, event):
         try:

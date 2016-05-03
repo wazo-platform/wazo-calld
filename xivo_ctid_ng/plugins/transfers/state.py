@@ -19,13 +19,14 @@ class StateFactory(object):
         self._state_constructors = {}
         self._ari = ari
 
-    def set_dependencies(self, ari):
+    def set_dependencies(self, ari, services):
         self._ari = ari
+        self._services = services
 
-    def make(self, state_name):
-        if not self._ari:
+    def make(self, transfer):
+        if not self._ari or not self._services:
             raise RuntimeError('StateFactory is not configured')
-        return self._state_constructors[state_name](self._ari, self._stat_sender)
+        return self._state_constructors[transfer.status](self._ari, self._services, transfer)
 
     def state(self, wrapped_class):
         self._state_constructors[wrapped_class.name] = wrapped_class
@@ -153,12 +154,28 @@ class TransferStateStarting(TransferState):
         return TransferStateRingback.from_state(self)
 
 
+class TransferStateAbandonable(TransferState):
+
+    def abandon(self):
+        self._services.unset_variable(self.transfer.recipient_call, 'XIVO_TRANSFER_ID')
+        self._services.unset_variable(self.transfer.recipient_call, 'XIVO_TRANSFER_ROLE')
+        self._services.unset_variable(self.transfer.initiator_call, 'XIVO_TRANSFER_ID')
+        self._services.unset_variable(self.transfer.initiator_call, 'XIVO_TRANSFER_ROLE')
+
+        if self.transfer.transferred_call:
+            try:
+                self._ari.channels.hangup(channelId=self.transfer.transferred_call)
+            except ARINotFound:
+                pass
+
+
 @state_factory.state
-class TransferStateRingback(TransferState):
+class TransferStateRingback(TransferStateAbandonable):
 
     name = 'ringback'
 
     def transferred_hangup(self):
+        self.abandon()
         return TransferStateReadyStasis.from_state(self)
 
     def recipient_hangup(self):
@@ -172,11 +189,12 @@ class TransferStateRingback(TransferState):
 
 
 @state_factory.state
-class TransferStateAnswered(TransferState):
+class TransferStateAnswered(TransferStateAbandonable):
 
     name = 'answered'
 
     def transferred_hangup(self):
+        self.abandon()
         return TransferStateReadyStasis.from_state(self)
 
     def initiator_hangup(self):

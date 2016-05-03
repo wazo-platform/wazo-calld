@@ -156,21 +156,6 @@ class TransfersService(object):
         except ARINotFound:
             raise TransferCancellationError(transfer_id, 'initiator hung up')
 
-    def abandon(self, transfer_id):
-        transfer = self.get(transfer_id)
-
-        self.unset_variable(transfer.recipient_call, 'XIVO_TRANSFER_ID')
-        self.unset_variable(transfer.recipient_call, 'XIVO_TRANSFER_ROLE')
-        self.unset_variable(transfer.initiator_call, 'XIVO_TRANSFER_ID')
-        self.unset_variable(transfer.initiator_call, 'XIVO_TRANSFER_ROLE')
-
-        self.state_persistor.remove(transfer_id)
-        if transfer.transferred_call:
-            try:
-                self.ari.channels.hangup(channelId=transfer.transferred_call)
-            except ARINotFound:
-                pass
-
     def is_in_stasis(self, call_id):
         try:
             self.ari.channels.setChannelVar(channelId=call_id, variable='XIVO_TEST_STASIS')
