@@ -19,7 +19,7 @@ from .exceptions import TransferCreationError
 from .exceptions import TransferCancellationError
 from .exceptions import TransferCompletionError
 from .exceptions import XiVOAmidUnreachable
-from .transfer import Transfer, TransferStatus
+from .state import TransferStateReadyNonStasis, TransferStateReadyStasis
 
 logger = logging.getLogger(__name__)
 
@@ -54,55 +54,14 @@ class TransfersService(object):
             raise TransferCreationError('channel not found')
 
         if not (self.is_in_stasis(transferred_call) and self.is_in_stasis(initiator_call)):
-            transfer = self.create_attended_not_stasis(transferred_channel, initiator_channel, context, exten)
+            transfer_state = TransferStateReadyNonStasis(self.ari, self)
         else:
-            transfer = self.create_attended_stasis(transferred_channel, initiator_channel, context, exten)
+            transfer_state = TransferStateReadyStasis(self.ari, self)
 
-        self.state_persistor.upsert(transfer)
-        return transfer
+        new_state = transfer_state.create(transferred_channel, initiator_channel, context, exten)
+        self.state_persistor.upsert(new_state.transfer)
 
-    def create_attended_not_stasis(self, transferred_channel, initiator_channel, context, exten):
-        transfer_id = str(uuid.uuid4())
-        self.convert_transfer_to_stasis(transferred_channel.id, initiator_channel.id, context, exten, transfer_id)
-        transfer = Transfer(transfer_id)
-        transfer.initiator_call = initiator_channel.id
-        transfer.transferred_call = transferred_channel.id
-        transfer.status = TransferStatus.starting
-
-        return transfer
-
-    def create_attended_stasis(self, transferred_channel, initiator_channel, context, exten):
-        transfer_bridge = self.ari.bridges.create(type='mixing', name='transfer')
-        transfer_id = transfer_bridge.id
-        try:
-            transferred_channel.setChannelVar(variable='XIVO_TRANSFER_ROLE', value='transferred')
-            transferred_channel.setChannelVar(variable='XIVO_TRANSFER_ID', value=transfer_id)
-            initiator_channel.setChannelVar(variable='XIVO_TRANSFER_ROLE', value='initiator')
-            initiator_channel.setChannelVar(variable='XIVO_TRANSFER_ID', value=transfer_id)
-            transfer_bridge.addChannel(channel=transferred_channel.id)
-            transfer_bridge.addChannel(channel=initiator_channel.id)
-        except ARINotFound:
-            raise TransferCreationError('some channel got hung up')
-
-        try:
-            self.hold_transferred_call(transferred_channel.id)
-        except ARINotFound:
-            raise TransferCreationError('transferred call hung up')
-
-        try:
-            self.ari.channels.ring(channelId=initiator_channel.id)
-        except ARINotFound:
-            raise TransferCreationError('initiator call hung up')
-
-        recipient_call = self.originate_recipient(initiator_channel.id, context, exten, transfer_id)
-
-        transfer = Transfer(transfer_id)
-        transfer.transferred_call = transferred_channel.id
-        transfer.initiator_call = initiator_channel.id
-        transfer.recipient_call = recipient_call
-        transfer.status = TransferStatus.ringback
-
-        return transfer
+        return new_state.transfer
 
     def create_blind(self, transferred_call, initiator_call, context, exten):
         pass
