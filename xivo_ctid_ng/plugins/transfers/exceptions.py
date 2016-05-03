@@ -41,6 +41,19 @@ class TransferCreationError(TransferException):
         )
 
 
+class TransferAnswerError(TransferException):
+    def __init__(self, transfer_id, detail):
+        super(TransferCompletionError, self).__init__(
+            status_code=400,
+            message='Transfer answer error',
+            error_id='transfer-answer-error',
+            details={
+                'transfer_id': transfer_id,
+                'message': detail,
+            }
+        )
+
+
 class TransferCompletionError(TransferException):
     def __init__(self, transfer_id, detail):
         super(TransferCompletionError, self).__init__(

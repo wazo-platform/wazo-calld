@@ -92,8 +92,6 @@ class TransfersStasis(object):
             transfer = self.state_persistor.get(event.transfer_bridge)
         except KeyError:
             logger.debug('recipient answered, but transfer was abandoned')
-            self.services.unset_variable(channel.id, 'XIVO_TRANSFER_ID')
-            self.services.unset_variable(channel.id, 'XIVO_TRANSFER_ROLE')
 
             for channel_id in transfer_bridge.json['channels']:
                 try:
@@ -102,12 +100,8 @@ class TransfersStasis(object):
                     pass
         else:
             logger.debug('recipient answered, transfer continues normally')
-            try:
-                self.services.unring_initiator_call(transfer.initiator_call)
-            except ARINotFound:
-                pass
-            transfer.recipient_call = channel.id
-            transfer.status = TransferStatus.answered
+            transfer_state = self.state_factory.make(transfer)
+            transfer_state.recipient_answer()
             self.state_persistor.upsert(transfer)
 
     def create_transfer(self, (channel, event)):

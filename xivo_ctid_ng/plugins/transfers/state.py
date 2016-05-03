@@ -7,6 +7,7 @@ import uuid
 
 from ari.exceptions import ARINotFound
 
+from .exceptions import TransferAnswerError
 from .exceptions import TransferCreationError
 from .exceptions import TransferCancellationError
 from .transfer import Transfer, TransferStatus
@@ -168,23 +169,27 @@ class TransferStateStarting(TransferState):
     name = 'starting'
 
     def start(self, transfer, context, exten):
+        self.transfer = transfer
+
         try:
-            self._services.hold_transferred_call(transfer.transferred_call)
+            self._services.hold_transferred_call(self.transfer.transferred_call)
         except ARINotFound:
             pass
 
         try:
-            self._ari.channels.ring(channelId=transfer.initiator_call)
+            self._ari.channels.ring(channelId=self.transfer.initiator_call)
         except ARINotFound:
             logger.error('initiator hung up while creating transfer')
 
         try:
-            transfer.recipient_call = self._services.originate_recipient(transfer.initiator_call,
-                                                                         context,
-                                                                         exten,
-                                                                         transfer.id)
+            self.transfer.recipient_call = self._services.originate_recipient(self.transfer.initiator_call,
+                                                                              context,
+                                                                              exten,
+                                                                              self.transfer.id)
         except TransferCreationError as e:
             logger.error(e.message, e.details)
+
+        self.transfer.status = TransferStatus.ringback
 
         return TransferStateRingback.from_state(self)
 
@@ -206,6 +211,12 @@ class TransferStateRingback(TransferState):
         return TransferStateReadyStasis.from_state(self)
 
     def recipient_answer(self):
+        try:
+            self._services.unring_initiator_call(self.transfer.initiator_call)
+        except ARINotFound:
+            raise TransferAnswerError('initiator hung up')
+        self.transfer.status = TransferStatus.answered
+
         return TransferStateAnswered.from_state(self)
 
 

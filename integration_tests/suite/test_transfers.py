@@ -639,7 +639,7 @@ class TestTransferFromNonStasis(TestTransfers):
 
         response = self.ctid_ng.create_transfer(transferred_channel_id,
                                                 initiator_channel_id,
-                                                **RECIPIENT)
+                                                **RECIPIENT_RINGING_ANSWER)
 
         assert_that(response, all_of(has_entries({'id': instance_of(unicode),
                                                   'transferred_call': transferred_channel_id,
