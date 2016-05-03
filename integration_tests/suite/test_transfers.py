@@ -225,7 +225,7 @@ class TestTransfers(IntegrationTest):
         assert_that(recipient_channel_id, self.c.is_hungup(), 'recipient channel is still talking')
 
         result = self.ctid_ng.get_transfer_result(transfer_id, token=VALID_TOKEN)
-        assert_that(result.status_code, equal_to(404))
+        assert_that(result.status_code, equal_to(404), 'transfer not removed')
         cached_transfers = json.loads(self.ari.asterisk.getGlobalVar(variable='XIVO_TRANSFERS')['value'])
         assert_that(cached_transfers, not_(has_item(transfer_id)))
 

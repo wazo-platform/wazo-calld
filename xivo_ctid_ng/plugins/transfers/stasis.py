@@ -12,8 +12,8 @@ from ari.exceptions import ARINotInStasis
 from .event import TransferRecipientAnsweredEvent
 from .event import CreateTransferEvent
 from .exceptions import InvalidEvent
-from .exceptions import TransferCancellationError
 from .exceptions import TransferCompletionError
+from .exceptions import TransferException
 from .state import TransferStateStarting
 from .transfer import TransferStatus, TransferRole
 
@@ -134,10 +134,12 @@ class TransfersStasis(object):
 
     def recipient_hangup(self, transfer):
         logger.debug('recipient hangup = cancel transfer %s', transfer.id)
+        transfer_state = self.state_factory.make(transfer)
         try:
-            self.services.cancel(transfer.id)
-        except TransferCancellationError as e:
+            transfer_state.recipient_hangup()
+        except TransferException as e:
             logger.error(e.message, e.details)
+        self.state_persistor.remove(transfer.id)
 
     def initiator_hangup(self, transfer):
         logger.debug('initiator hangup = complete transfer %s', transfer.id)

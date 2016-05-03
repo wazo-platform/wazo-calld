@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
-import uuid
 
 from contextlib import contextmanager
 from requests import RequestException
@@ -16,7 +15,6 @@ from xivo_ctid_ng.plugins.calls.state_persistor import ReadOnlyStatePersistor as
 
 from .exceptions import NoSuchTransfer
 from .exceptions import TransferCreationError
-from .exceptions import TransferCancellationError
 from .exceptions import TransferCompletionError
 from .exceptions import XiVOAmidUnreachable
 from .state import TransferStateReadyNonStasis, TransferStateReadyStasis
@@ -30,10 +28,11 @@ def new_amid_client(config):
 
 
 class TransfersService(object):
-    def __init__(self, ari, amid_config, state_persistor):
+    def __init__(self, ari, amid_config, state_factory, state_persistor):
         self.ari = ari
         self.amid_config = amid_config
         self.state_persistor = state_persistor
+        self.state_factory = state_factory
         self.call_states = ReadOnlyCallStates(self.ari)
 
     def set_token(self, auth_token):
@@ -133,28 +132,10 @@ class TransfersService(object):
 
     def cancel(self, transfer_id):
         transfer = self.get(transfer_id)
+        transfer_state = self.state_factory.make(transfer)
+        transfer_state.cancel()
 
-        self.unset_variable(transfer.transferred_call, 'XIVO_TRANSFER_ID')
-        self.unset_variable(transfer.transferred_call, 'XIVO_TRANSFER_ROLE')
-        self.unset_variable(transfer.initiator_call, 'XIVO_TRANSFER_ID')
-        self.unset_variable(transfer.initiator_call, 'XIVO_TRANSFER_ROLE')
-
-        self.state_persistor.remove(transfer_id)
-        if transfer.recipient_call:
-            try:
-                self.ari.channels.hangup(channelId=transfer.recipient_call)
-            except ARINotFound:
-                pass
-
-        try:
-            self.unhold_transferred_call(transfer.transferred_call)
-        except ARINotFound:
-            raise TransferCancellationError(transfer_id, 'transferred hung up')
-
-        try:
-            self.unring_initiator_call(transfer.initiator_call)
-        except ARINotFound:
-            raise TransferCancellationError(transfer_id, 'initiator hung up')
+        self.state_persistor.remove(transfer.id)
 
     def is_in_stasis(self, call_id):
         try:

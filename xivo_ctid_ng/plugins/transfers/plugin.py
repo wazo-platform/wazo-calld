@@ -21,13 +21,13 @@ class Plugin(object):
 
         state_persistor = StatePersistor(ari.client)
 
-        transfers_service = TransfersService(ari.client, config['amid'], state_persistor)
+        transfers_service = TransfersService(ari.client, config['amid'], state_factory, state_persistor)
         token_changed_subscribe(transfers_service.set_token)
-
-        state_factory.set_dependencies(ari.client, transfers_service)
 
         transfers_stasis = TransfersStasis(ari.client, transfers_service, state_factory, state_persistor, config['uuid'])
         transfers_stasis.subscribe()
+
+        state_factory.set_dependencies(ari.client, transfers_service)
 
         api.add_resource(TransfersResource, '/transfers', resource_class_args=[transfers_service])
         api.add_resource(TransferResource, '/transfers/<transfer_id>', resource_class_args=[transfers_service])

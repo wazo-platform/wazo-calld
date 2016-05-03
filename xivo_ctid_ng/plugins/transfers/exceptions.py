@@ -25,7 +25,11 @@ class InvalidEvent(ValueError):
         self.event = event
 
 
-class TransferCreationError(APIException):
+class TransferException(APIException):
+    pass
+
+
+class TransferCreationError(TransferException):
     def __init__(self, detail):
         super(TransferCreationError, self).__init__(
             status_code=400,
@@ -37,7 +41,7 @@ class TransferCreationError(APIException):
         )
 
 
-class TransferCompletionError(APIException):
+class TransferCompletionError(TransferException):
     def __init__(self, transfer_id, detail):
         super(TransferCompletionError, self).__init__(
             status_code=400,
@@ -50,7 +54,7 @@ class TransferCompletionError(APIException):
         )
 
 
-class TransferCancellationError(APIException):
+class TransferCancellationError(TransferException):
     def __init__(self, transfer_id, detail):
         super(TransferCancellationError, self).__init__(
             status_code=400,
@@ -63,7 +67,7 @@ class TransferCancellationError(APIException):
         )
 
 
-class NoSuchTransfer(APIException):
+class NoSuchTransfer(TransferException):
 
     def __init__(self, transfer_id):
         super(NoSuchTransfer, self).__init__(
