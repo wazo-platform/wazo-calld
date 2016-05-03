@@ -318,6 +318,12 @@
             "schema": {
                 "$ref": "#/definitions/Error"
             }
+        },
+        "NoSuchTransfer": {
+            "description": "The specified transfer does not exist",
+            "schema": {
+                "$ref": "#/definitions/Error"
+            }
         }
     },
     "definitions": {
@@ -367,12 +373,7 @@
                     "type": "string"
                 },
                 "talking_to": {
-                    "type": "object",
-                    "properties": {
-                        "<channel_id>": {
-                            "type": "string"
-                        }
-                    }
+                    "$ref": "#/definitions/TalkingTo"
                 },
                 "bridges": {
                     "type": "array",
@@ -420,6 +421,14 @@
                     "description": "Time when the error occured",
                     "type": "number",
                     "format": "timestamp"
+                }
+            }
+        },
+        "TalkingTo": {
+            "type": "object",
+            "properties": {
+                "{channel_id}": {
+                    "type": "string"
                 }
             }
         },
