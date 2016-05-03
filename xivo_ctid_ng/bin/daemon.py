@@ -9,12 +9,12 @@ import sys
 
 from functools import partial
 
+from xivo import xivo_logging
+from xivo.config_helper import set_xivo_uuid
 from xivo.daemonize import pidfile_context
 from xivo.user_rights import change_user
-from xivo import xivo_logging
 from xivo_ctid_ng.controller import Controller
 from xivo_ctid_ng.config import load as load_config
-from xivo_ctid_ng.config import set_xivo_uuid
 
 logger = logging.getLogger(__name__)
 
