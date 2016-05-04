@@ -47,28 +47,28 @@ class TransferState(object):
         self.transfer = transfer
 
     def transferred_hangup(self):
-        pass
+        return self
 
     def initiator_hangup(self):
-        pass
+        return self
 
     def recipient_hangup(self):
-        pass
+        return self
 
     def recipient_answer(self):
-        pass
+        return self
 
     def create(self):
-        pass
+        return self
 
     def start(self):
-        pass
+        return self
 
     def complete(self):
-        pass
+        return self
 
     def cancel(self):
-        pass
+        return self
 
     def _abandon(self):
         self._services.unset_variable(self.transfer.recipient_call, 'XIVO_TRANSFER_ID')
@@ -112,7 +112,7 @@ class TransferState(object):
 @state_factory.state
 class TransferStateReadyStasis(TransferState):
 
-    name = 'ready_stasis'
+    name = 'ready'
 
     def create(self, transferred_channel, initiator_channel, context, exten, flow):
         transfer_bridge = self._ari.bridges.create(type='mixing', name='transfer')
@@ -270,6 +270,10 @@ class TransferStateAnswered(TransferState):
         except ARINotFound:
             raise TransferCompletionError(self.transfer.id, 'transferred hung up')
 
+        self.transfer.status = 'ready'
+
+        return TransferStateReadyStasis.from_state(self)
+
     def recipient_hangup(self):
         return self.cancel()
 
@@ -288,6 +292,8 @@ class TransferStateAnswered(TransferState):
             self._services.unhold_transferred_call(self.transfer.transferred_call)
         except ARINotFound:
             raise TransferCompletionError(self.transfer.id, 'transferred hung up')
+
+        self.transfer.status = 'ready'
 
         return TransferStateReadyStasis.from_state(self)
 

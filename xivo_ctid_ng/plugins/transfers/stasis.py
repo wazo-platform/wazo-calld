@@ -146,7 +146,7 @@ class TransfersStasis(object):
             new_state = transfer_state.initiator_hangup()
         except TransferException as e:
             logger.error(e.message, e.details)
-        if new_state == 'ready':
+        if new_state.transfer.status == 'ready':
             self.state_persistor.remove(transfer.id)
         else:
             self.state_persistor.upsert(transfer)
@@ -224,7 +224,8 @@ class TransfersStasis(object):
 
     def bypass_hangup_lock_from_source(self, channel, event):
         lock_source = channel
-        lock_target_candidate_ids = [bridge.id for bridge in self.ari.bridges.list()]
+        lock_target_candidate_ids = [bridge.id for bridge in self.ari.bridges.list()
+                                     if len(bridge.json['channels']) == 1]
         for lock_target_candidate_id in lock_target_candidate_ids:
             try:
                 lock_target_candidate = self.ari.bridges.get(bridgeId=lock_target_candidate_id)
@@ -234,12 +235,12 @@ class TransfersStasis(object):
             logger.debug('bypassing hangup lock on %s due to source hangup %s', lock_target_candidate.json['name'], channel.json['name'])
 
             if lock_source_candidate_id == lock_source.id:
-                logger.debug('hanging up all channels in lock target %s', lock_target_candidate_id)
-                for channel_id in lock_target_candidate.json['channels']:
-                    try:
-                        self.ari.channels.hangup(channelId=channel_id)
-                    except ARINotFound:
-                        pass
+                logger.debug('hanging up all channel left in lock target %s', lock_target_candidate_id)
+                channel_id = lock_target_candidate.json['channels'][0]
+                try:
+                    self.ari.channels.hangup(channelId=channel_id)
+                except ARINotFound:
+                    pass
                 try:
                     lock_target_candidate.destroy()
                 except ARINotFound:
