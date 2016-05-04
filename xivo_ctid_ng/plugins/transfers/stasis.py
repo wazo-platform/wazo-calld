@@ -143,11 +143,13 @@ class TransfersStasis(object):
         logger.debug('initiator hangup = complete transfer %s', transfer.id)
         transfer_state = self.state_factory.make(transfer)
         try:
-            new_state = transfer_state.complete()
-        except TransferCompletionError as e:
+            new_state = transfer_state.initiator_hangup()
+        except TransferException as e:
             logger.error(e.message, e.details)
         if new_state == 'ready':
             self.state_persistor.remove(transfer.id)
+        else:
+            self.state_persistor.upsert(transfer)
 
     def transferred_hangup(self, transfer):
         logger.debug('transferred hangup = abandon transfer %s', transfer.id)

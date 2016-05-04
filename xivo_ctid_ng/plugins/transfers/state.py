@@ -213,6 +213,10 @@ class TransferStateRingback(TransferState):
         except ARINotFound:
             raise TransferCompletionError(self.transfer.id, 'transferred hung up')
 
+        self.transfer.status = 'blind_transferred'
+
+        return TransferStateBlindTransferred.from_state(self)
+
     def recipient_hangup(self):
         return self.cancel()
 
