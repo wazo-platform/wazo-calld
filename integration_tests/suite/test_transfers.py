@@ -252,6 +252,34 @@ class TestTransfers(IntegrationTest):
         cached_transfers = json.loads(self.ari.asterisk.getGlobalVar(variable='XIVO_TRANSFERS')['value'])
         assert_that(cached_transfers, not_(has_item(transfer_id)))
 
+    def assert_transfer_is_blind_transferred(self, transfer_id, transferred_channel_id, initiator_channel_id, recipient_channel_id):
+        transfer_bridge = self.ari.bridges.get(bridgeId=transfer_id)
+        assert_that(transfer_bridge.json,
+                    has_entry('channels',
+                              contains_inanyorder(
+                                  transferred_channel_id,
+                              )))
+        assert_that(transferred_channel_id, self.c.is_ringback(), 'transferred channel not ringing')
+        assert_that(transferred_channel_id, self.c.has_variable('XIVO_TRANSFER_ID', transfer_id), 'variable not set')
+        assert_that(transferred_channel_id, self.c.has_variable('XIVO_TRANSFER_ROLE', 'transferred'), 'variable not set')
+
+        assert_that(initiator_channel_id, self.c.is_hungup(), 'initiator channel is still talking')
+
+        assert_that(recipient_channel_id, self.c.is_ringing(), 'recipient channel not ringing')
+        assert_that(recipient_channel_id, self.c.has_variable('XIVO_TRANSFER_ID', transfer_id), 'variable not set')
+        assert_that(recipient_channel_id, self.c.has_variable('XIVO_TRANSFER_ROLE', 'recipient'), 'variable not set')
+
+        transfer = self.ctid_ng.get_transfer(transfer_id)
+        assert_that(transfer, has_entries({
+            'id': transfer_id,
+            'transferred_call': transferred_channel_id,
+            'initiator_call': initiator_channel_id,
+            'recipient_call': recipient_channel_id,
+            'status': 'blind_transferred',
+        }))
+        cached_transfers = json.loads(self.ari.asterisk.getGlobalVar(variable='XIVO_TRANSFERS')['value'])
+        assert_that(cached_transfers, has_item(transfer_id))
+
     def assert_transfer_is_abandoned(self, transfer_id, transferred_channel_id, initiator_channel_id, recipient_channel_id):
         transfer_bridge = self.ari.bridges.get(bridgeId=transfer_id)
         assert_that(transfer_bridge.json,
@@ -397,6 +425,38 @@ class TestTransferFromStasis(TestTransfers):
         transfer_id = response['id']
         recipient_channel_id = response['recipient_call']
         until.assert_(self.assert_transfer_is_cancelled,
+                      transfer_id,
+                      transferred_channel_id,
+                      initiator_channel_id,
+                      recipient_channel_id,
+                      tries=5)
+
+    def test_given_state_ready_when_blind_transfer_then_state_blind_transferred(self):
+        transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()
+
+        response = self.ctid_ng.create_blind_transfer(transferred_channel_id,
+                                                      initiator_channel_id,
+                                                      **RECIPIENT_RINGING)
+
+        transfer_id = response['id']
+        recipient_channel_id = response['recipient_call']
+        until.assert_(self.assert_transfer_is_blind_transferred,
+                      transfer_id,
+                      transferred_channel_id,
+                      initiator_channel_id,
+                      recipient_channel_id,
+                      tries=5)
+
+    def test_given_state_ready_when_blind_transfer_and_answer_then_state_completed(self):
+        transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()
+
+        response = self.ctid_ng.create_blind_transfer(transferred_channel_id,
+                                                      initiator_channel_id,
+                                                      **RECIPIENT)
+
+        transfer_id = response['id']
+        recipient_channel_id = response['recipient_call']
+        until.assert_(self.assert_transfer_is_completed,
                       transfer_id,
                       transferred_channel_id,
                       initiator_channel_id,
