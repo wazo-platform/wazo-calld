@@ -17,7 +17,7 @@ from xivo_ctid_ng.plugins.calls.state_persistor import ReadOnlyStatePersistor as
 from .exceptions import NoSuchTransfer
 from .exceptions import TransferCreationError
 from .exceptions import XiVOAmidUnreachable
-from .state import TransferStateReadyNonStasis, TransferStateReadyStasis
+from .state import TransferStateReadyNonStasis, TransferStateReady
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +48,7 @@ class TransfersService(object):
         if not (self.is_in_stasis(transferred_call) and self.is_in_stasis(initiator_call)):
             transfer_state = TransferStateReadyNonStasis(self.ari, self)
         else:
-            transfer_state = TransferStateReadyStasis(self.ari, self)
+            transfer_state = TransferStateReady(self.ari, self)
 
         new_state = transfer_state.create(transferred_channel, initiator_channel, context, exten, flow)
         if flow == 'blind':

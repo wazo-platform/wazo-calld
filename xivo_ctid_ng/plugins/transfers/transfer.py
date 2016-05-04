@@ -42,9 +42,11 @@ class Transfer(object):
 
 
 class TransferStatus(object):
-    starting = 'starting'
-    ringback = 'ringback'
     answered = 'answered'
+    blind_transferred = 'blind_transferred'
+    ringback = 'ringback'
+    ready = 'ready'
+    starting = 'starting'
 
 
 class TransferRole(object):
