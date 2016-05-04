@@ -21,15 +21,17 @@ class StateFactory(object):
     def __init__(self, ari=None):
         self._state_constructors = {}
         self._ari = ari
+        self._configured = False
 
-    def set_dependencies(self, ari, services):
-        self._ari = ari
-        self._services = services
+    def set_dependencies(self, *dependencies):
+        self._dependencies = dependencies
+        self._configured = True
 
     def make(self, transfer):
-        if not self._ari or not self._services:
+        if not self._configured:
             raise RuntimeError('StateFactory is not configured')
-        return self._state_constructors[transfer.status](self._ari, self._services, transfer)
+        dependencies = list(self._dependencies) + [transfer]
+        return self._state_constructors[transfer.status](*dependencies)
 
     def state(self, wrapped_class):
         self._state_constructors[wrapped_class.name] = wrapped_class
@@ -39,35 +41,55 @@ class StateFactory(object):
 state_factory = StateFactory()
 
 
+def transition(decorated):
+    def decorator(*args, **kwargs):
+        result = decorated(*args, **kwargs)
+        result.update_cache()
+        return result
+    return decorator
+
+
 class TransferState(object):
 
-    def __init__(self, ari, services, transfer=None):
+    def __init__(self, ari, services, state_persistor, transfer=None):
         self._ari = ari
         self._services = services
+        self._state_persistor = state_persistor
         self.transfer = transfer
 
+    @transition
     def transferred_hangup(self):
-        raise NotImplementedError()
+        raise NotImplementedError(self.name)
 
+    @transition
     def initiator_hangup(self):
-        raise NotImplementedError()
+        raise NotImplementedError(self.name)
 
+    @transition
     def recipient_hangup(self):
-        raise NotImplementedError()
+        raise NotImplementedError(self.name)
 
+    @transition
     def recipient_answer(self):
-        raise NotImplementedError()
+        raise NotImplementedError(self.name)
 
+    @transition
     def create(self):
-        raise NotImplementedError()
+        raise NotImplementedError(self.name)
 
+    @transition
     def start(self):
-        raise NotImplementedError()
+        raise NotImplementedError(self.name)
 
+    @transition
     def complete(self):
-        raise NotImplementedError()
+        raise NotImplementedError(self.name)
 
+    @transition
     def cancel(self):
+        raise NotImplementedError(self.name)
+
+    def update_cache(self):
         raise NotImplementedError()
 
     def _abandon(self):
@@ -106,7 +128,7 @@ class TransferState(object):
 
     @classmethod
     def from_state(cls, other_state):
-        new_state = cls(other_state._ari, other_state._services, other_state.transfer)
+        new_state = cls(other_state._ari, other_state._services, other_state._state_persistor, other_state.transfer)
         new_state.transfer.status = new_state.name
         return new_state
 
@@ -116,6 +138,7 @@ class TransferStateReady(TransferState):
 
     name = TransferStatus.ready
 
+    @transition
     def create(self, transferred_channel, initiator_channel, context, exten, flow):
         transfer_bridge = self._ari.bridges.create(type='mixing', name='transfer')
         transfer_id = transfer_bridge.id
@@ -150,12 +173,16 @@ class TransferStateReady(TransferState):
 
         return TransferStateRingback.from_state(self)
 
+    def update_cache(self):
+        self._state_persistor.remove(self.transfer.id)
+
 
 @state_factory.state
 class TransferStateReadyNonStasis(TransferState):
 
     name = 'ready_non_stasis'
 
+    @transition
     def create(self, transferred_channel, initiator_channel, context, exten, flow):
         transfer_id = str(uuid.uuid4())
         self._services.convert_transfer_to_stasis(transferred_channel.id, initiator_channel.id, context, exten, transfer_id)
@@ -167,12 +194,16 @@ class TransferStateReadyNonStasis(TransferState):
 
         return TransferStateStarting.from_state(self)
 
+    def update_cache(self):
+        self._state_persistor.remove(self.transfer.id)
+
 
 @state_factory.state
 class TransferStateStarting(TransferState):
 
     name = TransferStatus.starting
 
+    @transition
     def start(self, transfer, context, exten):
         self.transfer = transfer
 
@@ -196,16 +227,21 @@ class TransferStateStarting(TransferState):
 
         return TransferStateRingback.from_state(self)
 
+    def update_cache(self):
+        self._state_persistor.upsert(self.transfer)
+
 
 @state_factory.state
 class TransferStateRingback(TransferState):
 
     name = TransferStatus.ringback
 
+    @transition
     def transferred_hangup(self):
         self._abandon()
         return TransferStateReady.from_state(self)
 
+    @transition
     def initiator_hangup(self):
         try:
             self._services.unhold_transferred_call(self.transfer.transferred_call)
@@ -215,9 +251,11 @@ class TransferStateRingback(TransferState):
 
         return TransferStateBlindTransferred.from_state(self)
 
+    @transition
     def recipient_hangup(self):
         return self.cancel()
 
+    @transition
     def complete(self):
         try:
             self._ari.channels.hangup(channelId=self.transfer.initiator_call)
@@ -232,10 +270,12 @@ class TransferStateRingback(TransferState):
 
         return TransferStateBlindTransferred.from_state(self)
 
+    @transition
     def cancel(self):
         self._cancel()
         return TransferStateReady.from_state(self)
 
+    @transition
     def recipient_answer(self):
         try:
             self._services.unring_initiator_call(self.transfer.initiator_call)
@@ -244,16 +284,21 @@ class TransferStateRingback(TransferState):
 
         return TransferStateAnswered.from_state(self)
 
+    def update_cache(self):
+        self._state_persistor.upsert(self.transfer)
+
 
 @state_factory.state
 class TransferStateAnswered(TransferState):
 
     name = TransferStatus.answered
 
+    @transition
     def transferred_hangup(self):
         self._abandon()
         return TransferStateReady.from_state(self)
 
+    @transition
     def initiator_hangup(self):
         self._services.unset_variable(self.transfer.transferred_call, 'XIVO_TRANSFER_ID')
         self._services.unset_variable(self.transfer.transferred_call, 'XIVO_TRANSFER_ROLE')
@@ -267,9 +312,11 @@ class TransferStateAnswered(TransferState):
 
         return TransferStateReady.from_state(self)
 
+    @transition
     def recipient_hangup(self):
         return self.cancel()
 
+    @transition
     def complete(self):
         self._services.unset_variable(self.transfer.transferred_call, 'XIVO_TRANSFER_ID')
         self._services.unset_variable(self.transfer.transferred_call, 'XIVO_TRANSFER_ROLE')
@@ -288,9 +335,13 @@ class TransferStateAnswered(TransferState):
 
         return TransferStateReady.from_state(self)
 
+    @transition
     def cancel(self):
         self._cancel()
         return TransferStateReady.from_state(self)
+
+    def update_cache(self):
+        self._state_persistor.upsert(self.transfer)
 
 
 @state_factory.state
@@ -298,6 +349,7 @@ class TransferStateBlindTransferred(TransferState):
 
     name = TransferStatus.blind_transferred
 
+    @transition
     def recipient_answer(self):
         self._services.unset_variable(self.transfer.transferred_call, 'XIVO_TRANSFER_ID')
         self._services.unset_variable(self.transfer.transferred_call, 'XIVO_TRANSFER_ROLE')
@@ -310,3 +362,6 @@ class TransferStateBlindTransferred(TransferState):
             raise TransferAnswerError(self.transfer.id, 'transferred hung up')
 
         return TransferStateReady.from_state(self)
+
+    def update_cache(self):
+        self._state_persistor.upsert(self.transfer)

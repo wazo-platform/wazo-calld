@@ -12,10 +12,9 @@ from ari.exceptions import ARINotInStasis
 from .event import TransferRecipientAnsweredEvent
 from .event import CreateTransferEvent
 from .exceptions import InvalidEvent
-from .exceptions import TransferCompletionError
 from .exceptions import TransferException
 from .state import TransferStateStarting
-from .transfer import TransferStatus, TransferRole
+from .transfer import TransferRole
 
 logger = logging.getLogger(__name__)
 
@@ -102,11 +101,7 @@ class TransfersStasis(object):
         else:
             logger.debug('recipient answered, transfer continues normally')
             transfer_state = self.state_factory.make(transfer)
-            new_state = transfer_state.recipient_answer()
-            if new_state.transfer.status == 'ready':
-                self.state_persistor.remove(transfer.id)
-            else:
-                self.state_persistor.upsert(transfer)
+            transfer_state.recipient_answer()
 
     def create_transfer(self, (channel, event)):
         event = CreateTransferEvent(event)
@@ -125,10 +120,8 @@ class TransfersStasis(object):
             except ARINotFound:
                 logger.error('initiator hung up while creating transfer')
 
-            transfer_state = TransferStateStarting(self.ari, self.services, transfer)
-            new_state = transfer_state.start(transfer, context, exten)
-
-            self.state_persistor.upsert(new_state.transfer)
+            transfer_state = self.state_factory.make(transfer)
+            transfer_state.start(transfer, context, exten)
 
     def recipient_hangup(self, transfer):
         logger.debug('recipient hangup = cancel transfer %s', transfer.id)
@@ -137,25 +130,19 @@ class TransfersStasis(object):
             transfer_state.recipient_hangup()
         except TransferException as e:
             logger.error(e.message, e.details)
-        self.state_persistor.remove(transfer.id)
 
     def initiator_hangup(self, transfer):
         logger.debug('initiator hangup = complete transfer %s', transfer.id)
         transfer_state = self.state_factory.make(transfer)
         try:
-            new_state = transfer_state.initiator_hangup()
+            transfer_state.initiator_hangup()
         except TransferException as e:
             logger.error(e.message, e.details)
-        if new_state.transfer.status == 'ready':
-            self.state_persistor.remove(transfer.id)
-        else:
-            self.state_persistor.upsert(transfer)
 
     def transferred_hangup(self, transfer):
         logger.debug('transferred hangup = abandon transfer %s', transfer.id)
         transfer_state = self.state_factory.make(transfer)
         transfer_state.transferred_hangup()
-        self.state_persistor.remove(transfer.id)
 
     def clean_bridge(self, channel, event):
         try:

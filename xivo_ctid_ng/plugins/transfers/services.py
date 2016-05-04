@@ -46,15 +46,13 @@ class TransfersService(object):
             raise TransferCreationError('channel not found')
 
         if not (self.is_in_stasis(transferred_call) and self.is_in_stasis(initiator_call)):
-            transfer_state = TransferStateReadyNonStasis(self.ari, self)
+            transfer_state = TransferStateReadyNonStasis(self.ari, self, self.state_persistor)
         else:
-            transfer_state = TransferStateReady(self.ari, self)
+            transfer_state = TransferStateReady(self.ari, self, self.state_persistor)
 
         new_state = transfer_state.create(transferred_channel, initiator_channel, context, exten, flow)
         if flow == 'blind':
             new_state = new_state.complete()
-
-        self.state_persistor.upsert(new_state.transfer)
 
         return new_state.transfer
 
@@ -113,17 +111,12 @@ class TransfersService(object):
         transfer = self.get(transfer_id)
 
         transfer_state = self.state_factory.make(transfer)
-        new_state = transfer_state.complete()
-
-        if new_state.transfer.status == 'ready':
-            self.state_persistor.remove(transfer_id)
+        transfer_state.complete()
 
     def cancel(self, transfer_id):
         transfer = self.get(transfer_id)
         transfer_state = self.state_factory.make(transfer)
         transfer_state.cancel()
-
-        self.state_persistor.remove(transfer.id)
 
     def is_in_stasis(self, call_id):
         try:
