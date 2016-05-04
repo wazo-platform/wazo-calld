@@ -47,28 +47,28 @@ class TransferState(object):
         self.transfer = transfer
 
     def transferred_hangup(self):
-        return self
+        raise NotImplementedError()
 
     def initiator_hangup(self):
-        return self
+        raise NotImplementedError()
 
     def recipient_hangup(self):
-        return self
+        raise NotImplementedError()
 
     def recipient_answer(self):
-        return self
+        raise NotImplementedError()
 
     def create(self):
-        return self
+        raise NotImplementedError()
 
     def start(self):
-        return self
+        raise NotImplementedError()
 
     def complete(self):
-        return self
+        raise NotImplementedError()
 
     def cancel(self):
-        return self
+        raise NotImplementedError()
 
     def _abandon(self):
         self._services.unset_variable(self.transfer.recipient_call, 'XIVO_TRANSFER_ID')
