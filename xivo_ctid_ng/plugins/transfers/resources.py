@@ -15,7 +15,7 @@ class TransferRequestSchema(Schema):
     initiator_call = fields.Str(required=True)
     context = fields.Str(required=True)
     exten = fields.Str(required=True)
-    flow = fields.Str(validate=OneOf('attended', 'blind'), missing='attended')
+    flow = fields.Str(validate=OneOf(['attended', 'blind']), missing='attended')
 
 transfer_request_schema = TransferRequestSchema(strict=True)
 

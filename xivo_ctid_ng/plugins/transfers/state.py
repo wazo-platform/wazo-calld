@@ -114,7 +114,7 @@ class TransferStateReadyStasis(TransferState):
 
     name = 'ready_stasis'
 
-    def create(self, transferred_channel, initiator_channel, context, exten):
+    def create(self, transferred_channel, initiator_channel, context, exten, flow):
         transfer_bridge = self._ari.bridges.create(type='mixing', name='transfer')
         transfer_id = transfer_bridge.id
         try:
@@ -144,6 +144,7 @@ class TransferStateReadyStasis(TransferState):
         self.transfer.initiator_call = initiator_channel.id
         self.transfer.recipient_call = recipient_call
         self.transfer.status = TransferStatus.ringback
+        self.transfer.flow = flow
 
         return TransferStateRingback.from_state(self)
 
@@ -153,13 +154,14 @@ class TransferStateReadyNonStasis(TransferState):
 
     name = 'ready_non_stasis'
 
-    def create(self, transferred_channel, initiator_channel, context, exten):
+    def create(self, transferred_channel, initiator_channel, context, exten, flow):
         transfer_id = str(uuid.uuid4())
         self._services.convert_transfer_to_stasis(transferred_channel.id, initiator_channel.id, context, exten, transfer_id)
         self.transfer = Transfer(transfer_id)
         self.transfer.initiator_call = initiator_channel.id
         self.transfer.transferred_call = transferred_channel.id
         self.transfer.status = TransferStatus.starting
+        self.transfer.flow = flow
 
         return TransferStateStarting.from_state(self)
 
@@ -204,8 +206,31 @@ class TransferStateRingback(TransferState):
         self._abandon()
         return TransferStateReadyStasis.from_state(self)
 
+    def initiator_hangup(self):
+        try:
+            self._services.unhold_transferred_call(self.transfer.transferred_call)
+            self._ari.channels.ring(channelId=self.transfer.transferred_call)
+        except ARINotFound:
+            raise TransferCompletionError(self.transfer.id, 'transferred hung up')
+
     def recipient_hangup(self):
         return self.cancel()
+
+    def complete(self):
+        try:
+            self._ari.channels.hangup(channelId=self.transfer.initiator_call)
+        except ARINotFound:
+            pass
+
+        try:
+            self._services.unhold_transferred_call(self.transfer.transferred_call)
+            self._ari.channels.ring(channelId=self.transfer.transferred_call)
+        except ARINotFound:
+            raise TransferCompletionError(self.transfer.id, 'transferred hung up')
+
+        self.transfer.status = 'blind_transferred'
+
+        return TransferStateBlindTransferred.from_state(self)
 
     def cancel(self):
         self._cancel()
@@ -215,7 +240,7 @@ class TransferStateRingback(TransferState):
         try:
             self._services.unring_initiator_call(self.transfer.initiator_call)
         except ARINotFound:
-            raise TransferAnswerError('initiator hung up')
+            raise TransferAnswerError(self.transfer.id, 'initiator hung up')
         self.transfer.status = TransferStatus.answered
 
         return TransferStateAnswered.from_state(self)
@@ -231,7 +256,15 @@ class TransferStateAnswered(TransferState):
         return TransferStateReadyStasis.from_state(self)
 
     def initiator_hangup(self):
-        return self.complete()
+        self._services.unset_variable(self.transfer.transferred_call, 'XIVO_TRANSFER_ID')
+        self._services.unset_variable(self.transfer.transferred_call, 'XIVO_TRANSFER_ROLE')
+        self._services.unset_variable(self.transfer.recipient_call, 'XIVO_TRANSFER_ID')
+        self._services.unset_variable(self.transfer.recipient_call, 'XIVO_TRANSFER_ROLE')
+
+        try:
+            self._services.unhold_transferred_call(self.transfer.transferred_call)
+        except ARINotFound:
+            raise TransferCompletionError(self.transfer.id, 'transferred hung up')
 
     def recipient_hangup(self):
         return self.cancel()
@@ -242,11 +275,11 @@ class TransferStateAnswered(TransferState):
         self._services.unset_variable(self.transfer.recipient_call, 'XIVO_TRANSFER_ID')
         self._services.unset_variable(self.transfer.recipient_call, 'XIVO_TRANSFER_ROLE')
 
-        if self.transfer.initiator_call:
-            try:
-                self._ari.channels.hangup(channelId=self.transfer.initiator_call)
-            except ARINotFound:
-                pass
+        try:
+            self._ari.channels.hangup(channelId=self.transfer.initiator_call)
+        except ARINotFound:
+            pass
+
         try:
             self._services.unhold_transferred_call(self.transfer.transferred_call)
         except ARINotFound:
@@ -256,4 +289,25 @@ class TransferStateAnswered(TransferState):
 
     def cancel(self):
         self._cancel()
+        return TransferStateReadyStasis.from_state(self)
+
+
+@state_factory.state
+class TransferStateBlindTransferred(TransferState):
+
+    name = 'blind_transferred'
+
+    def recipient_answer(self):
+        self._services.unset_variable(self.transfer.transferred_call, 'XIVO_TRANSFER_ID')
+        self._services.unset_variable(self.transfer.transferred_call, 'XIVO_TRANSFER_ROLE')
+        self._services.unset_variable(self.transfer.recipient_call, 'XIVO_TRANSFER_ID')
+        self._services.unset_variable(self.transfer.recipient_call, 'XIVO_TRANSFER_ROLE')
+
+        try:
+            self._services.unring_initiator_call(self.transfer.transferred_call)
+        except ARINotFound:
+            raise TransferAnswerError(self.transfer.id, 'transferred hung up')
+
+        self.transfer.status = 'ready'
+
         return TransferStateReadyStasis.from_state(self)

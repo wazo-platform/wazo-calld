@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
+import json
 
 from contextlib import contextmanager
 from requests import RequestException
@@ -15,7 +16,6 @@ from xivo_ctid_ng.plugins.calls.state_persistor import ReadOnlyStatePersistor as
 
 from .exceptions import NoSuchTransfer
 from .exceptions import TransferCreationError
-from .exceptions import TransferCompletionError
 from .exceptions import XiVOAmidUnreachable
 from .state import TransferStateReadyNonStasis, TransferStateReadyStasis
 
@@ -39,13 +39,6 @@ class TransfersService(object):
         self.auth_token = auth_token
 
     def create(self, transferred_call, initiator_call, context, exten, flow):
-        if flow == 'attended':
-            return self.create_attended(transferred_call, initiator_call, context, exten)
-        elif flow == 'blind':
-            return self.create_blind(transferred_call, initiator_call, context, exten)
-        raise TransferCreationError('unknown transfer flow {}'.format(flow))
-
-    def create_attended(self, transferred_call, initiator_call, context, exten):
         try:
             transferred_channel = self.ari.channels.get(channelId=transferred_call)
             initiator_channel = self.ari.channels.get(channelId=initiator_call)
@@ -57,13 +50,13 @@ class TransfersService(object):
         else:
             transfer_state = TransferStateReadyStasis(self.ari, self)
 
-        new_state = transfer_state.create(transferred_channel, initiator_channel, context, exten)
+        new_state = transfer_state.create(transferred_channel, initiator_channel, context, exten, flow)
+        if flow == 'blind':
+            new_state = new_state.complete()
+
         self.state_persistor.upsert(new_state.transfer)
 
         return new_state.transfer
-
-    def create_blind(self, transferred_call, initiator_call, context, exten):
-        pass
 
     def hold_transferred_call(self, transferred_call):
         self.ari.channels.mute(channelId=transferred_call, direction='in')
@@ -90,7 +83,7 @@ class TransfersService(object):
         app_args = [app_instance, 'transfer_recipient_called', transfer_id]
         originate_variables = {'XIVO_TRANSFER_ROLE': 'recipient',
                                'XIVO_TRANSFER_ID': transfer_id,
-                               'XIVO_HANGUP_LOCK_TARGET': initiator_call}
+                               'XIVO_HANGUP_LOCK_TARGET': transfer_id}
         new_channel = self.ari.channels.originate(endpoint=recipient_endpoint,
                                                   app=APPLICATION_NAME,
                                                   appArgs=app_args,
@@ -100,9 +93,14 @@ class TransfersService(object):
         try:
             initiator_channel.setChannelVar(variable='CONNECTEDLINE(name)', value=new_channel.json['caller']['name'])
             initiator_channel.setChannelVar(variable='CONNECTEDLINE(num)', value=new_channel.json['caller']['number'])
-            initiator_channel.setChannelVar(variable='XIVO_HANGUP_LOCK_SOURCE', value=recipient_call)
         except ARINotFound:
             raise TransferCreationError('initiator hung up')
+
+        try:
+            self.set_bridge_variable(transfer_id, 'XIVO_HANGUP_LOCK_SOURCE', recipient_call)
+        except ARINotFound:
+            raise TransferCreationError('bridge not found')
+
         return recipient_call
 
     def get(self, transfer_id):
@@ -115,8 +113,10 @@ class TransfersService(object):
         transfer = self.get(transfer_id)
 
         transfer_state = self.state_factory.make(transfer)
-        transfer_state.complete()
-        self.state_persistor.remove(transfer_id)
+        new_state = transfer_state.complete()
+
+        if new_state.transfer.status == 'ready':
+            self.state_persistor.remove(transfer_id)
 
     def cancel(self, transfer_id):
         transfer = self.get(transfer_id)
@@ -175,3 +175,32 @@ class TransfersService(object):
                 ami.action('Setvar', parameters, token=self.auth_token)
             except RequestException as e:
                 raise XiVOAmidUnreachable(self.amid_config, e)
+
+    def set_bridge_variable(self, bridge_id, variable, value):
+        global_variable = 'XIVO_BRIDGE_VARIABLES_{}'.format(bridge_id)
+        try:
+            cache_str = self.ari.asterisk.getGlobalVar(variable=global_variable)['value']
+        except ARINotFound:
+            cache_str = '{}'
+        if not cache_str:
+            cache_str = '{}'
+        cache = json.loads(cache_str)
+
+        cache[variable] = value
+
+        self.ari.asterisk.setGlobalVar(variable=global_variable, value=json.dumps(cache))
+
+    def get_bridge_variable(self, bridge_id, variable):
+        global_variable = 'XIVO_BRIDGE_VARIABLES_{}'.format(bridge_id)
+        try:
+            cache_str = self.ari.asterisk.getGlobalVar(variable=global_variable)['value']
+        except ARINotFound:
+            cache_str = '{}'
+        if not cache_str:
+            cache_str = '{}'
+        cache = json.loads(cache_str)
+
+        try:
+            return cache[variable]
+        except KeyError as e:
+            raise ARINotFound(self.ari, e)
