@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
-import json
 
 from contextlib import contextmanager
 from requests import RequestException
@@ -14,6 +13,7 @@ from ari.exceptions import ARINotFound
 from ari.exceptions import ARINotInStasis
 from xivo_ctid_ng.plugins.calls.state_persistor import ReadOnlyStatePersistor as ReadOnlyCallStates
 
+from . import ari_helpers
 from .exceptions import NoSuchTransfer
 from .exceptions import TransferCreationError
 from .exceptions import XiVOAmidUnreachable
@@ -81,7 +81,7 @@ class TransfersService(object):
             raise TransferCreationError('initiator hung up')
 
         try:
-            self.set_bridge_variable(transfer_id, 'XIVO_HANGUP_LOCK_SOURCE', recipient_call)
+            ari_helpers.set_bridge_variable(self.ari, transfer_id, 'XIVO_HANGUP_LOCK_SOURCE', recipient_call)
         except ARINotFound:
             raise TransferCreationError('bridge not found')
 
@@ -154,32 +154,3 @@ class TransfersService(object):
                 ami.action('Setvar', parameters, token=self.auth_token)
             except RequestException as e:
                 raise XiVOAmidUnreachable(self.amid_config, e)
-
-    def set_bridge_variable(self, bridge_id, variable, value):
-        global_variable = 'XIVO_BRIDGE_VARIABLES_{}'.format(bridge_id)
-        try:
-            cache_str = self.ari.asterisk.getGlobalVar(variable=global_variable)['value']
-        except ARINotFound:
-            cache_str = '{}'
-        if not cache_str:
-            cache_str = '{}'
-        cache = json.loads(cache_str)
-
-        cache[variable] = value
-
-        self.ari.asterisk.setGlobalVar(variable=global_variable, value=json.dumps(cache))
-
-    def get_bridge_variable(self, bridge_id, variable):
-        global_variable = 'XIVO_BRIDGE_VARIABLES_{}'.format(bridge_id)
-        try:
-            cache_str = self.ari.asterisk.getGlobalVar(variable=global_variable)['value']
-        except ARINotFound:
-            cache_str = '{}'
-        if not cache_str:
-            cache_str = '{}'
-        cache = json.loads(cache_str)
-
-        try:
-            return cache[variable]
-        except KeyError as e:
-            raise ARINotFound(self.ari, e)
