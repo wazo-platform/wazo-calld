@@ -56,16 +56,6 @@ class TransfersService(object):
 
         return new_state.transfer
 
-    def hold_transferred_call(self, transferred_call):
-        self.ari.channels.mute(channelId=transferred_call, direction='in')
-        self.ari.channels.hold(channelId=transferred_call)
-        self.ari.channels.startMoh(channelId=transferred_call)
-
-    def unhold_transferred_call(self, transferred_call):
-        self.ari.channels.unmute(channelId=transferred_call, direction='in')
-        self.ari.channels.unhold(channelId=transferred_call)
-        self.ari.channels.stopMoh(channelId=transferred_call)
-
     def unring_initiator_call(self, initiator_call):
         self.ari.channels.stopMoh(channelId=initiator_call)  # workaround for SCCP bug on ringStop
         self.ari.channels.ringStop(channelId=initiator_call)

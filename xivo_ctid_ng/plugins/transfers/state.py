@@ -7,6 +7,7 @@ import uuid
 
 from ari.exceptions import ARINotFound
 
+from . import ari_helpers
 from .exceptions import TransferAnswerError
 from .exceptions import TransferCreationError
 from .exceptions import TransferCancellationError
@@ -117,7 +118,7 @@ class TransferState(object):
                 pass
 
         try:
-            self._services.unhold_transferred_call(self.transfer.transferred_call)
+            ari_helpers.unhold_transferred_call(self._ari, self.transfer.transferred_call)
         except ARINotFound:
             raise TransferCancellationError(self.transfer.id, 'transferred hung up')
 
@@ -153,7 +154,7 @@ class TransferStateReady(TransferState):
             raise TransferCreationError('some channel got hung up')
 
         try:
-            self._services.hold_transferred_call(transferred_channel.id)
+            ari_helpers.hold_transferred_call(self._ari, transferred_channel.id)
         except ARINotFound:
             raise TransferCreationError('transferred call hung up')
 
@@ -206,7 +207,7 @@ class TransferStateStarting(TransferState):
         self.transfer = transfer
 
         try:
-            self._services.hold_transferred_call(self.transfer.transferred_call)
+            ari_helpers.hold_transferred_call(self._ari, self.transfer.transferred_call)
         except ARINotFound:
             pass
 
@@ -248,7 +249,7 @@ class TransferStateRingback(TransferState):
     @transition
     def initiator_hangup(self):
         try:
-            self._services.unhold_transferred_call(self.transfer.transferred_call)
+            ari_helpers.unhold_transferred_call(self._ari, self.transfer.transferred_call)
             self._ari.channels.ring(channelId=self.transfer.transferred_call)
         except ARINotFound:
             raise TransferCompletionError(self.transfer.id, 'transferred hung up')
@@ -269,7 +270,7 @@ class TransferStateRingback(TransferState):
             pass
 
         try:
-            self._services.unhold_transferred_call(self.transfer.transferred_call)
+            ari_helpers.unhold_transferred_call(self._ari, self.transfer.transferred_call)
             self._ari.channels.ring(channelId=self.transfer.transferred_call)
         except ARINotFound:
             raise TransferCompletionError(self.transfer.id, 'transferred hung up')
@@ -349,7 +350,7 @@ class TransferStateAnswered(TransferState):
         self._services.unset_variable(self.transfer.recipient_call, 'XIVO_TRANSFER_ROLE')
 
         try:
-            self._services.unhold_transferred_call(self.transfer.transferred_call)
+            ari_helpers.unhold_transferred_call(self._ari, self.transfer.transferred_call)
         except ARINotFound:
             raise TransferCompletionError(self.transfer.id, 'transferred hung up')
 
@@ -372,7 +373,7 @@ class TransferStateAnswered(TransferState):
             pass
 
         try:
-            self._services.unhold_transferred_call(self.transfer.transferred_call)
+            ari_helpers.unhold_transferred_call(self._ari, self.transfer.transferred_call)
         except ARINotFound:
             raise TransferCompletionError(self.transfer.id, 'transferred hung up')
 
