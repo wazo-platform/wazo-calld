@@ -126,7 +126,7 @@ class TransfersStasis(object):
                 try:
                     new_state.complete()
                 except TransferException as e:
-                    logger.error(e.message, e.details)
+                    logger.error('%s: %s', e.message, e.details)
 
     def recipient_hangup(self, transfer):
         logger.debug('recipient hangup = cancel transfer %s', transfer.id)
@@ -134,7 +134,7 @@ class TransfersStasis(object):
         try:
             transfer_state.recipient_hangup()
         except TransferException as e:
-            logger.error(e.message, e.details)
+            logger.error('%s: %s', e.message, e.details)
 
     def initiator_hangup(self, transfer):
         logger.debug('initiator hangup = complete transfer %s', transfer.id)
@@ -142,7 +142,7 @@ class TransfersStasis(object):
         try:
             transfer_state.initiator_hangup()
         except TransferException as e:
-            logger.error(e.message, e.details)
+            logger.error('%s: %s', e.message, e.details)
 
     def transferred_hangup(self, transfer):
         logger.debug('transferred hangup = abandon transfer %s', transfer.id)
@@ -150,7 +150,7 @@ class TransfersStasis(object):
         try:
             transfer_state.transferred_hangup()
         except TransferException as e:
-            logger.error(e.message, e.details)
+            logger.error('%s: %s', e.message, e.details)
 
     def clean_bridge(self, channel, event):
         try:
@@ -189,7 +189,7 @@ class TransfersStasis(object):
             logger.debug('destroying bridge %s', bridge.id)
             try:
                 bridge.destroy()
-            except ARINotInStasis:
+            except (ARINotInStasis, ARINotFound):
                 pass
 
     def clean_bridge_variables(self, bridge, event):
