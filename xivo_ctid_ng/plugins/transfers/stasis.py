@@ -9,6 +9,7 @@ from xivo.pubsub import Pubsub
 from ari.exceptions import ARINotFound
 from ari.exceptions import ARINotInStasis
 
+from . import ari_helpers
 from .event import TransferRecipientAnsweredEvent
 from .event import CreateTransferEvent
 from .exceptions import InvalidEvent
@@ -94,7 +95,7 @@ class TransfersStasis(object):
 
             for channel_id in transfer_bridge.json['channels']:
                 try:
-                    self.services.unring_initiator_call(channel_id)
+                    ari_helpers.unring_initiator_call(self.ari, channel_id)
                 except ARINotFound:
                     pass
         else:

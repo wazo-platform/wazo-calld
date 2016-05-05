@@ -13,3 +13,8 @@ def unhold_transferred_call(ari, transferred_call):
     ari.channels.unmute(channelId=transferred_call, direction='in')
     ari.channels.unhold(channelId=transferred_call)
     ari.channels.stopMoh(channelId=transferred_call)
+
+
+def unring_initiator_call(ari, initiator_call):
+    ari.channels.stopMoh(channelId=initiator_call)  # workaround for SCCP bug on ringStop
+    ari.channels.ringStop(channelId=initiator_call)

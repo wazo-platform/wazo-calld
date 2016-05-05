@@ -56,10 +56,6 @@ class TransfersService(object):
 
         return new_state.transfer
 
-    def unring_initiator_call(self, initiator_call):
-        self.ari.channels.stopMoh(channelId=initiator_call)  # workaround for SCCP bug on ringStop
-        self.ari.channels.ringStop(channelId=initiator_call)
-
     def originate_recipient(self, initiator_call, context, exten, transfer_id):
         try:
             app_instance = self.call_states.get(initiator_call).app_instance

@@ -123,7 +123,7 @@ class TransferState(object):
             raise TransferCancellationError(self.transfer.id, 'transferred hung up')
 
         try:
-            self._services.unring_initiator_call(self.transfer.initiator_call)
+            ari_helpers.unring_initiator_call(self._ari, self.transfer.initiator_call)
         except ARINotFound:
             raise TransferCancellationError(self.transfer.id, 'initiator hung up')
 
@@ -287,7 +287,7 @@ class TransferStateRingback(TransferState):
     @transition
     def recipient_answer(self):
         try:
-            self._services.unring_initiator_call(self.transfer.initiator_call)
+            ari_helpers.unring_initiator_call(self._ari, self.transfer.initiator_call)
         except ARINotFound:
             raise TransferAnswerError(self.transfer.id, 'initiator hung up')
 
@@ -322,7 +322,7 @@ class TransferStateBlindTransferred(TransferState):
         self._services.unset_variable(self.transfer.recipient_call, 'XIVO_TRANSFER_ROLE')
 
         try:
-            self._services.unring_initiator_call(self.transfer.transferred_call)
+            ari_helpers.unring_initiator_call(self._ari, self.transfer.transferred_call)
         except ARINotFound:
             raise TransferAnswerError(self.transfer.id, 'transferred hung up')
 
