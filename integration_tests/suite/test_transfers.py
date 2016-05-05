@@ -482,6 +482,40 @@ class TestTransferFromStasis(TestTransfers):
                       recipient_channel_id,
                       tries=5)
 
+    def test_given_state_ready_when_blind_transfer_to_extension_not_found_then_state_hungup(self):
+        transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()
+
+        response = self.ctid_ng.create_blind_transfer(transferred_channel_id,
+                                                      initiator_channel_id,
+                                                      **RECIPIENT_NOT_FOUND)
+
+        transfer_id = response['id']
+        recipient_channel_id = response['recipient_call']
+        until.assert_(self.assert_transfer_is_hungup,
+                      transfer_id,
+                      transferred_channel_id,
+                      initiator_channel_id,
+                      recipient_channel_id,
+                      tries=5)
+
+    def test_given_state_ready_when_blind_transfer_and_abandon_then_state_hungup(self):
+        transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()
+
+        response = self.ctid_ng.create_blind_transfer(transferred_channel_id,
+                                                      initiator_channel_id,
+                                                      **RECIPIENT_RINGING)
+
+        self.ari.channels.hangup(channelId=transferred_channel_id)
+
+        transfer_id = response['id']
+        recipient_channel_id = response['recipient_call']
+        until.assert_(self.assert_transfer_is_hungup,
+                      transfer_id,
+                      transferred_channel_id,
+                      initiator_channel_id,
+                      recipient_channel_id,
+                      tries=5)
+
     def test_given_state_ringback_when_cancel_then_state_cancelled(self):
         (transferred_channel_id,
          initiator_channel_id,
@@ -731,6 +765,22 @@ class TestTransferFromNonStasis(TestTransfers):
                       transfer_bridge_id,
                       transferred_channel_id,
                       initiator_channel_id,
+                      tries=5)
+
+    def test_given_state_ready_when_blind_transfer_then_state_blind_transferred(self):
+        transferred_channel_id, initiator_channel_id = self.given_bridged_call_not_stasis()
+
+        response = self.ctid_ng.create_blind_transfer(transferred_channel_id,
+                                                      initiator_channel_id,
+                                                      **RECIPIENT_RINGING)
+
+        transfer_id = response['id']
+        recipient_channel_id = response['recipient_call']
+        until.assert_(self.assert_transfer_is_blind_transferred,
+                      transfer_id,
+                      transferred_channel_id,
+                      initiator_channel_id,
+                      recipient_channel_id,
                       tries=5)
 
 
