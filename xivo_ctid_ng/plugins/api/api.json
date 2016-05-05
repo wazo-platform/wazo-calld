@@ -489,6 +489,14 @@
                         "ringback",
                         "answered"
                     ]
+                },
+                "flow": {
+                    "description": "The behavior of the transfer",
+                    "type": "string",
+                    "enum": [
+                        "attended",
+                        "blind"
+                    ]
                 }
             }
         }

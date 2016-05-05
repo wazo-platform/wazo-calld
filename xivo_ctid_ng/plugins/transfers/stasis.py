@@ -13,7 +13,6 @@ from .event import TransferRecipientAnsweredEvent
 from .event import CreateTransferEvent
 from .exceptions import InvalidEvent
 from .exceptions import TransferException
-from .state import TransferStateStarting
 from .transfer import TransferRole
 
 logger = logging.getLogger(__name__)
@@ -121,7 +120,12 @@ class TransfersStasis(object):
                 logger.error('initiator hung up while creating transfer')
 
             transfer_state = self.state_factory.make(transfer)
-            transfer_state.start(transfer, context, exten)
+            new_state = transfer_state.start(transfer, context, exten)
+            if new_state.transfer.flow == 'blind':
+                try:
+                    new_state.complete()
+                except TransferException as e:
+                    logger.error(e.message, e.details)
 
     def recipient_hangup(self, transfer):
         logger.debug('recipient hangup = cancel transfer %s', transfer.id)
@@ -142,7 +146,10 @@ class TransfersStasis(object):
     def transferred_hangup(self, transfer):
         logger.debug('transferred hangup = abandon transfer %s', transfer.id)
         transfer_state = self.state_factory.make(transfer)
-        transfer_state.transferred_hangup()
+        try:
+            transfer_state.transferred_hangup()
+        except TransferException as e:
+            logger.error(e.message, e.details)
 
     def clean_bridge(self, channel, event):
         try:

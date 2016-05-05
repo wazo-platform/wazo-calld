@@ -50,7 +50,7 @@ class TransfersService(object):
         else:
             transfer_state = TransferStateReady(self.ari, self, self.state_persistor)
 
-        new_state = transfer_state.create(transferred_channel, initiator_channel, context, exten, flow)
+        new_state = transfer_state.create(transferred_channel, initiator_channel, context, exten)
         if flow == 'blind':
             new_state = new_state.complete()
 

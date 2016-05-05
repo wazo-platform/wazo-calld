@@ -11,6 +11,7 @@ class Transfer(object):
         self.initiator_call = None
         self.recipient_call = None
         self.status = 'invalid'
+        self.flow = 'attended'
 
     def to_dict(self):
         return {
@@ -19,6 +20,7 @@ class Transfer(object):
             'initiator_call': self.initiator_call,
             'recipient_call': self.recipient_call,
             'status': self.status,
+            'flow': self.flow,
         }
 
     @classmethod
@@ -28,6 +30,7 @@ class Transfer(object):
         transfer.initiator_call = dict_['initiator_call']
         transfer.recipient_call = dict_['recipient_call']
         transfer.status = dict_['status']
+        transfer.flow = dict_['flow']
         return transfer
 
     def role(self, call_id):

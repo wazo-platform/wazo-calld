@@ -139,7 +139,7 @@ class TransferStateReady(TransferState):
     name = TransferStatus.ready
 
     @transition
-    def create(self, transferred_channel, initiator_channel, context, exten, flow):
+    def create(self, transferred_channel, initiator_channel, context, exten):
         transfer_bridge = self._ari.bridges.create(type='mixing', name='transfer')
         transfer_id = transfer_bridge.id
         try:
@@ -169,7 +169,6 @@ class TransferStateReady(TransferState):
         self.transfer.initiator_call = initiator_channel.id
         self.transfer.recipient_call = recipient_call
         self.transfer.status = self.name
-        self.transfer.flow = flow
 
         return TransferStateRingback.from_state(self)
 
@@ -183,14 +182,13 @@ class TransferStateReadyNonStasis(TransferState):
     name = 'ready_non_stasis'
 
     @transition
-    def create(self, transferred_channel, initiator_channel, context, exten, flow):
+    def create(self, transferred_channel, initiator_channel, context, exten):
         transfer_id = str(uuid.uuid4())
         self._services.convert_transfer_to_stasis(transferred_channel.id, initiator_channel.id, context, exten, transfer_id)
         self.transfer = Transfer(transfer_id)
         self.transfer.initiator_call = initiator_channel.id
         self.transfer.transferred_call = transferred_channel.id
         self.transfer.status = self.name
-        self.transfer.flow = flow
 
         return TransferStateStarting.from_state(self)
 
@@ -227,6 +225,12 @@ class TransferStateStarting(TransferState):
 
         return TransferStateRingback.from_state(self)
 
+    @transition
+    def complete(self):
+        self.transfer.flow = 'blind'
+
+        return self
+
     def update_cache(self):
         self._state_persistor.upsert(self.transfer)
 
@@ -249,6 +253,8 @@ class TransferStateRingback(TransferState):
         except ARINotFound:
             raise TransferCompletionError(self.transfer.id, 'transferred hung up')
 
+        self.transfer.flow = 'blind'
+
         return TransferStateBlindTransferred.from_state(self)
 
     @transition
@@ -268,6 +274,8 @@ class TransferStateRingback(TransferState):
         except ARINotFound:
             raise TransferCompletionError(self.transfer.id, 'transferred hung up')
 
+        self.transfer.flow = 'blind'
+
         return TransferStateBlindTransferred.from_state(self)
 
     @transition
@@ -283,6 +291,41 @@ class TransferStateRingback(TransferState):
             raise TransferAnswerError(self.transfer.id, 'initiator hung up')
 
         return TransferStateAnswered.from_state(self)
+
+    def update_cache(self):
+        self._state_persistor.upsert(self.transfer)
+
+
+@state_factory.state
+class TransferStateBlindTransferred(TransferState):
+
+    name = TransferStatus.blind_transferred
+
+    @transition
+    def transferred_hangup(self):
+        return TransferStateReady.from_state(self)
+
+    @transition
+    def initiator_hangup(self):
+        return self
+
+    @transition
+    def recipient_hangup(self):
+        return TransferStateReady.from_state(self)
+
+    @transition
+    def recipient_answer(self):
+        self._services.unset_variable(self.transfer.transferred_call, 'XIVO_TRANSFER_ID')
+        self._services.unset_variable(self.transfer.transferred_call, 'XIVO_TRANSFER_ROLE')
+        self._services.unset_variable(self.transfer.recipient_call, 'XIVO_TRANSFER_ID')
+        self._services.unset_variable(self.transfer.recipient_call, 'XIVO_TRANSFER_ROLE')
+
+        try:
+            self._services.unring_initiator_call(self.transfer.transferred_call)
+        except ARINotFound:
+            raise TransferAnswerError(self.transfer.id, 'transferred hung up')
+
+        return TransferStateReady.from_state(self)
 
     def update_cache(self):
         self._state_persistor.upsert(self.transfer)
@@ -338,29 +381,6 @@ class TransferStateAnswered(TransferState):
     @transition
     def cancel(self):
         self._cancel()
-        return TransferStateReady.from_state(self)
-
-    def update_cache(self):
-        self._state_persistor.upsert(self.transfer)
-
-
-@state_factory.state
-class TransferStateBlindTransferred(TransferState):
-
-    name = TransferStatus.blind_transferred
-
-    @transition
-    def recipient_answer(self):
-        self._services.unset_variable(self.transfer.transferred_call, 'XIVO_TRANSFER_ID')
-        self._services.unset_variable(self.transfer.transferred_call, 'XIVO_TRANSFER_ROLE')
-        self._services.unset_variable(self.transfer.recipient_call, 'XIVO_TRANSFER_ID')
-        self._services.unset_variable(self.transfer.recipient_call, 'XIVO_TRANSFER_ROLE')
-
-        try:
-            self._services.unring_initiator_call(self.transfer.transferred_call)
-        except ARINotFound:
-            raise TransferAnswerError(self.transfer.id, 'transferred hung up')
-
         return TransferStateReady.from_state(self)
 
     def update_cache(self):
