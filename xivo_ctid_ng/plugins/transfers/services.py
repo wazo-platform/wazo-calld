@@ -45,7 +45,8 @@ class TransfersService(object):
         except ARINotFound:
             raise TransferCreationError('channel not found')
 
-        if not (self.is_in_stasis(transferred_call) and self.is_in_stasis(initiator_call)):
+        if not (ari_helpers.is_in_stasis(self.ari, transferred_call) and
+                ari_helpers.is_in_stasis(self.ari, initiator_call)):
             transfer_state = TransferStateReadyNonStasis(self.ari, self, self.state_persistor)
         else:
             transfer_state = TransferStateReady(self.ari, self, self.state_persistor)
@@ -103,13 +104,6 @@ class TransfersService(object):
         transfer = self.get(transfer_id)
         transfer_state = self.state_factory.make(transfer)
         transfer_state.cancel()
-
-    def is_in_stasis(self, call_id):
-        try:
-            self.ari.channels.setChannelVar(channelId=call_id, variable='XIVO_TEST_STASIS')
-            return True
-        except ARINotInStasis:
-            return False
 
     def convert_transfer_to_stasis(self, transferred_call, initiator_call, context, exten, transfer_id):
         set_variables = [(transferred_call, 'XIVO_TRANSFER_ROLE', 'transferred'),

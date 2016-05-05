@@ -4,7 +4,15 @@
 
 import json
 
-from ari.exceptions import ARINotFound
+from ari.exceptions import ARINotFound, ARINotInStasis
+
+
+def is_in_stasis(ari, call_id):
+    try:
+        ari.channels.setChannelVar(channelId=call_id, variable='XIVO_TEST_STASIS')
+        return True
+    except ARINotInStasis:
+        return False
 
 
 def hold_transferred_call(ari, transferred_call):
