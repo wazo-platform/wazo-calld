@@ -57,8 +57,7 @@ class TransfersService(object):
         recipient_endpoint = 'Local/{exten}@{context}'.format(exten=exten, context=context)
         app_args = [app_instance, 'transfer_recipient_called', transfer_id]
         originate_variables = {'XIVO_TRANSFER_ROLE': 'recipient',
-                               'XIVO_TRANSFER_ID': transfer_id,
-                               'XIVO_HANGUP_LOCK_TARGET': transfer_id}
+                               'XIVO_TRANSFER_ID': transfer_id}
         new_channel = self.ari.channels.originate(endpoint=recipient_endpoint,
                                                   app=APPLICATION_NAME,
                                                   appArgs=app_args,

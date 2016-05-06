@@ -37,7 +37,6 @@ class TransfersStasis(object):
     def subscribe(self):
         self.ari.on_channel_event('ChannelEnteredBridge', self.release_hangup_lock)
         self.ari.on_channel_event('ChannelDestroyed', self.bypass_hangup_lock_from_source)
-        self.ari.on_bridge_event('BridgeDestroyed', self.bypass_hangup_lock_from_target)
         self.ari.on_bridge_event('BridgeDestroyed', self.clean_bridge_variables)
 
         self.ari.on_channel_event('ChannelLeftBridge', self.clean_bridge)
@@ -182,6 +181,8 @@ class TransfersStasis(object):
         except ARINotFound:
             return
         if len(bridge.json['channels']) == 0:
+            self.bypass_hangup_lock_from_target(bridge)
+
             logger.debug('destroying bridge %s', bridge.id)
             try:
                 bridge.destroy()
@@ -193,27 +194,14 @@ class TransfersStasis(object):
         self.ari.asterisk.setGlobalVar(variable=global_variable, value='')
 
     def release_hangup_lock(self, channel, event):
-        one_lock_source = channel
+        lock_source = channel
+        lock_target_candidate_id = event['bridge']['id']
 
-        try:
-            lock_target_id = one_lock_source.getChannelVar(variable='XIVO_HANGUP_LOCK_TARGET')['value']
-        except ARINotFound:
-            return
+        lock_source_candidate_id = ari_helpers.get_bridge_variable(self.ari, lock_target_candidate_id, 'XIVO_HANGUP_LOCK_SOURCE')
 
-        logger.debug('releasing hangup lock from source %s', channel.json['name'])
-
-        for lock_source_candidate in self.ari.channels.list():
-            try:
-                lock_target_candidate_id = lock_source_candidate.getChannelVar(variable='XIVO_HANGUP_LOCK_TARGET')['value']
-            except ARINotFound:
-                continue
-            if lock_target_candidate_id == lock_target_id:
-                try:
-                    ari_helpers.unset_variable(self.ari, self.amid, lock_source_candidate.id, 'XIVO_HANGUP_LOCK_TARGET')
-                except XiVOAmidUnreachable as e:
-                    self.handle_error(e)
-
-        if lock_target_id:
+        if lock_source_candidate_id == lock_source.id:
+            lock_target_id = lock_target_candidate_id
+            logger.debug('releasing hangup lock from source %s', lock_source.json['name'])
             ari_helpers.set_bridge_variable(self.ari, lock_target_id, 'XIVO_HANGUP_LOCK_SOURCE', '')
 
     def bypass_hangup_lock_from_source(self, channel, event):
@@ -240,18 +228,10 @@ class TransfersStasis(object):
                 except ARINotFound:
                     pass
 
-    def bypass_hangup_lock_from_target(self, bridge, event):
-        logger.debug('bypassing hangup lock due to target destroy %s', bridge.id)
-
-        lock_target = bridge
-        for lock_source_candidate in self.ari.channels.list():
-            try:
-                lock_target_candidate_id = lock_source_candidate.getChannelVar(variable='XIVO_HANGUP_LOCK_TARGET')['value']
-            except ARINotFound:
-                continue
-            if lock_target_candidate_id == lock_target.id:
-                logger.debug('hanging up lock source %s', lock_source_candidate.json['name'])
-                try:
-                    lock_source_candidate.hangup()
-                except ARINotFound:
-                    pass
+    def bypass_hangup_lock_from_target(self, bridge):
+        try:
+            lock_source_id = ari_helpers.get_bridge_variable(self.ari, bridge.id, 'XIVO_HANGUP_LOCK_SOURCE')
+            logger.debug('hanging up lock source %s', lock_source_id)
+            self.ari.channels.hangup(channelId=lock_source_id)
+        except ARINotFound:
+            pass
