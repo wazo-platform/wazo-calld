@@ -8,11 +8,9 @@ from requests import RequestException
 from xivo.caller_id import assemble_caller_id
 from xivo_ctid_ng.core.ari_ import APPLICATION_NAME
 from ari.exceptions import ARINotFound
-from ari.exceptions import ARINotInStasis
 from xivo_ctid_ng.plugins.calls.state_persistor import ReadOnlyStatePersistor as ReadOnlyCallStates
 
 from . import ari_helpers
-from . import ami_helpers
 from .exceptions import NoSuchTransfer
 from .exceptions import TransferCreationError
 from .exceptions import XiVOAmidUnreachable
@@ -41,9 +39,9 @@ class TransfersService(object):
 
         if not (ari_helpers.is_in_stasis(self.ari, transferred_call) and
                 ari_helpers.is_in_stasis(self.ari, initiator_call)):
-            transfer_state = TransferStateReadyNonStasis(self.ari, self, self.state_persistor)
+            transfer_state = TransferStateReadyNonStasis(self.amid_client, self.ari, self, self.state_persistor)
         else:
-            transfer_state = TransferStateReady(self.ari, self, self.state_persistor)
+            transfer_state = TransferStateReady(self.amid_client, self.ari, self, self.state_persistor)
 
         new_state = transfer_state.create(transferred_channel, initiator_channel, context, exten)
         if flow == 'blind':
@@ -123,11 +121,3 @@ class TransfersService(object):
             self.amid_client.action('Redirect', destination, token=self.auth_token)
         except RequestException as e:
             raise XiVOAmidUnreachable(self.amid_client, e)
-
-    def unset_variable(self, channel_id, variable):
-        try:
-            self.ari.channels.setChannelVar(channelId=channel_id, variable=variable, value='')
-        except ARINotFound:
-            pass
-        except ARINotInStasis:
-            ami_helpers.unset_variable_ami(self.amid_client, channel_id, variable)

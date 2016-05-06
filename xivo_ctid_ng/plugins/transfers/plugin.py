@@ -29,10 +29,10 @@ class Plugin(object):
         transfers_service = TransfersService(ari.client, amid_client, state_factory, state_persistor)
         token_changed_subscribe(transfers_service.set_token)
 
-        transfers_stasis = TransfersStasis(ari.client, transfers_service, state_factory, state_persistor, config['uuid'])
+        transfers_stasis = TransfersStasis(amid_client, ari.client, transfers_service, state_factory, state_persistor, config['uuid'])
         transfers_stasis.subscribe()
 
-        state_factory.set_dependencies(ari.client, transfers_service, state_persistor)
+        state_factory.set_dependencies(amid_client, ari.client, transfers_service, state_persistor)
 
         api.add_resource(TransfersResource, '/transfers', resource_class_args=[transfers_service])
         api.add_resource(TransferResource, '/transfers/<transfer_id>', resource_class_args=[transfers_service])

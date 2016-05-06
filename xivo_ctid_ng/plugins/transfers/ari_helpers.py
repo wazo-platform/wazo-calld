@@ -6,6 +6,8 @@ import json
 
 from ari.exceptions import ARINotFound, ARINotInStasis
 
+from . import ami_helpers
+
 
 def is_in_stasis(ari, call_id):
     try:
@@ -30,6 +32,15 @@ def unhold_transferred_call(ari, transferred_call):
 def unring_initiator_call(ari, initiator_call):
     ari.channels.stopMoh(channelId=initiator_call)  # workaround for SCCP bug on ringStop
     ari.channels.ringStop(channelId=initiator_call)
+
+
+def unset_variable(ari, amid, channel_id, variable):
+    try:
+        ari.channels.setChannelVar(channelId=channel_id, variable=variable, value='')
+    except ARINotFound:
+        pass
+    except ARINotInStasis:
+        ami_helpers.unset_variable_ami(amid, channel_id, variable)
 
 
 def set_bridge_variable(ari, bridge_id, variable, value):

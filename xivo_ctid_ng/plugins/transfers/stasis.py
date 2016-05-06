@@ -22,8 +22,9 @@ logger = logging.getLogger(__name__)
 
 class TransfersStasis(object):
 
-    def __init__(self, ari_client, services, state_factory, state_persistor, xivo_uuid):
+    def __init__(self, amid_client, ari_client, services, state_factory, state_persistor, xivo_uuid):
         self.ari = ari_client
+        self.amid = amid_client
         self.services = services
         self.xivo_uuid = xivo_uuid
         self.stasis_start_pubsub = Pubsub()
@@ -208,7 +209,7 @@ class TransfersStasis(object):
                 continue
             if lock_target_candidate_id == lock_target_id:
                 try:
-                    self.services.unset_variable(lock_source_candidate.id, 'XIVO_HANGUP_LOCK_TARGET')
+                    ari_helpers.unset_variable(self.ari, self.amid, lock_source_candidate.id, 'XIVO_HANGUP_LOCK_TARGET')
                 except XiVOAmidUnreachable as e:
                     self.handle_error(e)
 

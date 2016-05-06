@@ -52,11 +52,22 @@ def transition(decorated):
 
 class TransferState(object):
 
-    def __init__(self, ari, services, state_persistor, transfer=None):
+    def __init__(self, amid, ari, services, state_persistor, transfer=None):
+        self._amid = amid
         self._ari = ari
         self._services = services
         self._state_persistor = state_persistor
         self.transfer = transfer
+
+    @classmethod
+    def from_state(cls, other_state):
+        new_state = cls(other_state._amid,
+                        other_state._ari,
+                        other_state._services,
+                        other_state._state_persistor,
+                        other_state.transfer)
+        new_state.transfer.status = new_state.name
+        return new_state
 
     @transition
     def transferred_hangup(self):
@@ -94,10 +105,10 @@ class TransferState(object):
         raise NotImplementedError()
 
     def _abandon(self):
-        self._services.unset_variable(self.transfer.recipient_call, 'XIVO_TRANSFER_ID')
-        self._services.unset_variable(self.transfer.recipient_call, 'XIVO_TRANSFER_ROLE')
-        self._services.unset_variable(self.transfer.initiator_call, 'XIVO_TRANSFER_ID')
-        self._services.unset_variable(self.transfer.initiator_call, 'XIVO_TRANSFER_ROLE')
+        ari_helpers.unset_variable(self._ari, self._amid, self.transfer.recipient_call, 'XIVO_TRANSFER_ID')
+        ari_helpers.unset_variable(self._ari, self._amid, self.transfer.recipient_call, 'XIVO_TRANSFER_ROLE')
+        ari_helpers.unset_variable(self._ari, self._amid, self.transfer.initiator_call, 'XIVO_TRANSFER_ID')
+        ari_helpers.unset_variable(self._ari, self._amid, self.transfer.initiator_call, 'XIVO_TRANSFER_ROLE')
 
         if self.transfer.transferred_call:
             try:
@@ -106,10 +117,10 @@ class TransferState(object):
                 pass
 
     def _cancel(self):
-        self._services.unset_variable(self.transfer.transferred_call, 'XIVO_TRANSFER_ID')
-        self._services.unset_variable(self.transfer.transferred_call, 'XIVO_TRANSFER_ROLE')
-        self._services.unset_variable(self.transfer.initiator_call, 'XIVO_TRANSFER_ID')
-        self._services.unset_variable(self.transfer.initiator_call, 'XIVO_TRANSFER_ROLE')
+        ari_helpers.unset_variable(self._ari, self._amid, self.transfer.transferred_call, 'XIVO_TRANSFER_ID')
+        ari_helpers.unset_variable(self._ari, self._amid, self.transfer.transferred_call, 'XIVO_TRANSFER_ROLE')
+        ari_helpers.unset_variable(self._ari, self._amid, self.transfer.initiator_call, 'XIVO_TRANSFER_ID')
+        ari_helpers.unset_variable(self._ari, self._amid, self.transfer.initiator_call, 'XIVO_TRANSFER_ROLE')
 
         if self.transfer.recipient_call:
             try:
@@ -126,12 +137,6 @@ class TransferState(object):
             ari_helpers.unring_initiator_call(self._ari, self.transfer.initiator_call)
         except ARINotFound:
             raise TransferCancellationError(self.transfer.id, 'initiator hung up')
-
-    @classmethod
-    def from_state(cls, other_state):
-        new_state = cls(other_state._ari, other_state._services, other_state._state_persistor, other_state.transfer)
-        new_state.transfer.status = new_state.name
-        return new_state
 
 
 @state_factory.state
@@ -316,10 +321,10 @@ class TransferStateBlindTransferred(TransferState):
 
     @transition
     def recipient_answer(self):
-        self._services.unset_variable(self.transfer.transferred_call, 'XIVO_TRANSFER_ID')
-        self._services.unset_variable(self.transfer.transferred_call, 'XIVO_TRANSFER_ROLE')
-        self._services.unset_variable(self.transfer.recipient_call, 'XIVO_TRANSFER_ID')
-        self._services.unset_variable(self.transfer.recipient_call, 'XIVO_TRANSFER_ROLE')
+        ari_helpers.unset_variable(self._ari, self._amid, self.transfer.transferred_call, 'XIVO_TRANSFER_ID')
+        ari_helpers.unset_variable(self._ari, self._amid, self.transfer.transferred_call, 'XIVO_TRANSFER_ROLE')
+        ari_helpers.unset_variable(self._ari, self._amid, self.transfer.recipient_call, 'XIVO_TRANSFER_ID')
+        ari_helpers.unset_variable(self._ari, self._amid, self.transfer.recipient_call, 'XIVO_TRANSFER_ROLE')
 
         try:
             ari_helpers.unring_initiator_call(self._ari, self.transfer.transferred_call)
@@ -344,10 +349,10 @@ class TransferStateAnswered(TransferState):
 
     @transition
     def initiator_hangup(self):
-        self._services.unset_variable(self.transfer.transferred_call, 'XIVO_TRANSFER_ID')
-        self._services.unset_variable(self.transfer.transferred_call, 'XIVO_TRANSFER_ROLE')
-        self._services.unset_variable(self.transfer.recipient_call, 'XIVO_TRANSFER_ID')
-        self._services.unset_variable(self.transfer.recipient_call, 'XIVO_TRANSFER_ROLE')
+        ari_helpers.unset_variable(self._ari, self._amid, self.transfer.transferred_call, 'XIVO_TRANSFER_ID')
+        ari_helpers.unset_variable(self._ari, self._amid, self.transfer.transferred_call, 'XIVO_TRANSFER_ROLE')
+        ari_helpers.unset_variable(self._ari, self._amid, self.transfer.recipient_call, 'XIVO_TRANSFER_ID')
+        ari_helpers.unset_variable(self._ari, self._amid, self.transfer.recipient_call, 'XIVO_TRANSFER_ROLE')
 
         try:
             ari_helpers.unhold_transferred_call(self._ari, self.transfer.transferred_call)
@@ -362,10 +367,10 @@ class TransferStateAnswered(TransferState):
 
     @transition
     def complete(self):
-        self._services.unset_variable(self.transfer.transferred_call, 'XIVO_TRANSFER_ID')
-        self._services.unset_variable(self.transfer.transferred_call, 'XIVO_TRANSFER_ROLE')
-        self._services.unset_variable(self.transfer.recipient_call, 'XIVO_TRANSFER_ID')
-        self._services.unset_variable(self.transfer.recipient_call, 'XIVO_TRANSFER_ROLE')
+        ari_helpers.unset_variable(self._ari, self._amid, self.transfer.transferred_call, 'XIVO_TRANSFER_ID')
+        ari_helpers.unset_variable(self._ari, self._amid, self.transfer.transferred_call, 'XIVO_TRANSFER_ROLE')
+        ari_helpers.unset_variable(self._ari, self._amid, self.transfer.recipient_call, 'XIVO_TRANSFER_ID')
+        ari_helpers.unset_variable(self._ari, self._amid, self.transfer.recipient_call, 'XIVO_TRANSFER_ROLE')
 
         try:
             self._ari.channels.hangup(channelId=self.transfer.initiator_call)
