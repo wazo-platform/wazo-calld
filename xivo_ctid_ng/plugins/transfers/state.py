@@ -7,6 +7,7 @@ import uuid
 
 from ari.exceptions import ARINotFound
 
+from . import ami_helpers
 from . import ari_helpers
 from .exceptions import TransferAnswerError
 from .exceptions import TransferCreationError
@@ -190,7 +191,12 @@ class TransferStateReadyNonStasis(TransferState):
     @transition
     def create(self, transferred_channel, initiator_channel, context, exten):
         transfer_id = str(uuid.uuid4())
-        self._services.convert_transfer_to_stasis(transferred_channel.id, initiator_channel.id, context, exten, transfer_id)
+        ami_helpers.convert_transfer_to_stasis(self._amid,
+                                               transferred_channel.id,
+                                               initiator_channel.id,
+                                               context,
+                                               exten,
+                                               transfer_id)
         self.transfer = Transfer(transfer_id)
         self.transfer.initiator_call = initiator_channel.id
         self.transfer.transferred_call = transferred_channel.id

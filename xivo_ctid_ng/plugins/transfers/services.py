@@ -4,7 +4,6 @@
 
 import logging
 
-from requests import RequestException
 from xivo.caller_id import assemble_caller_id
 from xivo_ctid_ng.core.ari_ import APPLICATION_NAME
 from ari.exceptions import ARINotFound
@@ -13,7 +12,6 @@ from xivo_ctid_ng.plugins.calls.state_persistor import ReadOnlyStatePersistor as
 from . import ari_helpers
 from .exceptions import NoSuchTransfer
 from .exceptions import TransferCreationError
-from .exceptions import XiVOAmidUnreachable
 from .state import TransferStateReadyNonStasis, TransferStateReady
 
 logger = logging.getLogger(__name__)
@@ -96,28 +94,3 @@ class TransfersService(object):
         transfer = self.get(transfer_id)
         transfer_state = self.state_factory.make(transfer)
         transfer_state.cancel()
-
-    def convert_transfer_to_stasis(self, transferred_call, initiator_call, context, exten, transfer_id):
-        set_variables = [(transferred_call, 'XIVO_TRANSFER_ROLE', 'transferred'),
-                         (transferred_call, 'XIVO_TRANSFER_ID', transfer_id),
-                         (transferred_call, 'XIVO_TRANSFER_DESTINATION_CONTEXT', context),
-                         (transferred_call, 'XIVO_TRANSFER_DESTINATION_EXTEN', exten),
-                         (initiator_call, 'XIVO_TRANSFER_ROLE', 'initiator'),
-                         (initiator_call, 'XIVO_TRANSFER_ID', transfer_id),
-                         (initiator_call, 'XIVO_TRANSFER_DESTINATION_CONTEXT', context),
-                         (initiator_call, 'XIVO_TRANSFER_DESTINATION_EXTEN', exten)]
-        try:
-            for channel_id, variable, value in set_variables:
-                parameters = {'Channel': channel_id,
-                              'Variable': variable,
-                              'Value': value}
-                self.amid_client.action('Setvar', parameters, token=self.auth_token)
-
-            destination = {'Channel': transferred_call,
-                           'ExtraChannel': initiator_call,
-                           'Context': 'convert_to_stasis',
-                           'Exten': 'transfer',
-                           'Priority': 1}
-            self.amid_client.action('Redirect', destination, token=self.auth_token)
-        except RequestException as e:
-            raise XiVOAmidUnreachable(self.amid_client, e)
