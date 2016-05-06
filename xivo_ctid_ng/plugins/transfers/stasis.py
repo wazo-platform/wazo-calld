@@ -15,6 +15,7 @@ from .event import CreateTransferEvent
 from .exceptions import InvalidEvent
 from .exceptions import TransferException
 from .exceptions import XiVOAmidUnreachable
+from .lock import HangupLock, InvalidLock
 from .transfer import TransferRole
 
 logger = logging.getLogger(__name__)
@@ -196,13 +197,11 @@ class TransfersStasis(object):
     def release_hangup_lock(self, channel, event):
         lock_source = channel
         lock_target_candidate_id = event['bridge']['id']
-
-        lock_source_candidate_id = ari_helpers.get_bridge_variable(self.ari, lock_target_candidate_id, 'XIVO_HANGUP_LOCK_SOURCE')
-
-        if lock_source_candidate_id == lock_source.id:
-            lock_target_id = lock_target_candidate_id
-            logger.debug('releasing hangup lock from source %s', lock_source.json['name'])
-            ari_helpers.set_bridge_variable(self.ari, lock_target_id, 'XIVO_HANGUP_LOCK_SOURCE', '')
+        try:
+            lock = HangupLock(self.ari, lock_source.id, lock_target_candidate_id)
+            lock.release()
+        except InvalidLock:
+            pass
 
     def bypass_hangup_lock_from_source(self, channel, event):
         lock_source = channel
