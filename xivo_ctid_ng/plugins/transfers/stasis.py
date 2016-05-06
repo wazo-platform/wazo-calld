@@ -166,11 +166,11 @@ class TransfersStasis(object):
             lone_channel_id = bridge.json['channels'][0]
 
             try:
-                channel_is_locked = ari_helpers.get_bridge_variable(self.ari, bridge.id, 'XIVO_HANGUP_LOCK_SOURCE')
-            except ARINotFound:
-                channel_is_locked = False
+                bridge_is_locked = HangupLock.from_target(self.ari, bridge.id)
+            except InvalidLock:
+                bridge_is_locked = False
 
-            if not channel_is_locked:
+            if not bridge_is_locked:
                 logger.debug('emptying bridge %s', bridge.id)
                 try:
                     self.ari.channels.hangup(channelId=lone_channel_id)
