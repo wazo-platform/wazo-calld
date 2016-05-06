@@ -37,7 +37,7 @@ class TransfersService(object):
         self.call_states = ReadOnlyCallStates(self.ari)
 
     def set_token(self, auth_token):
-        self.auth_token = auth_token
+        self.amid_config['token'] = auth_token
 
     def create(self, transferred_call, initiator_call, context, exten):
 
@@ -215,14 +215,14 @@ class TransfersService(object):
                     parameters = {'Channel': channel_id,
                                   'Variable': variable,
                                   'Value': value}
-                    ami.action('Setvar', parameters, token=self.auth_token)
+                    ami.action('Setvar', parameters)
 
                 destination = {'Channel': transferred_call,
                                'ExtraChannel': initiator_call,
                                'Context': 'convert_to_stasis',
                                'Exten': 'transfer',
                                'Priority': 1}
-                ami.action('Redirect', destination, token=self.auth_token)
+                ami.action('Redirect', destination)
             except RequestException as e:
                 raise XiVOAmidUnreachable(self.amid_config, e)
 
@@ -240,6 +240,6 @@ class TransfersService(object):
                 parameters = {'Channel': channel_id,
                               'Variable': variable,
                               'Value': ''}
-                ami.action('Setvar', parameters, token=self.auth_token)
+                ami.action('Setvar', parameters)
             except RequestException as e:
                 raise XiVOAmidUnreachable(self.amid_config, e)
