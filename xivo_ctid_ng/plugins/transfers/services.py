@@ -12,6 +12,7 @@ from ari.exceptions import ARINotInStasis
 from xivo_ctid_ng.plugins.calls.state_persistor import ReadOnlyStatePersistor as ReadOnlyCallStates
 
 from . import ari_helpers
+from . import ami_helpers
 from .exceptions import NoSuchTransfer
 from .exceptions import TransferCreationError
 from .exceptions import XiVOAmidUnreachable
@@ -129,13 +130,4 @@ class TransfersService(object):
         except ARINotFound:
             pass
         except ARINotInStasis:
-            self.unset_variable_ami(channel_id, variable)
-
-    def unset_variable_ami(self, channel_id, variable):
-        try:
-            parameters = {'Channel': channel_id,
-                          'Variable': variable,
-                          'Value': ''}
-            self.amid_client.action('Setvar', parameters, token=self.auth_token)
-        except RequestException as e:
-            raise XiVOAmidUnreachable(self.amid_client, e)
+            ami_helpers.unset_variable_ami(self.amid_client, channel_id, variable)

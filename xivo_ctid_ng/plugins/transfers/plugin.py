@@ -22,6 +22,7 @@ class Plugin(object):
         token_changed_subscribe = dependencies['token_changed_subscribe']
 
         amid_client = AmidClient(**config['amid'])
+        token_changed_subscribe(amid_client.set_token)
 
         state_persistor = StatePersistor(ari.client)
 
