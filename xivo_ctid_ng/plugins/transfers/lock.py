@@ -41,6 +41,7 @@ class HangupLock(object):
                 result.append(lock)
             except InvalidLock:
                 continue
+        return result
 
     @classmethod
     def from_target(cls, ari, target_id):
@@ -54,6 +55,16 @@ class HangupLock(object):
     def kill_source(self):
         logger.debug('hanging up lock source %s', self._source_id)
         self._ari.channels.hangup(channelId=self._source_id)
+        self._clear()
+
+    def kill_target(self):
+        target = self._ari.bridges.get(bridgeId=self._target_id)
+        if len(target.json['channels']) == 1:
+            channel_id = target.json['channels'][0]
+            self._ari.channels.hangup(channelId=channel_id)
+        if len(target.json['channels']) <= 1:
+            target.destroy()
+
         self._clear()
 
     def _clear(self):
