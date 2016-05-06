@@ -229,8 +229,7 @@ class TransfersStasis(object):
 
     def bypass_hangup_lock_from_target(self, bridge):
         try:
-            lock_source_id = ari_helpers.get_bridge_variable(self.ari, bridge.id, 'XIVO_HANGUP_LOCK_SOURCE')
-            logger.debug('hanging up lock source %s', lock_source_id)
-            self.ari.channels.hangup(channelId=lock_source_id)
-        except ARINotFound:
+            lock = HangupLock.from_target(self.ari, bridge.id)
+            lock.kill_source()
+        except InvalidLock:
             pass

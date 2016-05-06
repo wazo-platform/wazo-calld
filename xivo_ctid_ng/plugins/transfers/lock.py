@@ -21,12 +21,40 @@ class HangupLock(object):
             raise InvalidLock()
 
     def _is_valid_lock(self):
+        if not self._source_id:
+            return False
+        if not self._target_id:
+            return False
         try:
             source_candidate_id = ari_helpers.get_bridge_variable(self._ari, self._target_id, 'XIVO_HANGUP_LOCK_SOURCE')
         except ARINotFound:
             return False
         return source_candidate_id == self._source_id
 
+    @classmethod
+    def from_source(cls, ari, source_id):
+        result = []
+        target_candidates = [bridge for bridge in ari.bridges.list()]
+        for target_candidate in target_candidates:
+            try:
+                lock = cls(ari, source_id, target_candidate.id)
+                result.append(lock)
+            except InvalidLock:
+                continue
+
+    @classmethod
+    def from_target(cls, ari, target_id):
+        source_id = ari_helpers.get_bridge_variable(ari, target_id, 'XIVO_HANGUP_LOCK_SOURCE')
+        return cls(ari, source_id, target_id)
+
     def release(self):
         logger.debug('releasing hangup lock from source %s', self._source_id)
+        self._clear()
+
+    def kill_source(self):
+        logger.debug('hanging up lock source %s', self._source_id)
+        self._ari.channels.hangup(channelId=self._source_id)
+        self._clear()
+
+    def _clear(self):
         ari_helpers.set_bridge_variable(self._ari, self._target_id, 'XIVO_HANGUP_LOCK_SOURCE', '')
