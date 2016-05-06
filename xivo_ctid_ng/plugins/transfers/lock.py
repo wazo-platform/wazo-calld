@@ -45,7 +45,10 @@ class HangupLock(object):
 
     @classmethod
     def from_target(cls, ari, target_id):
-        source_id = ari_helpers.get_bridge_variable(ari, target_id, 'XIVO_HANGUP_LOCK_SOURCE')
+        try:
+            source_id = ari_helpers.get_bridge_variable(ari, target_id, 'XIVO_HANGUP_LOCK_SOURCE')
+        except ARINotFound:
+            raise InvalidLock()
         return cls(ari, source_id, target_id)
 
     def release(self):
@@ -54,18 +57,33 @@ class HangupLock(object):
 
     def kill_source(self):
         logger.debug('hanging up lock source %s', self._source_id)
-        self._ari.channels.hangup(channelId=self._source_id)
+        try:
+            self._ari.channels.hangup(channelId=self._source_id)
+        except ARINotFound:
+            pass
         self._clear()
 
     def kill_target(self):
-        target = self._ari.bridges.get(bridgeId=self._target_id)
+        try:
+            target = self._ari.bridges.get(bridgeId=self._target_id)
+        except ARINotFound:
+            return
         if len(target.json['channels']) == 1:
             channel_id = target.json['channels'][0]
-            self._ari.channels.hangup(channelId=channel_id)
+            try:
+                self._ari.channels.hangup(channelId=channel_id)
+            except ARINotFound:
+                pass
         if len(target.json['channels']) <= 1:
-            target.destroy()
+            try:
+                target.destroy()
+            except ARINotFound:
+                pass
 
         self._clear()
 
     def _clear(self):
-        ari_helpers.set_bridge_variable(self._ari, self._target_id, 'XIVO_HANGUP_LOCK_SOURCE', '')
+        try:
+            ari_helpers.set_bridge_variable(self._ari, self._target_id, 'XIVO_HANGUP_LOCK_SOURCE', '')
+        except ARINotFound:
+            pass
