@@ -55,8 +55,14 @@ class TransfersStasis(object):
         if isinstance(exception, InvalidEvent):
             event = exception.event
             logger.error('invalid stasis event received: %s', event)
+        elif (isinstance(exception, XiVOAmidUnreachable) or
+              isinstance(exception, TransferException)):
+            self.handle_error(exception)
         else:
             raise
+
+    def handle_error(self, exception):
+        logger.error('%s: %s', exception.message, exception.details)
 
     def stasis_start(self, event_objects, event):
         channel = event_objects['channel']
@@ -102,10 +108,7 @@ class TransfersStasis(object):
         else:
             logger.debug('recipient answered, transfer continues normally')
             transfer_state = self.state_factory.make(transfer)
-            try:
-                transfer_state.recipient_answer()
-            except (TransferException, XiVOAmidUnreachable) as e:
-                logger.error('%s: %s', e.message, e.details)
+            transfer_state.recipient_answer()
 
     def create_transfer(self, (channel, event)):
         event = CreateTransferEvent(event)
@@ -125,36 +128,24 @@ class TransfersStasis(object):
                 logger.error('initiator hung up while creating transfer')
 
             transfer_state = self.state_factory.make(transfer)
-            try:
-                new_state = transfer_state.start(transfer, context, exten)
-                if new_state.transfer.flow == 'blind':
-                    new_state.complete()
-            except (TransferException, XiVOAmidUnreachable) as e:
-                logger.error('%s: %s', e.message, e.details)
+            new_state = transfer_state.start(transfer, context, exten)
+            if new_state.transfer.flow == 'blind':
+                new_state.complete()
 
     def recipient_hangup(self, transfer):
         logger.debug('recipient hangup = cancel transfer %s', transfer.id)
         transfer_state = self.state_factory.make(transfer)
-        try:
-            transfer_state.recipient_hangup()
-        except (TransferException, XiVOAmidUnreachable) as e:
-            logger.error('%s: %s', e.message, e.details)
+        transfer_state.recipient_hangup()
 
     def initiator_hangup(self, transfer):
         logger.debug('initiator hangup = complete transfer %s', transfer.id)
         transfer_state = self.state_factory.make(transfer)
-        try:
-            transfer_state.initiator_hangup()
-        except (TransferException, XiVOAmidUnreachable) as e:
-            logger.error('%s: %s', e.message, e.details)
+        transfer_state.initiator_hangup()
 
     def transferred_hangup(self, transfer):
         logger.debug('transferred hangup = abandon transfer %s', transfer.id)
         transfer_state = self.state_factory.make(transfer)
-        try:
-            transfer_state.transferred_hangup()
-        except (TransferException, XiVOAmidUnreachable) as e:
-            logger.error('%s: %s', e.message, e.details)
+        transfer_state.transferred_hangup()
 
     def clean_bridge(self, channel, event):
         try:
@@ -219,7 +210,7 @@ class TransfersStasis(object):
                 try:
                     self.services.unset_variable(lock_source_candidate.id, 'XIVO_HANGUP_LOCK_TARGET')
                 except XiVOAmidUnreachable as e:
-                    logger.error('%s: %s', e.message, e.details)
+                    self.handle_error(e)
 
         if lock_target_id:
             ari_helpers.set_bridge_variable(self.ari, lock_target_id, 'XIVO_HANGUP_LOCK_SOURCE', '')
