@@ -4,10 +4,8 @@
 
 import logging
 
-from contextlib import contextmanager
 from requests import RequestException
 from xivo.caller_id import assemble_caller_id
-from xivo_amid_client import Client as AmidClient
 from xivo_ctid_ng.core.ari_ import APPLICATION_NAME
 from ari.exceptions import ARINotFound
 from ari.exceptions import ARINotInStasis
@@ -22,15 +20,10 @@ from .state import TransferStateReadyNonStasis, TransferStateReady
 logger = logging.getLogger(__name__)
 
 
-@contextmanager
-def new_amid_client(config):
-    yield AmidClient(**config)
-
-
 class TransfersService(object):
-    def __init__(self, ari, amid_config, state_factory, state_persistor):
+    def __init__(self, ari, amid_client, state_factory, state_persistor):
         self.ari = ari
-        self.amid_config = amid_config
+        self.amid_client = amid_client
         self.state_persistor = state_persistor
         self.state_factory = state_factory
         self.call_states = ReadOnlyCallStates(self.ari)
@@ -114,22 +107,21 @@ class TransfersService(object):
                          (initiator_call, 'XIVO_TRANSFER_ID', transfer_id),
                          (initiator_call, 'XIVO_TRANSFER_DESTINATION_CONTEXT', context),
                          (initiator_call, 'XIVO_TRANSFER_DESTINATION_EXTEN', exten)]
-        with new_amid_client(self.amid_config) as ami:
-            try:
-                for channel_id, variable, value in set_variables:
-                    parameters = {'Channel': channel_id,
-                                  'Variable': variable,
-                                  'Value': value}
-                    ami.action('Setvar', parameters, token=self.auth_token)
+        try:
+            for channel_id, variable, value in set_variables:
+                parameters = {'Channel': channel_id,
+                              'Variable': variable,
+                              'Value': value}
+                self.amid_client.action('Setvar', parameters, token=self.auth_token)
 
-                destination = {'Channel': transferred_call,
-                               'ExtraChannel': initiator_call,
-                               'Context': 'convert_to_stasis',
-                               'Exten': 'transfer',
-                               'Priority': 1}
-                ami.action('Redirect', destination, token=self.auth_token)
-            except RequestException as e:
-                raise XiVOAmidUnreachable(self.amid_config, e)
+            destination = {'Channel': transferred_call,
+                           'ExtraChannel': initiator_call,
+                           'Context': 'convert_to_stasis',
+                           'Exten': 'transfer',
+                           'Priority': 1}
+            self.amid_client.action('Redirect', destination, token=self.auth_token)
+        except RequestException as e:
+            raise XiVOAmidUnreachable(self.amid_client, e)
 
     def unset_variable(self, channel_id, variable):
         try:
@@ -140,11 +132,10 @@ class TransfersService(object):
             self.unset_variable_ami(channel_id, variable)
 
     def unset_variable_ami(self, channel_id, variable):
-        with new_amid_client(self.amid_config) as ami:
-            try:
-                parameters = {'Channel': channel_id,
-                              'Variable': variable,
-                              'Value': ''}
-                ami.action('Setvar', parameters, token=self.auth_token)
-            except RequestException as e:
-                raise XiVOAmidUnreachable(self.amid_config, e)
+        try:
+            parameters = {'Channel': channel_id,
+                          'Variable': variable,
+                          'Value': ''}
+            self.amid_client.action('Setvar', parameters, token=self.auth_token)
+        except RequestException as e:
+            raise XiVOAmidUnreachable(self.amid_client, e)

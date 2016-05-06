@@ -2,6 +2,8 @@
 # Copyright 2016 by Avencall
 # SPDX-License-Identifier: GPL-3.0+
 
+from xivo_amid_client import Client as AmidClient
+
 from .resources import TransferResource
 from .resources import TransferCompleteResource
 from .resources import TransfersResource
@@ -19,9 +21,11 @@ class Plugin(object):
         config = dependencies['config']
         token_changed_subscribe = dependencies['token_changed_subscribe']
 
+        amid_client = AmidClient(**config['amid'])
+
         state_persistor = StatePersistor(ari.client)
 
-        transfers_service = TransfersService(ari.client, config['amid'], state_factory, state_persistor)
+        transfers_service = TransfersService(ari.client, amid_client, state_factory, state_persistor)
         token_changed_subscribe(transfers_service.set_token)
 
         transfers_stasis = TransfersStasis(ari.client, transfers_service, state_factory, state_persistor, config['uuid'])
