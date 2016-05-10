@@ -7,13 +7,15 @@ from xivo_ctid_ng.core.exceptions import APIException
 
 class XiVOAmidUnreachable(APIException):
 
-    def __init__(self, xivo_amid_config, error):
+    def __init__(self, xivo_amid_client, error):
         super(XiVOAmidUnreachable, self).__init__(
             status_code=503,
             message='xivo-amid server unreachable',
             error_id='xivo-amid-unreachable',
             details={
-                'xivo_amid_config': xivo_amid_config,
+                'xivo_amid_config': {'host': xivo_amid_client.host,
+                                     'port': xivo_amid_client.port,
+                                     'timeout': xivo_amid_client.timeout},
                 'original_error': str(error),
             }
         )
@@ -25,7 +27,11 @@ class InvalidEvent(ValueError):
         self.event = event
 
 
-class TransferCreationError(APIException):
+class TransferException(APIException):
+    pass
+
+
+class TransferCreationError(TransferException):
     def __init__(self, detail):
         super(TransferCreationError, self).__init__(
             status_code=400,
@@ -37,7 +43,20 @@ class TransferCreationError(APIException):
         )
 
 
-class TransferCompletionError(APIException):
+class TransferAnswerError(TransferException):
+    def __init__(self, transfer_id, detail):
+        super(TransferCompletionError, self).__init__(
+            status_code=400,
+            message='Transfer answer error',
+            error_id='transfer-answer-error',
+            details={
+                'transfer_id': transfer_id,
+                'message': detail,
+            }
+        )
+
+
+class TransferCompletionError(TransferException):
     def __init__(self, transfer_id, detail):
         super(TransferCompletionError, self).__init__(
             status_code=400,
@@ -50,7 +69,7 @@ class TransferCompletionError(APIException):
         )
 
 
-class TransferCancellationError(APIException):
+class TransferCancellationError(TransferException):
     def __init__(self, transfer_id, detail):
         super(TransferCancellationError, self).__init__(
             status_code=400,
@@ -63,7 +82,7 @@ class TransferCancellationError(APIException):
         )
 
 
-class NoSuchTransfer(APIException):
+class NoSuchTransfer(TransferException):
 
     def __init__(self, transfer_id):
         super(NoSuchTransfer, self).__init__(

@@ -24,8 +24,20 @@ class HamcrestARIChannel(object):
         channel_ids = (channel.id for channel in channels if channel.json['state'] == 'Up')
         return is_in(list(channel_ids))
 
+    def is_ringback(self):
+        # There is currently no way to tell if a channel is ringback or not. It is considered Up.
+        channels = self._ari.channels.list()
+        channel_ids = (channel.id for channel in channels if channel.json['state'] == 'Up')
+        return is_in(list(channel_ids))
+
+    def is_ringing(self):
+        channels = self._ari.channels.list()
+        channel_ids = (channel.id for channel in channels if channel.json['state'] == 'Ringing')
+        return is_in(list(channel_ids))
+
     def is_hungup(self):
-        return not_(is_in(channel.id for channel in self._ari.channels.list()))
+        channel_ids = (channel.id for channel in self._ari.channels.list())
+        return not_(is_in(list(channel_ids)))
 
     def has_variable(self, variable, expected_value):
         channels = self._ari.channels.list()
@@ -45,4 +57,5 @@ class HamcrestARIBridge(object):
         self._ari = ari
 
     def is_found(self):
-        return is_in(bridge.id for bridge in self._ari.bridges.list())
+        bridge_ids = (bridge.id for bridge in self._ari.bridges.list())
+        return is_in(list(bridge_ids))

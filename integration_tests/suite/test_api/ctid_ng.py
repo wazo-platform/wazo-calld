@@ -114,6 +114,19 @@ class CtidNgClient(object):
             'initiator_call': initiator_call,
             'context': context,
             'exten': exten,
+            'flow': 'attended',
+        }
+        response = self.post_transfer_result(body, token=VALID_TOKEN)
+        assert_that(response.status_code, equal_to(201))
+        return response.json()
+
+    def create_blind_transfer(self, transferred_call, initiator_call, context, exten):
+        body = {
+            'transferred_call': transferred_call,
+            'initiator_call': initiator_call,
+            'context': context,
+            'exten': exten,
+            'flow': 'blind',
         }
         response = self.post_transfer_result(body, token=VALID_TOKEN)
         assert_that(response.status_code, equal_to(201))

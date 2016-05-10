@@ -166,6 +166,17 @@ class TestTransfers(IntegrationTest):
                 transfer_id)
 
     def assert_transfer_is_answered(self, transfer_id, transferred_channel_id, initiator_channel_id, recipient_channel_id=None):
+        transfer = self.ctid_ng.get_transfer(transfer_id)
+        assert_that(transfer, has_entries({
+            'id': transfer_id,
+            'transferred_call': transferred_channel_id,
+            'initiator_call': initiator_channel_id,
+            'recipient_call': (recipient_channel_id if recipient_channel_id else anything()),
+            'status': 'answered'
+        }))
+
+        recipient_channel_id = transfer['recipient_call']
+
         try:
             transfer_bridge = self.ari.bridges.get(bridgeId=transfer_id)
         except ARINotFound:
@@ -175,13 +186,8 @@ class TestTransfers(IntegrationTest):
                               contains_inanyorder(
                                   transferred_channel_id,
                                   initiator_channel_id,
-                                  anything(),
+                                  recipient_channel_id,
                               )))
-        try:
-            recipient_channel_id = next(channel_id for channel_id in transfer_bridge.json['channels']
-                                        if channel_id not in (transferred_channel_id, initiator_channel_id))
-        except StopIteration:
-            raise AssertionError('no recipient channel in bridge')
 
         assert_that(transferred_channel_id, self.c.is_talking(), 'transferred channel not talking')
         assert_that(transferred_channel_id, self.c.has_variable('XIVO_TRANSFER_ID', transfer_id), 'variable not set')
@@ -195,14 +201,6 @@ class TestTransfers(IntegrationTest):
         assert_that(recipient_channel_id, self.c.has_variable('XIVO_TRANSFER_ID', transfer_id), 'variable not set')
         assert_that(recipient_channel_id, self.c.has_variable('XIVO_TRANSFER_ROLE', 'recipient'), 'variable not set')
 
-        transfer = self.ctid_ng.get_transfer(transfer_id)
-        assert_that(transfer, has_entries({
-            'id': transfer_id,
-            'transferred_call': transferred_channel_id,
-            'initiator_call': initiator_channel_id,
-            'recipient_call': recipient_channel_id,
-            'status': 'answered'
-        }))
         cached_transfers = json.loads(self.ari.asterisk.getGlobalVar(variable='XIVO_TRANSFERS')['value'])
         assert_that(cached_transfers, has_item(transfer_id))
 
@@ -225,7 +223,7 @@ class TestTransfers(IntegrationTest):
         assert_that(recipient_channel_id, self.c.is_hungup(), 'recipient channel is still talking')
 
         result = self.ctid_ng.get_transfer_result(transfer_id, token=VALID_TOKEN)
-        assert_that(result.status_code, equal_to(404))
+        assert_that(result.status_code, equal_to(404), 'transfer not removed')
         cached_transfers = json.loads(self.ari.asterisk.getGlobalVar(variable='XIVO_TRANSFERS')['value'])
         assert_that(cached_transfers, not_(has_item(transfer_id)))
 
@@ -251,6 +249,37 @@ class TestTransfers(IntegrationTest):
         assert_that(result.status_code, equal_to(404))
         cached_transfers = json.loads(self.ari.asterisk.getGlobalVar(variable='XIVO_TRANSFERS')['value'])
         assert_that(cached_transfers, not_(has_item(transfer_id)))
+
+    def assert_transfer_is_blind_transferred(self, transfer_id, transferred_channel_id, initiator_channel_id, recipient_channel_id=None):
+        transfer = self.ctid_ng.get_transfer(transfer_id)
+        assert_that(transfer, has_entries({
+            'id': transfer_id,
+            'transferred_call': transferred_channel_id,
+            'initiator_call': initiator_channel_id,
+            'recipient_call': (recipient_channel_id if recipient_channel_id else anything()),
+            'status': 'blind_transferred',
+        }))
+
+        recipient_channel_id = transfer['recipient_call']
+
+        transfer_bridge = self.ari.bridges.get(bridgeId=transfer_id)
+        assert_that(transfer_bridge.json,
+                    has_entry('channels',
+                              contains_inanyorder(
+                                  transferred_channel_id,
+                              )))
+        assert_that(transferred_channel_id, self.c.is_ringback(), 'transferred channel not ringing')
+        assert_that(transferred_channel_id, self.c.has_variable('XIVO_TRANSFER_ID', transfer_id), 'variable not set')
+        assert_that(transferred_channel_id, self.c.has_variable('XIVO_TRANSFER_ROLE', 'transferred'), 'variable not set')
+
+        assert_that(initiator_channel_id, self.c.is_hungup(), 'initiator channel is still talking')
+
+        assert_that(recipient_channel_id, self.c.is_ringing(), 'recipient channel not ringing')
+        assert_that(recipient_channel_id, self.c.has_variable('XIVO_TRANSFER_ID', transfer_id), 'variable not set')
+        assert_that(recipient_channel_id, self.c.has_variable('XIVO_TRANSFER_ROLE', 'recipient'), 'variable not set')
+
+        cached_transfers = json.loads(self.ari.asterisk.getGlobalVar(variable='XIVO_TRANSFERS')['value'])
+        assert_that(cached_transfers, has_item(transfer_id))
 
     def assert_transfer_is_abandoned(self, transfer_id, transferred_channel_id, initiator_channel_id, recipient_channel_id):
         transfer_bridge = self.ari.bridges.get(bridgeId=transfer_id)
@@ -397,6 +426,90 @@ class TestTransferFromStasis(TestTransfers):
         transfer_id = response['id']
         recipient_channel_id = response['recipient_call']
         until.assert_(self.assert_transfer_is_cancelled,
+                      transfer_id,
+                      transferred_channel_id,
+                      initiator_channel_id,
+                      recipient_channel_id,
+                      tries=5)
+
+    def test_given_state_ready_when_blind_transfer_then_state_blind_transferred(self):
+        transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()
+
+        response = self.ctid_ng.create_blind_transfer(transferred_channel_id,
+                                                      initiator_channel_id,
+                                                      **RECIPIENT_RINGING)
+
+        transfer_id = response['id']
+        recipient_channel_id = response['recipient_call']
+        until.assert_(self.assert_transfer_is_blind_transferred,
+                      transfer_id,
+                      transferred_channel_id,
+                      initiator_channel_id,
+                      recipient_channel_id,
+                      tries=5)
+
+    def test_given_state_ready_when_transfer_and_initiator_hangup_then_state_blind_transferred(self):
+        transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()
+
+        response = self.ctid_ng.create_transfer(transferred_channel_id,
+                                                initiator_channel_id,
+                                                **RECIPIENT_RINGING)
+
+        self.ari.channels.hangup(channelId=initiator_channel_id)
+
+        transfer_id = response['id']
+        recipient_channel_id = response['recipient_call']
+        until.assert_(self.assert_transfer_is_blind_transferred,
+                      transfer_id,
+                      transferred_channel_id,
+                      initiator_channel_id,
+                      recipient_channel_id,
+                      tries=5)
+
+    def test_given_state_ready_when_blind_transfer_and_answer_then_state_completed(self):
+        transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()
+
+        response = self.ctid_ng.create_blind_transfer(transferred_channel_id,
+                                                      initiator_channel_id,
+                                                      **RECIPIENT)
+
+        transfer_id = response['id']
+        recipient_channel_id = response['recipient_call']
+        until.assert_(self.assert_transfer_is_completed,
+                      transfer_id,
+                      transferred_channel_id,
+                      initiator_channel_id,
+                      recipient_channel_id,
+                      tries=5)
+
+    def test_given_state_ready_when_blind_transfer_to_extension_not_found_then_state_hungup(self):
+        transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()
+
+        response = self.ctid_ng.create_blind_transfer(transferred_channel_id,
+                                                      initiator_channel_id,
+                                                      **RECIPIENT_NOT_FOUND)
+
+        transfer_id = response['id']
+        recipient_channel_id = response['recipient_call']
+        until.assert_(self.assert_transfer_is_hungup,
+                      transfer_id,
+                      transferred_channel_id,
+                      initiator_channel_id,
+                      recipient_channel_id,
+                      tries=5)
+
+    def test_given_state_ready_when_blind_transfer_and_abandon_then_state_hungup(self):
+        transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()
+
+        response = self.ctid_ng.create_blind_transfer(transferred_channel_id,
+                                                      initiator_channel_id,
+                                                      **RECIPIENT_RINGING)
+
+        self.ari.channels.hangup(channelId=transferred_channel_id)
+
+        transfer_id = response['id']
+        recipient_channel_id = response['recipient_call']
+        until.assert_(self.assert_transfer_is_hungup,
                       transfer_id,
                       transferred_channel_id,
                       initiator_channel_id,
@@ -652,6 +765,22 @@ class TestTransferFromNonStasis(TestTransfers):
                       transfer_bridge_id,
                       transferred_channel_id,
                       initiator_channel_id,
+                      tries=5)
+
+    def test_given_state_ready_when_blind_transfer_then_state_blind_transferred(self):
+        transferred_channel_id, initiator_channel_id = self.given_bridged_call_not_stasis()
+
+        response = self.ctid_ng.create_blind_transfer(transferred_channel_id,
+                                                      initiator_channel_id,
+                                                      **RECIPIENT_RINGING)
+
+        transfer_id = response['id']
+        recipient_channel_id = response['recipient_call']
+        until.assert_(self.assert_transfer_is_blind_transferred,
+                      transfer_id,
+                      transferred_channel_id,
+                      initiator_channel_id,
+                      recipient_channel_id,
                       tries=5)
 
 
