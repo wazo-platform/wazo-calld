@@ -25,9 +25,6 @@ class TransfersService(object):
         self.state_factory = state_factory
         self.call_states = ReadOnlyCallStates(self.ari)
 
-    def set_token(self, auth_token):
-        self.amid_config['token'] = auth_token
-
     def create(self, transferred_call, initiator_call, context, exten, flow):
         try:
             transferred_channel = self.ari.channels.get(channelId=transferred_call)

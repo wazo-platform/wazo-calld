@@ -27,7 +27,6 @@ class Plugin(object):
         state_persistor = StatePersistor(ari.client)
 
         transfers_service = TransfersService(ari.client, amid_client, state_factory, state_persistor)
-        token_changed_subscribe(transfers_service.set_token)
 
         transfers_stasis = TransfersStasis(amid_client, ari.client, transfers_service, state_factory, state_persistor, config['uuid'])
         transfers_stasis.subscribe()
