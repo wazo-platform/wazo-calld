@@ -123,8 +123,8 @@ class TransfersStasis(object):
         if len(channel_ids) == 2:
             transfer = self.state_persistor.get(event.transfer_id)
             try:
-                context = self.ari.channels.getChannelVar(channelId=transfer.initiator_call, variable='XIVO_TRANSFER_DESTINATION_CONTEXT')['value']
-                exten = self.ari.channels.getChannelVar(channelId=transfer.initiator_call, variable='XIVO_TRANSFER_DESTINATION_EXTEN')['value']
+                context = self.ari.channels.getChannelVar(channelId=transfer.initiator_call, variable='XIVO_TRANSFER_RECIPIENT_CONTEXT')['value']
+                exten = self.ari.channels.getChannelVar(channelId=transfer.initiator_call, variable='XIVO_TRANSFER_RECIPIENT_EXTEN')['value']
             except ARINotFound:
                 logger.error('initiator hung up while creating transfer')
 

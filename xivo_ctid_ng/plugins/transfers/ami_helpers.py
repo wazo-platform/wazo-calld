@@ -20,12 +20,12 @@ def unset_variable_ami(amid, channel_id, variable):
 def convert_transfer_to_stasis(amid, transferred_call, initiator_call, context, exten, transfer_id):
     set_variables = [(transferred_call, 'XIVO_TRANSFER_ROLE', 'transferred'),
                      (transferred_call, 'XIVO_TRANSFER_ID', transfer_id),
-                     (transferred_call, 'XIVO_TRANSFER_DESTINATION_CONTEXT', context),
-                     (transferred_call, 'XIVO_TRANSFER_DESTINATION_EXTEN', exten),
+                     (transferred_call, 'XIVO_TRANSFER_RECIPIENT_CONTEXT', context),
+                     (transferred_call, 'XIVO_TRANSFER_RECIPIENT_EXTEN', exten),
                      (initiator_call, 'XIVO_TRANSFER_ROLE', 'initiator'),
                      (initiator_call, 'XIVO_TRANSFER_ID', transfer_id),
-                     (initiator_call, 'XIVO_TRANSFER_DESTINATION_CONTEXT', context),
-                     (initiator_call, 'XIVO_TRANSFER_DESTINATION_EXTEN', exten)]
+                     (initiator_call, 'XIVO_TRANSFER_RECIPIENT_CONTEXT', context),
+                     (initiator_call, 'XIVO_TRANSFER_RECIPIENT_EXTEN', exten)]
     try:
         for channel_id, variable, value in set_variables:
             parameters = {'Channel': channel_id,
