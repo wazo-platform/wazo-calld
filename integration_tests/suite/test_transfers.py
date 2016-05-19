@@ -4,10 +4,10 @@
 # SPDX-License-Identifier: GPL-3.0+
 
 import ari
-import json
 import logging
 
 from ari.exceptions import ARINotFound
+from ari.exceptions import ARINotInStasis
 
 from hamcrest import all_of
 from hamcrest import anything
@@ -17,7 +17,6 @@ from hamcrest import contains_string
 from hamcrest import equal_to
 from hamcrest import has_entry
 from hamcrest import has_entries
-from hamcrest import has_item
 from hamcrest import has_key
 from hamcrest import instance_of
 from hamcrest import not_
@@ -93,12 +92,16 @@ class TestTransfers(IntegrationTest):
                                              appArgs=[STASIS_APP_INSTANCE])
         bridge = self.ari.bridges.create(type='mixing')
 
-        def channel_is_up(channel_id):
-            return self.ari.channels.get(channelId=channel_id).json['state'] == 'Up'
+        def channel_is_in_stasis(channel_id):
+            try:
+                self.ari.channels.setChannelVar(channelId=channel_id, variable='TEST_STASIS', value='')
+                return True
+            except ARINotInStasis:
+                return False
 
-        until.true(channel_is_up, caller.id, tries=2)
+        until.true(channel_is_in_stasis, caller.id, tries=2)
         bridge.addChannel(channel=caller.id)
-        until.true(channel_is_up, callee.id, tries=2)
+        until.true(channel_is_in_stasis, callee.id, tries=2)
         bridge.addChannel(channel=callee.id)
         return caller.id, callee.id
 
