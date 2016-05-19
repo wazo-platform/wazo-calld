@@ -2,31 +2,26 @@
 # Copyright 2016 by Avencall
 # SPDX-License-Identifier: GPL-3.0+
 
-import json
 import logging
 
-from ari.exceptions import ARINotFound
-
+from xivo_ctid_ng.core.ari_helpers import (GlobalVariableAdapter,
+                                           GlobalVariableJsonAdapter,
+                                           GlobalVariableNameDecorator,
+                                           GlobalVariableConstantNameAdapter)
 from .transfer import Transfer
 
 logger = logging.getLogger(__name__)
 
-TRANSFERS_INDEX_VAR_NAME = 'XIVO_TRANSFERS_INDEX'
-
 
 class StatePersistor(object):
     def __init__(self, ari):
-        self._ari = ari
+        self._transfers = GlobalVariableNameDecorator(GlobalVariableJsonAdapter(GlobalVariableAdapter(ari)),
+                                                      'XIVO_TRANSFERS_{}')
+        self._index = GlobalVariableConstantNameAdapter(GlobalVariableJsonAdapter(GlobalVariableAdapter(ari)),
+                                                        'XIVO_TRANSFERS_INDEX')
 
     def get(self, transfer_id):
-        try:
-            entry_str = self._ari.asterisk.getGlobalVar(variable=self._var_name(transfer_id))['value']
-        except ARINotFound:
-            raise KeyError(transfer_id)
-        if not entry_str:
-            raise KeyError(transfer_id)
-
-        return Transfer.from_dict(json.loads(entry_str))
+        return Transfer.from_dict(self._transfers.get(transfer_id))
 
     def get_by_channel(self, channel_id):
         try:
@@ -38,35 +33,20 @@ class StatePersistor(object):
             raise KeyError(channel_id)
 
     def upsert(self, transfer):
-        self._ari.asterisk.setGlobalVar(variable=self._var_name(transfer.id), value=json.dumps(transfer.to_dict()))
-        index = self._index()
+        self._transfers.set(transfer.id, transfer.to_dict())
+        index = set(self._index.get(default=[]))
         index.add(transfer.id)
-        self._set_index(index)
+        self._index.set(list(index))
 
     def remove(self, transfer_id):
-        self._ari.asterisk.setGlobalVar(variable=self._var_name(transfer_id), value='')
-        index = self._index()
+        self._transfers.unset(transfer_id)
+        index = set(self._index.get(default=[]))
         try:
             index.remove(transfer_id)
         except KeyError:
             return
-        self._set_index(index)
-
-    def _var_name(self, transfer_id):
-        return 'XIVO_TRANSFERS_{}'.format(transfer_id)
-
-    def _index(self):
-        try:
-            index_str = self._ari.asterisk.getGlobalVar(variable=TRANSFERS_INDEX_VAR_NAME)['value']
-        except ARINotFound:
-            return set()
-        if not index_str:
-            return set()
-        return set(json.loads(index_str))
+        self._index.set(list(index))
 
     def _list(self):
-        for transfer_id in self._index():
+        for transfer_id in self._index.get():
             yield self.get(transfer_id)
-
-    def _set_index(self, index):
-        self._ari.asterisk.setGlobalVar(variable=TRANSFERS_INDEX_VAR_NAME, value=json.dumps(list(index)))
