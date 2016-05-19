@@ -9,6 +9,7 @@ import requests
 import socket
 import time
 
+from contextlib import contextmanager
 from requests.exceptions import HTTPError
 from websocket import WebSocketException
 
@@ -23,14 +24,6 @@ def not_found(error):
     return error.response is not None and error.response.status_code == 404
 
 
-def not_in_stasis(error):
-    return error.response is not None and error.response.status_code == 409
-
-
-def server_error(error):
-    return error.response is not None and error.response.status_code == 500
-
-
 def service_unavailable(error):
     return error.response is not None and error.response.status_code == 503
 
@@ -43,65 +36,70 @@ class CoreARI(object):
 
     def __init__(self, config):
         self.config = config
-        self._running = False
+        self._is_running = False
         self._should_reconnect = True
-        self.client = None
+        self.client = self._new_ari_client(config['connection'],
+                                           config['startup_connection_tries'],
+                                           config['startup_connection_delay'])
 
-        connect_tries = 0
-        while not self.client and connect_tries < config['startup_connection_tries']:
-            self.client = self._new_ari_client(config['connection'])
-            if not self.client:
-                logger.info('ARI is not ready yet, retrying...')
-                connect_tries += 1
-                time.sleep(config['startup_connection_delay'])
-
-        if not self.client:
-            raise ARIUnreachable(config['connection'])
-
-    def _new_ari_client(self, ari_config):
-        try:
-            return ari.connect(**ari_config)
-        except requests.ConnectionError:
-            logger.critical('ARI config: %s', ari_config)
+    def _new_ari_client(self, ari_config, connection_tries, connection_delay):
+        for _ in xrange(connection_tries):
+            try:
+                return ari.connect(**ari_config)
+            except requests.ConnectionError:
+                logger.critical('ARI config: %s', ari_config)
+                raise ARIUnreachable(ari_config)
+            except requests.HTTPError as e:
+                if asterisk_is_loading(e):
+                    logger.info('ARI is not ready yet, retrying in %s seconds...', connection_delay)
+                    time.sleep(connection_delay)
+                    continue
+                else:
+                    raise
+        else:
             raise ARIUnreachable(ari_config)
-        except requests.HTTPError as e:
-            if asterisk_is_loading(e):
-                return None
-            raise
 
     def run(self):
         logger.debug('ARI client listening...')
-        while True:
-            self._running = True
-            try:
+        self._connect()
+        while self._should_reconnect:
+            self._reconnect()
+
+    def _connect(self):
+        try:
+            with self._running():
                 self.client.run(apps=[APPLICATION_NAME])
-            except socket.error as e:
-                if e.errno == errno.EPIPE:
-                    # bug in ari-py when calling client.close(): ignore it and stop
-                    logger.error('Error while listening for ARI events: %s', e)
-                    self._running = False
-                    return
-                else:
-                    error = e
-            except (WebSocketException, HTTPError) as e:
-                error = e
-            finally:
-                self._running = False
-
-            logger.warning('ARI connection error: %s...', error)
-
-            if not self._should_reconnect:
+        except socket.error as e:
+            if e.errno == errno.EPIPE:
+                # bug in ari-py when calling client.close(): ignore it and stop
+                logger.error('Error while listening for ARI events: %s', e)
                 return
+            else:
+                self._connection_error(e)
+        except (WebSocketException, HTTPError) as e:
+            self._connection_error(e)
 
-            delay = self.config['reconnection_delay']
-            logger.warning('Reconnecting to ARI in %s seconds', delay)
-            time.sleep(delay)
+    @contextmanager
+    def _running(self):
+        self._is_running = True
+        yield
+        self._is_running = False
+
+    def _connection_error(self, error):
+        logger.warning('ARI connection error: %s...', error)
+
+    def _reconnect(self):
+        delay = self.config['reconnection_delay']
+        logger.warning('Reconnecting to ARI in %s seconds', delay)
+        time.sleep(delay)
+
+        self._connect()
 
     def _sync(self):
         '''self.sync() should be called before calling self.stop(), in case the
         ari client does not have the websocket yet'''
 
-        while self._running and not self.client.websockets:
+        while self._is_running and not self.client.websockets:
             time.sleep(0.1)
 
     def stop(self):
