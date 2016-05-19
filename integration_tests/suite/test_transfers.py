@@ -204,9 +204,6 @@ class TestTransfers(IntegrationTest):
         assert_that(recipient_channel_id, self.c.has_variable('XIVO_TRANSFER_ID', transfer_id), 'variable not set')
         assert_that(recipient_channel_id, self.c.has_variable('XIVO_TRANSFER_ROLE', 'recipient'), 'variable not set')
 
-        cached_transfers = json.loads(self.ari.asterisk.getGlobalVar(variable='XIVO_TRANSFERS')['value'])
-        assert_that(cached_transfers, has_item(transfer_id))
-
     def assert_transfer_is_cancelled(self, transfer_id, transferred_channel_id, initiator_channel_id, recipient_channel_id):
         transfer_bridge = self.ari.bridges.get(bridgeId=transfer_id)
         assert_that(transfer_bridge.json,
@@ -227,8 +224,6 @@ class TestTransfers(IntegrationTest):
 
         result = self.ctid_ng.get_transfer_result(transfer_id, token=VALID_TOKEN)
         assert_that(result.status_code, equal_to(404), 'transfer not removed')
-        cached_transfers = json.loads(self.ari.asterisk.getGlobalVar(variable='XIVO_TRANSFERS')['value'])
-        assert_that(cached_transfers, not_(has_item(transfer_id)))
 
     def assert_transfer_is_completed(self, transfer_id, transferred_channel_id, initiator_channel_id, recipient_channel_id):
         transfer_bridge = self.ari.bridges.get(bridgeId=transfer_id)
@@ -250,8 +245,6 @@ class TestTransfers(IntegrationTest):
 
         result = self.ctid_ng.get_transfer_result(transfer_id, token=VALID_TOKEN)
         assert_that(result.status_code, equal_to(404))
-        cached_transfers = json.loads(self.ari.asterisk.getGlobalVar(variable='XIVO_TRANSFERS')['value'])
-        assert_that(cached_transfers, not_(has_item(transfer_id)))
 
     def assert_transfer_is_blind_transferred(self, transfer_id, transferred_channel_id, initiator_channel_id, recipient_channel_id=None):
         transfer = self.ctid_ng.get_transfer(transfer_id)
@@ -281,9 +274,6 @@ class TestTransfers(IntegrationTest):
         assert_that(recipient_channel_id, self.c.has_variable('XIVO_TRANSFER_ID', transfer_id), 'variable not set')
         assert_that(recipient_channel_id, self.c.has_variable('XIVO_TRANSFER_ROLE', 'recipient'), 'variable not set')
 
-        cached_transfers = json.loads(self.ari.asterisk.getGlobalVar(variable='XIVO_TRANSFERS')['value'])
-        assert_that(cached_transfers, has_item(transfer_id))
-
     def assert_transfer_is_abandoned(self, transfer_id, transferred_channel_id, initiator_channel_id, recipient_channel_id):
         transfer_bridge = self.ari.bridges.get(bridgeId=transfer_id)
         assert_that(transfer_bridge.json,
@@ -304,8 +294,6 @@ class TestTransfers(IntegrationTest):
 
         result = self.ctid_ng.get_transfer_result(transfer_id, token=VALID_TOKEN)
         assert_that(result.status_code, equal_to(404))
-        cached_transfers = json.loads(self.ari.asterisk.getGlobalVar(variable='XIVO_TRANSFERS')['value'])
-        assert_that(cached_transfers, not_(has_item(transfer_id)))
 
     def assert_transfer_is_hungup(self, transfer_id, transferred_channel_id, initiator_channel_id, recipient_channel_id):
         assert_that(transfer_id, not_(self.b.is_found()), 'transfer still exists')
@@ -316,8 +304,6 @@ class TestTransfers(IntegrationTest):
 
         result = self.ctid_ng.get_transfer_result(transfer_id, token=VALID_TOKEN)
         assert_that(result.status_code, equal_to(404))
-        cached_transfers = json.loads(self.ari.asterisk.getGlobalVar(variable='XIVO_TRANSFERS')['value'])
-        assert_that(cached_transfers, not_(has_item(transfer_id)))
 
 
 class TestCreateTransfer(TestTransfers):

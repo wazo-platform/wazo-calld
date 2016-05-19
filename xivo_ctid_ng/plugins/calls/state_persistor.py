@@ -26,36 +26,27 @@ class ChannelCacheEntry(object):
 
 
 class ReadOnlyStatePersistor(object):
-    global_var_name = 'XIVO_CALLCONTROL'
-
     def __init__(self, ari):
         self._ari = ari
 
     def get(self, channel_id):
-        return ChannelCacheEntry.from_dict(self._cache()[channel_id])
-
-    def _cache(self):
         try:
-            cache_str = self._ari.asterisk.getGlobalVar(variable=self.global_var_name)['value']
+            entry_str = self._ari.asterisk.getGlobalVar(variable=self._var_name(channel_id))['value']
         except ARINotFound:
-            return {}
-        if not cache_str:
-            return {}
-        return json.loads(cache_str)
+            raise KeyError(channel_id)
+        if not entry_str:
+            raise KeyError(channel_id)
+
+        return ChannelCacheEntry.from_dict(json.loads(entry_str))
+
+    def _var_name(self, channel_id):
+        return 'XIVO_CHANNELS_{}'.format(channel_id)
 
 
 class StatePersistor(ReadOnlyStatePersistor):
 
     def upsert(self, channel_id, entry):
-        cache = self._cache()
-        cache[channel_id] = entry.to_dict()
-        self._set_cache(cache)
+        self._ari.asterisk.setGlobalVar(variable=self._var_name(channel_id), value=json.dumps(entry.to_dict()))
 
     def remove(self, channel_id):
-        cache = self._cache()
-        cache.pop(channel_id, None)
-        self._set_cache(cache)
-
-    def _set_cache(self, cache):
-        self._ari.asterisk.setGlobalVar(variable=self.global_var_name,
-                                        value=json.dumps(cache))
+        self._ari.asterisk.setGlobalVar(variable=self._var_name(channel_id), value='')
