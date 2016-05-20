@@ -319,11 +319,33 @@ class TestTransfers(IntegrationTest):
 
 class TestCreateTransfer(TestTransfers):
 
-    def test_given_missing_keys_when_create_then_error_400(self):
-        response = self.ctid_ng.post_transfer_result(body={}, token=VALID_TOKEN)
+    def test_given_invalid_input_when_create_then_error_400(self):
+        for invalid_body in self.invalid_transfer_requests():
+            response = self.ctid_ng.post_transfer_result(invalid_body, VALID_TOKEN)
 
-        assert_that(response.status_code, equal_to(400))
-        assert_that(response.json(), has_entry('message', contains_string('invalid')))
+            assert_that(response.status_code, equal_to(400))
+            assert_that(response.json(), has_entry('message', contains_string('invalid')))
+
+    def invalid_transfer_requests(self):
+        valid_transfer_request = {
+            'transferred_call': 'some-channel-id',
+            'initiator_call': 'some-channel-id',
+            'context': 'some-context',
+            'exten': 'some-extension'
+        }
+
+        for key in ('transferred_call', 'initiator_call', 'context', 'exten'):
+            body = dict(valid_transfer_request)
+            body.pop(key)
+            yield body
+            body[key] = None
+            yield body
+            body[key] = 1234
+            yield body
+            body[key] = True
+            yield body
+            body[key] = ''
+            yield body
 
     def test_given_transferred_not_found_when_create_then_error_400(self):
         transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()

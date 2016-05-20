@@ -4,17 +4,17 @@
 
 from flask import request
 from marshmallow import Schema, fields
-from marshmallow.validate import OneOf
+from marshmallow.validate import OneOf, Length
 
 from xivo_ctid_ng.core.auth import required_acl
 from xivo_ctid_ng.core.rest_api import AuthResource
 
 
 class TransferRequestSchema(Schema):
-    transferred_call = fields.Str(required=True)
-    initiator_call = fields.Str(required=True)
-    context = fields.Str(required=True)
-    exten = fields.Str(required=True)
+    transferred_call = fields.Str(validate=Length(min=1), required=True)
+    initiator_call = fields.Str(validate=Length(min=1), required=True)
+    context = fields.Str(validate=Length(min=1), required=True)
+    exten = fields.Str(validate=Length(min=1), required=True)
     flow = fields.Str(validate=OneOf(['attended', 'blind']), missing='attended')
 
 transfer_request_schema = TransferRequestSchema(strict=True)
