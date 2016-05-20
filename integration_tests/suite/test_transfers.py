@@ -416,21 +416,20 @@ class TestTransferFromStasis(TestTransfers):
                       recipient_channel_id,
                       tries=5)
 
-    def test_given_state_ready_when_start_to_extension_not_found_then_state_cancelled(self):
+    def test_given_state_ready_when_start_to_extension_not_found_then_error_400(self):
         transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()
+        body = {
+            'transferred_call': transferred_channel_id,
+            'initiator_call': initiator_channel_id,
+        }
+        body.update(RECIPIENT_NOT_FOUND)
 
-        response = self.ctid_ng.create_transfer(transferred_channel_id,
-                                                initiator_channel_id,
-                                                **RECIPIENT_NOT_FOUND)
+        response = self.ctid_ng.post_transfer_result(body, VALID_TOKEN)
 
-        transfer_id = response['id']
-        recipient_channel_id = response['recipient_call']
-        until.assert_(self.assert_transfer_is_cancelled,
-                      transfer_id,
-                      transferred_channel_id,
-                      initiator_channel_id,
-                      recipient_channel_id,
-                      tries=5)
+        assert_that(response.status_code, equal_to(400))
+        assert_that(response.json(), has_entries({'message': contains_string('extension'),
+                                                  'details': has_entries({'exten': RECIPIENT_NOT_FOUND['exten'],
+                                                                          'context': RECIPIENT_NOT_FOUND['context']})}))
 
     def test_given_state_ready_when_blind_transfer_then_state_blind_transferred(self):
         transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()
@@ -476,22 +475,6 @@ class TestTransferFromStasis(TestTransfers):
         transfer_id = response['id']
         recipient_channel_id = response['recipient_call']
         until.assert_(self.assert_transfer_is_completed,
-                      transfer_id,
-                      transferred_channel_id,
-                      initiator_channel_id,
-                      recipient_channel_id,
-                      tries=5)
-
-    def test_given_state_ready_when_blind_transfer_to_extension_not_found_then_state_hungup(self):
-        transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()
-
-        response = self.ctid_ng.create_blind_transfer(transferred_channel_id,
-                                                      initiator_channel_id,
-                                                      **RECIPIENT_NOT_FOUND)
-
-        transfer_id = response['id']
-        recipient_channel_id = response['recipient_call']
-        until.assert_(self.assert_transfer_is_hungup,
                       transfer_id,
                       transferred_channel_id,
                       initiator_channel_id,

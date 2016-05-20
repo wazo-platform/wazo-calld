@@ -9,7 +9,9 @@ from xivo_ctid_ng.core.ari_ import APPLICATION_NAME
 from ari.exceptions import ARINotFound
 from xivo_ctid_ng.plugins.calls.state_persistor import ReadOnlyStatePersistor as ReadOnlyCallStates
 
+from . import ami_helpers
 from . import ari_helpers
+from .exceptions import InvalidExtension
 from .exceptions import NoSuchTransfer
 from .exceptions import TransferCreationError
 from .state import TransferStateReadyNonStasis, TransferStateReady
@@ -31,6 +33,9 @@ class TransfersService(object):
             initiator_channel = self.ari.channels.get(channelId=initiator_call)
         except ARINotFound:
             raise TransferCreationError('channel not found')
+
+        if not ami_helpers.extension_exists(self.amid_client, context, exten):
+            raise InvalidExtension(context, exten)
 
         if not (ari_helpers.is_in_stasis(self.ari, transferred_call) and
                 ari_helpers.is_in_stasis(self.ari, initiator_call)):
