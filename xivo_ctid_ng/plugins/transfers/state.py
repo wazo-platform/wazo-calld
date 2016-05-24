@@ -358,6 +358,10 @@ class TransferStateAnswered(TransferState):
 
     name = TransferStatus.answered
 
+    def __init__(self, *args, **kwargs):
+        super(TransferStateAnswered, self).__init__(*args, **kwargs)
+        self._notifier.answered(self.transfer)
+
     @transition
     def transferred_hangup(self):
         self._abandon()

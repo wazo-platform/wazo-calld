@@ -204,6 +204,8 @@ class TestTransfers(IntegrationTest):
         cached_transfers = json.loads(self.ari.asterisk.getGlobalVar(variable='XIVO_TRANSFERS')['value'])
         assert_that(cached_transfers, has_item(transfer_id))
 
+        assert_that(self.bus.events(), has_item(has_entry('name', 'transfer_answered')))
+
     def assert_transfer_is_cancelled(self, transfer_id, transferred_channel_id, initiator_channel_id, recipient_channel_id):
         transfer_bridge = self.ari.bridges.get(bridgeId=transfer_id)
         assert_that(transfer_bridge.json,
@@ -403,6 +405,10 @@ class TestCompleteTransfer(TestTransfers):
 
 
 class TestTransferFromStasis(TestTransfers):
+
+    def setUp(self):
+        super(TestTransferFromStasis, self).setUp()
+        self.bus.listen_events('calls.transfer.*')
 
     def test_given_state_ready_when_transfer_start_and_answer_then_state_answered(self):
         transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()

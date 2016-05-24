@@ -4,7 +4,8 @@
 
 import logging
 
-from xivo_bus.resources.calls.transfer import (CreateTransferEvent)
+from xivo_bus.resources.calls.transfer import (CreateTransferEvent,
+                                               AnswerTransferEvent)
 
 logger = logging.getLogger(__name__)
 
@@ -16,4 +17,8 @@ class TransferNotifier(object):
 
     def created(self, transfer):
         event = CreateTransferEvent(transfer.to_dict())
+        self._bus_producer.publish(event)
+
+    def answered(self, transfer):
+        event = AnswerTransferEvent(transfer.to_dict())
         self._bus_producer.publish(event)
