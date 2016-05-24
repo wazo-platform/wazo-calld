@@ -341,7 +341,7 @@ class TestCreateTransfer(TestTransfers):
     def test_given_initiator_not_found_when_create_then_error_400(self):
         transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()
         body = {
-            'transferred_call': initiator_channel_id,
+            'transferred_call': transferred_channel_id,
             'initiator_call': 'not-found',
         }
         body.update(RECIPIENT)
