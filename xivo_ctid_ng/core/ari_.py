@@ -56,8 +56,7 @@ class CoreARI(object):
                     continue
                 else:
                     raise
-        else:
-            raise ARIUnreachable(ari_config)
+        raise ARIUnreachable(ari_config)
 
     def run(self):
         logger.debug('ARI client listening...')
