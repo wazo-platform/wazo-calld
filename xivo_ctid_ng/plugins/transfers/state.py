@@ -59,9 +59,10 @@ def transition(decorated):
 
 class TransferState(object):
 
-    def __init__(self, amid, ari, services, state_persistor, transfer=None):
+    def __init__(self, amid, ari, notifier, services, state_persistor, transfer=None):
         self._amid = amid
         self._ari = ari
+        self._notifier = notifier
         self._services = services
         self._state_persistor = state_persistor
         self.transfer = transfer
@@ -70,6 +71,7 @@ class TransferState(object):
     def from_state(cls, other_state):
         new_state = cls(other_state._amid,
                         other_state._ari,
+                        other_state._notifier,
                         other_state._services,
                         other_state._state_persistor,
                         other_state.transfer)
@@ -182,6 +184,7 @@ class TransferStateReady(TransferState):
         self.transfer.initiator_call = initiator_channel.id
         self.transfer.recipient_call = recipient_call
         self.transfer.status = self.name
+        self._notifier.created(self.transfer)
 
         return TransferStateRingback.from_state(self)
 
@@ -207,6 +210,7 @@ class TransferStateReadyNonStasis(TransferState):
         self.transfer.initiator_call = initiator_channel.id
         self.transfer.transferred_call = transferred_channel.id
         self.transfer.status = self.name
+        self._notifier.created(self.transfer)
 
         return TransferStateStarting.from_state(self)
 

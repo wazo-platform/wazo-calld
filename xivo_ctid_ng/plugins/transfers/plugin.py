@@ -4,6 +4,7 @@
 
 from xivo_amid_client import Client as AmidClient
 
+from .notifier import TransferNotifier
 from .resources import TransferResource
 from .resources import TransferCompleteResource
 from .resources import TransfersResource
@@ -18,6 +19,7 @@ class Plugin(object):
     def load(self, dependencies):
         api = dependencies['api']
         ari = dependencies['ari']
+        bus_publisher = dependencies['bus_publisher']
         config = dependencies['config']
         token_changed_subscribe = dependencies['token_changed_subscribe']
 
@@ -31,7 +33,9 @@ class Plugin(object):
         transfers_stasis = TransfersStasis(amid_client, ari.client, transfers_service, state_factory, state_persistor, config['uuid'])
         transfers_stasis.subscribe()
 
-        state_factory.set_dependencies(amid_client, ari.client, transfers_service, state_persistor)
+        notifier = TransferNotifier(bus_publisher)
+
+        state_factory.set_dependencies(amid_client, ari.client, notifier, transfers_service, state_persistor)
 
         api.add_resource(TransfersResource, '/transfers', resource_class_args=[transfers_service])
         api.add_resource(TransferResource, '/transfers/<transfer_id>', resource_class_args=[transfers_service])

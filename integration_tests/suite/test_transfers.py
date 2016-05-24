@@ -351,6 +351,32 @@ class TestCreateTransfer(TestTransfers):
         assert_that(response.status_code, equal_to(400))
         assert_that(response.json(), has_entry('message', contains_string('creation')))
 
+    def test_given_stasis_when_create_then_event_sent_in_bus(self):
+        transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()
+
+        self.bus.listen_events('calls.transfer.created')
+        self.ctid_ng.create_transfer(transferred_channel_id,
+                                     initiator_channel_id,
+                                     **RECIPIENT)
+
+        def event_is_sent():
+            assert_that(self.bus.events(), has_item(has_entry('name', 'transfer_created')))
+
+        until.assert_(event_is_sent, tries=5)
+
+    def test_given_non_stasis_when_create_then_event_sent_in_bus(self):
+        transferred_channel_id, initiator_channel_id = self.given_bridged_call_not_stasis()
+
+        self.bus.listen_events('calls.transfer.created')
+        self.ctid_ng.create_transfer(transferred_channel_id,
+                                     initiator_channel_id,
+                                     **RECIPIENT)
+
+        def event_is_sent():
+            assert_that(self.bus.events(), has_item(has_entry('name', 'transfer_created')))
+
+        until.assert_(event_is_sent, tries=5)
+
 
 class TestGetTransfer(TestTransfers):
 
