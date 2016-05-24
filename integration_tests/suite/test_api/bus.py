@@ -55,6 +55,8 @@ class BusClient(object):
 
     @classmethod
     def _drain_events(cls, on_event):
+        if not hasattr(cls, 'bus_queue'):
+            raise Exception('You must listen for events before consuming them')
         with Connection(BUS_URL) as conn:
             with Consumer(conn, cls.bus_queue, callbacks=[on_event]):
                 try:
