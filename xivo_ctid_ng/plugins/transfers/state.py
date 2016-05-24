@@ -35,6 +35,12 @@ class StateFactory(object):
         dependencies = list(self._dependencies) + [transfer]
         return self._state_constructors[transfer.status](*dependencies)
 
+    def make_from_class(self, state_class):
+        if not self._configured:
+            raise RuntimeError('StateFactory is not configured')
+        dependencies = list(self._dependencies)
+        return state_class(*dependencies)
+
     def state(self, wrapped_class):
         self._state_constructors[wrapped_class.name] = wrapped_class
         return wrapped_class
