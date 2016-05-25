@@ -125,6 +125,8 @@ class TransferState(object):
             except ARINotFound:
                 pass
 
+        self._notifier.abandoned(self.transfer)
+
     def _cancel(self):
         ari_helpers.unset_variable(self._ari, self._amid, self.transfer.transferred_call, 'XIVO_TRANSFER_ID')
         ari_helpers.unset_variable(self._ari, self._amid, self.transfer.transferred_call, 'XIVO_TRANSFER_ROLE')

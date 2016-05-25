@@ -4,7 +4,8 @@
 
 import logging
 
-from xivo_bus.resources.calls.transfer import (AnswerTransferEvent,
+from xivo_bus.resources.calls.transfer import (AbandonTransferEvent,
+                                               AnswerTransferEvent,
                                                CancelTransferEvent,
                                                CompleteTransferEvent,
                                                CreateTransferEvent,
@@ -30,10 +31,14 @@ class TransferNotifier(object):
         event = CancelTransferEvent(transfer.to_dict())
         self._bus_producer.publish(event)
 
-    def ended(self, transfer):
-        event = EndTransferEvent(transfer.to_dict())
-        self._bus_producer.publish(event)
-
     def completed(self, transfer):
         event = CompleteTransferEvent(transfer.to_dict())
+        self._bus_producer.publish(event)
+
+    def abandoned(self, transfer):
+        event = AbandonTransferEvent(transfer.to_dict())
+        self._bus_producer.publish(event)
+
+    def ended(self, transfer):
+        event = EndTransferEvent(transfer.to_dict())
         self._bus_producer.publish(event)
