@@ -24,12 +24,12 @@ class StatePersistor(object):
         return Transfer.from_dict(self._transfers.get(transfer_id))
 
     def get_by_channel(self, channel_id):
-        try:
-            return next(transfer for transfer in self._list()
-                        if (channel_id in (transfer.transferred_call,
-                                           transfer.initiator_call,
-                                           transfer.recipient_call)))
-        except StopIteration:
+        for transfer in self._list():
+            if channel_id in (transfer.transferred_call,
+                              transfer.initiator_call,
+                              transfer.recipient_call):
+                return transfer
+        else:
             raise KeyError(channel_id)
 
     def upsert(self, transfer):
