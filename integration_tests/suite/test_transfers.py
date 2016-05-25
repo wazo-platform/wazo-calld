@@ -231,6 +231,7 @@ class TestTransfers(IntegrationTest):
 
         events = self.bus.events()
         assert_that(events, has_item(has_entry('name', 'transfer_cancelled')))
+        assert_that(events, has_item(has_entry('name', 'transfer_ended')))
 
     def assert_transfer_is_completed(self, transfer_id, transferred_channel_id, initiator_channel_id, recipient_channel_id):
         transfer_bridge = self.ari.bridges.get(bridgeId=transfer_id)
@@ -254,6 +255,8 @@ class TestTransfers(IntegrationTest):
         assert_that(result.status_code, equal_to(404))
         cached_transfers = json.loads(self.ari.asterisk.getGlobalVar(variable='XIVO_TRANSFERS')['value'])
         assert_that(cached_transfers, not_(has_item(transfer_id)))
+
+        assert_that(self.bus.events(), has_item(has_entry('name', 'transfer_ended')))
 
     def assert_transfer_is_blind_transferred(self, transfer_id, transferred_channel_id, initiator_channel_id, recipient_channel_id=None):
         transfer = self.ctid_ng.get_transfer(transfer_id)
@@ -309,6 +312,8 @@ class TestTransfers(IntegrationTest):
         cached_transfers = json.loads(self.ari.asterisk.getGlobalVar(variable='XIVO_TRANSFERS')['value'])
         assert_that(cached_transfers, not_(has_item(transfer_id)))
 
+        assert_that(self.bus.events(), has_item(has_entry('name', 'transfer_ended')))
+
     def assert_transfer_is_hungup(self, transfer_id, transferred_channel_id, initiator_channel_id, recipient_channel_id):
         assert_that(transfer_id, not_(self.b.is_found()), 'transfer still exists')
 
@@ -320,6 +325,13 @@ class TestTransfers(IntegrationTest):
         assert_that(result.status_code, equal_to(404))
         cached_transfers = json.loads(self.ari.asterisk.getGlobalVar(variable='XIVO_TRANSFERS')['value'])
         assert_that(cached_transfers, not_(has_item(transfer_id)))
+
+        assert_that(self.bus.events(), has_item(has_entry('name', 'transfer_ended')))
+
+    def assert_everyone_hungup(self, transferred_channel_id, initiator_channel_id, recipient_channel_id):
+        assert_that(transferred_channel_id, self.c.is_hungup(), 'transferred channel is still talking')
+        assert_that(initiator_channel_id, self.c.is_hungup(), 'initiator channel is still talking')
+        assert_that(recipient_channel_id, self.c.is_hungup(), 'recipient channel is still talking')
 
 
 class TestCreateTransfer(TestTransfers):
@@ -720,8 +732,7 @@ class TestTransferFromStasis(TestTransfers):
 
         self.ari.channels.hangup(channelId=initiator_channel_id)
 
-        until.assert_(self.assert_transfer_is_hungup,
-                      transfer_id,
+        until.assert_(self.assert_everyone_hungup,
                       transferred_channel_id,
                       initiator_channel_id,
                       recipient_channel_id,
@@ -744,8 +755,7 @@ class TestTransferFromStasis(TestTransfers):
 
         self.ari.channels.hangup(channelId=recipient_channel_id)
 
-        until.assert_(self.assert_transfer_is_hungup,
-                      transfer_id,
+        until.assert_(self.assert_everyone_hungup,
                       transferred_channel_id,
                       initiator_channel_id,
                       recipient_channel_id,
