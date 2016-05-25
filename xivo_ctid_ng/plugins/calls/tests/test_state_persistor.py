@@ -20,8 +20,6 @@ from ..state_persistor import ReadOnlyStatePersistor
 from ..state_persistor import StatePersistor
 
 SOME_CHANNEL_ID = 'some-channel-id'
-SOME_ENTRY = Mock()
-SOME_ENTRY.to_dict.return_value = {}
 
 
 class TestChannelCacheEntry(TestCase):
