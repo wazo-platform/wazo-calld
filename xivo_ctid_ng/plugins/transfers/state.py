@@ -278,6 +278,7 @@ class TransferStateRingback(TransferState):
             raise TransferCompletionError(self.transfer.id, 'transferred hung up')
 
         self.transfer.flow = 'blind'
+        self._notifier.completed(self.transfer)
 
         return TransferStateBlindTransferred.from_state(self)
 
@@ -299,6 +300,7 @@ class TransferStateRingback(TransferState):
             raise TransferCompletionError(self.transfer.id, 'transferred hung up')
 
         self.transfer.flow = 'blind'
+        self._notifier.completed(self.transfer)
 
         return TransferStateBlindTransferred.from_state(self)
 
@@ -381,6 +383,8 @@ class TransferStateAnswered(TransferState):
         except ARINotFound:
             raise TransferCompletionError(self.transfer.id, 'transferred hung up')
 
+        self._notifier.completed(self.transfer)
+
         return TransferStateEnded.from_state(self)
 
     @transition
@@ -403,6 +407,8 @@ class TransferStateAnswered(TransferState):
             ari_helpers.unhold_transferred_call(self._ari, self.transfer.transferred_call)
         except ARINotFound:
             raise TransferCompletionError(self.transfer.id, 'transferred hung up')
+
+        self._notifier.completed(self.transfer)
 
         return TransferStateEnded.from_state(self)
 

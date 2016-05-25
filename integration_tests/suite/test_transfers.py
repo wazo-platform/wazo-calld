@@ -256,7 +256,9 @@ class TestTransfers(IntegrationTest):
         cached_transfers = json.loads(self.ari.asterisk.getGlobalVar(variable='XIVO_TRANSFERS')['value'])
         assert_that(cached_transfers, not_(has_item(transfer_id)))
 
-        assert_that(self.bus.events(), has_item(has_entry('name', 'transfer_ended')))
+        events = self.bus.events()
+        assert_that(events, has_item(has_entry('name', 'transfer_completed')))
+        assert_that(events, has_item(has_entry('name', 'transfer_ended')))
 
     def assert_transfer_is_blind_transferred(self, transfer_id, transferred_channel_id, initiator_channel_id, recipient_channel_id=None):
         transfer = self.ctid_ng.get_transfer(transfer_id)
