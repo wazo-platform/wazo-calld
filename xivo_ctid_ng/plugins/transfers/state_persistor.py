@@ -2,54 +2,51 @@
 # Copyright 2016 by Avencall
 # SPDX-License-Identifier: GPL-3.0+
 
-import json
 import logging
 
-from ari.exceptions import ARINotFound
-
+from xivo_ctid_ng.core.ari_helpers import (GlobalVariableAdapter,
+                                           GlobalVariableJsonAdapter,
+                                           GlobalVariableNameDecorator,
+                                           GlobalVariableConstantNameAdapter)
 from .transfer import Transfer
 
 logger = logging.getLogger(__name__)
 
 
 class StatePersistor(object):
-    global_var_name = 'XIVO_TRANSFERS'
-
     def __init__(self, ari):
-        self._ari = ari
+        self._transfers = GlobalVariableNameDecorator(GlobalVariableJsonAdapter(GlobalVariableAdapter(ari)),
+                                                      'XIVO_TRANSFERS_{}')
+        self._index = GlobalVariableConstantNameAdapter(GlobalVariableJsonAdapter(GlobalVariableAdapter(ari)),
+                                                        'XIVO_TRANSFERS_INDEX')
 
     def get(self, transfer_id):
-        return Transfer.from_dict(self._cache()[transfer_id])
+        return Transfer.from_dict(self._transfers.get(transfer_id))
 
     def get_by_channel(self, channel_id):
-        try:
-            entry = next(transfer for (transfer_id, transfer) in self._cache().iteritems()
-                         if (channel_id in (transfer['transferred_call'],
-                                            transfer['initiator_call'],
-                                            transfer['recipient_call'])))
-        except StopIteration:
+        for transfer in self._list():
+            if channel_id in (transfer.transferred_call,
+                              transfer.initiator_call,
+                              transfer.recipient_call):
+                return transfer
+        else:
             raise KeyError(channel_id)
-        return Transfer.from_dict(entry)
 
     def upsert(self, transfer):
-        cache = self._cache()
-        cache[transfer.id] = transfer.to_dict()
-        self._set_cache(cache)
+        self._transfers.set(transfer.id, transfer.to_dict())
+        index = set(self._index.get(default=[]))
+        index.add(transfer.id)
+        self._index.set(list(index))
 
     def remove(self, transfer_id):
-        cache = self._cache()
-        cache.pop(transfer_id, None)
-        self._set_cache(cache)
-
-    def _cache(self):
+        self._transfers.unset(transfer_id)
+        index = set(self._index.get(default=[]))
         try:
-            cache_str = self._ari.asterisk.getGlobalVar(variable=self.global_var_name)['value']
-        except ARINotFound:
-            return {}
-        if not cache_str:
-            return {}
-        return json.loads(cache_str)
+            index.remove(transfer_id)
+        except KeyError:
+            return
+        self._index.set(list(index))
 
-    def _set_cache(self, cache):
-        self._ari.asterisk.setGlobalVar(variable=self.global_var_name,
-                                        value=json.dumps(cache))
+    def _list(self):
+        for transfer_id in self._index.get():
+            yield self.get(transfer_id)

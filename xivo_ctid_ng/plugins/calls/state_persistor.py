@@ -2,9 +2,9 @@
 # Copyright 2016 by Avencall
 # SPDX-License-Identifier: GPL-3.0+
 
-import json
-
-from ari.exceptions import ARINotFound
+from xivo_ctid_ng.core.ari_helpers import (GlobalVariableAdapter,
+                                           GlobalVariableJsonAdapter,
+                                           GlobalVariableNameDecorator)
 
 
 class ChannelCacheEntry(object):
@@ -26,36 +26,18 @@ class ChannelCacheEntry(object):
 
 
 class ReadOnlyStatePersistor(object):
-    global_var_name = 'XIVO_CALLCONTROL'
-
     def __init__(self, ari):
-        self._ari = ari
+        self._channels = GlobalVariableNameDecorator(GlobalVariableJsonAdapter(GlobalVariableAdapter(ari)),
+                                                     'XIVO_CHANNELS_{}')
 
     def get(self, channel_id):
-        return ChannelCacheEntry.from_dict(self._cache()[channel_id])
-
-    def _cache(self):
-        try:
-            cache_str = self._ari.asterisk.getGlobalVar(variable=self.global_var_name)['value']
-        except ARINotFound:
-            return {}
-        if not cache_str:
-            return {}
-        return json.loads(cache_str)
+        return ChannelCacheEntry.from_dict(self._channels.get(channel_id))
 
 
 class StatePersistor(ReadOnlyStatePersistor):
 
     def upsert(self, channel_id, entry):
-        cache = self._cache()
-        cache[channel_id] = entry.to_dict()
-        self._set_cache(cache)
+        self._channels.set(channel_id, entry.to_dict())
 
     def remove(self, channel_id):
-        cache = self._cache()
-        cache.pop(channel_id, None)
-        self._set_cache(cache)
-
-    def _set_cache(self, cache):
-        self._ari.asterisk.setGlobalVar(variable=self.global_var_name,
-                                        value=json.dumps(cache))
+        self._channels.unset(channel_id)

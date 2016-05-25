@@ -8,13 +8,18 @@ from ari.exceptions import ARINotFound
 from hamcrest import assert_that
 from hamcrest import calling
 from hamcrest import equal_to
+from hamcrest import has_property
+from hamcrest import is_not
 from hamcrest import raises
 from mock import Mock
 from mock import sentinel as s
 from unittest import TestCase
 
 from ..state_persistor import ChannelCacheEntry
+from ..state_persistor import ReadOnlyStatePersistor
 from ..state_persistor import StatePersistor
+
+SOME_CHANNEL_ID = 'some-channel-id'
 
 
 class TestChannelCacheEntry(TestCase):
@@ -36,89 +41,61 @@ class TestChannelCacheEntry(TestCase):
         assert_that(entry.state, equal_to(s.state))
 
 
+class TestReadOnlyStatePersistor(TestCase):
+
+    def setUp(self):
+        self.ari = Mock()
+        self.persistor = ReadOnlyStatePersistor(self.ari)
+
+    def test_read_only_state_persistor_cant_upsert(self):
+        assert_that(self.persistor, is_not(has_property('upsert')))
+
+    def test_read_only_state_persistor_cant_remove(self):
+        assert_that(self.persistor, is_not(has_property('remove')))
+
+    def test_given_no_calls_when_get_unknown_channel_then_raise_keyerror(self):
+        self.ari.asterisk.getGlobalVar.side_effect = ARINotFound(Mock(), Mock())
+
+        assert_that(calling(self.persistor.get).with_args('unknown-channel-id'), raises(KeyError))
+
+    def test_given_valid_cache_when_get_existing_channel_then_return_entry(self):
+        self.ari.asterisk.getGlobalVar.return_value = {'value': json.dumps({'app': 'myapp',
+                                                                            'app_instance': 'red',
+                                                                            'state': 'mystate'})}
+        result = self.persistor.get('my-channel')
+
+        assert_that(result.state, equal_to('mystate'))
+
+
 class TestStatePersistor(TestCase):
 
     def setUp(self):
         self.ari = Mock()
+        self.persistor = StatePersistor(self.ari)
 
-    def test_given_no_cache_when_get_then_raise_keyerror(self):
-        self.ari.asterisk.getGlobalVar.side_effect = ARINotFound(Mock(), Mock())
-        persistor = StatePersistor(self.ari)
-
-        assert_that(calling(persistor.get).with_args('unknown-channel-id'), raises(KeyError))
-
-    def test_given_empty_cache_when_get_then_raise_keyerror(self):
-        self.ari.asterisk.getGlobalVar.return_value = {'value': ''}
-        persistor = StatePersistor(self.ari)
-
-        assert_that(calling(persistor.get).with_args('unknown-channel-id'), raises(KeyError))
-
-    def test_given_valid_cache_when_get_unknown_channel_then_raise_keyerror(self):
-        self.ari.asterisk.getGlobalVar.return_value = {'value': '{}'}
-        persistor = StatePersistor(self.ari)
-
-        assert_that(calling(persistor.get).with_args('unknown-channel-id'), raises(KeyError))
-
-    def test_given_valid_cache_when_get_existing_channel_then_return_entry(self):
-        self.ari.asterisk.getGlobalVar.return_value = {'value': json.dumps({'my-channel': {'app': 'myapp',
-                                                                                           'app_instance': 'red',
-                                                                                           'state': 'mystate'}})}
-        persistor = StatePersistor(self.ari)
-
-        result = persistor.get('my-channel')
-
-        assert_that(result.state, equal_to('mystate'))
-
-    def test_given_valid_empty_cache_when_remove_unknown_channel_then_nothing_happens(self):
-        self.ari.asterisk.getGlobalVar.return_value = {'value': '{}'}
-        persistor = StatePersistor(self.ari)
-
-        persistor.remove('unknown-channel')
-
-        self.assert_set_global_var(StatePersistor.global_var_name, {})
-
-    def test_given_valid_cache_when_remove_existing_channel_then_entry_removed(self):
-        self.ari.asterisk.getGlobalVar.return_value = {'value': json.dumps({'my-channel': {'app': 'myapp',
-                                                                                           'app_instance': 'red',
-                                                                                           'state': 'mystate'},
-                                                                            'my-other-channel': {'app': 'myapp',
-                                                                                                 'app_instance': 'red',
-                                                                                                 'state': 'mystate'}})}
-        persistor = StatePersistor(self.ari)
-
-        persistor.remove('my-channel')
-
-        expected_cache = {'my-other-channel': {'app': 'myapp',
-                                               'app_instance': 'red',
-                                               'state': 'mystate'}}
-        self.assert_set_global_var(StatePersistor.global_var_name, expected_cache)
-
-    def test_given_channel_not_found_when_upsert_channel_then_entry_inserted(self):
+    def test_when_upsert_then_variable_set(self):
         entry = Mock()
         entry.to_dict.return_value = 'my-entry'
-        self.ari.asterisk.getGlobalVar.return_value = {'value': json.dumps({'my-other-channel': 'other-entry'})}
-        persistor = StatePersistor(self.ari)
+        exptected_variable = '"my-entry"'
 
-        persistor.upsert('my-channel', entry)
+        self.persistor.upsert(SOME_CHANNEL_ID, entry)
 
-        expected_cache = {'my-channel': 'my-entry', 'my-other-channel': 'other-entry'}
-        self.assert_set_global_var(StatePersistor.global_var_name, expected_cache)
+        self.ari.asterisk.setGlobalVar.assert_called_once_with(variable='XIVO_CHANNELS_{}'.format(SOME_CHANNEL_ID), value=exptected_variable)
 
-    def test_given_existing_channel_when_upsert_then_entry_updated(self):
-        entry = Mock()
-        entry.to_dict.return_value = 'new-entry'
-        self.ari.asterisk.getGlobalVar.return_value = {'value': json.dumps({'my-channel': 'old-entry'})}
-        persistor = StatePersistor(self.ari)
+    def test_when_remove_then_variable_unset(self):
+        self.persistor.remove(SOME_CHANNEL_ID)
 
-        persistor.upsert('my-channel', entry)
+        self.ari.asterisk.setGlobalVar.assert_called_once_with(variable='XIVO_CHANNELS_{}'.format(SOME_CHANNEL_ID), value='')
 
-        expected_cache = {'my-channel': 'new-entry'}
-        self.assert_set_global_var(StatePersistor.global_var_name, expected_cache)
+    def test_given_no_calls_when_get_then_raise_keyerror(self):
+        self.ari.asterisk.getGlobalVar.side_effect = ARINotFound(Mock(), Mock())
 
-    def assert_set_global_var(self, variable_name, expected):
-        calls = self.ari.asterisk.setGlobalVar.call_args_list
-        for args, kwargs in calls:
-            value = json.loads(kwargs['value'])
-            if kwargs['variable'] == variable_name and expected == value:
-                return
-        self.fail('no call to setGlobalVar({}, {})\n\tgot: {}'.format(variable_name, expected, calls))
+        assert_that(calling(self.persistor.get).with_args('unknown-channel-id'), raises(KeyError))
+
+    def test_given_existing_channel_when_get_then_return_entry(self):
+        self.ari.asterisk.getGlobalVar.return_value = {'value': json.dumps({'app': 'myapp',
+                                                                            'app_instance': 'red',
+                                                                            'state': 'mystate'})}
+        result = self.persistor.get('my-channel')
+
+        assert_that(result.state, equal_to('mystate'))
