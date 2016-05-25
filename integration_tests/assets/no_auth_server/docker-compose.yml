@@ -6,7 +6,7 @@ sync:
     - rabbitmq
   environment:
     PORTS: "5039 5672 9500"
-    TIMEOUT: "5"
+    TIMEOUT: "${INTEGRATION_TEST_TIMEOUT}"
 
 ari:
   image: ari-mock

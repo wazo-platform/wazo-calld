@@ -9,7 +9,7 @@ sync:
     - rabbitmq
   environment:
     PORTS: "5039 5040 5672 9486 9491 9497 9500"
-    TIMEOUT: "5"
+    TIMEOUT: "${INTEGRATION_TEST_TIMEOUT}"
 
 amid:
   image: xivo/xivo-amid
