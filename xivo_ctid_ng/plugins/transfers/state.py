@@ -147,6 +147,8 @@ class TransferState(object):
         except ARINotFound:
             raise TransferCancellationError(self.transfer.id, 'initiator hung up')
 
+        self._notifier.cancelled(self.transfer)
+
 
 @state_factory.state
 class TransferStateReady(TransferState):

@@ -229,6 +229,9 @@ class TestTransfers(IntegrationTest):
         cached_transfers = json.loads(self.ari.asterisk.getGlobalVar(variable='XIVO_TRANSFERS')['value'])
         assert_that(cached_transfers, not_(has_item(transfer_id)))
 
+        events = self.bus.events()
+        assert_that(events, has_item(has_entry('name', 'transfer_cancelled')))
+
     def assert_transfer_is_completed(self, transfer_id, transferred_channel_id, initiator_channel_id, recipient_channel_id):
         transfer_bridge = self.ari.bridges.get(bridgeId=transfer_id)
         assert_that(transfer_bridge.json,
