@@ -93,3 +93,17 @@ class NoSuchTransfer(TransferException):
                 'transfer_id': transfer_id,
             }
         )
+
+
+class InvalidExtension(TransferException):
+
+    def __init__(self, context, exten):
+        super(InvalidExtension, self).__init__(
+            status_code=400,
+            message='Invalid extension',
+            error_id='invalid-extension',
+            details={
+                'context': context,
+                'exten': exten,
+            }
+        )

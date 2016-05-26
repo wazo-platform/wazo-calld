@@ -229,6 +229,9 @@
                             "$ref": "#/definitions/Transfer"
                         }
                     },
+                    "400": {
+                        "$ref": "#/responses/InvalidRequest"
+                    },
                     "503": {
                         "$ref": "#/responses/AnotherServiceUnavailable"
                     }
@@ -321,6 +324,12 @@
         },
         "NoSuchTransfer": {
             "description": "The specified transfer does not exist",
+            "schema": {
+                "$ref": "#/definitions/Error"
+            }
+        },
+        "InvalidRequest": {
+            "description": "Invalid request",
             "schema": {
                 "$ref": "#/definitions/Error"
             }

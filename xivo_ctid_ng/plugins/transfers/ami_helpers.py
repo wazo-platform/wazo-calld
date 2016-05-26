@@ -41,3 +41,13 @@ def convert_transfer_to_stasis(amid, transferred_call, initiator_call, context, 
         amid.action('Redirect', destination)
     except RequestException as e:
         raise XiVOAmidUnreachable(amid, e)
+
+
+def extension_exists(amid, context, exten):
+    try:
+        response = amid.action('ShowDialplan', {'Context': context,
+                                                'Extension': exten})
+    except RequestException as e:
+        raise XiVOAmidUnreachable(amid, e)
+
+    return '1' in (event['Priority'] for event in response if event.get('Event') == 'ListDialplan')
