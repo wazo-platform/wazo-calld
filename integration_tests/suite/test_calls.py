@@ -162,15 +162,15 @@ class TestListCalls(IntegrationTest):
                               MockChannel(id='third-id'),
                               MockChannel(id='fourth-id'))
         self.ari.set_applications(MockApplication(name='my-app', channels=['first-id', 'second-id', 'third-id']))
-        self.ari.set_global_variables({'XIVO_CALLCONTROL': json.dumps({'first-id': {'app': 'my-app',
-                                                                                    'app_instance': 'appX',
-                                                                                    'state': 'talking'},
-                                                                       'second-id': {'app': 'my-app',
-                                                                                     'app_instance': 'appY',
-                                                                                     'state': 'talking'},
-                                                                       'third-id': {'app': 'my-app',
-                                                                                    'app_instance': 'appX',
-                                                                                    'state': 'talking'}})})
+        self.ari.set_global_variables({'XIVO_CHANNELS_first-id': json.dumps({'app': 'my-app',
+                                                                             'app_instance': 'appX',
+                                                                             'state': 'talking'}),
+                                       'XIVO_CHANNELS_second-id': json.dumps({'app': 'my-app',
+                                                                              'app_instance': 'appY',
+                                                                              'state': 'talking'}),
+                                       'XIVO_CHANNELS_third-id': json.dumps({'app': 'my-app',
+                                                                             'app_instance': 'appX',
+                                                                             'state': 'talking'})})
 
         calls = self.ctid_ng.list_calls(application='my-app', application_instance='appX')
 
@@ -446,9 +446,9 @@ class TestConnectUser(IntegrationTest):
         self.ari.set_channels(MockChannel(id='call-id'),
                               MockChannel(id='new-call-id', ))
         self.ari.set_channel_variable({'new-call-id': {'XIVO_USERUUID': 'user-uuid'}})
-        self.ari.set_global_variables({'XIVO_CALLCONTROL': json.dumps({'call-id': {'app': 'sw',
-                                                                                   'app_instance': 'sw1',
-                                                                                   'state': 'ringing'}})})
+        self.ari.set_global_variables({'XIVO_CHANNELS_call-id': json.dumps({'app': 'sw',
+                                                                            'app_instance': 'sw1',
+                                                                            'state': 'ringing'})})
         self.confd.set_users(MockUser(uuid='user-uuid'))
         self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip'))
         self.confd.set_user_lines({'user-uuid': [MockUserLine('line-id')]})

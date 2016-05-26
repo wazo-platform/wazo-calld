@@ -33,9 +33,9 @@ class TestDialedFrom(IntegrationTest):
         call_id = new_call_id()
         new_call_id_ = new_call_id()
         self.ari.set_channels(MockChannel(id=call_id), MockChannel(id=new_call_id_))
-        self.ari.set_global_variables({'XIVO_CALLCONTROL': json.dumps({call_id: {'state': 'ringing',
-                                                                                 'app': STASIS_APP_NAME,
-                                                                                 'app_instance': STASIS_APP_INSTANCE_NAME}})})
+        self.ari.set_global_variables({'XIVO_CHANNELS_{}'.format(call_id): json.dumps({'state': 'ringing',
+                                                                                       'app': STASIS_APP_NAME,
+                                                                                       'app_instance': STASIS_APP_INSTANCE_NAME})})
 
         self.stasis.event_answer_connect(from_=call_id, new_call_id=new_call_id_)
 
@@ -68,9 +68,9 @@ class TestDialedFrom(IntegrationTest):
         self.ari.set_channels(MockChannel(id=call_id),
                               MockChannel(id=new_call_id, ))
         self.ari.set_channel_variable({new_call_id: {'XIVO_USERUUID': 'user-uuid'}})
-        self.ari.set_global_variables({'XIVO_CALLCONTROL': json.dumps({call_id: {'app': 'my-app',
-                                                                                 'app_instance': 'sw1',
-                                                                                 'state': 'ringing'}})})
+        self.ari.set_global_variables({'XIVO_CHANNELS_{}'.format(call_id): json.dumps({'app': 'my-app',
+                                                                                       'app_instance': 'sw1',
+                                                                                       'state': 'ringing'})})
         self.confd.set_users(MockUser(uuid='user-uuid'))
         self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip'))
         self.confd.set_user_lines({'user-uuid': [MockUserLine('line-id')]})
