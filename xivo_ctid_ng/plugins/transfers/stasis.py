@@ -14,7 +14,7 @@ from .event import TransferRecipientAnsweredEvent
 from .event import CreateTransferEvent
 from .exceptions import InvalidEvent
 from .exceptions import TransferException
-from .exceptions import XiVOAmidUnreachable
+from .exceptions import XiVOAmidError
 from .lock import HangupLock, InvalidLock
 from .transfer import TransferRole
 
@@ -56,7 +56,7 @@ class TransfersStasis(object):
         if isinstance(exception, InvalidEvent):
             event = exception.event
             logger.error('invalid stasis event received: %s', event)
-        elif (isinstance(exception, XiVOAmidUnreachable) or
+        elif (isinstance(exception, XiVOAmidError) or
               isinstance(exception, TransferException)):
             self.handle_error(exception)
         else:

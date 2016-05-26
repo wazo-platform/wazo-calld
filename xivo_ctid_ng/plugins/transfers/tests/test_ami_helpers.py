@@ -12,7 +12,7 @@ from mock import Mock
 from unittest import TestCase
 
 from ..ami_helpers import extension_exists
-from ..exceptions import XiVOAmidUnreachable
+from ..exceptions import XiVOAmidError
 
 SOME_EXTEN = 'some-exten'
 SOME_CONTEXT = 'some-context'
@@ -28,7 +28,7 @@ class TestExtensionExists(TestCase):
 
         assert_that((calling(extension_exists)
                      .with_args(self.amid, SOME_EXTEN, SOME_CONTEXT)),
-                    raises(XiVOAmidUnreachable))
+                    raises(XiVOAmidError))
 
     def test_given_invalid_context_when_extension_exists_then_return_false(self):
         self.amid.action.return_value = [

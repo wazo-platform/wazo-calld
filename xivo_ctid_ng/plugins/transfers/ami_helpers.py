@@ -4,7 +4,7 @@
 
 from requests import RequestException
 
-from .exceptions import XiVOAmidUnreachable
+from .exceptions import XiVOAmidError
 
 
 def unset_variable_ami(amid, channel_id, variable):
@@ -14,7 +14,7 @@ def unset_variable_ami(amid, channel_id, variable):
                       'Value': ''}
         amid.action('Setvar', parameters)
     except RequestException as e:
-        raise XiVOAmidUnreachable(amid, e)
+        raise XiVOAmidError(amid, e)
 
 
 def convert_transfer_to_stasis(amid, transferred_call, initiator_call, context, exten, transfer_id):
@@ -40,7 +40,7 @@ def convert_transfer_to_stasis(amid, transferred_call, initiator_call, context, 
                        'Priority': 1}
         amid.action('Redirect', destination)
     except RequestException as e:
-        raise XiVOAmidUnreachable(amid, e)
+        raise XiVOAmidError(amid, e)
 
 
 def extension_exists(amid, context, exten):
@@ -48,6 +48,6 @@ def extension_exists(amid, context, exten):
         response = amid.action('ShowDialplan', {'Context': context,
                                                 'Extension': exten})
     except RequestException as e:
-        raise XiVOAmidUnreachable(amid, e)
+        raise XiVOAmidError(amid, e)
 
     return '1' in (event['Priority'] for event in response if event.get('Event') == 'ListDialplan')
