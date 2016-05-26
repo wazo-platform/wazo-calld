@@ -5,6 +5,7 @@
 
 import ari
 import logging
+import json
 
 from ari.exceptions import ARINotFound
 from ari.exceptions import ARINotInStasis
@@ -17,6 +18,7 @@ from hamcrest import contains_string
 from hamcrest import equal_to
 from hamcrest import has_entry
 from hamcrest import has_entries
+from hamcrest import has_item
 from hamcrest import has_key
 from hamcrest import instance_of
 from hamcrest import not_
@@ -203,9 +205,6 @@ class TestTransfers(IntegrationTest):
         assert_that(recipient_channel_id, self.c.is_talking(), 'recipient channel is not talking')
         assert_that(recipient_channel_id, self.c.has_variable('XIVO_TRANSFER_ID', transfer_id), 'variable not set')
         assert_that(recipient_channel_id, self.c.has_variable('XIVO_TRANSFER_ROLE', 'recipient'), 'variable not set')
-
-        cached_transfers = json.loads(self.ari.asterisk.getGlobalVar(variable='XIVO_TRANSFERS')['value'])
-        assert_that(cached_transfers, has_item(transfer_id))
 
         assert_that(self.bus.events(), has_item(has_entry('name', 'transfer_answered')))
 
@@ -428,7 +427,6 @@ class TestCreateTransfer(TestTransfers):
 
         until.assert_(event_is_sent, tries=5)
 
->>>>>>> origin/6230-transfer-bus-events
 
 class TestGetTransfer(TestTransfers):
 
