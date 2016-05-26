@@ -366,10 +366,6 @@ class TransferStateAnswered(TransferState):
 
     name = TransferStatus.answered
 
-    def __init__(self, *args, **kwargs):
-        super(TransferStateAnswered, self).__init__(*args, **kwargs)
-        self._notifier.answered(self.transfer)
-
     @transition
     def transferred_hangup(self):
         self._abandon()
@@ -424,15 +420,23 @@ class TransferStateAnswered(TransferState):
     def update_cache(self):
         self._state_persistor.upsert(self.transfer)
 
+    @classmethod
+    def from_state(cls, *args, **kwargs):
+        new_state = super(TransferStateAnswered, cls).from_state(*args, **kwargs)
+        new_state._notifier.answered(new_state.transfer)
+        return new_state
+
 
 @state_factory.state
 class TransferStateEnded(TransferState):
 
     name = 'ended'
 
-    def __init__(self, *args, **kwargs):
-        super(TransferStateEnded, self).__init__(*args, **kwargs)
-        self._notifier.ended(self.transfer)
-
     def update_cache(self):
         self._state_persistor.remove(self.transfer.id)
+
+    @classmethod
+    def from_state(cls, *args, **kwargs):
+        new_state = super(TransferStateEnded, cls).from_state(*args, **kwargs)
+        new_state._notifier.ended(new_state.transfer)
+        return new_state
