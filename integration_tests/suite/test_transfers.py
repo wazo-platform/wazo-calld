@@ -257,6 +257,7 @@ class TestTransfers(IntegrationTest):
         assert_that(cached_transfers, not_(has_item(transfer_id)))
 
         events = self.bus.events()
+        assert_that(events, has_item(has_entry('name', 'transfer_answered')))
         assert_that(events, has_item(has_entry('name', 'transfer_completed')))
         assert_that(events, has_item(has_entry('name', 'transfer_ended')))
 

@@ -353,6 +353,8 @@ class TransferStateBlindTransferred(TransferState):
         except ARINotFound:
             raise TransferAnswerError(self.transfer.id, 'transferred hung up')
 
+        self._notifier.answered(self.transfer)
+
         return TransferStateEnded.from_state(self)
 
     def update_cache(self):
