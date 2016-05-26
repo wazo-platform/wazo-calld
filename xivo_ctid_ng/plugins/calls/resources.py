@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015 by Avencall
+# Copyright (C) 2015-2016 Avencall
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
@@ -32,7 +32,7 @@ class CallsResource(AuthResource):
 
     @required_acl('ctid-ng.calls.create')
     def post(self):
-        request_body = request.json
+        request_body = request.get_json(force=True)
 
         validator.validate_originate_body(request_body)
 

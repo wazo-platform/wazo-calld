@@ -340,6 +340,18 @@ class TestCreateTransfer(TestTransfers):
         assert_that(response.status_code, equal_to(400))
         assert_that(response.json(), has_entry('message', contains_string('creation')))
 
+    def test_given_no_content_type_when_create_then_ok(self):
+        transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()
+        body = {
+            'transferred_call': initiator_channel_id,
+            'initiator_call': transferred_channel_id,
+        }
+        body.update(RECIPIENT)
+
+        response = self.ctid_ng.post_transfer_result_no_json(body=body, token=VALID_TOKEN)
+
+        assert_that(response.status_code, equal_to(201))
+
 
 class TestGetTransfer(TestTransfers):
 

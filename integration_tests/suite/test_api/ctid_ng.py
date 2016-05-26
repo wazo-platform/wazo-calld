@@ -2,6 +2,7 @@
 # Copyright (C) 2015-2016 Avencall
 # SPDX-License-Identifier: GPL-3.0+
 
+import json
 import requests
 import time
 
@@ -66,6 +67,14 @@ class CtidNgClient(object):
                                verify=False)
         return result
 
+    def post_call_raw_no_json(self, body, token=None):
+        url = u'https://localhost:9500/1.0/calls'
+        result = requests.post(url,
+                               data=json.dumps(body),
+                               headers={'X-Auth-Token': token},
+                               verify=False)
+        return result
+
     def originate(self, source, priority, extension, context, variables=None, token=VALID_TOKEN):
         response = self.post_call_result(source, priority, extension, context, variables, token=token)
         assert_that(response.status_code, equal_to(201))
@@ -100,6 +109,13 @@ class CtidNgClient(object):
         response = self.put_call_user_result(call_id, user_uuid, token=VALID_TOKEN)
         assert_that(response.status_code, equal_to(200))
         return response.json()
+
+    def post_transfer_result_no_json(self, body, token=None):
+        result = requests.post('https://localhost:9500/1.0/transfers',
+                               data=json.dumps(body),
+                               headers={'X-Auth-Token': token},
+                               verify=False)
+        return result
 
     def post_transfer_result(self, body, token=None):
         result = requests.post('https://localhost:9500/1.0/transfers',

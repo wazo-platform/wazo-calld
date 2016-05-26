@@ -27,7 +27,7 @@ class TransfersResource(AuthResource):
 
     @required_acl('ctid-ng.transfers.create')
     def post(self):
-        request_body = transfer_request_schema.load(request.json).data
+        request_body = transfer_request_schema.load(request.get_json(force=True)).data
         transfer = self._transfers_service.create(request_body['transferred_call'],
                                                   request_body['initiator_call'],
                                                   request_body['context'],

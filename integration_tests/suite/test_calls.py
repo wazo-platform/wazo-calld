@@ -371,6 +371,21 @@ class TestCreateCall(IntegrationTest):
         assert_that(result.status_code, equal_to(400))
         assert_that(result.json(), has_entry('message', contains_string('source')))
 
+    def test_create_call_with_no_content_type(self):
+        user_uuid = 'user-uuid'
+        self.confd.set_users(MockUser(uuid='user-uuid'))
+        self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip'))
+        self.confd.set_user_lines({'user-uuid': [MockUserLine('line-id')]})
+        self.ari.set_originates(MockChannel(id='new-call-id'))
+        body = {'source': {'user': user_uuid},
+                'destination': {'priority': 'my-priority',
+                                'extension': 'my-extension',
+                                'context': 'my-context'}}
+
+        result = self.ctid_ng.post_call_raw_no_json(body, token=VALID_TOKEN)
+
+        assert_that(result.status_code, equal_to(201), result.json())
+
 
 class TestNoConfd(IntegrationTest):
 
