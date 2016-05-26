@@ -20,7 +20,7 @@ Running unit tests
 2. Run tests with ```nosetests xivo_ctid_ng```
 
 Running integration tests
-------------------
+-------------------------
 
 You need Docker installed on your machine.
 
@@ -28,3 +28,10 @@ You need Docker installed on your machine.
 2. ```pip install -r test-requirements.txt```
 3. ```make test-setup```
 4. ```make test```
+
+Environment variables
+---------------------
+
+Running the integration tests is controlled by the following environment variables:
+
+* `INTEGRATION_TEST_TIMEOUT`: controls the startup timeout of each container
