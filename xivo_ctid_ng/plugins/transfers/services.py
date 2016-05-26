@@ -39,9 +39,9 @@ class TransfersService(object):
 
         if not (ari_helpers.is_in_stasis(self.ari, transferred_call) and
                 ari_helpers.is_in_stasis(self.ari, initiator_call)):
-            transfer_state = TransferStateReadyNonStasis(self.amid_client, self.ari, self, self.state_persistor)
+            transfer_state = self.state_factory.make_from_class(TransferStateReadyNonStasis)
         else:
-            transfer_state = TransferStateReady(self.amid_client, self.ari, self, self.state_persistor)
+            transfer_state = self.state_factory.make_from_class(TransferStateReady)
 
         new_state = transfer_state.create(transferred_channel, initiator_channel, context, exten)
         if flow == 'blind':

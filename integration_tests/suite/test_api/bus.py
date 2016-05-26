@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015 by Avencall
+# Copyright (C) 2015-2016 Avencall
 # SPDX-License-Identifier: GPL-3.0+
 
 import json
@@ -18,6 +18,18 @@ from .constants import BUS_QUEUE_NAME
 
 
 class BusClient(object):
+
+    @classmethod
+    def is_up(cls):
+        try:
+            bus_exchange = Exchange(BUS_EXCHANGE_NAME, type=BUS_EXCHANGE_TYPE)
+            with Connection(BUS_URL) as connection:
+                producer = Producer(connection, exchange=bus_exchange, auto_declare=True)
+                producer.publish('', routing_key='test')
+        except IOError:
+            return False
+        else:
+            return True
 
     @classmethod
     def listen_events(cls, routing_key, exchange=BUS_EXCHANGE_NAME):
@@ -43,6 +55,8 @@ class BusClient(object):
 
     @classmethod
     def _drain_events(cls, on_event):
+        if not hasattr(cls, 'bus_queue'):
+            raise Exception('You must listen for events before consuming them')
         with Connection(BUS_URL) as conn:
             with Consumer(conn, cls.bus_queue, callbacks=[on_event]):
                 try:

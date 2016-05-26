@@ -35,6 +35,12 @@ class StateFactory(object):
         dependencies = list(self._dependencies) + [transfer]
         return self._state_constructors[transfer.status](*dependencies)
 
+    def make_from_class(self, state_class):
+        if not self._configured:
+            raise RuntimeError('StateFactory is not configured')
+        dependencies = list(self._dependencies)
+        return state_class(*dependencies)
+
     def state(self, wrapped_class):
         self._state_constructors[wrapped_class.name] = wrapped_class
         return wrapped_class
@@ -53,9 +59,10 @@ def transition(decorated):
 
 class TransferState(object):
 
-    def __init__(self, amid, ari, services, state_persistor, transfer=None):
+    def __init__(self, amid, ari, notifier, services, state_persistor, transfer=None):
         self._amid = amid
         self._ari = ari
+        self._notifier = notifier
         self._services = services
         self._state_persistor = state_persistor
         self.transfer = transfer
@@ -64,6 +71,7 @@ class TransferState(object):
     def from_state(cls, other_state):
         new_state = cls(other_state._amid,
                         other_state._ari,
+                        other_state._notifier,
                         other_state._services,
                         other_state._state_persistor,
                         other_state.transfer)
@@ -117,6 +125,8 @@ class TransferState(object):
             except ARINotFound:
                 pass
 
+        self._notifier.abandoned(self.transfer)
+
     def _cancel(self):
         ari_helpers.unset_variable(self._ari, self._amid, self.transfer.transferred_call, 'XIVO_TRANSFER_ID')
         ari_helpers.unset_variable(self._ari, self._amid, self.transfer.transferred_call, 'XIVO_TRANSFER_ROLE')
@@ -138,6 +148,8 @@ class TransferState(object):
             ari_helpers.unring_initiator_call(self._ari, self.transfer.initiator_call)
         except ARINotFound:
             raise TransferCancellationError(self.transfer.id, 'initiator hung up')
+
+        self._notifier.cancelled(self.transfer)
 
 
 @state_factory.state
@@ -176,11 +188,12 @@ class TransferStateReady(TransferState):
         self.transfer.initiator_call = initiator_channel.id
         self.transfer.recipient_call = recipient_call
         self.transfer.status = self.name
+        self._notifier.created(self.transfer)
 
         return TransferStateRingback.from_state(self)
 
-    def update_cache(self):
-        self._state_persistor.remove(self.transfer.id)
+    def from_state(self, other_state):
+        raise NotImplementedError('This state cannot be transitioned to')
 
 
 @state_factory.state
@@ -201,11 +214,12 @@ class TransferStateReadyNonStasis(TransferState):
         self.transfer.initiator_call = initiator_channel.id
         self.transfer.transferred_call = transferred_channel.id
         self.transfer.status = self.name
+        self._notifier.created(self.transfer)
 
         return TransferStateStarting.from_state(self)
 
-    def update_cache(self):
-        self._state_persistor.remove(self.transfer.id)
+    def from_state(self, other_state):
+        raise NotImplementedError('This state cannot be transitioned to')
 
 
 @state_factory.state
@@ -255,7 +269,7 @@ class TransferStateRingback(TransferState):
     @transition
     def transferred_hangup(self):
         self._abandon()
-        return TransferStateReady.from_state(self)
+        return TransferStateEnded.from_state(self)
 
     @transition
     def initiator_hangup(self):
@@ -266,6 +280,7 @@ class TransferStateRingback(TransferState):
             raise TransferCompletionError(self.transfer.id, 'transferred hung up')
 
         self.transfer.flow = 'blind'
+        self._notifier.completed(self.transfer)
 
         return TransferStateBlindTransferred.from_state(self)
 
@@ -287,13 +302,14 @@ class TransferStateRingback(TransferState):
             raise TransferCompletionError(self.transfer.id, 'transferred hung up')
 
         self.transfer.flow = 'blind'
+        self._notifier.completed(self.transfer)
 
         return TransferStateBlindTransferred.from_state(self)
 
     @transition
     def cancel(self):
         self._cancel()
-        return TransferStateReady.from_state(self)
+        return TransferStateEnded.from_state(self)
 
     @transition
     def recipient_answer(self):
@@ -315,7 +331,7 @@ class TransferStateBlindTransferred(TransferState):
 
     @transition
     def transferred_hangup(self):
-        return TransferStateReady.from_state(self)
+        return TransferStateEnded.from_state(self)
 
     @transition
     def initiator_hangup(self):
@@ -323,7 +339,7 @@ class TransferStateBlindTransferred(TransferState):
 
     @transition
     def recipient_hangup(self):
-        return TransferStateReady.from_state(self)
+        return TransferStateEnded.from_state(self)
 
     @transition
     def recipient_answer(self):
@@ -337,7 +353,9 @@ class TransferStateBlindTransferred(TransferState):
         except ARINotFound:
             raise TransferAnswerError(self.transfer.id, 'transferred hung up')
 
-        return TransferStateReady.from_state(self)
+        self._notifier.answered(self.transfer)
+
+        return TransferStateEnded.from_state(self)
 
     def update_cache(self):
         self._state_persistor.upsert(self.transfer)
@@ -351,7 +369,7 @@ class TransferStateAnswered(TransferState):
     @transition
     def transferred_hangup(self):
         self._abandon()
-        return TransferStateReady.from_state(self)
+        return TransferStateEnded.from_state(self)
 
     @transition
     def initiator_hangup(self):
@@ -365,7 +383,9 @@ class TransferStateAnswered(TransferState):
         except ARINotFound:
             raise TransferCompletionError(self.transfer.id, 'transferred hung up')
 
-        return TransferStateReady.from_state(self)
+        self._notifier.completed(self.transfer)
+
+        return TransferStateEnded.from_state(self)
 
     @transition
     def recipient_hangup(self):
@@ -388,12 +408,35 @@ class TransferStateAnswered(TransferState):
         except ARINotFound:
             raise TransferCompletionError(self.transfer.id, 'transferred hung up')
 
-        return TransferStateReady.from_state(self)
+        self._notifier.completed(self.transfer)
+
+        return TransferStateEnded.from_state(self)
 
     @transition
     def cancel(self):
         self._cancel()
-        return TransferStateReady.from_state(self)
+        return TransferStateEnded.from_state(self)
 
     def update_cache(self):
         self._state_persistor.upsert(self.transfer)
+
+    @classmethod
+    def from_state(cls, *args, **kwargs):
+        new_state = super(TransferStateAnswered, cls).from_state(*args, **kwargs)
+        new_state._notifier.answered(new_state.transfer)
+        return new_state
+
+
+@state_factory.state
+class TransferStateEnded(TransferState):
+
+    name = 'ended'
+
+    def update_cache(self):
+        self._state_persistor.remove(self.transfer.id)
+
+    @classmethod
+    def from_state(cls, *args, **kwargs):
+        new_state = super(TransferStateEnded, cls).from_state(*args, **kwargs)
+        new_state._notifier.ended(new_state.transfer)
+        return new_state

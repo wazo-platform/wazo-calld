@@ -204,6 +204,11 @@ class TestTransfers(IntegrationTest):
         assert_that(recipient_channel_id, self.c.has_variable('XIVO_TRANSFER_ID', transfer_id), 'variable not set')
         assert_that(recipient_channel_id, self.c.has_variable('XIVO_TRANSFER_ROLE', 'recipient'), 'variable not set')
 
+        cached_transfers = json.loads(self.ari.asterisk.getGlobalVar(variable='XIVO_TRANSFERS')['value'])
+        assert_that(cached_transfers, has_item(transfer_id))
+
+        assert_that(self.bus.events(), has_item(has_entry('name', 'transfer_answered')))
+
     def assert_transfer_is_cancelled(self, transfer_id, transferred_channel_id, initiator_channel_id, recipient_channel_id):
         transfer_bridge = self.ari.bridges.get(bridgeId=transfer_id)
         assert_that(transfer_bridge.json,
@@ -225,6 +230,10 @@ class TestTransfers(IntegrationTest):
         result = self.ctid_ng.get_transfer_result(transfer_id, token=VALID_TOKEN)
         assert_that(result.status_code, equal_to(404), 'transfer not removed')
 
+        events = self.bus.events()
+        assert_that(events, has_item(has_entry('name', 'transfer_cancelled')))
+        assert_that(events, has_item(has_entry('name', 'transfer_ended')))
+
     def assert_transfer_is_completed(self, transfer_id, transferred_channel_id, initiator_channel_id, recipient_channel_id):
         transfer_bridge = self.ari.bridges.get(bridgeId=transfer_id)
         assert_that(transfer_bridge.json,
@@ -245,6 +254,11 @@ class TestTransfers(IntegrationTest):
 
         result = self.ctid_ng.get_transfer_result(transfer_id, token=VALID_TOKEN)
         assert_that(result.status_code, equal_to(404))
+
+        events = self.bus.events()
+        assert_that(events, has_item(has_entry('name', 'transfer_answered')))
+        assert_that(events, has_item(has_entry('name', 'transfer_completed')))
+        assert_that(events, has_item(has_entry('name', 'transfer_ended')))
 
     def assert_transfer_is_blind_transferred(self, transfer_id, transferred_channel_id, initiator_channel_id, recipient_channel_id=None):
         transfer = self.ctid_ng.get_transfer(transfer_id)
@@ -295,6 +309,10 @@ class TestTransfers(IntegrationTest):
         result = self.ctid_ng.get_transfer_result(transfer_id, token=VALID_TOKEN)
         assert_that(result.status_code, equal_to(404))
 
+        events = self.bus.events()
+        assert_that(events, has_item(has_entry('name', 'transfer_abandoned')))
+        assert_that(events, has_item(has_entry('name', 'transfer_ended')))
+
     def assert_transfer_is_hungup(self, transfer_id, transferred_channel_id, initiator_channel_id, recipient_channel_id):
         assert_that(transfer_id, not_(self.b.is_found()), 'transfer still exists')
 
@@ -304,6 +322,13 @@ class TestTransfers(IntegrationTest):
 
         result = self.ctid_ng.get_transfer_result(transfer_id, token=VALID_TOKEN)
         assert_that(result.status_code, equal_to(404))
+
+        assert_that(self.bus.events(), has_item(has_entry('name', 'transfer_ended')))
+
+    def assert_everyone_hungup(self, transferred_channel_id, initiator_channel_id, recipient_channel_id):
+        assert_that(transferred_channel_id, self.c.is_hungup(), 'transferred channel is still talking')
+        assert_that(initiator_channel_id, self.c.is_hungup(), 'initiator channel is still talking')
+        assert_that(recipient_channel_id, self.c.is_hungup(), 'recipient channel is still talking')
 
 
 class TestCreateTransfer(TestTransfers):
@@ -352,7 +377,7 @@ class TestCreateTransfer(TestTransfers):
     def test_given_initiator_not_found_when_create_then_error_400(self):
         transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()
         body = {
-            'transferred_call': initiator_channel_id,
+            'transferred_call': transferred_channel_id,
             'initiator_call': 'not-found',
         }
         body.update(RECIPIENT)
@@ -362,6 +387,7 @@ class TestCreateTransfer(TestTransfers):
         assert_that(response.status_code, equal_to(400))
         assert_that(response.json(), has_entry('message', contains_string('creation')))
 
+<<<<<<< HEAD
     def test_given_recipient_not_found_when_create_then_error_400(self):
         transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()
         body = {
@@ -377,6 +403,35 @@ class TestCreateTransfer(TestTransfers):
                                                   'details': has_entries({'exten': RECIPIENT_NOT_FOUND['exten'],
                                                                           'context': RECIPIENT_NOT_FOUND['context']})}))
 
+||||||| merged common ancestors
+=======
+    def test_given_stasis_when_create_then_event_sent_in_bus(self):
+        transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()
+
+        self.bus.listen_events('calls.transfer.created')
+        self.ctid_ng.create_transfer(transferred_channel_id,
+                                     initiator_channel_id,
+                                     **RECIPIENT)
+
+        def event_is_sent():
+            assert_that(self.bus.events(), has_item(has_entry('name', 'transfer_created')))
+
+        until.assert_(event_is_sent, tries=5)
+
+    def test_given_non_stasis_when_create_then_event_sent_in_bus(self):
+        transferred_channel_id, initiator_channel_id = self.given_bridged_call_not_stasis()
+
+        self.bus.listen_events('calls.transfer.created')
+        self.ctid_ng.create_transfer(transferred_channel_id,
+                                     initiator_channel_id,
+                                     **RECIPIENT)
+
+        def event_is_sent():
+            assert_that(self.bus.events(), has_item(has_entry('name', 'transfer_created')))
+
+        until.assert_(event_is_sent, tries=5)
+
+>>>>>>> origin/6230-transfer-bus-events
 
 class TestGetTransfer(TestTransfers):
 
@@ -403,6 +458,10 @@ class TestCompleteTransfer(TestTransfers):
 
 
 class TestTransferFromStasis(TestTransfers):
+
+    def setUp(self):
+        super(TestTransferFromStasis, self).setUp()
+        self.bus.listen_events('calls.transfer.*')
 
     def test_given_state_ready_when_transfer_start_and_answer_then_state_answered(self):
         transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()
@@ -679,8 +738,7 @@ class TestTransferFromStasis(TestTransfers):
 
         self.ari.channels.hangup(channelId=initiator_channel_id)
 
-        until.assert_(self.assert_transfer_is_hungup,
-                      transfer_id,
+        until.assert_(self.assert_everyone_hungup,
                       transferred_channel_id,
                       initiator_channel_id,
                       recipient_channel_id,
@@ -703,8 +761,7 @@ class TestTransferFromStasis(TestTransfers):
 
         self.ari.channels.hangup(channelId=recipient_channel_id)
 
-        until.assert_(self.assert_transfer_is_hungup,
-                      transfer_id,
+        until.assert_(self.assert_everyone_hungup,
                       transferred_channel_id,
                       initiator_channel_id,
                       recipient_channel_id,
@@ -740,6 +797,10 @@ class TestTransferFromStasis(TestTransfers):
 
 
 class TestTransferFromNonStasis(TestTransfers):
+
+    def setUp(self):
+        super(TestTransferFromNonStasis, self).setUp()
+        self.bus.listen_events('calls.transfer.*')
 
     def test_given_state_ready_from_not_stasis_when_transfer_start_and_answer_then_state_answered(self):
         transferred_channel_id, initiator_channel_id = self.given_bridged_call_not_stasis()

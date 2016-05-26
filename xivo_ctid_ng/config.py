@@ -4,8 +4,6 @@
 
 
 import argparse
-import os
-import sys
 
 from xivo.chain_map import ChainMap
 from xivo.config_helper import read_config_file_hierarchy, parse_config_file
