@@ -796,6 +796,10 @@ class TestTransferFromStasis(TestTransfers):
 
 class TestTransferFromNonStasis(TestTransfers):
 
+    def setUp(self):
+        super(TestTransferFromNonStasis, self).setUp()
+        self.bus.listen_events('calls.transfer.*')
+
     def test_given_state_ready_from_not_stasis_when_transfer_start_and_answer_then_state_answered(self):
         transferred_channel_id, initiator_channel_id = self.given_bridged_call_not_stasis()
 
