@@ -387,7 +387,6 @@ class TestCreateTransfer(TestTransfers):
         assert_that(response.status_code, equal_to(400))
         assert_that(response.json(), has_entry('message', contains_string('creation')))
 
-<<<<<<< HEAD
     def test_given_recipient_not_found_when_create_then_error_400(self):
         transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()
         body = {
@@ -403,8 +402,6 @@ class TestCreateTransfer(TestTransfers):
                                                   'details': has_entries({'exten': RECIPIENT_NOT_FOUND['exten'],
                                                                           'context': RECIPIENT_NOT_FOUND['context']})}))
 
-||||||| merged common ancestors
-=======
     def test_given_stasis_when_create_then_event_sent_in_bus(self):
         transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()
 
