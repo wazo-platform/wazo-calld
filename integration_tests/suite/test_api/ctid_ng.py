@@ -6,6 +6,7 @@ import json
 import requests
 import time
 
+from contextlib import contextmanager
 from hamcrest import assert_that, equal_to
 
 from .constants import VALID_TOKEN
@@ -67,14 +68,6 @@ class CtidNgClient(object):
                                verify=False)
         return result
 
-    def post_call_raw_no_json(self, body, token=None):
-        url = u'https://localhost:9500/1.0/calls'
-        result = requests.post(url,
-                               data=json.dumps(body),
-                               headers={'X-Auth-Token': token},
-                               verify=False)
-        return result
-
     def originate(self, source, priority, extension, context, variables=None, token=VALID_TOKEN):
         response = self.post_call_result(source, priority, extension, context, variables, token=token)
         assert_that(response.status_code, equal_to(201))
@@ -109,13 +102,6 @@ class CtidNgClient(object):
         response = self.put_call_user_result(call_id, user_uuid, token=VALID_TOKEN)
         assert_that(response.status_code, equal_to(200))
         return response.json()
-
-    def post_transfer_result_no_json(self, body, token=None):
-        result = requests.post('https://localhost:9500/1.0/transfers',
-                               data=json.dumps(body),
-                               headers={'X-Auth-Token': token},
-                               verify=False)
-        return result
 
     def post_transfer_result(self, body, token=None):
         result = requests.post('https://localhost:9500/1.0/transfers',
@@ -183,6 +169,22 @@ class CtidNgClient(object):
         response = self.get_transfer_result(transfer_id, token=token)
         assert_that(response.status_code, equal_to(200))
         return response.json()
+
+    @contextmanager
+    def send_no_content_type(self):
+        def no_json(decorated):
+            def decorator(*args, **kwargs):
+                kwargs['data'] = json.dumps(kwargs.pop('json'))
+                return decorated(*args, **kwargs)
+            return decorator
+
+        old_post = requests.post
+        old_put = requests.put
+        requests.post = no_json(requests.post)
+        requests.put = no_json(requests.put)
+        yield
+        requests.post = old_post
+        requests.put = old_put
 
 
 def new_call_id():

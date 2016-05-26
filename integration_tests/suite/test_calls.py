@@ -377,12 +377,13 @@ class TestCreateCall(IntegrationTest):
         self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip'))
         self.confd.set_user_lines({'user-uuid': [MockUserLine('line-id')]})
         self.ari.set_originates(MockChannel(id='new-call-id'))
-        body = {'source': {'user': user_uuid},
-                'destination': {'priority': 'my-priority',
-                                'extension': 'my-extension',
-                                'context': 'my-context'}}
 
-        result = self.ctid_ng.post_call_raw_no_json(body, token=VALID_TOKEN)
+        with self.ctid_ng.send_no_content_type():
+            result = self.ctid_ng.post_call_result(source=user_uuid,
+                                                   priority='my-priority',
+                                                   extension='my-extension',
+                                                   context='my-context',
+                                                   token=VALID_TOKEN)
 
         assert_that(result.status_code, equal_to(201), result.json())
 
