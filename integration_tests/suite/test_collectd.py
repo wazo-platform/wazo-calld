@@ -2,6 +2,7 @@
 # Copyright 2015-2016 by Avencall
 # SPDX-License-Identifier: GPL-3.0+
 
+import os
 import time
 
 from hamcrest import assert_that
@@ -220,7 +221,7 @@ class TestCollectdRabbitMQRestart(IntegrationTest):
         self.stasis.event_stasis_start(channel_id=call_id)
 
         self.restart_service('rabbitmq')
-        until.true(self.bus.is_up, tries=5)  # wait for rabbitmq to come back up
+        until.true(self.bus.is_up, tries=os.environ.get('INTEGRATION_TEST_TIMEOUT', 30))  # wait for rabbitmq to come back up
 
         self.bus.listen_events(routing_key='collectd.calls', exchange='collectd')
         self.stasis.event_channel_destroyed(channel_id=call_id)
