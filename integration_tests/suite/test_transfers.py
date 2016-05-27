@@ -427,6 +427,18 @@ class TestCreateTransfer(TestTransfers):
 
         until.assert_(event_is_sent, tries=5)
 
+    def test_when_create_then_recipient_sees_initiator_caller_id(self):
+        transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()
+        initiator_caller_id_name = u'înîtîâtôr'
+        self.ari.channels.setChannelVar(channelId=initiator_channel_id, variable='CALLERID(name)', value=initiator_caller_id_name.encode('utf-8'))
+
+        response = self.ctid_ng.create_transfer(transferred_channel_id,
+                                                initiator_channel_id,
+                                                **RECIPIENT)
+
+        recipient_channel = self.ari.channels.get(channelId=response['recipient_call'])
+        assert_that(recipient_channel.json['connected']['name'], equal_to(initiator_caller_id_name))
+
 
 class TestGetTransfer(TestTransfers):
 
