@@ -5,7 +5,6 @@
 
 import ari
 import logging
-import json
 
 from ari.exceptions import ARINotFound
 from ari.exceptions import ARINotInStasis
@@ -55,6 +54,10 @@ RECIPIENT_BUSY = {
 RECIPIENT_NOT_FOUND = {
     'context': 'local',
     'exten': 'extenNotFound',
+}
+RECIPIENT_CALLER_ID = {
+    'context': 'local',
+    'exten': 'answer-caller-id',
 }
 SOME_CHANNEL_ID = '123456789.123'
 SOME_TRANSFER_ID = '123456789.123'
@@ -427,17 +430,24 @@ class TestCreateTransfer(TestTransfers):
 
         until.assert_(event_is_sent, tries=5)
 
-    def test_when_create_then_recipient_sees_initiator_caller_id(self):
+    def test_when_create_then_caller_ids_are_right(self):
         transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()
         initiator_caller_id_name = u'înîtîâtôr'
+        recipient_caller_id_name = u'rêcîpîênt'
         self.ari.channels.setChannelVar(channelId=initiator_channel_id, variable='CALLERID(name)', value=initiator_caller_id_name.encode('utf-8'))
 
         response = self.ctid_ng.create_transfer(transferred_channel_id,
                                                 initiator_channel_id,
-                                                **RECIPIENT)
+                                                **RECIPIENT_CALLER_ID)
 
-        recipient_channel = self.ari.channels.get(channelId=response['recipient_call'])
-        assert_that(recipient_channel.json['connected']['name'], equal_to(initiator_caller_id_name))
+        def caller_id_are_right():
+            recipient_channel = self.ari.channels.get(channelId=response['recipient_call'])
+            assert_that(recipient_channel.json['connected']['name'], equal_to(initiator_caller_id_name))
+
+            initiator_channel = self.ari.channels.get(channelId=initiator_channel_id)
+            assert_that(initiator_channel.json['connected']['name'], equal_to(recipient_caller_id_name))
+
+        until.assert_(caller_id_are_right, tries=5)
 
 
 class TestGetTransfer(TestTransfers):
