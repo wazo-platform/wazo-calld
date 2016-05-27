@@ -27,7 +27,7 @@ ari:
   volumes:
     - "./etc/asterisk:/etc/asterisk"
     - "./ssl:/usr/local/share/ssl"
-  command: "asterisk -fvvv"
+  command: "asterisk -fTvvv"
 
 auth:
   image: p0bailey/docker-flask
