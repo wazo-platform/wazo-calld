@@ -230,11 +230,15 @@ class TransfersStasis(object):
             return
 
         try:
-            self.ari.channels.setChannelVar(channelId=transfer.initiator_call,
-                                            variable='CONNECTEDLINE(name)',
-                                            value=channel.json['caller']['name'].encode('utf-8'))
-            self.ari.channels.setChannelVar(channelId=transfer.initiator_call,
-                                            variable='CONNECTEDLINE(num)',
-                                            value=channel.json['caller']['number'].encode('utf-8'))
+            ari_helpers.update_connectedline(self.ari,
+                                             self.amid,
+                                             transfer.initiator_call,
+                                             transfer.recipient_call)
         except ARINotFound:
-            pass
+            try:
+                ari_helpers.update_connectedline(self.ari,
+                                                 self.amid,
+                                                 transfer.transferred_call,
+                                                 transfer.recipient_call)
+            except ARINotFound:
+                logger.debug('cannot update transfer callerid: everyone hung up')

@@ -2,9 +2,13 @@
 # Copyright 2016 by Avencall
 # SPDX-License-Identifier: GPL-3.0+
 
+import logging
+
 from requests import RequestException
 
 from .exceptions import XiVOAmidError
+
+logger = logging.getLogger(__name__)
 
 
 def unset_variable_ami(amid, channel_id, variable):
