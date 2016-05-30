@@ -467,6 +467,19 @@ class TestCreateTransfer(TestTransfers):
 
         until.assert_(caller_id_are_right, tries=5)
 
+    def test_given_no_content_type_when_create_then_ok(self):
+        transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()
+        body = {
+            'transferred_call': transferred_channel_id,
+            'initiator_call': initiator_channel_id,
+        }
+        body.update(RECIPIENT)
+
+        with self.ctid_ng.send_no_content_type():
+            response = self.ctid_ng.post_transfer_result(body=body, token=VALID_TOKEN)
+
+        assert_that(response.status_code, equal_to(201))
+
 
 class TestGetTransfer(TestTransfers):
 

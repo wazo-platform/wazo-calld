@@ -2,9 +2,11 @@
 # Copyright (C) 2015-2016 Avencall
 # SPDX-License-Identifier: GPL-3.0+
 
+import json
 import requests
 import time
 
+from contextlib import contextmanager
 from hamcrest import assert_that, equal_to
 
 from .constants import VALID_TOKEN
@@ -167,6 +169,22 @@ class CtidNgClient(object):
         response = self.get_transfer_result(transfer_id, token=token)
         assert_that(response.status_code, equal_to(200))
         return response.json()
+
+    @contextmanager
+    def send_no_content_type(self):
+        def no_json(decorated):
+            def decorator(*args, **kwargs):
+                kwargs['data'] = json.dumps(kwargs.pop('json'))
+                return decorated(*args, **kwargs)
+            return decorator
+
+        old_post = requests.post
+        old_put = requests.put
+        requests.post = no_json(requests.post)
+        requests.put = no_json(requests.put)
+        yield
+        requests.post = old_post
+        requests.put = old_put
 
 
 def new_call_id():
