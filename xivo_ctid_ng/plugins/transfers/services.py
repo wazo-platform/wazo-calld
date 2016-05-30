@@ -55,7 +55,7 @@ class TransfersService(object):
         except KeyError:
             raise TransferCreationError('{call}: no app_instance found'.format(call=initiator_call))
         initiator_channel = self.ari.channels.get(channelId=initiator_call)
-        caller_id = assemble_caller_id(initiator_channel.json['caller']['name'], initiator_channel.json['caller']['number'])
+        caller_id = assemble_caller_id(initiator_channel.json['caller']['name'], initiator_channel.json['caller']['number']).encode('utf-8')
         recipient_endpoint = 'Local/{exten}@{context}'.format(exten=exten, context=context)
         app_args = [app_instance, 'transfer_recipient_called', transfer_id]
         originate_variables = {'XIVO_TRANSFER_ROLE': 'recipient',
@@ -66,11 +66,6 @@ class TransfersService(object):
                                                   callerId=caller_id,
                                                   variables={'variables': originate_variables})
         recipient_call = new_channel.id
-        try:
-            initiator_channel.setChannelVar(variable='CONNECTEDLINE(name)', value=new_channel.json['caller']['name'])
-            initiator_channel.setChannelVar(variable='CONNECTEDLINE(num)', value=new_channel.json['caller']['number'])
-        except ARINotFound:
-            raise TransferCreationError('initiator hung up')
 
         try:
             ari_helpers.set_bridge_variable(self.ari, transfer_id, 'XIVO_HANGUP_LOCK_SOURCE', recipient_call)

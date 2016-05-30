@@ -43,6 +43,14 @@ def unset_variable(ari, amid, channel_id, variable):
         ami_helpers.unset_variable_ami(amid, channel_id, variable)
 
 
+def update_connectedline(ari, amid, channel_id, from_channel_id):
+    from_channel = ari.channels.get(channelId=from_channel_id)
+    name = from_channel.json['caller']['name']
+    number = from_channel.json['caller']['number']
+    ari.channels.setChannelVar(channelId=channel_id, variable='CONNECTEDLINE(name)', value=name.encode('utf-8'))
+    ari.channels.setChannelVar(channelId=channel_id, variable='CONNECTEDLINE(num)', value=number.encode('utf-8'))
+
+
 def set_bridge_variable(ari, bridge_id, variable, value):
     global_variable = 'XIVO_BRIDGE_VARIABLES_{}'.format(bridge_id)
     try:

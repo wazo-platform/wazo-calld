@@ -52,6 +52,8 @@ class TransfersStasis(object):
         self.hangup_pubsub.subscribe(TransferRole.initiator, self.initiator_hangup)
         self.hangup_pubsub.subscribe(TransferRole.transferred, self.transferred_hangup)
 
+        self.ari.on_channel_event('ChannelCallerId', self.update_transfer_caller_id)
+
     def invalid_event(self, _, __, exception):
         if isinstance(exception, InvalidEvent):
             event = exception.event
@@ -214,3 +216,29 @@ class TransfersStasis(object):
             lock.kill_source()
         except InvalidLock:
             pass
+
+    def update_transfer_caller_id(self, channel, event):
+        try:
+            transfer = self.state_persistor.get_by_channel(channel.id)
+        except KeyError:
+            logger.debug('ignoring ChannelCallerId event: channel %s', event['channel']['name'])
+            return
+
+        transfer_role = transfer.role(channel.id)
+        if transfer_role != TransferRole.recipient:
+            logger.debug('ignoring ChannelCallerId event: channel %s', event['channel']['name'])
+            return
+
+        try:
+            ari_helpers.update_connectedline(self.ari,
+                                             self.amid,
+                                             transfer.initiator_call,
+                                             transfer.recipient_call)
+        except ARINotFound:
+            try:
+                ari_helpers.update_connectedline(self.ari,
+                                                 self.amid,
+                                                 transfer.transferred_call,
+                                                 transfer.recipient_call)
+            except ARINotFound:
+                logger.debug('cannot update transfer callerid: everyone hung up')
