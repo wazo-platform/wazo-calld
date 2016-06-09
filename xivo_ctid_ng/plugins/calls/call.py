@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015 by Avencall
+# Copyright 2015-2016 by Avencall
 # SPDX-License-Identifier: GPL-3.0+
 
 
@@ -14,6 +14,7 @@ class Call(object):
         self.user_uuid = None
         self.caller_id_name = ''
         self.caller_id_number = ''
+        self.on_hold = False
 
     def to_dict(self):
         return {
@@ -23,6 +24,7 @@ class Call(object):
             'caller_id_number': self.caller_id_number,
             'creation_time': self.creation_time,
             'status': self.status,
+            'on_hold': self.on_hold,
             'talking_to': self.talking_to,
             'user_uuid': self.user_uuid,
         }
