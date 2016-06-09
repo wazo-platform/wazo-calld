@@ -11,14 +11,18 @@ from .exceptions import XiVOAmidError
 logger = logging.getLogger(__name__)
 
 
-def unset_variable_ami(amid, channel_id, variable):
+def set_variable_ami(amid, channel_id, variable, value):
     try:
         parameters = {'Channel': channel_id,
                       'Variable': variable,
-                      'Value': ''}
+                      'Value': value}
         amid.action('Setvar', parameters)
     except RequestException as e:
         raise XiVOAmidError(amid, e)
+
+
+def unset_variable_ami(amid, channel_id, variable):
+    set_variable_ami(amid, channel_id, variable, '')
 
 
 def convert_transfer_to_stasis(amid, transferred_call, initiator_call, context, exten, transfer_id):
