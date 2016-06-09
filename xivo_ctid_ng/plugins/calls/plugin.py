@@ -2,6 +2,7 @@
 # Copyright (C) 2015-2016 Avencall
 # SPDX-License-Identifier: GPL-3.0+
 
+from xivo_amid_client import Client as AmidClient
 
 from .bus_consume import CallsBusEventHandler
 from .resources import CallResource
@@ -22,10 +23,13 @@ class Plugin(object):
         token_changed_subscribe = dependencies['token_changed_subscribe']
         config = dependencies['config']
 
+        amid_client = AmidClient(**config['amid'])
+        token_changed_subscribe(amid_client.set_token)
+
         calls_service = CallsService(config['ari']['connection'], config['confd'], ari.client)
         token_changed_subscribe(calls_service.set_confd_token)
 
-        calls_stasis = CallsStasis(ari.client, collectd, bus_publisher, calls_service, config['uuid'])
+        calls_stasis = CallsStasis(ari.client, collectd, bus_publisher, calls_service, config['uuid'], amid_client)
         calls_stasis.subscribe()
 
         calls_bus_event_handler = CallsBusEventHandler(ari.client, collectd, bus_publisher, calls_service, config['uuid'])
