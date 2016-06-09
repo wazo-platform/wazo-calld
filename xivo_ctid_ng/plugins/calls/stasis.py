@@ -41,9 +41,9 @@ class CallsStasis(object):
     def subscribe(self):
         self.ari.on_channel_event('StasisStart', self.stasis_start)
         self.ari.on_channel_event('ChannelDestroyed', self.channel_destroyed)
-        self.subscribe_all_channels_handle = self.ari.on_channel_event('StasisStart', self.subscribe_to_all_channel_events)
+        self.ari.on_application_registered(APPLICATION_NAME, self.subscribe_to_all_channel_events)
 
-    def subscribe_to_all_channel_events(self, event_objects, event):
+    def subscribe_to_all_channel_events(self):
         self.subscribe_all_channels_handle.close()
         self.ari.applications.subscribe(applicationName=APPLICATION_NAME, eventSource='channel:')
 
