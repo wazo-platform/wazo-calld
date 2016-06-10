@@ -156,28 +156,6 @@ class TestCollectd(IntegrationTest):
         until.assert_(assert_function, tries=3)
 
 
-class TestCollectdFirstStasisStart(IntegrationTest):
-
-    asset = 'basic_rest'
-
-    def setUp(self):
-        super(TestCollectdFirstStasisStart, self).setUp()
-        self.ari.reset()
-        self.confd.reset()
-
-    def test_when_new_stasis_channel_then_subscribe_to_all_channel_events(self):
-        self.stasis.event_stasis_start(channel_id=new_call_id())
-
-        def assert_function():
-            assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
-                'method': 'POST',
-                'path': '/ari/applications/callcontrol/subscription',
-                'query': [['eventSource', 'channel:']]
-            }))))
-
-        until.assert_(assert_function, tries=3)
-
-
 class TestCollectdCtidNgRestart(IntegrationTest):
 
     asset = 'basic_rest'
