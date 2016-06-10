@@ -4,6 +4,7 @@
 
 import logging
 
+from xivo_bus.resources.calls.hold import CallOnHoldEvent, CallResumeEvent
 from xivo_ctid_ng.core.ari_ import APPLICATION_NAME
 
 from .event import CallEvent
@@ -92,6 +93,10 @@ class CallsStasis(object):
 
     def channel_hold(self, channel, event):
         ami_helpers.set_variable_ami(self.ami, channel.id, 'XIVO_ON_HOLD', '1')
+        bus_msg = CallOnHoldEvent(channel.id)
+        self.bus_publisher.publish(bus_msg)
 
     def channel_unhold(self, channel, event):
         ami_helpers.unset_variable_ami(self.ami, channel.id, 'XIVO_ON_HOLD')
+        bus_msg = CallResumeEvent(channel.id)
+        self.bus_publisher.publish(bus_msg)
