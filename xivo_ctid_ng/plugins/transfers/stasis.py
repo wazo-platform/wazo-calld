@@ -10,13 +10,13 @@ from ari.exceptions import ARINotFound
 from ari.exceptions import ARINotInStasis
 
 from xivo_ctid_ng.core.ari_ import APPLICATION_NAME
+from xivo_ctid_ng.core.exceptions import XiVOAmidError
 
 from . import ari_helpers
 from .event import TransferRecipientAnsweredEvent
 from .event import CreateTransferEvent
 from .exceptions import InvalidEvent
 from .exceptions import TransferException
-from .exceptions import XiVOAmidError
 from .lock import HangupLock, InvalidLock
 from .transfer import TransferRole
 

@@ -9,7 +9,7 @@ from xivo_ctid_ng.core.ari_ import APPLICATION_NAME
 from ari.exceptions import ARINotFound
 from xivo_ctid_ng.plugins.calls.state_persistor import ReadOnlyStatePersistor as ReadOnlyCallStates
 
-from . import ami_helpers
+from xivo_ctid_ng.core import ami_helpers
 from . import ari_helpers
 from .exceptions import InvalidExtension
 from .exceptions import NoSuchTransfer

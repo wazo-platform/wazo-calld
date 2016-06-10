@@ -16,7 +16,7 @@ from .state import state_factory
 from .state import CallStateOnHook
 from .state_persistor import ChannelCacheEntry
 from .state_persistor import StatePersistor
-from xivo_ctid_ng.plugins.transfers import ami_helpers
+from xivo_ctid_ng.core import ami_helpers
 
 logger = logging.getLogger(__name__)
 
