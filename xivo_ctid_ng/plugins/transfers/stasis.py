@@ -9,6 +9,8 @@ from xivo.pubsub import Pubsub
 from ari.exceptions import ARINotFound
 from ari.exceptions import ARINotInStasis
 
+from xivo_ctid_ng.core.ari_ import APPLICATION_NAME
+
 from . import ari_helpers
 from .event import TransferRecipientAnsweredEvent
 from .event import CreateTransferEvent
@@ -36,6 +38,7 @@ class TransfersStasis(object):
         self.state_persistor = state_persistor
 
     def subscribe(self):
+        self.ari.on_application_registered(APPLICATION_NAME, self.process_lost_hangups)
         self.ari.on_channel_event('ChannelEnteredBridge', self.release_hangup_lock)
         self.ari.on_channel_event('ChannelDestroyed', self.bypass_hangup_lock_from_source)
         self.ari.on_bridge_event('BridgeDestroyed', self.clean_bridge_variables)
@@ -66,6 +69,23 @@ class TransfersStasis(object):
 
     def handle_error(self, exception):
         logger.error('%s: %s', exception.message, exception.details)
+
+    def process_lost_hangups(self):
+        transfers = list(self.state_persistor.list())
+
+        logger.debug('Processing lost hangups since last stop...')
+        for transfer in transfers:
+            transfer_state = self.state_factory.make(transfer)
+            if not ari_helpers.channel_exists(self.ari, transfer.transferred_call):
+                logger.debug('Transferred hangup from transfer %s', transfer.id)
+                transfer_state = transfer_state.transferred_hangup()
+            if not ari_helpers.channel_exists(self.ari, transfer.initiator_call):
+                logger.debug('Initiator hangup from transfer %s', transfer.id)
+                transfer_state = transfer_state.initiator_hangup()
+            if not ari_helpers.channel_exists(self.ari, transfer.recipient_call):
+                logger.debug('Recipient hangup from transfer %s', transfer.id)
+                transfer_state = transfer_state.recipient_hangup()
+        logger.debug('Done.')
 
     def stasis_start(self, event_objects, event):
         channel = event_objects['channel']

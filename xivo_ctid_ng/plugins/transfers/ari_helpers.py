@@ -80,3 +80,11 @@ def get_bridge_variable(ari, bridge_id, variable):
         return cache[variable]
     except KeyError as e:
         raise ARINotFound(ari, e)
+
+
+def channel_exists(ari, channel_id):
+    try:
+        ari.channels.get(channelId=channel_id)
+        return True
+    except ARINotFound:
+        return False
