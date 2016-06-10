@@ -988,7 +988,7 @@ class TestInitialisation(TestTransfers):
          transfer_id) = self.given_ringing_and_answer_transfer()
 
         with self._ctid_ng_stopped():
-            time.sleep(2)
+            time.sleep(2)  # wait for recipient to answer (and be hungup by Asterisk, cause "no such application")
 
         until.assert_(self.assert_transfer_is_cancelled,
                       transfer_id,
@@ -1026,19 +1026,6 @@ class TestInitialisation(TestTransfers):
     def _stop_ctid_ng(self):
         self.stop_service('ctid-ng')
 
-        def ctid_ng_is_stopped():
-            status = self.service_status()
-            return not status['State']['Running']
-        until.true(ctid_ng_is_stopped, tries=5)
-
     def _start_ctid_ng(self):
         self.start_service('ctid-ng')
-
-        def ctid_ng_is_started():
-            try:
-                response = self.ctid_ng.get_transfer_result('transfer-not-found', 'invalid-token')
-                return response.status_code == 401
-            except RequestException:
-                return False
-
-        until.true(ctid_ng_is_started, tries=5)
+        until.true(self.ctid_ng.is_up, tries=5)
