@@ -48,5 +48,5 @@ class StatePersistor(object):
         self._index.set(list(index))
 
     def list(self):
-        for transfer_id in self._index.get():
+        for transfer_id in self._index.get(default=[]):
             yield self.get(transfer_id)
