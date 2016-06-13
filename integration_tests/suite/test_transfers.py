@@ -5,10 +5,11 @@
 
 import ari
 import logging
+import time
 
 from ari.exceptions import ARINotFound
 from ari.exceptions import ARINotInStasis
-
+from contextlib import contextmanager
 from hamcrest import all_of
 from hamcrest import anything
 from hamcrest import assert_that
@@ -21,7 +22,7 @@ from hamcrest import has_item
 from hamcrest import has_key
 from hamcrest import instance_of
 from hamcrest import not_
-
+from requests import RequestException
 from xivo_test_helpers import until
 
 from .test_api.base import IntegrationTest
@@ -939,3 +940,92 @@ class TestNoAmid(TestTransfers):
 
         assert_that(response.status_code, equal_to(503))
         assert_that(response.json(), has_entry('message', contains_string('xivo-amid')))
+
+
+class TestInitialisation(TestTransfers):
+
+    def setUp(self):
+        super(TestInitialisation, self).setUp()
+        self.bus.listen_events('calls.transfer.*')
+
+    def test_given_started_transfer_when_xivo_ctid_ng_restarts_then_transfer_may_continue(self):
+        (transferred_channel_id,
+         initiator_channel_id,
+         recipient_channel_id,
+         transfer_id) = self.given_answered_transfer()
+
+        self._restart_ctid_ng()
+
+        self.ctid_ng.complete_transfer(transfer_id)
+
+        until.assert_(self.assert_transfer_is_completed,
+                      transfer_id,
+                      transferred_channel_id,
+                      initiator_channel_id,
+                      recipient_channel_id,
+                      tries=5)
+
+    def test_given_started_transfer_and_initiator_hangs_up_while_ctid_ng_is_down_when_ctid_ng_restarts_then_transfer_is_completed(self):
+        (transferred_channel_id,
+         initiator_channel_id,
+         recipient_channel_id,
+         transfer_id) = self.given_answered_transfer()
+
+        with self._ctid_ng_stopped():
+            self.ari.channels.hangup(channelId=initiator_channel_id)
+
+        until.assert_(self.assert_transfer_is_completed,
+                      transfer_id,
+                      transferred_channel_id,
+                      initiator_channel_id,
+                      recipient_channel_id,
+                      tries=5)
+
+    def test_given_ringing_transfer_and_recipient_answers_while_ctid_ng_is_down_when_ctid_ng_restarts_then_transfer_is_cancelled(self):
+        (transferred_channel_id,
+         initiator_channel_id,
+         recipient_channel_id,
+         transfer_id) = self.given_ringing_and_answer_transfer()
+
+        with self._ctid_ng_stopped():
+            time.sleep(2)  # wait for recipient to answer (and be hungup by Asterisk, cause "no such application")
+
+        until.assert_(self.assert_transfer_is_cancelled,
+                      transfer_id,
+                      transferred_channel_id,
+                      initiator_channel_id,
+                      recipient_channel_id,
+                      tries=5)
+
+    def test_given_answered_transfer_and_transferred_hangs_up_while_ctid_ng_is_down_when_ctid_ng_restarts_then_transfer_is_abandoned(self):
+        (transferred_channel_id,
+         initiator_channel_id,
+         recipient_channel_id,
+         transfer_id) = self.given_answered_transfer()
+
+        with self._ctid_ng_stopped():
+            self.ari.channels.hangup(channelId=transferred_channel_id)
+
+        until.assert_(self.assert_transfer_is_abandoned,
+                      transfer_id,
+                      transferred_channel_id,
+                      initiator_channel_id,
+                      recipient_channel_id,
+                      tries=5)
+
+    @contextmanager
+    def _ctid_ng_stopped(self):
+        self._stop_ctid_ng()
+        yield
+        self._start_ctid_ng()
+
+    def _restart_ctid_ng(self):
+        self._stop_ctid_ng()
+        self._start_ctid_ng()
+
+    def _stop_ctid_ng(self):
+        self.stop_service('ctid-ng')
+
+    def _start_ctid_ng(self):
+        self.start_service('ctid-ng')
+        until.true(self.ctid_ng.is_up, tries=5)

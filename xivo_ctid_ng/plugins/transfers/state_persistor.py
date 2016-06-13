@@ -24,7 +24,7 @@ class StatePersistor(object):
         return Transfer.from_dict(self._transfers.get(transfer_id))
 
     def get_by_channel(self, channel_id):
-        for transfer in self._list():
+        for transfer in self.list():
             if channel_id in (transfer.transferred_call,
                               transfer.initiator_call,
                               transfer.recipient_call):
@@ -47,6 +47,6 @@ class StatePersistor(object):
             return
         self._index.set(list(index))
 
-    def _list(self):
+    def list(self):
         for transfer_id in self._index.get():
             yield self.get(transfer_id)

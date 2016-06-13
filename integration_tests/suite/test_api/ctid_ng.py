@@ -14,6 +14,14 @@ from .constants import VALID_TOKEN
 
 class CtidNgClient(object):
 
+    def is_up(self):
+        url = u'https://localhost:9500/'
+        try:
+            response = requests.get(url, verify=False)
+            return response.status_code == 404
+        except requests.RequestException:
+            return False
+
     def get_calls_result(self, application=None, application_instance=None, token=None):
         url = u'https://localhost:9500/1.0/calls'
         params = {}
