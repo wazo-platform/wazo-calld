@@ -18,6 +18,7 @@ from hamcrest import contains_string
 from .test_api.ari_ import MockApplication
 from .test_api.ari_ import MockBridge
 from .test_api.ari_ import MockChannel
+from .test_api.auth import MockUserToken
 from .test_api.base import IntegrationTest
 from .test_api.confd import MockLine
 from .test_api.confd import MockUser
@@ -384,6 +385,165 @@ class TestCreateCall(IntegrationTest):
                                                    extension='my-extension',
                                                    context='my-context',
                                                    token=VALID_TOKEN)
+
+        assert_that(result.status_code, equal_to(201), result.json())
+
+
+class TestUserCreateCall(IntegrationTest):
+
+    asset = 'basic_rest'
+
+    def setUp(self):
+        super(TestUserCreateCall, self).setUp()
+        self.ari.reset()
+        self.confd.reset()
+
+    def test_given_invalid_input_when_create_then_error_400(self):
+        for invalid_body in self.invalid_call_requests():
+            response = self.ctid_ng.post_user_me_call_result(invalid_body, VALID_TOKEN)
+
+            assert_that(response.status_code, equal_to(400))
+            assert_that(response.json(), has_entries({'message': contains_string('invalid'),
+                                                      'error_id': equal_to('invalid-data')}))
+
+    def invalid_call_requests(self):
+        valid_call_request = {
+            'extension': '1234',
+            'variables': {'key': 'value'}
+        }
+
+        for key in ('extension', 'variables'):
+            body = dict(valid_call_request)
+            body[key] = None
+            yield body
+            body[key] = 1234
+            yield body
+            body[key] = True
+            yield body
+            body[key] = ''
+            yield body
+
+        body = dict(valid_call_request)
+        body.pop('extension')
+        yield body
+
+        body = dict(valid_call_request)
+        body['variables'] = 'abcd'
+        yield body
+
+    def test_create_call_with_correct_values(self):
+        user_uuid = 'user-uuid'
+        token = 'my-token'
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
+        self.confd.set_users(MockUser(uuid=user_uuid))
+        self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip', context='my-context'))
+        self.confd.set_user_lines({'user-uuid': [MockUserLine('line-id')]})
+        self.ari.set_originates(MockChannel(id='new-call-id'))
+
+        result = self.ctid_ng.originate_me(extension='my-extension', token=token)
+
+        assert_that(result, has_entry('call_id', 'new-call-id'))
+        assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
+            'method': 'POST',
+            'path': '/ari/channels',
+        }))))
+
+    def test_when_create_call_then_ari_arguments_are_correct(self):
+        user_uuid = 'user-uuid'
+        token = 'my-token'
+        self.auth.set_token(MockUserToken(token, user_uuid))
+        self.confd.set_users(MockUser(uuid=user_uuid))
+        self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip', context='my-context'))
+        self.confd.set_user_lines({user_uuid: [MockUserLine('line-id')]})
+        self.ari.set_originates(MockChannel('new-call-id'))
+
+        self.ctid_ng.originate_me(extension='my-extension',
+                                  variables={'MY_VARIABLE': 'my-value',
+                                             'SECOND_VARIABLE': 'my-second-value'},
+                                  token=token)
+
+        assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
+            'method': 'POST',
+            'path': '/ari/channels',
+            'query': has_items(['priority', '1'],
+                               ['extension', 'my-extension'],
+                               ['context', 'my-context'],
+                               ['endpoint', 'sip/line-name']),
+            'json': has_entries({'variables': {'MY_VARIABLE': 'my-value',
+                                               'SECOND_VARIABLE': 'my-second-value'}}),
+        }))))
+
+    def test_when_create_call_with_no_variables_then_ari_variables_are_empty(self):
+        user_uuid = 'user-uuid'
+        token = 'my-token'
+        self.auth.set_token(MockUserToken(token, user_uuid))
+        self.confd.set_users(MockUser(uuid=user_uuid))
+        self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip', context='my-context'))
+        self.confd.set_user_lines({user_uuid: [MockUserLine('line-id')]})
+        self.ari.set_originates(MockChannel(id='new-call-id'))
+
+        self.ctid_ng.originate_me(extension='my-extension', token=token)
+
+        assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
+            'method': 'POST',
+            'path': '/ari/channels',
+            'json': has_entries({'variables': {}}),
+        }))))
+
+    def test_create_call_with_multiple_lines(self):
+        user_uuid = 'user-uuid'
+        token = 'my-token'
+        self.auth.set_token(MockUserToken(token, user_uuid))
+        self.confd.set_users(MockUser(uuid=user_uuid))
+        self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip', context='my-context'))
+        self.confd.set_user_lines({user_uuid: [MockUserLine('line-id2', main_line=False),
+                                               MockUserLine('line-id', main_line=True)]})
+        self.ari.set_originates(MockChannel(id='new-call-id'))
+
+        result = self.ctid_ng.originate_me(extension='my-extension', token=token)
+
+        assert_that(result, has_entry('call_id', 'new-call-id'))
+        assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
+            'method': 'POST',
+            'path': '/ari/channels',
+        }))))
+
+    def test_create_call_with_no_lines(self):
+        user_uuid = 'user-uuid'
+        token = 'my-token'
+        self.auth.set_token(MockUserToken(token, user_uuid))
+        self.confd.set_users(MockUser(uuid='user-uuid'))
+        self.confd.set_user_lines({'user-uuid': []})
+
+        body = {'extension': 'my-extension'}
+        result = self.ctid_ng.post_user_me_call_result(body, token)
+
+        assert_that(result.status_code, equal_to(400))
+        assert_that(result.json(), has_entry('message', contains_string('line')))
+
+    def test_create_call_with_invalid_user(self):
+        user_uuid = 'user-uuid-not-found'
+        token = 'my-token'
+        self.auth.set_token(MockUserToken(token, user_uuid))
+
+        body = {'extension': 'my-extension'}
+        result = self.ctid_ng.post_user_me_call_result(body, token=token)
+
+        assert_that(result.status_code, equal_to(400))
+        assert_that(result.json(), has_entry('message', contains_string('user')))
+
+    def test_create_call_with_no_content_type(self):
+        user_uuid = 'user-uuid'
+        token = 'my-token'
+        self.auth.set_token(MockUserToken(token, user_uuid))
+        self.confd.set_users(MockUser(uuid=user_uuid))
+        self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip', context='my-context'))
+        self.confd.set_user_lines({user_uuid: [MockUserLine('line-id')]})
+        self.ari.set_originates(MockChannel(id='new-call-id'))
+
+        with self.ctid_ng.send_no_content_type():
+            body = {'extension': 'my-extension'}
+            result = self.ctid_ng.post_user_me_call_result(body, token=token)
 
         assert_that(result.status_code, equal_to(201), result.json())
 

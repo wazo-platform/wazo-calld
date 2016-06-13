@@ -5,6 +5,8 @@
 import logging
 
 from flask import request
+from marshmallow import Schema, fields
+from marshmallow.validate import Length
 
 from xivo_ctid_ng.core.auth import required_acl
 from xivo_ctid_ng.core.rest_api import AuthResource
@@ -12,6 +14,13 @@ from xivo_ctid_ng.core.rest_api import AuthResource
 from . import validator
 
 logger = logging.getLogger(__name__)
+
+
+class CallRequestSchema(Schema):
+    extension = fields.Str(validate=Length(min=1), required=True)
+    variables = fields.Dict(missing=dict)
+
+call_request_schema = CallRequestSchema(strict=True)
 
 
 class CallsResource(AuthResource):
@@ -37,6 +46,25 @@ class CallsResource(AuthResource):
         validator.validate_originate_body(request_body)
 
         call_id = self.calls_service.originate(request_body)
+
+        return {'call_id': call_id}, 201
+
+
+class MyCallsResource(AuthResource):
+
+    def __init__(self, auth_client, calls_service):
+        self.auth_client = auth_client
+        self.calls_service = calls_service
+
+    @required_acl('ctid-ng.users.me.calls.create')
+    def post(self):
+        request_body = call_request_schema.load(request.get_json(force=True)).data
+
+        token = request.headers['X-Auth-Token']
+        token_infos = self.auth_client.token.get(token)
+        user_uuid = token_infos['xivo_user_uuid']
+
+        call_id = self.calls_service.originate_user(request_body, user_uuid)
 
         return {'call_id': call_id}, 201
 

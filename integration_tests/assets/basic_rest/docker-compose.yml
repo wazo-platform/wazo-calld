@@ -23,8 +23,8 @@ ari:
 
 auth:
   image: p0bailey/docker-flask
-  expose:
-    - "9497"
+  ports:
+    - "9497:9497"
   volumes:
     - "./xivo-auth:/usr/local/share/xivo-auth"
     - "./ssl:/usr/local/share/ssl"
