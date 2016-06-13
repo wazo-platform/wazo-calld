@@ -435,6 +435,18 @@ class TransferStateEnded(TransferState):
     def update_cache(self):
         self._state_persistor.remove(self.transfer.id)
 
+    @transition
+    def initiator_hangup(self):
+        return self
+
+    @transition
+    def recipient_hangup(self):
+        return self
+
+    @transition
+    def transferred_hangup(self):
+        return self
+
     @classmethod
     def from_state(cls, *args, **kwargs):
         new_state = super(TransferStateEnded, cls).from_state(*args, **kwargs)
