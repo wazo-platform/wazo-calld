@@ -5,22 +5,6 @@
 from xivo_ctid_ng.core.exceptions import APIException
 
 
-class XiVOAmidError(APIException):
-
-    def __init__(self, xivo_amid_client, error):
-        super(XiVOAmidError, self).__init__(
-            status_code=503,
-            message='xivo-amid request error',
-            error_id='xivo-amid-error',
-            details={
-                'xivo_amid_config': {'host': xivo_amid_client.host,
-                                     'port': xivo_amid_client.port,
-                                     'timeout': xivo_amid_client.timeout},
-                'original_error': str(error),
-            }
-        )
-
-
 class InvalidEvent(ValueError):
 
     def __init__(self, event):

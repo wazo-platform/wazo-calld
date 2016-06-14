@@ -6,7 +6,7 @@ import json
 
 from ari.exceptions import ARINotFound, ARINotInStasis
 
-from . import ami_helpers
+from xivo_ctid_ng.core import ami_helpers
 
 
 def is_in_stasis(ari, call_id):

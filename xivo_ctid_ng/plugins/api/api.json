@@ -399,6 +399,9 @@
                 },
                 "caller_id_number": {
                     "type": "string"
+                },
+                "on_hold": {
+                    "type": "boolean"
                 }
             }
         },

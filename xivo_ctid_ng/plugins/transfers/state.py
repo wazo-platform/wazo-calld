@@ -7,7 +7,7 @@ import uuid
 
 from ari.exceptions import ARINotFound
 
-from . import ami_helpers
+from xivo_ctid_ng.core import ami_helpers
 from . import ari_helpers
 from .exceptions import TransferAnswerError
 from .exceptions import TransferCreationError

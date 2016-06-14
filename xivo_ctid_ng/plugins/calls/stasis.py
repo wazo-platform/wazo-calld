@@ -4,6 +4,7 @@
 
 import logging
 
+from xivo_bus.resources.calls.hold import CallOnHoldEvent, CallResumeEvent
 from xivo_ctid_ng.core.ari_ import APPLICATION_NAME
 
 from .event import CallEvent
@@ -15,18 +16,14 @@ from .state import state_factory
 from .state import CallStateOnHook
 from .state_persistor import ChannelCacheEntry
 from .state_persistor import StatePersistor
+from xivo_ctid_ng.core import ami_helpers
 
 logger = logging.getLogger(__name__)
 
 
-class NullHandle(object):
-    def close(self):
-        pass
-
-
 class CallsStasis(object):
 
-    def __init__(self, ari_client, collectd, bus_publisher, services, xivo_uuid):
+    def __init__(self, ari_client, collectd, bus_publisher, services, xivo_uuid, amid_client):
         self.ari = ari_client
         self.bus_publisher = bus_publisher
         self.collectd = collectd
@@ -35,16 +32,17 @@ class CallsStasis(object):
         self.state_factory = state_factory
         self.state_factory.set_dependencies(ari_client, self.stat_sender)
         self.state_persistor = StatePersistor(ari_client)
-        self.subscribe_all_channels_handle = NullHandle()
         self.xivo_uuid = xivo_uuid
+        self.ami = amid_client
 
     def subscribe(self):
         self.ari.on_channel_event('StasisStart', self.stasis_start)
         self.ari.on_channel_event('ChannelDestroyed', self.channel_destroyed)
-        self.subscribe_all_channels_handle = self.ari.on_channel_event('StasisStart', self.subscribe_to_all_channel_events)
+        self.ari.on_channel_event('ChannelHold', self.channel_hold)
+        self.ari.on_channel_event('ChannelUnhold', self.channel_unhold)
+        self.ari.on_application_registered(APPLICATION_NAME, self.subscribe_to_all_channel_events)
 
-    def subscribe_to_all_channel_events(self, event_objects, event):
-        self.subscribe_all_channels_handle.close()
+    def subscribe_to_all_channel_events(self):
         self.ari.applications.subscribe(applicationName=APPLICATION_NAME, eventSource='channel:')
 
     def stasis_start(self, event_objects, event):
@@ -85,3 +83,13 @@ class CallsStasis(object):
         state.hangup(CallEvent(channel, event, self.state_persistor))
 
         self.state_persistor.remove(channel.id)
+
+    def channel_hold(self, channel, event):
+        ami_helpers.set_variable_ami(self.ami, channel.id, 'XIVO_ON_HOLD', '1')
+        bus_msg = CallOnHoldEvent(channel.id)
+        self.bus_publisher.publish(bus_msg)
+
+    def channel_unhold(self, channel, event):
+        ami_helpers.unset_variable_ami(self.ami, channel.id, 'XIVO_ON_HOLD')
+        bus_msg = CallResumeEvent(channel.id)
+        self.bus_publisher.publish(bus_msg)

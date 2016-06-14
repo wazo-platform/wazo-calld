@@ -125,6 +125,7 @@ class CallsService(object):
         call.caller_id_name = channel.json['caller']['name']
         call.caller_id_number = channel.json['caller']['number']
         call.user_uuid = self._get_uuid_from_channel_id(ari, channel.id)
+        call.on_hold = self._get_hold_from_channel_id(ari, channel.id) == '1'
         call.bridges = [bridge.id for bridge in ari.bridges.list() if channel.id in bridge.json['channels']]
 
         call.talking_to = dict()
@@ -173,6 +174,12 @@ class CallsService(object):
         try:
             uuid = ari.channels.getChannelVar(channelId=channel_id, variable='XIVO_USERUUID')['value']
             return uuid
+        except ARINotFound:
+            return None
+
+    def _get_hold_from_channel_id(self, ari, channel_id):
+        try:
+            return ari.channels.getChannelVar(channelId=channel_id, variable='XIVO_ON_HOLD')['value']
         except ARINotFound:
             return None
 
