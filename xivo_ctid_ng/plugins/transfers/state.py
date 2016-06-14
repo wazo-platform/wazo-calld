@@ -59,13 +59,14 @@ def transition(decorated):
 
 class TransferState(object):
 
-    def __init__(self, amid, ari, notifier, services, state_persistor, transfer=None):
+    def __init__(self, amid, ari, notifier, services, state_persistor, transfer=None, variables=None):
         self._amid = amid
         self._ari = ari
         self._notifier = notifier
         self._services = services
         self._state_persistor = state_persistor
         self.transfer = transfer
+        self.variables = variables or {}
 
     @classmethod
     def from_state(cls, other_state):
@@ -74,7 +75,8 @@ class TransferState(object):
                         other_state._notifier,
                         other_state._services,
                         other_state._state_persistor,
-                        other_state.transfer)
+                        other_state.transfer,
+                        other_state.variables)
         new_state.transfer.status = new_state.name
         return new_state
 
@@ -158,9 +160,10 @@ class TransferStateReady(TransferState):
     name = TransferStatus.ready
 
     @transition
-    def create(self, transferred_channel, initiator_channel, context, exten):
+    def create(self, transferred_channel, initiator_channel, context, exten, variables):
         transfer_bridge = self._ari.bridges.create(type='mixing', name='transfer')
         transfer_id = transfer_bridge.id
+        self.variables = variables
         try:
             transferred_channel.setChannelVar(variable='XIVO_TRANSFER_ROLE', value='transferred')
             transferred_channel.setChannelVar(variable='XIVO_TRANSFER_ID', value=transfer_id)
@@ -181,13 +184,14 @@ class TransferStateReady(TransferState):
         except ARINotFound:
             raise TransferCreationError('initiator call hung up')
 
-        recipient_call = self._services.originate_recipient(initiator_channel.id, context, exten, transfer_id)
+        recipient_call = self._services.originate_recipient(initiator_channel.id, context, exten, transfer_id, variables)
 
         self.transfer = Transfer(transfer_id)
         self.transfer.transferred_call = transferred_channel.id
         self.transfer.initiator_call = initiator_channel.id
         self.transfer.recipient_call = recipient_call
         self.transfer.status = self.name
+        self.variables = variables
         self._notifier.created(self.transfer)
 
         return TransferStateRingback.from_state(self)
@@ -202,19 +206,21 @@ class TransferStateReadyNonStasis(TransferState):
     name = 'ready_non_stasis'
 
     @transition
-    def create(self, transferred_channel, initiator_channel, context, exten):
+    def create(self, transferred_channel, initiator_channel, context, exten, variables):
         transfer_id = str(uuid.uuid4())
         ami_helpers.convert_transfer_to_stasis(self._amid,
                                                transferred_channel.id,
                                                initiator_channel.id,
                                                context,
                                                exten,
-                                               transfer_id)
+                                               transfer_id,
+                                               variables)
         self.transfer = Transfer(transfer_id)
         self.transfer.initiator_call = initiator_channel.id
         self.transfer.transferred_call = transferred_channel.id
         self.transfer.status = self.name
         self._notifier.created(self.transfer)
+        self.variables = variables
 
         return TransferStateStarting.from_state(self)
 
@@ -245,7 +251,8 @@ class TransferStateStarting(TransferState):
             self.transfer.recipient_call = self._services.originate_recipient(self.transfer.initiator_call,
                                                                               context,
                                                                               exten,
-                                                                              self.transfer.id)
+                                                                              self.transfer.id,
+                                                                              self.variables)
         except TransferCreationError as e:
             logger.error(e.message, e.details)
 
