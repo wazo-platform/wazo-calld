@@ -21,11 +21,6 @@ from xivo_ctid_ng.core import ami_helpers
 logger = logging.getLogger(__name__)
 
 
-class NullHandle(object):
-    def close(self):
-        pass
-
-
 class CallsStasis(object):
 
     def __init__(self, ari_client, collectd, bus_publisher, services, xivo_uuid, amid_client):
@@ -37,7 +32,6 @@ class CallsStasis(object):
         self.state_factory = state_factory
         self.state_factory.set_dependencies(ari_client, self.stat_sender)
         self.state_persistor = StatePersistor(ari_client)
-        self.subscribe_all_channels_handle = NullHandle()
         self.xivo_uuid = xivo_uuid
         self.ami = amid_client
 
@@ -49,7 +43,6 @@ class CallsStasis(object):
         self.ari.on_application_registered(APPLICATION_NAME, self.subscribe_to_all_channel_events)
 
     def subscribe_to_all_channel_events(self):
-        self.subscribe_all_channels_handle.close()
         self.ari.applications.subscribe(applicationName=APPLICATION_NAME, eventSource='channel:')
 
     def stasis_start(self, event_objects, event):
