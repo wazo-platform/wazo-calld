@@ -43,6 +43,18 @@ class TransferCreationError(TransferException):
         )
 
 
+class TooManyTransferredCandidates(TransferException):
+    def __init__(self, candidates):
+        super(TooManyTransferredCandidates, self).__init__(
+            status_code=409,
+            message='Too many transferred candidates',
+            error_id='too-many-transferred-candidates',
+            details={
+                'candidates': list(candidates),
+            }
+        )
+
+
 class TransferAnswerError(TransferException):
     def __init__(self, transfer_id, message):
         super(TransferAnswerError, self).__init__(
@@ -147,3 +159,13 @@ class XiVOConfdUnreachable(APIException):
                 'original_error': str(error),
             }
         )
+
+
+class NoSuchChannel(Exception):
+    def __init__(self, channel):
+        self.channel = channel
+
+
+class TooManyChannels(Exception):
+    def __init__(self, channels):
+        self.channels = channels

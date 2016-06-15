@@ -563,6 +563,42 @@ class TestUserCreateTransfer(TestTransfers):
         assert_that(response.status_code, equal_to(400))
         assert_that(response.json(), has_entry('message', contains_string('creation')))
 
+    def test_given_recipient_not_found_when_create_then_error_400(self):
+        transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()
+        token = self.given_token_user_with_line(RECIPIENT_NOT_FOUND['context'])
+        body = {
+            'initiator_call': initiator_channel_id,
+            'exten': RECIPIENT_NOT_FOUND['exten']
+        }
+
+        response = self.ctid_ng.post_user_transfer_result(body, token)
+
+        assert_that(response.status_code, equal_to(400))
+        assert_that(response.json(), has_entries({'message': contains_string('extension'),
+                                                  'details': has_entries({'exten': RECIPIENT_NOT_FOUND['exten'],
+                                                                          'context': RECIPIENT_NOT_FOUND['context']})}))
+
+    def test_given_multiple_transferred_candidates_when_create_then_error_409(self):
+        bridge = self.ari.bridges.create(type='mixing')
+        transferred_channel_1 = self.add_channel_to_bridge(bridge)
+        transferred_channel_2 = self.add_channel_to_bridge(bridge)
+        initiator_channel = self.add_channel_to_bridge(bridge)
+        token = self.given_token_user_with_line(RECIPIENT['context'])
+        body = {
+            'initiator_call': initiator_channel.id,
+            'exten': RECIPIENT['exten']
+        }
+
+        response = self.ctid_ng.post_user_transfer_result(body, token)
+
+        assert_that(response.status_code, equal_to(409))
+        assert_that(response.json(), has_entries({'message': contains_string('transferred'),
+                                                  'details': has_entries({'candidates': contains_inanyorder(
+                                                      transferred_channel_1.id,
+                                                      transferred_channel_2.id,
+                                                  )})}))
+
+
     def test_given_state_ready_when_transfer_start_and_answer_then_state_answered(self):
         transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()
         token = self.given_token_user_with_line(RECIPIENT['context'])

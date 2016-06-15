@@ -15,7 +15,10 @@ from . import ari_helpers
 from .exceptions import InvalidExtension
 from .exceptions import InvalidUserUUID
 from .exceptions import NoSuchTransfer
+from .exceptions import NoSuchChannel
 from .exceptions import TransferCreationError
+from .exceptions import TooManyChannels
+from .exceptions import TooManyTransferredCandidates
 from .exceptions import UserHasNoLine
 from .exceptions import XiVOConfdUnreachable
 from .state import TransferStateReadyNonStasis, TransferStateReady
@@ -59,8 +62,14 @@ class TransfersService(object):
         return new_state.transfer
 
     def create_from_user(self, initiator_call, exten, flow, user_uuid):
-        transferred_call = self._get_channels_talking_to(initiator_call)
+        try:
+            transferred_call = self._get_channels_talking_to(initiator_call)
+        except TooManyChannels as e:
+            raise TooManyTransferredCandidates(e.channels)
+        except NoSuchChannel:
+            raise TransferCreationError('initiator channel not found')
         context = self._context_from_user_uuid(user_uuid)
+
         return self.create(transferred_call, initiator_call, context, exten, flow)
 
     def _context_from_user_uuid(self, uuid):
@@ -92,7 +101,9 @@ class TransfersService(object):
         try:
             channels_talking_to.remove(channel_id)
         except KeyError:
-            raise TransferCreationError('channel not found')
+            raise NoSuchChannel(channel_id)
+        if len(channels_talking_to) > 1:
+            raise TooManyChannels(channels_talking_to)
         return channels_talking_to.pop()
 
     def _get_channel_ids_from_bridges(self, ari, bridges):
