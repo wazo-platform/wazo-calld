@@ -89,7 +89,10 @@ class TransfersService(object):
     def _get_channels_talking_to(self, channel_id):
         connected_bridges = [bridge.id for bridge in self.ari.bridges.list() if channel_id in bridge.json['channels']]
         channels_talking_to = self._get_channel_ids_from_bridges(self.ari, connected_bridges)
-        channels_talking_to.remove(channel_id)
+        try:
+            channels_talking_to.remove(channel_id)
+        except KeyError:
+            raise TransferCreationError('channel not found')
         return channels_talking_to.pop()
 
     def _get_channel_ids_from_bridges(self, ari, bridges):
