@@ -221,6 +221,7 @@
                 ],
                 "tags": [
                     "calls"
+                    "users"
                 ],
                 "responses": {
                     "201": {
@@ -368,6 +369,7 @@
                 ],
                 "tags": [
                     "transfers"
+                    "users"
                 ],
                 "responses": {
                     "201": {
