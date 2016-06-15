@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
+import requests
 
 from xivo.caller_id import assemble_caller_id
 from xivo_ctid_ng.core.ari_ import APPLICATION_NAME
@@ -12,17 +13,25 @@ from xivo_ctid_ng.plugins.calls.state_persistor import ReadOnlyStatePersistor as
 from . import ami_helpers
 from . import ari_helpers
 from .exceptions import InvalidExtension
+from .exceptions import InvalidUserUUID
 from .exceptions import NoSuchTransfer
 from .exceptions import TransferCreationError
+from .exceptions import UserHasNoLine
+from .exceptions import XiVOConfdUnreachable
 from .state import TransferStateReadyNonStasis, TransferStateReady
 
 logger = logging.getLogger(__name__)
 
 
+def not_found(error):
+    return error.response is not None and error.response.status_code == 404
+
+
 class TransfersService(object):
-    def __init__(self, ari, amid_client, state_factory, state_persistor):
-        self.ari = ari
+    def __init__(self, amid_client, ari, confd_client, state_factory, state_persistor):
         self.amid_client = amid_client
+        self.ari = ari
+        self.confd_client = confd_client
         self.state_persistor = state_persistor
         self.state_factory = state_factory
         self.call_states = ReadOnlyCallStates(self.ari)
@@ -48,6 +57,51 @@ class TransfersService(object):
             new_state = new_state.complete()
 
         return new_state.transfer
+
+    def create_from_user(self, initiator_call, exten, flow, user_uuid):
+        transferred_call = self._get_channels_talking_to(initiator_call)
+        context = self._context_from_user_uuid(user_uuid)
+        return self.create(transferred_call, initiator_call, context, exten, flow)
+
+    def _context_from_user_uuid(self, uuid):
+        line = self._line_from_user_uuid(uuid)
+        logger.debug(line)
+
+        return line['context']
+
+    def _line_from_user_uuid(self, uuid):
+        try:
+            user_lines_of_user = self.confd_client.users.relations(uuid).list_lines()['items']
+        except requests.HTTPError as e:
+            if not_found(e):
+                raise InvalidUserUUID(uuid)
+            raise
+        except requests.RequestException as e:
+            raise XiVOConfdUnreachable(self._self.confd_client_config, e)
+
+        main_line_ids = [user_line['line_id'] for user_line in user_lines_of_user if user_line['main_line'] is True]
+        if not main_line_ids:
+            raise UserHasNoLine(uuid)
+        line_id = main_line_ids[0]
+
+        return self.confd_client.lines.get(line_id)
+
+    def _get_channels_talking_to(self, channel_id):
+        connected_bridges = [bridge.id for bridge in self.ari.bridges.list() if channel_id in bridge.json['channels']]
+        channels_talking_to = self._get_channel_ids_from_bridges(self.ari, connected_bridges)
+        channels_talking_to.remove(channel_id)
+        return channels_talking_to.pop()
+
+    def _get_channel_ids_from_bridges(self, ari, bridges):
+        result = set()
+        for bridge_id in bridges:
+            try:
+                channels = ari.bridges.get(bridgeId=bridge_id).json['channels']
+            except requests.RequestException as e:
+                logger.error(e)
+                channels = set()
+            result.update(channels)
+        return result
 
     def originate_recipient(self, initiator_call, context, exten, transfer_id):
         try:

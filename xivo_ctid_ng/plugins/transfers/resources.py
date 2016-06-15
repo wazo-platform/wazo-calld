@@ -20,6 +20,14 @@ class TransferRequestSchema(Schema):
 transfer_request_schema = TransferRequestSchema(strict=True)
 
 
+class UserTransferRequestSchema(Schema):
+    initiator_call = fields.Str(validate=Length(min=1), required=True)
+    exten = fields.Str(validate=Length(min=1), required=True)
+    flow = fields.Str(validate=OneOf(['attended', 'blind']), missing='attended')
+
+user_transfer_request_schema = UserTransferRequestSchema(strict=True)
+
+
 class TransfersResource(AuthResource):
 
     def __init__(self, transfers_service):
@@ -33,6 +41,24 @@ class TransfersResource(AuthResource):
                                                   request_body['context'],
                                                   request_body['exten'],
                                                   request_body['flow'])
+        return transfer.to_dict(), 201
+
+
+class UserTransfersResource(AuthResource):
+
+    def __init__(self, auth_client, transfers_service):
+        self._auth_client = auth_client
+        self._transfers_service = transfers_service
+
+    @required_acl('ctid-ng.users.me.transfers.create')
+    def post(self):
+        request_body = user_transfer_request_schema.load(request.get_json(force=True)).data
+        token = request.headers['X-Auth-Token']
+        user_uuid = self._auth_client.token.get(token)['xivo_user_uuid']
+        transfer = self._transfers_service.create_from_user(request_body['initiator_call'],
+                                                            request_body['exten'],
+                                                            request_body['flow'],
+                                                            user_uuid)
         return transfer.to_dict(), 201
 
 
