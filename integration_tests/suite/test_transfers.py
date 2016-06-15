@@ -550,19 +550,6 @@ class TestUserCreateTransfer(TestTransfers):
         body['flow'] = 'unknown'
         yield body
 
-    def test_given_no_content_type_when_create_then_ok(self):
-        transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()
-        token = self.given_token_user_with_line(RECIPIENT['context'])
-        body = {
-            'initiator_call': initiator_channel_id,
-            'exten': RECIPIENT['exten'],
-        }
-
-        with self.ctid_ng.send_no_content_type():
-            response = self.ctid_ng.post_user_transfer_result(body=body, token=token)
-
-        assert_that(response.status_code, equal_to(201))
-
     def test_given_initiator_not_found_when_create_then_error_400(self):
         token = self.given_token_user_with_line(RECIPIENT['context'])
         body = {
@@ -597,6 +584,19 @@ class TestUserCreateTransfer(TestTransfers):
                       initiator_channel_id,
                       recipient_channel_id,
                       tries=5)
+
+    def test_given_no_content_type_when_create_then_ok(self):
+        transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()
+        token = self.given_token_user_with_line(RECIPIENT['context'])
+        body = {
+            'initiator_call': initiator_channel_id,
+            'exten': RECIPIENT['exten'],
+        }
+
+        with self.ctid_ng.send_no_content_type():
+            response = self.ctid_ng.post_user_transfer_result(body=body, token=token)
+
+        assert_that(response.status_code, equal_to(201))
 
 
 class TestGetTransfer(TestTransfers):
