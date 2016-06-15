@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015 by Avencall
+# Copyright (C) 2015-2016 Avencall
 # SPDX-License-Identifier: GPL-3.0+
 
 from .test_api.base import IntegrationTest
@@ -55,13 +55,18 @@ class TestAuthenticationCoverage(IntegrationTest):
 
         assert_that(result.status_code, equal_to(401))
 
-    def test_auth_on_new_call(self):
+    def test_auth_on_get_call(self):
         result = self.ctid_ng.get_call_result('my-call')
 
         assert_that(result.status_code, equal_to(401))
 
-    def test_auth_on_get_call(self):
+    def test_auth_on_new_call(self):
         result = self.ctid_ng.post_call_result(source=None, priority=None, extension=None, context=None)
+
+        assert_that(result.status_code, equal_to(401))
+
+    def test_auth_on_new_user_call(self):
+        result = self.ctid_ng.post_user_me_call_result(body={})
 
         assert_that(result.status_code, equal_to(401))
 

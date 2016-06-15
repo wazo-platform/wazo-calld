@@ -204,6 +204,43 @@
                 }
             }
         },
+        "/users/me/calls": {
+            "post": {
+                "summary": "Make a new call from a user",
+                "description": "**Required ACL:** `ctid-ng.users.me.calls.create`\n\nThe user originator of the call is determined from the authentication token.",
+                "parameters": [
+                    {
+                        "name": "body",
+                        "in": "body",
+                        "description": "Parameters of the call",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/UserCallRequest"
+                        }
+                    }
+                ],
+                "tags": [
+                    "calls"
+                ],
+                "responses": {
+                    "201": {
+                        "description": "The new call ID",
+                        "schema": {
+                            "$ref": "#/definitions/CallID"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    },
+                    "503": {
+                        "$ref": "#/responses/AnotherServiceUnavailable"
+                    }
+                }
+            }
+        },
         "/transfers": {
             "post": {
                 "summary": "Initiate a transfer",
@@ -511,6 +548,22 @@
                     ]
                 }
             }
+        },
+        "UserCallRequest": {
+            "type": "object",
+            "properties": {
+                "extension": {
+                    "description": "Extension to call",
+                    "type": "string"
+                },
+                "variables": {
+                    "description": "Channel variables to set",
+                    "type": "object"
+                }
+            },
+            "required": [
+                "extension"
+            ]
         }
     },
     "parameters": {

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015 by Avencall
+# Copyright (C) 2015-2016 Avencall
 # SPDX-License-Identifier: GPL-3.0+
 
 import requests
@@ -50,11 +50,12 @@ class MockUser(object):
 
 class MockLine(object):
 
-    def __init__(self, id, name=None, protocol=None, users=None):
+    def __init__(self, id, name=None, protocol=None, users=None, context=None):
         self._id = id
         self._name = name
         self._protocol = protocol
         self._users = users or []
+        self._context = context
 
     def id_(self):
         return self._id
@@ -67,6 +68,7 @@ class MockLine(object):
             'id': self._id,
             'name': self._name,
             'protocol': self._protocol,
+            'context': self._context,
         }
 
 

@@ -81,6 +81,24 @@ class CtidNgClient(object):
         assert_that(response.status_code, equal_to(201))
         return response.json()
 
+    def post_user_me_call_result(self, body, token=None):
+        url = u'https://localhost:9500/1.0/users/me/calls'
+        result = requests.post(url,
+                               json=body,
+                               headers={'X-Auth-Token': token},
+                               verify=False)
+        return result
+
+    def originate_me(self, extension, variables=None, token=VALID_TOKEN):
+        body = {
+            'extension': extension
+        }
+        if variables:
+            body['variables'] = variables
+        response = self.post_user_me_call_result(body, token=token)
+        assert_that(response.status_code, equal_to(201))
+        return response.json()
+
     def delete_call_result(self, call_id, token=None):
         url = u'https://localhost:9500/1.0/calls/{call_id}'
         result = requests.delete(url.format(call_id=call_id),

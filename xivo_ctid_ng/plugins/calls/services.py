@@ -74,6 +74,17 @@ class CallsService(object):
                                                variables={'variables': request.get('variables', {})})
         return channel.id
 
+    def originate_user(self, request, user_uuid):
+        context = self._context_from_user_uuid(user_uuid)
+        new_request = {
+            'destination': {'context': context,
+                            'extension': request['extension'],
+                            'priority': 1},
+            'source': {'user': user_uuid},
+            'variables': request['variables']
+        }
+        return self.originate(new_request)
+
     def get(self, call_id):
         channel_id = call_id
         try:
@@ -148,6 +159,21 @@ class CallsService(object):
         return call
 
     def _endpoint_from_user_uuid(self, uuid):
+        line = self._line_from_user_uuid(uuid)
+
+        endpoint = "{}/{}".format(line['protocol'], line['name'])
+        if endpoint:
+            return endpoint
+
+        return None
+
+    def _context_from_user_uuid(self, uuid):
+        line = self._line_from_user_uuid(uuid)
+        logger.debug(line)
+
+        return line['context']
+
+    def _line_from_user_uuid(self, uuid):
         with new_confd_client(self._confd_config) as confd:
             try:
                 user_lines_of_user = confd.users.relations(uuid).list_lines()['items']
@@ -162,13 +188,8 @@ class CallsService(object):
             if not main_line_ids:
                 raise UserHasNoLine(uuid)
             line_id = main_line_ids[0]
-            line = confd.lines.get(line_id)
 
-        endpoint = "{}/{}".format(line['protocol'], line['name'])
-        if endpoint:
-            return endpoint
-
-        return None
+            return confd.lines.get(line_id)
 
     def _get_uuid_from_channel_id(self, ari, channel_id):
         try:
