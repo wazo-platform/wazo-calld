@@ -494,6 +494,15 @@ class TestUserCreateTransfer(TestTransfers):
         super(TestUserCreateTransfer, self).setUp()
         self.bus.listen_events('calls.transfer.*')
 
+    def given_token_user_with_line(self, context):
+        token = 'my-token'
+        self.auth.set_token(MockUserToken(token, user_uuid='some-user-id'))
+        self.confd.set_users(MockUser(uuid='some-user-id'))
+        self.confd.set_lines(MockLine(id='some-line-id', name='line-name', protocol='sip', context=context))
+        self.confd.set_user_lines({'some-user-id': [MockUserLine('some-line-id')]})
+
+        return token
+
     def test_given_invalid_input_when_create_then_error_400(self):
         for invalid_body in self.invalid_transfer_requests():
             response = self.ctid_ng.post_user_transfer_result(invalid_body, VALID_TOKEN)
@@ -543,11 +552,7 @@ class TestUserCreateTransfer(TestTransfers):
 
     def test_given_no_content_type_when_create_then_ok(self):
         transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()
-        user_uuid, line_id, token = 'user-uuid', 'line-id', 'my-token'
-        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
-        self.confd.set_users(MockUser(uuid=user_uuid))
-        self.confd.set_lines(MockLine(id=line_id, name='line-name', protocol='sip', context=RECIPIENT['context']))
-        self.confd.set_user_lines({user_uuid: [MockUserLine(line_id)]})
+        token = self.given_token_user_with_line(RECIPIENT['context'])
         body = {
             'initiator_call': initiator_channel_id,
             'exten': RECIPIENT['exten'],
@@ -560,11 +565,7 @@ class TestUserCreateTransfer(TestTransfers):
 
     def test_given_state_ready_when_transfer_start_and_answer_then_state_answered(self):
         transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()
-        user_uuid, line_id, token = 'user-uuid', 'line-id', 'my-token'
-        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
-        self.confd.set_users(MockUser(uuid=user_uuid))
-        self.confd.set_lines(MockLine(id=line_id, name='line-name', protocol='sip', context=RECIPIENT['context']))
-        self.confd.set_user_lines({user_uuid: [MockUserLine(line_id)]})
+        token = self.given_token_user_with_line(RECIPIENT['context'])
 
         response = self.ctid_ng.create_user_transfer(initiator_channel_id,
                                                      RECIPIENT['exten'],
