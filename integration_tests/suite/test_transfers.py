@@ -551,6 +551,20 @@ class TestUserCreateTransfer(TestTransfers):
         body['flow'] = 'unknown'
         yield body
 
+    def test_given_transferred_not_found_when_create_then_error_400(self):
+        bridge = self.ari.bridges.create(type='mixing')
+        initiator_channel = self.add_channel_to_bridge(bridge)
+        token = self.given_token_user_with_line(RECIPIENT['context'])
+        body = {
+            'initiator_call': initiator_channel.id,
+            'exten': RECIPIENT['exten'],
+        }
+
+        response = self.ctid_ng.post_user_transfer_result(body, VALID_TOKEN)
+
+        assert_that(response.status_code, equal_to(400))
+        assert_that(response.json(), has_entry('message', contains_string('creation')))
+
     def test_given_initiator_not_found_when_create_then_error_400(self):
         token = self.given_token_user_with_line(RECIPIENT['context'])
         body = {

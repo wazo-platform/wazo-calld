@@ -16,6 +16,7 @@ from .exceptions import InvalidExtension
 from .exceptions import InvalidUserUUID
 from .exceptions import NoSuchTransfer
 from .exceptions import NoSuchChannel
+from .exceptions import NotEnoughChannels
 from .exceptions import TransferCreationError
 from .exceptions import TooManyChannels
 from .exceptions import TooManyTransferredCandidates
@@ -63,9 +64,11 @@ class TransfersService(object):
 
     def create_from_user(self, initiator_call, exten, flow, user_uuid):
         try:
-            transferred_call = self._get_channels_talking_to(initiator_call)
+            transferred_call = self._get_channel_talking_to(initiator_call)
         except TooManyChannels as e:
             raise TooManyTransferredCandidates(e.channels)
+        except NotEnoughChannels as e:
+            raise TransferCreationError('transferred channel not found')
         except NoSuchChannel:
             raise TransferCreationError('initiator channel not found')
         context = self._context_from_user_uuid(user_uuid)
@@ -95,7 +98,7 @@ class TransfersService(object):
 
         return self.confd_client.lines.get(line_id)
 
-    def _get_channels_talking_to(self, channel_id):
+    def _get_channel_talking_to(self, channel_id):
         connected_bridges = [bridge.id for bridge in self.ari.bridges.list() if channel_id in bridge.json['channels']]
         channels_talking_to = self._get_channel_ids_from_bridges(self.ari, connected_bridges)
         try:
@@ -104,7 +107,10 @@ class TransfersService(object):
             raise NoSuchChannel(channel_id)
         if len(channels_talking_to) > 1:
             raise TooManyChannels(channels_talking_to)
-        return channels_talking_to.pop()
+        try:
+            return channels_talking_to.pop()
+        except KeyError:
+            raise NotEnoughChannels()
 
     def _get_channel_ids_from_bridges(self, ari, bridges):
         result = set()

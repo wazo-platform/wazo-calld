@@ -169,3 +169,7 @@ class NoSuchChannel(Exception):
 class TooManyChannels(Exception):
     def __init__(self, channels):
         self.channels = channels
+
+
+class NotEnoughChannels(Exception):
+    pass
