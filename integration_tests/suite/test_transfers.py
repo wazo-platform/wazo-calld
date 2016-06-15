@@ -92,15 +92,7 @@ class TestTransfers(IntegrationTest):
             except ARINotFound:
                 pass
 
-    def given_bridged_call_stasis(self):
-        caller = self.ari.channels.originate(endpoint=ENDPOINT,
-                                             app=STASIS_APP,
-                                             appArgs=[STASIS_APP_INSTANCE])
-        callee = self.ari.channels.originate(endpoint=ENDPOINT,
-                                             app=STASIS_APP,
-                                             appArgs=[STASIS_APP_INSTANCE])
-        bridge = self.ari.bridges.create(type='mixing')
-
+    def add_channel_to_bridge(self, bridge):
         def channel_is_in_stasis(channel_id):
             try:
                 self.ari.channels.setChannelVar(channelId=channel_id, variable='TEST_STASIS', value='')
@@ -108,10 +100,19 @@ class TestTransfers(IntegrationTest):
             except ARINotInStasis:
                 return False
 
-        until.true(channel_is_in_stasis, caller.id, tries=2)
-        bridge.addChannel(channel=caller.id)
-        until.true(channel_is_in_stasis, callee.id, tries=2)
-        bridge.addChannel(channel=callee.id)
+        new_channel = self.ari.channels.originate(endpoint=ENDPOINT,
+                                                  app=STASIS_APP,
+                                                  appArgs=[STASIS_APP_INSTANCE])
+        until.true(channel_is_in_stasis, new_channel.id, tries=2)
+        bridge.addChannel(channel=new_channel.id)
+
+        return new_channel
+
+    def given_bridged_call_stasis(self):
+        bridge = self.ari.bridges.create(type='mixing')
+        caller = self.add_channel_to_bridge(bridge)
+        callee = self.add_channel_to_bridge(bridge)
+
         return caller.id, callee.id
 
     def given_bridged_call_not_stasis(self):
