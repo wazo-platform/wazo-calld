@@ -136,7 +136,7 @@ class CtidNgClient(object):
                                verify=False)
         return result
 
-    def create_transfer(self, transferred_call, initiator_call, context, exten):
+    def create_transfer(self, transferred_call, initiator_call, context, exten, variables=None):
         body = {
             'transferred_call': transferred_call,
             'initiator_call': initiator_call,
@@ -144,6 +144,8 @@ class CtidNgClient(object):
             'exten': exten,
             'flow': 'attended',
         }
+        if variables:
+            body['variables'] = variables
         response = self.post_transfer_result(body, token=VALID_TOKEN)
         assert_that(response.status_code, equal_to(201))
         return response.json()
