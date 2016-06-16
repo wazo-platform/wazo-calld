@@ -6,6 +6,7 @@ import logging
 import requests
 
 from xivo_ctid_ng.core.ari_ import APPLICATION_NAME
+from xivo_ctid_ng.core import ari_helpers as core_ari_helpers
 from xivo_ctid_ng.core.confd_helpers import User
 from ari.exceptions import ARINotFound
 
@@ -125,10 +126,9 @@ class CallsService(object):
         call.bridges = [bridge.id for bridge in ari.bridges.list() if channel.id in bridge.json['channels']]
 
         call.talking_to = dict()
-        for channel_id in self._get_channel_ids_from_bridges(ari, call.bridges):
-            talking_to_user_uuid = self._get_uuid_from_channel_id(ari, channel_id)
-            call.talking_to[channel_id] = talking_to_user_uuid
-        call.talking_to.pop(channel.id, None)
+        for connected_channel_id in core_ari_helpers.connected_channel_ids(ari, channel.id):
+            talking_to_user_uuid = self._get_uuid_from_channel_id(ari, connected_channel_id)
+            call.talking_to[connected_channel_id] = talking_to_user_uuid
 
         return call
 
@@ -149,14 +149,3 @@ class CallsService(object):
             return uuid
         except ARINotFound:
             return None
-
-    def _get_channel_ids_from_bridges(self, ari, bridges):
-        result = set()
-        for bridge_id in bridges:
-            try:
-                channels = ari.bridges.get(bridgeId=bridge_id).json['channels']
-            except requests.RequestException as e:
-                logger.error(e)
-                channels = set()
-            result.update(channels)
-        return result

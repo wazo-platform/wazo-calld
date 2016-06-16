@@ -77,3 +77,13 @@ class GlobalVariableConstantNameAdapter(object):
 
     def unset(self):
         return self._global_variables.unset(self._variable)
+
+
+def connected_channel_ids(ari, channel_id):
+    channels = set(sum((bridge.json['channels'] for bridge in ari.bridges.list()
+                        if channel_id in bridge.json['channels']), list()))
+    try:
+        channels.remove(channel_id)
+    except KeyError:
+        pass
+    return channels

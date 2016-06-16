@@ -7,6 +7,7 @@ import requests
 from ari.exceptions import ARINotFound
 from xivo.caller_id import assemble_caller_id
 
+from xivo_ctid_ng.core import ari_helpers as core_ari_helpers
 from xivo_ctid_ng.core.ari_ import APPLICATION_NAME
 from xivo_ctid_ng.core.confd_helpers import User
 from xivo_ctid_ng.plugins.calls.state_persistor import ReadOnlyStatePersistor as ReadOnlyCallStates
@@ -61,14 +62,15 @@ class TransfersService(object):
         return new_state.transfer
 
     def create_from_user(self, initiator_call, exten, flow, user_uuid):
+        if not ari_helpers.channel_exists(self.ari, initiator_call):
+            raise TransferCreationError('initiator channel not found')
+
         try:
             transferred_call = self._get_channel_talking_to(initiator_call)
         except TooManyChannels as e:
             raise TooManyTransferredCandidates(e.channels)
         except NotEnoughChannels as e:
             raise TransferCreationError('transferred channel not found')
-        except NoSuchChannel:
-            raise TransferCreationError('initiator channel not found')
 
         if self._get_uuid_from_channel_id(self.ari, initiator_call) != user_uuid:
             raise TransferCreationError('initiator call does not belong to authenticated user')
@@ -85,29 +87,13 @@ class TransfersService(object):
             return None
 
     def _get_channel_talking_to(self, channel_id):
-        connected_bridges = [bridge.id for bridge in self.ari.bridges.list() if channel_id in bridge.json['channels']]
-        channels_talking_to = self._get_channel_ids_from_bridges(self.ari, connected_bridges)
+        connected_channel_ids = core_ari_helpers.connected_channel_ids(self.ari, channel_id)
+        if len(connected_channel_ids) > 1:
+            raise TooManyChannels(connected_channel_ids)
         try:
-            channels_talking_to.remove(channel_id)
-        except KeyError:
-            raise NoSuchChannel(channel_id)
-        if len(channels_talking_to) > 1:
-            raise TooManyChannels(channels_talking_to)
-        try:
-            return channels_talking_to.pop()
+            return connected_channel_ids.pop()
         except KeyError:
             raise NotEnoughChannels()
-
-    def _get_channel_ids_from_bridges(self, ari, bridges):
-        result = set()
-        for bridge_id in bridges:
-            try:
-                channels = ari.bridges.get(bridgeId=bridge_id).json['channels']
-            except requests.RequestException as e:
-                logger.error(e)
-                channels = set()
-            result.update(channels)
-        return result
 
     def originate_recipient(self, initiator_call, context, exten, transfer_id):
         try:
