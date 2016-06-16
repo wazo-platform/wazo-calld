@@ -71,9 +71,20 @@ class TransfersService(object):
             raise TransferCreationError('transferred channel not found')
         except NoSuchChannel:
             raise TransferCreationError('initiator channel not found')
+
+        if self._get_uuid_from_channel_id(self.ari, initiator_call) != user_uuid:
+            raise TransferCreationError('initiator call does not belong to authenticated user')
+
         context = self._context_from_user_uuid(user_uuid)
 
         return self.create(transferred_call, initiator_call, context, exten, flow)
+
+    def _get_uuid_from_channel_id(self, ari, channel_id):
+        try:
+            uuid = ari.channels.getChannelVar(channelId=channel_id, variable='XIVO_USERUUID')['value']
+            return uuid
+        except ARINotFound:
+            return None
 
     def _context_from_user_uuid(self, uuid):
         line = self._line_from_user_uuid(uuid)
