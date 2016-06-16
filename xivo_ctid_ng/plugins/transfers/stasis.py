@@ -153,8 +153,7 @@ class TransfersStasis(object):
                 logger.error('initiator hung up while creating transfer')
 
             transfer_state = self.state_factory.make(transfer)
-            transfer_state.variables = variables
-            new_state = transfer_state.start(transfer, context, exten)
+            new_state = transfer_state.start(transfer, context, exten, variables)
             if new_state.transfer.flow == 'blind':
                 new_state.complete()
 

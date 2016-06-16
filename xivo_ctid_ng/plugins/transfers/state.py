@@ -59,14 +59,13 @@ def transition(decorated):
 
 class TransferState(object):
 
-    def __init__(self, amid, ari, notifier, services, state_persistor, transfer=None, variables=None):
+    def __init__(self, amid, ari, notifier, services, state_persistor, transfer=None):
         self._amid = amid
         self._ari = ari
         self._notifier = notifier
         self._services = services
         self._state_persistor = state_persistor
         self.transfer = transfer
-        self.variables = variables or {}
 
     @classmethod
     def from_state(cls, other_state):
@@ -75,8 +74,7 @@ class TransferState(object):
                         other_state._notifier,
                         other_state._services,
                         other_state._state_persistor,
-                        other_state.transfer,
-                        other_state.variables)
+                        other_state.transfer)
         new_state.transfer.status = new_state.name
         return new_state
 
@@ -163,7 +161,6 @@ class TransferStateReady(TransferState):
     def create(self, transferred_channel, initiator_channel, context, exten, variables):
         transfer_bridge = self._ari.bridges.create(type='mixing', name='transfer')
         transfer_id = transfer_bridge.id
-        self.variables = variables
         try:
             transferred_channel.setChannelVar(variable='XIVO_TRANSFER_ROLE', value='transferred')
             transferred_channel.setChannelVar(variable='XIVO_TRANSFER_ID', value=transfer_id)
@@ -191,7 +188,6 @@ class TransferStateReady(TransferState):
         self.transfer.initiator_call = initiator_channel.id
         self.transfer.recipient_call = recipient_call
         self.transfer.status = self.name
-        self.variables = variables
         self._notifier.created(self.transfer)
 
         return TransferStateRingback.from_state(self)
@@ -220,7 +216,6 @@ class TransferStateReadyNonStasis(TransferState):
         self.transfer.transferred_call = transferred_channel.id
         self.transfer.status = self.name
         self._notifier.created(self.transfer)
-        self.variables = variables
 
         return TransferStateStarting.from_state(self)
 
@@ -234,7 +229,7 @@ class TransferStateStarting(TransferState):
     name = TransferStatus.starting
 
     @transition
-    def start(self, transfer, context, exten):
+    def start(self, transfer, context, exten, variables):
         self.transfer = transfer
 
         try:
@@ -252,7 +247,7 @@ class TransferStateStarting(TransferState):
                                                                               context,
                                                                               exten,
                                                                               self.transfer.id,
-                                                                              self.variables)
+                                                                              variables)
         except TransferCreationError as e:
             logger.error(e.message, e.details)
 
