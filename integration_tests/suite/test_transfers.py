@@ -493,6 +493,7 @@ class TestCreateTransfer(TestTransfers):
 class TestUserCreateTransfer(TestTransfers):
     def setUp(self):
         super(TestUserCreateTransfer, self).setUp()
+        self.confd.reset()
         self.bus.listen_events('calls.transfer.*')
 
     def given_token_user_with_line(self, context):
@@ -612,6 +613,53 @@ class TestUserCreateTransfer(TestTransfers):
                                                       transferred_channel_2.id,
                                                   )})}))
 
+    def test_create_call_with_multiple_lines(self):
+        transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()
+        token, user_uuid, context = 'my-token', 'my-user-uuid', RECIPIENT['context']
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
+        self.confd.set_users(MockUser(uuid=user_uuid))
+        self.confd.set_lines(MockLine(id='some-line-id', name='line-name', protocol='sip', context=context),
+                             MockLine(id='some-other-line-id', name='other-line-name', protocol='sip', context='another-context'))
+        self.confd.set_user_lines({user_uuid: [MockUserLine('some-line-id', main_line=True),
+                                               MockUserLine('some-other-line-id', main_line=False)]})
+        body = {
+            'initiator_call': initiator_channel_id,
+            'exten': RECIPIENT['exten']
+        }
+
+        response = self.ctid_ng.post_user_transfer_result(body, token)
+
+        assert_that(response.status_code, equal_to(201))
+
+    def test_create_call_with_no_lines(self):
+        transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()
+        token, user_uuid = 'my-token', 'my-user-uuid'
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
+        self.confd.set_users(MockUser(uuid=user_uuid))
+        self.confd.set_user_lines({user_uuid: []})
+        body = {
+            'initiator_call': initiator_channel_id,
+            'exten': RECIPIENT['exten']
+        }
+
+        response = self.ctid_ng.post_user_transfer_result(body, token)
+
+        assert_that(response.status_code, equal_to(400))
+        assert_that(response.json(), has_entry('message', contains_string('line')))
+
+    def test_create_call_with_invalid_user(self):
+        transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()
+        token = 'my-token'
+        self.auth.set_token(MockUserToken(token, user_uuid='user-id-not-found'))
+        body = {
+            'initiator_call': initiator_channel_id,
+            'exten': RECIPIENT['exten']
+        }
+
+        response = self.ctid_ng.post_user_transfer_result(body, token)
+
+        assert_that(response.status_code, equal_to(400))
+        assert_that(response.json(), has_entry('message', contains_string('user')))
 
     def test_given_state_ready_when_transfer_start_and_answer_then_state_answered(self):
         transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()
