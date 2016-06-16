@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: GPL-3.0+
 
 from xivo_auth_client import Client as AuthClient
+from xivo_confd_client import Client as ConfdClient
 
 from .bus_consume import CallsBusEventHandler
 from .resources import CallResource
@@ -25,9 +26,11 @@ class Plugin(object):
         config = dependencies['config']
 
         auth_client = AuthClient(**config['auth'])
+        confd_client = ConfdClient(**config['confd'])
 
-        calls_service = CallsService(config['ari']['connection'], config['confd'], ari.client)
-        token_changed_subscribe(calls_service.set_confd_token)
+        token_changed_subscribe(confd_client.set_token)
+
+        calls_service = CallsService(config['ari']['connection'], ari.client, confd_client)
 
         calls_stasis = CallsStasis(ari.client, collectd, bus_publisher, calls_service, config['uuid'])
         calls_stasis.subscribe()

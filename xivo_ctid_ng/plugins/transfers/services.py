@@ -4,24 +4,22 @@
 
 import logging
 import requests
-
-from xivo.caller_id import assemble_caller_id
-from xivo_ctid_ng.core.ari_ import APPLICATION_NAME
 from ari.exceptions import ARINotFound
+from xivo.caller_id import assemble_caller_id
+
+from xivo_ctid_ng.core.ari_ import APPLICATION_NAME
+from xivo_ctid_ng.core.confd_helpers import User
 from xivo_ctid_ng.plugins.calls.state_persistor import ReadOnlyStatePersistor as ReadOnlyCallStates
 
 from . import ami_helpers
 from . import ari_helpers
 from .exceptions import InvalidExtension
-from .exceptions import InvalidUserUUID
 from .exceptions import NoSuchTransfer
 from .exceptions import NoSuchChannel
 from .exceptions import NotEnoughChannels
 from .exceptions import TransferCreationError
 from .exceptions import TooManyChannels
 from .exceptions import TooManyTransferredCandidates
-from .exceptions import UserHasNoLine
-from .exceptions import XiVOConfdUnreachable
 from .state import TransferStateReadyNonStasis, TransferStateReady
 
 logger = logging.getLogger(__name__)
@@ -75,7 +73,7 @@ class TransfersService(object):
         if self._get_uuid_from_channel_id(self.ari, initiator_call) != user_uuid:
             raise TransferCreationError('initiator call does not belong to authenticated user')
 
-        context = self._context_from_user_uuid(user_uuid)
+        context = User(user_uuid, self.confd_client).main_line().context()
 
         return self.create(transferred_call, initiator_call, context, exten, flow)
 
@@ -85,29 +83,6 @@ class TransfersService(object):
             return uuid
         except ARINotFound:
             return None
-
-    def _context_from_user_uuid(self, uuid):
-        line = self._line_from_user_uuid(uuid)
-        logger.debug(line)
-
-        return line['context']
-
-    def _line_from_user_uuid(self, uuid):
-        try:
-            user_lines_of_user = self.confd_client.users.relations(uuid).list_lines()['items']
-        except requests.HTTPError as e:
-            if not_found(e):
-                raise InvalidUserUUID(uuid)
-            raise
-        except requests.RequestException as e:
-            raise XiVOConfdUnreachable(self._self.confd_client_config, e)
-
-        main_line_ids = [user_line['line_id'] for user_line in user_lines_of_user if user_line['main_line'] is True]
-        if not main_line_ids:
-            raise UserHasNoLine(uuid)
-        line_id = main_line_ids[0]
-
-        return self.confd_client.lines.get(line_id)
 
     def _get_channel_talking_to(self, channel_id):
         connected_bridges = [bridge.id for bridge in self.ari.bridges.list() if channel_id in bridge.json['channels']]
