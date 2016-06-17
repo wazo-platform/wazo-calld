@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
+import time
 
 from requests.packages import urllib3
 from xivo_test_helpers.asset_launching_test_case import AssetLaunchingTestCase
@@ -33,3 +34,7 @@ class IntegrationTest(AssetLaunchingTestCase):
         self.confd = ConfdClient()
         self.ctid_ng = CtidNgClient()
         self.stasis = StasisClient()
+
+    @classmethod
+    def wait_for_ctid_ng_to_connect_to_bus(cls):
+        time.sleep(4)

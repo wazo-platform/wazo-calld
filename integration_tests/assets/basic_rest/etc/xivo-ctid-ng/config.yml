@@ -42,4 +42,5 @@ confd:
 
 enabled_plugins:
   - calls
+  - chats
   - plugin_list

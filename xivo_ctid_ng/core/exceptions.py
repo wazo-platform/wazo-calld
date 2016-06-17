@@ -73,3 +73,13 @@ class ValidationError(APIException):
             error_id='invalid-data',
             details=errors
         )
+
+
+class TokenWithUserUUIDRequiredError(APIException):
+
+    def __init__(self):
+        super(TokenWithUserUUIDRequiredError, self).__init__(
+            status_code=400,
+            message='Token with a user UUID is required',
+            error_id='token-with-user-uuid-required',
+        )

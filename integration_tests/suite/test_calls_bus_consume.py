@@ -2,8 +2,6 @@
 # Copyright 2016 by Avencall
 # SPDX-License-Identifier: GPL-3.0+
 
-import time
-
 from hamcrest import assert_that
 from hamcrest import has_entries
 from hamcrest import has_entry
@@ -23,7 +21,7 @@ class TestDialedFrom(IntegrationTest):
     @classmethod
     def setUpClass(cls):
         super(TestDialedFrom, cls).setUpClass()
-        time.sleep(4)  # wait for xivo-ctid-ng to connect to the bus
+        cls.wait_for_ctid_ng_to_connect_to_bus()
 
     def setUp(self):
         super(TestDialedFrom, self).setUp()

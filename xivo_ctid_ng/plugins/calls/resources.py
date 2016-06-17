@@ -9,6 +9,7 @@ from marshmallow import Schema, fields
 from marshmallow.validate import Length
 
 from xivo_ctid_ng.core.auth import required_acl
+from xivo_ctid_ng.core.auth import get_token_user_uuid_from_request
 from xivo_ctid_ng.core.rest_api import AuthResource
 
 from . import validator
@@ -60,9 +61,7 @@ class MyCallsResource(AuthResource):
     def post(self):
         request_body = call_request_schema.load(request.get_json(force=True)).data
 
-        token = request.headers['X-Auth-Token']
-        token_infos = self.auth_client.token.get(token)
-        user_uuid = token_infos['xivo_user_uuid']
+        user_uuid = get_token_user_uuid_from_request(self.auth_client)
 
         call_id = self.calls_service.originate_user(request_body, user_uuid)
 
