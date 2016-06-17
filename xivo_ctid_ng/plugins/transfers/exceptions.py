@@ -119,17 +119,3 @@ class InvalidExtension(TransferException):
                 'exten': exten,
             }
         )
-
-
-class NoSuchChannel(Exception):
-    def __init__(self, channel):
-        self.channel = channel
-
-
-class TooManyChannels(Exception):
-    def __init__(self, channels):
-        self.channels = channels
-
-
-class NotEnoughChannels(Exception):
-    pass

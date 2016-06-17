@@ -9,23 +9,19 @@ from xivo.caller_id import assemble_caller_id
 from xivo_ctid_ng.core.ari_ import APPLICATION_NAME
 from xivo_ctid_ng.core.ari_helpers import Channel
 from xivo_ctid_ng.core.confd_helpers import User
+from xivo_ctid_ng.core.exceptions import NotEnoughChannels
+from xivo_ctid_ng.core.exceptions import TooManyChannels
 from xivo_ctid_ng.plugins.calls.state_persistor import ReadOnlyStatePersistor as ReadOnlyCallStates
 
 from . import ami_helpers
 from . import ari_helpers
 from .exceptions import InvalidExtension
 from .exceptions import NoSuchTransfer
-from .exceptions import NotEnoughChannels
 from .exceptions import TransferCreationError
-from .exceptions import TooManyChannels
 from .exceptions import TooManyTransferredCandidates
 from .state import TransferStateReadyNonStasis, TransferStateReady
 
 logger = logging.getLogger(__name__)
-
-
-def not_found(error):
-    return error.response is not None and error.response.status_code == 404
 
 
 class TransfersService(object):
@@ -67,7 +63,7 @@ class TransfersService(object):
             raise TransferCreationError('initiator call does not belong to authenticated user')
 
         try:
-            transferred_call = self._get_channel_talking_to(initiator_call)
+            transferred_call = Channel(initiator_call, self.ari).only_connected_channel()
         except TooManyChannels as e:
             raise TooManyTransferredCandidates(e.channels)
         except NotEnoughChannels as e:
@@ -76,15 +72,6 @@ class TransfersService(object):
         context = User(user_uuid, self.confd_client).main_line().context()
 
         return self.create(transferred_call, initiator_call, context, exten, flow)
-
-    def _get_channel_talking_to(self, channel_id):
-        connected_channels = Channel(channel_id, self.ari).connected_channels()
-        if len(connected_channels) > 1:
-            raise TooManyChannels(channel.id for channel in connected_channels)
-        try:
-            return connected_channels.pop().id
-        except KeyError:
-            raise NotEnoughChannels()
 
     def originate_recipient(self, initiator_call, context, exten, transfer_id):
         try:

@@ -6,6 +6,9 @@ import json
 
 from ari.exceptions import ARINotFound
 
+from .exceptions import NotEnoughChannels
+from .exceptions import TooManyChannels
+
 
 class GlobalVariableAdapter(object):
 
@@ -96,6 +99,15 @@ class Channel(object):
         except KeyError:
             pass
         return {Channel(channel_id, self._ari) for channel_id in channel_ids}
+
+    def only_connected_channel(self):
+        connected_channels = self.connected_channels()
+        if len(connected_channels) > 1:
+            raise TooManyChannels(channel.id for channel in connected_channels)
+        try:
+            return connected_channels.pop().id
+        except KeyError:
+            raise NotEnoughChannels()
 
     def user(self, default=None):
         try:
