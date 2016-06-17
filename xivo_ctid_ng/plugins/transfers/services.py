@@ -3,12 +3,11 @@
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
-import requests
 from ari.exceptions import ARINotFound
 from xivo.caller_id import assemble_caller_id
 
-from xivo_ctid_ng.core import ari_helpers as core_ari_helpers
 from xivo_ctid_ng.core.ari_ import APPLICATION_NAME
+from xivo_ctid_ng.core.ari_helpers import Channel
 from xivo_ctid_ng.core.confd_helpers import User
 from xivo_ctid_ng.plugins.calls.state_persistor import ReadOnlyStatePersistor as ReadOnlyCallStates
 
@@ -16,7 +15,6 @@ from . import ami_helpers
 from . import ari_helpers
 from .exceptions import InvalidExtension
 from .exceptions import NoSuchTransfer
-from .exceptions import NoSuchChannel
 from .exceptions import NotEnoughChannels
 from .exceptions import TransferCreationError
 from .exceptions import TooManyChannels
@@ -65,6 +63,9 @@ class TransfersService(object):
         if not ari_helpers.channel_exists(self.ari, initiator_call):
             raise TransferCreationError('initiator channel not found')
 
+        if Channel(initiator_call, self.ari).user() != user_uuid:
+            raise TransferCreationError('initiator call does not belong to authenticated user')
+
         try:
             transferred_call = self._get_channel_talking_to(initiator_call)
         except TooManyChannels as e:
@@ -72,26 +73,16 @@ class TransfersService(object):
         except NotEnoughChannels as e:
             raise TransferCreationError('transferred channel not found')
 
-        if self._get_uuid_from_channel_id(self.ari, initiator_call) != user_uuid:
-            raise TransferCreationError('initiator call does not belong to authenticated user')
-
         context = User(user_uuid, self.confd_client).main_line().context()
 
         return self.create(transferred_call, initiator_call, context, exten, flow)
 
-    def _get_uuid_from_channel_id(self, ari, channel_id):
-        try:
-            uuid = ari.channels.getChannelVar(channelId=channel_id, variable='XIVO_USERUUID')['value']
-            return uuid
-        except ARINotFound:
-            return None
-
     def _get_channel_talking_to(self, channel_id):
-        connected_channel_ids = core_ari_helpers.connected_channel_ids(self.ari, channel_id)
-        if len(connected_channel_ids) > 1:
-            raise TooManyChannels(connected_channel_ids)
+        connected_channels = Channel(channel_id, self.ari).connected_channels()
+        if len(connected_channels) > 1:
+            raise TooManyChannels(channel.id for channel in connected_channels)
         try:
-            return connected_channel_ids.pop()
+            return connected_channels.pop().id
         except KeyError:
             raise NotEnoughChannels()
 

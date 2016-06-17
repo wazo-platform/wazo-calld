@@ -79,11 +79,27 @@ class GlobalVariableConstantNameAdapter(object):
         return self._global_variables.unset(self._variable)
 
 
-def connected_channel_ids(ari, channel_id):
-    channels = set(sum((bridge.json['channels'] for bridge in ari.bridges.list()
-                        if channel_id in bridge.json['channels']), list()))
-    try:
-        channels.remove(channel_id)
-    except KeyError:
-        pass
-    return channels
+class Channel(object):
+
+    def __init__(self, channel_id, ari):
+        self.id = channel_id
+        self._ari = ari
+
+    def __str__(self):
+        return self.id
+
+    def connected_channels(self):
+        channel_ids = set(sum((bridge.json['channels'] for bridge in self._ari.bridges.list()
+                               if self.id in bridge.json['channels']), list()))
+        try:
+            channel_ids.remove(self.id)
+        except KeyError:
+            pass
+        return {Channel(channel_id, self._ari) for channel_id in channel_ids}
+
+    def user(self, default=None):
+        try:
+            uuid = self._ari.channels.getChannelVar(channelId=self.id, variable='XIVO_USERUUID')['value']
+            return uuid
+        except ARINotFound:
+            return default

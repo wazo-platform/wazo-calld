@@ -3,10 +3,9 @@
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
-import requests
 
 from xivo_ctid_ng.core.ari_ import APPLICATION_NAME
-from xivo_ctid_ng.core import ari_helpers as core_ari_helpers
+from xivo_ctid_ng.core.ari_helpers import Channel
 from xivo_ctid_ng.core.confd_helpers import User
 from ari.exceptions import ARINotFound
 
@@ -122,13 +121,11 @@ class CallsService(object):
         call.status = channel.json['state']
         call.caller_id_name = channel.json['caller']['name']
         call.caller_id_number = channel.json['caller']['number']
-        call.user_uuid = self._get_uuid_from_channel_id(ari, channel.id)
+        call.user_uuid = Channel(channel.id, ari).user()
         call.bridges = [bridge.id for bridge in ari.bridges.list() if channel.id in bridge.json['channels']]
 
-        call.talking_to = dict()
-        for connected_channel_id in core_ari_helpers.connected_channel_ids(ari, channel.id):
-            talking_to_user_uuid = self._get_uuid_from_channel_id(ari, connected_channel_id)
-            call.talking_to[connected_channel_id] = talking_to_user_uuid
+        call.talking_to = {connected_channel.id: connected_channel.user()
+                           for connected_channel in Channel(channel.id, ari).connected_channels()}
 
         return call
 
@@ -142,10 +139,3 @@ class CallsService(object):
         call.talking_to = {}
 
         return call
-
-    def _get_uuid_from_channel_id(self, ari, channel_id):
-        try:
-            uuid = ari.channels.getChannelVar(channelId=channel_id, variable='XIVO_USERUUID')['value']
-            return uuid
-        except ARINotFound:
-            return None
