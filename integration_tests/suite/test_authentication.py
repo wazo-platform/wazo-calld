@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: GPL-3.0+
 
 from .test_api.base import IntegrationTest
+from .test_api.chat import new_chat_message, new_user_chat_message
 from .test_api.constants import INVALID_ACL_TOKEN, VALID_TOKEN
 
 from hamcrest import assert_that
@@ -77,5 +78,15 @@ class TestAuthenticationCoverage(IntegrationTest):
 
     def test_auth_on_list_plugins(self):
         result = self.ctid_ng.get_plugins_result()
+
+        assert_that(result.status_code, equal_to(401))
+
+    def test_auth_on_new_chat(self):
+        result = self.ctid_ng.post_chat_result(new_chat_message())
+
+        assert_that(result.status_code, equal_to(401))
+
+    def test_auth_on_new_user_chat(self):
+        result = self.ctid_ng.post_user_chat_result(new_user_chat_message())
 
         assert_that(result.status_code, equal_to(401))

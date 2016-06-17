@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# Copyright 2015 by Avencall
+# Copyright 2015-2016 by Avencall
 # SPDX-License-Identifier: GPL-3.0+
 
 
@@ -24,6 +24,7 @@ setup(
         'xivo_ctid_ng.plugins': [
             'api = xivo_ctid_ng.plugins.api.plugin:Plugin',
             'calls = xivo_ctid_ng.plugins.calls.plugin:Plugin',
+            'chats = xivo_ctid_ng.plugins.chats.plugin:Plugin',
             'transfers = xivo_ctid_ng.plugins.transfers.plugin:Plugin',
             'plugin_list = xivo_ctid_ng.plugins.plugin_list.plugin:Plugin',
         ]

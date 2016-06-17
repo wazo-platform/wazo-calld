@@ -87,4 +87,5 @@ amid:
 enabled_plugins:
   - api
   - calls
+  - chats
   - transfers

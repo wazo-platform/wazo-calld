@@ -196,6 +196,20 @@ class CtidNgClient(object):
         assert_that(response.status_code, equal_to(200))
         return response.json()
 
+    def post_chat_result(self, chat_msg, token=None):
+        result = requests.post('https://localhost:9500/1.0/chats',
+                               json=chat_msg.as_chat_body(),
+                               headers={'X-Auth-Token': token},
+                               verify=False)
+        return result
+
+    def post_user_chat_result(self, chat_msg, token=None):
+        result = requests.post('https://localhost:9500/1.0/users/me/chats',
+                               json=chat_msg.as_user_chat_body(),
+                               headers={'X-Auth-Token': token},
+                               verify=False)
+        return result
+
     @contextmanager
     def send_no_content_type(self):
         def no_json(decorated):
