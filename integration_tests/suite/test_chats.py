@@ -46,12 +46,14 @@ class TestCreateChat(IntegrationTest):
 
     def _assert_chat_msg_sent_on_bus(self):
         def assert_function():
+            destination = [self.chat_msg.to_xivo_uuid or XIVO_UUID, self.chat_msg.to]
             assert_that(self.bus.events(), has_item(equal_to({
                 'name': 'chat_message_event',
                 'origin_uuid': XIVO_UUID,
+                'required_acl': 'events.chat.message.{}.{}'.format(*destination),
                 'data': {
                     'alias': self.chat_msg.alias,
-                    'to': [self.chat_msg.to_xivo_uuid or XIVO_UUID, self.chat_msg.to],
+                    'to': destination,
                     'from': [XIVO_UUID, self.chat_msg.from_],
                     'msg': self.chat_msg.content,
                 }
@@ -87,6 +89,7 @@ class TestUserCreateChat(IntegrationTest):
             assert_that(self.bus.events(), has_item(equal_to({
                 'name': 'chat_message_event',
                 'origin_uuid': XIVO_UUID,
+                'required_acl': 'events.chat.message.{}.{}'.format(XIVO_UUID, self.chat_msg.to),
                 'data': {
                     'alias': self.chat_msg.alias,
                     'to': [XIVO_UUID, self.chat_msg.to],
