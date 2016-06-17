@@ -23,6 +23,6 @@ class ChatsService(object):
         return (self._xivo_uuid, user_uuid)
 
     def _build_to(self, request_body):
-        xivo_uuid = str(request_body['to_xivo_uuid']) if 'to_xivo_uuid' in request_body else self._xivo_uuid
+        xivo_uuid = str(request_body.get('to_xivo_uuid', self._xivo_uuid))
         user_uuid = str(request_body['to'])
         return (xivo_uuid, user_uuid)
