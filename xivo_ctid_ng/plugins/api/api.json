@@ -264,8 +264,11 @@
                     "204": {
                         "description": "Message has been sent"
                     },
-                    "503": {
-                        "$ref": "#/responses/AnotherServiceUnavailable"
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
                     }
                 }
             }
@@ -293,8 +296,11 @@
                     "204": {
                         "description": "Message has been sent"
                     },
-                    "503": {
-                        "$ref": "#/responses/AnotherServiceUnavailable"
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
                     }
                 }
             }
