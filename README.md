@@ -16,8 +16,10 @@ further details on installing one.
 Running unit tests
 ------------------
 
-1. Install requirements with ```pip install -r requirements.txt -r test-requirements.txt```
-2. Run tests with ```nosetests xivo_ctid_ng```
+```
+pip install tox
+tox --recreate -e py27
+```
 
 Running integration tests
 -------------------------
