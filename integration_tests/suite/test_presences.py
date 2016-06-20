@@ -56,11 +56,11 @@ class TestUserUpdatePresence(IntegrationTest):
 
     @classmethod
     def setUpClass(cls):
-        super(TestUpdatePresence, cls).setUpClass()
+        super(TestUserUpdatePresence, cls).setUpClass()
         cls.wait_for_ctid_ng_to_connect_to_bus()
 
     def setUp(self):
-        super(TestUpdatePresence, self).setUp()
+        super(TestUserUpdatePresence, self).setUp()
         self.bus.listen_events(routing_key='status.user')
         self.presence_msg = new_presence_message()
         self.token_id = 'my-token'
