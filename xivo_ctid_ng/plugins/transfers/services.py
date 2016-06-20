@@ -58,14 +58,14 @@ class TransfersService(object):
         caller_id = assemble_caller_id(initiator_channel.json['caller']['name'], initiator_channel.json['caller']['number']).encode('utf-8')
         recipient_endpoint = 'Local/{exten}@{context}'.format(exten=exten, context=context)
         app_args = [app_instance, 'transfer_recipient_called', transfer_id]
-        originate_variables = {'XIVO_TRANSFER_ROLE': 'recipient',
-                               'XIVO_TRANSFER_ID': transfer_id}
-        variables.update(originate_variables)
+        originate_variables = dict(variables)
+        originate_variables['XIVO_TRANSFER_ROLE'] = 'recipient'
+        originate_variables['XIVO_TRANSFER_ID'] = transfer_id
         new_channel = self.ari.channels.originate(endpoint=recipient_endpoint,
                                                   app=APPLICATION_NAME,
                                                   appArgs=app_args,
                                                   callerId=caller_id,
-                                                  variables={'variables': variables})
+                                                  variables={'variables': originate_variables})
         recipient_call = new_channel.id
 
         try:
