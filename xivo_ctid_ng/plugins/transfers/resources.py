@@ -16,6 +16,7 @@ class TransferRequestSchema(Schema):
     context = fields.Str(validate=Length(min=1), required=True)
     exten = fields.Str(validate=Length(min=1), required=True)
     flow = fields.Str(validate=OneOf(['attended', 'blind']), missing='attended')
+    variables = fields.Dict(required=False, missing=dict)
 
 transfer_request_schema = TransferRequestSchema(strict=True)
 
@@ -32,7 +33,8 @@ class TransfersResource(AuthResource):
                                                   request_body['initiator_call'],
                                                   request_body['context'],
                                                   request_body['exten'],
-                                                  request_body['flow'])
+                                                  request_body['flow'],
+                                                  request_body['variables'])
         return transfer.to_dict(), 201
 
 

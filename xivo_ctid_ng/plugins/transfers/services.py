@@ -27,7 +27,7 @@ class TransfersService(object):
         self.state_factory = state_factory
         self.call_states = ReadOnlyCallStates(self.ari)
 
-    def create(self, transferred_call, initiator_call, context, exten, flow):
+    def create(self, transferred_call, initiator_call, context, exten, flow, variables):
         try:
             transferred_channel = self.ari.channels.get(channelId=transferred_call)
             initiator_channel = self.ari.channels.get(channelId=initiator_call)
@@ -43,13 +43,13 @@ class TransfersService(object):
         else:
             transfer_state = self.state_factory.make_from_class(TransferStateReady)
 
-        new_state = transfer_state.create(transferred_channel, initiator_channel, context, exten)
+        new_state = transfer_state.create(transferred_channel, initiator_channel, context, exten, variables)
         if flow == 'blind':
             new_state = new_state.complete()
 
         return new_state.transfer
 
-    def originate_recipient(self, initiator_call, context, exten, transfer_id):
+    def originate_recipient(self, initiator_call, context, exten, transfer_id, variables):
         try:
             app_instance = self.call_states.get(initiator_call).app_instance
         except KeyError:
@@ -58,8 +58,9 @@ class TransfersService(object):
         caller_id = assemble_caller_id(initiator_channel.json['caller']['name'], initiator_channel.json['caller']['number']).encode('utf-8')
         recipient_endpoint = 'Local/{exten}@{context}'.format(exten=exten, context=context)
         app_args = [app_instance, 'transfer_recipient_called', transfer_id]
-        originate_variables = {'XIVO_TRANSFER_ROLE': 'recipient',
-                               'XIVO_TRANSFER_ID': transfer_id}
+        originate_variables = dict(variables)
+        originate_variables['XIVO_TRANSFER_ROLE'] = 'recipient'
+        originate_variables['XIVO_TRANSFER_ID'] = transfer_id
         new_channel = self.ari.channels.originate(endpoint=recipient_endpoint,
                                                   app=APPLICATION_NAME,
                                                   appArgs=app_args,

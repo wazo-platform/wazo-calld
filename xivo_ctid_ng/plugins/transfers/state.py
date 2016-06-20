@@ -158,7 +158,7 @@ class TransferStateReady(TransferState):
     name = TransferStatus.ready
 
     @transition
-    def create(self, transferred_channel, initiator_channel, context, exten):
+    def create(self, transferred_channel, initiator_channel, context, exten, variables):
         transfer_bridge = self._ari.bridges.create(type='mixing', name='transfer')
         transfer_id = transfer_bridge.id
         try:
@@ -181,7 +181,7 @@ class TransferStateReady(TransferState):
         except ARINotFound:
             raise TransferCreationError('initiator call hung up')
 
-        recipient_call = self._services.originate_recipient(initiator_channel.id, context, exten, transfer_id)
+        recipient_call = self._services.originate_recipient(initiator_channel.id, context, exten, transfer_id, variables)
 
         self.transfer = Transfer(transfer_id)
         self.transfer.transferred_call = transferred_channel.id
@@ -202,14 +202,15 @@ class TransferStateReadyNonStasis(TransferState):
     name = 'ready_non_stasis'
 
     @transition
-    def create(self, transferred_channel, initiator_channel, context, exten):
+    def create(self, transferred_channel, initiator_channel, context, exten, variables):
         transfer_id = str(uuid.uuid4())
         ami_helpers.convert_transfer_to_stasis(self._amid,
                                                transferred_channel.id,
                                                initiator_channel.id,
                                                context,
                                                exten,
-                                               transfer_id)
+                                               transfer_id,
+                                               variables)
         self.transfer = Transfer(transfer_id)
         self.transfer.initiator_call = initiator_channel.id
         self.transfer.transferred_call = transferred_channel.id
@@ -228,7 +229,7 @@ class TransferStateStarting(TransferState):
     name = TransferStatus.starting
 
     @transition
-    def start(self, transfer, context, exten):
+    def start(self, transfer, context, exten, variables):
         self.transfer = transfer
 
         try:
@@ -245,7 +246,8 @@ class TransferStateStarting(TransferState):
             self.transfer.recipient_call = self._services.originate_recipient(self.transfer.initiator_call,
                                                                               context,
                                                                               exten,
-                                                                              self.transfer.id)
+                                                                              self.transfer.id,
+                                                                              variables)
         except TransferCreationError as e:
             logger.error(e.message, e.details)
 

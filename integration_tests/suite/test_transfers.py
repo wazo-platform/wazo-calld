@@ -22,7 +22,6 @@ from hamcrest import has_item
 from hamcrest import has_key
 from hamcrest import instance_of
 from hamcrest import not_
-from requests import RequestException
 from xivo_test_helpers import until
 
 from .test_api.base import IntegrationTest
@@ -155,10 +154,11 @@ class TestTransfers(IntegrationTest):
                 recipient_channel_id,
                 transfer_id)
 
-    def given_answered_transfer(self):
+    def given_answered_transfer(self, variables=None):
         transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()
         response = self.ctid_ng.create_transfer(transferred_channel_id,
                                                 initiator_channel_id,
+                                                variables=variables,
                                                 **RECIPIENT)
 
         transfer_id = response['id']
@@ -843,6 +843,17 @@ class TestTransferFromStasis(TestTransfers):
                       initiator_channel_id2,
                       recipient_channel_id2,
                       tries=5)
+
+    def test_that_variables_are_applied_to_the_recipient_channel(self):
+        (transferred_channel_,
+         initiator_channel_id,
+         recipient_channel_id,
+         transfer_id) = self.given_answered_transfer(variables={'TEST': 'foobar'})
+
+        variable = self.ari.channels.getChannelVar(channelId=recipient_channel_id,
+                                                   variable='TEST')['value']
+
+        assert_that(variable, equal_to('foobar'))
 
 
 class TestTransferFromNonStasis(TestTransfers):

@@ -620,6 +620,10 @@
                         "attended",
                         "blind"
                     ]
+                },
+                "variables": {
+                    "description": "Channel variables to set on the recipient call",
+                    "type": "object"
                 }
             }
         },

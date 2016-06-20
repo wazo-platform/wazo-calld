@@ -2,6 +2,7 @@
 # Copyright 2016 by Avencall
 # SPDX-License-Identifier: GPL-3.0+
 
+import json
 import logging
 
 from xivo.pubsub import Pubsub
@@ -147,11 +148,17 @@ class TransfersStasis(object):
             try:
                 context = self.ari.channels.getChannelVar(channelId=transfer.initiator_call, variable='XIVO_TRANSFER_RECIPIENT_CONTEXT')['value']
                 exten = self.ari.channels.getChannelVar(channelId=transfer.initiator_call, variable='XIVO_TRANSFER_RECIPIENT_EXTEN')['value']
+                variables_str = self.ari.channels.getChannelVar(channelId=transfer.initiator_call, variable='XIVO_TRANSFER_VARIABLES')['value']
             except ARINotFound:
                 logger.error('initiator hung up while creating transfer')
+            try:
+                variables = json.loads(variables_str)
+            except ValueError:
+                logger.warning('could not decode transfer variables "%s"', variables_str)
+                variables = {}
 
             transfer_state = self.state_factory.make(transfer)
-            new_state = transfer_state.start(transfer, context, exten)
+            new_state = transfer_state.start(transfer, context, exten, variables)
             if new_state.transfer.flow == 'blind':
                 new_state.complete()
 
