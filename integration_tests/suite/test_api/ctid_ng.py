@@ -213,14 +213,14 @@ class CtidNgClient(object):
         return result
 
     def put_presence_result(self, presence_msg, token=None):
-        result = requests.post('https://localhost:9500/1.0/presences',
+        result = requests.put('https://localhost:9500/1.0/presences',
                                json=presence_msg.as_presence_body(),
                                headers={'X-Auth-Token': token},
                                verify=False)
         return result
 
     def put_user_presence_result(self, presence_msg, token=None):
-        result = requests.post('https://localhost:9500/1.0/users/me/presences',
+        result = requests.put('https://localhost:9500/1.0/users/me/presences',
                                json=presence_msg.as_user_presence_body(),
                                headers={'X-Auth-Token': token},
                                verify=False)
