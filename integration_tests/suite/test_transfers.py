@@ -22,7 +22,6 @@ from hamcrest import has_item
 from hamcrest import has_key
 from hamcrest import instance_of
 from hamcrest import not_
-from requests import RequestException
 from xivo_test_helpers import until
 
 from .test_api.base import IntegrationTest
