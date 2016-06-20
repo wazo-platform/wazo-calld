@@ -88,4 +88,5 @@ enabled_plugins:
   - api
   - calls
   - chats
+  - presences
   - transfers

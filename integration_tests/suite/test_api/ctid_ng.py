@@ -212,6 +212,20 @@ class CtidNgClient(object):
                                verify=False)
         return result
 
+    def put_presence_result(self, presence_msg, token=None):
+        result = requests.post('https://localhost:9500/1.0/presences',
+                               json=presence_msg.as_presence_body(),
+                               headers={'X-Auth-Token': token},
+                               verify=False)
+        return result
+
+    def put_user_presence_result(self, presence_msg, token=None):
+        result = requests.post('https://localhost:9500/1.0/users/me/presences',
+                               json=presence_msg.as_user_presence_body(),
+                               headers={'X-Auth-Token': token},
+                               verify=False)
+        return result
+
     @contextmanager
     def send_no_content_type(self):
         def no_json(decorated):

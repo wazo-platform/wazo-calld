@@ -305,6 +305,63 @@
                 }
             }
         },
+        "/presences": {
+            "put": {
+                "summary": "Update user presence",
+                "description": "**Required ACL:** `ctid-ng.presences.update`\n\nUpdate presence for a user.\n",
+                "parameters": [
+                    {
+                        "name": "body",
+                        "in": "body",
+                        "description": "Presence parameters",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/PresenceRequest"
+                        }
+                    }
+                ],
+                "tags": [
+                    "presences"
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Presence has been updated"
+                    },
+                    "503": {
+                        "$ref": "#/responses/AnotherServiceUnavailable"
+                    }
+                }
+            }
+        },
+        "/users/me/presences": {
+            "put": {
+                "summary": "Update user presence",
+                "description": "**Required ACL:** `ctid-ng.presences.update`\n\nUpdate presence for a user.\n",
+                "parameters": [
+                    {
+                        "name": "body",
+                        "in": "body",
+                        "description": "Presence parameters",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/UserPresenceRequest"
+                        }
+                    }
+                ],
+                "tags": [
+                    "presences",
+                    "users"
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Presence has been updated"
+                    },
+                    "503": {
+                        "$ref": "#/responses/AnotherServiceUnavailable"
+                    }
+                }
+            }
+        },
         "/transfers": {
             "post": {
                 "summary": "Initiate a transfer",
@@ -539,6 +596,28 @@
                 }
             },
             "required": ["from", "to", "alias", "msg"]
+        },
+        "PresenceRequest": {
+            "type": "object",
+            "properties": {
+                "user_uuid": {
+                    "description": "User UUID",
+                    "type": "string"
+                },
+                "status_name": {
+                    "description": "Presence status name (ex. available)",
+                    "type": "string"
+                }
+            }
+        },
+        "UserPresenceRequest": {
+            "type": "object",
+            "properties": {
+                "status_name": {
+                    "description": "Presence status name (ex. available)",
+                    "type": "string"
+                }
+            }
         },
         "UserChatRequest": {
             "type": "object",
