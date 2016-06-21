@@ -16,7 +16,7 @@ from xivo_ctid_ng.plugins.presences.resources import presence_request_schema
 
 class TestPresenceRequestSchema(unittest.TestCase):
 
-    schema = user_presence_request_schema
+    schema = presence_request_schema
 
     def setUp(self):
         self.data = {

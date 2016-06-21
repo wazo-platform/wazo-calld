@@ -25,7 +25,7 @@ class TestPresencesService(unittest.TestCase):
         }
 
     def test_update_presence(self):
-        self.service.update_presence(self.request_body)
+        self.service.update_presence(self.user_uuid, self.request_body)
 
         expected_event = UserStatusUpdateEvent(self.user_uuid, self.status_name)
         self.bus_publisher.publish.assert_called_once_with(expected_event)
