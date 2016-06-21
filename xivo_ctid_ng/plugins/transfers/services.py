@@ -3,10 +3,14 @@
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
-
-from xivo.caller_id import assemble_caller_id
-from xivo_ctid_ng.core.ari_ import APPLICATION_NAME
 from ari.exceptions import ARINotFound
+from xivo.caller_id import assemble_caller_id
+
+from xivo_ctid_ng.core.ari_ import APPLICATION_NAME
+from xivo_ctid_ng.core.ari_helpers import Channel
+from xivo_ctid_ng.core.confd_helpers import User
+from xivo_ctid_ng.core.exceptions import NotEnoughChannels
+from xivo_ctid_ng.core.exceptions import TooManyChannels
 from xivo_ctid_ng.plugins.calls.state_persistor import ReadOnlyStatePersistor as ReadOnlyCallStates
 
 from xivo_ctid_ng.core import ami_helpers
@@ -14,15 +18,17 @@ from . import ari_helpers
 from .exceptions import InvalidExtension
 from .exceptions import NoSuchTransfer
 from .exceptions import TransferCreationError
+from .exceptions import TooManyTransferredCandidates
 from .state import TransferStateReadyNonStasis, TransferStateReady
 
 logger = logging.getLogger(__name__)
 
 
 class TransfersService(object):
-    def __init__(self, ari, amid_client, state_factory, state_persistor):
-        self.ari = ari
+    def __init__(self, amid_client, ari, confd_client, state_factory, state_persistor):
         self.amid_client = amid_client
+        self.ari = ari
+        self.confd_client = confd_client
         self.state_persistor = state_persistor
         self.state_factory = state_factory
         self.call_states = ReadOnlyCallStates(self.ari)
@@ -48,6 +54,24 @@ class TransfersService(object):
             new_state = new_state.complete()
 
         return new_state.transfer
+
+    def create_from_user(self, initiator_call, exten, flow, user_uuid):
+        if not ari_helpers.channel_exists(self.ari, initiator_call):
+            raise TransferCreationError('initiator channel not found')
+
+        if Channel(initiator_call, self.ari).user() != user_uuid:
+            raise TransferCreationError('initiator call does not belong to authenticated user')
+
+        try:
+            transferred_call = Channel(initiator_call, self.ari).only_connected_channel()
+        except TooManyChannels as e:
+            raise TooManyTransferredCandidates(e.channels)
+        except NotEnoughChannels as e:
+            raise TransferCreationError('transferred channel not found')
+
+        context = User(user_uuid, self.confd_client).main_line().context()
+
+        return self.create(transferred_call, initiator_call, context, exten, flow, None)
 
     def originate_recipient(self, initiator_call, context, exten, transfer_id, variables):
         try:

@@ -6,6 +6,9 @@ import json
 
 from ari.exceptions import ARINotFound
 
+from .exceptions import NotEnoughChannels
+from .exceptions import TooManyChannels
+
 
 class GlobalVariableAdapter(object):
 
@@ -77,3 +80,38 @@ class GlobalVariableConstantNameAdapter(object):
 
     def unset(self):
         return self._global_variables.unset(self._variable)
+
+
+class Channel(object):
+
+    def __init__(self, channel_id, ari):
+        self.id = channel_id
+        self._ari = ari
+
+    def __str__(self):
+        return self.id
+
+    def connected_channels(self):
+        channel_ids = set(sum((bridge.json['channels'] for bridge in self._ari.bridges.list()
+                               if self.id in bridge.json['channels']), list()))
+        try:
+            channel_ids.remove(self.id)
+        except KeyError:
+            pass
+        return {Channel(channel_id, self._ari) for channel_id in channel_ids}
+
+    def only_connected_channel(self):
+        connected_channels = self.connected_channels()
+        if len(connected_channels) > 1:
+            raise TooManyChannels(channel.id for channel in connected_channels)
+        try:
+            return connected_channels.pop().id
+        except KeyError:
+            raise NotEnoughChannels()
+
+    def user(self, default=None):
+        try:
+            uuid = self._ari.channels.getChannelVar(channelId=self.id, variable='XIVO_USERUUID')['value']
+            return uuid
+        except ARINotFound:
+            return default

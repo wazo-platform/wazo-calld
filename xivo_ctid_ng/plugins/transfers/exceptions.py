@@ -16,52 +16,64 @@ class TransferException(APIException):
 
 
 class TransferCreationError(TransferException):
-    def __init__(self, detail):
+    def __init__(self, message):
         super(TransferCreationError, self).__init__(
             status_code=400,
             message='Transfer creation error',
             error_id='transfer-creation-error',
             details={
-                'message': detail,
+                'message': message,
+            }
+        )
+
+
+class TooManyTransferredCandidates(TransferException):
+    def __init__(self, candidates):
+        super(TooManyTransferredCandidates, self).__init__(
+            status_code=409,
+            message='Too many transferred candidates',
+            error_id='too-many-transferred-candidates',
+            details={
+                'candidates': list(candidates),
             }
         )
 
 
 class TransferAnswerError(TransferException):
-    def __init__(self, transfer_id, detail):
+    def __init__(self, transfer_id, message):
         super(TransferAnswerError, self).__init__(
             status_code=400,
             message='Transfer answer error',
             error_id='transfer-answer-error',
             details={
                 'transfer_id': transfer_id,
-                'message': detail,
+                'message': message,
             }
         )
 
 
 class TransferCompletionError(TransferException):
-    def __init__(self, transfer_id, detail):
+    def __init__(self, transfer_id, message):
         super(TransferCompletionError, self).__init__(
             status_code=400,
             message='Transfer completion error',
             error_id='transfer-completion-error',
             details={
                 'transfer_id': transfer_id,
-                'message': detail,
+                'message': message,
             }
         )
 
 
 class TransferCancellationError(TransferException):
-    def __init__(self, transfer_id, detail):
+    def __init__(self, transfer_id, message):
         super(TransferCancellationError, self).__init__(
             status_code=400,
             message='Transfer cancellation error',
             error_id='transfer-cancellation-error',
             details={
                 'transfer_id': transfer_id,
-                'message': detail,
+                'message': message,
             }
         )
 

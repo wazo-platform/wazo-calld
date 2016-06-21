@@ -3,41 +3,27 @@
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
-import requests
 
-from contextlib import contextmanager
-from requests import HTTPError
-from xivo_confd_client import Client as ConfdClient
-
-from xivo_ctid_ng.core.ari_ import APPLICATION_NAME, not_found
+from xivo_ctid_ng.core.ari_ import APPLICATION_NAME
+from xivo_ctid_ng.core.ari_helpers import Channel
+from xivo_ctid_ng.core.confd_helpers import User
 from ari.exceptions import ARINotFound
 
 from .call import Call
 from .exceptions import CallConnectError
-from .exceptions import InvalidUserUUID
 from .exceptions import NoSuchCall
-from .exceptions import UserHasNoLine
-from .exceptions import XiVOConfdUnreachable
 from .state_persistor import ReadOnlyStatePersistor
 
 logger = logging.getLogger(__name__)
 
 
-@contextmanager
-def new_confd_client(config):
-    yield ConfdClient(**config)
-
-
 class CallsService(object):
 
-    def __init__(self, ari_config, confd_config, ari):
+    def __init__(self, ari_config, ari, confd_client):
         self._ari_config = ari_config
-        self._confd_config = confd_config
         self._ari = ari
+        self._confd = confd_client
         self._state_persistor = ReadOnlyStatePersistor(self._ari)
-
-    def set_confd_token(self, confd_token):
-        self._confd_config['token'] = confd_token
 
     def list_calls(self, application_filter=None, application_instance_filter=None):
         channels = self._ari.channels.list()
@@ -65,7 +51,7 @@ class CallsService(object):
 
     def originate(self, request):
         source_user = request['source']['user']
-        endpoint = self._endpoint_from_user_uuid(source_user)
+        endpoint = User(source_user, self._confd).main_line().interface()
 
         channel = self._ari.channels.originate(endpoint=endpoint,
                                                extension=request['destination']['extension'],
@@ -75,7 +61,7 @@ class CallsService(object):
         return channel.id
 
     def originate_user(self, request, user_uuid):
-        context = self._context_from_user_uuid(user_uuid)
+        context = User(user_uuid, self._confd).main_line().context()
         new_request = {
             'destination': {'context': context,
                             'extension': request['extension'],
@@ -105,7 +91,7 @@ class CallsService(object):
 
     def connect_user(self, call_id, user_uuid):
         channel_id = call_id
-        endpoint = self._endpoint_from_user_uuid(user_uuid)
+        endpoint = User(user_uuid, self._confd).main_line().interface()
 
         try:
             channel = self._ari.channels.get(channelId=channel_id)
@@ -135,15 +121,11 @@ class CallsService(object):
         call.status = channel.json['state']
         call.caller_id_name = channel.json['caller']['name']
         call.caller_id_number = channel.json['caller']['number']
-        call.user_uuid = self._get_uuid_from_channel_id(ari, channel.id)
+        call.user_uuid = Channel(channel.id, ari).user()
         call.on_hold = self._get_hold_from_channel_id(ari, channel.id) == '1'
         call.bridges = [bridge.id for bridge in ari.bridges.list() if channel.id in bridge.json['channels']]
-
-        call.talking_to = dict()
-        for channel_id in self._get_channel_ids_from_bridges(ari, call.bridges):
-            talking_to_user_uuid = self._get_uuid_from_channel_id(ari, channel_id)
-            call.talking_to[channel_id] = talking_to_user_uuid
-        call.talking_to.pop(channel.id, None)
+        call.talking_to = {connected_channel.id: connected_channel.user()
+                           for connected_channel in Channel(channel.id, ari).connected_channels()}
 
         return call
 
@@ -158,59 +140,8 @@ class CallsService(object):
 
         return call
 
-    def _endpoint_from_user_uuid(self, uuid):
-        line = self._line_from_user_uuid(uuid)
-
-        endpoint = "{}/{}".format(line['protocol'], line['name'])
-        if endpoint:
-            return endpoint
-
-        return None
-
-    def _context_from_user_uuid(self, uuid):
-        line = self._line_from_user_uuid(uuid)
-        logger.debug(line)
-
-        return line['context']
-
-    def _line_from_user_uuid(self, uuid):
-        with new_confd_client(self._confd_config) as confd:
-            try:
-                user_lines_of_user = confd.users.relations(uuid).list_lines()['items']
-            except HTTPError as e:
-                if not_found(e):
-                    raise InvalidUserUUID(uuid)
-                raise
-            except requests.RequestException as e:
-                raise XiVOConfdUnreachable(self._confd_config, e)
-
-            main_line_ids = [user_line['line_id'] for user_line in user_lines_of_user if user_line['main_line'] is True]
-            if not main_line_ids:
-                raise UserHasNoLine(uuid)
-            line_id = main_line_ids[0]
-
-            return confd.lines.get(line_id)
-
-    def _get_uuid_from_channel_id(self, ari, channel_id):
-        try:
-            uuid = ari.channels.getChannelVar(channelId=channel_id, variable='XIVO_USERUUID')['value']
-            return uuid
-        except ARINotFound:
-            return None
-
     def _get_hold_from_channel_id(self, ari, channel_id):
         try:
             return ari.channels.getChannelVar(channelId=channel_id, variable='XIVO_ON_HOLD')['value']
         except ARINotFound:
             return None
-
-    def _get_channel_ids_from_bridges(self, ari, bridges):
-        result = set()
-        for bridge_id in bridges:
-            try:
-                channels = ari.bridges.get(bridgeId=bridge_id).json['channels']
-            except requests.RequestException as e:
-                logger.error(e)
-                channels = set()
-            result.update(channels)
-        return result

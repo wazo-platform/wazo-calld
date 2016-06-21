@@ -162,6 +162,23 @@ class CtidNgClient(object):
         assert_that(response.status_code, equal_to(201))
         return response.json()
 
+    def post_user_transfer_result(self, body, token=None):
+        result = requests.post('https://localhost:9500/1.0/users/me/transfers',
+                               json=body,
+                               headers={'X-Auth-Token': token},
+                               verify=False)
+        return result
+
+    def create_user_transfer(self, initiator_call, exten, token=VALID_TOKEN):
+        body = {
+            'initiator_call': initiator_call,
+            'exten': exten,
+            'flow': 'attended',
+        }
+        response = self.post_user_transfer_result(body, token=token)
+        assert_that(response.status_code, equal_to(201))
+        return response.json()
+
     def put_complete_transfer_result(self, transfer_id, token=None):
         url = u'https://localhost:9500/1.0/transfers/{transfer_id}/complete'
         result = requests.put(url.format(transfer_id=transfer_id),

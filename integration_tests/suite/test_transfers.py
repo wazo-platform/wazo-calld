@@ -26,6 +26,10 @@ from xivo_test_helpers import until
 
 from .test_api.base import IntegrationTest
 from .test_api.constants import VALID_TOKEN
+from .test_api.confd import MockUser
+from .test_api.confd import MockLine
+from .test_api.confd import MockUserLine
+from .test_api.auth import MockUserToken
 from .test_api.hamcrest_ import HamcrestARIBridge
 from .test_api.hamcrest_ import HamcrestARIChannel
 
@@ -88,15 +92,7 @@ class TestTransfers(IntegrationTest):
             except ARINotFound:
                 pass
 
-    def given_bridged_call_stasis(self):
-        caller = self.ari.channels.originate(endpoint=ENDPOINT,
-                                             app=STASIS_APP,
-                                             appArgs=[STASIS_APP_INSTANCE])
-        callee = self.ari.channels.originate(endpoint=ENDPOINT,
-                                             app=STASIS_APP,
-                                             appArgs=[STASIS_APP_INSTANCE])
-        bridge = self.ari.bridges.create(type='mixing')
-
+    def add_channel_to_bridge(self, bridge):
         def channel_is_in_stasis(channel_id):
             try:
                 self.ari.channels.setChannelVar(channelId=channel_id, variable='TEST_STASIS', value='')
@@ -104,10 +100,19 @@ class TestTransfers(IntegrationTest):
             except ARINotInStasis:
                 return False
 
-        until.true(channel_is_in_stasis, caller.id, tries=2)
-        bridge.addChannel(channel=caller.id)
-        until.true(channel_is_in_stasis, callee.id, tries=2)
-        bridge.addChannel(channel=callee.id)
+        new_channel = self.ari.channels.originate(endpoint=ENDPOINT,
+                                                  app=STASIS_APP,
+                                                  appArgs=[STASIS_APP_INSTANCE])
+        until.true(channel_is_in_stasis, new_channel.id, tries=2)
+        bridge.addChannel(channel=new_channel.id)
+
+        return new_channel
+
+    def given_bridged_call_stasis(self):
+        bridge = self.ari.bridges.create(type='mixing')
+        caller = self.add_channel_to_bridge(bridge)
+        callee = self.add_channel_to_bridge(bridge)
+
         return caller.id, callee.id
 
     def given_bridged_call_not_stasis(self):
@@ -363,6 +368,10 @@ class TestCreateTransfer(TestTransfers):
             yield body
             body[key] = ''
             yield body
+            body[key] = []
+            yield body
+            body[key] = {}
+            yield body
 
     def test_given_transferred_not_found_when_create_then_error_400(self):
         transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()
@@ -478,6 +487,249 @@ class TestCreateTransfer(TestTransfers):
 
         with self.ctid_ng.send_no_content_type():
             response = self.ctid_ng.post_transfer_result(body=body, token=VALID_TOKEN)
+
+        assert_that(response.status_code, equal_to(201))
+
+
+class TestUserCreateTransfer(TestTransfers):
+    def setUp(self):
+        super(TestUserCreateTransfer, self).setUp()
+        self.confd.reset()
+        self.bus.listen_events('calls.transfer.*')
+
+    def given_bridged_call_stasis(self, initiator_uuid):
+        transferred_channel_id, initiator_channel_id = super(TestUserCreateTransfer, self).given_bridged_call_stasis()
+        self.set_initiator_channel(initiator_channel_id, initiator_uuid)
+        return transferred_channel_id, initiator_channel_id
+
+    def set_initiator_channel(self, channel_id, initiator_uuid):
+        self.ari.channels.setChannelVar(channelId=channel_id, variable='XIVO_USERUUID', value=initiator_uuid)
+
+    def given_user_token(self, user_uuid):
+        token = 'my-token'
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
+
+        return token
+
+    def given_user_with_line(self, context):
+        user_uuid = 'some-user-id'
+        self.confd.set_users(MockUser(uuid=user_uuid))
+        self.confd.set_lines(MockLine(id='some-line-id', name='line-name', protocol='sip', context=context))
+        self.confd.set_user_lines({user_uuid: [MockUserLine('some-line-id')]})
+
+        return user_uuid
+
+    def test_given_invalid_input_when_create_then_error_400(self):
+        for invalid_body in self.invalid_transfer_requests():
+            response = self.ctid_ng.post_user_transfer_result(invalid_body, VALID_TOKEN)
+
+            assert_that(response.status_code, equal_to(400))
+            assert_that(response.json(), has_entry('message', contains_string('invalid')))
+
+    def invalid_transfer_requests(self):
+        valid_transfer_request = {
+            'initiator_call': 'some-channel-id',
+            'exten': 'some-extension',
+            'flow': 'attended'
+        }
+
+        for key in ('initiator_call', 'exten'):
+            body = dict(valid_transfer_request)
+            body.pop(key)
+            yield body
+            body[key] = None
+            yield body
+            body[key] = 1234
+            yield body
+            body[key] = True
+            yield body
+            body[key] = ''
+            yield body
+            body[key] = []
+            yield body
+            body[key] = {}
+            yield body
+
+        body = dict(valid_transfer_request)
+        body['flow'] = None
+        yield body
+        body['flow'] = 1234
+        yield body
+        body['flow'] = True
+        yield body
+        body['flow'] = ''
+        yield body
+        body['flow'] = []
+        yield body
+        body['flow'] = {}
+        yield body
+        body['flow'] = 'unknown'
+        yield body
+
+    def test_given_transferred_not_found_when_create_then_error_400(self):
+        user_uuid = self.given_user_with_line(RECIPIENT['context'])
+        token = self.given_user_token(user_uuid)
+        bridge = self.ari.bridges.create(type='mixing')
+        initiator_channel = self.add_channel_to_bridge(bridge)
+        self.set_initiator_channel(initiator_channel.id, user_uuid)
+        body = {
+            'initiator_call': initiator_channel.id,
+            'exten': RECIPIENT['exten'],
+        }
+
+        response = self.ctid_ng.post_user_transfer_result(body, VALID_TOKEN)
+
+        assert_that(response.status_code, equal_to(400))
+        assert_that(response.json(), has_entry('message', contains_string('creation')))
+
+    def test_given_initiator_not_found_when_create_then_error_400(self):
+        user_uuid = self.given_user_with_line(RECIPIENT['context'])
+        token = self.given_user_token(user_uuid)
+        body = {
+            'initiator_call': 'not-found',
+            'exten': RECIPIENT['exten'],
+        }
+
+        response = self.ctid_ng.post_user_transfer_result(body, VALID_TOKEN)
+
+        assert_that(response.status_code, equal_to(400))
+        assert_that(response.json(), has_entry('message', contains_string('creation')))
+
+    def test_given_recipient_not_found_when_create_then_error_400(self):
+        user_uuid = self.given_user_with_line(RECIPIENT['context'])
+        token = self.given_user_token(user_uuid)
+        transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis(user_uuid)
+        body = {
+            'initiator_call': initiator_channel_id,
+            'exten': RECIPIENT_NOT_FOUND['exten']
+        }
+
+        response = self.ctid_ng.post_user_transfer_result(body, token)
+
+        assert_that(response.status_code, equal_to(400))
+        assert_that(response.json(), has_entries({'message': contains_string('extension'),
+                                                  'details': has_entries({'exten': RECIPIENT_NOT_FOUND['exten'],
+                                                                          'context': RECIPIENT_NOT_FOUND['context']})}))
+
+    def test_given_multiple_transferred_candidates_when_create_then_error_409(self):
+        user_uuid = self.given_user_with_line(RECIPIENT['context'])
+        token = self.given_user_token(user_uuid)
+        bridge = self.ari.bridges.create(type='mixing')
+        transferred_channel_1 = self.add_channel_to_bridge(bridge)
+        transferred_channel_2 = self.add_channel_to_bridge(bridge)
+        initiator_channel = self.add_channel_to_bridge(bridge)
+        self.set_initiator_channel(initiator_channel.id, user_uuid)
+        body = {
+            'initiator_call': initiator_channel.id,
+            'exten': RECIPIENT['exten']
+        }
+
+        response = self.ctid_ng.post_user_transfer_result(body, token)
+
+        assert_that(response.status_code, equal_to(409))
+        assert_that(response.json(), has_entries({'message': contains_string('transferred'),
+                                                  'details': has_entries({'candidates': contains_inanyorder(
+                                                      transferred_channel_1.id,
+                                                      transferred_channel_2.id,
+                                                  )})}))
+
+    def test_given_multiple_lines_when_create_then_use_main_line(self):
+        user_uuid, context = 'my-user-uuid', RECIPIENT['context']
+        self.confd.set_users(MockUser(uuid=user_uuid))
+        self.confd.set_lines(MockLine(id='some-line-id', name='line-name', protocol='sip', context=context),
+                             MockLine(id='some-other-line-id', name='other-line-name', protocol='sip', context='another-context'))
+        self.confd.set_user_lines({user_uuid: [MockUserLine('some-line-id', main_line=True),
+                                               MockUserLine('some-other-line-id', main_line=False)]})
+        transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis(user_uuid)
+        token = self.given_user_token(user_uuid)
+        body = {
+            'initiator_call': initiator_channel_id,
+            'exten': RECIPIENT['exten']
+        }
+
+        response = self.ctid_ng.post_user_transfer_result(body, token)
+
+        assert_that(response.status_code, equal_to(201))
+
+    def test_given_no_lines_when_create_then_error_400(self):
+        user_uuid = 'my-user-uuid'
+        self.confd.set_users(MockUser(uuid=user_uuid))
+        self.confd.set_user_lines({user_uuid: []})
+        transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis(user_uuid)
+        token = self.given_user_token(user_uuid)
+        body = {
+            'initiator_call': initiator_channel_id,
+            'exten': RECIPIENT['exten']
+        }
+
+        response = self.ctid_ng.post_user_transfer_result(body, token)
+
+        assert_that(response.status_code, equal_to(400))
+        assert_that(response.json(), has_entry('message', contains_string('line')))
+
+    def test_given_user_not_found_when_create_then_error_400(self):
+        user_uuid = 'user-uuid-not-found'
+        transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis(user_uuid)
+        token = self.given_user_token(user_uuid)
+        body = {
+            'initiator_call': initiator_channel_id,
+            'exten': RECIPIENT['exten']
+        }
+
+        response = self.ctid_ng.post_user_transfer_result(body, token)
+
+        assert_that(response.status_code, equal_to(400))
+        assert_that(response.json(), has_entry('message', contains_string('user')))
+
+    def test_given_channel_not_mine_when_create_then_error_400(self):
+        user_uuid = self.given_user_with_line(RECIPIENT['context'])
+        token = self.given_user_token(user_uuid)
+        transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis(initiator_uuid='some-other-user-uuid')
+        body = {
+            'initiator_call': initiator_channel_id,
+            'exten': RECIPIENT['exten']
+        }
+
+        response = self.ctid_ng.post_user_transfer_result(body, token)
+
+        assert_that(response.status_code, equal_to(400))
+        assert_that(response.json(), has_entry('details', has_entry('message', contains_string('initiator'))))
+
+    def test_given_state_ready_when_transfer_start_and_answer_then_state_answered(self):
+        user_uuid = self.given_user_with_line(RECIPIENT['context'])
+        token = self.given_user_token(user_uuid)
+        transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis(user_uuid)
+
+        response = self.ctid_ng.create_user_transfer(initiator_channel_id,
+                                                     RECIPIENT['exten'],
+                                                     token)
+
+        assert_that(response, all_of(has_entries({'transferred_call': transferred_channel_id,
+                                                  'initiator_call': initiator_channel_id,
+                                                  'status': 'ringback'}),
+                                     has_key('id'),
+                                     has_key('recipient_call')))
+
+        transfer_id = response['id']
+        recipient_channel_id = response['recipient_call']
+        until.assert_(self.assert_transfer_is_answered,
+                      transfer_id,
+                      transferred_channel_id,
+                      initiator_channel_id,
+                      recipient_channel_id,
+                      tries=5)
+
+    def test_given_no_content_type_when_create_then_ok(self):
+        user_uuid = self.given_user_with_line(RECIPIENT['context'])
+        token = self.given_user_token(user_uuid)
+        transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis(user_uuid)
+        body = {
+            'initiator_call': initiator_channel_id,
+            'exten': RECIPIENT['exten'],
+        }
+
+        with self.ctid_ng.send_no_content_type():
+            response = self.ctid_ng.post_user_transfer_result(body=body, token=token)
 
         assert_that(response.status_code, equal_to(201))
 

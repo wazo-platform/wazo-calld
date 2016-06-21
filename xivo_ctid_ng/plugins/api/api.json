@@ -414,6 +414,47 @@
                     }
                 }
             }
+        },
+        "/users/me/transfers": {
+            "post": {
+                "summary": "Initiate a transfer from the authenticated user",
+                "description": "**Required ACL:** `ctid-ng.users.me.transfers.create`",
+                "parameters": [
+                    {
+                        "name": "body",
+                        "in": "body",
+                        "description": "Parameters of the transfer",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/UserTransferRequest"
+                        }
+                    }
+                ],
+                "tags": [
+                    "transfers",
+                    "users"
+                ],
+                "responses": {
+                    "201": {
+                        "description": "The transfer being created",
+                        "schema": {
+                            "$ref": "#/definitions/Transfer"
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/responses/InvalidRequest"
+                    },
+                    "409": {
+                        "description": "The server could not determine which Call to use as transferred or initiator, usually because too many Calls are eligible",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    },
+                    "503": {
+                        "$ref": "#/responses/AnotherServiceUnavailable"
+                    }
+                }
+            }
         }
     },
     "responses": {
@@ -593,6 +634,15 @@
                 }
             }
         },
+        "TransferFlow": {
+            "description": "Behavior of the transfer. `attended` allows the initiator to talk to the recipient. `blind` does not.",
+            "type": "string",
+            "default": "attended",
+            "enum": [
+                "attended",
+                "blind"
+            ]
+        },
         "TransferRequest": {
             "type": "object",
             "properties": {
@@ -613,13 +663,7 @@
                     "type": "string"
                 },
                 "flow": {
-                    "description": "Behavior of the transfer. `attended` allows the initiator to talk to the recipient. `blind` does not.",
-                    "type": "string",
-                    "default": "attended",
-                    "enum": [
-                        "attended",
-                        "blind"
-                    ]
+                    "$ref": "#/definitions/TransferFlow"
                 },
                 "variables": {
                     "description": "Channel variables to set on the recipient call",
@@ -658,6 +702,7 @@
                 "flow": {
                     "description": "The behavior of the transfer",
                     "type": "string",
+                    "default": "attended",
                     "enum": [
                         "attended",
                         "blind"
@@ -679,6 +724,26 @@
             },
             "required": [
                 "extension"
+            ]
+        },
+        "UserTransferRequest": {
+            "type": "object",
+            "properties": {
+                "initiator_call": {
+                    "description": "Call ID of the transfer initiator. This call must be owned by the authenticated user.",
+                    "type": "string"
+                },
+                "exten": {
+                    "description": "Extension of the recipient of the transfer",
+                    "type": "string"
+                },
+                "flow": {
+                    "$ref": "#/definitions/TransferFlow"
+                }
+            },
+            "required": [
+                "initiator_call",
+                "exten"
             ]
         }
     },

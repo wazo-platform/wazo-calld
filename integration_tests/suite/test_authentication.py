@@ -90,3 +90,28 @@ class TestAuthenticationCoverage(IntegrationTest):
         result = self.ctid_ng.post_user_chat_result(new_user_chat_message())
 
         assert_that(result.status_code, equal_to(401))
+
+    def test_auth_on_get_transfer(self):
+        result = self.ctid_ng.get_transfer_result('my-transfer')
+
+        assert_that(result.status_code, equal_to(401))
+
+    def test_auth_on_new_transfer(self):
+        result = self.ctid_ng.post_transfer_result(body={})
+
+        assert_that(result.status_code, equal_to(401))
+
+    def test_auth_on_new_user_transfer(self):
+        result = self.ctid_ng.post_user_transfer_result(body={})
+
+        assert_that(result.status_code, equal_to(401))
+
+    def test_auth_on_transfer_cancel(self):
+        result = self.ctid_ng.delete_transfer_result('my-transfer')
+
+        assert_that(result.status_code, equal_to(401))
+
+    def test_auth_on_transfer_complete(self):
+        result = self.ctid_ng.put_complete_transfer_result('my-transfer')
+
+        assert_that(result.status_code, equal_to(401))

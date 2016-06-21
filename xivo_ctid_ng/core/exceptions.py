@@ -83,3 +83,54 @@ class TokenWithUserUUIDRequiredError(APIException):
             message='A valid token with a user UUID is required',
             error_id='token-with-user-uuid-required',
         )
+
+
+class UserHasNoLine(APIException):
+
+    def __init__(self, user_uuid):
+        super(UserHasNoLine, self).__init__(
+            status_code=400,
+            message='Invalid user: user has no line',
+            error_id='user-has-no-line',
+            details={
+                'user_uuid': user_uuid
+            }
+        )
+
+
+class InvalidUserUUID(APIException):
+
+    def __init__(self, user_uuid):
+        super(InvalidUserUUID, self).__init__(
+            status_code=400,
+            message='Invalid user: not found',
+            error_id='invalid-user',
+            details={
+                'user_uuid': user_uuid
+            }
+        )
+
+
+class XiVOConfdUnreachable(APIException):
+
+    def __init__(self, xivo_confd_client, error):
+        super(XiVOConfdUnreachable, self).__init__(
+            status_code=503,
+            message='xivo-confd server unreachable',
+            error_id='xivo-confd-unreachable',
+            details={
+                'xivo_confd_config': {'host': xivo_confd_client.host,
+                                      'port': xivo_confd_client.port,
+                                      'timeout': xivo_confd_client.timeout},
+                'original_error': str(error),
+            }
+        )
+
+
+class TooManyChannels(Exception):
+    def __init__(self, channels):
+        self.channels = channels
+
+
+class NotEnoughChannels(Exception):
+    pass
