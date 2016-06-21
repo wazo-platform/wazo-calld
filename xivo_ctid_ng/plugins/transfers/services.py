@@ -71,7 +71,7 @@ class TransfersService(object):
 
         context = User(user_uuid, self.confd_client).main_line().context()
 
-        return self.create(transferred_call, initiator_call, context, exten, flow, None)
+        return self.create(transferred_call, initiator_call, context, exten, flow, variables={})
 
     def originate_recipient(self, initiator_call, context, exten, transfer_id, variables):
         try:
