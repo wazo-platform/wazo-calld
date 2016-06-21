@@ -29,17 +29,3 @@ class TestPresencesService(unittest.TestCase):
 
         expected_event = UserStatusUpdateEvent(self.user_uuid, self.status_name)
         self.bus_publisher.publish.assert_called_once_with(expected_event)
-
-    def test_update_presence_without_user_uuid(self):
-        del self.request_body['user_uuid']
-
-        self.service.update_presence(self.request_body, self.user_uuid)
-
-        expected_event = UserStatusUpdateEvent(self.user_uuid, self.status_name)
-        self.bus_publisher.publish.assert_called_once_with(expected_event)
-
-    def test_send_message_with_user_uuid(self):
-        self.service.update_presence(self.request_body)
-
-        expected_event = UserStatusUpdateEvent(self.user_uuid, self.status_name)
-        self.bus_publisher.publish.assert_called_once_with(expected_event)

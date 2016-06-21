@@ -31,7 +31,7 @@ class TestUpdatePresence(IntegrationTest):
         self.presence_msg = new_presence_message()
 
     def test_create_presence_with_correct_values(self):
-        result = self.ctid_ng.put_presence_result(self.presence_msg, token=VALID_TOKEN)
+        result = self.ctid_ng.put_presence_result(self.presence_msg, self.user_uuid, token=VALID_TOKEN)
 
         assert_that(result.status_code, equal_to(204))
         self._assert_presence_msg_sent_on_bus()
@@ -43,7 +43,6 @@ class TestUpdatePresence(IntegrationTest):
                 'origin_uuid': XIVO_UUID,
                 'required_acl': 'events.statuses.users',
                 'data': {
-                    'user_uuid': self.user_uuid,
                     'name': 'available',
                 }
             })))
@@ -80,7 +79,6 @@ class TestUserUpdatePresence(IntegrationTest):
                 'origin_uuid': XIVO_UUID,
                 'required_acl': 'events.statuses.users',
                 'data': {
-                    'user_uuid': self.user_uuid,
                     'name': 'available',
                 }
             })))

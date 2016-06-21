@@ -12,11 +12,6 @@ class PresenceMessage(object):
         self.status_name = status_name
 
     def as_presence_body(self):
-        body = self.as_user_presence_body()
-        body['user_uuid'] = self.user_uuid
-        return body
-
-    def as_user_presence_body(self):
         body = {
             'status_name': self.status_name
         }

@@ -305,11 +305,18 @@
                 }
             }
         },
-        "/presences": {
+        "/users/{user_uuid}/presences": {
             "put": {
                 "summary": "Update user presence",
                 "description": "**Required ACL:** `ctid-ng.presences.update`\n\nUpdate presence for a user.\n",
                 "parameters": [
+                    {
+                        "name": "user_uuid",
+                        "in": "path",
+                        "description": "User UUID",
+                        "required": true,
+                        "type": "string"
+                    },
                     {
                         "name": "body",
                         "in": "body",
@@ -321,7 +328,8 @@
                     }
                 ],
                 "tags": [
-                    "presences"
+                    "presences",
+                    "users"
                 ],
                 "responses": {
                     "204": {
@@ -344,7 +352,7 @@
                         "description": "Presence parameters",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/UserPresenceRequest"
+                            "$ref": "#/definitions/PresenceRequest"
                         }
                     }
                 ],
@@ -598,19 +606,6 @@
             "required": ["from", "to", "alias", "msg"]
         },
         "PresenceRequest": {
-            "type": "object",
-            "properties": {
-                "user_uuid": {
-                    "description": "User UUID",
-                    "type": "string"
-                },
-                "status_name": {
-                    "description": "Presence status name (ex. available)",
-                    "type": "string"
-                }
-            }
-        },
-        "UserPresenceRequest": {
             "type": "object",
             "properties": {
                 "status_name": {
