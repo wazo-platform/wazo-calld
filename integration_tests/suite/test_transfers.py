@@ -6,6 +6,7 @@
 import ari
 import logging
 import time
+import uuid
 
 from ari.exceptions import ARINotFound
 from ari.exceptions import ARINotInStasis
@@ -108,15 +109,23 @@ class TestTransfers(IntegrationTest):
 
         return new_channel
 
-    def given_bridged_call_stasis(self):
+    def given_bridged_call_stasis(self, caller_uuid=None, callee_uuid=None):
+        caller_uuid = caller_uuid or str(uuid.uuid4())
+        callee_uuid = callee_uuid or str(uuid.uuid4())
         bridge = self.ari.bridges.create(type='mixing')
         caller = self.add_channel_to_bridge(bridge)
+        caller.setChannelVar(variable='XIVO_USERUUID', value=caller_uuid)
         callee = self.add_channel_to_bridge(bridge)
+        callee.setChannelVar(variable='XIVO_USERUUID', value=callee_uuid)
 
         return caller.id, callee.id
 
-    def given_bridged_call_not_stasis(self):
-        caller = self.ari.channels.originate(endpoint=ENDPOINT, context='local', extension='dial', priority=1)
+    def given_bridged_call_not_stasis(self, caller_uuid=None, callee_uuid=None):
+        caller_uuid = caller_uuid or str(uuid.uuid4())
+        callee_uuid = callee_uuid or str(uuid.uuid4())
+        caller = self.ari.channels.originate(endpoint=ENDPOINT, context='local', extension='dial', priority=1,
+                                             variables={'variables': {'XIVO_USERUUID': caller_uuid,
+                                                                      '__CALLEE_XIVO_USERUUID': callee_uuid}})
 
         def channels_are_talking(caller_channel_id):
             try:
@@ -439,6 +448,24 @@ class TestCreateTransfer(TestTransfers):
             assert_that(self.bus.events(), has_item(has_entry('name', 'transfer_created')))
 
         until.assert_(event_is_sent, tries=5)
+
+    def test_given_stasis_when_create_then_owner_is_set(self):
+        transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis(callee_uuid='my-uuid')
+
+        response = self.ctid_ng.create_transfer(transferred_channel_id,
+                                                initiator_channel_id,
+                                                **RECIPIENT)
+
+        assert_that(response, has_entry('initiator_uuid', 'my-uuid'))
+
+    def test_given_non_stasis_when_create_then_owner_is_set(self):
+        transferred_channel_id, initiator_channel_id = self.given_bridged_call_not_stasis(callee_uuid='my-uuid')
+
+        response = self.ctid_ng.create_transfer(transferred_channel_id,
+                                                initiator_channel_id,
+                                                **RECIPIENT)
+
+        assert_that(response, has_entry('initiator_uuid', 'my-uuid'))
 
     def test_when_create_then_caller_ids_are_right(self):
         transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()

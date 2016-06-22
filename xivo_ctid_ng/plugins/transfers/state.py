@@ -8,6 +8,7 @@ import uuid
 from ari.exceptions import ARINotFound
 
 from xivo_ctid_ng.core import ami_helpers
+from xivo_ctid_ng.core.ari_helpers import Channel
 from . import ari_helpers
 from .exceptions import TransferAnswerError
 from .exceptions import TransferCreationError
@@ -159,6 +160,10 @@ class TransferStateReady(TransferState):
 
     @transition
     def create(self, transferred_channel, initiator_channel, context, exten, variables):
+        initiator_uuid = Channel(initiator_channel.id, self._ari).user()
+        if initiator_uuid is None:
+            raise TransferCreationError('initiator has no user UUID')
+
         transfer_bridge = self._ari.bridges.create(type='mixing', name='transfer')
         transfer_id = transfer_bridge.id
         try:
@@ -183,7 +188,7 @@ class TransferStateReady(TransferState):
 
         recipient_call = self._services.originate_recipient(initiator_channel.id, context, exten, transfer_id, variables)
 
-        self.transfer = Transfer(transfer_id)
+        self.transfer = Transfer(transfer_id, initiator_uuid)
         self.transfer.transferred_call = transferred_channel.id
         self.transfer.initiator_call = initiator_channel.id
         self.transfer.recipient_call = recipient_call
@@ -203,6 +208,10 @@ class TransferStateReadyNonStasis(TransferState):
 
     @transition
     def create(self, transferred_channel, initiator_channel, context, exten, variables):
+        initiator_uuid = Channel(initiator_channel.id, self._ari).user()
+        if initiator_uuid is None:
+            raise TransferCreationError('initiator has no user UUID')
+
         transfer_id = str(uuid.uuid4())
         ami_helpers.convert_transfer_to_stasis(self._amid,
                                                transferred_channel.id,
@@ -211,7 +220,7 @@ class TransferStateReadyNonStasis(TransferState):
                                                exten,
                                                transfer_id,
                                                variables)
-        self.transfer = Transfer(transfer_id)
+        self.transfer = Transfer(transfer_id, initiator_uuid)
         self.transfer.initiator_call = initiator_channel.id
         self.transfer.transferred_call = transferred_channel.id
         self.transfer.status = self.name

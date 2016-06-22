@@ -20,7 +20,7 @@ class Testclassname(TestCase):
         pass
 
     def test_transfer_role(self):
-        transfer = Transfer('id')
+        transfer = Transfer('id', 'initiator_uuid')
         transfer.transferred_call = 'transferred'
         transfer.initiator_call = 'initiator'
         transfer.recipient_call = 'recipient'
