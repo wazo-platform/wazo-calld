@@ -4,6 +4,7 @@ git+https://github.com/xivo-pbx/xivo-amid-client.git
 git+https://github.com/xivo-pbx/xivo-auth-client.git
 git+https://github.com/xivo-pbx/xivo-bus.git
 git+https://github.com/xivo-pbx/xivo-confd-client.git
+git+https://github.com/xivo-pbx/xivo-ctid-client.git
 git+https://github.com/xivo-pbx/xivo-lib-python.git
 git+https://github.com/xivo-pbx/xivo-lib-rest-client.git
 cherrypy==3.7.0
