@@ -306,9 +306,34 @@
             }
         },
         "/users/{user_uuid}/presences": {
+            "get": {
+                "summary": "Get a user presence",
+                "description": "**Required ACL:** `ctid-ng.users.{user_uuid}.presences.get`\n\nGet presence for a user.\n",
+                "parameters": [
+                    {
+                        "name": "user_uuid",
+                        "in": "path",
+                        "description": "User UUID",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "tags": [
+                    "presences",
+                    "users"
+                ],
+                "responses": {
+                    "200": {
+                        "$ref": "#/responses/PresenceUser"
+                    },
+                    "503": {
+                        "$ref": "#/responses/AnotherServiceUnavailable"
+                    }
+                }
+            },
             "put": {
                 "summary": "Update user presence",
-                "description": "**Required ACL:** `ctid-ng.presences.update`\n\nUpdate presence for a user.\n",
+                "description": "**Required ACL:** `ctid-ng.users.{user_uuid}.presences.update`\n\nUpdate presence for a user.\n",
                 "parameters": [
                     {
                         "name": "user_uuid",
@@ -342,9 +367,25 @@
             }
         },
         "/users/me/presences": {
+            "get": {
+                "summary": "Get a user presence",
+                "description": "**Required ACL:** `ctid-ng.users.me.presences.get`\n\nGet presence for a user.\n",
+                "tags": [
+                    "presences",
+                    "users"
+                ],
+                "responses": {
+                    "200": {
+                        "$ref": "#/responses/PresenceUser"
+                    },
+                    "503": {
+                        "$ref": "#/responses/AnotherServiceUnavailable"
+                    }
+                }
+            },
             "put": {
                 "summary": "Update user presence",
-                "description": "**Required ACL:** `ctid-ng.presences.update`\n\nUpdate presence for a user.\n",
+                "description": "**Required ACL:** `ctid-ng.users.me.presences.update`\n\nUpdate presence for a user.\n",
                 "parameters": [
                     {
                         "name": "body",
@@ -611,6 +652,26 @@
                 "status_name": {
                     "description": "Presence status name (ex. available)",
                     "type": "string"
+                }
+            }
+        },
+        "PresenceUser": {
+            "title": "Presence User",
+            "description": "Presence user information",
+            "properties": {
+                "id": {
+                    "type": "integer",
+                    "format": "int32",
+                    "description": "Unique ID"
+                },
+                "origin_uuid": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "UUID of the server on which this endpoint is connected"
+                },
+                "presence": {
+                    "type": "string",
+                    "description": "Current presence for the user. The list of presences and their meaning are defined in the CTI presence configuration. (Configurable only via the web interface)"
                 }
             }
         },

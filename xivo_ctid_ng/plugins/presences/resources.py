@@ -22,7 +22,7 @@ class PresencesResource(AuthResource):
     def __init__(self, presences_service):
         self._presences_service = presences_service
 
-    @required_acl('ctid-ng.presences.update')
+    @required_acl('ctid-ng.users.{user_uuid}.presences.update')
     def put(self, user_uuid):
         request_body = presence_request_schema.load(request.get_json(force=True)).data
 
