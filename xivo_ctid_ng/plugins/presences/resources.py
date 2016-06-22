@@ -22,7 +22,7 @@ class PresencesResource(AuthResource):
     def __init__(self, presences_service):
         self._presences_service = presences_service
 
-    @required_acl('ctid-ng.users.{user_uuid}.presences.get')
+    @required_acl('ctid-ng.users.{user_uuid}.presences.read')
     def get(self, user_uuid):
         result = self._presences_service.get_presence(user_uuid)
 
@@ -43,7 +43,7 @@ class UserPresencesResource(AuthResource):
         self._auth_client = auth_client
         self._presences_service = presences_service
 
-    @required_acl('ctid-ng.users.me.presences.get')
+    @required_acl('ctid-ng.users.me.presences.read')
     def get(self):
         user_uuid = get_token_user_uuid_from_request(self._auth_client)
         result = self._presences_service.get_presence(user_uuid)

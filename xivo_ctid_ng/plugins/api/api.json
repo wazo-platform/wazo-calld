@@ -308,7 +308,7 @@
         "/users/{user_uuid}/presences": {
             "get": {
                 "summary": "Get a user presence",
-                "description": "**Required ACL:** `ctid-ng.users.{user_uuid}.presences.get`\n\nGet presence for a user.\n",
+                "description": "**Required ACL:** `ctid-ng.users.{user_uuid}.presences.read`\n\nGet presence for a user.\n",
                 "parameters": [
                     {
                         "name": "user_uuid",
@@ -372,7 +372,7 @@
         "/users/me/presences": {
             "get": {
                 "summary": "Get a user presence",
-                "description": "**Required ACL:** `ctid-ng.users.me.presences.get`\n\nGet presence for a user.\n",
+                "description": "**Required ACL:** `ctid-ng.users.me.presences.read`\n\nGet presence for a user.\n",
                 "tags": [
                     "presences",
                     "users"
