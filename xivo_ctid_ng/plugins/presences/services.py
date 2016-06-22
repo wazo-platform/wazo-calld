@@ -5,7 +5,10 @@
 from xivo_bus.resources.cti.event import UserStatusUpdateEvent
 
 from contextlib import contextmanager
+import requests
 from xivo_ctid_client import Client as CtidClient
+
+from .exceptions import XiVOCtidUnreachable
 
 
 @contextmanager
@@ -17,11 +20,14 @@ class PresencesService(object):
 
     def __init__(self, bus_publisher, ctid_config):
         self._bus_publisher = bus_publisher
-        self._config_ctid = ctid_config
+        self._ctid_config = ctid_config
 
     def get_presence(self, user_uuid):
         with new_ctid_client(self._ctid_config) as ctid:
-            return ctid.users.get(user_uuid)
+            try:
+                return ctid.users.get(user_uuid)
+            except requests.RequestException as e:
+                raise XiVOCtidUnreachable(self._ctid_config, e)
 
         return '', 404
 
