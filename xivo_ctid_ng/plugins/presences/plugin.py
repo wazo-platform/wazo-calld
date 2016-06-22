@@ -17,7 +17,7 @@ class Plugin(object):
 
         auth_client = AuthClient(**config['auth'])
 
-        presences_service = PresencesService(bus_publisher)
+        presences_service = PresencesService(bus_publisher, config['ctid'])
 
         api.add_resource(PresencesResource, '/users/<user_uuid>/presences', resource_class_args=[presences_service])
         api.add_resource(UserPresencesResource, '/users/me/presences', resource_class_args=[auth_client, presences_service])
