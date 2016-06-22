@@ -324,7 +324,10 @@
                 ],
                 "responses": {
                     "200": {
-                        "$ref": "#/responses/PresenceUser"
+                        "description": "Get presence for user",
+                        "schema": {
+                            "$ref": "#/definitions/PresenceUser"
+                        }
                     },
                     "503": {
                         "$ref": "#/responses/AnotherServiceUnavailable"
@@ -376,7 +379,10 @@
                 ],
                 "responses": {
                     "200": {
-                        "$ref": "#/responses/PresenceUser"
+                        "description": "Get presence for user",
+                        "schema": {
+                            "$ref": "#/definitions/PresenceUser"
+                        }
                     },
                     "503": {
                         "$ref": "#/responses/AnotherServiceUnavailable"
@@ -656,8 +662,7 @@
             }
         },
         "PresenceUser": {
-            "title": "Presence User",
-            "description": "Presence user information",
+            "type": "object",
             "properties": {
                 "id": {
                     "type": "integer",
