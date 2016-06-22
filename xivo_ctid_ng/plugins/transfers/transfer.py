@@ -5,8 +5,9 @@
 
 class Transfer(object):
 
-    def __init__(self, id_):
+    def __init__(self, id_, initiator_uuid):
         self.id = id_
+        self.initiator_uuid = initiator_uuid
         self.transferred_call = None
         self.initiator_call = None
         self.recipient_call = None
@@ -16,6 +17,7 @@ class Transfer(object):
     def to_dict(self):
         return {
             'id': self.id,
+            'initiator_uuid': self.initiator_uuid,
             'transferred_call': self.transferred_call,
             'initiator_call': self.initiator_call,
             'recipient_call': self.recipient_call,
@@ -25,7 +27,7 @@ class Transfer(object):
 
     @classmethod
     def from_dict(cls, dict_):
-        transfer = cls(dict_['id'])
+        transfer = cls(dict_['id'], dict_['initiator_uuid'])
         transfer.transferred_call = dict_['transferred_call']
         transfer.initiator_call = dict_['initiator_call']
         transfer.recipient_call = dict_['recipient_call']
