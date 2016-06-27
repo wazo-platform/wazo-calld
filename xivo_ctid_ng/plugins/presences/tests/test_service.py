@@ -16,7 +16,8 @@ class TestPresencesService(unittest.TestCase):
     def setUp(self):
         self.bus_publisher = Mock()
         self.xivo_uuid = 'xivo-uuid'
-        self.service = PresencesService(self.bus_publisher)
+        ctid_config = dict()
+        self.service = PresencesService(self.bus_publisher, ctid_config)
         self.user_uuid = 'efd089b0-b803-4536-b8f0-91bab5b94604'
         self.status_name = 'available'
         self.request_body = {
