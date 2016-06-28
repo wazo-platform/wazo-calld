@@ -307,8 +307,8 @@
         },
         "/users/{user_uuid}/presences": {
             "get": {
-                "summary": "Get a user presence",
-                "description": "**Required ACL:** `ctid-ng.users.{user_uuid}.presences.read`\n\nGet presence for a user.\n",
+                "summary": "Get the current presence of a user",
+                "description": "**Required ACL:** `ctid-ng.users.{user_uuid}.presences.read`",
                 "parameters": [
                     {
                         "name": "user_uuid",
@@ -324,7 +324,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Get presence for user",
+                        "description": "The current presence of the user",
                         "schema": {
                             "$ref": "#/definitions/PresenceUser"
                         }
@@ -335,8 +335,8 @@
                 }
             },
             "put": {
-                "summary": "Update user presence",
-                "description": "**Required ACL:** `ctid-ng.users.{user_uuid}.presences.update`\n\nUpdate presence for a user.\n",
+                "summary": "Update the presence of a user",
+                "description": "**Required ACL:** `ctid-ng.users.{user_uuid}.presences.update`",
                 "parameters": [
                     {
                         "name": "user_uuid",
@@ -348,7 +348,7 @@
                     {
                         "name": "body",
                         "in": "body",
-                        "description": "Presence parameters",
+                        "description": "The new presence",
                         "required": true,
                         "schema": {
                             "$ref": "#/definitions/PresenceRequest"
@@ -371,15 +371,15 @@
         },
         "/users/me/presences": {
             "get": {
-                "summary": "Get a user presence",
-                "description": "**Required ACL:** `ctid-ng.users.me.presences.read`\n\nGet presence for a user.\n",
+                "summary": "Get the current presence of the authenticated user",
+                "description": "**Required ACL:** `ctid-ng.users.me.presences.read`",
                 "tags": [
                     "presences",
                     "users"
                 ],
                 "responses": {
                     "200": {
-                        "description": "Get presence for user",
+                        "description": "The current presence of the authenticated user",
                         "schema": {
                             "$ref": "#/definitions/PresenceUser"
                         }
@@ -390,8 +390,8 @@
                 }
             },
             "put": {
-                "summary": "Update user presence",
-                "description": "**Required ACL:** `ctid-ng.users.me.presences.update`\n\nUpdate presence for a user.\n",
+                "summary": "Update the presence of the authenticated user",
+                "description": "**Required ACL:** `ctid-ng.users.me.presences.update`",
                 "parameters": [
                     {
                         "name": "body",
