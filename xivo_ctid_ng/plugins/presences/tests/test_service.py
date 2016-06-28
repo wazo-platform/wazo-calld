@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: GPL-3.0+
 
 import unittest
-import uuid
 
 from mock import Mock
 from xivo_bus.resources.cti.event import UserStatusUpdateEvent
@@ -21,13 +20,9 @@ class TestPresencesService(unittest.TestCase):
         self.service = PresencesService(self.bus_publisher, ctid_client, ctid_config)
         self.user_uuid = 'efd089b0-b803-4536-b8f0-91bab5b94604'
         self.presence = 'available'
-        self.request_body = {
-            'user_uuid': self.user_uuid,
-            'presence': self.presence,
-        }
 
     def test_update_presence(self):
-        self.service.update_presence(self.user_uuid, self.request_body)
+        self.service.update_presence(self.user_uuid, self.presence)
 
         expected_event = UserStatusUpdateEvent(self.user_uuid, self.presence)
         self.bus_publisher.publish.assert_called_once_with(expected_event)
