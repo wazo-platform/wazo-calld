@@ -7,7 +7,7 @@ import uuid
 
 class PresenceMessage(object):
 
-    def __init__(self, status_name, user_uuid=None):
+    def __init__(self, presence, user_uuid=None):
         self.user_uuid = user_uuid or new_uuid_str()
         self.presence = presence
 
