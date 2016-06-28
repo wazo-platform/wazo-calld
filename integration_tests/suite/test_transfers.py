@@ -604,7 +604,7 @@ class TestUserCreateTransfer(TestTransfers):
             'exten': RECIPIENT['exten'],
         }
 
-        response = self.ctid_ng.post_user_transfer_result(body, VALID_TOKEN)
+        response = self.ctid_ng.post_user_transfer_result(body, token)
 
         assert_that(response.status_code, equal_to(400))
         assert_that(response.json(), has_entry('message', contains_string('creation')))
@@ -617,7 +617,7 @@ class TestUserCreateTransfer(TestTransfers):
             'exten': RECIPIENT['exten'],
         }
 
-        response = self.ctid_ng.post_user_transfer_result(body, VALID_TOKEN)
+        response = self.ctid_ng.post_user_transfer_result(body, token)
 
         assert_that(response.status_code, equal_to(400))
         assert_that(response.json(), has_entry('message', contains_string('creation')))
