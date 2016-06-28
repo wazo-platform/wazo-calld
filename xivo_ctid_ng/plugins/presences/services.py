@@ -23,8 +23,6 @@ class PresencesService(object):
         except requests.RequestException as e:
             raise XiVOCtidUnreachable(self._ctid_config, e)
 
-        return '', 404
-
     def update_presence(self, user_uuid, status):
         bus_event = UserStatusUpdateEvent(user_uuid, status)
         self._bus_publisher.publish(bus_event)

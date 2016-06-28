@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) 2015-2016 Avencall
+# Copyright (C) 2016 Avencall
 # SPDX-License-Identifier: GPL-3.0+
 
 from xivo_ctid_ng.core.exceptions import APIException
@@ -17,4 +17,3 @@ class XiVOCtidUnreachable(APIException):
                 'original_error': str(error),
             }
         )
-
