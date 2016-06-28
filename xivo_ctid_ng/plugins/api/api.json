@@ -664,17 +664,12 @@
         "PresenceUser": {
             "type": "object",
             "properties": {
-                "id": {
-                    "type": "integer",
-                    "format": "int32",
-                    "description": "Unique ID"
-                },
                 "user_uuid": {
                     "type": "string",
                     "format": "uuid",
                     "description": "The user's UUID"
                 },
-                "origin_uuid": {
+                "xivo_uuid": {
                     "type": "string",
                     "format": "uuid",
                     "description": "UUID of the server on which this endpoint is connected"

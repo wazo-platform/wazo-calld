@@ -18,12 +18,13 @@ class PresencesService(object):
 
     def get_presence(self, user_uuid):
         try:
-            return self._ctid_client.users.get(user_uuid)
+            response = self._ctid_client.users.get(user_uuid)
+            return response['origin_uuid'], response['presence']
         except requests.RequestException as e:
             raise XiVOCtidUnreachable(self._ctid_config, e)
 
         return '', 404
 
-    def update_presence(self, user_uuid, request_body):
-        bus_event = UserStatusUpdateEvent(user_uuid, request_body['presence'])
+    def update_presence(self, user_uuid, status):
+        bus_event = UserStatusUpdateEvent(user_uuid, status)
         self._bus_publisher.publish(bus_event)

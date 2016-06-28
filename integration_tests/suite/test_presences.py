@@ -34,9 +34,8 @@ class TestGetPresence(IntegrationTest):
         result = self.ctid_ng.get_presence_result(self.token_user_uuid, token=VALID_TOKEN)
 
         assert_that(result.status_code, equal_to(200))
-        assert_that(result.json(), has_entries({'id': 1,
-                                                'user_uuid': contains_string(self.token_user_uuid),
-                                                'origin_uuid': contains_string(XIVO_UUID),
+        assert_that(result.json(), has_entries({'user_uuid': contains_string(self.token_user_uuid),
+                                                'xivo_uuid': contains_string(XIVO_UUID),
                                                 'presence': contains_string('available')}))
 
 
@@ -50,15 +49,16 @@ class TestGetUserPresence(IntegrationTest):
 
     def setUp(self):
         super(TestGetUserPresence, self).setUp()
+        self.token_id = 'my-token'
         self.token_user_uuid = 'my-user-uuid'
+        self.auth.set_token(MockUserToken('my-token', self.token_user_uuid))
 
     def test_get_presence_with_correct_values(self):
-        result = self.ctid_ng.get_user_presence_result(token=VALID_TOKEN)
+        result = self.ctid_ng.get_user_presence_result(token=self.token_id)
 
         assert_that(result.status_code, equal_to(200))
-        assert_that(result.json(), has_entries({'id': 1,
-                                                'user_uuid': contains_string(self.token_user_uuid),
-                                                'origin_uuid': contains_string(XIVO_UUID),
+        assert_that(result.json(), has_entries({'user_uuid': contains_string(self.token_user_uuid),
+                                                'xivo_uuid': contains_string(XIVO_UUID),
                                                 'presence': contains_string('available')}))
 
 

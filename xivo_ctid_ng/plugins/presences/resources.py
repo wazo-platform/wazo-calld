@@ -17,6 +17,12 @@ class PresenceRequestSchema(Schema):
 presence_request_schema = PresenceRequestSchema(strict=True)
 
 
+def presence_body(xivo_uuid, user_uuid, presence):
+    return {'xivo_uuid': xivo_uuid,
+            'user_uuid': user_uuid,
+            'presence': presence}
+
+
 class PresencesResource(AuthResource):
 
     def __init__(self, presences_service):
@@ -24,15 +30,15 @@ class PresencesResource(AuthResource):
 
     @required_acl('ctid-ng.users.{user_uuid}.presences.read')
     def get(self, user_uuid):
-        result = self._presences_service.get_presence(user_uuid)
+        xivo_uuid, status = self._presences_service.get_presence(user_uuid)
 
-        return result, 200
+        return presence_body(xivo_uuid, user_uuid, status), 200
 
     @required_acl('ctid-ng.users.{user_uuid}.presences.update')
     def put(self, user_uuid):
         request_body = presence_request_schema.load(request.get_json(force=True)).data
 
-        self._presences_service.update_presence(user_uuid, request_body)
+        self._presences_service.update_presence(user_uuid, request_body['presence'])
 
         return '', 204
 
@@ -46,15 +52,15 @@ class UserPresencesResource(AuthResource):
     @required_acl('ctid-ng.users.me.presences.read')
     def get(self):
         user_uuid = get_token_user_uuid_from_request(self._auth_client)
-        result = self._presences_service.get_presence(user_uuid)
+        xivo_uuid, status = self._presences_service.get_presence(user_uuid)
 
-        return result, 200
+        return presence_body(xivo_uuid, user_uuid, status), 200
 
     @required_acl('ctid-ng.users.me.presences.update')
     def put(self):
         request_body = presence_request_schema.load(request.get_json(force=True)).data
 
         user_uuid = get_token_user_uuid_from_request(self._auth_client)
-        self._presences_service.update_presence(user_uuid, request_body)
+        self._presences_service.update_presence(user_uuid, request_body['presence'])
 
         return '', 204
