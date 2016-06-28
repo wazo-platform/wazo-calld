@@ -319,8 +319,7 @@
                     }
                 ],
                 "tags": [
-                    "presences",
-                    "users"
+                    "presences"
                 ],
                 "responses": {
                     "200": {
@@ -356,8 +355,7 @@
                     }
                 ],
                 "tags": [
-                    "presences",
-                    "users"
+                    "presences"
                 ],
                 "responses": {
                     "204": {
