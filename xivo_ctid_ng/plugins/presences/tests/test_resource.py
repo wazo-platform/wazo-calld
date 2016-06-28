@@ -20,15 +20,15 @@ class TestPresenceRequestSchema(unittest.TestCase):
 
     def setUp(self):
         self.data = {
-            'status_name': 'available'
+            'presence': 'available'
         }
 
     def test_valid(self):
         result = self.schema.load(self.data).data
 
-        assert_that(result['status_name'], equal_to('available'))
+        assert_that(result['presence'], equal_to('available'))
 
     def test_invalid_status_name(self):
-        self.data['status_name'] = None
+        self.data['presence'] = None
 
         assert_that(calling(self.schema.load).with_args(self.data), raises(ValidationError))

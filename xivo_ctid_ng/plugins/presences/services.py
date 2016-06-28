@@ -25,5 +25,5 @@ class PresencesService(object):
         return '', 404
 
     def update_presence(self, user_uuid, request_body):
-        bus_event = UserStatusUpdateEvent(user_uuid, request_body['status_name'])
+        bus_event = UserStatusUpdateEvent(user_uuid, request_body['presence'])
         self._bus_publisher.publish(bus_event)

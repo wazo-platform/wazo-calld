@@ -9,11 +9,11 @@ class PresenceMessage(object):
 
     def __init__(self, status_name, user_uuid=None):
         self.user_uuid = user_uuid or new_uuid_str()
-        self.status_name = status_name
+        self.presence = presence
 
     def as_presence_body(self):
         body = {
-            'status_name': self.status_name
+            'presence': self.presence
         }
         return body
 

@@ -16,17 +16,18 @@ class TestPresencesService(unittest.TestCase):
     def setUp(self):
         self.bus_publisher = Mock()
         self.xivo_uuid = 'xivo-uuid'
+        ctid_client = Mock()
         ctid_config = dict()
-        self.service = PresencesService(self.bus_publisher, ctid_config)
+        self.service = PresencesService(self.bus_publisher, ctid_client, ctid_config)
         self.user_uuid = 'efd089b0-b803-4536-b8f0-91bab5b94604'
-        self.status_name = 'available'
+        self.presence = 'available'
         self.request_body = {
             'user_uuid': self.user_uuid,
-            'status_name': self.status_name,
+            'presence': self.presence,
         }
 
     def test_update_presence(self):
         self.service.update_presence(self.user_uuid, self.request_body)
 
-        expected_event = UserStatusUpdateEvent(self.user_uuid, self.status_name)
+        expected_event = UserStatusUpdateEvent(self.user_uuid, self.presence)
         self.bus_publisher.publish.assert_called_once_with(expected_event)

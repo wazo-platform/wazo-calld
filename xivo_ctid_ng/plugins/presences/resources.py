@@ -12,7 +12,7 @@ from xivo_ctid_ng.core.rest_api import AuthResource
 
 class PresenceRequestSchema(Schema):
 
-    status_name = fields.Str(required=True)
+    presence = fields.Str(required=True)
 
 presence_request_schema = PresenceRequestSchema(strict=True)
 

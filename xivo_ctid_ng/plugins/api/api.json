@@ -655,7 +655,7 @@
         "PresenceRequest": {
             "type": "object",
             "properties": {
-                "status_name": {
+                "presence": {
                     "description": "Presence status name (ex. available)",
                     "type": "string"
                 }
