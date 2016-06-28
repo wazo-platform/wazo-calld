@@ -40,8 +40,13 @@ confd:
   port: 9486
   verify_certificate: /usr/local/share/ssl/confd/server.crt
 
+ctid:
+  host: ctid
+  port: 9495
+
 enabled_plugins:
   - calls
   - chats
+  - presences
   - plugin_list
   - transfers
