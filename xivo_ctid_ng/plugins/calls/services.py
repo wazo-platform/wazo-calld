@@ -53,8 +53,7 @@ class CallsService(object):
         source_user = request['source']['user']
         endpoint = User(source_user, self._confd).main_line().interface()
         variables = request.get('variables', {})
-        variables.setdefault('CONNECTEDLINE(num)', request['destination']['extension'])
-        variables.setdefault('CONNECTEDLINE(name)', request['destination']['extension'])
+        variables.setdefault('CONNECTEDLINE(all)', request['destination']['extension'])
 
         channel = self._ari.channels.originate(endpoint=endpoint,
                                                extension=request['destination']['extension'],
