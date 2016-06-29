@@ -107,12 +107,13 @@ class AuthResource(ErrorCatchingResource):
     method_decorators = [auth_verifier.verify_token] + ErrorCatchingResource.method_decorators
 
 
-class Variables(fields.Field):
+class StrictDict(fields.Field):
 
-    def __init__(self, *args, **kwargs):
-        super(Variables, self).__init__(*args, **kwargs)
+    def __init__(self, key_field, value_field, *args, **kwargs):
+        super(StrictDict, self).__init__(*args, **kwargs)
         self.dict_field = fields.Dict(required=True)
-        self.string_field = fields.String(required=True, validate=Length(min=1))
+        self.key_field = key_field
+        self.value_field = value_field
 
     def _deserialize(self, variables, attr, data):
         if variables is None:
@@ -120,7 +121,9 @@ class Variables(fields.Field):
 
         self.dict_field.deserialize(variables, attr, data)
 
+        result = {}
         for variable, variable_value in variables.iteritems():
-            self.string_field.deserialize(variable, attr, data)
-            self.string_field.deserialize(variable_value, attr, data)
-        return variables
+            new_key = self.key_field.deserialize(variable, attr, data)
+            new_value = self.value_field.deserialize(variable_value, attr, data)
+            result[new_key] = new_value
+        return result
