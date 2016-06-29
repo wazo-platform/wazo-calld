@@ -114,14 +114,14 @@ class StrictDict(fields.Dict):
         self.key_field = key_field
         self.value_field = value_field
 
-    def _deserialize(self, variables, attr, data):
-        variables = super(StrictDict, self)._deserialize(variables, attr, data)
-        if variables is None:
+    def _deserialize(self, value, attr, data):
+        value = super(StrictDict, self)._deserialize(value, attr, data)
+        if value is None:
             return {}
 
         result = {}
-        for variable, variable_value in variables.iteritems():
-            new_key = self.key_field.deserialize(variable, attr, data)
-            new_value = self.value_field.deserialize(variable_value, attr, data)
+        for key, inner_value in value.iteritems():
+            new_key = self.key_field.deserialize(key, attr, data)
+            new_value = self.value_field.deserialize(inner_value, attr, data)
             result[new_key] = new_value
         return result
