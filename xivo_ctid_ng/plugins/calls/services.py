@@ -52,12 +52,14 @@ class CallsService(object):
     def originate(self, request):
         source_user = request['source']['user']
         endpoint = User(source_user, self._confd).main_line().interface()
+        variables = request.get('variables', {})
+        variables.setdefault('CONNECTEDLINE(all)', request['destination']['extension'])
 
         channel = self._ari.channels.originate(endpoint=endpoint,
                                                extension=request['destination']['extension'],
                                                context=request['destination']['context'],
                                                priority=request['destination']['priority'],
-                                               variables={'variables': request.get('variables', {})})
+                                               variables={'variables': variables})
         return channel.id
 
     def originate_user(self, request, user_uuid):

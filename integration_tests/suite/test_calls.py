@@ -288,7 +288,8 @@ class TestCreateCall(IntegrationTest):
                                extension='my-extension',
                                context='my-context',
                                variables={'MY_VARIABLE': 'my-value',
-                                          'SECOND_VARIABLE': 'my-second-value'})
+                                          'SECOND_VARIABLE': 'my-second-value',
+                                          'CONNECTEDLINE(all)': 'my-connected-line'})
 
         assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
             'method': 'POST',
@@ -297,11 +298,12 @@ class TestCreateCall(IntegrationTest):
                                ['extension', 'my-extension'],
                                ['context', 'my-context'],
                                ['endpoint', 'sip/line-name']),
-            'json': has_entries({'variables': {'MY_VARIABLE': 'my-value',
-                                               'SECOND_VARIABLE': 'my-second-value'}}),
+            'json': has_entries({'variables': has_entries({'MY_VARIABLE': 'my-value',
+                                                           'SECOND_VARIABLE': 'my-second-value',
+                                                           'CONNECTEDLINE(all)': 'my-connected-line'})}),
         }))))
 
-    def test_when_create_call_with_no_variables_then_ari_variables_are_empty(self):
+    def test_when_create_call_with_no_variables_then_default_variables_are_set(self):
         user_uuid = 'user-uuid'
         self.confd.set_users(MockUser(uuid='user-uuid'))
         self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip'))
@@ -316,7 +318,7 @@ class TestCreateCall(IntegrationTest):
         assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
             'method': 'POST',
             'path': '/ari/channels',
-            'json': has_entries({'variables': {}}),
+            'json': has_entries({'variables': {'CONNECTEDLINE(all)': 'my-extension'}}),
         }))))
 
     def test_create_call_with_multiple_lines(self):
@@ -459,7 +461,8 @@ class TestUserCreateCall(IntegrationTest):
 
         self.ctid_ng.originate_me(extension='my-extension',
                                   variables={'MY_VARIABLE': 'my-value',
-                                             'SECOND_VARIABLE': 'my-second-value'},
+                                             'SECOND_VARIABLE': 'my-second-value',
+                                             'CONNECTEDLINE(all)': 'my-extension'},
                                   token=token)
 
         assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
@@ -469,11 +472,12 @@ class TestUserCreateCall(IntegrationTest):
                                ['extension', 'my-extension'],
                                ['context', 'my-context'],
                                ['endpoint', 'sip/line-name']),
-            'json': has_entries({'variables': {'MY_VARIABLE': 'my-value',
-                                               'SECOND_VARIABLE': 'my-second-value'}}),
+            'json': has_entries({'variables': has_entries({'MY_VARIABLE': 'my-value',
+                                                           'SECOND_VARIABLE': 'my-second-value',
+                                                           'CONNECTEDLINE(all)': 'my-extension'})}),
         }))))
 
-    def test_when_create_call_with_no_variables_then_ari_variables_are_empty(self):
+    def test_when_create_call_with_no_variables_then_default_variables_are_set(self):
         user_uuid = 'user-uuid'
         token = 'my-token'
         self.auth.set_token(MockUserToken(token, user_uuid))
@@ -487,7 +491,7 @@ class TestUserCreateCall(IntegrationTest):
         assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
             'method': 'POST',
             'path': '/ari/channels',
-            'json': has_entries({'variables': {}}),
+            'json': has_entries({'variables': {'CONNECTEDLINE(all)': 'my-extension'}}),
         }))))
 
     def test_create_call_with_multiple_lines(self):
