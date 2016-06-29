@@ -16,7 +16,7 @@ from .state import state_factory
 from .state import CallStateOnHook
 from .state_persistor import ChannelCacheEntry
 from .state_persistor import StatePersistor
-from xivo_ctid_ng.core import ami_helpers
+from xivo_ctid_ng.helpers import ami
 
 logger = logging.getLogger(__name__)
 
@@ -85,11 +85,11 @@ class CallsStasis(object):
         self.state_persistor.remove(channel.id)
 
     def channel_hold(self, channel, event):
-        ami_helpers.set_variable_ami(self.ami, channel.id, 'XIVO_ON_HOLD', '1')
+        ami.set_variable_ami(self.ami, channel.id, 'XIVO_ON_HOLD', '1')
         bus_msg = CallOnHoldEvent(channel.id)
         self.bus_publisher.publish(bus_msg)
 
     def channel_unhold(self, channel, event):
-        ami_helpers.unset_variable_ami(self.ami, channel.id, 'XIVO_ON_HOLD')
+        ami.unset_variable_ami(self.ami, channel.id, 'XIVO_ON_HOLD')
         bus_msg = CallResumeEvent(channel.id)
         self.bus_publisher.publish(bus_msg)

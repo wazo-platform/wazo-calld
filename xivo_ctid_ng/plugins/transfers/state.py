@@ -7,8 +7,8 @@ import uuid
 
 from ari.exceptions import ARINotFound
 
-from xivo_ctid_ng.core import ami_helpers
-from xivo_ctid_ng.core.ari_helpers import Channel
+from xivo_ctid_ng.helpers import ami
+from xivo_ctid_ng.helpers.ari_ import Channel
 from . import ari_helpers
 from .exceptions import TransferAnswerError
 from .exceptions import TransferCreationError
@@ -213,13 +213,13 @@ class TransferStateReadyNonStasis(TransferState):
             raise TransferCreationError('initiator has no user UUID')
 
         transfer_id = str(uuid.uuid4())
-        ami_helpers.convert_transfer_to_stasis(self._amid,
-                                               transferred_channel.id,
-                                               initiator_channel.id,
-                                               context,
-                                               exten,
-                                               transfer_id,
-                                               variables)
+        ami.convert_transfer_to_stasis(self._amid,
+                                       transferred_channel.id,
+                                       initiator_channel.id,
+                                       context,
+                                       exten,
+                                       transfer_id,
+                                       variables)
         self.transfer = Transfer(transfer_id, initiator_uuid)
         self.transfer.initiator_call = initiator_channel.id
         self.transfer.transferred_call = transferred_channel.id

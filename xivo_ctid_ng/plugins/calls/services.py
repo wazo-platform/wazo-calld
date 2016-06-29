@@ -5,8 +5,8 @@
 import logging
 
 from xivo_ctid_ng.core.ari_ import APPLICATION_NAME
-from xivo_ctid_ng.core.ari_helpers import Channel
-from xivo_ctid_ng.core.confd_helpers import User
+from xivo_ctid_ng.helpers.ari_ import Channel
+from xivo_ctid_ng.helpers.confd import User
 from ari.exceptions import ARINotFound
 
 from .call import Call

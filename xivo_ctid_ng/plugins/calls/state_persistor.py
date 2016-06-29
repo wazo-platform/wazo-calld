@@ -2,9 +2,9 @@
 # Copyright 2016 by Avencall
 # SPDX-License-Identifier: GPL-3.0+
 
-from xivo_ctid_ng.core.ari_helpers import (GlobalVariableAdapter,
-                                           GlobalVariableJsonAdapter,
-                                           GlobalVariableNameDecorator)
+from xivo_ctid_ng.helpers.ari_ import (GlobalVariableAdapter,
+                                       GlobalVariableJsonAdapter,
+                                       GlobalVariableNameDecorator)
 
 
 class ChannelCacheEntry(object):

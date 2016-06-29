@@ -7,13 +7,13 @@ from ari.exceptions import ARINotFound
 from xivo.caller_id import assemble_caller_id
 
 from xivo_ctid_ng.core.ari_ import APPLICATION_NAME
-from xivo_ctid_ng.core.ari_helpers import Channel
-from xivo_ctid_ng.core.confd_helpers import User
-from xivo_ctid_ng.core.exceptions import NotEnoughChannels
-from xivo_ctid_ng.core.exceptions import TooManyChannels
+from xivo_ctid_ng.helpers.ari_ import Channel
+from xivo_ctid_ng.helpers.confd import User
+from xivo_ctid_ng.helpers.exceptions import NotEnoughChannels
+from xivo_ctid_ng.helpers.exceptions import TooManyChannels
 from xivo_ctid_ng.plugins.calls.state_persistor import ReadOnlyStatePersistor as ReadOnlyCallStates
 
-from xivo_ctid_ng.core import ami_helpers
+from xivo_ctid_ng.helpers import ami
 from . import ari_helpers
 from .exceptions import InvalidExtension
 from .exceptions import NoSuchTransfer
@@ -40,7 +40,7 @@ class TransfersService(object):
         except ARINotFound:
             raise TransferCreationError('channel not found')
 
-        if not ami_helpers.extension_exists(self.amid_client, context, exten):
+        if not ami.extension_exists(self.amid_client, context, exten):
             raise InvalidExtension(context, exten)
 
         if not (ari_helpers.is_in_stasis(self.ari, transferred_call) and

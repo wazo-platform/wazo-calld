@@ -6,7 +6,7 @@ import json
 
 from ari.exceptions import ARINotFound, ARINotInStasis
 
-from xivo_ctid_ng.core import ami_helpers
+from xivo_ctid_ng.helpers import ami
 
 
 def is_in_stasis(ari, call_id):
@@ -40,7 +40,7 @@ def unset_variable(ari, amid, channel_id, variable):
     except ARINotFound:
         pass
     except ARINotInStasis:
-        ami_helpers.unset_variable_ami(amid, channel_id, variable)
+        ami.unset_variable_ami(amid, channel_id, variable)
 
 
 def update_connectedline(ari, amid, channel_id, from_channel_id):
