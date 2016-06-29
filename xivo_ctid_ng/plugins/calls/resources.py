@@ -11,7 +11,7 @@ from marshmallow.validate import Length
 from xivo_ctid_ng.core.auth import required_acl
 from xivo_ctid_ng.core.auth import get_token_user_uuid_from_request
 from xivo_ctid_ng.core.rest_api import AuthResource
-from xivo_ctid_ng.core.rest_api import StrictDict
+from xivo_ctid_ng.helpers.mallow import StrictDict
 
 from . import validator
 

@@ -15,8 +15,6 @@ from flask_restful import Api
 from flask_restful import Resource
 from flask_cors import CORS
 from functools import wraps
-from marshmallow import fields
-from marshmallow.validate import Length
 from xivo.auth_verifier import AuthVerifier
 from xivo import http_helpers
 from xivo import rest_api_helpers
@@ -105,23 +103,3 @@ class ErrorCatchingResource(Resource):
 
 class AuthResource(ErrorCatchingResource):
     method_decorators = [auth_verifier.verify_token] + ErrorCatchingResource.method_decorators
-
-
-class StrictDict(fields.Dict):
-
-    def __init__(self, key_field, value_field, *args, **kwargs):
-        super(StrictDict, self).__init__(*args, **kwargs)
-        self.key_field = key_field
-        self.value_field = value_field
-
-    def _deserialize(self, value, attr, data):
-        value = super(StrictDict, self)._deserialize(value, attr, data)
-        if value is None:
-            return {}
-
-        result = {}
-        for key, inner_value in value.iteritems():
-            new_key = self.key_field.deserialize(key, attr, data)
-            new_value = self.value_field.deserialize(inner_value, attr, data)
-            result[new_key] = new_value
-        return result
