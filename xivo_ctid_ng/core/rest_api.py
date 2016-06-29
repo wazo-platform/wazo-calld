@@ -107,19 +107,17 @@ class AuthResource(ErrorCatchingResource):
     method_decorators = [auth_verifier.verify_token] + ErrorCatchingResource.method_decorators
 
 
-class StrictDict(fields.Field):
+class StrictDict(fields.Dict):
 
     def __init__(self, key_field, value_field, *args, **kwargs):
         super(StrictDict, self).__init__(*args, **kwargs)
-        self.dict_field = fields.Dict(required=True)
         self.key_field = key_field
         self.value_field = value_field
 
     def _deserialize(self, variables, attr, data):
+        variables = super(StrictDict, self)._deserialize(variables, attr, data)
         if variables is None:
             return {}
-
-        self.dict_field.deserialize(variables, attr, data)
 
         result = {}
         for variable, variable_value in variables.iteritems():
