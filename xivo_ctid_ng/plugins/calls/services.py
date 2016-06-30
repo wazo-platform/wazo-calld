@@ -5,6 +5,7 @@
 import logging
 
 from xivo_ctid_ng.core.ari_ import APPLICATION_NAME
+from xivo_ctid_ng.core.exceptions import UserPermissionDenied
 from xivo_ctid_ng.helpers.ari_ import Channel
 from xivo_ctid_ng.helpers.confd import User
 from ari.exceptions import ARINotFound
@@ -90,6 +91,16 @@ class CallsService(object):
             raise NoSuchCall(channel_id)
 
         self._ari.channels.hangup(channelId=channel_id)
+
+    def hangup_user(self, call_id, user_uuid):
+        channel = Channel(call_id, self._ari)
+        if not channel.exists():
+            raise NoSuchCall(call_id)
+
+        if channel.user() != user_uuid:
+            raise UserPermissionDenied(user_uuid, {'call': call_id})
+
+        self._ari.channels.hangup(channelId=call_id)
 
     def connect_user(self, call_id, user_uuid):
         channel_id = call_id

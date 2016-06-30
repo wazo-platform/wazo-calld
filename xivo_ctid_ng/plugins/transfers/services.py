@@ -56,7 +56,7 @@ class TransfersService(object):
         return new_state.transfer
 
     def create_from_user(self, initiator_call, exten, flow, user_uuid):
-        if not ari_helpers.channel_exists(self.ari, initiator_call):
+        if not Channel(initiator_call, self.ari).exists():
             raise TransferCreationError('initiator channel not found')
 
         if Channel(initiator_call, self.ari).user() != user_uuid:
