@@ -14,8 +14,6 @@ class StrictDict(fields.Dict):
 
     def _deserialize(self, value, attr, data):
         value = super(StrictDict, self)._deserialize(value, attr, data)
-        if value is None:
-            return {}
 
         result = {}
         for key, inner_value in value.iteritems():
