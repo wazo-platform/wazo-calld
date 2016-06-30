@@ -9,6 +9,7 @@ from marshmallow.validate import OneOf, Length
 from xivo_ctid_ng.core.auth import get_token_user_uuid_from_request
 from xivo_ctid_ng.core.auth import required_acl
 from xivo_ctid_ng.core.rest_api import AuthResource
+from xivo_ctid_ng.helpers.mallow import StrictDict
 
 
 class TransferRequestSchema(Schema):
@@ -17,7 +18,9 @@ class TransferRequestSchema(Schema):
     context = fields.Str(validate=Length(min=1), required=True)
     exten = fields.Str(validate=Length(min=1), required=True)
     flow = fields.Str(validate=OneOf(['attended', 'blind']), missing='attended')
-    variables = fields.Dict(required=False, missing=dict)
+    variables = StrictDict(key_field=fields.String(required=True, validate=Length(min=1)),
+                           value_field=fields.String(required=True, validate=Length(min=1)),
+                           missing=dict)
 
 transfer_request_schema = TransferRequestSchema(strict=True)
 

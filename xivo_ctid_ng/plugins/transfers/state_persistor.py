@@ -4,10 +4,10 @@
 
 import logging
 
-from xivo_ctid_ng.core.ari_helpers import (GlobalVariableAdapter,
-                                           GlobalVariableJsonAdapter,
-                                           GlobalVariableNameDecorator,
-                                           GlobalVariableConstantNameAdapter)
+from xivo_ctid_ng.helpers.ari_ import (GlobalVariableAdapter,
+                                       GlobalVariableJsonAdapter,
+                                       GlobalVariableNameDecorator,
+                                       GlobalVariableConstantNameAdapter)
 from .transfer import Transfer
 
 logger = logging.getLogger(__name__)

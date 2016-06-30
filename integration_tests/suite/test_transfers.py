@@ -368,18 +368,16 @@ class TestCreateTransfer(TestTransfers):
         for key in ('transferred_call', 'initiator_call', 'context', 'exten'):
             body = dict(valid_transfer_request)
             body.pop(key)
+            for invalid in (None, 1234, True, '', [], {}):
+                body[key] = invalid
+                yield body
+
+        body = dict(valid_transfer_request)
+        for invalid in (1234, True, '', [], '1234'):
+            body['variables'] = invalid
             yield body
-            body[key] = None
-            yield body
-            body[key] = 1234
-            yield body
-            body[key] = True
-            yield body
-            body[key] = ''
-            yield body
-            body[key] = []
-            yield body
-            body[key] = {}
+        for invalid in (None, 1234, True, []):
+            body['variables'] = {'key': invalid}
             yield body
 
     def test_given_transferred_not_found_when_create_then_error_400(self):
@@ -564,34 +562,14 @@ class TestUserCreateTransfer(TestTransfers):
             body = dict(valid_transfer_request)
             body.pop(key)
             yield body
-            body[key] = None
-            yield body
-            body[key] = 1234
-            yield body
-            body[key] = True
-            yield body
-            body[key] = ''
-            yield body
-            body[key] = []
-            yield body
-            body[key] = {}
-            yield body
+            for value in (None, 1234, True, '', [], {}):
+                body[key] = value
+                yield body
 
         body = dict(valid_transfer_request)
-        body['flow'] = None
-        yield body
-        body['flow'] = 1234
-        yield body
-        body['flow'] = True
-        yield body
-        body['flow'] = ''
-        yield body
-        body['flow'] = []
-        yield body
-        body['flow'] = {}
-        yield body
-        body['flow'] = 'unknown'
-        yield body
+        for value in (None, 1234, True, '', [], {}, 'unknown'):
+            body['flow'] = value
+            yield body
 
     def test_given_transferred_not_found_when_create_then_error_400(self):
         user_uuid = self.given_user_with_line(RECIPIENT['context'])

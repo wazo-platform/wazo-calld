@@ -7,7 +7,7 @@ import json
 
 from requests import RequestException
 
-from .exceptions import XiVOAmidError
+from xivo_ctid_ng.core.exceptions import XiVOAmidError
 
 logger = logging.getLogger(__name__)
 
