@@ -593,6 +593,12 @@
                     "400": {
                         "$ref": "#/responses/InvalidRequest"
                     },
+                    "403": {
+                        "description": "The authenticated user tried to hangup a call owned by someone else",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    },
                     "409": {
                         "description": "The server could not determine which Call to use as transferred or initiator, usually because too many Calls are eligible",
                         "schema": {

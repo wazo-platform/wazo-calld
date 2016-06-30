@@ -697,8 +697,8 @@ class TestUserCreateTransfer(TestTransfers):
 
         response = self.ctid_ng.post_user_transfer_result(body, token)
 
-        assert_that(response.status_code, equal_to(400))
-        assert_that(response.json(), has_entry('details', has_entry('message', contains_string('initiator'))))
+        assert_that(response.status_code, equal_to(403))
+        assert_that(response.json(), has_entry('message', contains_string('user')))
 
     def test_given_state_ready_when_transfer_start_and_answer_then_state_answered(self):
         user_uuid = self.given_user_with_line(RECIPIENT['context'])

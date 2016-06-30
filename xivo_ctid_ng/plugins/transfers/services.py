@@ -7,6 +7,7 @@ from ari.exceptions import ARINotFound
 from xivo.caller_id import assemble_caller_id
 
 from xivo_ctid_ng.core.ari_ import APPLICATION_NAME
+from xivo_ctid_ng.core.exceptions import UserPermissionDenied
 from xivo_ctid_ng.helpers.ari_ import Channel
 from xivo_ctid_ng.helpers.confd import User
 from xivo_ctid_ng.helpers.exceptions import NotEnoughChannels
@@ -60,7 +61,7 @@ class TransfersService(object):
             raise TransferCreationError('initiator channel not found')
 
         if Channel(initiator_call, self.ari).user() != user_uuid:
-            raise TransferCreationError('initiator call does not belong to authenticated user')
+            raise UserPermissionDenied(user_uuid, {'call': initiator_call})
 
         try:
             transferred_call = Channel(initiator_call, self.ari).only_connected_channel()
