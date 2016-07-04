@@ -56,6 +56,15 @@ class UserTransfersResource(AuthResource):
         self._auth_client = auth_client
         self._transfers_service = transfers_service
 
+    @required_acl('ctid-ng.users.me.transfers.read')
+    def get(self):
+        user_uuid = get_token_user_uuid_from_request(self._auth_client)
+        transfers = self._transfers_service.list_from_user(user_uuid)
+
+        return {
+            'items': [transfer.to_dict() for transfer in transfers]
+        }, 200
+
     @required_acl('ctid-ng.users.me.transfers.create')
     def post(self):
         request_body = user_transfer_request_schema.load(request.get_json(force=True)).data

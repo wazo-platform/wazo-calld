@@ -14,9 +14,11 @@ from contextlib import contextmanager
 from hamcrest import all_of
 from hamcrest import anything
 from hamcrest import assert_that
+from hamcrest import contains
 from hamcrest import contains_inanyorder
 from hamcrest import contains_string
 from hamcrest import equal_to
+from hamcrest import empty
 from hamcrest import has_entry
 from hamcrest import has_entries
 from hamcrest import has_item
@@ -168,8 +170,8 @@ class TestTransfers(IntegrationTest):
                 recipient_channel_id,
                 transfer_id)
 
-    def given_answered_transfer(self, variables=None):
-        transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()
+    def given_answered_transfer(self, variables=None, initiator_uuid=None):
+        transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis(callee_uuid=initiator_uuid)
         response = self.ctid_ng.create_transfer(transferred_channel_id,
                                                 initiator_channel_id,
                                                 variables=variables,
@@ -346,6 +348,64 @@ class TestTransfers(IntegrationTest):
         assert_that(transferred_channel_id, self.c.is_hungup(), 'transferred channel is still talking')
         assert_that(initiator_channel_id, self.c.is_hungup(), 'initiator channel is still talking')
         assert_that(recipient_channel_id, self.c.is_hungup(), 'recipient channel is still talking')
+
+
+class TestUserListTransfers(TestTransfers):
+
+    def given_answered_transfer(self, variables=None, initiator_uuid=None):
+        (transferred_channel_id,
+         initiator_channel_id,
+         recipient_channel_id,
+         transfer_id) = super(TestUserListTransfers, self).given_answered_transfer(variables, initiator_uuid)
+        self.set_initiator_channel(initiator_channel_id, initiator_uuid)
+        return (transferred_channel_id, initiator_channel_id, recipient_channel_id, transfer_id)
+
+    def set_initiator_channel(self, channel_id, initiator_uuid):
+        self.ari.channels.setChannelVar(channelId=channel_id, variable='XIVO_USERUUID', value=initiator_uuid)
+
+    def test_given_no_transfers_when_list_then_list_empty(self):
+        token = 'my-token'
+        user_uuid = 'user-uuid'
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
+
+        result = self.ctid_ng.list_my_transfers(token)
+
+        assert_that(result['items'], empty())
+
+    def test_given_one_transfer_when_list_then_all_fields_are_listed(self):
+        token = 'my-token'
+        user_uuid = 'user-uuid'
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
+        (transferred_channel_id,
+         initiator_channel_id,
+         recipient_channel_id,
+         transfer_id) = self.given_answered_transfer(initiator_uuid=user_uuid)
+
+        result = self.ctid_ng.list_my_transfers(token)
+
+        assert_that(result['items'], contains({
+            'id': transfer_id,
+            'initiator_uuid': user_uuid,
+            'transferred_call': transferred_channel_id,
+            'initiator_call': initiator_channel_id,
+            'recipient_call': recipient_channel_id,
+            'status': 'answered',
+            'flow': 'attended',
+        }))
+
+    def test_given_two_transfers_when_list_then_transfers_are_filtered_by_user(self):
+        token = 'my-token'
+        user_uuid = 'user-uuid'
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
+        _, __, ___, transfer1_id = self.given_answered_transfer(initiator_uuid=user_uuid)
+        _, __, ___, transfer2_id = self.given_answered_transfer(initiator_uuid='other-uuid')
+
+        result = self.ctid_ng.list_my_transfers(token)
+
+        assert_that(result['items'], contains(has_entries({
+            'id': transfer1_id,
+            'initiator_uuid': user_uuid,
+        })))
 
 
 class TestCreateTransfer(TestTransfers):
