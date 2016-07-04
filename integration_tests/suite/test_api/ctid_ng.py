@@ -40,6 +40,24 @@ class CtidNgClient(object):
         assert_that(response.status_code, equal_to(200))
         return response.json()
 
+    def get_users_me_calls_result(self, application=None, application_instance=None, token=None):
+        url = u'https://localhost:9500/1.0/users/me/calls'
+        params = {}
+        if application:
+            params['application'] = application
+            if application_instance:
+                params['application_instance'] = application_instance
+        result = requests.get(url,
+                              params=params,
+                              headers={'X-Auth-Token': token},
+                              verify=False)
+        return result
+
+    def list_my_calls(self, application=None, application_instance=None, token=VALID_TOKEN):
+        response = self.get_users_me_calls_result(application, application_instance, token)
+        assert_that(response.status_code, equal_to(200))
+        return response.json()
+
     def get_call_result(self, call_id, token=None):
         url = u'https://localhost:9500/1.0/calls/{call_id}'
         result = requests.get(url.format(call_id=call_id),

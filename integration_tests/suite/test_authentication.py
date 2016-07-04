@@ -57,6 +57,11 @@ class TestAuthenticationCoverage(IntegrationTest):
 
         assert_that(result.status_code, equal_to(401))
 
+    def test_auth_on_list_user_calls(self):
+        result = self.ctid_ng.get_users_me_calls_result()
+
+        assert_that(result.status_code, equal_to(401))
+
     def test_auth_on_get_call(self):
         result = self.ctid_ng.get_call_result('my-call')
 

@@ -205,6 +205,47 @@
             }
         },
         "/users/me/calls": {
+            "get": {
+                "summary": "List calls of a user",
+                "description": "**Required ACL:** `ctid-ng.users.me.calls.read`",
+                "parameters": [
+                    {
+                        "name": "application",
+                        "description": "Filter calls by Stasis application, e.g. switchboard.",
+                        "in": "query",
+                        "type": "string"
+                    },
+                    {
+                        "name": "application_instance",
+                        "description": "Filter calls by Stasis application instance, e.g. switchboard-sales,green. Args must be separated by commas (,).",
+                        "in": "query",
+                        "type": "string"
+                    }
+                ],
+                "tags": [
+                    "calls",
+                    "users"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List currently active calls of a user",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "items": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/definitions/Call"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "503": {
+                        "$ref": "#/responses/AnotherServiceUnavailable"
+                    }
+                }
+            },
             "post": {
                 "summary": "Make a new call from a user",
                 "description": "**Required ACL:** `ctid-ng.users.me.calls.create`\n\nThe user originator of the call is determined from the authentication token.\n",
