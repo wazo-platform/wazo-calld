@@ -115,3 +115,10 @@ class Channel(object):
             return uuid
         except ARINotFound:
             return default
+
+    def exists(self):
+        try:
+            self._ari.channels.get(channelId=self.id)
+            return True
+        except ARINotFound:
+            return False

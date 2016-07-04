@@ -125,3 +125,16 @@ class XiVOConfdUnreachable(APIException):
                 'original_error': str(error),
             }
         )
+
+
+class UserPermissionDenied(APIException):
+
+    def __init__(self, user_uuid, details):
+        details = dict(details)
+        details['user'] = user_uuid
+        super(UserPermissionDenied, self).__init__(
+            status_code=403,
+            message='User does not have permission to handle objects of other users',
+            error_id='user-permission-denied',
+            details=details
+        )

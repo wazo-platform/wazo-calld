@@ -249,6 +249,56 @@ class TestDeleteCall(IntegrationTest):
         }))))
 
 
+class TestUserDeleteCall(IntegrationTest):
+
+    asset = 'basic_rest'
+
+    def setUp(self):
+        super(TestUserDeleteCall, self).setUp()
+        self.ari.reset()
+        self.confd.reset()
+
+    def test_given_no_calls_when_delete_call_then_404(self):
+        call_id = 'not-found'
+        user_uuid = 'user-uuid'
+        token = 'my-token'
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
+
+        result = self.ctid_ng.delete_user_me_call_result(call_id, token=token)
+
+        assert_that(result.status_code, equal_to(404))
+
+    def test_given_another_call_when_delete_call_then_403(self):
+        call_id = 'call-id'
+        user_uuid = 'user-uuid'
+        token = 'my-token'
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
+        self.confd.set_users(MockUser(uuid=user_uuid))
+        self.ari.set_channels(MockChannel(id=call_id, state='Up'))
+        self.ari.set_channel_variable({call_id: {'XIVO_USERUUID': 'some-other-uuid'}})
+
+        result = self.ctid_ng.delete_user_me_call_result(call_id, token=token)
+
+        assert_that(result.status_code, equal_to(403))
+        assert_that(result.json(), has_entry('message', contains_string('user')))
+
+    def test_given_my_call_when_delete_call_then_call_hungup(self):
+        call_id = 'call-id'
+        user_uuid = 'user-uuid'
+        token = 'my-token'
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
+        self.confd.set_users(MockUser(uuid=user_uuid))
+        self.ari.set_channels(MockChannel(id=call_id, state='Up'))
+        self.ari.set_channel_variable({call_id: {'XIVO_USERUUID': user_uuid}})
+
+        self.ctid_ng.hangup_my_call(call_id, token)
+
+        assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
+            'method': 'DELETE',
+            'path': '/ari/channels/call-id',
+        }))))
+
+
 class TestCreateCall(IntegrationTest):
 
     asset = 'basic_rest'

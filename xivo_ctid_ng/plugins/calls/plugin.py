@@ -11,6 +11,7 @@ from .resources import CallResource
 from .resources import CallsResource
 from .resources import ConnectCallToUserResource
 from .resources import MyCallsResource
+from .resources import MyCallResource
 from .services import CallsService
 from .stasis import CallsStasis
 
@@ -45,4 +46,5 @@ class Plugin(object):
         api.add_resource(CallsResource, '/calls', resource_class_args=[calls_service])
         api.add_resource(MyCallsResource, '/users/me/calls', resource_class_args=[auth_client, calls_service])
         api.add_resource(CallResource, '/calls/<call_id>', resource_class_args=[calls_service])
+        api.add_resource(MyCallResource, '/users/me/calls/<call_id>', resource_class_args=[auth_client, calls_service])
         api.add_resource(ConnectCallToUserResource, '/calls/<call_id>/user/<user_uuid>', resource_class_args=[calls_service])
