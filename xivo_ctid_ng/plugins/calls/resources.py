@@ -60,6 +60,18 @@ class MyCallsResource(AuthResource):
         self.auth_client = auth_client
         self.calls_service = calls_service
 
+    @required_acl('ctid-ng.users.me.calls.read')
+    def get(self):
+        application_filter = request.args.get('application')
+        application_instance_filter = request.args.get('application_instance')
+        user_uuid = get_token_user_uuid_from_request(self.auth_client)
+
+        calls = self.calls_service.list_calls_user(user_uuid, application_filter, application_instance_filter)
+
+        return {
+            'items': [call.to_dict() for call in calls],
+        }, 200
+
     @required_acl('ctid-ng.users.me.calls.create')
     def post(self):
         request_body = call_request_schema.load(request.get_json(force=True)).data

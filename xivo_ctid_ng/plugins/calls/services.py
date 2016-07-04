@@ -50,6 +50,10 @@ class CallsService(object):
 
         return [self.make_call_from_channel(self._ari, channel) for channel in channels]
 
+    def list_calls_user(self, user_uuid, application_filter=None, application_instance_filter=None):
+        calls = self.list_calls(application_filter, application_instance_filter)
+        return [call for call in calls if call.user_uuid == user_uuid]
+
     def originate(self, request):
         source_user = request['source']['user']
         endpoint = User(source_user, self._confd).main_line().interface()

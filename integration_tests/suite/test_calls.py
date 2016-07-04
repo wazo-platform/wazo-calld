@@ -40,6 +40,43 @@ class TestListCalls(IntegrationTest):
 
         assert_that(calls, has_entry('items', contains()))
 
+    def test_given_some_calls_with_user_id_when_list_calls_then_calls_are_complete(self):
+        self.ari.set_channels(MockChannel(id='first-id',
+                                          caller_id_name='Weber',
+                                          caller_id_number='4185556666',
+                                          creation_time='first-time',
+                                          state='Up'),
+                              MockChannel(id='second-id',
+                                          caller_id_name='Denis',
+                                          caller_id_number='4185557777',
+                                          creation_time='second-time',
+                                          state='Ringing'))
+        self.ari.set_channel_variable({'first-id': {'XIVO_USERUUID': 'user1-uuid'},
+                                       'second-id': {'XIVO_USERUUID': 'user2-uuid'}})
+        self.ari.set_bridges(MockBridge(id='bridge-id', channels=['first-id', 'second-id']))
+        self.confd.set_users(MockUser(uuid='user1-uuid'),
+                             MockUser(uuid='user2-uuid'))
+
+        calls = self.ctid_ng.list_calls()
+
+        assert_that(calls, has_entry('items', contains_inanyorder(
+            has_entries({'call_id': 'first-id',
+                         'user_uuid': 'user1-uuid',
+                         'status': 'Up',
+                         'bridges': ['bridge-id'],
+                         'talking_to': {'second-id': 'user2-uuid'},
+                         'creation_time': 'first-time',
+                         'caller_id_number': '4185556666',
+                         'caller_id_name': 'Weber'}),
+            has_entries({'call_id': 'second-id',
+                         'user_uuid': 'user2-uuid',
+                         'status': 'Ringing',
+                         'bridges': ['bridge-id'],
+                         'talking_to': {'first-id': 'user1-uuid'},
+                         'creation_time': 'second-time',
+                         'caller_id_number': '4185557777',
+                         'caller_id_name': 'Denis'}))))
+
     def test_given_some_calls_and_no_user_id_when_list_calls_then_list_calls_with_no_user_uuid(self):
         self.ari.set_channels(MockChannel(id='first-id'),
                               MockChannel(id='second-id'))
@@ -51,91 +88,6 @@ class TestListCalls(IntegrationTest):
                          'user_uuid': None}),
             has_entries({'call_id': 'second-id',
                          'user_uuid': None}))))
-
-    def test_given_some_calls_with_user_id_when_list_calls_then_list_calls_with_user_uuid(self):
-        self.ari.set_channels(MockChannel(id='first-id'),
-                              MockChannel(id='second-id'))
-        self.ari.set_channel_variable({'first-id': {'XIVO_USERUUID': 'user1-uuid'},
-                                       'second-id': {'XIVO_USERUUID': 'user2-uuid'}})
-        self.confd.set_users(MockUser(uuid='user1-uuid'),
-                             MockUser(uuid='user2-uuid'))
-
-        calls = self.ctid_ng.list_calls()
-
-        assert_that(calls, has_entry('items', contains_inanyorder(
-            has_entries({'call_id': 'first-id',
-                         'user_uuid': 'user1-uuid'}),
-            has_entries({'call_id': 'second-id',
-                         'user_uuid': 'user2-uuid'}))))
-
-    def test_given_some_calls_when_list_calls_then_list_calls_with_status(self):
-        self.ari.set_channels(MockChannel(id='first-id', state='Up'),
-                              MockChannel(id='second-id', state='Ringing'))
-
-        calls = self.ctid_ng.list_calls()
-
-        assert_that(calls, has_entry('items', contains_inanyorder(
-            has_entries({'call_id': 'first-id',
-                         'status': 'Up'}),
-            has_entries({'call_id': 'second-id',
-                         'status': 'Ringing'}))))
-
-    def test_given_some_calls_when_list_calls_then_list_calls_with_bridges(self):
-        self.ari.set_channels(MockChannel(id='first-id'),
-                              MockChannel(id='second-id'))
-        self.ari.set_bridges(MockBridge(id='first-bridge', channels=['first-id']),
-                             MockBridge(id='second-bridge', channels=['second-id']))
-
-        calls = self.ctid_ng.list_calls()
-
-        assert_that(calls, has_entry('items', contains_inanyorder(
-            has_entries({'call_id': 'first-id',
-                         'bridges': ['first-bridge']}),
-            has_entries({'call_id': 'second-id',
-                         'bridges': ['second-bridge']}))))
-
-    def test_given_some_calls_when_list_calls_then_list_calls_with_talking_channels_and_users(self):
-        self.ari.set_channels(MockChannel(id='first-id'),
-                              MockChannel(id='second-id'))
-        self.ari.set_bridges(MockBridge(id='bridge-id', channels=['first-id', 'second-id']))
-        self.ari.set_channel_variable({'first-id': {'XIVO_USERUUID': 'user1-uuid'},
-                                       'second-id': {'XIVO_USERUUID': 'user2-uuid'}})
-        self.confd.set_users(MockUser(uuid='user1-uuid'),
-                             MockUser(uuid='user2-uuid'))
-
-        calls = self.ctid_ng.list_calls()
-
-        assert_that(calls, has_entry('items', contains_inanyorder(
-            has_entries({'call_id': 'first-id',
-                         'talking_to': {'second-id': 'user2-uuid'}}),
-            has_entries({'call_id': 'second-id',
-                         'talking_to': {'first-id': 'user1-uuid'}}))))
-
-    def test_given_some_calls_when_list_calls_then_list_calls_with_creation_time(self):
-        self.ari.set_channels(MockChannel(id='first-id', creation_time='first-time'),
-                              MockChannel(id='second-id', creation_time='second-time'))
-
-        calls = self.ctid_ng.list_calls()
-
-        assert_that(calls, has_entry('items', contains_inanyorder(
-            has_entries({'call_id': 'first-id',
-                         'creation_time': 'first-time'}),
-            has_entries({'call_id': 'second-id',
-                         'creation_time': 'second-time'}))))
-
-    def test_given_some_calls_when_list_calls_then_list_calls_with_caller_id(self):
-        self.ari.set_channels(MockChannel(id='first-id', caller_id_name='Weber', caller_id_number='4185556666'),
-                              MockChannel(id='second-id', caller_id_name='Denis', caller_id_number='4185557777'))
-
-        calls = self.ctid_ng.list_calls()
-
-        assert_that(calls, has_entry('items', contains_inanyorder(
-            has_entries({'call_id': 'first-id',
-                         'caller_id_number': '4185556666',
-                         'caller_id_name': 'Weber'}),
-            has_entries({'call_id': 'second-id',
-                         'caller_id_number': '4185557777',
-                         'caller_id_name': 'Denis'}))))
 
     def test_given_some_calls_when_list_calls_by_application_then_list_of_calls_is_filtered(self):
         self.ari.set_channels(MockChannel(id='first-id'),
@@ -174,6 +126,106 @@ class TestListCalls(IntegrationTest):
                                                                              'state': 'talking'})})
 
         calls = self.ctid_ng.list_calls(application='my-app', application_instance='appX')
+
+        assert_that(calls, has_entry('items', contains_inanyorder(
+            has_entries({'call_id': 'first-id'}),
+            has_entries({'call_id': 'third-id'}))))
+
+
+class TestUserListCalls(IntegrationTest):
+
+    asset = 'basic_rest'
+
+    def setUp(self):
+        super(TestUserListCalls, self).setUp()
+        self.ari.reset()
+        self.confd.reset()
+
+    def test_given_no_calls_when_list_calls_then_empty_list(self):
+        token = 'my-token'
+        user_uuid = 'user-uuid'
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
+        calls = self.ctid_ng.list_my_calls(token=token)
+
+        assert_that(calls, has_entry('items', contains()))
+
+    def test_given_some_calls_with_user_id_when_list_my_calls_then_calls_are_filtered_by_user(self):
+        token = 'my-token'
+        user_uuid = 'user-uuid'
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
+        self.ari.set_channels(MockChannel(id='my-call'),
+                              MockChannel(id='my-second-call'),
+                              MockChannel(id='others-call'),
+                              MockChannel(id='no-user-call'))
+        self.ari.set_channel_variable({'my-call': {'XIVO_USERUUID': user_uuid},
+                                       'my-second-call': {'XIVO_USERUUID': user_uuid},
+                                       'others-call': {'XIVO_USERUUID': 'user2-uuid'}})
+        self.confd.set_users(MockUser(uuid=user_uuid),
+                             MockUser(uuid='user2-uuid'))
+
+        calls = self.ctid_ng.list_my_calls(token=token)
+
+        assert_that(calls, has_entry('items', contains_inanyorder(
+            has_entries({'call_id': 'my-call',
+                         'user_uuid': user_uuid}),
+            has_entries({'call_id': 'my-second-call',
+                         'user_uuid': user_uuid}))))
+
+    def test_given_some_calls_when_list_calls_by_application_then_list_of_calls_is_filtered(self):
+        token = 'my-token'
+        user_uuid = 'user-uuid'
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
+        self.ari.set_channels(MockChannel(id='first-id'),
+                              MockChannel(id='second-id'),
+                              MockChannel(id='third-id'))
+        self.ari.set_applications(MockApplication(name='my-app', channels=['first-id', 'third-id']))
+        self.ari.set_channel_variable({'first-id': {'XIVO_USERUUID': user_uuid},
+                                       'second-id': {'XIVO_USERUUID': user_uuid},
+                                       'third-id': {'XIVO_USERUUID': user_uuid}})
+
+        calls = self.ctid_ng.list_my_calls(application='my-app', token=token)
+
+        assert_that(calls, has_entry('items', contains_inanyorder(
+            has_entries({'call_id': 'first-id'}),
+            has_entries({'call_id': 'third-id'}))))
+
+    def test_given_some_calls_and_no_applications_when_list_calls_by_application_then_no_calls(self):
+        token = 'my-token'
+        user_uuid = 'user-uuid'
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
+        self.ari.set_channels(MockChannel(id='first-id'),
+                              MockChannel(id='second-id'))
+        self.ari.set_channel_variable({'first-id': {'XIVO_USERUUID': user_uuid},
+                                       'second-id': {'XIVO_USERUUID': user_uuid}})
+
+        calls = self.ctid_ng.list_my_calls(application='my-app', token=token)
+
+        assert_that(calls, has_entry('items', empty()))
+
+    def test_given_some_calls_when_list_calls_by_application_instance_then_list_of_calls_is_filtered(self):
+        token = 'my-token'
+        user_uuid = 'user-uuid'
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
+        self.ari.set_channels(MockChannel(id='first-id'),
+                              MockChannel(id='second-id'),
+                              MockChannel(id='third-id'),
+                              MockChannel(id='fourth-id'))
+        self.ari.set_channel_variable({'first-id': {'XIVO_USERUUID': user_uuid},
+                                       'second-id': {'XIVO_USERUUID': user_uuid},
+                                       'third-id': {'XIVO_USERUUID': user_uuid},
+                                       'fourth-id': {'XIVO_USERUUID': user_uuid}})
+        self.ari.set_applications(MockApplication(name='my-app', channels=['first-id', 'second-id', 'third-id']))
+        self.ari.set_global_variables({'XIVO_CHANNELS_first-id': json.dumps({'app': 'my-app',
+                                                                             'app_instance': 'appX',
+                                                                             'state': 'talking'}),
+                                       'XIVO_CHANNELS_second-id': json.dumps({'app': 'my-app',
+                                                                              'app_instance': 'appY',
+                                                                              'state': 'talking'}),
+                                       'XIVO_CHANNELS_third-id': json.dumps({'app': 'my-app',
+                                                                             'app_instance': 'appX',
+                                                                             'state': 'talking'})})
+
+        calls = self.ctid_ng.list_my_calls(application='my-app', application_instance='appX', token=token)
 
         assert_that(calls, has_entry('items', contains_inanyorder(
             has_entries({'call_id': 'first-id'}),
