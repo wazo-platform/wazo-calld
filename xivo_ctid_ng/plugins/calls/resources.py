@@ -95,7 +95,7 @@ class MyCallResource(AuthResource):
         self.auth_client = auth_client
         self.calls_service = calls_service
 
-    @required_acl('ctid-ng.users.me.calls.{call_id}.create')
+    @required_acl('ctid-ng.users.me.calls.{call_id}.delete')
     def delete(self, call_id):
         user_uuid = get_token_user_uuid_from_request(self.auth_client)
         self.calls_service.hangup_user(call_id, user_uuid)
