@@ -594,7 +594,7 @@
                         "$ref": "#/responses/InvalidRequest"
                     },
                     "403": {
-                        "description": "The authenticated user tried to hangup a call owned by someone else",
+                        "description": "The authenticated user tried to transfer a call owned by someone else",
                         "schema": {
                             "$ref": "#/definitions/Error"
                         }
