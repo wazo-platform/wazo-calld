@@ -34,6 +34,10 @@ class TransfersService(object):
         self.state_factory = state_factory
         self.call_states = ReadOnlyCallStates(self.ari)
 
+    def list_from_user(self, user_uuid):
+        transfers = self.state_persistor.list()
+        return [transfer for transfer in transfers if transfer.initiator_uuid == user_uuid]
+
     def create(self, transferred_call, initiator_call, context, exten, flow, variables):
         try:
             transferred_channel = self.ari.channels.get(channelId=transferred_call)

@@ -158,6 +158,18 @@ class CtidNgClient(object):
         assert_that(response.status_code, equal_to(200))
         return response.json()
 
+    def get_users_me_transfers_result(self, token=None):
+        url = u'https://localhost:9500/1.0/users/me/transfers'
+        result = requests.get(url,
+                              headers={'X-Auth-Token': token},
+                              verify=False)
+        return result
+
+    def list_my_transfers(self, token=VALID_TOKEN):
+        response = self.get_users_me_transfers_result(token)
+        assert_that(response.status_code, equal_to(200))
+        return response.json()
+
     def post_transfer_result(self, body, token=None):
         result = requests.post('https://localhost:9500/1.0/transfers',
                                json=body,
