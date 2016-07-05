@@ -606,6 +606,28 @@
             }
         },
         "/users/me/transfers": {
+            "get": {
+                "summary": "Get the transfers of the authenticated user",
+                "description": "**Required ACL:** `ctid-ng.users.me.transfers.read`",
+                "tags": [
+                    "transfers",
+                    "users"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The list of transfers",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/Transfer"
+                            }
+                        }
+                    },
+                    "503": {
+                        "$ref": "#/responses/AnotherServiceUnavailable"
+                    }
+                }
+            },
             "post": {
                 "summary": "Initiate a transfer from the authenticated user",
                 "description": "**Required ACL:** `ctid-ng.users.me.transfers.create`",
