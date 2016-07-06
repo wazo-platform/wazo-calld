@@ -54,11 +54,11 @@ def convert_transfer_to_stasis(amid, transferred_call, initiator_call, context, 
         raise XiVOAmidError(amid, e)
 
 
-def extension_exists(amid, context, exten):
+def extension_exists(amid, context, exten, priority=1):
     try:
         response = amid.action('ShowDialplan', {'Context': context,
                                                 'Extension': exten})
     except RequestException as e:
         raise XiVOAmidError(amid, e)
 
-    return '1' in (event['Priority'] for event in response if event.get('Event') == 'ListDialplan')
+    return str(priority) in (event['Priority'] for event in response if event.get('Event') == 'ListDialplan')

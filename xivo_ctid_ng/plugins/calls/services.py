@@ -5,7 +5,9 @@
 import logging
 
 from xivo_ctid_ng.core.ari_ import APPLICATION_NAME
+from xivo_ctid_ng.core.exceptions import InvalidExtension
 from xivo_ctid_ng.core.exceptions import UserPermissionDenied
+from xivo_ctid_ng.helpers import ami
 from xivo_ctid_ng.helpers.ari_ import Channel
 from xivo_ctid_ng.helpers.confd import User
 from ari.exceptions import ARINotFound
@@ -20,7 +22,8 @@ logger = logging.getLogger(__name__)
 
 class CallsService(object):
 
-    def __init__(self, ari_config, ari, confd_client):
+    def __init__(self, amid_client, ari_config, ari, confd_client):
+        self._ami = amid_client
         self._ari_config = ari_config
         self._ari = ari
         self._confd = confd_client
@@ -57,13 +60,19 @@ class CallsService(object):
     def originate(self, request):
         source_user = request['source']['user']
         endpoint = User(source_user, self._confd).main_line().interface()
+        extension = request['destination']['extension']
+        context = request['destination']['context']
+        priority = request['destination']['priority']
+        if not ami.extension_exists(self._ami, context, extension, priority):
+            raise InvalidExtension(context, extension)
+
         variables = request.get('variables', {})
-        variables.setdefault('CONNECTEDLINE(all)', request['destination']['extension'])
+        variables.setdefault('CONNECTEDLINE(all)', extension)
 
         channel = self._ari.channels.originate(endpoint=endpoint,
-                                               extension=request['destination']['extension'],
-                                               context=request['destination']['context'],
-                                               priority=request['destination']['priority'],
+                                               extension=extension,
+                                               context=context,
+                                               priority=priority,
                                                variables={'variables': variables})
         return channel.id
 
