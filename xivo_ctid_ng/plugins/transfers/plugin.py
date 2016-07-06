@@ -11,6 +11,8 @@ from .resources import TransferResource
 from .resources import TransferCompleteResource
 from .resources import TransfersResource
 from .resources import UserTransfersResource
+from .resources import UserTransferResource
+from .resources import UserTransferCompleteResource
 from .services import TransfersService
 from .stasis import TransfersStasis
 from .state import state_factory
@@ -48,3 +50,5 @@ class Plugin(object):
         api.add_resource(TransferResource, '/transfers/<transfer_id>', resource_class_args=[transfers_service])
         api.add_resource(TransferCompleteResource, '/transfers/<transfer_id>/complete', resource_class_args=[transfers_service])
         api.add_resource(UserTransfersResource, '/users/me/transfers', resource_class_args=[auth_client, transfers_service])
+        api.add_resource(UserTransferResource, '/users/me/transfers/<transfer_id>', resource_class_args=[auth_client, transfers_service])
+        api.add_resource(UserTransferCompleteResource, '/users/me/transfers/<transfer_id>/complete', resource_class_args=[auth_client, transfers_service])

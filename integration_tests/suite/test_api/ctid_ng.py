@@ -228,8 +228,18 @@ class CtidNgClient(object):
         return result
 
     def complete_transfer(self, transfer_id):
-        response = self.put_complete_transfer_result(transfer_id,
-                                                     token=VALID_TOKEN)
+        response = self.put_complete_transfer_result(transfer_id, token=VALID_TOKEN)
+        assert_that(response.status_code, equal_to(204))
+
+    def put_users_me_complete_transfer_result(self, transfer_id, token=None):
+        url = u'https://localhost:9500/1.0/users/me/transfers/{transfer_id}/complete'
+        result = requests.put(url.format(transfer_id=transfer_id),
+                              headers={'X-Auth-Token': token},
+                              verify=False)
+        return result
+
+    def complete_my_transfer(self, transfer_id, token=VALID_TOKEN):
+        response = self.put_users_me_complete_transfer_result(transfer_id, token=token)
         assert_that(response.status_code, equal_to(204))
 
     def delete_transfer_result(self, transfer_id, token=None):
@@ -242,6 +252,18 @@ class CtidNgClient(object):
     def cancel_transfer(self, transfer_id):
         response = self.delete_transfer_result(transfer_id,
                                                token=VALID_TOKEN)
+        assert_that(response.status_code, equal_to(204))
+
+    def delete_users_me_transfer_result(self, transfer_id, token=None):
+        url = u'https://localhost:9500/1.0/users/me/transfers/{transfer_id}'
+        result = requests.delete(url.format(transfer_id=transfer_id),
+                                 headers={'X-Auth-Token': token},
+                                 verify=False)
+        return result
+
+    def cancel_my_transfer(self, transfer_id, token=VALID_TOKEN):
+        response = self.delete_users_me_transfer_result(transfer_id,
+                                                        token=token)
         assert_that(response.status_code, equal_to(204))
 
     def get_transfer_result(self, transfer_id, token=None):

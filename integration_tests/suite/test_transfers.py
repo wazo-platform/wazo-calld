@@ -815,12 +815,98 @@ class TestCancelTransfer(TestTransfers):
         assert_that(response.status_code, equal_to(404))
 
 
+class TestUserCancelTransfer(TestTransfers):
+    def setUp(self):
+        super(TestUserCancelTransfer, self).setUp()
+        self.bus.listen_events('calls.transfer.*')
+
+    def test_given_no_transfer_when_cancel_transfer_then_error_404(self):
+        token = 'my-token'
+        user_uuid = 'user-uuid'
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
+
+        response = self.ctid_ng.delete_users_me_transfer_result(transfer_id='not-found', token=token)
+
+        assert_that(response.status_code, equal_to(404))
+
+    def test_given_transfer_is_not_mine_when_cancel_transfer_then_error_403(self):
+        token = 'my-token'
+        user_uuid = 'user-uuid'
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
+        _, __, ___, transfer_id = self.given_answered_transfer(initiator_uuid='other-uuid')
+
+        response = self.ctid_ng.delete_users_me_transfer_result(transfer_id=transfer_id, token=token)
+
+        assert_that(response.status_code, equal_to(403))
+
+    def test_given_my_transfer_when_cancel_transfer_then_transfer_is_cancelled(self):
+        token = 'my-token'
+        user_uuid = 'user-uuid'
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
+        (transferred_channel_id,
+         initiator_channel_id,
+         recipient_channel_id,
+         transfer_id) = self.given_answered_transfer(initiator_uuid=user_uuid)
+
+        self.ctid_ng.cancel_my_transfer(transfer_id, token)
+
+        until.assert_(self.assert_transfer_is_cancelled,
+                      transfer_id,
+                      transferred_channel_id,
+                      initiator_channel_id,
+                      recipient_channel_id,
+                      tries=5)
+
+
 class TestCompleteTransfer(TestTransfers):
 
     def test_given_no_transfer_when_complete_transfer_then_error_404(self):
         response = self.ctid_ng.put_complete_transfer_result(transfer_id='not-found', token=VALID_TOKEN)
 
         assert_that(response.status_code, equal_to(404))
+
+
+class TestUserCompleteTransfer(TestTransfers):
+    def setUp(self):
+        super(TestUserCompleteTransfer, self).setUp()
+        self.bus.listen_events('calls.transfer.*')
+
+    def test_given_no_transfer_when_complete_transfer_then_error_404(self):
+        token = 'my-token'
+        user_uuid = 'user-uuid'
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
+
+        response = self.ctid_ng.put_users_me_complete_transfer_result(transfer_id='not-found', token=token)
+
+        assert_that(response.status_code, equal_to(404))
+
+    def test_given_transfer_is_not_mine_when_complete_transfer_then_error_403(self):
+        token = 'my-token'
+        user_uuid = 'user-uuid'
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
+        _, __, ___, transfer_id = self.given_answered_transfer(initiator_uuid='other-uuid')
+
+        response = self.ctid_ng.put_users_me_complete_transfer_result(transfer_id=transfer_id, token=token)
+
+        assert_that(response.status_code, equal_to(403))
+
+    def test_given_my_transfer_when_complete_transfer_then_transfer_is_completeled(self):
+        token = 'my-token'
+        user_uuid = 'user-uuid'
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
+        (transferred_channel_id,
+         initiator_channel_id,
+         recipient_channel_id,
+         transfer_id) = self.given_answered_transfer(initiator_uuid=user_uuid)
+
+        self.ctid_ng.complete_my_transfer(transfer_id, token)
+
+        until.assert_(self.assert_transfer_is_completed,
+                      transfer_id,
+                      transferred_channel_id,
+                      initiator_channel_id,
+                      recipient_channel_id,
+                      tries=5)
 
 
 class TestTransferFromStasis(TestTransfers):

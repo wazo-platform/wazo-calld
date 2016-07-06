@@ -102,6 +102,11 @@ class TestAuthenticationCoverage(IntegrationTest):
 
         assert_that(result.status_code, equal_to(401))
 
+    def test_auth_on_list_user_transfer(self):
+        result = self.ctid_ng.get_users_me_transfers_result()
+
+        assert_that(result.status_code, equal_to(401))
+
     def test_auth_on_get_transfer(self):
         result = self.ctid_ng.get_transfer_result('my-transfer')
 
@@ -122,8 +127,18 @@ class TestAuthenticationCoverage(IntegrationTest):
 
         assert_that(result.status_code, equal_to(401))
 
+    def test_auth_on_cancel_user_transfer(self):
+        result = self.ctid_ng.delete_users_me_transfer_result('my-transfer')
+
+        assert_that(result.status_code, equal_to(401))
+
     def test_auth_on_transfer_complete(self):
         result = self.ctid_ng.put_complete_transfer_result('my-transfer')
+
+        assert_that(result.status_code, equal_to(401))
+
+    def test_auth_on_complete_user_transfer(self):
+        result = self.ctid_ng.put_users_me_complete_transfer_result('my-transfer')
 
         assert_that(result.status_code, equal_to(401))
 
