@@ -35,7 +35,7 @@ class Plugin(object):
 
         token_changed_subscribe(confd_client.set_token)
 
-        calls_service = CallsService(config['ari']['connection'], ari.client, confd_client)
+        calls_service = CallsService(amid_client, config['ari']['connection'], ari.client, confd_client)
 
         calls_stasis = CallsStasis(ari.client, collectd, bus_publisher, calls_service, config['uuid'], amid_client)
         calls_stasis.subscribe()

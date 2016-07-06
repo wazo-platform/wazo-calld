@@ -357,6 +357,7 @@ class TestCreateCall(IntegrationTest):
 
     def setUp(self):
         super(TestCreateCall, self).setUp()
+        self.amid.reset()
         self.ari.reset()
         self.confd.reset()
 
@@ -366,6 +367,7 @@ class TestCreateCall(IntegrationTest):
         self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip'))
         self.confd.set_user_lines({'user-uuid': [MockUserLine('line-id')]})
         self.ari.set_originates(MockChannel(id='new-call-id'))
+        self.amid.set_valid_exten('my-context', 'my-extension', 'my-priority')
 
         result = self.ctid_ng.originate(source=user_uuid,
                                         priority='my-priority',
@@ -384,6 +386,7 @@ class TestCreateCall(IntegrationTest):
         self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip'))
         self.confd.set_user_lines({'user-uuid': [MockUserLine('line-id')]})
         self.ari.set_originates(MockChannel('new-call-id'))
+        self.amid.set_valid_exten('my-context', 'my-extension', 'my-priority')
 
         self.ctid_ng.originate(source=user_uuid,
                                priority='my-priority',
@@ -411,6 +414,7 @@ class TestCreateCall(IntegrationTest):
         self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip'))
         self.confd.set_user_lines({'user-uuid': [MockUserLine('line-id')]})
         self.ari.set_originates(MockChannel(id='new-call-id'))
+        self.amid.set_valid_exten('my-context', 'my-extension', 'my-priority')
 
         self.ctid_ng.originate(source=user_uuid,
                                priority='my-priority',
@@ -430,6 +434,7 @@ class TestCreateCall(IntegrationTest):
         self.confd.set_user_lines({'user-uuid': [MockUserLine('line-id2', main_line=False),
                                                  MockUserLine('line-id', main_line=True)]})
         self.ari.set_originates(MockChannel(id='new-call-id'))
+        self.amid.set_valid_exten('my-context', 'my-extension', 'my-priority')
 
         result = self.ctid_ng.originate(source=user_uuid,
                                         priority='my-priority',
@@ -446,6 +451,7 @@ class TestCreateCall(IntegrationTest):
         user_uuid = 'user-uuid'
         self.confd.set_users(MockUser(uuid='user-uuid'))
         self.confd.set_user_lines({'user-uuid': []})
+        self.amid.set_valid_exten('my-context', 'my-extension', 'my-priority')
 
         result = self.ctid_ng.post_call_result(source=user_uuid,
                                                priority='my-priority',
@@ -458,6 +464,7 @@ class TestCreateCall(IntegrationTest):
 
     def test_create_call_with_invalid_user(self):
         user_uuid = 'user-uuid-not-found'
+        self.amid.set_valid_exten('my-context', 'my-extension', 'my-priority')
 
         result = self.ctid_ng.post_call_result(source=user_uuid,
                                                priority='my-priority',
@@ -468,6 +475,7 @@ class TestCreateCall(IntegrationTest):
         assert_that(result.json(), has_entry('message', contains_string('user')))
 
     def test_create_call_with_missing_source(self):
+        self.amid.set_valid_exten('mycontext', 'myexten')
         body = {'destination': {'priority': '1',
                                 'extension': 'myexten',
                                 'context': 'mycontext'}}
@@ -476,12 +484,30 @@ class TestCreateCall(IntegrationTest):
         assert_that(result.status_code, equal_to(400))
         assert_that(result.json(), has_entry('message', contains_string('source')))
 
+    def test_create_call_with_wrong_exten(self):
+        user_uuid = 'user-uuid'
+        self.confd.set_users(MockUser(uuid='user-uuid'))
+        self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip'))
+        self.confd.set_user_lines({'user-uuid': [MockUserLine('line-id')]})
+        self.ari.set_originates(MockChannel(id='new-call-id'))
+        self.amid.set_no_valid_exten()
+
+        result = self.ctid_ng.post_call_result(source=user_uuid,
+                                               priority='my-priority',
+                                               extension='not-found',
+                                               context='my-context',
+                                               token=VALID_TOKEN)
+
+        assert_that(result.status_code, equal_to(400))
+        assert_that(result.json(), has_entry('message', contains_string('exten')))
+
     def test_create_call_with_no_content_type(self):
         user_uuid = 'user-uuid'
         self.confd.set_users(MockUser(uuid='user-uuid'))
         self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip'))
         self.confd.set_user_lines({'user-uuid': [MockUserLine('line-id')]})
         self.ari.set_originates(MockChannel(id='new-call-id'))
+        self.amid.set_valid_exten('my-context', 'my-extension', 'my-priority')
 
         with self.ctid_ng.send_no_content_type():
             result = self.ctid_ng.post_call_result(source=user_uuid,
@@ -499,6 +525,7 @@ class TestUserCreateCall(IntegrationTest):
 
     def setUp(self):
         super(TestUserCreateCall, self).setUp()
+        self.amid.reset()
         self.ari.reset()
         self.confd.reset()
 
@@ -543,6 +570,7 @@ class TestUserCreateCall(IntegrationTest):
         self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip', context='my-context'))
         self.confd.set_user_lines({'user-uuid': [MockUserLine('line-id')]})
         self.ari.set_originates(MockChannel(id='new-call-id'))
+        self.amid.set_valid_exten('my-context', 'my-extension')
 
         result = self.ctid_ng.originate_me(extension='my-extension', token=token)
 
@@ -560,6 +588,7 @@ class TestUserCreateCall(IntegrationTest):
         self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip', context='my-context'))
         self.confd.set_user_lines({user_uuid: [MockUserLine('line-id')]})
         self.ari.set_originates(MockChannel('new-call-id'))
+        self.amid.set_valid_exten('my-context', 'my-extension')
 
         self.ctid_ng.originate_me(extension='my-extension',
                                   variables={'MY_VARIABLE': 'my-value',
@@ -587,6 +616,7 @@ class TestUserCreateCall(IntegrationTest):
         self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip', context='my-context'))
         self.confd.set_user_lines({user_uuid: [MockUserLine('line-id')]})
         self.ari.set_originates(MockChannel(id='new-call-id'))
+        self.amid.set_valid_exten('my-context', 'my-extension')
 
         self.ctid_ng.originate_me(extension='my-extension', token=token)
 
@@ -605,6 +635,7 @@ class TestUserCreateCall(IntegrationTest):
         self.confd.set_user_lines({user_uuid: [MockUserLine('line-id2', main_line=False),
                                                MockUserLine('line-id', main_line=True)]})
         self.ari.set_originates(MockChannel(id='new-call-id'))
+        self.amid.set_valid_exten('my-context', 'my-extension')
 
         result = self.ctid_ng.originate_me(extension='my-extension', token=token)
 
@@ -620,6 +651,7 @@ class TestUserCreateCall(IntegrationTest):
         self.auth.set_token(MockUserToken(token, user_uuid))
         self.confd.set_users(MockUser(uuid='user-uuid'))
         self.confd.set_user_lines({'user-uuid': []})
+        self.amid.set_valid_exten('my-context', 'my-extension')
 
         body = {'extension': 'my-extension'}
         result = self.ctid_ng.post_user_me_call_result(body, token)
@@ -631,12 +663,29 @@ class TestUserCreateCall(IntegrationTest):
         user_uuid = 'user-uuid-not-found'
         token = 'my-token'
         self.auth.set_token(MockUserToken(token, user_uuid))
+        self.amid.set_valid_exten('my-context', 'my-extension')
 
         body = {'extension': 'my-extension'}
         result = self.ctid_ng.post_user_me_call_result(body, token=token)
 
         assert_that(result.status_code, equal_to(400))
         assert_that(result.json(), has_entry('message', contains_string('user')))
+
+    def test_create_call_with_wrong_exten(self):
+        user_uuid = 'user-uuid'
+        token = 'my-token'
+        self.auth.set_token(MockUserToken(token, user_uuid))
+        self.confd.set_users(MockUser(uuid=user_uuid))
+        self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip', context='my-context'))
+        self.confd.set_user_lines({user_uuid: [MockUserLine('line-id')]})
+        self.ari.set_originates(MockChannel(id='new-call-id'))
+        self.amid.set_no_valid_exten()
+
+        body = {'extension': 'not-found'}
+        result = self.ctid_ng.post_user_me_call_result(body, token=token)
+
+        assert_that(result.status_code, equal_to(400))
+        assert_that(result.json(), has_entry('message', contains_string('exten')))
 
     def test_create_call_with_no_content_type(self):
         user_uuid = 'user-uuid'
@@ -646,6 +695,7 @@ class TestUserCreateCall(IntegrationTest):
         self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip', context='my-context'))
         self.confd.set_user_lines({user_uuid: [MockUserLine('line-id')]})
         self.ari.set_originates(MockChannel(id='new-call-id'))
+        self.amid.set_valid_exten('my-context', 'my-extension')
 
         with self.ctid_ng.send_no_content_type():
             body = {'extension': 'my-extension'}
