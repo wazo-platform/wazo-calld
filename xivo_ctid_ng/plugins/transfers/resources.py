@@ -92,6 +92,19 @@ class TransferResource(AuthResource):
         return '', 204
 
 
+class UserTransferResource(AuthResource):
+
+    def __init__(self, auth_client, transfers_service):
+        self._auth_client = auth_client
+        self._transfers_service = transfers_service
+
+    @required_acl('ctid-ng.users.me.transfers.{transfer_id}.delete')
+    def delete(self, transfer_id):
+        user_uuid = get_token_user_uuid_from_request(self._auth_client)
+        self._transfers_service.cancel_from_user(transfer_id, user_uuid)
+        return '', 204
+
+
 class TransferCompleteResource(AuthResource):
 
     def __init__(self, transfers_service):
@@ -100,4 +113,17 @@ class TransferCompleteResource(AuthResource):
     @required_acl('ctid-ng.transfers.{transfer_id}.complete.update')
     def put(self, transfer_id):
         self._transfers_service.complete(transfer_id)
+        return '', 204
+
+
+class UserTransferCompleteResource(AuthResource):
+
+    def __init__(self, auth_client, transfers_service):
+        self._auth_client = auth_client
+        self._transfers_service = transfers_service
+
+    @required_acl('ctid-ng.users.me.transfers.{transfer_id}.complete.update')
+    def put(self, transfer_id):
+        user_uuid = get_token_user_uuid_from_request(self._auth_client)
+        self._transfers_service.complete_from_user(transfer_id, user_uuid)
         return '', 204

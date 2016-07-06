@@ -673,6 +673,70 @@
                     }
                 }
             }
+        },
+        "/users/me/transfers/{transfer_id}": {
+            "delete": {
+                "summary": "Cancel a transfer",
+                "description": "**Required ACL:** `ctid-ng.users.me.transfers.{transfer_id}.delete`",
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/TransferID"
+                    }
+                ],
+                "tags": [
+                    "transfers",
+                    "users"
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Transfer cancelled"
+                    },
+                    "403": {
+                        "description": "The authenticated user tried to cancel a transfer owned by someone else",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/responses/NoSuchTransfer"
+                    },
+                    "503": {
+                        "$ref": "#/responses/AnotherServiceUnavailable"
+                    }
+                }
+            }
+        },
+        "/users/me/transfers/{transfer_id}/complete": {
+            "put": {
+                "summary": "Complete a transfer",
+                "description": "**Required ACL:** `ctid-ng.users.me.transfers.{transfer_id}.complete.update`",
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/TransferID"
+                    }
+                ],
+                "tags": [
+                    "transfers",
+                    "users"
+                ],
+                "responses": {
+                    "204": {
+                        "description": "The transfer was completed"
+                    },
+                    "403": {
+                        "description": "The authenticated user tried to complete a transfer owned by someone else",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/responses/NoSuchTransfer"
+                    },
+                    "503": {
+                        "$ref": "#/responses/AnotherServiceUnavailable"
+                    }
+                }
+            }
         }
     },
     "responses": {

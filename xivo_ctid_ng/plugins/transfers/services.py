@@ -116,7 +116,23 @@ class TransfersService(object):
         transfer_state = self.state_factory.make(transfer)
         transfer_state.complete()
 
+    def complete_from_user(self, transfer_id, user_uuid):
+        transfer = self.get(transfer_id)
+        if transfer.initiator_uuid != user_uuid:
+            raise UserPermissionDenied(user_uuid, {'transfer': transfer_id})
+
+        transfer_state = self.state_factory.make(transfer)
+        transfer_state.complete()
+
     def cancel(self, transfer_id):
         transfer = self.get(transfer_id)
+        transfer_state = self.state_factory.make(transfer)
+        transfer_state.cancel()
+
+    def cancel_from_user(self, transfer_id, user_uuid):
+        transfer = self.get(transfer_id)
+        if transfer.initiator_uuid != user_uuid:
+            raise UserPermissionDenied(user_uuid, {'transfer': transfer_id})
+
         transfer_state = self.state_factory.make(transfer)
         transfer_state.cancel()
