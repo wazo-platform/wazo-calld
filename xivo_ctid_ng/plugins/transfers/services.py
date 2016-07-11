@@ -90,6 +90,16 @@ class TransfersService(object):
         originate_variables = dict(variables)
         originate_variables['XIVO_TRANSFER_ROLE'] = 'recipient'
         originate_variables['XIVO_TRANSFER_ID'] = transfer_id
+        originate_variables['CHANNEL(language)'] = initiator_channel.getChannelVar(variable='CHANNEL(language)')['value']
+        try:
+            originate_variables['XIVO_USERID'] = initiator_channel.getChannelVar(variable='XIVO_USERID')['value']
+        except ARINotFound:
+            pass
+        try:
+            originate_variables['XIVO_USERUUID'] = initiator_channel.getChannelVar(variable='XIVO_USERUUID')['value']
+        except ARINotFound:
+            pass
+
         new_channel = self.ari.channels.originate(endpoint=recipient_endpoint,
                                                   app=APPLICATION_NAME,
                                                   appArgs=app_args,

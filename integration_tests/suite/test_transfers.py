@@ -14,6 +14,7 @@ from contextlib import contextmanager
 from hamcrest import all_of
 from hamcrest import anything
 from hamcrest import assert_that
+from hamcrest import calling
 from hamcrest import contains
 from hamcrest import contains_inanyorder
 from hamcrest import contains_string
@@ -25,6 +26,7 @@ from hamcrest import has_item
 from hamcrest import has_key
 from hamcrest import instance_of
 from hamcrest import not_
+from hamcrest import raises
 from xivo_test_helpers import until
 
 from .test_api.base import IntegrationTest
@@ -574,6 +576,46 @@ class TestCreateTransfer(TestTransfers):
             response = self.ctid_ng.post_transfer_result(body=body, token=VALID_TOKEN)
 
         assert_that(response.status_code, equal_to(201))
+
+    def test_that_variables_are_applied_to_the_recipient_channel(self):
+        transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()
+        self.ari.channels.setChannelVar(channelId=initiator_channel_id,
+                                        variable='CHANNEL(language)',
+                                        value='my-lang')
+        self.ari.channels.setChannelVar(channelId=initiator_channel_id,
+                                        variable='XIVO_USERID',
+                                        value='my-userid')
+        self.ari.channels.setChannelVar(channelId=initiator_channel_id,
+                                        variable='XIVO_USERUUID',
+                                        value='my-useruuid')
+        custom_variables = {'TEST': 'foobar'}
+
+        response = self.ctid_ng.create_transfer(transferred_channel_id,
+                                                initiator_channel_id,
+                                                variables=custom_variables,
+                                                **RECIPIENT_CALLER_ID)
+
+        recipient_channel_id = response['recipient_call']
+        expected = {'TEST': 'foobar',
+                    'CHANNEL(language)': 'my-lang',
+                    'XIVO_USERID': 'my-userid',
+                    'XIVO_USERUUID': 'my-useruuid'}
+        for expected_variable, expected_value in expected.iteritems():
+            actual_value = self.ari.channels.getChannelVar(channelId=recipient_channel_id,
+                                                           variable=expected_variable)['value']
+            assert_that(actual_value, equal_to(expected_value))
+
+    def test_that_unset_inherited_variables_do_not_block_transfer(self):
+        transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()
+
+        response = self.ctid_ng.create_transfer(transferred_channel_id,
+                                                initiator_channel_id,
+                                                **RECIPIENT_CALLER_ID)
+        recipient_channel_id = response['recipient_call']
+        assert_that(calling(self.ari.channels.getChannelVar).with_args(channelId=recipient_channel_id,
+                                                                       variable='XIVO_USERID'),
+                    raises(ARINotFound))
+        # we can't check for missing XIVO_USERUUID because initiator must have XIVO_USERUUID for transfers to work
 
 
 class TestUserCreateTransfer(TestTransfers):
@@ -1246,17 +1288,6 @@ class TestTransferFromStasis(TestTransfers):
                       initiator_channel_id2,
                       recipient_channel_id2,
                       tries=5)
-
-    def test_that_variables_are_applied_to_the_recipient_channel(self):
-        (transferred_channel_,
-         initiator_channel_id,
-         recipient_channel_id,
-         transfer_id) = self.given_answered_transfer(variables={'TEST': 'foobar'})
-
-        variable = self.ari.channels.getChannelVar(channelId=recipient_channel_id,
-                                                   variable='TEST')['value']
-
-        assert_that(variable, equal_to('foobar'))
 
 
 class TestTransferFromNonStasis(TestTransfers):
