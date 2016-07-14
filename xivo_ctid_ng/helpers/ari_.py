@@ -110,7 +110,7 @@ class Channel(object):
             raise NotEnoughChannels()
 
     def user(self, default=None):
-        if self.is_local_channel():
+        if self.is_transfer_recipient_local_channel():
             return default
         try:
             uuid = self._ari.channels.getChannelVar(channelId=self.id, variable='XIVO_USERUUID')['value']
@@ -125,8 +125,17 @@ class Channel(object):
         except ARINotFound:
             return False
 
-    def is_local_channel(self):
+    def is_transfer_recipient_local_channel(self):
         try:
-            return self._ari.channels.get(channelId=self.id).json['name'].startswith('Local/')
+            channel = self._ari.channels.get(channelId=self.id)
         except ARINotFound:
             return False
+
+        is_local = channel.json['name'].startswith('Local/')
+
+        try:
+            is_transfer_recipient = channel.getChannelVar(variable='XIVO_TRANSFER_ROLE')['value'] == 'recipient'
+        except ARINotFound:
+            is_transfer_recipient = False
+
+        return is_local and is_transfer_recipient
