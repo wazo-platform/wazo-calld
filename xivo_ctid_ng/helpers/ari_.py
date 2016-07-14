@@ -110,6 +110,8 @@ class Channel(object):
             raise NotEnoughChannels()
 
     def user(self, default=None):
+        if self.is_local_channel():
+            return default
         try:
             uuid = self._ari.channels.getChannelVar(channelId=self.id, variable='XIVO_USERUUID')['value']
             return uuid
@@ -120,5 +122,11 @@ class Channel(object):
         try:
             self._ari.channels.get(channelId=self.id)
             return True
+        except ARINotFound:
+            return False
+
+    def is_local_channel(self):
+        try:
+            return self._ari.channels.get(channelId=self.id).json['name'].startswith('Local/')
         except ARINotFound:
             return False

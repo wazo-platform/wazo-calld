@@ -79,12 +79,14 @@ class MockChannel(object):
                  state='Ringing',
                  creation_time='2015-01-01T00:00:00.0-0500',
                  caller_id_name='someone',
-                 caller_id_number='somewhere'):
+                 caller_id_number='somewhere',
+                 name='something'):
         self._id = id
         self._state = state
         self._creation_time = creation_time
         self._caller_id_name = caller_id_name
         self._caller_id_number = caller_id_number
+        self._name = name
 
     def id_(self):
         return self._id
@@ -98,6 +100,7 @@ class MockChannel(object):
                 'name': self._caller_id_name,
                 'number': self._caller_id_number
             },
+            'name': self._name
         }
 
 
