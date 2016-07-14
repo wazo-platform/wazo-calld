@@ -248,6 +248,20 @@ class TestUserListCalls(IntegrationTest):
             has_entries({'call_id': 'first-id'}),
             has_entries({'call_id': 'third-id'}))))
 
+    def test_given_local_channels_when_list_then_local_channels_are_ignored(self):
+        token = 'my-token'
+        user_uuid = 'user-uuid'
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
+        self.ari.set_channels(MockChannel(id='first-id'),
+                              MockChannel(id='second-id', name='Local/second'))
+        self.ari.set_channel_variable({'first-id': {'XIVO_USERUUID': user_uuid},
+                                       'second-id': {'XIVO_USERUUID': user_uuid}})
+
+        calls = self.ctid_ng.list_my_calls(token=token)
+
+        assert_that(calls, has_entry('items', contains_inanyorder(
+            has_entries({'call_id': 'first-id'}))))
+
 
 class TestGetCall(IntegrationTest):
 
