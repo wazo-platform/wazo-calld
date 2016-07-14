@@ -394,7 +394,8 @@ class TestCreateCall(IntegrationTest):
                                context='my-context',
                                variables={'MY_VARIABLE': 'my-value',
                                           'SECOND_VARIABLE': 'my-second-value',
-                                          'CONNECTEDLINE(all)': 'my-connected-line'})
+                                          'CONNECTEDLINE(all)': 'my-connected-line',
+                                          'XIVO_FIX_CALLERID': '1'})
 
         assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
             'method': 'POST',
@@ -405,7 +406,10 @@ class TestCreateCall(IntegrationTest):
                                ['endpoint', 'sip/line-name']),
             'json': has_entries({'variables': has_entries({'MY_VARIABLE': 'my-value',
                                                            'SECOND_VARIABLE': 'my-second-value',
-                                                           'CONNECTEDLINE(all)': 'my-connected-line'})}),
+                                                           'CALLERID(name)': 'my-extension',
+                                                           'CALLERID(num)': 'my-extension',
+                                                           'CONNECTEDLINE(all)': 'my-connected-line',
+                                                           'XIVO_FIX_CALLERID': '1'})}),
         }))))
 
     def test_when_create_call_with_no_variables_then_default_variables_are_set(self):
@@ -424,7 +428,10 @@ class TestCreateCall(IntegrationTest):
         assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
             'method': 'POST',
             'path': '/ari/channels',
-            'json': has_entries({'variables': {'CONNECTEDLINE(all)': 'my-extension'}}),
+            'json': has_entries({'variables': {'CONNECTEDLINE(all)': 'my-extension',
+                                               'CALLERID(name)': 'my-extension',
+                                               'CALLERID(num)': 'my-extension',
+                                               'XIVO_FIX_CALLERID': '1'}}),
         }))))
 
     def test_create_call_with_multiple_lines(self):
@@ -593,7 +600,8 @@ class TestUserCreateCall(IntegrationTest):
         self.ctid_ng.originate_me(extension='my-extension',
                                   variables={'MY_VARIABLE': 'my-value',
                                              'SECOND_VARIABLE': 'my-second-value',
-                                             'CONNECTEDLINE(all)': 'my-extension'},
+                                             'CONNECTEDLINE(all)': 'my-extension',
+                                             'XIVO_FIX_CALLERID': '1'},
                                   token=token)
 
         assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
@@ -605,7 +613,10 @@ class TestUserCreateCall(IntegrationTest):
                                ['endpoint', 'sip/line-name']),
             'json': has_entries({'variables': has_entries({'MY_VARIABLE': 'my-value',
                                                            'SECOND_VARIABLE': 'my-second-value',
-                                                           'CONNECTEDLINE(all)': 'my-extension'})}),
+                                                           'CONNECTEDLINE(all)': 'my-extension',
+                                                           'CALLERID(name)': 'my-extension',
+                                                           'CALLERID(num)': 'my-extension',
+                                                           'XIVO_FIX_CALLERID': '1'})}),
         }))))
 
     def test_when_create_call_with_no_variables_then_default_variables_are_set(self):
@@ -623,7 +634,10 @@ class TestUserCreateCall(IntegrationTest):
         assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
             'method': 'POST',
             'path': '/ari/channels',
-            'json': has_entries({'variables': {'CONNECTEDLINE(all)': 'my-extension'}}),
+            'json': has_entries({'variables': {'CONNECTEDLINE(all)': 'my-extension',
+                                               'CALLERID(name)': 'my-extension',
+                                               'CALLERID(num)': 'my-extension',
+                                               'XIVO_FIX_CALLERID': '1'}}),
         }))))
 
     def test_create_call_with_multiple_lines(self):

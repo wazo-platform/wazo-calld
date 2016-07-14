@@ -68,6 +68,9 @@ class CallsService(object):
 
         variables = request.get('variables', {})
         variables.setdefault('CONNECTEDLINE(all)', extension)
+        variables.setdefault('CALLERID(name)', extension)
+        variables.setdefault('CALLERID(num)', extension)
+        variables.setdefault('XIVO_FIX_CALLERID', '1')
 
         channel = self._ari.channels.originate(endpoint=endpoint,
                                                extension=extension,
