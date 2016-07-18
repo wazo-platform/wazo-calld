@@ -824,6 +824,18 @@
                 "caller_id_number": {
                     "type": "string"
                 },
+                "peer_caller_id_name": {
+                    "type": "string"
+                },
+                "peer_caller_id_number": {
+                    "type": "string"
+                },
+                "connected_id_name": {
+                    "type": "string"
+                },
+                "caller_id_number": {
+                    "type": "string"
+                },
                 "on_hold": {
                     "type": "boolean"
                 }

@@ -150,6 +150,8 @@ class CallsService(object):
         call.status = channel.json['state']
         call.caller_id_name = channel.json['caller']['name']
         call.caller_id_number = channel.json['caller']['number']
+        call.peer_caller_id_name = channel.json['connected']['name']
+        call.peer_caller_id_number = channel.json['connected']['number']
         call.user_uuid = Channel(channel.id, ari).user()
         call.on_hold = self._get_hold_from_channel_id(ari, channel.id) == '1'
         call.bridges = [bridge.id for bridge in ari.bridges.list() if channel.id in bridge.json['channels']]
@@ -163,6 +165,8 @@ class CallsService(object):
         call.status = event['ChannelStateDesc']
         call.caller_id_name = event['CallerIDName']
         call.caller_id_number = event['CallerIDNum']
+        call.peer_caller_id_name = event['ConnectedLineName']
+        call.peer_caller_id_number = event['ConnectedLineNum']
         call.user_uuid = event.get('XIVO_USERUUID') or None
         call.bridges = []
         call.talking_to = {}
