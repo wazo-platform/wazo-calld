@@ -80,12 +80,16 @@ class MockChannel(object):
                  creation_time='2015-01-01T00:00:00.0-0500',
                  caller_id_name='someone',
                  caller_id_number='somewhere',
+                 connected_line_name='someone else',
+                 connected_line_number='somewhere else',
                  name='something'):
         self._id = id
         self._state = state
         self._creation_time = creation_time
         self._caller_id_name = caller_id_name
         self._caller_id_number = caller_id_number
+        self._connected_line_name = connected_line_name
+        self._connected_line_number = connected_line_number
         self._name = name
 
     def id_(self):
@@ -99,6 +103,10 @@ class MockChannel(object):
             'caller': {
                 'name': self._caller_id_name,
                 'number': self._caller_id_number
+            },
+            'connected': {
+                'name': self._connected_line_name,
+                'number': self._connected_line_number
             },
             'name': self._name
         }

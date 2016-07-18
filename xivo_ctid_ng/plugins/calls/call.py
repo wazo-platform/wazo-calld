@@ -14,6 +14,8 @@ class Call(object):
         self.user_uuid = None
         self.caller_id_name = ''
         self.caller_id_number = ''
+        self.peer_caller_id_name = ''
+        self.peer_caller_id_number = ''
         self.on_hold = False
 
     def to_dict(self):
@@ -22,6 +24,8 @@ class Call(object):
             'call_id': self.id_,
             'caller_id_name': self.caller_id_name,
             'caller_id_number': self.caller_id_number,
+            'peer_caller_id_name': self.peer_caller_id_name,
+            'peer_caller_id_number': self.peer_caller_id_number,
             'creation_time': self.creation_time,
             'status': self.status,
             'on_hold': self.on_hold,

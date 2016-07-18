@@ -44,11 +44,15 @@ class TestListCalls(IntegrationTest):
         self.ari.set_channels(MockChannel(id='first-id',
                                           caller_id_name='Weber',
                                           caller_id_number='4185556666',
+                                          connected_line_name='Denis',
+                                          connected_line_number='4185557777',
                                           creation_time='first-time',
                                           state='Up'),
                               MockChannel(id='second-id',
                                           caller_id_name='Denis',
                                           caller_id_number='4185557777',
+                                          connected_line_name='Weber',
+                                          connected_line_number='4185556666',
                                           creation_time='second-time',
                                           state='Ringing'))
         self.ari.set_channel_variable({'first-id': {'XIVO_USERUUID': 'user1-uuid'},
@@ -67,7 +71,9 @@ class TestListCalls(IntegrationTest):
                          'talking_to': {'second-id': 'user2-uuid'},
                          'creation_time': 'first-time',
                          'caller_id_number': '4185556666',
-                         'caller_id_name': 'Weber'}),
+                         'caller_id_name': 'Weber',
+                         'peer_caller_id_number': '4185557777',
+                         'peer_caller_id_name': 'Denis'}),
             has_entries({'call_id': 'second-id',
                          'user_uuid': 'user2-uuid',
                          'status': 'Ringing',
@@ -75,7 +81,9 @@ class TestListCalls(IntegrationTest):
                          'talking_to': {'first-id': 'user1-uuid'},
                          'creation_time': 'second-time',
                          'caller_id_number': '4185557777',
-                         'caller_id_name': 'Denis'}))))
+                         'caller_id_name': 'Denis',
+                         'peer_caller_id_number': '4185556666',
+                         'peer_caller_id_name': 'Weber'}))))
 
     def test_given_some_calls_and_no_user_id_when_list_calls_then_list_calls_with_no_user_uuid(self):
         self.ari.set_channels(MockChannel(id='first-id'),
