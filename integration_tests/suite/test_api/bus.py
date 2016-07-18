@@ -112,6 +112,8 @@ class BusClient(object):
                 'ChannelStateDesc': 'Up',
                 'CallerIDName': 'my-caller-id-name',
                 'CallerIDNum': 'my-caller-id-num',
+                'ConnectedLineName': 'peer-name',
+                'ConnectedLineNum': 'peer-num',
                 'XIVO_USERUUID': 'my-uuid',
             }
         }, 'ami.UserEvent')
