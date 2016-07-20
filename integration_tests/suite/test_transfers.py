@@ -5,6 +5,7 @@
 
 import ari
 import logging
+import requests
 import time
 import uuid
 
@@ -90,8 +91,10 @@ class TestTransfers(IntegrationTest):
                 pass
 
     def answer_channel(self, channel):
-        command = ['asterisk', '-rx', 'test answer {}'.format(channel.json['name'])]
-        self.docker_exec(command, 'ari')
+        url = 'http://localhost:5039/ari/chan_test/answer'
+        params = {'id': channel.id}
+        response = requests.post(url, params=params, auth=(ARI_CONFIG['username'], ARI_CONFIG['password']))
+        response.raise_for_status()
 
     def dereference_local_channel(self, local_channel_left):
         left_name = local_channel_left.json['name']
