@@ -43,7 +43,7 @@ ARI_CONFIG = {
     'username': 'xivo',
     'password': 'xivo',
 }
-ENDPOINT = 'Local/answer@local'
+ENDPOINT = 'Test/integration-caller'
 RECIPIENT = {
     'context': 'local',
     'exten': 'answer',
@@ -97,6 +97,10 @@ class TestTransfers(IntegrationTest):
             except ARINotFound:
                 pass
 
+    def answer_channel(self, channel):
+        command = ['asterisk', '-rx', 'test answer {}'.format(channel.json['name'])]
+        self.docker_exec(command, 'ari')
+
     def add_channel_to_bridge(self, bridge):
         def channel_is_in_stasis(channel_id):
             try:
@@ -108,6 +112,7 @@ class TestTransfers(IntegrationTest):
         new_channel = self.ari.channels.originate(endpoint=ENDPOINT,
                                                   app=STASIS_APP,
                                                   appArgs=[STASIS_APP_INSTANCE])
+        self.answer_channel(new_channel)
         until.true(channel_is_in_stasis, new_channel.id, tries=2)
         bridge.addChannel(channel=new_channel.id)
 
@@ -130,19 +135,23 @@ class TestTransfers(IntegrationTest):
         caller = self.ari.channels.originate(endpoint=ENDPOINT, context='local', extension='dial', priority=1,
                                              variables={'variables': {'XIVO_USERUUID': caller_uuid,
                                                                       '__CALLEE_XIVO_USERUUID': callee_uuid}})
+        self.answer_channel(caller)
 
         def channels_are_talking(caller_channel_id):
-            try:
-                bridge = next(bridge for bridge in self.ari.bridges.list()
-                              if caller.id in bridge.json['channels'])
-                callee_id = next(channel_id for channel_id in bridge.json['channels']
-                                 if channel_id != caller_channel_id)
-                return callee_id
-            except StopIteration:
-                return None
+            linkedid = caller.getChannelVar(variable='CHANNEL(linkedid)')['value']
+            for channel in self.ari.channels.list():
+                try:
+                    if (channel.getChannelVar(variable='CHANNEL(linkedid)')['value'] == linkedid and
+                        channel.id != caller.id):
+                        return channel
+                except ARINotFound:
+                    continue
+            else:
+                raise Exception('No channel with linkedid {} found'.format(linkedid))
 
-        callee_id = until.true(channels_are_talking, caller.id, tries=2)
-        return caller.id, callee_id
+        callee = until.true(channels_are_talking, caller.id, tries=2)
+        self.answer_channel(callee)
+        return caller.id, callee.id
 
     def given_ringing_transfer(self):
         transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()
