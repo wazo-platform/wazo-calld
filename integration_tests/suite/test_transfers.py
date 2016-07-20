@@ -46,15 +46,7 @@ ARI_CONFIG = {
 ENDPOINT = 'Test/integration-caller'
 RECIPIENT = {
     'context': 'local',
-    'exten': 'answer',
-}
-RECIPIENT_RINGING = {
-    'context': 'local',
-    'exten': 'ring',
-}
-RECIPIENT_RINGING_ANSWER = {
-    'context': 'local',
-    'exten': 'ringAnswer',
+    'exten': 'recipient',
 }
 RECIPIENT_BUSY = {
     'context': 'local',
@@ -101,6 +93,37 @@ class TestTransfers(IntegrationTest):
         command = ['asterisk', '-rx', 'test answer {}'.format(channel.json['name'])]
         self.docker_exec(command, 'ari')
 
+    def dereference_local_channel(self, local_channel_left):
+        left_name = local_channel_left.json['name']
+        left_suffix = int(left_name[-1])  # 1 or 2
+        right_suffix = left_suffix ^ 3  # 2 or 1
+        right_name = left_name[:-1] + str(right_suffix)
+        local_channel_right = next(channel for channel in self.ari.channels.list()
+                                   if channel.json['name'] == right_name)
+        final_channel = self.same_linkedid(local_channel_right, exclude=[local_channel_left])
+        return final_channel
+
+    def answer_recipient_channel(self, local_recipient_channel):
+        self.answer_channel(self.dereference_local_channel(local_recipient_channel))
+
+    def answer_recipient_channel_id(self, local_recipient_channel_id):
+        recipient_channel = self.ari.channels.get(channelId=local_recipient_channel_id)
+        self.answer_recipient_channel(recipient_channel)
+
+    def same_linkedid(self, channel_left, exclude=None):
+        exclude = exclude or []
+        linkedid = channel_left.getChannelVar(variable='CHANNEL(linkedid)')['value']
+        for channel_right_candidate in self.ari.channels.list():
+            try:
+                if (channel_right_candidate.getChannelVar(variable='CHANNEL(linkedid)')['value'] == linkedid and
+                    channel_right_candidate.id != channel_left.id and
+                    channel_right_candidate.id not in [excluded.id for excluded in exclude]):
+                    return channel_right_candidate
+            except ARINotFound:
+                continue
+        else:
+            raise Exception('No channel with linkedid {} found'.format(linkedid))
+
     def add_channel_to_bridge(self, bridge):
         def channel_is_in_stasis(channel_id):
             try:
@@ -137,41 +160,28 @@ class TestTransfers(IntegrationTest):
                                                                       '__CALLEE_XIVO_USERUUID': callee_uuid}})
         self.answer_channel(caller)
 
-        def channels_are_talking(caller_channel_id):
-            linkedid = caller.getChannelVar(variable='CHANNEL(linkedid)')['value']
-            for channel in self.ari.channels.list():
-                try:
-                    if (channel.getChannelVar(variable='CHANNEL(linkedid)')['value'] == linkedid and
-                        channel.id != caller.id):
-                        return channel
-                except ARINotFound:
-                    continue
-            else:
-                raise Exception('No channel with linkedid {} found'.format(linkedid))
+        def callee_is_ringing(caller):
+            return self.same_linkedid(caller)
 
-        callee = until.true(channels_are_talking, caller.id, tries=2)
+        def channels_are_talking(caller, callee):
+            try:
+                next(bridge for bridge in self.ari.bridges.list()
+                     if (caller.id in bridge.json['channels'] and
+                         callee.id in bridge.json['channels']))
+                return True
+            except StopIteration:
+                return False
+
+        callee = until.true(callee_is_ringing, caller, tries=2)
         self.answer_channel(callee)
+        until.true(channels_are_talking, caller, callee, tries=2)
         return caller.id, callee.id
 
     def given_ringing_transfer(self):
         transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()
         response = self.ctid_ng.create_transfer(transferred_channel_id,
                                                 initiator_channel_id,
-                                                **RECIPIENT_RINGING)
-
-        transfer_id = response['id']
-        recipient_channel_id = response['recipient_call']
-
-        return (transferred_channel_id,
-                initiator_channel_id,
-                recipient_channel_id,
-                transfer_id)
-
-    def given_ringing_and_answer_transfer(self):
-        transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()
-        response = self.ctid_ng.create_transfer(transferred_channel_id,
-                                                initiator_channel_id,
-                                                **RECIPIENT_RINGING_ANSWER)
+                                                **RECIPIENT)
 
         transfer_id = response['id']
         recipient_channel_id = response['recipient_call']
@@ -190,6 +200,7 @@ class TestTransfers(IntegrationTest):
 
         transfer_id = response['id']
         recipient_channel_id = response['recipient_call']
+        self.answer_recipient_channel_id(recipient_channel_id)
 
         def channel_is_in_bridge(channel_id, bridge_id):
             return channel_id in self.ari.bridges.get(bridgeId=bridge_id).json['channels']
@@ -828,6 +839,8 @@ class TestUserCreateTransfer(TestTransfers):
 
         transfer_id = response['id']
         recipient_channel_id = response['recipient_call']
+        self.answer_recipient_channel_id(recipient_channel_id)
+
         until.assert_(self.assert_transfer_is_answered,
                       transfer_id,
                       transferred_channel_id,
@@ -972,15 +985,15 @@ class TestTransferFromStasis(TestTransfers):
         response = self.ctid_ng.create_transfer(transferred_channel_id,
                                                 initiator_channel_id,
                                                 **RECIPIENT)
+        recipient_channel_id = response['recipient_call']
+        self.answer_recipient_channel_id(recipient_channel_id)
 
         assert_that(response, all_of(has_entries({'transferred_call': transferred_channel_id,
                                                   'initiator_call': initiator_channel_id,
                                                   'status': 'ringback'}),
                                      has_key('id'),
                                      has_key('recipient_call')))
-
         transfer_id = response['id']
-        recipient_channel_id = response['recipient_call']
         until.assert_(self.assert_transfer_is_answered,
                       transfer_id,
                       transferred_channel_id,
@@ -1009,7 +1022,7 @@ class TestTransferFromStasis(TestTransfers):
 
         response = self.ctid_ng.create_blind_transfer(transferred_channel_id,
                                                       initiator_channel_id,
-                                                      **RECIPIENT_RINGING)
+                                                      **RECIPIENT)
 
         transfer_id = response['id']
         recipient_channel_id = response['recipient_call']
@@ -1025,7 +1038,7 @@ class TestTransferFromStasis(TestTransfers):
 
         response = self.ctid_ng.create_transfer(transferred_channel_id,
                                                 initiator_channel_id,
-                                                **RECIPIENT_RINGING)
+                                                **RECIPIENT)
 
         self.ari.channels.hangup(channelId=initiator_channel_id)
 
@@ -1047,6 +1060,8 @@ class TestTransferFromStasis(TestTransfers):
 
         transfer_id = response['id']
         recipient_channel_id = response['recipient_call']
+        self.answer_recipient_channel_id(recipient_channel_id)
+
         until.assert_(self.assert_transfer_is_completed,
                       transfer_id,
                       transferred_channel_id,
@@ -1059,7 +1074,7 @@ class TestTransferFromStasis(TestTransfers):
 
         response = self.ctid_ng.create_blind_transfer(transferred_channel_id,
                                                       initiator_channel_id,
-                                                      **RECIPIENT_RINGING)
+                                                      **RECIPIENT)
 
         self.ari.channels.hangup(channelId=transferred_channel_id)
 
@@ -1106,9 +1121,10 @@ class TestTransferFromStasis(TestTransfers):
         (transferred_channel_id,
          initiator_channel_id,
          recipient_channel_id,
-         transfer_id) = self.given_ringing_and_answer_transfer()
+         transfer_id) = self.given_ringing_transfer()
 
         self.ari.channels.hangup(channelId=transferred_channel_id)
+        self.answer_recipient_channel_id(recipient_channel_id)
 
         until.assert_(self.assert_transfer_is_abandoned,
                       transfer_id,
@@ -1270,34 +1286,6 @@ class TestTransferFromStasis(TestTransfers):
                       recipient_channel_id,
                       tries=5)
 
-    def test_that_XIVO_TRANSFER_TARGET_is_not_reset_for_other_transfers(self):
-        (transferred_channel_id1,
-         initiator_channel_id1,
-         recipient_channel_id1,
-         transfer_id1) = self.given_ringing_and_answer_transfer()
-
-        (transferred_channel_id2,
-         initiator_channel_id2,
-         recipient_channel_id2,
-         transfer_id2) = self.given_ringing_transfer()
-
-        until.assert_(self.assert_transfer_is_answered,
-                      transfer_id1,
-                      transferred_channel_id1,
-                      initiator_channel_id1,
-                      recipient_channel_id1,
-                      tries=5)
-
-        self.ari.channels.hangup(channelId=transferred_channel_id2)
-        self.ari.channels.hangup(channelId=initiator_channel_id2)
-
-        until.assert_(self.assert_transfer_is_hungup,
-                      transfer_id2,
-                      transferred_channel_id2,
-                      initiator_channel_id2,
-                      recipient_channel_id2,
-                      tries=5)
-
 
 class TestTransferFromNonStasis(TestTransfers):
 
@@ -1318,9 +1306,17 @@ class TestTransferFromNonStasis(TestTransfers):
                                                   'recipient_call': None,
                                                   'status': 'starting'})))
 
-        transfer_bridge_id = response['id']
+        transfer_id = response['id']
+
+        def get_recipient_call():
+            response = self.ctid_ng.get_transfer(transfer_id)
+            return response['recipient_call']
+
+        recipient_channel_id = until.true(get_recipient_call, tries=5)
+        self.answer_recipient_channel_id(recipient_channel_id)
+
         until.assert_(self.assert_transfer_is_answered,
-                      transfer_bridge_id,
+                      transfer_id,
                       transferred_channel_id,
                       initiator_channel_id,
                       tries=5)
@@ -1330,7 +1326,7 @@ class TestTransferFromNonStasis(TestTransfers):
 
         response = self.ctid_ng.create_blind_transfer(transferred_channel_id,
                                                       initiator_channel_id,
-                                                      **RECIPIENT_RINGING)
+                                                      **RECIPIENT)
 
         transfer_id = response['id']
         recipient_channel_id = response['recipient_call']
@@ -1439,10 +1435,10 @@ class TestInitialisation(TestTransfers):
         (transferred_channel_id,
          initiator_channel_id,
          recipient_channel_id,
-         transfer_id) = self.given_ringing_and_answer_transfer()
+         transfer_id) = self.given_ringing_transfer()
 
         with self._ctid_ng_stopped():
-            time.sleep(2)  # wait for recipient to answer (and be hungup by Asterisk, cause "no such application")
+            self.answer_recipient_channel_id(recipient_channel_id)  # will be hungup by Asterisk, cause "no such application")
 
         until.assert_(self.assert_transfer_is_cancelled,
                       transfer_id,

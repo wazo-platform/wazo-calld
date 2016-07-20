@@ -1,4 +1,4 @@
-CHAN_TEST_DIR ?= ../../chan-testd
+CHAN_TEST_DIR ?= ../../chan-test
 
 .PHONY: test-setup egg-info test
 
