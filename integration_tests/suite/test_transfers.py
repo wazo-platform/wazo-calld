@@ -31,6 +31,7 @@ from hamcrest import raises
 from xivo_test_helpers import until
 
 from .test_api.base import IntegrationTest
+from .test_api.chan_test import ChanTest
 from .test_api.constants import VALID_TOKEN
 from .test_api.confd import MockUser
 from .test_api.confd import MockLine
@@ -78,6 +79,11 @@ class TestTransfers(IntegrationTest):
 
     asset = 'real_asterisk'
 
+    @classmethod
+    def setUpClass(cls):
+        super(TestTransfers, cls).setUpClass()
+        cls.chan_test = ChanTest(ARI_CONFIG)
+
     def setUp(self):
         super(TestTransfers, self).setUp()
         self.ari = ari.connect(**ARI_CONFIG)
@@ -94,12 +100,6 @@ class TestTransfers(IntegrationTest):
             except ARINotFound:
                 pass
 
-    def answer_channel(self, channel):
-        url = 'http://localhost:5039/ari/chan_test/answer'
-        params = {'id': channel.id}
-        response = requests.post(url, params=params, auth=(ARI_CONFIG['username'], ARI_CONFIG['password']))
-        response.raise_for_status()
-
     def dereference_local_channel(self, local_channel_left):
         left_name = local_channel_left.json['name']
         left_suffix = int(left_name[-1])  # 1 or 2
@@ -113,7 +113,7 @@ class TestTransfers(IntegrationTest):
     def answer_recipient_channel(self, local_recipient_channel_id):
         recipient_channel = self.ari.channels.get(channelId=local_recipient_channel_id)
         real_recipient_channel = self.dereference_local_channel(recipient_channel)
-        self.answer_channel(real_recipient_channel)
+        self.chan_test.answer_channel(real_recipient_channel)
 
     def same_linkedid(self, channel_left, exclude=None):
         exclude = exclude or []
