@@ -125,6 +125,14 @@ class Channel(object):
         except ARINotFound:
             return False
 
+    def is_local(self):
+        try:
+            channel = self._ari.channels.get(channelId=self.id)
+        except ARINotFound:
+            return False
+
+        return channel.json['name'].startswith('Local/')
+
     def is_transfer_recipient_local_channel(self):
         try:
             channel = self._ari.channels.get(channelId=self.id)

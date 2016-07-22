@@ -55,7 +55,7 @@ class CallsService(object):
 
     def list_calls_user(self, user_uuid, application_filter=None, application_instance_filter=None):
         calls = self.list_calls(application_filter, application_instance_filter)
-        return [call for call in calls if call.user_uuid == user_uuid]
+        return [call for call in calls if call.user_uuid == user_uuid and not Channel(call.id_, self._ari).is_local()]
 
     def originate(self, request):
         source_user = request['source']['user']
@@ -110,7 +110,7 @@ class CallsService(object):
 
     def hangup_user(self, call_id, user_uuid):
         channel = Channel(call_id, self._ari)
-        if not channel.exists():
+        if not channel.exists() or channel.is_local():
             raise NoSuchCall(call_id)
 
         if channel.user() != user_uuid:
