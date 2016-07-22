@@ -44,10 +44,14 @@ ARI_CONFIG = {
     'username': 'xivo',
     'password': 'xivo',
 }
-ENDPOINT = 'Test/integration-caller'
+ENDPOINT_AUTOANSWER = 'Test/integration-caller/autoanswer'
 RECIPIENT = {
     'context': 'local',
     'exten': 'recipient',
+}
+RECIPIENT_AUTOANSWER = {
+    'context': 'local',
+    'exten': 'recipient_autoanswer',
 }
 RECIPIENT_BUSY = {
     'context': 'local',
@@ -108,7 +112,7 @@ class TestTransfers(IntegrationTest):
 
     def answer_recipient_channel(self, local_recipient_channel_id):
         recipient_channel = self.ari.channels.get(channelId=local_recipient_channel_id)
-        real_recipient_channel = self.dereference_local_channel(local_recipient_channel)
+        real_recipient_channel = self.dereference_local_channel(recipient_channel)
         self.answer_channel(real_recipient_channel)
 
     def same_linkedid(self, channel_left, exclude=None):
@@ -133,10 +137,9 @@ class TestTransfers(IntegrationTest):
             except ARINotInStasis:
                 return False
 
-        new_channel = self.ari.channels.originate(endpoint=ENDPOINT,
+        new_channel = self.ari.channels.originate(endpoint=ENDPOINT_AUTOANSWER,
                                                   app=STASIS_APP,
                                                   appArgs=[STASIS_APP_INSTANCE])
-        self.answer_channel(new_channel)
         until.true(channel_is_in_stasis, new_channel.id, tries=2)
         bridge.addChannel(channel=new_channel.id)
 
@@ -156,13 +159,17 @@ class TestTransfers(IntegrationTest):
     def given_bridged_call_not_stasis(self, caller_uuid=None, callee_uuid=None):
         caller_uuid = caller_uuid or str(uuid.uuid4())
         callee_uuid = callee_uuid or str(uuid.uuid4())
-        caller = self.ari.channels.originate(endpoint=ENDPOINT, context='local', extension='dial', priority=1,
+        caller = self.ari.channels.originate(endpoint=ENDPOINT_AUTOANSWER,
+                                             context='local',
+                                             extension='dial-autoanswer',
                                              variables={'variables': {'XIVO_USERUUID': caller_uuid,
                                                                       '__CALLEE_XIVO_USERUUID': callee_uuid}})
-        self.answer_channel(caller)
 
         def callee_is_ringing(caller):
-            return self.same_linkedid(caller)
+            try:
+                return self.same_linkedid(caller)
+            except ARINotFound:
+                return False
 
         def channels_are_talking(caller, callee):
             try:
@@ -173,8 +180,7 @@ class TestTransfers(IntegrationTest):
             except StopIteration:
                 return False
 
-        callee = until.true(callee_is_ringing, caller, tries=2)
-        self.answer_channel(callee)
+        callee = until.true(callee_is_ringing, caller, tries=5)
         until.true(channels_are_talking, caller, callee, tries=2)
         return caller.id, callee.id
 
@@ -197,11 +203,10 @@ class TestTransfers(IntegrationTest):
         response = self.ctid_ng.create_transfer(transferred_channel_id,
                                                 initiator_channel_id,
                                                 variables=variables,
-                                                **RECIPIENT)
+                                                **RECIPIENT_AUTOANSWER)
 
         transfer_id = response['id']
         recipient_channel_id = response['recipient_call']
-        self.answer_recipient_channel(recipient_channel_id)
 
         def channel_is_in_bridge(channel_id, bridge_id):
             return channel_id in self.ari.bridges.get(bridgeId=bridge_id).json['channels']
