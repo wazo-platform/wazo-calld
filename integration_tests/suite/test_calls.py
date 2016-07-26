@@ -25,6 +25,8 @@ from .test_api.confd import MockUser
 from .test_api.confd import MockUserLine
 from .test_api.constants import VALID_TOKEN
 
+SOME_LOCAL_CHANNEL_NAME = 'Local/channel'
+
 
 class TestListCalls(IntegrationTest):
 
@@ -139,15 +141,14 @@ class TestListCalls(IntegrationTest):
             has_entries({'call_id': 'first-id'}),
             has_entries({'call_id': 'third-id'}))))
 
-    def test_given_recipient_local_channels_when_list_then_talking_to_is_none(self):
+    def test_given_local_channels_when_list_then_talking_to_is_none(self):
         self.ari.set_channels(MockChannel(id='first-id'),
-                              MockChannel(id='second-id', name='Local/second'))
+                              MockChannel(id='second-id', name=SOME_LOCAL_CHANNEL_NAME))
         self.ari.set_bridges(MockBridge(id='bridge-id', channels=['first-id', 'second-id']))
         self.confd.set_users(MockUser(uuid='user1-uuid'),
                              MockUser(uuid='user2-uuid'))
         self.ari.set_channel_variable({'first-id': {'XIVO_USERUUID': 'user1-uuid'},
-                                       'second-id': {'XIVO_USERUUID': 'user2-uuid',
-                                                     'XIVO_TRANSFER_ROLE': 'recipient'}})
+                                       'second-id': {'XIVO_USERUUID': 'user2-uuid'}})
 
         calls = self.ctid_ng.list_calls()
 
@@ -262,10 +263,9 @@ class TestUserListCalls(IntegrationTest):
         user_uuid = 'user-uuid'
         self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
         self.ari.set_channels(MockChannel(id='first-id'),
-                              MockChannel(id='second-id', name='Local/second'))
+                              MockChannel(id='second-id', name=SOME_LOCAL_CHANNEL_NAME))
         self.ari.set_channel_variable({'first-id': {'XIVO_USERUUID': user_uuid},
-                                       'second-id': {'XIVO_USERUUID': user_uuid,
-                                                     'XIVO_TRANSFER_ROLE': 'recipient'}})
+                                       'second-id': {'XIVO_USERUUID': user_uuid}})
 
         calls = self.ctid_ng.list_my_calls(token=token)
 
@@ -390,6 +390,19 @@ class TestUserDeleteCall(IntegrationTest):
             'method': 'DELETE',
             'path': '/ari/channels/call-id',
         }))))
+
+    def test_local_channel_when_delete_call_then_call_hungup(self):
+        call_id = 'call-id'
+        user_uuid = 'user-uuid'
+        token = 'my-token'
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
+        self.confd.set_users(MockUser(uuid=user_uuid))
+        self.ari.set_channels(MockChannel(id=call_id, state='Up', name=SOME_LOCAL_CHANNEL_NAME))
+        self.ari.set_channel_variable({call_id: {'XIVO_USERUUID': user_uuid}})
+
+        result = self.ctid_ng.delete_user_me_call_result(call_id, token=token)
+
+        assert_that(result.status_code, equal_to(404))
 
 
 class TestCreateCall(IntegrationTest):

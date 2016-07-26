@@ -11,7 +11,7 @@ sync:
     TIMEOUT: "${INTEGRATION_TEST_TIMEOUT}"
 
 ari:
-  image: quintana/asterisk
+  image: ari-real
   ports:
     - "5039:5039"
   volumes:
