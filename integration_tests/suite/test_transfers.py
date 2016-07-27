@@ -154,9 +154,7 @@ class TestTransfers(IntegrationTest):
         callee.setChannelVar(variable='XIVO_USERUUID', value=callee_uuid)
 
         def channels_have_been_created_in_ctid_ng(caller_id, callee_id):
-            print bus_events.accumulate()
             created_channel_ids = [message['data']['call_id'] for message in bus_events.accumulate()]
-            print created_channel_ids
             return (caller_id in created_channel_ids and
                     callee_id in created_channel_ids)
 

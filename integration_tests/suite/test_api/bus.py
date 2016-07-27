@@ -14,6 +14,7 @@ from kombu.exceptions import TimeoutError
 
 from .constants import BUS_EXCHANGE_NAME
 from .constants import BUS_EXCHANGE_TYPE
+from .constants import BUS_QUEUE_NAME
 from .constants import BUS_URL
 
 
