@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: GPL-3.0+
 
 import json
+import uuid
 
 from kombu import Connection
 from kombu import Consumer
@@ -14,7 +15,6 @@ from kombu.exceptions import TimeoutError
 from .constants import BUS_EXCHANGE_NAME
 from .constants import BUS_EXCHANGE_TYPE
 from .constants import BUS_URL
-from .constants import BUS_QUEUE_NAME
 
 
 class BusClient(object):
@@ -34,8 +34,9 @@ class BusClient(object):
     @classmethod
     def accumulator(cls, routing_key, exchange=BUS_EXCHANGE_NAME):
         exchange = Exchange(exchange, type=BUS_EXCHANGE_TYPE)
+        queue_name = str(uuid.uuid4())
         with Connection(BUS_URL) as conn:
-            queue = Queue(exchange=exchange, routing_key=routing_key, channel=conn.channel())
+            queue = Queue(name=queue_name, exchange=exchange, routing_key=routing_key, channel=conn.channel())
             queue.declare()
             queue.purge()
             accumulator = BusMessageAccumulator(queue)
