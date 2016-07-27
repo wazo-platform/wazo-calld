@@ -5,8 +5,6 @@
 
 import ari
 import logging
-import requests
-import time
 import uuid
 
 from ari.exceptions import ARINotFound
@@ -149,10 +147,20 @@ class TestTransfers(IntegrationTest):
         caller_uuid = caller_uuid or str(uuid.uuid4())
         callee_uuid = callee_uuid or str(uuid.uuid4())
         bridge = self.ari.bridges.create(type='mixing')
+        bus_events = self.bus.accumulator('calls.call.created')
         caller = self.add_channel_to_bridge(bridge)
         caller.setChannelVar(variable='XIVO_USERUUID', value=caller_uuid)
         callee = self.add_channel_to_bridge(bridge)
         callee.setChannelVar(variable='XIVO_USERUUID', value=callee_uuid)
+
+        def channels_have_been_created_in_ctid_ng(caller_id, callee_id):
+            print bus_events.accumulate()
+            created_channel_ids = [message['data']['call_id'] for message in bus_events.accumulate()]
+            print created_channel_ids
+            return (caller_id in created_channel_ids and
+                    callee_id in created_channel_ids)
+
+        until.true(channels_have_been_created_in_ctid_ng, callee.id, caller.id, tries=3)
 
         return caller.id, callee.id
 

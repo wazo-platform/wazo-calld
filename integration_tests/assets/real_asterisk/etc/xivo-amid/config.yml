@@ -18,4 +18,11 @@ auth:
   host: auth
   verify_certificate: /usr/local/share/ssl/auth/server.crt
 
-publish_ami_events: False
+publish_ami_events: True
+
+bus:
+  host: rabbitmq
+  username: guest
+  password: guest
+
+uuid: 08c56466-8f29-45c7-9856-92bf1ba89b92

@@ -13,15 +13,20 @@ sync:
 
 amid:
   image: xivo/xivo-amid
+  expose:
+    - "9491"
   volumes:
     - "./ssl:/usr/local/share/ssl"
     - "./etc/xivo-amid:/etc/xivo-amid"
   links:
     - auth
     - ari
+    - rabbitmq
 
 ari:
   image: ari-real
+  expose:
+    - "5038"
   ports:
     - "5039:5039"
   volumes:

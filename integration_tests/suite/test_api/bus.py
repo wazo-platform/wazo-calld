@@ -32,6 +32,16 @@ class BusClient(object):
             return True
 
     @classmethod
+    def accumulator(cls, routing_key, exchange=BUS_EXCHANGE_NAME):
+        exchange = Exchange(exchange, type=BUS_EXCHANGE_TYPE)
+        with Connection(BUS_URL) as conn:
+            queue = Queue(exchange=exchange, routing_key=routing_key, channel=conn.channel())
+            queue.declare()
+            queue.purge()
+            accumulator = BusMessageAccumulator(queue)
+        return accumulator
+
+    @classmethod
     def listen_events(cls, routing_key, exchange=BUS_EXCHANGE_NAME):
         exchange = Exchange(exchange, type=BUS_EXCHANGE_TYPE)
         with Connection(BUS_URL) as conn:
@@ -117,3 +127,26 @@ class BusClient(object):
                 'XIVO_USERUUID': 'my-uuid',
             }
         }, 'ami.UserEvent')
+
+
+class BusMessageAccumulator(object):
+
+    def __init__(self, queue):
+        self._queue = queue
+        self._events = []
+
+    def _on_event(self, body, message):
+        # events are already decoded, thanks to the content-type
+        self._events.append(body)
+        message.ack()
+
+    def accumulate(self):
+        with Connection(BUS_URL) as conn:
+            with Consumer(conn, self._queue, callbacks=[self._on_event]):
+                try:
+                    while True:
+                        conn.drain_events(timeout=0.5)
+                except TimeoutError:
+                    pass
+
+        return self._events
