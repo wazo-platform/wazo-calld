@@ -24,5 +24,7 @@ bus:
   host: rabbitmq
   username: guest
   password: guest
+  startup_connection_tries: 10
+  startup_connection_delay: 1
 
 uuid: 08c56466-8f29-45c7-9856-92bf1ba89b92
