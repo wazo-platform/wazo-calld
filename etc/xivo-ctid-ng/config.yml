@@ -94,4 +94,5 @@ enabled_plugins:
   - calls
   - chats
   - presences
+  - status
   - transfers
