@@ -319,6 +319,17 @@ class CtidNgClient(object):
                               verify=False)
         return result
 
+    def get_status_result(self, token=None):
+        result = requests.get('https://localhost:9500/1.0/status',
+                              headers={'X-Auth-Token': token},
+                              verify=False)
+        return result
+
+    def status(self, token=VALID_TOKEN):
+        response = self.get_status_result(token)
+        assert_that(response.status_code, equal_to(200))
+        return response.json()
+
     @contextmanager
     def send_no_content_type(self):
         def no_json(decorated):

@@ -4,8 +4,9 @@
 
 from .test_api.base import IntegrationTest
 from .test_api.chat import new_chat_message, new_user_chat_message
-from .test_api.presence import new_presence_message, new_user_presence_message
 from .test_api.constants import INVALID_ACL_TOKEN, VALID_TOKEN
+from .test_api.presence import new_presence_message, new_user_presence_message
+from .test_api.wait_strategy import CtidNgUpWaitStrategy
 
 from hamcrest import assert_that
 from hamcrest import contains_string
@@ -40,6 +41,7 @@ class TestAuthentication(IntegrationTest):
 class TestAuthenticationError(IntegrationTest):
 
     asset = 'no_auth_server'
+    wait_strategy = CtidNgUpWaitStrategy()
 
     def test_no_auth_server_gives_503(self):
         result = self.ctid_ng.get_call_result('my-call', token=None)

@@ -16,6 +16,7 @@ from .confd import ConfdClient
 from .constants import ASSET_ROOT
 from .ctid_ng import CtidNgClient
 from .stasis import StasisClient
+from .wait_strategy import CtidNgConnectionsOkWaitStrategy
 
 logger = logging.getLogger(__name__)
 
@@ -26,16 +27,19 @@ class IntegrationTest(AssetLaunchingTestCase):
 
     assets_root = ASSET_ROOT
     service = 'ctid-ng'
+    wait_strategy = CtidNgConnectionsOkWaitStrategy()
 
-    def __init__(self, *args, **kwargs):
-        super(IntegrationTest, self).__init__(*args, **kwargs)
-        self.amid = AmidClient()
-        self.ari = ARIClient()
-        self.auth = AuthClient()
-        self.bus = BusClient()
-        self.confd = ConfdClient()
-        self.ctid_ng = CtidNgClient()
-        self.stasis = StasisClient()
+    @classmethod
+    def setUpClass(cls):
+        super(IntegrationTest, cls).setUpClass()
+        cls.amid = AmidClient()
+        cls.ari = ARIClient()
+        cls.auth = AuthClient()
+        cls.bus = BusClient()
+        cls.confd = ConfdClient()
+        cls.ctid_ng = CtidNgClient()
+        cls.stasis = StasisClient()
+        cls.wait_strategy.wait(cls)
 
     @classmethod
     def wait_for_ctid_ng_to_connect_to_bus(cls):

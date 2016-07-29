@@ -737,6 +737,23 @@
                     }
                 }
             }
+        },
+        "/status": {
+            "get": {
+                "summary": "Print infos about internal status of xivo-ctid-ng",
+                "description": "**Required ACL:** `ctid-ng.status.read`",
+                "tags": [
+                    "status"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The internal infos of xivo-ctid-ng",
+                        "schema": {
+                            "$ref": "#/definitions/StatusSummary"
+                        }
+                    }
+                }
+            }
         }
     },
     "responses": {
@@ -947,6 +964,34 @@
                     "format": "timestamp"
                 }
             }
+        },
+        "StatusSummary": {
+            "type": "object",
+            "properties": {
+                "connections": {
+                    "schema": {
+                        "$ref": "#/definitions/ConnectionsStatusSummary"
+                    }
+                }
+            }
+        },
+        "ConnectionsStatusSummary": {
+            "type": "object",
+            "properties": {
+                "ari": {
+                    "$ref": "#/definitions/StatusValue"
+                },
+                "bus_consumer": {
+                    "$ref": "#/definitions/StatusValue"
+                }
+            }
+        },
+        "StatusValue": {
+            "type": "string",
+            "enum": [
+                "fail",
+                "ok"
+            ]
         },
         "TalkingTo": {
             "type": "object",

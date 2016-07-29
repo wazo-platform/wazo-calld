@@ -34,3 +34,4 @@ bus:
 
 enabled_plugins:
   - calls
+  - status
