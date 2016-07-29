@@ -58,6 +58,7 @@ class CoreBusConsumer(ConsumerMixin):
         exchange = Exchange(global_config['bus']['exchange_name'],
                             type=global_config['bus']['exchange_type'])
         self._queue = kombu.Queue(exchange=exchange, routing_key=self._KEY, exclusive=True)
+        self._is_running = False
 
     def run(self):
         logger.info("Running AMQP consumer")
@@ -69,6 +70,17 @@ class CoreBusConsumer(ConsumerMixin):
         return [
             Consumer(self._queue, callbacks=[self._on_bus_message]),
         ]
+
+    def on_connection_error(self, exc, interval):
+        super(CoreBusConsumer, self).on_connection_error(exc, interval)
+        self._is_running = False
+
+    def on_connection_revived(self):
+        super(CoreBusConsumer, self).on_connection_revived()
+        self._is_running = True
+
+    def is_running(self):
+        return self._is_running
 
     def on_ami_event(self, event_type, callback):
         self._events_pubsub.subscribe(event_type, callback)

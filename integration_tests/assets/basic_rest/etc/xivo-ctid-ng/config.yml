@@ -54,4 +54,5 @@ enabled_plugins:
   - chats
   - presences
   - plugin_list
+  - status
   - transfers

@@ -80,9 +80,16 @@ class CoreARI(object):
 
     @contextmanager
     def _running(self):
+        logger.debug('RUNNING')
         self._is_running = True
-        yield
-        self._is_running = False
+        try:
+            yield
+        finally:
+            logger.debug('NOT RUNNING')
+            self._is_running = False
+
+    def is_running(self):
+        return self._is_running
 
     def _connection_error(self, error):
         logger.warning('ARI connection error: %s...', error)

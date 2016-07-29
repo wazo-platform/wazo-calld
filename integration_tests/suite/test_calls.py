@@ -24,6 +24,7 @@ from .test_api.confd import MockLine
 from .test_api.confd import MockUser
 from .test_api.confd import MockUserLine
 from .test_api.constants import VALID_TOKEN
+from .test_api.wait_strategy import CtidNgUpWaitStrategy
 
 SOME_LOCAL_CHANNEL_NAME = 'Local/channel'
 
@@ -800,6 +801,7 @@ class TestNoConfd(IntegrationTest):
 class TestFailingARI(IntegrationTest):
 
     asset = 'failing_ari'
+    wait_strategy = CtidNgUpWaitStrategy()
 
     def setUp(self):
         super(TestFailingARI, self).setUp()

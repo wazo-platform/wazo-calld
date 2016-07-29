@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015 by Avencall
+# Copyright (C) 2015-2016 Avencall
 # SPDX-License-Identifier: GPL-3.0+
 
 from hamcrest import assert_that
@@ -7,10 +7,12 @@ from hamcrest import contains_string
 from xivo_test_helpers import until
 
 from .test_api.base import IntegrationTest
+from .test_api.wait_strategy import NoWaitStrategy
 
 
 class TestHTTPSMissingCertificate(IntegrationTest):
     asset = 'no_ssl_certificate'
+    wait_strategy = NoWaitStrategy()
 
     def test_given_no_ssl_certificate_when_ctid_ng_starts_then_ctid_ng_stops(self):
         def ctid_ng_is_stopped():
@@ -25,6 +27,7 @@ class TestHTTPSMissingCertificate(IntegrationTest):
 
 class TestHTTPSMissingPrivateKey(IntegrationTest):
     asset = 'no_ssl_private_key'
+    wait_strategy = NoWaitStrategy()
 
     def test_given_no_ssl_private_key_when_ctid_ng_starts_then_ctid_ng_stops(self):
         def ctid_ng_is_stopped():

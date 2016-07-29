@@ -737,6 +737,20 @@
                     }
                 }
             }
+        },
+        "/status": {
+            "get": {
+                "summary": "Print infos about internal status of xivo-ctid-ng",
+                "description": "**Required ACL:** `ctid-ng.status.read`",
+                "tags": [
+                    "status"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The internal infos of xivo-ctid-ng"
+                    }
+                }
+            }
         }
     },
     "responses": {

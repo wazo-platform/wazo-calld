@@ -10,11 +10,13 @@ from hamcrest import has_length
 from xivo_test_helpers import until
 
 from .test_api.base import IntegrationTest
+from .test_api.wait_strategy import NoWaitStrategy
 
 
 class TestNoARI(IntegrationTest):
 
     asset = 'no_ari'
+    wait_strategy = NoWaitStrategy()
 
     def test_given_no_ari_when_ctid_ng_starts_then_ctid_ng_stops(self):
         def ctid_ng_is_stopped():

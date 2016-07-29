@@ -37,6 +37,7 @@ from .test_api.confd import MockUserLine
 from .test_api.auth import MockUserToken
 from .test_api.hamcrest_ import HamcrestARIBridge
 from .test_api.hamcrest_ import HamcrestARIChannel
+from .test_api.wait_strategy import CtidNgUpWaitStrategy
 
 ARI_CONFIG = {
     'base_url': 'http://localhost:5039',
@@ -1353,6 +1354,7 @@ class TestTransferFromNonStasis(TestTransfers):
 class TestTransferFailingARI(IntegrationTest):
 
     asset = 'failing_ari'
+    wait_strategy = CtidNgUpWaitStrategy()
 
     def test_given_no_ari_when_transfer_start_then_error_503(self):
         transferred_channel_id = SOME_CHANNEL_ID

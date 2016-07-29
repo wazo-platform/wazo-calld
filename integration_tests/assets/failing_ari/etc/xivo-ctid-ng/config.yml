@@ -39,4 +39,5 @@ confd:
 
 enabled_plugins:
   - calls
+  - status
   - transfers
