@@ -80,12 +80,10 @@ class CoreARI(object):
 
     @contextmanager
     def _running(self):
-        logger.debug('RUNNING')
         self._is_running = True
         try:
             yield
         finally:
-            logger.debug('NOT RUNNING')
             self._is_running = False
 
     def is_running(self):
