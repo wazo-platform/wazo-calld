@@ -120,8 +120,8 @@ class TestTransfers(IntegrationTest):
         for channel_right_candidate in self.ari.channels.list():
             try:
                 if (channel_right_candidate.getChannelVar(variable='CHANNEL(linkedid)')['value'] == linkedid and
-                    channel_right_candidate.id != channel_left.id and
-                    channel_right_candidate.id not in [excluded.id for excluded in exclude]):
+                        channel_right_candidate.id != channel_left.id and
+                        channel_right_candidate.id not in [excluded.id for excluded in exclude]):
                     return channel_right_candidate
             except ARINotFound:
                 continue
@@ -175,7 +175,7 @@ class TestTransfers(IntegrationTest):
         def callee_is_ringing(caller):
             try:
                 return self.same_linkedid(caller)
-            except ARINotFound:
+            except Exception:
                 return False
 
         def channels_are_talking(caller, callee):
