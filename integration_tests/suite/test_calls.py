@@ -685,7 +685,7 @@ class TestUserCreateCall(IntegrationTest):
         self.ctid_ng.originate_me(extension='my-extension',
                                   variables={'MY_VARIABLE': 'my-value',
                                              'SECOND_VARIABLE': 'my-second-value',
-                                             'CONNECTEDLINE(all)': 'my-extension',
+                                             'CONNECTEDLINE(name)': 'my-connected-line',
                                              'XIVO_FIX_CALLERID': '1'},
                                   token=token)
 
@@ -698,7 +698,8 @@ class TestUserCreateCall(IntegrationTest):
                                ['endpoint', 'sip/line-name']),
             'json': has_entries({'variables': has_entries({'MY_VARIABLE': 'my-value',
                                                            'SECOND_VARIABLE': 'my-second-value',
-                                                           'CONNECTEDLINE(all)': 'my-extension',
+                                                           'CONNECTEDLINE(name)': 'my-connected-line',
+                                                           'CONNECTEDLINE(num)': 'my-extension',
                                                            'CALLERID(name)': 'my-extension',
                                                            'CALLERID(num)': 'my-extension',
                                                            'XIVO_FIX_CALLERID': '1'})}),
@@ -719,7 +720,8 @@ class TestUserCreateCall(IntegrationTest):
         assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
             'method': 'POST',
             'path': '/ari/channels',
-            'json': has_entries({'variables': {'CONNECTEDLINE(all)': 'my-extension',
+            'json': has_entries({'variables': {'CONNECTEDLINE(name)': 'my-extension',
+                                               'CONNECTEDLINE(num)': 'my-extension',
                                                'CALLERID(name)': 'my-extension',
                                                'CALLERID(num)': 'my-extension',
                                                'XIVO_FIX_CALLERID': '1'}}),
