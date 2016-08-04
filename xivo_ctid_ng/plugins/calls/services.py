@@ -67,7 +67,8 @@ class CallsService(object):
             raise InvalidExtension(context, extension)
 
         variables = request.get('variables', {})
-        variables.setdefault('CONNECTEDLINE(all)', extension)
+        variables.setdefault('CONNECTEDLINE(name)', extension)
+        variables.setdefault('CONNECTEDLINE(num)', '' if extension.startswith('#') else extension)
         variables.setdefault('CALLERID(name)', extension)
         variables.setdefault('CALLERID(num)', extension)
         variables.setdefault('XIVO_FIX_CALLERID', '1')

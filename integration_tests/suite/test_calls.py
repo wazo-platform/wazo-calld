@@ -449,7 +449,7 @@ class TestCreateCall(IntegrationTest):
                                context='my-context',
                                variables={'MY_VARIABLE': 'my-value',
                                           'SECOND_VARIABLE': 'my-second-value',
-                                          'CONNECTEDLINE(all)': 'my-connected-line',
+                                          'CONNECTEDLINE(name)': 'my-connected-line',
                                           'XIVO_FIX_CALLERID': '1'})
 
         assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
@@ -463,7 +463,8 @@ class TestCreateCall(IntegrationTest):
                                                            'SECOND_VARIABLE': 'my-second-value',
                                                            'CALLERID(name)': 'my-extension',
                                                            'CALLERID(num)': 'my-extension',
-                                                           'CONNECTEDLINE(all)': 'my-connected-line',
+                                                           'CONNECTEDLINE(name)': 'my-connected-line',
+                                                           'CONNECTEDLINE(num)': 'my-extension',
                                                            'XIVO_FIX_CALLERID': '1'})}),
         }))))
 
@@ -483,9 +484,38 @@ class TestCreateCall(IntegrationTest):
         assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
             'method': 'POST',
             'path': '/ari/channels',
-            'json': has_entries({'variables': {'CONNECTEDLINE(all)': 'my-extension',
+            'json': has_entries({'variables': {'CONNECTEDLINE(num)': 'my-extension',
+                                               'CONNECTEDLINE(name)': 'my-extension',
                                                'CALLERID(name)': 'my-extension',
                                                'CALLERID(num)': 'my-extension',
+                                               'XIVO_FIX_CALLERID': '1'}}),
+        }))))
+
+    def test_when_create_call_with_pound_exten_then_connected_line_num_is_empty(self):
+        '''
+        This is a workaround for chan-sip bug that does not SIP-encode the pound sign
+        in the SIP header To, causing Aastra phones to reject the INVITE.
+        '''
+
+        user_uuid = 'user-uuid'
+        self.confd.set_users(MockUser(uuid='user-uuid'))
+        self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip'))
+        self.confd.set_user_lines({'user-uuid': [MockUserLine('line-id')]})
+        self.ari.set_originates(MockChannel(id='new-call-id'))
+        self.amid.set_valid_exten('my-context', '#pound', 'my-priority')
+
+        self.ctid_ng.originate(source=user_uuid,
+                               priority='my-priority',
+                               extension='#pound',
+                               context='my-context')
+
+        assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
+            'method': 'POST',
+            'path': '/ari/channels',
+            'json': has_entries({'variables': {'CONNECTEDLINE(num)': '',
+                                               'CONNECTEDLINE(name)': '#pound',
+                                               'CALLERID(name)': '#pound',
+                                               'CALLERID(num)': '#pound',
                                                'XIVO_FIX_CALLERID': '1'}}),
         }))))
 
