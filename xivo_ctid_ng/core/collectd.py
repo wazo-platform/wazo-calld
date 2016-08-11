@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015 by Avencall
+# Copyright (C) 2015-2016 Avencall
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
@@ -31,8 +31,11 @@ class CoreCollectd(object):
     def _make_publisher(self):
         bus_url = 'amqp://{username}:{password}@{host}:{port}//'.format(**self.config)
         bus_connection = Connection(bus_url)
-        bus_exchange = Exchange(self.config['exchange_name'], type=self.config['exchange_type'])
-        bus_producer = Producer(bus_connection, exchange=bus_exchange, auto_declare=False)
+        same_exchange_arguments_as_collectd = {'arguments': {'auto_delete': True}, 'durable': False}
+        bus_exchange = Exchange(self.config['exchange_name'],
+                                type=self.config['exchange_type'],
+                                **same_exchange_arguments_as_collectd)
+        bus_producer = Producer(bus_connection, exchange=bus_exchange, auto_declare=True)
         bus_marshaler = CollectdMarshaler(self._uuid)
         return Publisher(bus_producer, bus_marshaler)
 
