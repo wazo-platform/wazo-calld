@@ -6,8 +6,6 @@ import os
 import time
 
 from hamcrest import assert_that
-from hamcrest import has_entries
-from hamcrest import has_entry
 from hamcrest import has_item
 from hamcrest import matches_regexp
 from hamcrest import not_
@@ -15,6 +13,7 @@ from xivo_test_helpers import until
 
 from .test_api.ari_ import MockChannel
 from .test_api.base import IntegrationTest
+from .test_api.constants import BUS_EXCHANGE_COLLECTD
 from .test_api.constants import STASIS_APP_NAME
 from .test_api.constants import STASIS_APP_INSTANCE_NAME
 from .test_api.ctid_ng import new_call_id
@@ -36,7 +35,7 @@ class TestCollectd(IntegrationTest):
 
     def test_when_new_channel_then_stat_channel_start(self):
         channel_id = 'channel-id'
-        self.bus.listen_events(routing_key='collectd.channels', exchange='collectd')
+        self.bus.listen_events(routing_key='collectd.channels', exchange=BUS_EXCHANGE_COLLECTD)
 
         self.bus.send_ami_newchannel_event(channel_id=channel_id)
 
@@ -48,7 +47,7 @@ class TestCollectd(IntegrationTest):
 
     def test_when_channel_ends_then_stat_channel_ended(self):
         channel_id = 'channel-id'
-        self.bus.listen_events(routing_key='collectd.channels', exchange='collectd')
+        self.bus.listen_events(routing_key='collectd.channels', exchange=BUS_EXCHANGE_COLLECTD)
 
         self.bus.send_ami_hangup_event(channel_id=channel_id)
 
@@ -61,7 +60,7 @@ class TestCollectd(IntegrationTest):
     def test_when_new_stasis_channel_then_stat_call_start(self):
         call_id = new_call_id()
         self.ari.set_channels(MockChannel(id=call_id))
-        self.bus.listen_events(routing_key='collectd.calls', exchange='collectd')
+        self.bus.listen_events(routing_key='collectd.calls', exchange=BUS_EXCHANGE_COLLECTD)
 
         self.stasis.event_stasis_start(channel_id=call_id)
 
@@ -76,7 +75,7 @@ class TestCollectd(IntegrationTest):
     def test_when_stasis_channel_destroyed_then_stat_call_end(self):
         call_id = new_call_id()
         self.ari.set_channels(MockChannel(id=call_id))
-        self.bus.listen_events(routing_key='collectd.calls', exchange='collectd')
+        self.bus.listen_events(routing_key='collectd.calls', exchange=BUS_EXCHANGE_COLLECTD)
 
         self.stasis.event_stasis_start(channel_id=call_id)
         self.stasis.event_channel_destroyed(channel_id=call_id)
@@ -92,7 +91,7 @@ class TestCollectd(IntegrationTest):
     def test_when_stasis_channel_destroyed_then_stat_call_duration(self):
         call_id = new_call_id()
         self.ari.set_channels(MockChannel(id=call_id))
-        self.bus.listen_events(routing_key='collectd.calls', exchange='collectd')
+        self.bus.listen_events(routing_key='collectd.calls', exchange=BUS_EXCHANGE_COLLECTD)
 
         self.stasis.event_stasis_start(channel_id=call_id)
         self.stasis.event_channel_destroyed(channel_id=call_id,
@@ -110,7 +109,7 @@ class TestCollectd(IntegrationTest):
     def test_given_connected_when_stasis_channel_destroyed_then_do_not_stat_abandoned_call(self):
         call_id = new_call_id()
         self.ari.set_channels(MockChannel(id=call_id))
-        self.bus.listen_events(routing_key='collectd.calls', exchange='collectd')
+        self.bus.listen_events(routing_key='collectd.calls', exchange=BUS_EXCHANGE_COLLECTD)
 
         self.stasis.event_stasis_start(channel_id=call_id)
         self.stasis.event_channel_destroyed(channel_id=call_id,
@@ -127,7 +126,7 @@ class TestCollectd(IntegrationTest):
     def test_given_not_connected_when_stasis_channel_destroyed_then_stat_abandoned_call(self):
         call_id = new_call_id()
         self.ari.set_channels(MockChannel(id=call_id))
-        self.bus.listen_events(routing_key='collectd.calls', exchange='collectd')
+        self.bus.listen_events(routing_key='collectd.calls', exchange=BUS_EXCHANGE_COLLECTD)
 
         self.stasis.event_stasis_start(channel_id=call_id)
         self.stasis.event_channel_destroyed(channel_id=call_id)
@@ -143,7 +142,7 @@ class TestCollectd(IntegrationTest):
     def test_when_connect_then_stat_connect(self):
         call_id = new_call_id()
         self.ari.set_channels(MockChannel(id=call_id))
-        self.bus.listen_events(routing_key='collectd.calls', exchange='collectd')
+        self.bus.listen_events(routing_key='collectd.calls', exchange=BUS_EXCHANGE_COLLECTD)
 
         self.stasis.event_stasis_start(channel_id=call_id, stasis_args=['dialed_from', 'another-channel'])
 
@@ -168,7 +167,7 @@ class TestCollectdCtidNgRestart(IntegrationTest):
     def test_given_ctid_ng_restarts_during_call_when_stasis_channel_destroyed_then_stat_call_end(self):
         call_id = new_call_id()
         self.ari.set_channels(MockChannel(id=call_id))
-        self.bus.listen_events(routing_key='collectd.calls', exchange='collectd')
+        self.bus.listen_events(routing_key='collectd.calls', exchange=BUS_EXCHANGE_COLLECTD)
         self.stasis.event_stasis_start(channel_id=call_id)
 
         self.restart_service('ctid-ng')
@@ -201,7 +200,7 @@ class TestCollectdRabbitMQRestart(IntegrationTest):
         self.restart_service('rabbitmq')
         until.true(self.bus.is_up, tries=int(os.environ.get('INTEGRATION_TEST_TIMEOUT', 30)))  # wait for rabbitmq to come back up
 
-        self.bus.listen_events(routing_key='collectd.calls', exchange='collectd')
+        self.bus.listen_events(routing_key='collectd.calls', exchange=BUS_EXCHANGE_COLLECTD)
         self.stasis.event_channel_destroyed(channel_id=call_id)
 
         def assert_ctid_ng_sent_end_call_stat():
