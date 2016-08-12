@@ -7,15 +7,13 @@ import uuid
 
 from kombu import Connection
 from kombu import Consumer
-from kombu import Exchange
 from kombu import Producer
 from kombu import Queue
 from kombu.exceptions import TimeoutError
 
-from .constants import BUS_EXCHANGE_NAME
-from .constants import BUS_EXCHANGE_TYPE
 from .constants import BUS_QUEUE_NAME
 from .constants import BUS_URL
+from .constants import BUS_EXCHANGE_XIVO
 
 
 class BusClient(object):
@@ -23,9 +21,8 @@ class BusClient(object):
     @classmethod
     def is_up(cls):
         try:
-            bus_exchange = Exchange(BUS_EXCHANGE_NAME, type=BUS_EXCHANGE_TYPE)
             with Connection(BUS_URL) as connection:
-                producer = Producer(connection, exchange=bus_exchange, auto_declare=True)
+                producer = Producer(connection, exchange=BUS_EXCHANGE_XIVO, auto_declare=True)
                 producer.publish('', routing_key='test')
         except IOError:
             return False
@@ -33,8 +30,7 @@ class BusClient(object):
             return True
 
     @classmethod
-    def accumulator(cls, routing_key, exchange=BUS_EXCHANGE_NAME):
-        exchange = Exchange(exchange, type=BUS_EXCHANGE_TYPE)
+    def accumulator(cls, routing_key, exchange=BUS_EXCHANGE_XIVO):
         queue_name = str(uuid.uuid4())
         with Connection(BUS_URL) as conn:
             queue = Queue(name=queue_name, exchange=exchange, routing_key=routing_key, channel=conn.channel())
@@ -44,8 +40,7 @@ class BusClient(object):
         return accumulator
 
     @classmethod
-    def listen_events(cls, routing_key, exchange=BUS_EXCHANGE_NAME):
-        exchange = Exchange(exchange, type=BUS_EXCHANGE_TYPE)
+    def listen_events(cls, routing_key, exchange=BUS_EXCHANGE_XIVO):
         with Connection(BUS_URL) as conn:
             queue = Queue(BUS_QUEUE_NAME, exchange=exchange, routing_key=routing_key, channel=conn.channel())
             queue.declare()
@@ -79,9 +74,8 @@ class BusClient(object):
 
     @classmethod
     def send_event(cls, event, routing_key):
-        bus_exchange = Exchange(BUS_EXCHANGE_NAME, type=BUS_EXCHANGE_TYPE)
         with Connection(BUS_URL) as connection:
-            producer = Producer(connection, exchange=bus_exchange, auto_declare=True)
+            producer = Producer(connection, exchange=BUS_EXCHANGE_XIVO, auto_declare=True)
             producer.publish(json.dumps(event), routing_key=routing_key, content_type='application/json')
 
     @classmethod
