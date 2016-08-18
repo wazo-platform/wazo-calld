@@ -8,6 +8,7 @@ test-setup: build-ctid-ng build-ari
 	docker pull n3llyb0y/wait
 	docker pull quintana/asterisk
 	docker pull xivo/xivo-amid
+	docker pull swaggerapi/swagger-validator
 
 build-ctid-ng: egg-info
 	docker build -t xivo/xivo-ctid-ng ..
