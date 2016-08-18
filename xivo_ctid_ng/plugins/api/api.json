@@ -122,6 +122,7 @@
                 ],
                 "responses": {
                     "200": {
+                        "description": "Call",
                         "schema": {
                             "$ref": "#/definitions/Call"
                         }
@@ -969,9 +970,7 @@
             "type": "object",
             "properties": {
                 "connections": {
-                    "schema": {
-                        "$ref": "#/definitions/ConnectionsStatusSummary"
-                    }
+                    "$ref": "#/definitions/ConnectionsStatusSummary"
                 }
             }
         },
