@@ -1,0 +1,17 @@
+rest_api:
+  listen: 0.0.0.0
+  port: 9500
+  certificate: /usr/local/share/ssl/ctid-ng/server.crt
+  private_key: /usr/local/share/ssl/ctid-ng/server.key
+
+ari:
+  connection:
+    base_url: http://ari:5039
+    username: xivo
+    password: Nasheow8Eag
+
+auth:
+  key_file: /etc/xivo-ctid-ng/key.yml
+
+enabled_plugins:
+  - api
