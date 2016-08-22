@@ -163,3 +163,8 @@ class TestAuthenticationCoverage(IntegrationTest):
         result = self.ctid_ng.put_user_me_presence_result(new_user_me_presence_message())
 
         assert_that(result.status_code, equal_to(401))
+
+    def test_auth_on_line_presence_read(self):
+        result = self.ctid_ng.get_line_presence_result('some-line-id')
+
+        assert_that(result.status_code, equal_to(401))

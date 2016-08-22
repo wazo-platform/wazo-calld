@@ -319,6 +319,12 @@ class CtidNgClient(object):
                               verify=False)
         return result
 
+    def get_line_presence_result(self, line_id, token=None):
+        result = requests.get('https://localhost:9500/1.0/lines/{line_id}/presences'.format(line_id=line_id),
+                              headers={'X-Auth-Token': token},
+                              verify=False)
+        return result
+
     def get_status_result(self, token=None):
         result = requests.get('https://localhost:9500/1.0/status',
                               headers={'X-Auth-Token': token},

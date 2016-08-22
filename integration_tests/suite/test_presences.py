@@ -133,3 +133,24 @@ class TestUserMeUpdatePresence(IntegrationTest):
                 }
             })))
         until.assert_(assert_function, tries=5)
+
+
+class TestGetLinePresence(IntegrationTest):
+
+    asset = 'basic_rest'
+
+    @classmethod
+    def setUpClass(cls):
+        super(TestGetLinePresence, cls).setUpClass()
+
+    def setUp(self):
+        super(TestGetLinePresence, self).setUp()
+
+    def test_get_presence_with_correct_values(self):
+        line_id = 'valid-id'
+        result = self.ctid_ng.get_line_presence_result(line_id, token=VALID_TOKEN)
+
+        assert_that(result.status_code, equal_to(200))
+        assert_that(result.json(), has_entries({'line_id': contains_string(line_id),
+                                                'xivo_uuid': contains_string(XIVO_UUID),
+                                                'presence': instance_of(int)}))

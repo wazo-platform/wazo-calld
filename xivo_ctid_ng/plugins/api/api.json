@@ -496,6 +496,36 @@
                 }
             }
         },
+        "/lines/{line_id}/presences": {
+            "get": {
+                "summary": "Get the current status of a line",
+                "description": "**Required ACL:** `ctid-ng.lines.{line_id}.presences.read`",
+                "parameters": [
+                    {
+                        "name": "line_id",
+                        "in": "path",
+                        "description": "The line's ID",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "tags": [
+                    "lines",
+                    "presences"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The current status of the line",
+                        "schema": {
+                            "$ref": "#/definitions/PresenceLine"
+                        }
+                    },
+                    "503": {
+                        "$ref": "#/responses/AnotherServiceUnavailable"
+                    }
+                }
+            }
+        },
         "/transfers": {
             "post": {
                 "summary": "Initiate a transfer",
@@ -918,6 +948,24 @@
                 "presence": {
                     "type": "string",
                     "description": "Current presence for the user. The list of presences and their meaning are defined in the CTI presence configuration. (Configurable only via the web interface)"
+                }
+            }
+        },
+        "PresenceLine": {
+            "type": "object",
+            "properties": {
+                "line_id": {
+                    "type": "string",
+                    "description": "The line's ID"
+                },
+                "xivo_uuid": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "UUID of the server on which this line is connected"
+                },
+                "presence": {
+                    "type": "integer",
+                    "description": "Current status for the line. The list of presences and their meaning are available in the CTI phone hints configuration."
                 }
             }
         },

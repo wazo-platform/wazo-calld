@@ -23,6 +23,12 @@ def user_presence_body(xivo_uuid, user_uuid, presence):
             'presence': presence}
 
 
+def line_presence_body(xivo_uuid, line_id, presence):
+    return {'xivo_uuid': xivo_uuid,
+            'line_id': line_id,
+            'presence': presence}
+
+
 class UserPresencesResource(AuthResource):
 
     def __init__(self, presences_service):
@@ -64,3 +70,15 @@ class UserMePresencesResource(AuthResource):
         self._presences_service.update_presence(user_uuid, request_body['presence'])
 
         return '', 204
+
+
+class LinePresencesResource(AuthResource):
+
+    def __init__(self, presences_service):
+        self._presences_service = presences_service
+
+    @required_acl('ctid-ng.lines.{line_id}.presences.read')
+    def get(self, line_id):
+        xivo_uuid, status = self._presences_service.get_presence(line_id)
+
+        return line_presence_body(xivo_uuid, line_id, status), 200
