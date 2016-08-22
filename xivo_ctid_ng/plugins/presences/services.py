@@ -9,7 +9,7 @@ import requests
 from .exceptions import XiVOCtidUnreachable
 
 
-class PresencesService(object):
+class UserPresencesService(object):
 
     def __init__(self, bus_publisher, ctid_client, ctid_config):
         self._bus_publisher = bus_publisher
