@@ -25,7 +25,7 @@ ctid-ng:
     - "./etc/xivo-ctid-ng:/etc/xivo-ctid-ng"
     - "./ssl-ctid-ng:/usr/share/xivo-certs"
   ports:
-    - "9500:9500"
+    - "9500"
   environment:
     XIVO_UUID: "08c56466-8f29-45c7-9856-92bf1ba89b92"
   links:

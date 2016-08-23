@@ -14,8 +14,17 @@ from .constants import VALID_TOKEN
 
 class CtidNgClient(object):
 
+    def __init__(self, host, port):
+        self._host = host
+        self._port = port
+
+    def url(self, *parts):
+        return 'https://{host}:{port}/1.0/{path}'.format(host=self._host,
+                                                         port=self._port,
+                                                         path='/'.join(unicode(part) for part in parts))
+
     def is_up(self):
-        url = u'https://localhost:9500/'
+        url = self.url()
         try:
             response = requests.get(url, verify=False)
             return response.status_code == 404
@@ -23,7 +32,7 @@ class CtidNgClient(object):
             return False
 
     def get_calls_result(self, application=None, application_instance=None, token=None):
-        url = u'https://localhost:9500/1.0/calls'
+        url = self.url('calls')
         params = {}
         if application:
             params['application'] = application
@@ -41,7 +50,7 @@ class CtidNgClient(object):
         return response.json()
 
     def get_users_me_calls_result(self, application=None, application_instance=None, token=None):
-        url = u'https://localhost:9500/1.0/users/me/calls'
+        url = self.url('users', 'me', 'calls')
         params = {}
         if application:
             params['application'] = application
@@ -59,8 +68,8 @@ class CtidNgClient(object):
         return response.json()
 
     def get_call_result(self, call_id, token=None):
-        url = u'https://localhost:9500/1.0/calls/{call_id}'
-        result = requests.get(url.format(call_id=call_id),
+        url = self.url('calls', call_id)
+        result = requests.get(url,
                               headers={'X-Auth-Token': token},
                               verify=False)
         return result
@@ -87,7 +96,7 @@ class CtidNgClient(object):
         return self.post_call_raw(body, token)
 
     def post_call_raw(self, body, token=None):
-        url = u'https://localhost:9500/1.0/calls'
+        url = self.url('calls')
         result = requests.post(url,
                                json=body,
                                headers={'X-Auth-Token': token},
@@ -100,7 +109,7 @@ class CtidNgClient(object):
         return response.json()
 
     def post_user_me_call_result(self, body, token=None):
-        url = u'https://localhost:9500/1.0/users/me/calls'
+        url = self.url('users', 'me', 'calls')
         result = requests.post(url,
                                json=body,
                                headers={'X-Auth-Token': token},
@@ -118,8 +127,8 @@ class CtidNgClient(object):
         return response.json()
 
     def delete_call_result(self, call_id, token=None):
-        url = u'https://localhost:9500/1.0/calls/{call_id}'
-        result = requests.delete(url.format(call_id=call_id),
+        url = self.url('calls', call_id)
+        result = requests.delete(url,
                                  headers={'X-Auth-Token': token},
                                  verify=False)
         return result
@@ -129,8 +138,8 @@ class CtidNgClient(object):
         assert_that(response.status_code, equal_to(204))
 
     def delete_user_me_call_result(self, call_id, token=None):
-        url = u'https://localhost:9500/1.0/users/me/calls/{call_id}'
-        result = requests.delete(url.format(call_id=call_id),
+        url = self.url('users', 'me', 'calls', call_id)
+        result = requests.delete(url,
                                  headers={'X-Auth-Token': token},
                                  verify=False)
         return result
@@ -140,15 +149,15 @@ class CtidNgClient(object):
         assert_that(response.status_code, equal_to(204))
 
     def get_plugins_result(self, token=None):
-        url = u'https://localhost:9500/1.0/plugins'
+        url = self.url('plugins')
         result = requests.get(url,
                               headers={'X-Auth-Token': token},
                               verify=False)
         return result
 
     def put_call_user_result(self, call_id, user_uuid, token):
-        url = u'https://localhost:9500/1.0/calls/{call_id}/user/{user_uuid}'
-        result = requests.put(url.format(call_id=call_id, user_uuid=user_uuid),
+        url = self.url('calls', call_id, 'user', user_uuid)
+        result = requests.put(url,
                               headers={'X-Auth-Token': token},
                               verify=False)
         return result
@@ -159,7 +168,7 @@ class CtidNgClient(object):
         return response.json()
 
     def get_users_me_transfers_result(self, token=None):
-        url = u'https://localhost:9500/1.0/users/me/transfers'
+        url = self.url('users', 'me', 'transfers')
         result = requests.get(url,
                               headers={'X-Auth-Token': token},
                               verify=False)
@@ -171,7 +180,8 @@ class CtidNgClient(object):
         return response.json()
 
     def post_transfer_result(self, body, token=None):
-        result = requests.post('https://localhost:9500/1.0/transfers',
+        url = self.url('transfers')
+        result = requests.post(url,
                                json=body,
                                headers={'X-Auth-Token': token},
                                verify=False)
@@ -204,7 +214,8 @@ class CtidNgClient(object):
         return response.json()
 
     def post_user_transfer_result(self, body, token=None):
-        result = requests.post('https://localhost:9500/1.0/users/me/transfers',
+        url = self.url('users', 'me', 'transfers')
+        result = requests.post(url,
                                json=body,
                                headers={'X-Auth-Token': token},
                                verify=False)
@@ -221,8 +232,8 @@ class CtidNgClient(object):
         return response.json()
 
     def put_complete_transfer_result(self, transfer_id, token=None):
-        url = u'https://localhost:9500/1.0/transfers/{transfer_id}/complete'
-        result = requests.put(url.format(transfer_id=transfer_id),
+        url = self.url('transfers', transfer_id, 'complete')
+        result = requests.put(url,
                               headers={'X-Auth-Token': token},
                               verify=False)
         return result
@@ -232,8 +243,8 @@ class CtidNgClient(object):
         assert_that(response.status_code, equal_to(204))
 
     def put_users_me_complete_transfer_result(self, transfer_id, token=None):
-        url = u'https://localhost:9500/1.0/users/me/transfers/{transfer_id}/complete'
-        result = requests.put(url.format(transfer_id=transfer_id),
+        url = self.url('users', 'me', 'transfers', transfer_id, 'complete')
+        result = requests.put(url,
                               headers={'X-Auth-Token': token},
                               verify=False)
         return result
@@ -243,8 +254,8 @@ class CtidNgClient(object):
         assert_that(response.status_code, equal_to(204))
 
     def delete_transfer_result(self, transfer_id, token=None):
-        url = u'https://localhost:9500/1.0/transfers/{transfer_id}'
-        result = requests.delete(url.format(transfer_id=transfer_id),
+        url = self.url('transfers', transfer_id)
+        result = requests.delete(url,
                                  headers={'X-Auth-Token': token},
                                  verify=False)
         return result
@@ -255,8 +266,8 @@ class CtidNgClient(object):
         assert_that(response.status_code, equal_to(204))
 
     def delete_users_me_transfer_result(self, transfer_id, token=None):
-        url = u'https://localhost:9500/1.0/users/me/transfers/{transfer_id}'
-        result = requests.delete(url.format(transfer_id=transfer_id),
+        url = self.url('users', 'me', 'transfers', transfer_id)
+        result = requests.delete(url,
                                  headers={'X-Auth-Token': token},
                                  verify=False)
         return result
@@ -267,8 +278,8 @@ class CtidNgClient(object):
         assert_that(response.status_code, equal_to(204))
 
     def get_transfer_result(self, transfer_id, token=None):
-        url = u'https://localhost:9500/1.0/transfers/{transfer_id}'
-        result = requests.get(url.format(transfer_id=transfer_id),
+        url = self.url('transfers', transfer_id)
+        result = requests.get(url,
                               headers={'X-Auth-Token': token},
                               verify=False)
         return result
@@ -279,54 +290,61 @@ class CtidNgClient(object):
         return response.json()
 
     def post_chat_result(self, chat_msg, token=None):
-        result = requests.post('https://localhost:9500/1.0/chats',
+        url = self.url('chats')
+        result = requests.post(url,
                                json=chat_msg.as_chat_body(),
                                headers={'X-Auth-Token': token},
                                verify=False)
         return result
 
     def post_user_chat_result(self, chat_msg, token=None):
-        result = requests.post('https://localhost:9500/1.0/users/me/chats',
+        url = self.url('users', 'me', 'chats')
+        result = requests.post(url,
                                json=chat_msg.as_user_chat_body(),
                                headers={'X-Auth-Token': token},
                                verify=False)
         return result
 
     def get_user_me_presence_result(self, token=None):
-        result = requests.get('https://localhost:9500/1.0/users/me/presences',
+        url = self.url('users', 'me', 'presences')
+        result = requests.get(url,
                               headers={'X-Auth-Token': token},
                               verify=False)
         return result
 
     def get_user_presence_result(self, user_uuid, token=None):
-        result = requests.get('https://localhost:9500/1.0/users/{user_uuid}/presences'.format(user_uuid=user_uuid),
+        url = self.url('users', user_uuid, 'presences')
+        result = requests.get(url,
                               headers={'X-Auth-Token': token},
                               verify=False)
         return result
 
     def put_user_presence_result(self, presence_msg, user_uuid, token=None):
-        url = u'https://localhost:9500/1.0/users/{user_uuid}/presences'
-        result = requests.put(url.format(user_uuid=user_uuid),
+        url = self.url('users', user_uuid, 'presences')
+        result = requests.put(url,
                               json=presence_msg.as_presence_body(),
                               headers={'X-Auth-Token': token},
                               verify=False)
         return result
 
     def put_user_me_presence_result(self, presence_msg, token=None):
-        result = requests.put('https://localhost:9500/1.0/users/me/presences',
+        url = self.url('users', 'me', 'presences')
+        result = requests.put(url,
                               json=presence_msg.as_presence_body(),
                               headers={'X-Auth-Token': token},
                               verify=False)
         return result
 
     def get_line_presence_result(self, line_id, token=None):
-        result = requests.get('https://localhost:9500/1.0/lines/{line_id}/presences'.format(line_id=line_id),
+        url = self.url('lines', line_id, 'presences')
+        result = requests.get(url,
                               headers={'X-Auth-Token': token},
                               verify=False)
         return result
 
     def get_status_result(self, token=None):
-        result = requests.get('https://localhost:9500/1.0/status',
+        url = self.url('status')
+        result = requests.get(url,
                               headers={'X-Auth-Token': token},
                               verify=False)
         return result
