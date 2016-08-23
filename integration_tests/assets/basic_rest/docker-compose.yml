@@ -15,7 +15,7 @@ sync:
 amid:
   image: p0bailey/docker-flask
   ports:
-    - "9491:9491"
+    - "9491"
   volumes:
     - "./xivo-amid:/usr/local/share/xivo-amid"
     - "./ssl:/usr/local/share/ssl"

@@ -6,7 +6,7 @@ import logging
 import time
 
 from requests.packages import urllib3
-from xivo_test_helpers.asset_launching_test_case import AssetLaunchingTestCase
+from xivo_test_helpers.asset_launching_test_case import AssetLaunchingTestCase, NoSuchService
 
 from .amid import AmidClient
 from .ari_ import ARIClient
@@ -23,6 +23,14 @@ logger = logging.getLogger(__name__)
 urllib3.disable_warnings()
 
 
+class WrongClient(object):
+    def __init__(self, client_name):
+        self.client_name = client_name
+
+    def __getattr__(self, member):
+        raise Exception('Could not create client {}'.format(self.client_name))
+
+
 class IntegrationTest(AssetLaunchingTestCase):
 
     assets_root = ASSET_ROOT
@@ -32,7 +40,10 @@ class IntegrationTest(AssetLaunchingTestCase):
     @classmethod
     def setUpClass(cls):
         super(IntegrationTest, cls).setUpClass()
-        cls.amid = AmidClient()
+        try:
+            cls.amid = AmidClient('localhost', cls.service_port(9491, 'amid'))
+        except NoSuchService:
+            cls.amid = WrongClient('amid')
         cls.ari = ARIClient()
         cls.auth = AuthClient()
         cls.bus = BusClient()
