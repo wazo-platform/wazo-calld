@@ -45,4 +45,4 @@ ctid-ng:
 rabbitmq:
   image: rabbitmq
   ports:
-    - "5672:5672"
+    - "5672"

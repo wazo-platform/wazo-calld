@@ -54,7 +54,10 @@ class IntegrationTest(AssetLaunchingTestCase):
             cls.auth = AuthClient('localhost', cls.service_port(9497, 'auth'))
         except (NoSuchService, NoSuchPort):
             cls.auth = WrongClient('auth')
-        cls.bus = BusClient()
+        try:
+            cls.bus = BusClient('localhost', cls.service_port(5672, 'rabbitmq'))
+        except (NoSuchService, NoSuchPort):
+            cls.bus = WrongClient('bus')
         cls.confd = ConfdClient()
         cls.ctid_ng = CtidNgClient()
         cls.stasis = StasisClient()
