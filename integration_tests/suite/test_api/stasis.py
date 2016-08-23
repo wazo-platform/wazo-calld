@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015 by Avencall
+# Copyright (C) 2015-2016 Avencall
 # SPDX-License-Identifier: GPL-3.0+
 
 import requests
@@ -13,8 +13,17 @@ from .constants import STASIS_APP_NAME
 
 class StasisClient(object):
 
-    def event_answer_connect(cls, from_, new_call_id):
-        url = 'http://localhost:5039/_send_ws_event'
+    def __init__(self, host, port):
+        self._host = host
+        self._port = port
+
+    def url(self, *parts):
+        return 'http://{host}:{port}/{path}'.format(host=self._host,
+                                                    port=self._port,
+                                                    path='/'.join(parts))
+
+    def event_answer_connect(self, from_, new_call_id):
+        url = self.url('_send_ws_event')
         body = {
             "application": STASIS_APP_NAME,
             "args": [
@@ -50,8 +59,8 @@ class StasisClient(object):
         response = requests.post(url, json=body)
         assert_that(response.status_code, equal_to(201))
 
-    def event_hangup(cls, channel_id):
-        url = 'http://localhost:5039/_send_ws_event'
+    def event_hangup(self, channel_id):
+        url = self.url('_send_ws_event')
         body = {
             "application": STASIS_APP_NAME,
             "channel": {
@@ -82,8 +91,8 @@ class StasisClient(object):
         response = requests.post(url, json=body)
         assert_that(response.status_code, equal_to(201))
 
-    def event_new_channel(cls, channel_id):
-        url = 'http://localhost:5039/_send_ws_event'
+    def event_new_channel(self, channel_id):
+        url = self.url('_send_ws_event')
         body = {
             "application": STASIS_APP_NAME,
             "args": [],
@@ -115,8 +124,8 @@ class StasisClient(object):
         response = requests.post(url, json=body)
         assert_that(response.status_code, equal_to(201))
 
-    def event_channel_updated(cls, channel_id, state='Ring'):
-        url = 'http://localhost:5039/_send_ws_event'
+    def event_channel_updated(self, channel_id, state='Ring'):
+        url = self.url('_send_ws_event')
         body = {
             "application": STASIS_APP_NAME,
             "channel": {
@@ -148,7 +157,7 @@ class StasisClient(object):
         assert_that(response.status_code, equal_to(201))
 
     def event_stasis_start(self, channel_id, stasis_args=STASIS_APP_ARGS):
-        url = 'http://localhost:5039/_send_ws_event'
+        url = self.url('_send_ws_event')
         body = {
             "application": STASIS_APP_NAME,
             "args": stasis_args,
@@ -181,7 +190,7 @@ class StasisClient(object):
         assert_that(response.status_code, equal_to(201))
 
     def event_channel_destroyed(self, channel_id, creation_time=None, timestamp=None, connected_number=''):
-        url = 'http://localhost:5039/_send_ws_event'
+        url = self.url('_send_ws_event')
         creation_time = creation_time or "2016-02-04T15:10:21.225-0500"
         timestamp = timestamp or "2016-02-04T15:10:22.548-0500"
         body = {
