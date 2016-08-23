@@ -44,19 +44,23 @@ class IntegrationTest(AssetLaunchingTestCase):
         super(IntegrationTest, cls).setUpClass()
         try:
             cls.amid = AmidClient('localhost', cls.service_port(9491, 'amid'))
-        except (NoSuchService, NoSuchPort):
+        except (NoSuchService, NoSuchPort) as e:
+            logger.debug(e)
             cls.amid = WrongClient('amid')
         try:
             cls.ari = ARIClient('localhost', cls.service_port(5039, 'ari'))
-        except (NoSuchService, NoSuchPort):
+        except (NoSuchService, NoSuchPort) as e:
+            logger.debug(e)
             cls.ari = WrongClient('ari')
         try:
             cls.auth = AuthClient('localhost', cls.service_port(9497, 'auth'))
-        except (NoSuchService, NoSuchPort):
+        except (NoSuchService, NoSuchPort) as e:
+            logger.debug(e)
             cls.auth = WrongClient('auth')
         try:
             cls.bus = BusClient('localhost', cls.service_port(5672, 'rabbitmq'))
-        except (NoSuchService, NoSuchPort):
+        except (NoSuchService, NoSuchPort) as e:
+            logger.debug(e)
             cls.bus = WrongClient('bus')
         cls.confd = ConfdClient()
         cls.ctid_ng = CtidNgClient()
