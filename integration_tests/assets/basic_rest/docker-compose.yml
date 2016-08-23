@@ -43,8 +43,8 @@ auth:
 
 ctid:
   image: p0bailey/docker-flask
-  ports:
-    - "9495:9495"
+  expose:
+    - "9495"
   volumes:
     - "./xivo-ctid:/usr/local/share/xivo-ctid"
   command: "python /usr/local/share/xivo-ctid/mock-xivo-ctid.py 9495"
