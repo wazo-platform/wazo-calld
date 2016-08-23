@@ -11,7 +11,7 @@ app = Flask(__name__)
 port = int(sys.argv[1])
 
 valid_user_uuid = {'valid-uuid': 'my-user-uuid'}
-valid_endpoint_id = ['valid-id']
+valid_endpoint_id = ['42']
 
 
 @app.route("/0.1/users/<user_uuid>", methods=['GET'])
@@ -33,7 +33,7 @@ def get_endpoint_presence(endpoint_id):
         return '', 404
 
     return jsonify({
-        'id': endpoint_id,
+        'id': int(endpoint_id),
         'origin_uuid': '08c56466-8f29-45c7-9856-92bf1ba89b92',
         'status': 4
     })

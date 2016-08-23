@@ -506,7 +506,7 @@
                         "in": "path",
                         "description": "The line's ID",
                         "required": true,
-                        "type": "string"
+                        "type": "integer"
                     }
                 ],
                 "tags": [
@@ -955,7 +955,7 @@
             "type": "object",
             "properties": {
                 "line_id": {
-                    "type": "string",
+                    "type": "integer",
                     "description": "The line's ID"
                 },
                 "xivo_uuid": {

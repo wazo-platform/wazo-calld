@@ -37,6 +37,6 @@ class LinePresencesService(object):
     def get_presence(self, line_id):
         try:
             response = self._ctid_client.endpoints.get(line_id)
-            return response['origin_uuid'], response['status']
+            return response['id'], response['origin_uuid'], response['status']
         except requests.RequestException as e:
             raise XiVOCtidUnreachable(self._ctid_config, e)

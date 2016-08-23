@@ -147,10 +147,10 @@ class TestGetLinePresence(IntegrationTest):
         super(TestGetLinePresence, self).setUp()
 
     def test_get_presence_with_correct_values(self):
-        line_id = 'valid-id'
+        line_id = '42'
         result = self.ctid_ng.get_line_presence_result(line_id, token=VALID_TOKEN)
 
         assert_that(result.status_code, equal_to(200))
-        assert_that(result.json(), has_entries({'line_id': contains_string(line_id),
+        assert_that(result.json(), has_entries({'line_id': equal_to(int(line_id)),
                                                 'xivo_uuid': contains_string(XIVO_UUID),
                                                 'presence': instance_of(int)}))
