@@ -50,7 +50,10 @@ class IntegrationTest(AssetLaunchingTestCase):
             cls.ari = ARIClient('localhost', cls.service_port(5039, 'ari'))
         except (NoSuchService, NoSuchPort):
             cls.ari = WrongClient('ari')
-        cls.auth = AuthClient()
+        try:
+            cls.auth = AuthClient('localhost', cls.service_port(9497, 'auth'))
+        except (NoSuchService, NoSuchPort):
+            cls.auth = WrongClient('auth')
         cls.bus = BusClient()
         cls.confd = ConfdClient()
         cls.ctid_ng = CtidNgClient()
