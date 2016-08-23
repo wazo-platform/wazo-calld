@@ -1495,4 +1495,5 @@ class TestInitialisation(TestTransfers):
 
     def _start_ctid_ng(self):
         self.start_service('ctid-ng')
+        self.reset_clients()
         until.true(self.ctid_ng.is_up, tries=5)

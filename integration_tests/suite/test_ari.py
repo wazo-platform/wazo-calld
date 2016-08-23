@@ -37,6 +37,7 @@ class TestARIReconnection(IntegrationTest):
         until.assert_(self._ctid_ng_is_connected, tries=3)
 
         self.restart_service('ari')
+        self.reset_clients()
 
         assert_that(self.service_logs(), contains_string("ARI connection error"))
 

@@ -42,6 +42,12 @@ class IntegrationTest(AssetLaunchingTestCase):
     @classmethod
     def setUpClass(cls):
         super(IntegrationTest, cls).setUpClass()
+        cls.reset_clients()
+        cls.reset_bus_client()
+        cls.wait_strategy.wait(cls)
+
+    @classmethod
+    def reset_clients(cls):
         try:
             cls.amid = AmidClient('localhost', cls.service_port(9491, 'amid'))
         except (NoSuchService, NoSuchPort) as e:
@@ -58,11 +64,6 @@ class IntegrationTest(AssetLaunchingTestCase):
             logger.debug(e)
             cls.auth = WrongClient('auth')
         try:
-            cls.bus = BusClient('localhost', cls.service_port(5672, 'rabbitmq'))
-        except (NoSuchService, NoSuchPort) as e:
-            logger.debug(e)
-            cls.bus = WrongClient('bus')
-        try:
             cls.confd = ConfdClient('localhost', cls.service_port(9486, 'confd'))
         except (NoSuchService, NoSuchPort) as e:
             logger.debug(e)
@@ -71,9 +72,26 @@ class IntegrationTest(AssetLaunchingTestCase):
             cls.ctid_ng = CtidNgClient('localhost', cls.service_port(9500, 'ctid-ng'))
         except (NoSuchService, NoSuchPort) as e:
             logger.debug(e)
-            cls.confd = WrongClient('ctid_ng')
-        cls.stasis = StasisClient()
-        cls.wait_strategy.wait(cls)
+            cls.ctid_ng = WrongClient('ctid_ng')
+        try:
+            cls.stasis = StasisClient('localhost', cls.service_port(5039, 'ari'))
+        except (NoSuchService, NoSuchPort) as e:
+            logger.debug(e)
+            cls.stasis = WrongClient('stasis')
+
+    @classmethod
+    def reset_bus_client(cls):
+        '''
+        The bus client is "special" because it has state: when calling
+        listen_events(), it stores events in its members. If reset like the
+        others, we lose this state.
+
+        '''
+        try:
+            cls.bus = BusClient('localhost', cls.service_port(5672, 'rabbitmq'))
+        except (NoSuchService, NoSuchPort) as e:
+            logger.debug(e)
+            cls.bus = WrongClient('bus')
 
     @classmethod
     def wait_for_ctid_ng_to_connect_to_bus(cls):
