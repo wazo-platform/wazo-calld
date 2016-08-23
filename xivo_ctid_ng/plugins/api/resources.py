@@ -1,25 +1,40 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015 by Avencall
+# Copyright 2016 by Avencall
 # SPDX-License-Identifier: GPL-3.0+
 
-from flask import make_response
+import collections
+import json
+import logging
+
 from flask.ext.restful import Resource
-from pkg_resources import resource_string
+from pkg_resources import resource_string, iter_entry_points
+
+logger = logging.getLogger(__name__)
 
 
 class SwaggerResource(Resource):
 
-    api_package = "xivo_ctid_ng.plugins.api"
     api_filename = "api.json"
-    api_path = "/api/api.json"
-
-    @classmethod
-    def add_resource(cls, api):
-        api.add_resource(cls, cls.api_path)
 
     def get(self):
-        try:
-            api_spec = resource_string(self.api_package, self.api_filename)
-        except IOError:
+        api_spec = {}
+        for module in iter_entry_points(group='xivo_ctid_ng.plugins'):
+            try:
+                spec = json.loads(resource_string(module.module_name, self.api_filename))
+                api_spec = self.update(api_spec, spec)
+            except IOError:
+                logger.debug('API spec for module "%s" does not exist', module.module_name)
+
+        if not api_spec.get('info'):
             return {'error': "API spec does not exist"}, 404
-        return make_response(api_spec, 200, {'Content-Type': 'application/json'})
+
+        return api_spec
+
+    def update(self, a, b):
+        for key, value in b.iteritems():
+            if isinstance(value, collections.Mapping):
+                result = self.update(a.get(key, {}), value)
+                a[key] = result
+            else:
+                a[key] = b[key]
+        return a
