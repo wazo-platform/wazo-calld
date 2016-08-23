@@ -139,7 +139,7 @@
                     }
                 }
             }
-        },
+        }
     },
     "definitions": {
         "PresenceRequest": {
