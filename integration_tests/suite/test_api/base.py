@@ -6,7 +6,9 @@ import logging
 import time
 
 from requests.packages import urllib3
-from xivo_test_helpers.asset_launching_test_case import AssetLaunchingTestCase, NoSuchService
+from xivo_test_helpers.asset_launching_test_case import AssetLaunchingTestCase
+from xivo_test_helpers.asset_launching_test_case import NoSuchService
+from xivo_test_helpers.asset_launching_test_case import NoSuchPort
 
 from .amid import AmidClient
 from .ari_ import ARIClient
@@ -42,9 +44,12 @@ class IntegrationTest(AssetLaunchingTestCase):
         super(IntegrationTest, cls).setUpClass()
         try:
             cls.amid = AmidClient('localhost', cls.service_port(9491, 'amid'))
-        except NoSuchService:
+        except (NoSuchService, NoSuchPort):
             cls.amid = WrongClient('amid')
-        cls.ari = ARIClient()
+        try:
+            cls.ari = ARIClient('localhost', cls.service_port(5039, 'ari'))
+        except (NoSuchService, NoSuchPort):
+            cls.ari = WrongClient('ari')
         cls.auth = AuthClient()
         cls.bus = BusClient()
         cls.confd = ConfdClient()

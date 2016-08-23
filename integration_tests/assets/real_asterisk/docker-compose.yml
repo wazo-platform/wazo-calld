@@ -28,7 +28,7 @@ ari:
   expose:
     - "5038"
   ports:
-    - "5039:5039"
+    - "5039"
   volumes:
     - "./etc/asterisk:/etc/asterisk"
     - "./ssl:/usr/local/share/ssl"

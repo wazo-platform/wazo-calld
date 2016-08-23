@@ -13,7 +13,7 @@ sync:
 ari:
   image: ari-real
   ports:
-    - "5039:5039"
+    - "5039"
   volumes:
     - "./etc/asterisk:/etc/asterisk"
     - "./ssl:/usr/local/share/ssl"

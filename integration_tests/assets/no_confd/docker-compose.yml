@@ -12,7 +12,7 @@ sync:
 ari:
   image: ari-mock
   ports:
-    - "5039:5039"
+    - "5039"
   volumes:
     - "./ari:/usr/local/share/ari"
     - "./ssl/ari:/usr/local/share/ari-ssl"

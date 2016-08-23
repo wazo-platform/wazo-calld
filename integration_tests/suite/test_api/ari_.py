@@ -7,52 +7,61 @@ import requests
 
 class ARIClient(object):
 
+    def __init__(self, host, port):
+        self.host = host
+        self.port = port
+
+    def url(self, *parts):
+        return 'http://{host}:{port}/{path}'.format(host=self.host,
+                                                    port=self.port,
+                                                    path='/'.join(parts))
+
     def set_applications(self, *mock_applications):
-        url = 'http://localhost:5039/_set_response'
+        url = self.url('_set_response')
         body = {'response': 'applications',
                 'content': {application.name(): application.to_dict() for application in mock_applications}}
         requests.post(url, json=body)
 
     def set_channels(self, *mock_channels):
-        url = 'http://localhost:5039/_set_response'
+        url = self.url('_set_response')
         body = {'response': 'channels',
                 'content': {channel.id_(): channel.to_dict() for channel in mock_channels}}
         requests.post(url, json=body)
 
     def set_bridges(self, *mock_bridges):
-        url = 'http://localhost:5039/_set_response'
+        url = self.url('_set_response')
         body = {'response': 'bridges',
                 'content': {bridge.id_(): bridge.to_dict() for bridge in mock_bridges}}
         requests.post(url, json=body)
 
     def set_originates(self, *mock_channels):
-        url = 'http://localhost:5039/_set_response'
+        url = self.url('_set_response')
         body = {'response': 'originates',
                 'content': [channel.to_dict() for channel in mock_channels]}
         requests.post(url, json=body)
 
     def set_channel_variable(self, variables):
-        url = 'http://localhost:5039/_set_response'
+        url = self.url('_set_response')
         body = {'response': 'channel_variables',
                 'content': variables}
         requests.post(url, json=body)
 
     def set_global_variables(self, variables):
-        url = 'http://localhost:5039/_set_response'
+        url = self.url('_set_response')
         body = {'response': 'global_variables',
                 'content': variables}
         requests.post(url, json=body)
 
     def reset(self):
-        url = 'http://localhost:5039/_reset'
+        url = self.url('_reset')
         requests.post(url)
 
     def requests(self):
-        url = 'http://localhost:5039/_requests'
+        url = self.url('_requests')
         return requests.get(url).json()
 
     def websockets(self):
-        url = 'http://localhost:5039/_websockets'
+        url = self.url('_websockets')
         return requests.get(url).json()
 
 
