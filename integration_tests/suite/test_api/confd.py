@@ -7,14 +7,23 @@ import requests
 
 class ConfdClient(object):
 
+    def __init__(self, host, port):
+        self._host = host
+        self._port = port
+
+    def url(self, *parts):
+        return 'https://{host}:{port}/{path}'.format(host=self._host,
+                                                     port=self._port,
+                                                     path='/'.join(parts))
+
     def set_users(self, *mock_users):
-        url = 'https://localhost:9486/_set_response'
+        url = self.url('_set_response')
         body = {'response': 'users',
                 'content': {user.uuid(): user.to_dict() for user in mock_users}}
         requests.post(url, json=body, verify=False)
 
     def set_lines(self, *mock_lines):
-        url = 'https://localhost:9486/_set_response'
+        url = self.url('_set_response')
         body = {'response': 'lines',
                 'content': {line.id_(): line.to_dict() for line in mock_lines}}
         requests.post(url, json=body, verify=False)
@@ -24,13 +33,13 @@ class ConfdClient(object):
         for user, user_lines in set_user_lines.iteritems():
             content[user] = [user_line.to_dict() for user_line in user_lines]
 
-        url = 'https://localhost:9486/_set_response'
+        url = self.url('_set_response')
         body = {'response': 'user_lines',
                 'content': content}
         requests.post(url, json=body, verify=False)
 
     def reset(self):
-        url = 'https://localhost:9486/_reset'
+        url = self.url('_reset')
         requests.post(url, verify=False)
 
 

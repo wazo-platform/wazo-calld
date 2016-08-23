@@ -62,7 +62,11 @@ class IntegrationTest(AssetLaunchingTestCase):
         except (NoSuchService, NoSuchPort) as e:
             logger.debug(e)
             cls.bus = WrongClient('bus')
-        cls.confd = ConfdClient()
+        try:
+            cls.confd = ConfdClient('localhost', cls.service_port(9486, 'confd'))
+        except (NoSuchService, NoSuchPort) as e:
+            logger.debug(e)
+            cls.confd = WrongClient('confd')
         cls.ctid_ng = CtidNgClient()
         cls.stasis = StasisClient()
         cls.wait_strategy.wait(cls)

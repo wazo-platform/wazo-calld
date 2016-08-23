@@ -46,7 +46,7 @@ auth:
 confd:
   image: p0bailey/docker-flask
   ports:
-    - "9486:9486"
+    - "9486"
   volumes:
     - "./xivo-confd:/usr/local/share/xivo-confd"
     - "./ssl:/usr/local/share/ssl"
