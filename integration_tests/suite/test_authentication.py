@@ -5,7 +5,7 @@
 from .test_api.base import IntegrationTest
 from .test_api.chat import new_chat_message, new_user_chat_message
 from .test_api.constants import INVALID_ACL_TOKEN, VALID_TOKEN
-from .test_api.presence import new_presence_message, new_user_presence_message
+from .test_api.presence import new_user_presence_message, new_user_me_presence_message
 from .test_api.wait_strategy import CtidNgUpWaitStrategy
 
 from hamcrest import assert_that
@@ -144,22 +144,27 @@ class TestAuthenticationCoverage(IntegrationTest):
 
         assert_that(result.status_code, equal_to(401))
 
-    def test_auth_on_presence_read(self):
-        result = self.ctid_ng.get_presence_result('some-user-uuid')
-
-        assert_that(result.status_code, equal_to(401))
-
-    def test_auth_on_presence_update(self):
-        result = self.ctid_ng.put_presence_result(new_presence_message(), 'some-user-uuid')
-
-        assert_that(result.status_code, equal_to(401))
-
     def test_auth_on_user_presence_read(self):
-        result = self.ctid_ng.get_user_presence_result()
+        result = self.ctid_ng.get_user_presence_result('some-user-uuid')
 
         assert_that(result.status_code, equal_to(401))
 
     def test_auth_on_user_presence_update(self):
-        result = self.ctid_ng.put_user_presence_result(new_user_presence_message())
+        result = self.ctid_ng.put_user_presence_result(new_user_presence_message(), 'some-user-uuid')
+
+        assert_that(result.status_code, equal_to(401))
+
+    def test_auth_on_user_me_presence_read(self):
+        result = self.ctid_ng.get_user_me_presence_result()
+
+        assert_that(result.status_code, equal_to(401))
+
+    def test_auth_on_user_me_presence_update(self):
+        result = self.ctid_ng.put_user_me_presence_result(new_user_me_presence_message())
+
+        assert_that(result.status_code, equal_to(401))
+
+    def test_auth_on_line_presence_read(self):
+        result = self.ctid_ng.get_line_presence_result('some-line-id')
 
         assert_that(result.status_code, equal_to(401))

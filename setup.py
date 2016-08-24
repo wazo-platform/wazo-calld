@@ -17,7 +17,7 @@ setup(
     url='http://www.xivo.io/',
     packages=find_packages(),
     package_data={
-        'xivo_ctid_ng.plugins.api': ['*.json'],
+        'xivo_ctid_ng.plugins': ['*/api.json'],
     },
     scripts=['bin/xivo-ctid-ng'],
     entry_points={

@@ -7,7 +7,7 @@ import unittest
 from mock import Mock
 from xivo_bus.resources.cti.event import UserStatusUpdateEvent
 
-from xivo_ctid_ng.plugins.presences.services import PresencesService
+from xivo_ctid_ng.plugins.presences.services import UserPresencesService
 
 
 class TestPresencesService(unittest.TestCase):
@@ -17,7 +17,7 @@ class TestPresencesService(unittest.TestCase):
         self.xivo_uuid = 'xivo-uuid'
         ctid_client = Mock()
         ctid_config = dict()
-        self.service = PresencesService(self.bus_publisher, ctid_client, ctid_config)
+        self.service = UserPresencesService(self.bus_publisher, ctid_client, ctid_config)
         self.user_uuid = 'efd089b0-b803-4536-b8f0-91bab5b94604'
         self.presence = 'available'
 

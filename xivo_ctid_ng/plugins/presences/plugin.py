@@ -5,8 +5,8 @@
 from xivo_auth_client import Client as AuthClient
 from xivo_ctid_client import Client as CtidClient
 
-from .resources import PresencesResource, UserPresencesResource
-from .services import PresencesService
+from .resources import LinePresencesResource, UserPresencesResource, UserMePresencesResource
+from .services import LinePresencesService, UserPresencesService
 
 
 class Plugin(object):
@@ -17,9 +17,11 @@ class Plugin(object):
         config = dependencies['config']
 
         auth_client = AuthClient(**config['auth'])
-        ctid_client = CtidClient(**config['ctid']) 
+        ctid_client = CtidClient(**config['ctid'])
 
-        presences_service = PresencesService(bus_publisher, ctid_client, config['ctid'])
+        user_presences_service = UserPresencesService(bus_publisher, ctid_client, config['ctid'])
+        line_presences_service = LinePresencesService(ctid_client, config['ctid'])
 
-        api.add_resource(PresencesResource, '/users/<user_uuid>/presences', resource_class_args=[presences_service])
-        api.add_resource(UserPresencesResource, '/users/me/presences', resource_class_args=[auth_client, presences_service])
+        api.add_resource(UserPresencesResource, '/users/<user_uuid>/presences', resource_class_args=[user_presences_service])
+        api.add_resource(UserMePresencesResource, '/users/me/presences', resource_class_args=[auth_client, user_presences_service])
+        api.add_resource(LinePresencesResource, '/lines/<line_id>/presences', resource_class_args=[line_presences_service])

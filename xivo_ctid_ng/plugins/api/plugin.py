@@ -1,5 +1,5 @@
 # -*- coding: UTF-8 -*-
-# Copyright 2015 by Avencall
+# Copyright (C) 2015-2016 Avencall
 # SPDX-License-Identifier: GPL-3.0+
 
 
@@ -10,4 +10,4 @@ class Plugin(object):
 
     def load(self, dependencies):
         api = dependencies['api']
-        SwaggerResource.add_resource(api)
+        api.add_resource(SwaggerResource, '/api/api.json')

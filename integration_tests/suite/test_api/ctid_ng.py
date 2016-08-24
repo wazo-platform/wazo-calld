@@ -292,19 +292,19 @@ class CtidNgClient(object):
                                verify=False)
         return result
 
-    def get_user_presence_result(self, token=None):
+    def get_user_me_presence_result(self, token=None):
         result = requests.get('https://localhost:9500/1.0/users/me/presences',
                               headers={'X-Auth-Token': token},
                               verify=False)
         return result
 
-    def get_presence_result(self, user_uuid, token=None):
+    def get_user_presence_result(self, user_uuid, token=None):
         result = requests.get('https://localhost:9500/1.0/users/{user_uuid}/presences'.format(user_uuid=user_uuid),
                               headers={'X-Auth-Token': token},
                               verify=False)
         return result
 
-    def put_presence_result(self, presence_msg, user_uuid, token=None):
+    def put_user_presence_result(self, presence_msg, user_uuid, token=None):
         url = u'https://localhost:9500/1.0/users/{user_uuid}/presences'
         result = requests.put(url.format(user_uuid=user_uuid),
                               json=presence_msg.as_presence_body(),
@@ -312,9 +312,15 @@ class CtidNgClient(object):
                               verify=False)
         return result
 
-    def put_user_presence_result(self, presence_msg, token=None):
+    def put_user_me_presence_result(self, presence_msg, token=None):
         result = requests.put('https://localhost:9500/1.0/users/me/presences',
                               json=presence_msg.as_presence_body(),
+                              headers={'X-Auth-Token': token},
+                              verify=False)
+        return result
+
+    def get_line_presence_result(self, line_id, token=None):
+        result = requests.get('https://localhost:9500/1.0/lines/{line_id}/presences'.format(line_id=line_id),
                               headers={'X-Auth-Token': token},
                               verify=False)
         return result

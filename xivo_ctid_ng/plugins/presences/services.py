@@ -9,7 +9,7 @@ import requests
 from .exceptions import XiVOCtidUnreachable
 
 
-class PresencesService(object):
+class UserPresencesService(object):
 
     def __init__(self, bus_publisher, ctid_client, ctid_config):
         self._bus_publisher = bus_publisher
@@ -26,3 +26,17 @@ class PresencesService(object):
     def update_presence(self, user_uuid, status):
         bus_event = UserStatusUpdateEvent(user_uuid, status)
         self._bus_publisher.publish(bus_event)
+
+
+class LinePresencesService(object):
+
+    def __init__(self, ctid_client, ctid_config):
+        self._ctid_client = ctid_client
+        self._ctid_config = ctid_config
+
+    def get_presence(self, line_id):
+        try:
+            response = self._ctid_client.endpoints.get(line_id)
+            return response['id'], response['origin_uuid'], response['status']
+        except requests.RequestException as e:
+            raise XiVOCtidUnreachable(self._ctid_config, e)
