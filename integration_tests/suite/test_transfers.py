@@ -39,11 +39,6 @@ from .test_api.hamcrest_ import HamcrestARIBridge
 from .test_api.hamcrest_ import HamcrestARIChannel
 from .test_api.wait_strategy import CtidNgUpWaitStrategy
 
-ARI_CONFIG = {
-    'base_url': 'http://localhost:5039',
-    'username': 'xivo',
-    'password': 'xivo',
-}
 ENDPOINT_AUTOANSWER = 'Test/integration-caller/autoanswer'
 RECIPIENT = {
     'context': 'local',
@@ -81,11 +76,19 @@ class TestTransfers(IntegrationTest):
     @classmethod
     def setUpClass(cls):
         super(TestTransfers, cls).setUpClass()
-        cls.chan_test = ChanTest(ARI_CONFIG)
+        cls.chan_test = ChanTest(cls.ari_config())
+
+    @classmethod
+    def ari_config(cls):
+        return {
+            'base_url': 'http://localhost:{port}'.format(port=cls.service_port(5039, 'ari')),
+            'username': 'xivo',
+            'password': 'xivo',
+        }
 
     def setUp(self):
         super(TestTransfers, self).setUp()
-        self.ari = ari.connect(**ARI_CONFIG)
+        self.ari = ari.connect(**self.ari_config())
         self.b = HamcrestARIBridge(self.ari)
         self.c = HamcrestARIChannel(self.ari)
 
@@ -1492,4 +1495,5 @@ class TestInitialisation(TestTransfers):
 
     def _start_ctid_ng(self):
         self.start_service('ctid-ng')
+        self.reset_clients()
         until.true(self.ctid_ng.is_up, tries=5)

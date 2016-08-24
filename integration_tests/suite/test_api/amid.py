@@ -7,9 +7,17 @@ import requests
 
 class AmidClient(object):
 
+    def __init__(self, host, port):
+        self.host = host
+        self.port = port
+
+    def url(self, *parts):
+        return 'https://{host}:{port}/{path}'.format(host=self.host,
+                                                     port=self.port,
+                                                     path='/'.join(parts))
+
     def set_action_result(self, result):
-        url = u'https://localhost:9491/_set_action'
-        requests.post(url, json=result, verify=False)
+        requests.post(self.url('_set_action'), json=result, verify=False)
 
     def set_no_valid_exten(self):
         result = []

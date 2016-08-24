@@ -171,6 +171,7 @@ class TestCollectdCtidNgRestart(IntegrationTest):
         self.stasis.event_stasis_start(channel_id=call_id)
 
         self.restart_service('ctid-ng')
+        self.reset_clients()
         until.true(self.ari.websockets, tries=5)  # wait for xivo-ctid-ng to come back up
         self.stasis.event_channel_destroyed(channel_id=call_id)
 
@@ -198,6 +199,7 @@ class TestCollectdRabbitMQRestart(IntegrationTest):
         self.stasis.event_stasis_start(channel_id=call_id)
 
         self.restart_service('rabbitmq')
+        self.reset_bus_client()
         until.true(self.bus.is_up, tries=int(os.environ.get('INTEGRATION_TEST_TIMEOUT', 30)))  # wait for rabbitmq to come back up
 
         self.bus.listen_events(routing_key='collectd.calls', exchange=BUS_EXCHANGE_COLLECTD)

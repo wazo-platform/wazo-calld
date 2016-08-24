@@ -12,16 +12,19 @@ from kombu import Queue
 from kombu.exceptions import TimeoutError
 
 from .constants import BUS_QUEUE_NAME
-from .constants import BUS_URL
 from .constants import BUS_EXCHANGE_XIVO
 
 
 class BusClient(object):
 
-    @classmethod
-    def is_up(cls):
+    def __init__(self, host, port):
+        self._host = host
+        self._port = port
+        self._url = 'amqp://guest:guest@{host}:{port}//'.format(host=self._host, port=self._port)
+
+    def is_up(self):
         try:
-            with Connection(BUS_URL) as connection:
+            with Connection(self._url) as connection:
                 producer = Producer(connection, exchange=BUS_EXCHANGE_XIVO, auto_declare=True)
                 producer.publish('', routing_key='test')
         except IOError:
@@ -29,26 +32,23 @@ class BusClient(object):
         else:
             return True
 
-    @classmethod
-    def accumulator(cls, routing_key, exchange=BUS_EXCHANGE_XIVO):
+    def accumulator(self, routing_key, exchange=BUS_EXCHANGE_XIVO):
         queue_name = str(uuid.uuid4())
-        with Connection(BUS_URL) as conn:
+        with Connection(self._url) as conn:
             queue = Queue(name=queue_name, exchange=exchange, routing_key=routing_key, channel=conn.channel())
             queue.declare()
             queue.purge()
-            accumulator = BusMessageAccumulator(queue)
+            accumulator = BusMessageAccumulator(self._host, self._port, queue)
         return accumulator
 
-    @classmethod
-    def listen_events(cls, routing_key, exchange=BUS_EXCHANGE_XIVO):
-        with Connection(BUS_URL) as conn:
+    def listen_events(self, routing_key, exchange=BUS_EXCHANGE_XIVO):
+        with Connection(self._url) as conn:
             queue = Queue(BUS_QUEUE_NAME, exchange=exchange, routing_key=routing_key, channel=conn.channel())
             queue.declare()
             queue.purge()
-            cls.bus_queue = queue
+            self.bus_queue = queue
 
-    @classmethod
-    def events(cls):
+    def events(self):
         events = []
 
         def on_event(body, message):
@@ -56,49 +56,44 @@ class BusClient(object):
             events.append(body)
             message.ack()
 
-        cls._drain_events(on_event=on_event)
+        self._drain_events(on_event=on_event)
 
         return events
 
-    @classmethod
-    def _drain_events(cls, on_event):
-        if not hasattr(cls, 'bus_queue'):
+    def _drain_events(self, on_event):
+        if not hasattr(self, 'bus_queue'):
             raise Exception('You must listen for events before consuming them')
-        with Connection(BUS_URL) as conn:
-            with Consumer(conn, cls.bus_queue, callbacks=[on_event]):
+        with Connection(self._url) as conn:
+            with Consumer(conn, self.bus_queue, callbacks=[on_event]):
                 try:
                     while True:
                         conn.drain_events(timeout=0.5)
                 except TimeoutError:
                     pass
 
-    @classmethod
-    def send_event(cls, event, routing_key):
-        with Connection(BUS_URL) as connection:
+    def send_event(self, event, routing_key):
+        with Connection(self._url) as connection:
             producer = Producer(connection, exchange=BUS_EXCHANGE_XIVO, auto_declare=True)
             producer.publish(json.dumps(event), routing_key=routing_key, content_type='application/json')
 
-    @classmethod
-    def send_ami_newchannel_event(cls, channel_id):
-        cls.send_event({
+    def send_ami_newchannel_event(self, channel_id):
+        self.send_event({
             'data': {
                 'Event': 'Newchannel',
                 'Uniqueid': channel_id,
             }
         }, 'ami.Newchannel')
 
-    @classmethod
-    def send_ami_newstate_event(cls, channel_id):
-        cls.send_event({
+    def send_ami_newstate_event(self, channel_id):
+        self.send_event({
             'data': {
                 'Event': 'Newstate',
                 'Uniqueid': channel_id,
             }
         }, 'ami.Newstate')
 
-    @classmethod
-    def send_ami_hangup_event(cls, channel_id):
-        cls.send_event({
+    def send_ami_hangup_event(self, channel_id):
+        self.send_event({
             'data': {
                 'Event': 'Hangup',
                 'Uniqueid': channel_id,
@@ -108,9 +103,8 @@ class BusClient(object):
             }
         }, 'ami.Hangup')
 
-    @classmethod
-    def send_ami_hangup_userevent(cls, channel_id):
-        cls.send_event({
+    def send_ami_hangup_userevent(self, channel_id):
+        self.send_event({
             'data': {
                 'Event': 'UserEvent',
                 'UserEvent': 'Hangup',
@@ -127,7 +121,8 @@ class BusClient(object):
 
 class BusMessageAccumulator(object):
 
-    def __init__(self, queue):
+    def __init__(self, host, port, queue):
+        self._url = 'amqp://guest:guest@{host}:{port}//'.format(host=host, port=port)
         self._queue = queue
         self._events = []
 
@@ -137,7 +132,7 @@ class BusMessageAccumulator(object):
         message.ack()
 
     def accumulate(self):
-        with Connection(BUS_URL) as conn:
+        with Connection(self._url) as conn:
             with Consumer(conn, self._queue, callbacks=[self._on_event]):
                 try:
                     while True:

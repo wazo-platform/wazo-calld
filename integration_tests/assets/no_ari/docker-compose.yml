@@ -21,7 +21,7 @@ auth:
 confd:
   image: p0bailey/docker-flask
   ports:
-    - "9486:9486"
+    - "9486"
   volumes:
     - "./xivo-confd:/usr/local/share/xivo-confd"
     - "./ssl:/usr/local/share/ssl"
@@ -34,7 +34,7 @@ ctid-ng:
     - "./etc/xivo-ctid-ng:/etc/xivo-ctid-ng"
     - "./ssl:/usr/local/share/ssl"
   ports:
-    - "9500:9500"
+    - "9500"
   environment:
     XIVO_UUID: "08c56466-8f29-45c7-9856-92bf1ba89b92"
   links:
@@ -45,4 +45,4 @@ ctid-ng:
 rabbitmq:
   image: rabbitmq
   ports:
-    - "5672:5672"
+    - "5672"
