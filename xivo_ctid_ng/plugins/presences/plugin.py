@@ -24,4 +24,4 @@ class Plugin(object):
 
         api.add_resource(UserPresencesResource, '/users/<user_uuid>/presences', resource_class_args=[user_presences_service])
         api.add_resource(UserMePresencesResource, '/users/me/presences', resource_class_args=[auth_client, user_presences_service])
-        api.add_resource(LinePresencesResource, '/lines/<line_id>/presences', resource_class_args=[line_presences_service])
+        api.add_resource(LinePresencesResource, '/lines/<int:line_id>/presences', resource_class_args=[line_presences_service])

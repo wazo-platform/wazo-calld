@@ -147,7 +147,7 @@ class TestGetLinePresence(IntegrationTest):
         super(TestGetLinePresence, self).setUp()
 
     def test_get_presence_with_correct_values(self):
-        line_id = '42'
+        line_id = 42
         result = self.ctid_ng.get_line_presence_result(line_id, token=VALID_TOKEN)
 
         assert_that(result.status_code, equal_to(200))
