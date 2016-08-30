@@ -6,7 +6,6 @@ import requests
 
 from hamcrest import assert_that
 from hamcrest import contains_string
-from hamcrest import has_length
 from xivo_test_helpers import until
 
 from .test_api.base import IntegrationTest
@@ -32,13 +31,13 @@ class TestARIReconnection(IntegrationTest):
     asset = 'quick_ari_reconnect'
 
     def test_when_asterisk_restart_then_ctid_ng_reconnects(self):
-        until.assert_(self._ctid_ng_is_connected, tries=3)
+        until.true(self._ctid_ng_is_connected, tries=3)
 
         self.restart_service('ari')
 
         assert_that(self.service_logs(), contains_string("ARI connection error"))
 
-        until.assert_(self._ctid_ng_is_connected, tries=3)
+        until.true(self._ctid_ng_is_connected, tries=3)
 
     def _ctid_ng_is_connected(self):
         try:
@@ -46,7 +45,16 @@ class TestARIReconnection(IntegrationTest):
         except requests.ConnectionError:
             ws = []
 
-        assert_that(ws, has_length(1))
+        return len(ws) > 0
+
+    def _ctid_ng_is_not_connected(self):
+        return not self._ctid_ng_is_connected()
+
+    def test_when_asterisk_sends_non_json_events_then_ctid_ng_reconnects(self):
+        self.stasis.non_json_message()
+
+        until.false(self._ctid_ng_is_not_connected, tries=3, message='xivo-ctid-ng did not disconnect from ARI')
+        until.true(self._ctid_ng_is_connected, tries=3, message='xivo-ctid-ng did not reconnect to ARI')
 
     '''Other tests I don't know how to implement:
 

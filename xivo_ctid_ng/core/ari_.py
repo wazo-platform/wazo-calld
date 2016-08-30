@@ -59,12 +59,12 @@ class CoreARI(object):
         raise ARIUnreachable(ari_config)
 
     def run(self):
-        logger.debug('ARI client listening...')
         self._connect()
         while self._should_reconnect:
             self._reconnect()
 
     def _connect(self):
+        logger.debug('ARI client listening...')
         try:
             with self._running():
                 self.client.run(apps=[APPLICATION_NAME])
@@ -77,6 +77,9 @@ class CoreARI(object):
                 self._connection_error(e)
         except (WebSocketException, HTTPError) as e:
             self._connection_error(e)
+        except ValueError:
+            logger.warning('Received non-JSON message from ARI... disconnecting')
+            self.client.close()
 
     @contextmanager
     def _running(self):
