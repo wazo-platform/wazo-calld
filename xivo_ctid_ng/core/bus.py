@@ -5,6 +5,7 @@
 import kombu
 import logging
 
+from kombu import binding
 from kombu import Connection
 from kombu import Exchange
 from kombu import Producer
@@ -48,7 +49,6 @@ class CoreBusPublisher(object):
 class CoreBusConsumer(ConsumerMixin):
 
     def __init__(self, global_config):
-        self._routing_keys = set()
         self._events_pubsub = Pubsub()
         self._userevent_pubsub = Pubsub()
         self._events_pubsub.subscribe('UserEvent',
@@ -57,30 +57,27 @@ class CoreBusConsumer(ConsumerMixin):
         self._bus_url = 'amqp://{username}:{password}@{host}:{port}//'.format(**global_config['bus'])
         self._exchange = Exchange(global_config['bus']['exchange_name'],
                                   type=global_config['bus']['exchange_type'])
-        self._queues = []
+        self._queue = kombu.Queue(exclusive=True)
 
     def run(self):
         logger.info("Running AMQP consumer")
         with Connection(self._bus_url) as connection:
             self.connection = connection
+
             super(CoreBusConsumer, self).run()
 
     def get_consumers(self, Consumer, channel):
-        return [Consumer(queue, callbacks=[self._on_bus_message]) for queue in self._queues]
+        return [
+            Consumer(self._queue, callbacks=[self._on_bus_message])
+        ]
 
     def on_ami_event(self, event_type, callback):
-        self._subscribe_to_key('ami.{}'.format(event_type))
+        self._queue.bindings.add(binding(self._exchange, routing_key='ami.{}'.format(event_type)))
         self._events_pubsub.subscribe(event_type, callback)
 
     def on_ami_userevent(self, userevent_type, callback):
-        self._subscribe_to_key('ami.UserEvent')
+        self._queue.bindings.add(binding(self._exchange, routing_key='ami.UserEvent'))
         self._userevent_pubsub.subscribe(userevent_type, callback)
-
-    def _subscribe_to_key(self, routing_key):
-        if routing_key not in self._routing_keys:
-            self._routing_keys.add(routing_key)
-            queue = kombu.Queue(exchange=self._exchange, routing_key=routing_key, exclusive=True)
-            self._queues.append(queue)
 
     def _on_bus_message(self, body, message):
         event = body['data']
