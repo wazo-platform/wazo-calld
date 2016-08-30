@@ -5,6 +5,7 @@
 import kombu
 import logging
 
+from kombu import binding
 from kombu import Connection
 from kombu import Exchange
 from kombu import Producer
@@ -46,7 +47,6 @@ class CoreBusPublisher(object):
 
 
 class CoreBusConsumer(ConsumerMixin):
-    _KEY = 'ami.*'
 
     def __init__(self, global_config):
         self._events_pubsub = Pubsub()
@@ -55,20 +55,21 @@ class CoreBusConsumer(ConsumerMixin):
                                       lambda message: self._userevent_pubsub.publish(message['UserEvent'], message))
 
         self._bus_url = 'amqp://{username}:{password}@{host}:{port}//'.format(**global_config['bus'])
-        exchange = Exchange(global_config['bus']['exchange_name'],
-                            type=global_config['bus']['exchange_type'])
-        self._queue = kombu.Queue(exchange=exchange, routing_key=self._KEY, exclusive=True)
+        self._exchange = Exchange(global_config['bus']['exchange_name'],
+                                  type=global_config['bus']['exchange_type'])
+        self._queue = kombu.Queue(exclusive=True)
         self._is_running = False
 
     def run(self):
         logger.info("Running AMQP consumer")
         with Connection(self._bus_url) as connection:
             self.connection = connection
+
             super(CoreBusConsumer, self).run()
 
     def get_consumers(self, Consumer, channel):
         return [
-            Consumer(self._queue, callbacks=[self._on_bus_message]),
+            Consumer(self._queue, callbacks=[self._on_bus_message])
         ]
 
     def on_connection_error(self, exc, interval):
@@ -83,9 +84,11 @@ class CoreBusConsumer(ConsumerMixin):
         return self._is_running
 
     def on_ami_event(self, event_type, callback):
+        self._queue.bindings.add(binding(self._exchange, routing_key='ami.{}'.format(event_type)))
         self._events_pubsub.subscribe(event_type, callback)
 
     def on_ami_userevent(self, userevent_type, callback):
+        self._queue.bindings.add(binding(self._exchange, routing_key='ami.UserEvent'))
         self._userevent_pubsub.subscribe(userevent_type, callback)
 
     def _on_bus_message(self, body, message):
