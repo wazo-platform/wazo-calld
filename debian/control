@@ -25,7 +25,8 @@ Depends: ${python:Depends},
          python-iso8601,
          python-kombu,
          python-marshmallow,
-         python-stevedore
+         python-stevedore,
+         python-wsaccel
 Description: XiVO CTI server (new generation)
  XiVO is a system based on a powerful IPBX, to bring an easy to
  install solution for telephony and related services.
