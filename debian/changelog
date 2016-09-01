@@ -1,3 +1,9 @@
+xivo-ctid-ng (16.08.2~20160901.1) xivo-16.08.2; urgency=medium
+
+  * xivo-16.08.2
+
+ -- Etienne Lessard <elessard@proformatique.com>  Thu, 01 Sep 2016 15:23:05 -0400
+
 xivo-ctid-ng (15.18~1) squeeze-xivo-skaro-dev; urgency=low
 
   * Initial package
