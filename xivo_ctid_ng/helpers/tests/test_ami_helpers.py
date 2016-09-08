@@ -13,6 +13,7 @@ from unittest import TestCase
 
 from xivo_ctid_ng.core.exceptions import XiVOAmidError
 from ..ami import extension_exists
+from ..ami import moh_class_exists
 
 SOME_EXTEN = 'some-exten'
 SOME_CONTEXT = 'some-context'
@@ -103,3 +104,40 @@ class TestExtensionExists(TestCase):
         ]
 
         assert_that(extension_exists(self.amid, SOME_EXTEN, SOME_CONTEXT), is_(True))
+
+    def test_given_garbage_when_moh_class_exists_then_false(self):
+        amid = Mock()
+        moh_class = 'default'
+        amid.command.return_value = {
+            'response': ['default',
+                         'Garbage: default',
+                         'ClassGarbage: default']
+        }
+
+        result = moh_class_exists(amid, moh_class)
+
+        assert_that(result, is_(False))
+
+    def test_given_unknown_moh_class_when_moh_class_exists_then_false(self):
+        amid = Mock()
+        moh_class = 'default'
+        amid.command.return_value = {
+            'response': ['Class: other',
+                         'Class: another']
+        }
+
+        result = moh_class_exists(amid, moh_class)
+
+        assert_that(result, is_(False))
+
+    def test_given_moh_class_exists_when_moh_class_exists_then_true(self):
+        amid = Mock()
+        moh_class = 'default'
+        amid.command.return_value = {
+            'response': ['Class: default',
+                         'Class: another']
+        }
+
+        result = moh_class_exists(amid, moh_class)
+
+        assert_that(result, is_(True))

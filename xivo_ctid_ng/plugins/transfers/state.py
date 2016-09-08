@@ -177,7 +177,7 @@ class TransferStateReady(TransferState):
             raise TransferCreationError('some channel got hung up')
 
         try:
-            ari_helpers.hold_transferred_call(self._ari, transferred_channel.id)
+            ari_helpers.hold_transferred_call(self._ari, self._amid, transferred_channel.id)
         except ARINotFound:
             raise TransferCreationError('transferred call hung up')
 
@@ -242,7 +242,7 @@ class TransferStateStarting(TransferState):
         self.transfer = transfer
 
         try:
-            ari_helpers.hold_transferred_call(self._ari, self.transfer.transferred_call)
+            ari_helpers.hold_transferred_call(self._ari, self._amid, self.transfer.transferred_call)
         except ARINotFound:
             pass
 
