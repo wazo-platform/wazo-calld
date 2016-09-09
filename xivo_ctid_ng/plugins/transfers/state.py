@@ -274,7 +274,7 @@ class TransferStateStarting(TransferState):
 
     def transferred_moh_stop(self):
         logger.warning('MOH stopped playing while starting transfer. Playing silence.')
-        self._ari.channels.startSilence(self.transfer.transferred_call)
+        self._ari.channels.startSilence(channelId=self.transfer.transferred_call)
         return self
 
     def update_cache(self):
@@ -444,7 +444,7 @@ class TransferStateAnswered(TransferState):
 
     def transferred_moh_stop(self):
         logger.warning('MOH stopped playing while transfer was answered. Playing silence.')
-        self._ari.channels.startSilence(self.transfer.transferred_call)
+        self._ari.channels.startSilence(channelId=self.transfer.transferred_call)
         return self
 
     def update_cache(self):
