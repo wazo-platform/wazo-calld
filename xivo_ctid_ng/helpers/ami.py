@@ -4,12 +4,15 @@
 
 import logging
 import json
+import re
 
 from requests import RequestException
 
 from xivo_ctid_ng.core.exceptions import XiVOAmidError
 
 logger = logging.getLogger(__name__)
+
+MOH_CLASS_RE = re.compile(r'^Class: (.+)$')
 
 
 def set_variable_ami(amid, channel_id, variable, value):
@@ -62,3 +65,14 @@ def extension_exists(amid, context, exten, priority=1):
         raise XiVOAmidError(amid, e)
 
     return str(priority) in (event['Priority'] for event in response if event.get('Event') == 'ListDialplan')
+
+
+def moh_class_exists(amid, moh_class):
+    try:
+        response = amid.command('moh show classes')
+    except RequestException as e:
+        raise XiVOAmidError(amid, e)
+
+    raw_body = response['response']
+    classes = [MOH_CLASS_RE.match(line).group(1) for line in raw_body if line.startswith('Class:')]
+    return moh_class in classes

@@ -111,6 +111,10 @@ class TransferState(object):
     def cancel(self):
         raise NotImplementedError(self.name)
 
+    @transition
+    def transferred_moh_stop(self):
+        return self
+
     def update_cache(self):
         raise NotImplementedError()
 
@@ -177,7 +181,7 @@ class TransferStateReady(TransferState):
             raise TransferCreationError('some channel got hung up')
 
         try:
-            ari_helpers.hold_transferred_call(self._ari, transferred_channel.id)
+            ari_helpers.hold_transferred_call(self._ari, self._amid, transferred_channel.id)
         except ARINotFound:
             raise TransferCreationError('transferred call hung up')
 
@@ -242,7 +246,7 @@ class TransferStateStarting(TransferState):
         self.transfer = transfer
 
         try:
-            ari_helpers.hold_transferred_call(self._ari, self.transfer.transferred_call)
+            ari_helpers.hold_transferred_call(self._ari, self._amid, self.transfer.transferred_call)
         except ARINotFound:
             pass
 
@@ -265,6 +269,15 @@ class TransferStateStarting(TransferState):
     @transition
     def complete(self):
         self.transfer.flow = 'blind'
+
+        return self
+
+    def transferred_moh_stop(self):
+        logger.warning('MOH stopped playing while starting transfer. Playing silence.')
+        try:
+            self._ari.channels.startSilence(channelId=self.transfer.transferred_call)
+        except ARINotFound:
+            pass
 
         return self
 
@@ -330,6 +343,14 @@ class TransferStateRingback(TransferState):
             raise TransferAnswerError(self.transfer.id, 'initiator hung up')
 
         return TransferStateAnswered.from_state(self)
+
+    def transferred_moh_stop(self):
+        logger.warning('MOH stopped playing while transfer was ringing. Playing silence.')
+        try:
+            self._ari.channels.startSilence(channelId=self.transfer.transferred_call)
+        except ARINotFound:
+            pass
+        return self
 
     def update_cache(self):
         self._state_persistor.upsert(self.transfer)
@@ -427,6 +448,15 @@ class TransferStateAnswered(TransferState):
     def cancel(self):
         self._cancel()
         return TransferStateEnded.from_state(self)
+
+    def transferred_moh_stop(self):
+        logger.warning('MOH stopped playing while transfer was answered. Playing silence.')
+        try:
+            self._ari.channels.startSilence(channelId=self.transfer.transferred_call)
+        except ARINotFound:
+            pass
+
+        return self
 
     def update_cache(self):
         self._state_persistor.upsert(self.transfer)

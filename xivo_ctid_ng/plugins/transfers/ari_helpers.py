@@ -3,10 +3,14 @@
 # SPDX-License-Identifier: GPL-3.0+
 
 import json
+import logging
 
 from ari.exceptions import ARINotFound, ARINotInStasis
 
+from xivo_ctid_ng.core.exceptions import XiVOAmidError
 from xivo_ctid_ng.helpers import ami
+
+logger = logging.getLogger(__name__)
 
 
 def is_in_stasis(ari, call_id):
@@ -17,16 +21,28 @@ def is_in_stasis(ari, call_id):
         return False
 
 
-def hold_transferred_call(ari, transferred_call):
+def hold_transferred_call(ari, amid, transferred_call):
     ari.channels.mute(channelId=transferred_call, direction='in')
     ari.channels.hold(channelId=transferred_call)
-    ari.channels.startMoh(channelId=transferred_call)
+
+    moh_class = 'default'
+    try:
+        moh_class_exists = ami.moh_class_exists(amid, moh_class)
+    except XiVOAmidError:
+        logger.error('xivo-amid could not tell if MOH "%s" exists. Assuming it does not.', moh_class)
+        moh_class_exists = False
+
+    if moh_class_exists:
+        ari.channels.startMoh(channelId=transferred_call, mohClass=moh_class)
+    else:
+        ari.channels.startSilence(channelId=transferred_call)
 
 
 def unhold_transferred_call(ari, transferred_call):
     ari.channels.unmute(channelId=transferred_call, direction='in')
     ari.channels.unhold(channelId=transferred_call)
     ari.channels.stopMoh(channelId=transferred_call)
+    ari.channels.stopSilence(channelId=transferred_call)
 
 
 def unring_initiator_call(ari, initiator_call):

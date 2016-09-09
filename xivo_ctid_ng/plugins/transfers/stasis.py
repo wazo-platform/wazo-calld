@@ -53,11 +53,28 @@ class TransfersStasis(object):
 
         self.ari.on_channel_event('ChannelDestroyed', self.hangup)
         self.ari.on_channel_event('StasisEnd', self.hangup)
+        self.ari.on_channel_event('ChannelMohStop', self.moh_stop)
         self.hangup_pubsub.subscribe(TransferRole.recipient, self.recipient_hangup)
         self.hangup_pubsub.subscribe(TransferRole.initiator, self.initiator_hangup)
         self.hangup_pubsub.subscribe(TransferRole.transferred, self.transferred_hangup)
 
         self.ari.on_channel_event('ChannelCallerId', self.update_transfer_caller_id)
+
+    def moh_stop(self, channel, event):
+        logger.debug('received ChannelMohStop for channel %s (%s)', channel.id, event['channel']['name'])
+        try:
+            transfer = self.state_persistor.get_by_channel(channel.id)
+        except KeyError:
+            logger.debug('ignoring ChannelMohStop event: channel %s, app %s', event['channel']['name'], event['application'])
+            return
+
+        transfer_role = transfer.role(channel.id)
+        if transfer_role != TransferRole.transferred:
+            logger.debug('ignoring ChannelMohStop event: channel %s, app %s', event['channel']['name'], event['application'])
+            return
+
+        transfer_state = self.state_factory.make(transfer)
+        transfer_state.transferred_moh_stop()
 
     def invalid_event(self, _, __, exception):
         if isinstance(exception, InvalidEvent):
