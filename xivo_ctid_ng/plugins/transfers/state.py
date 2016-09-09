@@ -111,6 +111,10 @@ class TransferState(object):
     def cancel(self):
         raise NotImplementedError(self.name)
 
+    @transition
+    def transferred_moh_stop(self):
+        return self
+
     def update_cache(self):
         raise NotImplementedError()
 
@@ -268,6 +272,11 @@ class TransferStateStarting(TransferState):
 
         return self
 
+    def transferred_moh_stop(self):
+        logger.warning('MOH stopped playing while starting transfer. Playing silence.')
+        self._ari.channels.startSilence(self.transfer.transferred_call)
+        return self
+
     def update_cache(self):
         self._state_persistor.upsert(self.transfer)
 
@@ -330,6 +339,11 @@ class TransferStateRingback(TransferState):
             raise TransferAnswerError(self.transfer.id, 'initiator hung up')
 
         return TransferStateAnswered.from_state(self)
+
+    def transferred_moh_stop(self):
+        logger.warning('MOH stopped playing while transfer was ringing. Playing silence.')
+        self._ari.channels.startSilence(channelId=self.transfer.transferred_call)
+        return self
 
     def update_cache(self):
         self._state_persistor.upsert(self.transfer)
@@ -427,6 +441,11 @@ class TransferStateAnswered(TransferState):
     def cancel(self):
         self._cancel()
         return TransferStateEnded.from_state(self)
+
+    def transferred_moh_stop(self):
+        logger.warning('MOH stopped playing while transfer was answered. Playing silence.')
+        self._ari.channels.startSilence(self.transfer.transferred_call)
+        return self
 
     def update_cache(self):
         self._state_persistor.upsert(self.transfer)
