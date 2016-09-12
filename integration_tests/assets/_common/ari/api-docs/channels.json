@@ -2,7 +2,7 @@
 	"_copyright": "Copyright (C) 2012 - 2013, Digium, Inc.",
 	"_author": "David M. Lee, II <dlee@digium.com>",
 	"_svn_revision": "$Revision$",
-	"apiVersion": "1.8.0",
+	"apiVersion": "1.9.0",
 	"swaggerVersion": "1.1",
 	"basePath": "http://localhost:8088/ari",
 	"resourcePath": "/api-docs/channels.{format}",
@@ -124,6 +124,14 @@
 						{
 							"name": "originator",
 							"description": "The unique id of the channel which is originating this one.",
+							"paramType": "query",
+							"required": false,
+							"allowMultiple": false,
+							"dataType": "string"
+						},
+						{
+							"name": "formats",
+							"description": "The format name capability list to use if originator is not specified. Ex. \"ulaw,slin16\".  Format names can be found with \"core show codecs\".",
 							"paramType": "query",
 							"required": false,
 							"allowMultiple": false,
@@ -276,6 +284,14 @@
 							"required": false,
 							"allowMultiple": false,
 							"dataType": "string"
+						},
+						{
+							"name": "formats",
+							"description": "The format name capability list to use if originator is not specified. Ex. \"ulaw,slin16\".  Format names can be found with \"core show codecs\".",
+							"paramType": "query",
+							"required": false,
+							"allowMultiple": false,
+							"dataType": "string"
 						}
 					],
 					"errorResponses": [
@@ -284,7 +300,6 @@
 							"reason": "Invalid parameters for originating a channel."
 						}
 					]
-
 				},
 				{
 					"httpMethod": "DELETE",

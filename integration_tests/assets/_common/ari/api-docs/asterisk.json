@@ -2,7 +2,7 @@
 	"_copyright": "Copyright (C) 2012 - 2013, Digium, Inc.",
 	"_author": "David M. Lee, II <dlee@digium.com>",
 	"_svn_revision": "$Revision$",
-	"apiVersion": "1.8.0",
+	"apiVersion": "1.9.0",
 	"swaggerVersion": "1.1",
 	"basePath": "http://localhost:8088/ari",
 	"resourcePath": "/api-docs/asterisk.{format}",
@@ -297,6 +297,108 @@
 			]
 		},
 		{
+			"path": "/asterisk/logging",
+			"description": "Asterisk log channels",
+			"operations": [
+				{
+					"httpMethod": "GET",
+					"summary": "Gets Asterisk log channel information.",
+					"nickname": "listLogChannels",
+					"responseClass": "List[LogChannel]"
+				}
+			]
+		},
+		{
+			"path": "/asterisk/logging/{logChannelName}",
+			"description": "Asterisk log channel",
+			"operations": [
+				{
+					"httpMethod": "POST",
+					"summary": "Adds a log channel.",
+					"nickname": "addLog",
+					"responseClass": "void",
+					"parameters": [
+						{
+							"name": "logChannelName",
+							"description": "The log channel to add",
+							"paramType": "path",
+							"required": true,
+							"allowMultiple": false,
+							"dataType": "string"
+						},
+						{
+							"name": "configuration",
+							"description": "levels of the log channel",
+							"paramType": "query",
+							"required": true,
+							"allowMultiple": false,
+							"dataType": "string"
+						}
+					],
+					"errorResponses": [
+						{
+							"code": 400,
+							"reason": "Bad request body"
+						},
+						{
+							"code": 409,
+							"reason": "Log channel could not be created."
+						}
+					]
+				},
+				{
+					"httpMethod": "DELETE",
+					"summary": "Deletes a log channel.",
+					"nickname": "deleteLog",
+					"responseClass": "void",
+					"parameters": [
+						{
+							"name": "logChannelName",
+							"description": "Log channels name",
+							"paramType": "path",
+							"required": true,
+							"allowMultiple": false,
+							"dataType": "string"
+						}
+					],
+					"errorResponses": [
+						{
+							"code": 404,
+							"reason": "Log channel does not exist."
+						}
+					]
+				}
+			]
+		},
+		{
+			"path": "/asterisk/logging/{logChannelName}/rotate",
+			"description": "Asterisk log channel",
+			"operations": [
+				{
+					"httpMethod": "PUT",
+					"summary": "Rotates a log channel.",
+					"nickname": "rotateLog",
+					"responseClass": "void",
+					"parameters": [
+						{
+							"name": "logChannelName",
+							"description": "Log channel's name",
+							"paramType": "path",
+							"required": true,
+							"allowMultiple": false,
+							"dataType": "string"
+						}
+					],
+					"errorResponses": [
+						{
+							"code": 404,
+							"reason": "Log channel does not exist."
+						}
+					]
+				}
+			]
+		},
+		{
 			"path": "/asterisk/variable",
 			"description": "Global variables",
 			"operations": [
@@ -529,6 +631,32 @@
 				"support_level": {
 					"type": "string",
 					"description": "The support state of this module",
+					"required": true
+				}
+			}
+		},
+		"LogChannel": {
+			"id": "LogChannel",
+			"description": "Details of an Asterisk log channel",
+			"properties": {
+				"channel": {
+					"type": "string",
+					"description": "The log channel path",
+					"required": true
+				},
+				"type": {
+					"type": "string",
+					"description": "Types of logs for the log channel",
+					"required": true
+				},
+				"status": {
+					"type": "string",
+					"description": "Whether or not a log type is enabled",
+					"required": true
+				},
+				"configuration": {
+					"type": "string",
+					"description": "The various log levels",
 					"required": true
 				}
 			}

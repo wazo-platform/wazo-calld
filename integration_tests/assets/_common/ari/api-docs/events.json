@@ -2,7 +2,7 @@
 	"_copyright": "Copyright (C) 2012 - 2013, Digium, Inc.",
 	"_author": "David M. Lee, II <dlee@digium.com>",
 	"_svn_revision": "$Revision$",
-	"apiVersion": "1.8.0",
+	"apiVersion": "1.9.0",
 	"swaggerVersion": "1.2",
 	"basePath": "http://localhost:8088/ari",
 	"resourcePath": "/api-docs/events.{format}",
@@ -26,6 +26,14 @@
 							"required": true,
 							"allowMultiple": true,
 							"dataType": "string"
+						},
+						{
+							"name": "subscribeAll",
+							"description": "Subscribe to all Asterisk events. If provided, the applications listed will be subscribed to all events, effectively disabling the application specific subscriptions. Default is 'false'.",
+							"paramType": "query",
+							"required": false,
+							"allowMultiple": false,
+							"dataType": "boolean"
 						}
 					]
 				}
@@ -163,13 +171,84 @@
 				"ChannelTalkingFinished",
 				"ChannelHold",
 				"ChannelUnhold",
+				"ContactStatusChange",
 				"EndpointStateChange",
 				"Dial",
 				"StasisEnd",
 				"StasisStart",
 				"TextMessageReceived",
-				"ChannelConnectedLine"
+				"ChannelConnectedLine",
+				"PeerStatusChange",
+				"ChannelMohStart",
+				"ChannelMohStop"
 			]
+		},
+		"ContactInfo": {
+			"id": "ContactInfo",
+			"description": "Detailed information about a contact on an endpoint.",
+			"properties": {
+				"uri": {
+					"type": "string",
+					"description": "The location of the contact.",
+					"required": true
+				},
+				"contact_status": {
+					"type": "string",
+					"description": "The current status of the contact.",
+					"required": true,
+					"allowableValues": {
+						"valueType": "LIST",
+						"values": [
+							"Unreachable",
+							"Reachable",
+							"Unknown",
+							"Created",
+							"Removed"
+						]
+					}
+				},
+				"aor": {
+					"type": "string",
+					"description": "The Address of Record this contact belongs to.",
+					"required": true
+				},
+				"roundtrip_usec": {
+					"type": "string",
+					"description": "Current round trip time, in microseconds, for the contact.",
+					"required": false
+				}
+			}
+		},
+		"Peer": {
+			"id": "Peer",
+			"description": "Detailed information about a remote peer that communicates with Asterisk.",
+			"properties": {
+				"peer_status": {
+					"type": "string",
+					"description": "The current state of the peer. Note that the values of the status are dependent on the underlying peer technology.",
+					"required": true
+				},
+				"cause": {
+					"type": "string",
+					"description": "An optional reason associated with the change in peer_status.",
+					"required": false
+				},
+				"address": {
+					"type": "string",
+					"description": "The IP address of the peer.",
+					"required": false
+				},
+				"port": {
+					"type": "string",
+					"description": "The port of the peer.",
+					"required": false
+				},
+				"time": {
+					"type": "string",
+					"description": "The last known time the peer was contacted.",
+					"required": false
+				}
+			}
 		},
 		"DeviceStateChanged": {
 			"id": "DeviceStateChanged",
@@ -654,6 +733,34 @@
 				}
 			}
 		},
+		"ContactStatusChange": {
+			"id": "ContactStatusChange",
+			"description": "The state of a contact on an endpoint has changed.",
+			"properties": {
+				"endpoint": {
+					"required": true,
+					"type": "Endpoint"
+				},
+				"contact_info": {
+					"required": true,
+					"type": "ContactInfo"
+				}
+			}
+		},
+		"PeerStatusChange": {
+			"id": "PeerStatusChange",
+			"description": "The state of a peer associated with an endpoint has changed.",
+			"properties": {
+				"endpoint": {
+					"required": true,
+					"type": "Endpoint"
+				},
+				"peer": {
+					"required": true,
+					"type": "Peer"
+				}
+			}
+		},
 		"EndpointStateChange": {
 			"id": "EndpointStateChange",
 			"description": "Endpoint state changed.",
@@ -751,6 +858,33 @@
 					"required": true,
 					"type": "Channel",
 					"description": "The channel whose connected line has changed."
+				}
+			}
+		},
+		"ChannelMohStart": {
+			"id": "ChannelMohStart",
+			"description": "MOH started on the channel.",
+			"properties": {
+				"channel": {
+					"required": true,
+					"type": "Channel",
+					"description": "The channel on which the MOH started."
+				},
+				"moh_class": {
+					"required": true,
+					"type": "string",
+					"description": "The name of the MOH class that started"
+				}
+			}
+		},
+		"ChannelMohStop": {
+			"id": "ChannelMohStop",
+			"description": "MOH stopped on the channel.",
+			"properties": {
+				"channel": {
+					"required": true,
+					"type": "Channel",
+					"description": "The channel on which the MOH stopped."
 				}
 			}
 		}
