@@ -5,6 +5,7 @@
 from flask import request
 from marshmallow import Schema, fields
 from marshmallow.validate import OneOf, Length
+from xivo.debug import trace_duration
 
 from xivo_ctid_ng.core.auth import get_token_user_uuid_from_request
 from xivo_ctid_ng.core.auth import required_acl
@@ -65,6 +66,7 @@ class UserTransfersResource(AuthResource):
             'items': [transfer.to_dict() for transfer in transfers]
         }, 200
 
+    @trace_duration
     @required_acl('ctid-ng.users.me.transfers.create')
     def post(self):
         request_body = user_transfer_request_schema.load(request.get_json(force=True)).data

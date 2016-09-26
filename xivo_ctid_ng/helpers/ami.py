@@ -29,7 +29,8 @@ def unset_variable_ami(amid, channel_id, variable):
     set_variable_ami(amid, channel_id, variable, '')
 
 
-def convert_transfer_to_stasis(amid, transferred_call, initiator_call, context, exten, transfer_id, variables):
+def convert_transfer_to_stasis(amid, ari, transferred_call, initiator_call, context, exten, transfer_id, variables):
+    # XXX the ari argument is quite hackish here
     channel_variables = json.dumps(variables) if variables else '{}'
     set_variables = [(transferred_call, 'XIVO_TRANSFER_ROLE', 'transferred'),
                      (transferred_call, 'XIVO_TRANSFER_ID', transfer_id),
@@ -42,10 +43,7 @@ def convert_transfer_to_stasis(amid, transferred_call, initiator_call, context, 
                      (initiator_call, 'XIVO_TRANSFER_VARIABLES', channel_variables)]
     try:
         for channel_id, variable, value in set_variables:
-            parameters = {'Channel': channel_id,
-                          'Variable': variable,
-                          'Value': value}
-            amid.action('Setvar', parameters)
+            ari.channels.setChannelVar(channelId=channel_id, variable=variable, value=value, bypassStasis=True)
 
         destination = {'Channel': transferred_call,
                        'ExtraChannel': initiator_call,

@@ -7,6 +7,7 @@ import logging
 from flask import request
 from marshmallow import Schema, fields
 from marshmallow.validate import Length
+from xivo.debug import trace_duration
 
 from xivo_ctid_ng.core.auth import required_acl
 from xivo_ctid_ng.core.auth import get_token_user_uuid_from_request
@@ -60,6 +61,7 @@ class MyCallsResource(AuthResource):
         self.auth_client = auth_client
         self.calls_service = calls_service
 
+    @trace_duration
     @required_acl('ctid-ng.users.me.calls.read')
     def get(self):
         application_filter = request.args.get('application')

@@ -218,6 +218,7 @@ class TransferStateReadyNonStasis(TransferState):
 
         transfer_id = str(uuid.uuid4())
         ami.convert_transfer_to_stasis(self._amid,
+                                       self._ari,
                                        transferred_channel.id,
                                        initiator_channel.id,
                                        context,
