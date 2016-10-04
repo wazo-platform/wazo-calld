@@ -96,3 +96,20 @@ def get_bridge_variable(ari, bridge_id, variable):
         return cache[variable]
     except KeyError as e:
         raise ARINotFound(ari, e)
+
+
+def convert_transfer_to_stasis(ari, amid, transferred_call, initiator_call, context, exten, transfer_id, variables):
+    channel_variables = json.dumps(variables) if variables else '{}'
+    set_variables = [(transferred_call, 'XIVO_TRANSFER_ROLE', 'transferred'),
+                     (transferred_call, 'XIVO_TRANSFER_ID', transfer_id),
+                     (transferred_call, 'XIVO_TRANSFER_RECIPIENT_CONTEXT', context),
+                     (transferred_call, 'XIVO_TRANSFER_RECIPIENT_EXTEN', exten),
+                     (initiator_call, 'XIVO_TRANSFER_ROLE', 'initiator'),
+                     (initiator_call, 'XIVO_TRANSFER_ID', transfer_id),
+                     (initiator_call, 'XIVO_TRANSFER_RECIPIENT_CONTEXT', context),
+                     (initiator_call, 'XIVO_TRANSFER_RECIPIENT_EXTEN', exten),
+                     (initiator_call, 'XIVO_TRANSFER_VARIABLES', channel_variables)]
+    for channel_id, variable, value in set_variables:
+        ari.channels.setChannelVar(channelId=channel_id, variable=variable, value=value, bypassStasis=True)
+
+    ami.redirect(amid, transferred_call, context='convert_to_stasis', exten='transfer', extra_channel=initiator_call)
