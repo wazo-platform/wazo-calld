@@ -1251,6 +1251,15 @@
 							"required": false,
 							"allowMultiple": false,
 							"dataType": "string"
+						},
+						{
+							"name": "bypassStasis",
+							"description": "Set the variable even if the channel is not in Stasis application",
+							"paramType": "query",
+							"required": false,
+							"allowMultiple": false,
+							"dataType": "boolean",
+							"defaultValue": false
 						}
 					],
 					"errorResponses": [
