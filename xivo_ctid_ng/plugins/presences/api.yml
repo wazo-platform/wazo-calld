@@ -1,0 +1,131 @@
+paths:
+  /users/{user_uuid}/presences:
+    get:
+      summary: Get the current presence of a user
+      description: '**Required ACL:** `ctid-ng.users.{user_uuid}.presences.read`'
+      parameters:
+      - name: user_uuid
+        in: path
+        description: The user's UUID
+        required: true
+        type: string
+      tags:
+      - presences
+      responses:
+        '200':
+          description: The current presence of the user
+          schema:
+            $ref: '#/definitions/PresenceUser'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+    put:
+      summary: Update the presence of a user
+      description: '**Required ACL:** `ctid-ng.users.{user_uuid}.presences.update`'
+      parameters:
+      - name: user_uuid
+        in: path
+        description: The user's UUID
+        required: true
+        type: string
+      - name: body
+        in: body
+        description: The new presence
+        required: true
+        schema:
+          $ref: '#/definitions/PresenceRequest'
+      tags:
+      - presences
+      responses:
+        '204':
+          description: Presence has been updated
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+  /users/me/presences:
+    get:
+      summary: Get the current presence of the authenticated user
+      description: '**Required ACL:** `ctid-ng.users.me.presences.read`'
+      tags:
+      - presences
+      - users
+      responses:
+        '200':
+          description: The current presence of the authenticated user
+          schema:
+            $ref: '#/definitions/PresenceUser'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+    put:
+      summary: Update the presence of the authenticated user
+      description: '**Required ACL:** `ctid-ng.users.me.presences.update`'
+      parameters:
+      - name: body
+        in: body
+        description: Presence parameters
+        required: true
+        schema:
+          $ref: '#/definitions/PresenceRequest'
+      tags:
+      - presences
+      - users
+      responses:
+        '204':
+          description: Presence has been updated
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+  /lines/{line_id}/presences:
+    get:
+      summary: Get the current status of a line
+      description: '**Required ACL:** `ctid-ng.lines.{line_id}.presences.read`'
+      parameters:
+      - name: line_id
+        in: path
+        description: The line's ID
+        required: true
+        type: integer
+      tags:
+      - lines
+      - presences
+      responses:
+        '200':
+          description: The current status of the line
+          schema:
+            $ref: '#/definitions/PresenceLine'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+definitions:
+  PresenceRequest:
+    type: object
+    properties:
+      presence:
+        description: Presence status name (ex. available)
+        type: string
+  PresenceUser:
+    type: object
+    properties:
+      user_uuid:
+        type: string
+        format: uuid
+        description: The user's UUID
+      xivo_uuid:
+        type: string
+        format: uuid
+        description: UUID of the server on which this endpoint is connected
+      presence:
+        type: string
+        description: Current presence for the user. The list of presences and their
+          meaning are defined in the CTI presence configuration. (Configurable only
+          via the web interface)
+  PresenceLine:
+    type: object
+    properties:
+      line_id:
+        type: integer
+        description: The line's ID
+      xivo_uuid:
+        type: string
+        format: uuid
+        description: UUID of the server on which this line is connected
+      presence:
+        type: integer
+        description: Current status for the line. The list of presences and their
+          meaning are available in the CTI phone hints configuration.
