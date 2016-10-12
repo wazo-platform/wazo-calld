@@ -1,0 +1,704 @@
+swagger: '2.0'
+info:
+  title: XiVO CTId ng
+  description: Control your calls from a REST API
+  version: 1.0.0
+schemes:
+- https
+basePath: /1.0
+produces:
+- application/json
+x-xivo-port: 9500
+x-xivo-name: ctid-ng
+securityDefinitions:
+  xivo_auth_token:
+    type: apiKey
+    name: X-Auth-Token
+    in: header
+security:
+- xivo_auth_token: []
+paths:
+  /calls:
+    get:
+      summary: List calls
+      description: '**Required ACL:** `ctid-ng.calls.read`'
+      parameters:
+      - name: application
+        description: Filter calls by Stasis application, e.g. switchboard.
+        in: query
+        type: string
+      - name: application_instance
+        description: Filter calls by Stasis application instance, e.g. switchboard-sales,green.
+          Args must be separated by commas (,).
+        in: query
+        type: string
+      tags:
+      - calls
+      responses:
+        '200':
+          description: List currently active calls
+          schema:
+            type: object
+            properties:
+              items:
+                type: array
+                items:
+                  $ref: '#/definitions/Call'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+    post:
+      summary: Make a new call
+      description: '**Required ACL:** `ctid-ng.calls.create`
+
+
+        Create a new call from a phone to an extension.
+
+        '
+      parameters:
+      - name: body
+        in: body
+        description: Call parameters
+        required: true
+        schema:
+          $ref: '#/definitions/CallRequest'
+      tags:
+      - calls
+      responses:
+        '201':
+          description: The new call ID
+          schema:
+            $ref: '#/definitions/CallID'
+        '400':
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/Error'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+  /calls/{call_id}:
+    get:
+      summary: Show a call
+      description: '**Required ACL:** `ctid-ng.calls.{call_id}.read`'
+      parameters:
+      - name: call_id
+        in: path
+        description: ID of the call
+        required: true
+        type: string
+      tags:
+      - calls
+      responses:
+        '200':
+          description: Call
+          schema:
+            $ref: '#/definitions/Call'
+        '404':
+          description: No such call
+          schema:
+            $ref: '#/definitions/Error'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+    delete:
+      summary: Hangup a call
+      description: '**Required ACL:** `ctid-ng.calls.{call_id}.delete`'
+      parameters:
+      - name: call_id
+        in: path
+        description: ID of the call
+        required: true
+        type: string
+      tags:
+      - calls
+      responses:
+        '204':
+          description: Call has been hung up
+        '404':
+          description: No such call
+          schema:
+            $ref: '#/definitions/Error'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+  /calls/{call_id}/user/{user_uuid}:
+    put:
+      summary: Connect a call to a user
+      description: '**Required ACL:** `ctid-ng.calls.{call_id}.user.{user_uuid}.update`'
+      parameters:
+      - name: call_id
+        in: path
+        description: ID of the call
+        required: true
+        type: string
+      - name: user_uuid
+        in: path
+        description: UUID of the user
+        required: true
+        type: string
+      tags:
+      - calls
+      responses:
+        '200':
+          description: The new call of the user (ringing side)
+          schema:
+            $ref: '#/definitions/Call'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+  /users/me/calls:
+    get:
+      summary: List calls of a user
+      description: '**Required ACL:** `ctid-ng.users.me.calls.read`'
+      parameters:
+      - name: application
+        description: Filter calls by Stasis application, e.g. switchboard.
+        in: query
+        type: string
+      - name: application_instance
+        description: Filter calls by Stasis application instance, e.g. switchboard-sales,green.
+          Args must be separated by commas (,).
+        in: query
+        type: string
+      tags:
+      - calls
+      - users
+      responses:
+        '200':
+          description: List currently active calls of a user
+          schema:
+            type: object
+            properties:
+              items:
+                type: array
+                items:
+                  $ref: '#/definitions/Call'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+    post:
+      summary: Make a new call from a user
+      description: '**Required ACL:** `ctid-ng.users.me.calls.create`
+
+
+        The user originator of the call is determined from the authentication token.
+
+        '
+      parameters:
+      - name: body
+        in: body
+        description: Parameters of the call
+        required: true
+        schema:
+          $ref: '#/definitions/UserCallRequest'
+      tags:
+      - calls
+      - users
+      responses:
+        '201':
+          description: The new call ID
+          schema:
+            $ref: '#/definitions/CallID'
+        '400':
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/Error'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+  /users/me/calls/{call_id}:
+    delete:
+      summary: Hangup a call from a user
+      description: '**Required ACL:** `ctid-ng.users.me.calls.{call_id}.delete`
+
+
+        Only calls owned by the authenticated user may be hung up.'
+      parameters:
+      - name: call_id
+        in: path
+        description: ID of the call
+        required: true
+        type: string
+      tags:
+      - calls
+      - users
+      responses:
+        '204':
+          description: Call has been hung up
+        '403':
+          description: The authenticated user tried to hangup a call owned by someone
+            else
+          schema:
+            $ref: '#/definitions/Error'
+        '404':
+          description: No such call
+          schema:
+            $ref: '#/definitions/Error'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+  /chats:
+    post:
+      summary: Send a chat message
+      description: '**Required ACL:** `ctid-ng.chats.create`
+
+
+        Send a chat message to a user.
+
+        '
+      parameters:
+      - name: body
+        in: body
+        description: Chat message parameters
+        required: true
+        schema:
+          $ref: '#/definitions/ChatRequest'
+      tags:
+      - chats
+      responses:
+        '204':
+          description: Message has been sent
+        '400':
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/Error'
+  /users/me/chats:
+    post:
+      summary: Send a chat message
+      description: '**Required ACL:** `ctid-ng.users.me.chats`
+
+
+        The sender of the message is determined from the authentication token.
+
+        '
+      parameters:
+      - name: body
+        in: body
+        description: Chat message parameters
+        required: true
+        schema:
+          $ref: '#/definitions/UserChatRequest'
+      tags:
+      - chats
+      - users
+      responses:
+        '204':
+          description: Message has been sent
+        '400':
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/Error'
+  /transfers:
+    post:
+      summary: Initiate a transfer
+      description: '**Required ACL:** `ctid-ng.transfers.create`
+
+
+        The only way to cancel the transfer from the initiator is to use `DELETE /transfers/<id>`
+        (i.e. sending DTMF `*0` will not work).'
+      parameters:
+      - name: body
+        in: body
+        description: Parameters of the transfer
+        required: true
+        schema:
+          $ref: '#/definitions/TransferRequest'
+      tags:
+      - transfers
+      responses:
+        '201':
+          description: The transfer being created
+          schema:
+            $ref: '#/definitions/Transfer'
+        '400':
+          $ref: '#/responses/InvalidRequest'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+  /transfers/{transfer_id}:
+    get:
+      summary: Get details of a transfer
+      description: '**Required ACL:** `ctid-ng.transfers.{transfer_id}.read`'
+      parameters:
+      - $ref: '#/parameters/TransferID'
+      tags:
+      - transfers
+      responses:
+        '200':
+          description: The details of the transfer
+          schema:
+            $ref: '#/definitions/Transfer'
+        '404':
+          $ref: '#/responses/NoSuchTransfer'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+    delete:
+      summary: Cancel a transfer
+      description: '**Required ACL:** `ctid-ng.transfers.{transfer_id}.delete`'
+      parameters:
+      - $ref: '#/parameters/TransferID'
+      tags:
+      - transfers
+      responses:
+        '204':
+          description: Transfer cancelled
+        '404':
+          $ref: '#/responses/NoSuchTransfer'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+  /transfers/{transfer_id}/complete:
+    put:
+      summary: Complete a transfer
+      description: '**Required ACL:** `ctid-ng.transfers.{transfer_id}.complete.update`'
+      parameters:
+      - $ref: '#/parameters/TransferID'
+      tags:
+      - transfers
+      responses:
+        '204':
+          description: The transfer was completed
+        '404':
+          $ref: '#/responses/NoSuchTransfer'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+  /users/me/transfers:
+    get:
+      summary: Get the transfers of the authenticated user
+      description: '**Required ACL:** `ctid-ng.users.me.transfers.read`'
+      tags:
+      - transfers
+      - users
+      responses:
+        '200':
+          description: The list of transfers
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Transfer'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+    post:
+      summary: Initiate a transfer from the authenticated user
+      description: '**Required ACL:** `ctid-ng.users.me.transfers.create`'
+      parameters:
+      - name: body
+        in: body
+        description: Parameters of the transfer
+        required: true
+        schema:
+          $ref: '#/definitions/UserTransferRequest'
+      tags:
+      - transfers
+      - users
+      responses:
+        '201':
+          description: The transfer being created
+          schema:
+            $ref: '#/definitions/Transfer'
+        '400':
+          $ref: '#/responses/InvalidRequest'
+        '403':
+          description: The authenticated user tried to transfer a call owned by someone
+            else
+          schema:
+            $ref: '#/definitions/Error'
+        '409':
+          description: The server could not determine which Call to use as transferred
+            or initiator, usually because too many Calls are eligible
+          schema:
+            $ref: '#/definitions/Error'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+  /users/me/transfers/{transfer_id}:
+    delete:
+      summary: Cancel a transfer
+      description: '**Required ACL:** `ctid-ng.users.me.transfers.{transfer_id}.delete`'
+      parameters:
+      - $ref: '#/parameters/TransferID'
+      tags:
+      - transfers
+      - users
+      responses:
+        '204':
+          description: Transfer cancelled
+        '403':
+          description: The authenticated user tried to cancel a transfer owned by
+            someone else
+          schema:
+            $ref: '#/definitions/Error'
+        '404':
+          $ref: '#/responses/NoSuchTransfer'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+  /users/me/transfers/{transfer_id}/complete:
+    put:
+      summary: Complete a transfer
+      description: '**Required ACL:** `ctid-ng.users.me.transfers.{transfer_id}.complete.update`'
+      parameters:
+      - $ref: '#/parameters/TransferID'
+      tags:
+      - transfers
+      - users
+      responses:
+        '204':
+          description: The transfer was completed
+        '403':
+          description: The authenticated user tried to complete a transfer owned by
+            someone else
+          schema:
+            $ref: '#/definitions/Error'
+        '404':
+          $ref: '#/responses/NoSuchTransfer'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+  /status:
+    get:
+      summary: Print infos about internal status of xivo-ctid-ng
+      description: '**Required ACL:** `ctid-ng.status.read`'
+      tags:
+      - status
+      responses:
+        '200':
+          description: The internal infos of xivo-ctid-ng
+          schema:
+            $ref: '#/definitions/StatusSummary'
+responses:
+  AnotherServiceUnavailable:
+    description: Another service is unavailable (e.g. xivo-auth, xivo-confd, Asterisk,
+      ...)
+    schema:
+      $ref: '#/definitions/Error'
+  NoSuchTransfer:
+    description: The specified transfer does not exist
+    schema:
+      $ref: '#/definitions/Error'
+  InvalidRequest:
+    description: Invalid request
+    schema:
+      $ref: '#/definitions/Error'
+definitions:
+  CallRequest:
+    type: object
+    properties:
+      destination:
+        description: Destination parameters
+        type: object
+        properties:
+          extension:
+            type: string
+          context:
+            type: string
+          priority:
+            type: integer
+      source:
+        description: Caller parameters
+        type: object
+        properties:
+          user:
+            type: string
+      variables:
+        description: Channel variables to set
+        type: object
+  Call:
+    type: object
+    properties:
+      call_id:
+        type: string
+      user_uuid:
+        type: string
+      status:
+        type: string
+      talking_to:
+        $ref: '#/definitions/TalkingTo'
+      bridges:
+        type: array
+        items:
+          type: string
+      creation_time:
+        type: string
+        format: date-time
+      caller_id_name:
+        type: string
+      caller_id_number:
+        type: string
+      peer_caller_id_name:
+        type: string
+      peer_caller_id_number:
+        type: string
+      connected_id_name:
+        type: string
+      on_hold:
+        type: boolean
+  CallID:
+    type: object
+    properties:
+      call_id:
+        type: string
+  ChatRequest:
+    type: object
+    properties:
+      from:
+        description: The user UUID of the sender
+        type: string
+      to:
+        description: The user UUID of the receiver
+        type: string
+      to_xivo_uuid:
+        description: The XiVO UUID of the receiver
+        type: string
+      alias:
+        description: Alias/nickname of the sender
+        type: string
+      msg:
+        description: The message content
+        type: string
+    required:
+    - from
+    - to
+    - alias
+    - msg
+  UserChatRequest:
+    type: object
+    properties:
+      to:
+        description: The user UUID of the receiver
+        type: string
+      to_xivo_uuid:
+        description: The XiVO UUID of the receiver
+        type: string
+      alias:
+        description: Alias/nickname of the sender
+        type: string
+      msg:
+        description: The message content
+        type: string
+    required:
+    - to
+    - alias
+    - msg
+  Error:
+    title: Error
+    description: Error message for the client
+    properties:
+      message:
+        description: Human readable explanation of the error
+        type: string
+      error_id:
+        description: Identifier of the type of error. It is more precise than the
+          HTTP status code.
+        type: string
+      details:
+        description: Additional information about the error. The keys are specific
+          to each error.
+        type: object
+      timestamp:
+        description: Time when the error occured
+        type: number
+        format: timestamp
+  StatusSummary:
+    type: object
+    properties:
+      connections:
+        $ref: '#/definitions/ConnectionsStatusSummary'
+  ConnectionsStatusSummary:
+    type: object
+    properties:
+      ari:
+        $ref: '#/definitions/StatusValue'
+      bus_consumer:
+        $ref: '#/definitions/StatusValue'
+  StatusValue:
+    type: string
+    enum:
+    - fail
+    - ok
+  TalkingTo:
+    type: object
+    properties:
+      '{channel_id}':
+        type: string
+  TransferFlow:
+    description: Behavior of the transfer. `attended` allows the initiator to talk
+      to the recipient. `blind` does not.
+    type: string
+    default: attended
+    enum:
+    - attended
+    - blind
+  TransferRequest:
+    type: object
+    properties:
+      transferred_call:
+        description: Call ID of the call being transferred to someone else
+        type: string
+      initiator_call:
+        description: Call ID of the transfer initiator
+        type: string
+      context:
+        description: Context of the recipient of the transfer
+        type: string
+      exten:
+        description: Extension of the recipient of the transfer
+        type: string
+      flow:
+        $ref: '#/definitions/TransferFlow'
+      variables:
+        description: Channel variables to set on the recipient call
+        type: object
+  Transfer:
+    type: object
+    properties:
+      id:
+        description: Unique identifier of the transfer
+        type: string
+      initiator_uuid:
+        description: UUID of the user who initiated the transfer
+        type: string
+      transferred_call:
+        description: Call ID of the call being transferred to someone else
+        type: string
+      initiator_call:
+        description: Call ID of the transfer initiator
+        type: string
+      recipient_call:
+        description: Call ID of the recipient of the transfer. May be null when the
+          transfer is 'starting'.
+        type: string
+      status:
+        description: The current step of the transfer
+        type: string
+        enum:
+        - starting
+        - ringback
+        - answered
+      flow:
+        description: The behavior of the transfer
+        type: string
+        default: attended
+        enum:
+        - attended
+        - blind
+  UserCallRequest:
+    type: object
+    properties:
+      extension:
+        description: Extension to call
+        type: string
+      variables:
+        description: Channel variables to set
+        type: object
+    required:
+    - extension
+  UserTransferRequest:
+    type: object
+    properties:
+      initiator_call:
+        description: Call ID of the transfer initiator. This call must be owned by
+          the authenticated user.
+        type: string
+      exten:
+        description: Extension of the recipient of the transfer
+        type: string
+      flow:
+        $ref: '#/definitions/TransferFlow'
+    required:
+    - initiator_call
+    - exten
+parameters:
+  TransferID:
+    name: transfer_id
+    in: path
+    description: Unique identifier of the transfer
+    required: true
+    type: string
