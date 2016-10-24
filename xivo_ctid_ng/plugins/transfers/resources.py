@@ -21,6 +21,7 @@ class TransferRequestSchema(Schema):
     variables = StrictDict(key_field=fields.String(required=True, validate=Length(min=1)),
                            value_field=fields.String(required=True, validate=Length(min=1)),
                            missing=dict)
+    timeout = fields.Integer(missing=None, min=1, allow_none=True)
 
 transfer_request_schema = TransferRequestSchema(strict=True)
 
@@ -29,6 +30,7 @@ class UserTransferRequestSchema(Schema):
     initiator_call = fields.Str(validate=Length(min=1), required=True)
     exten = fields.Str(validate=Length(min=1), required=True)
     flow = fields.Str(validate=OneOf(['attended', 'blind']), missing='attended')
+    timeout = fields.Integer(missing=None, min=1, allow_none=True)
 
 user_transfer_request_schema = UserTransferRequestSchema(strict=True)
 
@@ -46,7 +48,8 @@ class TransfersResource(AuthResource):
                                                   request_body['context'],
                                                   request_body['exten'],
                                                   request_body['flow'],
-                                                  request_body['variables'])
+                                                  request_body['variables'],
+                                                  request_body['timeout'])
         return transfer.to_dict(), 201
 
 
@@ -72,6 +75,7 @@ class UserTransfersResource(AuthResource):
         transfer = self._transfers_service.create_from_user(request_body['initiator_call'],
                                                             request_body['exten'],
                                                             request_body['flow'],
+                                                            request_body['timeout'],
                                                             user_uuid)
         return transfer.to_dict(), 201
 

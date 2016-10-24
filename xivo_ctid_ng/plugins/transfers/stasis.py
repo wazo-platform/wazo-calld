@@ -167,6 +167,7 @@ class TransfersStasis(object):
                 context = self.ari.channels.getChannelVar(channelId=transfer.initiator_call, variable='XIVO_TRANSFER_RECIPIENT_CONTEXT')['value']
                 exten = self.ari.channels.getChannelVar(channelId=transfer.initiator_call, variable='XIVO_TRANSFER_RECIPIENT_EXTEN')['value']
                 variables_str = self.ari.channels.getChannelVar(channelId=transfer.initiator_call, variable='XIVO_TRANSFER_VARIABLES')['value']
+                timeout_str = self.ari.channels.getChannelVar(channelId=transfer.initiator_call, variable='XIVO_TRANSFER_TIMEOUT')['value']
             except ARINotFound:
                 logger.error('initiator hung up while creating transfer')
             try:
@@ -174,9 +175,10 @@ class TransfersStasis(object):
             except ValueError:
                 logger.warning('could not decode transfer variables "%s"', variables_str)
                 variables = {}
+            timeout = None if timeout_str == 'None' else int(timeout_str)
 
             transfer_state = self.state_factory.make(transfer)
-            new_state = transfer_state.start(transfer, context, exten, variables)
+            new_state = transfer_state.start(transfer, context, exten, variables, timeout)
             if new_state.transfer.flow == 'blind':
                 new_state.complete()
 

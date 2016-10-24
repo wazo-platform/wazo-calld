@@ -38,7 +38,7 @@ class TransfersService(object):
         transfers = self.state_persistor.list()
         return [transfer for transfer in transfers if transfer.initiator_uuid == user_uuid]
 
-    def create(self, transferred_call, initiator_call, context, exten, flow, variables):
+    def create(self, transferred_call, initiator_call, context, exten, flow, variables, timeout):
         try:
             transferred_channel = self.ari.channels.get(channelId=transferred_call)
             initiator_channel = self.ari.channels.get(channelId=initiator_call)
@@ -54,13 +54,13 @@ class TransfersService(object):
         else:
             transfer_state = self.state_factory.make_from_class(TransferStateReady)
 
-        new_state = transfer_state.create(transferred_channel, initiator_channel, context, exten, variables)
+        new_state = transfer_state.create(transferred_channel, initiator_channel, context, exten, variables, timeout)
         if flow == 'blind':
             new_state = new_state.complete()
 
         return new_state.transfer
 
-    def create_from_user(self, initiator_call, exten, flow, user_uuid):
+    def create_from_user(self, initiator_call, exten, flow, timeout, user_uuid):
         if not Channel(initiator_call, self.ari).exists():
             raise TransferCreationError('initiator channel not found')
 
@@ -76,9 +76,9 @@ class TransfersService(object):
 
         context = User(user_uuid, self.confd_client).main_line().context()
 
-        return self.create(transferred_call, initiator_call, context, exten, flow, variables={})
+        return self.create(transferred_call, initiator_call, context, exten, flow, variables={}, timeout=timeout)
 
-    def originate_recipient(self, initiator_call, context, exten, transfer_id, variables):
+    def originate_recipient(self, initiator_call, context, exten, transfer_id, variables, timeout):
         try:
             app_instance = self.call_states.get(initiator_call).app_instance
         except KeyError:
@@ -99,12 +99,14 @@ class TransfersService(object):
             originate_variables['XIVO_USERUUID'] = initiator_channel.getChannelVar(variable='XIVO_USERUUID')['value']
         except ARINotFound:
             pass
+        timeout = -1 if timeout is None else timeout
 
         new_channel = self.ari.channels.originate(endpoint=recipient_endpoint,
                                                   app=APPLICATION_NAME,
                                                   appArgs=app_args,
                                                   callerId=caller_id,
-                                                  variables={'variables': originate_variables})
+                                                  variables={'variables': originate_variables},
+                                                  timeout=timeout)
         recipient_call = new_channel.id
 
         try:
