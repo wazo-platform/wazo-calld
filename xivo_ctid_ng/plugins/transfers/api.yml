@@ -163,9 +163,9 @@ paths:
           $ref: '#/responses/AnotherServiceUnavailable'
 responses:
   NoSuchTransfer:
-  description: The specified transfer does not exist
-  schema:
-    $ref: '#/definitions/Error'
+    description: The specified transfer does not exist
+    schema:
+      $ref: '#/definitions/Error'
 definitions:
   TransferFlow:
     description: Behavior of the transfer. `attended` allows the initiator to talk
