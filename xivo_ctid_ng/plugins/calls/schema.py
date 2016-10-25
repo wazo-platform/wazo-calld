@@ -9,6 +9,7 @@ from xivo_ctid_ng.helpers.mallow import StrictDict
 
 
 class CallRequestSourceSchema(Schema):
+    line_id = fields.Integer()
     user = fields.String(required=True)
 
 
@@ -28,6 +29,7 @@ class CallRequestSchema(Schema):
 
 class UserCallRequestSchema(Schema):
     extension = fields.String(validate=Length(min=1), required=True)
+    line_id = fields.Integer()
     variables = StrictDict(key_field=fields.String(required=True, validate=Length(min=1)),
                            value_field=fields.String(required=True, validate=Length(min=1)),
                            missing=dict)
