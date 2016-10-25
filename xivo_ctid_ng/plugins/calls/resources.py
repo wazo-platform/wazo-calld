@@ -1,44 +1,21 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) 2015-2016 Avencall
+# Copyright (C) 2016 Proformatique Inc.
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
 
 from flask import request
-from marshmallow import Schema, fields
-from marshmallow.validate import Length
 
 from xivo_ctid_ng.core.auth import required_acl
 from xivo_ctid_ng.core.auth import get_token_user_uuid_from_request
 from xivo_ctid_ng.core.rest_api import AuthResource
-from xivo_ctid_ng.helpers.mallow import StrictDict
+
+from .schema import CallRequestSchema
+from .schema import UserCallRequestSchema
 
 logger = logging.getLogger(__name__)
 
-
-class CallRequestSourceSchema(Schema):
-    user = fields.String(required=True)
-
-
-class CallRequestDestinationSchema(Schema):
-    context = fields.String(validate=Length(min=1), required=True)
-    extension = fields.String(validate=Length(min=1), required=True)
-    priority = fields.String(validate=Length(min=1), required=True)
-
-
-class CallRequestSchema(Schema):
-    source = fields.Nested('CallRequestSourceSchema', required=True)
-    destination = fields.Nested('CallRequestDestinationSchema', required=True)
-    variables = StrictDict(key_field=fields.String(required=True, validate=Length(min=1)),
-                           value_field=fields.String(required=True, validate=Length(min=1)),
-                           missing=dict)
-
-
-class UserCallRequestSchema(Schema):
-    extension = fields.String(validate=Length(min=1), required=True)
-    variables = StrictDict(key_field=fields.String(required=True, validate=Length(min=1)),
-                           value_field=fields.String(required=True, validate=Length(min=1)),
-                           missing=dict)
 
 call_request_schema = CallRequestSchema(strict=True)
 user_call_request_schema = UserCallRequestSchema(strict=True)
