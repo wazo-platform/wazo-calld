@@ -59,7 +59,10 @@ class CallsService(object):
 
     def originate(self, request):
         source_user = request['source']['user']
-        endpoint = User(source_user, self._confd).main_line().interface()
+        if 'line_id' in request['source']:
+            endpoint = User(source_user, self._confd).line(request['source']['line_id']).interface()
+        else:
+            endpoint = User(source_user, self._confd).main_line().interface()
         extension = request['destination']['extension']
         context = request['destination']['context']
         priority = request['destination']['priority']
@@ -81,7 +84,10 @@ class CallsService(object):
         return channel.id
 
     def originate_user(self, request, user_uuid):
-        context = User(user_uuid, self._confd).main_line().context()
+        if 'line_id' in request:
+            context = User(user_uuid, self._confd).line(request['line_id']).context()
+        else:
+            context = User(user_uuid, self._confd).main_line().context()
         new_request = {
             'destination': {'context': context,
                             'extension': request['extension'],
@@ -89,6 +95,8 @@ class CallsService(object):
             'source': {'user': user_uuid},
             'variables': request['variables']
         }
+        if 'line_id' in request:
+            new_request['source']['line_id'] = request['line_id']
         return self.originate(new_request)
 
     def get(self, call_id):

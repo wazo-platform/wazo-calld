@@ -1,30 +1,24 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) 2015-2016 Avencall
+# Copyright (C) 2016 Proformatique Inc.
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
 
 from flask import request
-from marshmallow import Schema, fields
-from marshmallow.validate import Length
 
 from xivo_ctid_ng.core.auth import required_acl
 from xivo_ctid_ng.core.auth import get_token_user_uuid_from_request
 from xivo_ctid_ng.core.rest_api import AuthResource
-from xivo_ctid_ng.helpers.mallow import StrictDict
 
-from . import validator
+from .schema import CallRequestSchema
+from .schema import UserCallRequestSchema
 
 logger = logging.getLogger(__name__)
 
 
-class CallRequestSchema(Schema):
-    extension = fields.Str(validate=Length(min=1), required=True)
-    variables = StrictDict(key_field=fields.String(required=True, validate=Length(min=1)),
-                           value_field=fields.String(required=True, validate=Length(min=1)),
-                           missing=dict)
-
 call_request_schema = CallRequestSchema(strict=True)
+user_call_request_schema = UserCallRequestSchema(strict=True)
 
 
 class CallsResource(AuthResource):
@@ -45,9 +39,7 @@ class CallsResource(AuthResource):
 
     @required_acl('ctid-ng.calls.create')
     def post(self):
-        request_body = request.get_json(force=True)
-
-        validator.validate_originate_body(request_body)
+        request_body = call_request_schema.load(request.get_json(force=True)).data
 
         call_id = self.calls_service.originate(request_body)
 
@@ -74,7 +66,7 @@ class MyCallsResource(AuthResource):
 
     @required_acl('ctid-ng.users.me.calls.create')
     def post(self):
-        request_body = call_request_schema.load(request.get_json(force=True)).data
+        request_body = user_call_request_schema.load(request.get_json(force=True)).data
 
         user_uuid = get_token_user_uuid_from_request(self.auth_client)
 

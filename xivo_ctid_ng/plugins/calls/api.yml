@@ -230,9 +230,16 @@ definitions:
         properties:
           user:
             type: string
+            description: UUID of the user making the call
+          line_id:
+            type: integer
+            description: ID of the line of the user used to make the call. Default is the main line of the user.
       variables:
         description: Channel variables to set
         type: object
+    required:
+      - destination
+      - source
   Call:
     type: object
     properties:
@@ -277,8 +284,11 @@ definitions:
       variables:
         description: Channel variables to set
         type: object
+      line_id:
+        type: integer
+        description: ID of the line of the user used to make the call. Default is the main line of the user.
     required:
-    - extension
+      - extension
   TalkingTo:
     type: object
     properties:

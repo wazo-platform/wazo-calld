@@ -5,9 +5,11 @@
 from requests import HTTPError
 from requests import RequestException
 
-from xivo_ctid_ng.core.exceptions import InvalidUserUUID
-from xivo_ctid_ng.core.exceptions import UserHasNoLine
 from xivo_ctid_ng.core.exceptions import XiVOConfdUnreachable
+
+from .exceptions import InvalidUserUUID
+from .exceptions import InvalidUserLine
+from .exceptions import UserHasNoLine
 
 
 def not_found(error):
@@ -34,6 +36,22 @@ class User(object):
         if not main_line_ids:
             raise UserHasNoLine(self.uuid)
         return Line(main_line_ids[0], self._confd, )
+
+    def line(self, line_id):
+        try:
+            user_lines = self._confd.users.relations(self.uuid).list_lines()['items']
+        except HTTPError as e:
+            if not_found(e):
+                raise InvalidUserUUID(self.uuid)
+            raise
+        except RequestException as e:
+            raise XiVOConfdUnreachable(self._confd, e)
+
+        valid_line_ids = [user_line['line_id'] for user_line in user_lines]
+        if line_id not in valid_line_ids:
+            raise InvalidUserLine(self.uuid, line_id)
+
+        return Line(line_id, self._confd)
 
 
 class Line(object):
