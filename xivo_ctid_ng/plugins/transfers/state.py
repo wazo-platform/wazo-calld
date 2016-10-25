@@ -162,7 +162,7 @@ class TransferStateReady(TransferState):
     name = TransferStatus.ready
 
     @transition
-    def create(self, transferred_channel, initiator_channel, context, exten, variables):
+    def create(self, transferred_channel, initiator_channel, context, exten, variables, timeout):
         initiator_uuid = Channel(initiator_channel.id, self._ari).user()
         if initiator_uuid is None:
             raise TransferCreationError('initiator has no user UUID')
@@ -189,7 +189,7 @@ class TransferStateReady(TransferState):
         except ARINotFound:
             raise TransferCreationError('initiator call hung up')
 
-        recipient_call = self._services.originate_recipient(initiator_channel.id, context, exten, transfer_id, variables)
+        recipient_call = self._services.originate_recipient(initiator_channel.id, context, exten, transfer_id, variables, timeout)
 
         self.transfer = Transfer(transfer_id, initiator_uuid)
         self.transfer.transferred_call = transferred_channel.id
@@ -210,7 +210,7 @@ class TransferStateReadyNonStasis(TransferState):
     name = 'ready_non_stasis'
 
     @transition
-    def create(self, transferred_channel, initiator_channel, context, exten, variables):
+    def create(self, transferred_channel, initiator_channel, context, exten, variables, timeout):
         initiator_uuid = Channel(initiator_channel.id, self._ari).user()
         if initiator_uuid is None:
             raise TransferCreationError('initiator has no user UUID')
@@ -224,7 +224,8 @@ class TransferStateReadyNonStasis(TransferState):
                                                    context,
                                                    exten,
                                                    transfer_id,
-                                                   variables)
+                                                   variables,
+                                                   timeout)
         except ARINotFound:
             raise TransferCreationError('channel not found')
         self.transfer = Transfer(transfer_id, initiator_uuid)
@@ -245,7 +246,7 @@ class TransferStateStarting(TransferState):
     name = TransferStatus.starting
 
     @transition
-    def start(self, transfer, context, exten, variables):
+    def start(self, transfer, context, exten, variables, timeout):
         self.transfer = transfer
 
         try:
@@ -263,7 +264,8 @@ class TransferStateStarting(TransferState):
                                                                               context,
                                                                               exten,
                                                                               self.transfer.id,
-                                                                              variables)
+                                                                              variables,
+                                                                              timeout)
         except TransferCreationError as e:
             logger.error(e.message, e.details)
 

@@ -187,7 +187,7 @@ class CtidNgClient(object):
                                verify=False)
         return result
 
-    def create_transfer(self, transferred_call, initiator_call, context, exten, variables=None):
+    def create_transfer(self, transferred_call, initiator_call, context, exten, variables=None, timeout=None):
         body = {
             'transferred_call': transferred_call,
             'initiator_call': initiator_call,
@@ -197,6 +197,8 @@ class CtidNgClient(object):
         }
         if variables:
             body['variables'] = variables
+        if timeout:
+            body['timeout'] = timeout
         response = self.post_transfer_result(body, token=VALID_TOKEN)
         assert_that(response.status_code, equal_to(201))
         return response.json()

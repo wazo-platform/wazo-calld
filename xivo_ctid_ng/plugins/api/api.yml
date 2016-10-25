@@ -616,6 +616,10 @@ definitions:
     enum:
     - attended
     - blind
+  TransferTimeout:
+    description: Maximum ringing time before cancelling the transfer (in seconds). Default (or null) is an unlimited ring time.
+    type: integer
+
   TransferRequest:
     type: object
     properties:
@@ -636,6 +640,8 @@ definitions:
       variables:
         description: Channel variables to set on the recipient call
         type: object
+      timeout:
+        $ref: '#/definitions/TransferTimeout'
   Transfer:
     type: object
     properties:
@@ -692,6 +698,8 @@ definitions:
         type: string
       flow:
         $ref: '#/definitions/TransferFlow'
+      timeout:
+        $ref: '#/definitions/TransferTimeout'
     required:
     - initiator_call
     - exten
