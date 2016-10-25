@@ -13,18 +13,35 @@ from xivo_ctid_ng.core.auth import get_token_user_uuid_from_request
 from xivo_ctid_ng.core.rest_api import AuthResource
 from xivo_ctid_ng.helpers.mallow import StrictDict
 
-from . import validator
-
 logger = logging.getLogger(__name__)
 
 
+class CallRequestSourceSchema(Schema):
+    user = fields.String(required=True)
+
+
+class CallRequestDestinationSchema(Schema):
+    context = fields.String(validate=Length(min=1), required=True)
+    extension = fields.String(validate=Length(min=1), required=True)
+    priority = fields.String(validate=Length(min=1), required=True)
+
+
 class CallRequestSchema(Schema):
-    extension = fields.Str(validate=Length(min=1), required=True)
+    source = fields.Nested('CallRequestSourceSchema', required=True)
+    destination = fields.Nested('CallRequestDestinationSchema', required=True)
+    variables = StrictDict(key_field=fields.String(required=True, validate=Length(min=1)),
+                           value_field=fields.String(required=True, validate=Length(min=1)),
+                           missing=dict)
+
+
+class UserCallRequestSchema(Schema):
+    extension = fields.String(validate=Length(min=1), required=True)
     variables = StrictDict(key_field=fields.String(required=True, validate=Length(min=1)),
                            value_field=fields.String(required=True, validate=Length(min=1)),
                            missing=dict)
 
 call_request_schema = CallRequestSchema(strict=True)
+user_call_request_schema = UserCallRequestSchema(strict=True)
 
 
 class CallsResource(AuthResource):
@@ -45,9 +62,7 @@ class CallsResource(AuthResource):
 
     @required_acl('ctid-ng.calls.create')
     def post(self):
-        request_body = request.get_json(force=True)
-
-        validator.validate_originate_body(request_body)
+        request_body = call_request_schema.load(request.get_json(force=True)).data
 
         call_id = self.calls_service.originate(request_body)
 
@@ -74,7 +89,7 @@ class MyCallsResource(AuthResource):
 
     @required_acl('ctid-ng.users.me.calls.create')
     def post(self):
-        request_body = call_request_schema.load(request.get_json(force=True)).data
+        request_body = user_call_request_schema.load(request.get_json(force=True)).data
 
         user_uuid = get_token_user_uuid_from_request(self.auth_client)
 

@@ -574,7 +574,7 @@ class TestCreateCall(IntegrationTest):
         result = self.ctid_ng.post_call_raw(body, token=VALID_TOKEN)
 
         assert_that(result.status_code, equal_to(400))
-        assert_that(result.json(), has_entry('message', contains_string('source')))
+        assert_that(result.json(), has_entry('details', has_item('source')))
 
     def test_create_call_with_wrong_exten(self):
         user_uuid = 'user-uuid'
@@ -591,7 +591,7 @@ class TestCreateCall(IntegrationTest):
                                                token=VALID_TOKEN)
 
         assert_that(result.status_code, equal_to(400))
-        assert_that(result.json(), has_entry('message', contains_string('exten')))
+        assert_that(result.json(), has_entry('details', has_item('exten')))
 
     def test_create_call_with_no_content_type(self):
         user_uuid = 'user-uuid'
@@ -815,9 +815,9 @@ class TestNoConfd(IntegrationTest):
 
     def test_given_no_confd_when_originate_then_503(self):
         result = self.ctid_ng.post_call_result(source='user-uuid',
-                                               priority=None,
-                                               extension=None,
-                                               context=None,
+                                               priority='some-priority',
+                                               extension='some-extension',
+                                               context='some-context',
                                                token=VALID_TOKEN)
 
         assert_that(result.status_code, equal_to(503))
