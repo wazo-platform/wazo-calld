@@ -1,0 +1,30 @@
+paths:
+  /status:
+    get:
+      summary: Print infos about internal status of xivo-ctid-ng
+      description: '**Required ACL:** `ctid-ng.status.read`'
+      tags:
+        - status
+      responses:
+        '200':
+          description: The internal infos of xivo-ctid-ng
+          schema:
+            $ref: '#/definitions/StatusSummary'
+definitions:
+  StatusSummary:
+    type: object
+    properties:
+      connections:
+        $ref: '#/definitions/ConnectionsStatusSummary'
+  ConnectionsStatusSummary:
+    type: object
+    properties:
+      ari:
+        $ref: '#/definitions/StatusValue'
+      bus_consumer:
+        $ref: '#/definitions/StatusValue'
+  StatusValue:
+    type: string
+    enum:
+      - fail
+      - ok

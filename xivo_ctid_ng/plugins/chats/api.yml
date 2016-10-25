@@ -1,0 +1,95 @@
+paths:
+  /chats:
+    post:
+      summary: Send a chat message
+      description: '**Required ACL:** `ctid-ng.chats.create`
+
+
+        Send a chat message to a user.
+
+        '
+      parameters:
+      - name: body
+        in: body
+        description: Chat message parameters
+        required: true
+        schema:
+          $ref: '#/definitions/ChatRequest'
+      tags:
+      - chats
+      responses:
+        '204':
+          description: Message has been sent
+        '400':
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/Error'
+  /users/me/chats:
+    post:
+      summary: Send a chat message
+      description: '**Required ACL:** `ctid-ng.users.me.chats`
+
+
+        The sender of the message is determined from the authentication token.
+
+        '
+      parameters:
+      - name: body
+        in: body
+        description: Chat message parameters
+        required: true
+        schema:
+          $ref: '#/definitions/UserChatRequest'
+      tags:
+      - chats
+      - users
+      responses:
+        '204':
+          description: Message has been sent
+        '400':
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/Error'
+definitions:
+  ChatRequest:
+    type: object
+    properties:
+      from:
+        description: The user UUID of the sender
+        type: string
+      to:
+        description: The user UUID of the receiver
+        type: string
+      to_xivo_uuid:
+        description: The XiVO UUID of the receiver
+        type: string
+      alias:
+        description: Alias/nickname of the sender
+        type: string
+      msg:
+        description: The message content
+        type: string
+    required:
+    - from
+    - to
+    - alias
+    - msg
+  UserChatRequest:
+    type: object
+    properties:
+      to:
+        description: The user UUID of the receiver
+        type: string
+      to_xivo_uuid:
+        description: The XiVO UUID of the receiver
+        type: string
+      alias:
+        description: Alias/nickname of the sender
+        type: string
+      msg:
+        description: The message content
+        type: string
+    required:
+    - to
+    - alias
+    - msg
