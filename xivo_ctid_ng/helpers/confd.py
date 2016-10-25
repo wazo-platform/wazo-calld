@@ -5,9 +5,10 @@
 from requests import HTTPError
 from requests import RequestException
 
-from xivo_ctid_ng.core.exceptions import InvalidUserUUID
-from xivo_ctid_ng.core.exceptions import UserHasNoLine
 from xivo_ctid_ng.core.exceptions import XiVOConfdUnreachable
+
+from .exceptions import InvalidUserUUID
+from .exceptions import UserHasNoLine
 
 
 def not_found(error):
