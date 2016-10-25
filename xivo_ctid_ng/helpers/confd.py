@@ -9,7 +9,7 @@ from xivo_ctid_ng.core.exceptions import XiVOConfdUnreachable
 
 from .exceptions import InvalidUserUUID
 from .exceptions import InvalidUserLine
-from .exceptions import UserHasNoLine
+from .exceptions import UserMissingMainLine
 
 
 def not_found(error):
@@ -34,7 +34,7 @@ class User(object):
 
         main_line_ids = [user_line['line_id'] for user_line in user_lines_of_user if user_line['main_line'] is True]
         if not main_line_ids:
-            raise UserHasNoLine(self.uuid)
+            raise UserMissingMainLine(self.uuid)
         return Line(main_line_ids[0], self._confd, )
 
     def line(self, line_id):

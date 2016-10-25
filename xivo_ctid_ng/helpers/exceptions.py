@@ -14,13 +14,13 @@ class NotEnoughChannels(Exception):
     pass
 
 
-class UserHasNoLine(APIException):
+class UserMissingMainLine(APIException):
 
     def __init__(self, user_uuid):
-        super(UserHasNoLine, self).__init__(
+        super(UserMissingMainLine, self).__init__(
             status_code=400,
-            message='Invalid user: user has no line',
-            error_id='user-has-no-line',
+            message='User has no main line',
+            error_id='user-missing-main-line',
             details={
                 'user_uuid': user_uuid
             }
