@@ -28,7 +28,7 @@ class AmidClient(object):
             {'Event': 'ListDialplan',
              'Context': context,
              'Exten': exten,
-             'Priority': priority}
+             'Priority': str(priority)}
         ]
         self.set_action_result(result)
 

@@ -4,6 +4,7 @@
 
 from marshmallow import Schema, fields
 from marshmallow.validate import Length
+from marshmallow.validate import Range
 
 from xivo_ctid_ng.helpers.mallow import StrictDict
 
@@ -16,7 +17,7 @@ class CallRequestSourceSchema(Schema):
 class CallRequestDestinationSchema(Schema):
     context = fields.String(validate=Length(min=1), required=True)
     extension = fields.String(validate=Length(min=1), required=True)
-    priority = fields.String(validate=Length(min=1), required=True)
+    priority = fields.Integer(validate=Range(min=1), required=True)
 
 
 class CallRequestSchema(Schema):
