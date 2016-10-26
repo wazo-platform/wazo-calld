@@ -266,8 +266,6 @@ definitions:
         type: string
       peer_caller_id_number:
         type: string
-      connected_id_name:
-        type: string
       on_hold:
         type: boolean
   CallID:
