@@ -3,7 +3,9 @@
 # SPDX-License-Identifier: GPL-3.0+
 
 import json
+import ari
 
+from ari.exceptions import ARINotFound
 from hamcrest import all_of
 from hamcrest import assert_that
 from hamcrest import contains
@@ -15,12 +17,14 @@ from hamcrest import has_entry
 from hamcrest import has_item
 from hamcrest import has_items
 from hamcrest import contains_string
+from xivo_test_helpers import until
 
 from .test_api.ari_ import MockApplication
 from .test_api.ari_ import MockBridge
 from .test_api.ari_ import MockChannel
 from .test_api.auth import MockUserToken
 from .test_api.base import IntegrationTest
+from .test_api.chan_test import ChanTest
 from .test_api.confd import MockLine
 from .test_api.confd import MockUser
 from .test_api.confd import MockUserLine
@@ -1014,3 +1018,62 @@ class TestConnectUser(IntegrationTest):
 
         assert_that(result.status_code, equal_to(404))
         assert_that(result.json(), has_entry('message', contains_string('call')))
+
+
+class TestCallerID(IntegrationTest):
+
+    asset = 'real_asterisk'
+
+    @classmethod
+    def setUpClass(cls):
+        super(TestCallerID, cls).setUpClass()
+        cls.chan_test = ChanTest(cls.ari_config())
+
+    @classmethod
+    def ari_config(cls):
+        return {
+            'base_url': 'http://localhost:{port}'.format(port=cls.service_port(5039, 'ari')),
+            'username': 'xivo',
+            'password': 'xivo',
+        }
+
+    def setUp(self):
+        super(TestCallerID, self).setUp()
+        self.ari = ari.connect(**self.ari_config())
+
+    def tearDown(self):
+        self.clear_channels()
+
+    def clear_channels(self):
+        for channel in self.ari.channels.list():
+            try:
+                channel.hangup()
+            except ARINotFound:
+                pass
+
+    def test_when_create_call_and_answer1_then_connected_line_is_correct(self):
+        self.confd.set_users(MockUser(uuid='user-uuid'))
+        self.confd.set_lines(MockLine(id='line-id', name='originator', protocol='test'))
+        self.confd.set_user_lines({'user-uuid': [MockUserLine('line-id')]})
+        originator_call = self.ctid_ng.originate('user-uuid',
+                                                 priority='1',
+                                                 extension='answer-callerid',
+                                                 context='local')
+        originator_channel = self.ari.channels.get(channelId=originator_call['call_id'])
+        recipient_caller_id_name = u'rêcîpîênt'
+        recipient_caller_id_number = u'answer-callerid'
+        bus_events = self.bus.accumulator('calls.call.updated')
+
+        self.chan_test.answer_channel(originator_channel)
+
+        def originator_has_correct_connected_line(name, number):
+            expected_peer_caller_id = {'name': name,
+                                       'number': number}
+            peer_caller_ids = [{'name': message['data']['peer_caller_id_name'],
+                                'number': message['data']['peer_caller_id_number']}
+                               for message in bus_events.accumulate()
+                               if message['data']['call_id'] == originator_channel.id]
+
+            return expected_peer_caller_id in peer_caller_ids
+
+        until.true(originator_has_correct_connected_line, recipient_caller_id_name, recipient_caller_id_number, tries=3)

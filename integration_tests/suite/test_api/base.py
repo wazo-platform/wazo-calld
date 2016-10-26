@@ -2,6 +2,7 @@
 # Copyright 2015-2016 by Avencall
 # SPDX-License-Identifier: GPL-3.0+
 
+import os
 import logging
 import time
 
@@ -23,6 +24,9 @@ from .wait_strategy import CtidNgConnectionsOkWaitStrategy
 logger = logging.getLogger(__name__)
 
 urllib3.disable_warnings()
+if os.environ.get('TEST_LOGS') != 'verbose':
+    logging.getLogger('swaggerpy.client').setLevel(logging.WARNING)
+    logging.getLogger('amqp').setLevel(logging.INFO)
 
 
 class WrongClient(object):
