@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) 2015-2016 Avencall
+# Copyright (C) 2016 Proformatique Inc.
 # SPDX-License-Identifier: GPL-3.0+
 
 import json
-import ari
 
-from ari.exceptions import ARINotFound
 from hamcrest import all_of
 from hamcrest import assert_that
 from hamcrest import contains
@@ -24,7 +23,7 @@ from .test_api.ari_ import MockBridge
 from .test_api.ari_ import MockChannel
 from .test_api.auth import MockUserToken
 from .test_api.base import IntegrationTest
-from .test_api.chan_test import ChanTest
+from .test_api.base import RealAsteriskIntegrationTest
 from .test_api.confd import MockLine
 from .test_api.confd import MockUser
 from .test_api.confd import MockUserLine
@@ -1020,36 +1019,9 @@ class TestConnectUser(IntegrationTest):
         assert_that(result.json(), has_entry('message', contains_string('call')))
 
 
-class TestCallerID(IntegrationTest):
+class TestCallerID(RealAsteriskIntegrationTest):
 
     asset = 'real_asterisk'
-
-    @classmethod
-    def setUpClass(cls):
-        super(TestCallerID, cls).setUpClass()
-        cls.chan_test = ChanTest(cls.ari_config())
-
-    @classmethod
-    def ari_config(cls):
-        return {
-            'base_url': 'http://localhost:{port}'.format(port=cls.service_port(5039, 'ari')),
-            'username': 'xivo',
-            'password': 'xivo',
-        }
-
-    def setUp(self):
-        super(TestCallerID, self).setUp()
-        self.ari = ari.connect(**self.ari_config())
-
-    def tearDown(self):
-        self.clear_channels()
-
-    def clear_channels(self):
-        for channel in self.ari.channels.list():
-            try:
-                channel.hangup()
-            except ARINotFound:
-                pass
 
     def test_when_create_call_and_answer1_then_connected_line_is_correct(self):
         self.confd.set_users(MockUser(uuid='user-uuid'))
