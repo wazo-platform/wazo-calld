@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
 # Copyright 2016 by Avencall
+# Copyright 2016 by Proformatique Inc.
 # SPDX-License-Identifier: GPL-3.0+
 
-import ari
 import logging
 import uuid
 
@@ -29,7 +29,7 @@ from hamcrest import raises
 from xivo_test_helpers import until
 
 from .test_api.base import IntegrationTest
-from .test_api.chan_test import ChanTest
+from .test_api.base import RealAsteriskIntegrationTest
 from .test_api.constants import VALID_TOKEN
 from .test_api.confd import MockUser
 from .test_api.confd import MockLine
@@ -69,38 +69,14 @@ logging.getLogger('swaggerpy.client').setLevel(logging.INFO)
 logging.getLogger('requests.packages.urllib3.connectionpool').setLevel(logging.INFO)
 
 
-class TestTransfers(IntegrationTest):
+class TestTransfers(RealAsteriskIntegrationTest):
 
     asset = 'real_asterisk'
 
-    @classmethod
-    def setUpClass(cls):
-        super(TestTransfers, cls).setUpClass()
-        cls.chan_test = ChanTest(cls.ari_config())
-
-    @classmethod
-    def ari_config(cls):
-        return {
-            'base_url': 'http://localhost:{port}'.format(port=cls.service_port(5039, 'ari')),
-            'username': 'xivo',
-            'password': 'xivo',
-        }
-
     def setUp(self):
         super(TestTransfers, self).setUp()
-        self.ari = ari.connect(**self.ari_config())
         self.b = HamcrestARIBridge(self.ari)
         self.c = HamcrestARIChannel(self.ari)
-
-    def tearDown(self):
-        self.clear_channels()
-
-    def clear_channels(self):
-        for channel in self.ari.channels.list():
-            try:
-                channel.hangup()
-            except ARINotFound:
-                pass
 
     def dereference_local_channel(self, local_channel_left):
         left_name = local_channel_left.json['name']

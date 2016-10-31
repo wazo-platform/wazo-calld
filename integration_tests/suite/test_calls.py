@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) 2015-2016 Avencall
+# Copyright (C) 2016 Proformatique Inc.
 # SPDX-License-Identifier: GPL-3.0+
 
 import json
@@ -15,12 +16,14 @@ from hamcrest import has_entry
 from hamcrest import has_item
 from hamcrest import has_items
 from hamcrest import contains_string
+from xivo_test_helpers import until
 
 from .test_api.ari_ import MockApplication
 from .test_api.ari_ import MockBridge
 from .test_api.ari_ import MockChannel
 from .test_api.auth import MockUserToken
 from .test_api.base import IntegrationTest
+from .test_api.base import RealAsteriskIntegrationTest
 from .test_api.confd import MockLine
 from .test_api.confd import MockUser
 from .test_api.confd import MockUserLine
@@ -1027,3 +1030,35 @@ class TestConnectUser(IntegrationTest):
 
         assert_that(result.status_code, equal_to(404))
         assert_that(result.json(), has_entry('message', contains_string('call')))
+
+
+class TestCallerID(RealAsteriskIntegrationTest):
+
+    asset = 'real_asterisk'
+
+    def test_when_create_call_and_answer1_then_connected_line_is_correct(self):
+        self.confd.set_users(MockUser(uuid='user-uuid'))
+        self.confd.set_lines(MockLine(id='line-id', name='originator', protocol='test'))
+        self.confd.set_user_lines({'user-uuid': [MockUserLine('line-id')]})
+        originator_call = self.ctid_ng.originate('user-uuid',
+                                                 priority='1',
+                                                 extension='ring-connected-line',
+                                                 context='local')
+        originator_channel = self.ari.channels.get(channelId=originator_call['call_id'])
+        recipient_caller_id_name = u'rêcîpîênt'
+        recipient_caller_id_number = u'ring-connected-line'
+        bus_events = self.bus.accumulator('calls.call.updated')
+
+        self.chan_test.answer_channel(originator_channel)
+
+        def originator_has_correct_connected_line(name, number):
+            expected_peer_caller_id = {'name': name,
+                                       'number': number}
+            peer_caller_ids = [{'name': message['data']['peer_caller_id_name'],
+                                'number': message['data']['peer_caller_id_number']}
+                               for message in bus_events.accumulate()
+                               if message['data']['call_id'] == originator_channel.id]
+
+            return expected_peer_caller_id in peer_caller_ids
+
+        until.true(originator_has_correct_connected_line, recipient_caller_id_name, recipient_caller_id_number, tries=3)

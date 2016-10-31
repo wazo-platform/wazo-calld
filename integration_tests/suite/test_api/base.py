@@ -1,10 +1,14 @@
 # -*- coding: utf-8 -*-
 # Copyright 2015-2016 by Avencall
+# Copyright 2016 by Proformatique Inc.
 # SPDX-License-Identifier: GPL-3.0+
 
+import ari
+import os
 import logging
 import time
 
+from ari.exceptions import ARINotFound
 from requests.packages import urllib3
 from xivo_test_helpers.asset_launching_test_case import AssetLaunchingTestCase
 from xivo_test_helpers.asset_launching_test_case import NoSuchService
@@ -14,6 +18,7 @@ from .amid import AmidClient
 from .ari_ import ARIClient
 from .auth import AuthClient
 from .bus import BusClient
+from .chan_test import ChanTest
 from .confd import ConfdClient
 from .constants import ASSET_ROOT
 from .ctid_ng import CtidNgClient
@@ -23,6 +28,9 @@ from .wait_strategy import CtidNgConnectionsOkWaitStrategy
 logger = logging.getLogger(__name__)
 
 urllib3.disable_warnings()
+if os.environ.get('TEST_LOGS') != 'verbose':
+    logging.getLogger('swaggerpy.client').setLevel(logging.WARNING)
+    logging.getLogger('amqp').setLevel(logging.INFO)
 
 
 class WrongClient(object):
@@ -96,3 +104,35 @@ class IntegrationTest(AssetLaunchingTestCase):
     @classmethod
     def wait_for_ctid_ng_to_connect_to_bus(cls):
         time.sleep(4)
+
+
+class RealAsteriskIntegrationTest(IntegrationTest):
+    asset = 'real_asterisk'
+
+    @classmethod
+    def setUpClass(cls):
+        super(RealAsteriskIntegrationTest, cls).setUpClass()
+        cls.chan_test = ChanTest(cls.ari_config())
+
+    @classmethod
+    def ari_config(cls):
+        return {
+            'base_url': 'http://localhost:{port}'.format(port=cls.service_port(5039, 'ari')),
+            'username': 'xivo',
+            'password': 'xivo',
+        }
+
+    def setUp(self):
+        super(RealAsteriskIntegrationTest, self).setUp()
+        self.ari = ari.connect(**self.ari_config())
+
+    def tearDown(self):
+        self.clear_channels()
+        super(RealAsteriskIntegrationTest, self).tearDown()
+
+    def clear_channels(self):
+        for channel in self.ari.channels.list():
+            try:
+                channel.hangup()
+            except ARINotFound:
+                pass
