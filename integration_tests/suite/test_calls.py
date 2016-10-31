@@ -1029,11 +1029,11 @@ class TestCallerID(RealAsteriskIntegrationTest):
         self.confd.set_user_lines({'user-uuid': [MockUserLine('line-id')]})
         originator_call = self.ctid_ng.originate('user-uuid',
                                                  priority='1',
-                                                 extension='answer-callerid',
+                                                 extension='ring-connected-line',
                                                  context='local')
         originator_channel = self.ari.channels.get(channelId=originator_call['call_id'])
         recipient_caller_id_name = u'rêcîpîênt'
-        recipient_caller_id_number = u'answer-callerid'
+        recipient_caller_id_number = u'ring-connected-line'
         bus_events = self.bus.accumulator('calls.call.updated')
 
         self.chan_test.answer_channel(originator_channel)
