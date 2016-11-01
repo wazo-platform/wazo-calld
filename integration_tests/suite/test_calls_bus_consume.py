@@ -25,6 +25,7 @@ class TestDialedFrom(IntegrationTest):
 
     def setUp(self):
         super(TestDialedFrom, self).setUp()
+        self.amid.reset()
         self.ari.reset()
         self.confd.reset()
 
@@ -71,6 +72,58 @@ class TestDialedFrom(IntegrationTest):
                 'name': 'call_updated',
                 'origin_uuid': XIVO_UUID,
                 'data': has_entries({'call_id': call_id, 'status': 'Up'})
+            })))
+
+        until.assert_(assert_function, tries=5)
+
+    def test_when_channel_held_then_bus_event(self):
+        call_id = new_call_id()
+        self.ari.set_channels(MockChannel(id=call_id))
+        self.ari.set_channel_variable({call_id: {'XIVO_ON_HOLD': '1'}})
+        self.bus.listen_events(routing_key='calls.hold.created')
+
+        self.bus.send_ami_hold_event(call_id)
+
+        def assert_function():
+            assert_that(self.amid.requests()['requests'], has_item(has_entries({
+                'method': 'POST',
+                'path': '/1.0/action/Setvar',
+                'json': has_entries({
+                    'Channel': call_id,
+                    'Variable': 'XIVO_ON_HOLD',
+                    'Value': '1'
+                }),
+            })))
+            assert_that(self.bus.events(), has_item(has_entries({
+                'name': 'call_held',
+                'origin_uuid': XIVO_UUID,
+                'data': has_entries({'call_id': call_id})
+            })))
+
+        until.assert_(assert_function, tries=5)
+
+    def test_when_channel_resumed_then_bus_event(self):
+        call_id = new_call_id()
+        self.ari.set_channels(MockChannel(id=call_id))
+        self.ari.set_channel_variable({call_id: {'XIVO_ON_HOLD': ''}})
+        self.bus.listen_events(routing_key='calls.hold.deleted')
+
+        self.bus.send_ami_unhold_event(call_id)
+
+        def assert_function():
+            assert_that(self.amid.requests()['requests'], has_item(has_entries({
+                'method': 'POST',
+                'path': '/1.0/action/Setvar',
+                'json': has_entries({
+                    'Channel': call_id,
+                    'Variable': 'XIVO_ON_HOLD',
+                    'Value': ''
+                }),
+            })))
+            assert_that(self.bus.events(), has_item(has_entries({
+                'name': 'call_resumed',
+                'origin_uuid': XIVO_UUID,
+                'data': has_entries({'call_id': call_id})
             })))
 
         until.assert_(assert_function, tries=5)

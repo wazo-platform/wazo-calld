@@ -40,7 +40,7 @@ class Plugin(object):
         calls_stasis = CallsStasis(ari.client, collectd, bus_publisher, calls_service, config['uuid'], amid_client)
         calls_stasis.subscribe()
 
-        calls_bus_event_handler = CallsBusEventHandler(ari.client, collectd, bus_publisher, calls_service, config['uuid'])
+        calls_bus_event_handler = CallsBusEventHandler(amid_client, ari.client, collectd, bus_publisher, calls_service, config['uuid'])
         calls_bus_event_handler.subscribe(bus_consumer)
 
         api.add_resource(CallsResource, '/calls', resource_class_args=[calls_service])

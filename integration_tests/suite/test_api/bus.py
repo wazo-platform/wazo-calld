@@ -92,6 +92,22 @@ class BusClient(object):
             }
         }, 'ami.Newstate')
 
+    def send_ami_hold_event(self, channel_id):
+        self.send_event({
+            'data': {
+                'Event': 'Hold',
+                'Uniqueid': channel_id,
+            }
+        }, 'ami.Hold')
+
+    def send_ami_unhold_event(self, channel_id):
+        self.send_event({
+            'data': {
+                'Event': 'Unhold',
+                'Uniqueid': channel_id,
+            }
+        }, 'ami.Unhold')
+
     def send_ami_hangup_event(self, channel_id):
         self.send_event({
             'data': {
