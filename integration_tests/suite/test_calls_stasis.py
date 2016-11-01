@@ -17,7 +17,6 @@ from .test_api.constants import STASIS_APP_INSTANCE_NAME
 from .test_api.ctid_ng import new_call_id
 from .test_api.confd import MockLine
 from .test_api.confd import MockUser
-from .test_api.confd import MockUserLine
 
 
 class TestDialedFrom(IntegrationTest):
@@ -71,9 +70,8 @@ class TestDialedFrom(IntegrationTest):
         self.ari.set_global_variables({'XIVO_CHANNELS_{}'.format(call_id): json.dumps({'app': 'my-app',
                                                                                        'app_instance': 'sw1',
                                                                                        'state': 'ringing'})})
-        self.confd.set_users(MockUser(uuid='user-uuid'))
+        self.confd.set_users(MockUser(uuid='user-uuid', line_ids=['line-id']))
         self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip'))
-        self.confd.set_user_lines({'user-uuid': [MockUserLine('line-id')]})
         self.ari.set_originates(MockChannel(id=new_call_id))
 
         self.ctid_ng.connect_user(call_id, 'user-uuid')

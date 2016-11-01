@@ -24,7 +24,7 @@ class User(object):
 
     def main_line(self):
         try:
-            user_lines_of_user = self._confd.users.relations(self.uuid).list_lines()['items']
+            lines = self._confd.users.get(self.uuid)['lines']
         except HTTPError as e:
             if not_found(e):
                 raise InvalidUserUUID(self.uuid)
@@ -32,14 +32,15 @@ class User(object):
         except RequestException as e:
             raise XiVOConfdUnreachable(self._confd, e)
 
-        main_line_ids = [user_line['line_id'] for user_line in user_lines_of_user if user_line['main_line'] is True]
-        if not main_line_ids:
+        try:
+            main_line_id = lines[0]['id']
+        except IndexError:
             raise UserMissingMainLine(self.uuid)
-        return Line(main_line_ids[0], self._confd, )
+        return Line(main_line_id, self._confd)
 
     def line(self, line_id):
         try:
-            user_lines = self._confd.users.relations(self.uuid).list_lines()['items']
+            lines = self._confd.users.get(self.uuid)['lines']
         except HTTPError as e:
             if not_found(e):
                 raise InvalidUserUUID(self.uuid)
@@ -47,7 +48,7 @@ class User(object):
         except RequestException as e:
             raise XiVOConfdUnreachable(self._confd, e)
 
-        valid_line_ids = [user_line['line_id'] for user_line in user_lines]
+        valid_line_ids = [line['id'] for line in lines]
         if line_id not in valid_line_ids:
             raise InvalidUserLine(self.uuid, line_id)
 
