@@ -45,8 +45,9 @@ class ConfdClient(object):
 
 class MockUser(object):
 
-    def __init__(self, uuid):
+    def __init__(self, uuid, line_ids=None):
         self._uuid = uuid
+        self._line_ids = line_ids or []
 
     def uuid(self):
         return self._uuid
@@ -54,6 +55,7 @@ class MockUser(object):
     def to_dict(self):
         return {
             'uuid': self._uuid,
+            'lines': [{'id': line_id} for line_id in self._line_ids],
         }
 
 
@@ -78,18 +80,4 @@ class MockLine(object):
             'name': self._name,
             'protocol': self._protocol,
             'context': self._context,
-        }
-
-
-class MockUserLine(object):
-
-    def __init__(self, line_id, main_line=True):
-        self._line_id = line_id
-        self._main_line = main_line
-
-    def to_dict(self):
-        return {
-            'user_id': None,
-            'line_id': self._line_id,
-            'main_line': self._main_line
         }

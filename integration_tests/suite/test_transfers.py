@@ -33,7 +33,6 @@ from .test_api.base import RealAsteriskIntegrationTest
 from .test_api.constants import VALID_TOKEN
 from .test_api.confd import MockUser
 from .test_api.confd import MockLine
-from .test_api.confd import MockUserLine
 from .test_api.auth import MockUserToken
 from .test_api.hamcrest_ import HamcrestARIBridge
 from .test_api.hamcrest_ import HamcrestARIChannel
@@ -652,9 +651,8 @@ class TestUserCreateTransfer(TestTransfers):
 
     def given_user_with_line(self, context):
         user_uuid = 'some-user-id'
-        self.confd.set_users(MockUser(uuid=user_uuid))
+        self.confd.set_users(MockUser(uuid=user_uuid, line_ids=['some-line-id']))
         self.confd.set_lines(MockLine(id='some-line-id', name='line-name', protocol='sip', context=context))
-        self.confd.set_user_lines({user_uuid: [MockUserLine('some-line-id')]})
 
         return user_uuid
 
@@ -754,11 +752,9 @@ class TestUserCreateTransfer(TestTransfers):
 
     def test_given_multiple_lines_when_create_then_use_main_line(self):
         user_uuid, context = 'my-user-uuid', RECIPIENT['context']
-        self.confd.set_users(MockUser(uuid=user_uuid))
+        self.confd.set_users(MockUser(uuid=user_uuid, line_ids=['some-line-id', 'some-other-line-id']))
         self.confd.set_lines(MockLine(id='some-line-id', name='line-name', protocol='sip', context=context),
                              MockLine(id='some-other-line-id', name='other-line-name', protocol='sip', context='another-context'))
-        self.confd.set_user_lines({user_uuid: [MockUserLine('some-line-id', main_line=True),
-                                               MockUserLine('some-other-line-id', main_line=False)]})
         transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis(user_uuid)
         token = self.given_user_token(user_uuid)
         body = {

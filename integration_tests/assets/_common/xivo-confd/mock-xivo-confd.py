@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015 by Avencall
+# Copyright (C) 2015 Avencall
+# Copyright (C) 2016 Proformatique
 # SPDX-License-Identifier: GPL-3.0+
 
 import json
@@ -80,11 +81,11 @@ def line(line_id):
 
 @app.route('/1.1/users/<user_uuid>/lines')
 def lines_of_user(user_uuid):
-    if user_uuid not in _responses['user_lines']:
+    if user_uuid not in _responses['users']:
         return '', 404
 
     return jsonify({
-        'items': _responses['user_lines'][user_uuid]
+        'items': _responses['user_lines'].get(user_uuid, [])
     })
 
 
