@@ -840,7 +840,7 @@ class TestUserCreateCall(IntegrationTest):
         result = self.ctid_ng.post_user_me_call_result(body, token)
 
         assert_that(result.status_code, equal_to(400))
-        assert_that(result.json(), has_entry('message', contains_string('line')))
+        assert_that(result.json()['message'].lower(), contains_string('line'))
 
     def test_create_call_with_invalid_user(self):
         user_uuid = 'user-uuid-not-found'
@@ -852,7 +852,7 @@ class TestUserCreateCall(IntegrationTest):
         result = self.ctid_ng.post_user_me_call_result(body, token=token)
 
         assert_that(result.status_code, equal_to(400))
-        assert_that(result.json(), has_entry('message', contains_string('user')))
+        assert_that(result.json()['message'].lower(), contains_string('user'))
 
     def test_create_call_with_wrong_exten(self):
         user_uuid = 'user-uuid'
@@ -868,7 +868,7 @@ class TestUserCreateCall(IntegrationTest):
         result = self.ctid_ng.post_user_me_call_result(body, token=token)
 
         assert_that(result.status_code, equal_to(400))
-        assert_that(result.json(), has_entry('message', contains_string('exten')))
+        assert_that(result.json()['message'].lower(), contains_string('exten'))
 
     def test_create_call_with_no_content_type(self):
         user_uuid = 'user-uuid'
@@ -1010,7 +1010,7 @@ class TestConnectUser(IntegrationTest):
         result = self.ctid_ng.put_call_user_result('call-id', 'user-uuid', token=VALID_TOKEN)
 
         assert_that(result.status_code, equal_to(400))
-        assert_that(result.json(), has_entry('message', contains_string('user')))
+        assert_that(result.json()['message'].lower(), contains_string('user'))
 
     def test_given_user_has_no_line_when_connect_user_then_400(self):
         self.ari.set_channels(MockChannel(id='call-id'))
@@ -1019,7 +1019,7 @@ class TestConnectUser(IntegrationTest):
         result = self.ctid_ng.put_call_user_result('call-id', 'user-uuid', token=VALID_TOKEN)
 
         assert_that(result.status_code, equal_to(400))
-        assert_that(result.json(), has_entry('message', contains_string('user')))
+        assert_that(result.json()['message'].lower(), contains_string('user'))
 
     def test_given_no_call_when_connect_user_then_404(self):
         self.confd.set_users(MockUser(uuid='user-uuid'))
@@ -1029,7 +1029,7 @@ class TestConnectUser(IntegrationTest):
         result = self.ctid_ng.put_call_user_result('call-id', 'user-uuid', token=VALID_TOKEN)
 
         assert_that(result.status_code, equal_to(404))
-        assert_that(result.json(), has_entry('message', contains_string('call')))
+        assert_that(result.json()['message'].lower(), contains_string('call'))
 
 
 class TestCallerID(RealAsteriskIntegrationTest):
