@@ -4,7 +4,6 @@
 
 import logging
 
-from xivo_bus.resources.calls.hold import CallOnHoldEvent, CallResumeEvent
 from xivo_ctid_ng.core.ari_ import APPLICATION_NAME
 
 from .event import CallEvent
@@ -16,7 +15,6 @@ from .state import state_factory
 from .state import CallStateOnHook
 from .state_persistor import ChannelCacheEntry
 from .state_persistor import StatePersistor
-from xivo_ctid_ng.helpers import ami
 
 logger = logging.getLogger(__name__)
 
@@ -38,8 +36,6 @@ class CallsStasis(object):
     def subscribe(self):
         self.ari.on_channel_event('StasisStart', self.stasis_start)
         self.ari.on_channel_event('ChannelDestroyed', self.channel_destroyed)
-        self.ari.on_channel_event('ChannelHold', self.channel_hold)
-        self.ari.on_channel_event('ChannelUnhold', self.channel_unhold)
         self.ari.on_application_registered(APPLICATION_NAME, self.subscribe_to_all_channel_events)
 
     def subscribe_to_all_channel_events(self):
@@ -83,13 +79,3 @@ class CallsStasis(object):
         state.hangup(CallEvent(channel, event, self.state_persistor))
 
         self.state_persistor.remove(channel.id)
-
-    def channel_hold(self, channel, event):
-        ami.set_variable_ami(self.ami, channel.id, 'XIVO_ON_HOLD', '1')
-        bus_msg = CallOnHoldEvent(channel.id)
-        self.bus_publisher.publish(bus_msg)
-
-    def channel_unhold(self, channel, event):
-        ami.unset_variable_ami(self.ami, channel.id, 'XIVO_ON_HOLD')
-        bus_msg = CallResumeEvent(channel.id)
-        self.bus_publisher.publish(bus_msg)

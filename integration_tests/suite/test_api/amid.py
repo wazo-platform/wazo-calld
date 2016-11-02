@@ -33,4 +33,9 @@ class AmidClient(object):
         self.set_action_result(result)
 
     def reset(self):
-        self.set_action_result('')
+        url = self.url('_reset')
+        requests.post(url, verify=False)
+
+    def requests(self):
+        url = self.url('_requests')
+        return requests.get(url, verify=False).json()

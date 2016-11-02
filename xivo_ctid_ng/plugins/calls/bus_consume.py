@@ -10,14 +10,19 @@ from xivo_bus.collectd.channels import ChannelEndedCollectdEvent
 from xivo_bus.resources.calls.event import CreateCallEvent
 from xivo_bus.resources.calls.event import EndCallEvent
 from xivo_bus.resources.calls.event import UpdateCallEvent
+from xivo_bus.resources.calls.hold import CallOnHoldEvent
+from xivo_bus.resources.calls.hold import CallResumeEvent
 
+from xivo_ctid_ng.helpers import ami
+from xivo_ctid_ng.helpers.ari_ import Channel
 
 logger = logging.getLogger(__name__)
 
 
 class CallsBusEventHandler(object):
 
-    def __init__(self, ari, collectd, bus_publisher, services, xivo_uuid):
+    def __init__(self, ami, ari, collectd, bus_publisher, services, xivo_uuid):
+        self.ami = ami
         self.ari = ari
         self.collectd = collectd
         self.bus_publisher = bus_publisher
@@ -29,6 +34,8 @@ class CallsBusEventHandler(object):
         bus_consumer.on_ami_event('Newchannel', self._collectd_channel_created)
         bus_consumer.on_ami_event('Newstate', self._relay_channel_updated)
         bus_consumer.on_ami_event('NewConnectedLine', self._relay_channel_updated)
+        bus_consumer.on_ami_event('Hold', self._channel_hold)
+        bus_consumer.on_ami_event('Unhold', self._channel_unhold)
         bus_consumer.on_ami_userevent('Hangup', self._relay_channel_hung_up)
         bus_consumer.on_ami_event('Hangup', self._collectd_channel_ended)
 
@@ -72,3 +79,21 @@ class CallsBusEventHandler(object):
         channel_id = event['Uniqueid']
         logger.debug('sending stat for channel ended %s', channel_id)
         self.collectd.publish(ChannelEndedCollectdEvent())
+
+    def _channel_hold(self, event):
+        channel_id = event['Uniqueid']
+        logger.debug('marking channel %s on hold', channel_id)
+        ami.set_variable_ami(self.ami, channel_id, 'XIVO_ON_HOLD', '1')
+
+        user_uuid = Channel(channel_id, self.ari).user()
+        bus_msg = CallOnHoldEvent(channel_id, user_uuid)
+        self.bus_publisher.publish(bus_msg)
+
+    def _channel_unhold(self, event):
+        channel_id = event['Uniqueid']
+        logger.debug('marking channel %s not on hold', channel_id)
+        ami.unset_variable_ami(self.ami, channel_id, 'XIVO_ON_HOLD')
+
+        user_uuid = Channel(channel_id, self.ari).user()
+        bus_msg = CallResumeEvent(channel_id, user_uuid)
+        self.bus_publisher.publish(bus_msg)
