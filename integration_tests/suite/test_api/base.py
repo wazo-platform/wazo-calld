@@ -50,9 +50,13 @@ class IntegrationTest(AssetLaunchingTestCase):
     @classmethod
     def setUpClass(cls):
         super(IntegrationTest, cls).setUpClass()
-        cls.reset_clients()
-        cls.reset_bus_client()
-        cls.wait_strategy.wait(cls)
+        try:
+            cls.reset_clients()
+            cls.reset_bus_client()
+            cls.wait_strategy.wait(cls)
+        except Exception:
+            cls.tearDownClass()
+            raise
 
     @classmethod
     def reset_clients(cls):
