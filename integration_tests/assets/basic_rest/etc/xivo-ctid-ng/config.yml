@@ -56,3 +56,4 @@ enabled_plugins:
   - plugin_list
   - status
   - transfers
+  - voicemails

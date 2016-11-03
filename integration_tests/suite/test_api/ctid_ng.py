@@ -360,6 +360,92 @@ class CtidNgClient(object):
         assert_that(response.status_code, equal_to(200))
         return response.json()
 
+    def get_voicemail_result(self, voicemail_id, token=None):
+        url = self.url('voicemails', voicemail_id)
+        result = requests.get(url,
+                              headers={'X-Auth-Token': token},
+                              verify=False)
+        return result
+
+    def get_user_me_voicemail_result(self, token=None):
+        url = self.url('users', 'me', 'voicemails')
+        result = requests.get(url,
+                              headers={'X-Auth-Token': token},
+                              verify=False)
+        return result
+
+    def get_voicemail_folder_result(self, voicemail_id, folder_id, token=None):
+        url = self.url('voicemails', voicemail_id, 'folders', folder_id)
+        result = requests.get(url,
+                              headers={'X-Auth-Token': token},
+                              verify=False)
+        return result
+
+    def get_user_me_voicemail_folder_result(self, folder_id, token=None):
+        url = self.url('users', 'me', 'voicemails', 'folders', folder_id)
+        result = requests.get(url,
+                              headers={'X-Auth-Token': token},
+                              verify=False)
+        return result
+
+    def delete_voicemail_message_result(self, voicemail_id, message_id, token=None):
+        url = self.url('voicemails', voicemail_id, 'messages', message_id)
+        result = requests.delete(url,
+                                 headers={'X-Auth-Token': token},
+                                 verify=False)
+        return result
+
+    def delete_user_me_voicemail_message_result(self, message_id, token=None):
+        url = self.url('users', 'me', 'voicemails', 'messages', message_id)
+        result = requests.delete(url,
+                                 headers={'X-Auth-Token': token},
+                                 verify=False)
+        return result
+
+    def get_voicemail_message_result(self, voicemail_id, message_id, token=None):
+        url = self.url('voicemails', voicemail_id, 'messages', message_id)
+        result = requests.get(url,
+                              headers={'X-Auth-Token': token},
+                              verify=False)
+        return result
+
+    def get_user_me_voicemail_message_result(self, message_id, token=None):
+        url = self.url('users', 'me', 'voicemails', 'messages', message_id)
+        result = requests.get(url,
+                              headers={'X-Auth-Token': token},
+                              verify=False)
+        return result
+
+    def put_voicemail_message_result(self, message, voicemail_id, message_id, token=None):
+        url = self.url('voicemails', voicemail_id, 'messages', message_id)
+        result = requests.put(url,
+                              json=message,
+                              headers={'X-Auth-Token': token},
+                              verify=False)
+        return result
+
+    def put_user_me_voicemail_message_result(self, message, message_id, token=None):
+        url = self.url('users', 'me', 'voicemails', 'messages', message_id)
+        result = requests.put(url,
+                              json=message,
+                              headers={'X-Auth-Token': token},
+                              verify=False)
+        return result
+
+    def get_voicemail_recording_result(self, voicemail_id, message_id, token=None):
+        url = self.url('voicemails', voicemail_id, 'messages', message_id, 'recording')
+        result = requests.get(url,
+                              headers={'X-Auth-Token': token},
+                              verify=False)
+        return result
+
+    def get_user_me_voicemail_recording_result(self, message_id, token=None):
+        url = self.url('users', 'me', 'voicemails', 'messages', message_id, 'recording')
+        result = requests.get(url,
+                              headers={'X-Auth-Token': token},
+                              verify=False)
+        return result
+
     @contextmanager
     def send_no_content_type(self):
         def no_json(decorated):

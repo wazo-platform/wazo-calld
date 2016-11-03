@@ -1,0 +1,656 @@
+paths:
+  /voicemails/{voicemail_id}:
+    get:
+      summary: Get details of a voicemail
+      description: '**Required ACL:** `ctid-ng.voicemails.{voicemail_id}.read`'
+      parameters:
+      - $ref: '#/parameters/VoicemailID'
+      tags:
+      - voicemails
+      responses:
+        '200':
+          description: The details of the voicemail
+          schema:
+            $ref: '#/definitions/Voicemail'
+        '400':
+          $ref: '#/responses/InvalidRequest'
+        '404':
+          $ref: '#/responses/NotFoundError'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+  /voicemails/{voicemail_id}/folders/{folder_id}:
+    get:
+      summary: Get details of a folder
+      description: '**Required ACL:** `ctid-ng.voicemails.{voicemail_id}.folders.{folder_id}.read`'
+      parameters:
+      - $ref: '#/parameters/VoicemailID'
+      - $ref: '#/parameters/VoicemailFolderID'
+      tags:
+      - voicemails
+      responses:
+        '200':
+          description: The details of the folder
+          schema:
+            $ref: '#/definitions/VoicemailFolder'
+        '400':
+          $ref: '#/responses/InvalidRequest'
+        '404':
+          $ref: '#/responses/NotFoundError'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+  /voicemails/{voicemail_id}/messages/{message_id}:
+    get:
+      summary: Get a message
+      description: '**Required ACL:** `ctid-ng.voicemails.{voicemail_id}.messages.{message_id}.read`'
+      parameters:
+      - $ref: '#/parameters/VoicemailID'
+      - $ref: '#/parameters/VoicemailMessageID'
+      tags:
+      - voicemails
+      responses:
+        '200':
+          description: The message
+          schema:
+            $ref: '#/definitions/VoicemailMessage'
+        '400':
+          $ref: '#/responses/InvalidRequest'
+        '404':
+          $ref: '#/responses/NotFoundError'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+    put:
+      summary: Update a message
+      description: '**Required ACL:** `ctid-ng.voicemails.{voicemail_id}.messages.{message_id}.update`'
+      parameters:
+      - $ref: '#/parameters/VoicemailID'
+      - $ref: '#/parameters/VoicemailMessageID'
+      - name: body
+        in: body
+        description: Message
+        required: true
+        schema:
+          $ref: '#/definitions/VoicemailMessageUpdate'
+      tags:
+      - voicemails
+      responses:
+        '204':
+          description: Message was updated successfully
+        '400':
+          $ref: '#/responses/InvalidRequest'
+        '404':
+          $ref: '#/responses/NotFoundError'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+    delete:
+      summary: Delete a mesage
+      description: '**Required ACL:** `ctid-ng.voicemails.{voicemail_id}.messages.{message_id}.delete`'
+      parameters:
+      - $ref: '#/parameters/VoicemailID'
+      - $ref: '#/parameters/VoicemailMessageID'
+      tags:
+      - voicemails
+      responses:
+        '204':
+          description: Message was deleted successfully
+        '400':
+          $ref: '#/responses/InvalidRequest'
+        '404':
+          $ref: '#/responses/NotFoundError'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+  /voicemails/{voicemail_id}/messages/{message_id}/recording:
+    get:
+      summary: Get a message's recording
+      description: '**Required ACL:** `ctid-ng.voicemails.{voicemail_id}.messages.{message_id}.recording.read`'
+      parameters:
+      - $ref: '#/parameters/VoicemailID'
+      - $ref: '#/parameters/VoicemailMessageID'
+      - $ref: '#/parameters/TokenID'
+      - $ref: '#/parameters/ForceDownload'
+      tags:
+      - voicemails
+      produces:
+      - audio/wav
+      responses:
+        '200':
+          description: The recording
+        '400':
+          $ref: '#/responses/InvalidRequest'
+        '404':
+          $ref: '#/responses/NotFoundError'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+  /voicemails/{voicemail_id}/messages/{message_id}/listen:
+    post:
+      summary: Listen a message's recording from a phone
+      description: "**Required ACL:** `ctid-ng.voicemails.{voicemail_id}.messages.{message_id}.listen.create`
+
+
+        Create a new call from a phone to listen to the specified message"
+      parameters:
+      - $ref: '#/parameters/VoicemailID'
+      - $ref: '#/parameters/VoicemailMessageID'
+      - name: body
+        in: body
+        description: Call parameters
+        required: true
+        schema:
+          $ref: '#/definitions/VoicemailMessageListenRequest'
+      tags:
+      - voicemails
+      responses:
+        '204':
+          description: Call was originated succesfully
+        '400':
+          $ref: '#/responses/InvalidRequest'
+        '404':
+          $ref: '#/responses/NotFoundError'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+  /voicemails/{voicemail_id}/greetings/{greeting}:
+    get:
+      summary: Get a custom greeting
+      description: '**Required ACL:** `ctid-ng.voicemails.{voicemail_id}.greetings.{greeting}.read`
+
+
+        **Not implemented**'
+      parameters:
+      - $ref: '#/parameters/VoicemailID'
+      - $ref: '#/parameters/VoicemailGreeting'
+      produces:
+      - audio/wav
+      tags:
+      - voicemails
+      responses:
+        '200':
+          description: The greeting's recording
+        '400':
+          $ref: '#/responses/InvalidRequest'
+        '404':
+          $ref: '#/responses/NotFoundError'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+    head:
+      summary: Check if a custom greeting exist
+      description: '**Required ACL:** `ctid-ng.voicemails.{voicemail_id}.greetings.{greeting}.read`
+
+
+        **Not implemented**'
+      parameters:
+      - $ref: '#/parameters/VoicemailID'
+      - $ref: '#/parameters/VoicemailGreeting'
+      tags:
+      - voicemails
+      responses:
+        '200':
+          description: The greeting's recording
+        '400':
+          $ref: '#/responses/InvalidRequest'
+        '404':
+          $ref: '#/responses/NotFoundError'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+    put:
+      summary: Update a custom greeting
+      description: '**Required ACL:** `ctid-ng.voicemails.{voicemail_id}.greetings.{greeting}.update`
+
+
+        **Not implemented**'
+      parameters:
+      - $ref: '#/parameters/VoicemailID'
+      - $ref: '#/parameters/VoicemailGreeting'
+      consumes:
+      - audio/wav
+      tags:
+      - voicemails
+      responses:
+        '204':
+          description: The greeting was updated successfully
+        '400':
+          $ref: '#/responses/InvalidRequest'
+        '404':
+          $ref: '#/responses/NotFoundError'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+    delete:
+      summary: Delete a custom greeting
+      description: '**Required ACL:** `ctid-ng.voicemails.{voicemail_id}.greetings.{greeting}.delete`
+
+
+        **Not implemented**'
+      parameters:
+      - $ref: '#/parameters/VoicemailID'
+      - $ref: '#/parameters/VoicemailGreeting'
+      tags:
+      - voicemails
+      responses:
+        '204':
+          description: The greeting was deleted successfully
+        '400':
+          $ref: '#/responses/InvalidRequest'
+        '404':
+          $ref: '#/responses/NotFoundError'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+  /voicemails/{voicemail_id}/greetings/{greeting}/copy:
+    post:
+      summary: Copy a custom greeting
+      description: '**Required ACL:** `ctid-ng.voicemails.{voicemail_id}.greetings.{greeting}.copy.create`
+
+
+        **Not implemented**'
+      parameters:
+      - $ref: '#/parameters/VoicemailID'
+      - $ref: '#/parameters/VoicemailGreeting'
+      - name: body
+        in: body
+        required: true
+        schema:
+          $ref: '#/definitions/GreetingCopy'
+      tags:
+      - voicemails
+      responses:
+        '204':
+          description: The greeting was copied successfully
+        '400':
+          $ref: '#/responses/InvalidRequest'
+        '404':
+          $ref: '#/responses/NotFoundError'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+  /users/me/voicemails:
+    get:
+      summary: Get details of the voicemail of the authenticated user
+      description: '**Required ACL:** `ctid-ng.users.me.voicemails.read`'
+      tags:
+      - users
+      - voicemails
+      responses:
+        '200':
+          description: The details of the voicemail
+          schema:
+            $ref: '#/definitions/Voicemail'
+        '400':
+          $ref: '#/responses/InvalidRequest'
+        '404':
+          $ref: '#/responses/NotFoundError'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+  /users/me/voicemails/folders/{folder_id}:
+    get:
+      summary: Get details of a folder
+      description: '**Required ACL:** `ctid-ng.users.me.voicemails.folders.{folder_id}.read`'
+      parameters:
+      - $ref: '#/parameters/VoicemailFolderID'
+      tags:
+      - users
+      - voicemails
+      responses:
+        '200':
+          description: The details of the folder
+          schema:
+            $ref: '#/definitions/VoicemailFolder'
+        '400':
+          $ref: '#/responses/InvalidRequest'
+        '404':
+          $ref: '#/responses/NotFoundError'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+  /users/me/voicemails/messages/{message_id}:
+    get:
+      summary: Get a message
+      description: '**Required ACL:** `ctid-ng.users.me.voicemails.messages.{message_id}.read`'
+      parameters:
+      - $ref: '#/parameters/VoicemailMessageID'
+      tags:
+      - users
+      - voicemails
+      responses:
+        '200':
+          description: The message
+          schema:
+            $ref: '#/definitions/VoicemailMessage'
+        '400':
+          $ref: '#/responses/InvalidRequest'
+        '404':
+          $ref: '#/responses/NotFoundError'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+    put:
+      summary: Update a message
+      description: '**Required ACL:** `ctid-ng.users.me.voicemails.messages.{message_id}.update`'
+      parameters:
+      - $ref: '#/parameters/VoicemailMessageID'
+      - name: body
+        in: body
+        description: Message
+        required: true
+        schema:
+          $ref: '#/definitions/VoicemailMessageUpdate'
+      tags:
+      - users
+      - voicemails
+      responses:
+        '204':
+          description: Message was updated successfully
+        '400':
+          $ref: '#/responses/InvalidRequest'
+        '404':
+          $ref: '#/responses/NotFoundError'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+    delete:
+      summary: Delete a mesage
+      description: '**Required ACL:** `ctid-ng.users.me.voicemails.messages.{message_id}.delete`'
+      parameters:
+      - $ref: '#/parameters/VoicemailMessageID'
+      tags:
+      - users
+      - voicemails
+      responses:
+        '204':
+          description: Message was deleted successfully
+        '400':
+          $ref: '#/responses/InvalidRequest'
+        '404':
+          $ref: '#/responses/NotFoundError'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+  /users/me/voicemails/messages/{message_id}/recording:
+    get:
+      summary: Get a message's recording
+      description: '**Required ACL:** `ctid-ng.users.me.voicemails.messages.{message_id}.recording.read`'
+      parameters:
+      - $ref: '#/parameters/VoicemailMessageID'
+      - $ref: '#/parameters/TokenID'
+      - $ref: '#/parameters/ForceDownload'
+      tags:
+      - users
+      - voicemails
+      produces:
+      - audio/wav
+      responses:
+        '200':
+          description: The recording
+        '400':
+          $ref: '#/responses/InvalidRequest'
+        '404':
+          $ref: '#/responses/NotFoundError'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+  /users/me/voicemails/messages/{message_id}/listen:
+    post:
+      summary: Listen a message's recording from a phone
+      description: "**Required ACL:** `ctid-ng.users.me.voicemails.messages.{message_id}.listen.create`
+
+
+        Create a new call from a phone to listen to the specified message"
+      parameters:
+      - $ref: '#/parameters/VoicemailMessageID'
+      - name: body
+        in: body
+        description: Call parameters
+        required: true
+        schema:
+          $ref: '#/definitions/VoicemailMessageListenRequest'
+      tags:
+      - users
+      - voicemails
+      responses:
+        '204':
+          description: Call was originated succesfully
+        '400':
+          $ref: '#/responses/InvalidRequest'
+        '404':
+          $ref: '#/responses/NotFoundError'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+  /users/me/voicemails/greetings/{greeting}:
+    get:
+      summary: Get a custom greeting
+      description: '**Required ACL:** `ctid-ng.users.me.voicemails.greetings.{greeting}.read`
+
+
+        **Not implemented**'
+      parameters:
+      - $ref: '#/parameters/VoicemailGreeting'
+      produces:
+      - audio/wav
+      tags:
+      - users
+      - voicemails
+      responses:
+        '200':
+          description: The greeting's recording
+        '400':
+          $ref: '#/responses/InvalidRequest'
+        '404':
+          $ref: '#/responses/NotFoundError'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+    head:
+      summary: Check if a custom greeting exist
+      description: '**Required ACL:** `ctid-ng.users.me.voicemails.greetings.{greeting}.read`
+
+
+        **Not implemented**'
+      parameters:
+      - $ref: '#/parameters/VoicemailGreeting'
+      tags:
+      - users
+      - voicemails
+      responses:
+        '200':
+          description: The greeting's recording
+        '400':
+          $ref: '#/responses/InvalidRequest'
+        '404':
+          $ref: '#/responses/NotFoundError'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+    put:
+      summary: Update a custom greeting
+      description: '**Required ACL:** `ctid-ng.users.me.voicemails.greetings.{greeting}.update`
+
+
+        **Not implemented**'
+      parameters:
+      - $ref: '#/parameters/VoicemailGreeting'
+      consumes:
+      - audio/wav
+      tags:
+      - users
+      - voicemails
+      responses:
+        '204':
+          description: The greeting was updated successfully
+        '400':
+          $ref: '#/responses/InvalidRequest'
+        '404':
+          $ref: '#/responses/NotFoundError'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+    delete:
+      summary: Delete a custom greeting
+      description: '**Required ACL:** `ctid-ng.users.me.voicemails.greetings.{greeting}.delete`
+
+
+        **Not implemented**'
+      parameters:
+      - $ref: '#/parameters/VoicemailGreeting'
+      tags:
+      - users
+      - voicemails
+      responses:
+        '204':
+          description: The greeting was deleted successfully
+        '400':
+          $ref: '#/responses/InvalidRequest'
+        '404':
+          $ref: '#/responses/NotFoundError'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+  /users/me/voicemails/greetings/{greeting}/copy:
+    post:
+      summary: Copy a custom greeting
+      description: '**Required ACL:** `ctid-ng.users.me.voicemails.greetings.{greeting}.copy.create`
+
+
+        **Not implemented**'
+      parameters:
+      - $ref: '#/parameters/VoicemailGreeting'
+      - name: body
+        in: body
+        required: true
+        schema:
+          $ref: '#/definitions/GreetingCopy'
+      tags:
+      - users
+      - voicemails
+      responses:
+        '204':
+          description: The greeting was copied successfully
+        '400':
+          $ref: '#/responses/InvalidRequest'
+        '404':
+          $ref: '#/responses/NotFoundError'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+definitions:
+  GreetingCopy:
+    type: object
+    properties:
+      dest_greeting:
+        type: string
+        description: The destination name of the greeting
+        required: true
+  Voicemail:
+    type: object
+    properties:
+      id:
+        type: integer
+        description: The voicemail's ID
+      number:
+        type: string
+        description: The voicemail's number
+      name:
+        type: string
+        description: The voicemail's name
+      folders:
+        type: array
+        description: The voicemail's folders
+        items:
+          $ref: '#/definitions/VoicemailFolder'
+  VoicemailFolderBase:
+    type: object
+    properties:
+      id:
+        type: integer
+        description: The folder's ID
+      name:
+        type: string
+        description: The folder's name
+      type:
+        type: string
+        enum:
+        - new
+        - old
+        - urgent
+        - other
+        description: The folder's type. When a message if left on a voicemail, it is stored in the folder of type "new", unless if it is an urgent message, in which case it is left in the folder of type "urgent". When that messages is read, it is moved into the folder of type "old". All other folders used the type "other".
+  VoicemailFolder:
+    type: object
+    allOf:
+    - $ref: '#/definitions/VoicemailFolderBase'
+    - properties:
+        messages:
+          type: array
+          description: The folder's messages
+          items:
+            $ref: '#/definitions/VoicemailMessageBase'
+  VoicemailMessageBase:
+    type: object
+    properties:
+      id:
+        type: string
+        description: The message's ID
+        readOnly: true
+      caller_id_name:
+        type: string
+        description: The caller's name (or null if no caller ID name)
+        readOnly: true
+      caller_id_num:
+        type: string
+        description: The caller's number (or null if no caller ID number)
+        readOnly: true
+      duration:
+        type: integer
+        description: The message's duration in seconds
+        readOnly: true
+      timestamp:
+        type: integer
+        description: The time the message was left as a Unix time value
+        readOnly: true
+  VoicemailMessage:
+    type: object
+    allOf:
+    - $ref: '#/definitions/VoicemailMessageBase'
+    - properties:
+        folder:
+          $ref: '#/definitions/VoicemailFolderBase'
+          readOnly: true
+  VoicemailMessageUpdate:
+    type: object
+    properties:
+      folder_id:
+        type: integer
+        description: The folder's ID
+  VoicemailMessageListenRequest:
+    type: object
+    properties:
+      user:
+        type: string
+        description: UUID of the user making the call
+      line_id:
+        type: integer
+        description: ID of the line of the user used to make the call. Default is the main line of the user.
+  UserVoicemailMessageListenRequest:
+    type: object
+    properties:
+      line_id:
+        type: integer
+        description: ID of the line of the user used to make the call. Default is the main line of the user.
+parameters:
+  ForceDownload:
+    name: download
+    in: query
+    description: Set to 1 to force download by browser
+    type: string
+  VoicemailID:
+    name: voicemail_id
+    in: path
+    description: The voicemail's ID
+    required: true
+    type: integer
+  VoicemailFolderID:
+    name: folder_id
+    in: path
+    description: The folder's ID
+    required: true
+    type: integer
+  VoicemailMessageID:
+    name: message_id
+    in: path
+    description: The message's ID
+    required: true
+    type: string
+  VoicemailGreeting:
+    name: greeting
+    in: path
+    description: The greeting
+    required: true
+    type: string
+    enum:
+    - unavailable
+    - busy
+    - temp

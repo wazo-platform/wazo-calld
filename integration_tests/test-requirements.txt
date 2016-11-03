@@ -5,4 +5,4 @@ docker-compose
 kombu
 nose
 pyhamcrest
-requests
+requests<2.7

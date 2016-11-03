@@ -168,3 +168,63 @@ class TestAuthenticationCoverage(IntegrationTest):
         result = self.ctid_ng.get_line_presence_result(1)
 
         assert_that(result.status_code, equal_to(401))
+
+    def test_auth_on_get_voicemail(self):
+        result = self.ctid_ng.get_voicemail_result(1)
+
+        assert_that(result.status_code, equal_to(401))
+
+    def test_auth_on_get_user_voicemail(self):
+        result = self.ctid_ng.get_user_me_voicemail_result()
+
+        assert_that(result.status_code, equal_to(401))
+
+    def test_auth_on_get_voicemail_folder(self):
+        result = self.ctid_ng.get_voicemail_folder_result(1, 1)
+
+        assert_that(result.status_code, equal_to(401))
+
+    def test_auth_on_get_user_voicemail_folder(self):
+        result = self.ctid_ng.get_user_me_voicemail_folder_result(1)
+
+        assert_that(result.status_code, equal_to(401))
+
+    def test_auth_on_delete_voicemail_message(self):
+        result = self.ctid_ng.delete_voicemail_message_result(1, '42')
+
+        assert_that(result.status_code, equal_to(401))
+
+    def test_auth_on_delete_user_voicemail_message(self):
+        result = self.ctid_ng.delete_user_me_voicemail_message_result(1, '42')
+
+        assert_that(result.status_code, equal_to(401))
+
+    def test_auth_on_get_voicemail_message(self):
+        result = self.ctid_ng.get_voicemail_message_result(1, '42')
+
+        assert_that(result.status_code, equal_to(401))
+
+    def test_auth_on_get_user_voicemail_message(self):
+        result = self.ctid_ng.get_user_me_voicemail_message_result(1, '42')
+
+        assert_that(result.status_code, equal_to(401))
+
+    def test_auth_on_put_voicemail_message(self):
+        result = self.ctid_ng.put_voicemail_message_result({}, 1, '42')
+
+        assert_that(result.status_code, equal_to(401))
+
+    def test_auth_on_put_user_voicemail_message(self):
+        result = self.ctid_ng.put_user_me_voicemail_message_result({}, 1, '42')
+
+        assert_that(result.status_code, equal_to(401))
+
+    def test_auth_on_get_voicemail_recording(self):
+        result = self.ctid_ng.get_voicemail_recording_result(1, '42')
+
+        assert_that(result.status_code, equal_to(401))
+
+    def test_auth_on_get_user_voicemail_recording(self):
+        result = self.ctid_ng.get_user_me_voicemail_recording_result(1, '42')
+
+        assert_that(result.status_code, equal_to(401))

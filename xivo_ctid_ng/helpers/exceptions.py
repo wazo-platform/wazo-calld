@@ -52,3 +52,29 @@ class InvalidUserLine(APIException):
                 'line_id': line_id,
             }
         )
+
+
+class NoSuchUserVoicemail(APIException):
+
+    def __init__(self, user_uuid):
+        super(NoSuchUserVoicemail, self).__init__(
+            status_code=404,
+            message='No such user voicemail',
+            error_id='no-such-user-voicemail',
+            details={
+                'user_uuid': user_uuid,
+            }
+        )
+
+
+class NoSuchVoicemail(APIException):
+
+    def __init__(self, voicemail_id):
+        super(NoSuchVoicemail, self).__init__(
+            status_code=404,
+            message='No such voicemail',
+            error_id='no-such-voicemail',
+            details={
+                'voicemail_id': voicemail_id,
+            }
+        )
