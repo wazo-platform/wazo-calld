@@ -67,7 +67,7 @@ class Line(object):
         except HTTPError as e:
             raise
         except RequestException as e:
-            raise XiVOConfdUnreachable(self._confd_config, e)
+            raise XiVOConfdUnreachable(self._confd, e)
 
     def context(self):
         line = self._get()
