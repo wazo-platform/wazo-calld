@@ -1,10 +1,14 @@
 # -*- coding: utf-8 -*-
 # Copyright 2015-2016 by Avencall
+# Copyright (C) 2016 Proformatique, Inc.
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
 
 from threading import Thread
+from functools import partial
+from xivo.config_helper import get_xivo_uuid
+from xivo.consul_helpers import ServiceCatalogRegistration
 from xivo.token_renewer import TokenRenewer
 from xivo_auth_client import Client as AuthClient
 
@@ -14,6 +18,7 @@ from xivo_ctid_ng.core.bus import CoreBusPublisher
 from xivo_ctid_ng.core.collectd import CoreCollectd
 from xivo_ctid_ng.core.ari_ import CoreARI
 from xivo_ctid_ng.core.rest_api import api, CoreRestApi
+from .service_discovery import self_check
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +26,7 @@ logger = logging.getLogger(__name__)
 class Controller(object):
 
     def __init__(self, config):
+        xivo_uuid = get_xivo_uuid(logger)
         auth_config = dict(config['auth'])
         auth_config.pop('key_file', None)
         auth_client = AuthClient(**auth_config)
@@ -31,6 +37,14 @@ class Controller(object):
         self.rest_api = CoreRestApi(config)
         self.token_renewer = TokenRenewer(auth_client)
         self._load_plugins(config)
+        self._service_registration_params = ['xivo-ctid-ng',
+                                             xivo_uuid,
+                                             config['consul'],
+                                             config['service_discovery'],
+                                             config['bus'],
+                                             partial(self_check,
+                                                     config['rest_api']['port'],
+                                                     config['rest_api']['certificate'])]
 
     def run(self):
         logger.info('xivo-ctid-ng starting...')
@@ -44,7 +58,8 @@ class Controller(object):
         ari_thread.start()
         try:
             with self.token_renewer:
-                self.rest_api.run()
+                with ServiceCatalogRegistration(*self._service_registration_params):
+                    self.rest_api.run()
         finally:
             logger.info('xivo-ctid-ng stopping...')
             self.ari.stop()
