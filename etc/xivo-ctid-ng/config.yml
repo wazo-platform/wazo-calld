@@ -93,6 +93,7 @@ enabled_plugins:
   - api
   - calls
   - chats
+  - lookup
   - presences
   - status
   - transfers

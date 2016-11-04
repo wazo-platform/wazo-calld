@@ -25,6 +25,7 @@ setup(
             'api = xivo_ctid_ng.plugins.api.plugin:Plugin',
             'calls = xivo_ctid_ng.plugins.calls.plugin:Plugin',
             'chats = xivo_ctid_ng.plugins.chats.plugin:Plugin',
+            'lookup = xivo_ctid_ng.plugins.lookup.plugin:Plugin',
             'plugin_list = xivo_ctid_ng.plugins.plugin_list.plugin:Plugin',
             'presences = xivo_ctid_ng.plugins.presences.plugin:Plugin',
             'status = xivo_ctid_ng.plugins.status.plugin:Plugin',

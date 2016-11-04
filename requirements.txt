@@ -7,6 +7,7 @@ git+https://github.com/xivo-pbx/xivo-confd-client.git
 git+https://github.com/xivo-pbx/xivo-ctid-client.git
 git+https://github.com/xivo-pbx/xivo-lib-python.git
 git+https://github.com/xivo-pbx/xivo-lib-rest-client.git
+git+https://github.com/daviddrysdale/python-phonenumbers.git
 cherrypy==3.7.0
 flask==0.10.1
 flask-restful==0.3.5
