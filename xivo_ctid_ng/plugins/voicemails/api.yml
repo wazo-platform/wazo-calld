@@ -120,33 +120,6 @@ paths:
           $ref: '#/responses/NotFoundError'
         '503':
           $ref: '#/responses/AnotherServiceUnavailable'
-  /voicemails/{voicemail_id}/messages/{message_id}/listen:
-    post:
-      summary: Listen a message's recording from a phone
-      description: "**Required ACL:** `ctid-ng.voicemails.{voicemail_id}.messages.{message_id}.listen.create`
-
-
-        Create a new call from a phone to listen to the specified message"
-      parameters:
-      - $ref: '#/parameters/VoicemailID'
-      - $ref: '#/parameters/VoicemailMessageID'
-      - name: body
-        in: body
-        description: Call parameters
-        required: true
-        schema:
-          $ref: '#/definitions/VoicemailMessageListenRequest'
-      tags:
-      - voicemails
-      responses:
-        '204':
-          description: Call was originated succesfully
-        '400':
-          $ref: '#/responses/InvalidRequest'
-        '404':
-          $ref: '#/responses/NotFoundError'
-        '503':
-          $ref: '#/responses/AnotherServiceUnavailable'
   /voicemails/{voicemail_id}/greetings/{greeting}:
     get:
       summary: Get a custom greeting
@@ -378,33 +351,6 @@ paths:
           $ref: '#/responses/NotFoundError'
         '503':
           $ref: '#/responses/AnotherServiceUnavailable'
-  /users/me/voicemails/messages/{message_id}/listen:
-    post:
-      summary: Listen a message's recording from a phone
-      description: "**Required ACL:** `ctid-ng.users.me.voicemails.messages.{message_id}.listen.create`
-
-
-        Create a new call from a phone to listen to the specified message"
-      parameters:
-      - $ref: '#/parameters/VoicemailMessageID'
-      - name: body
-        in: body
-        description: Call parameters
-        required: true
-        schema:
-          $ref: '#/definitions/VoicemailMessageListenRequest'
-      tags:
-      - users
-      - voicemails
-      responses:
-        '204':
-          description: Call was originated succesfully
-        '400':
-          $ref: '#/responses/InvalidRequest'
-        '404':
-          $ref: '#/responses/NotFoundError'
-        '503':
-          $ref: '#/responses/AnotherServiceUnavailable'
   /users/me/voicemails/greetings/{greeting}:
     get:
       summary: Get a custom greeting
@@ -605,21 +551,6 @@ definitions:
       folder_id:
         type: integer
         description: The folder's ID
-  VoicemailMessageListenRequest:
-    type: object
-    properties:
-      user:
-        type: string
-        description: UUID of the user making the call
-      line_id:
-        type: integer
-        description: ID of the line of the user used to make the call. Default is the main line of the user.
-  UserVoicemailMessageListenRequest:
-    type: object
-    properties:
-      line_id:
-        type: integer
-        description: ID of the line of the user used to make the call. Default is the main line of the user.
 parameters:
   ForceDownload:
     name: download

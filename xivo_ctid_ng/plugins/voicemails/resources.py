@@ -49,21 +49,10 @@ class VoicemailSchema(Schema):
 class VoicemailMessageUpdateSchema(Schema):
     folder_id = fields.Integer(required=True)
 
-
-class VoicemailListenRequestSchema(Schema):
-    line_id = fields.Integer()
-    user = fields.String(required=True)
-
-
-class UserVoicemailListenRequestSchema(Schema):
-    line_id = fields.Integer()
-
 voicemail_schema = VoicemailSchema(strict=True)
 voicemail_folder_schema = VoicemailFolderSchema(strict=True)
 voicemail_message_schema = VoicemailMessageSchema(strict=True)
 voicemail_message_update_schema = VoicemailMessageUpdateSchema(strict=True)
-voicemail_listen_request_schema = VoicemailListenRequestSchema(strict=True)
-user_voicemail_listen_request_schema = UserVoicemailListenRequestSchema(strict=True)
 
 
 class _BaseVoicemailResource(AuthResource):
@@ -229,59 +218,6 @@ class UserVoicemailRecordingResource(_BaseVoicemailRecordingResource):
         voicemail_id = _get_voicemail_id_from_request(self._auth_client, self._voicemails_service)
         message_id = _validate_message_id(message_id)
         return self._get(voicemail_id, message_id)
-
-
-class _BaseVoicemailListenResource(AuthResource):
-
-    def __init__(self, calls_service, voicemails_service):
-        self._calls_service = calls_service
-        self._voicemails_service = voicemails_service
-
-    def _post(self, voicemail_id, message_id, source):
-        message = self._voicemails_service.get_message(voicemail_id, message_id)
-        call_request = {
-            'source': source,
-            'destination': {
-                'context': 'voicemailplaymsg',
-                'extension': 's',
-                'priority': '1',
-            },
-            'variables': {
-                'XIVO_MAILBOX': message[u'vm_conf'][u'number'],
-                'XIVO_MAILBOX_CONTEXT': message[u'vm_conf'][u'context'],
-                'XIVO_MAILBOX_MSG_ID': message[u'id'],
-                'CONNECTEDLINE(name)': '',
-                'CONNECTEDLINE(num)': 'voicemail',
-            }
-        }
-        self._calls_service.originate(call_request)
-        return '', 204
-
-
-class VoicemailListenResource(_BaseVoicemailListenResource):
-
-    @required_acl('ctid-ng.voicemails.{voicemail_id}.messages.{message_id}.listen.create')
-    def post(self, voicemail_id, message_id):
-        voicemail_id = _validate_voicemail_id(voicemail_id)
-        message_id = _validate_message_id(message_id)
-        source = voicemail_listen_request_schema.load(request.get_json(force=True)).data
-        return self._post(voicemail_id, message_id, source)
-
-
-class UserVoicemailListenResource(_BaseVoicemailListenResource):
-
-    def __init__(self, auth_client, calls_service, voicemails_service):
-        super(UserVoicemailListenResource, self).__init__(calls_service, voicemails_service)
-        self._auth_client = auth_client
-
-    @required_acl('ctid-ng.users.me.voicemails.messages.{message_id}.listen.create')
-    def post(self, message_id):
-        user_uuid = get_token_user_uuid_from_request(self._auth_client)
-        voicemail_id = self._voicemails_service.get_user_voicemail_id(user_uuid)
-        message_id = _validate_message_id(message_id)
-        source = user_voicemail_listen_request_schema.load(request.get_json(force=True)).data
-        source['user'] = user_uuid
-        return self._post(voicemail_id, message_id, source)
 
 
 def _validate_voicemail_id(voicemail_id):
