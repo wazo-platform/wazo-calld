@@ -469,7 +469,8 @@ definitions:
       dest_greeting:
         type: string
         description: The destination name of the greeting
-        required: true
+    required:
+    - dest_greeting
   Voicemail:
     type: object
     properties:
@@ -551,6 +552,8 @@ definitions:
       folder_id:
         type: integer
         description: The folder's ID
+    required:
+    - folder_id
 parameters:
   ForceDownload:
     name: download
