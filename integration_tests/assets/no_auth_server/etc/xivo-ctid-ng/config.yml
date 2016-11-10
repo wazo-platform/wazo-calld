@@ -35,3 +35,6 @@ bus:
 enabled_plugins:
   - calls
   - status
+
+service_discovery:
+  enabled: false

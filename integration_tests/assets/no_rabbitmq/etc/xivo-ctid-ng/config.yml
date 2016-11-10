@@ -28,3 +28,6 @@ auth:
 
 enabled_plugins:
   - status
+
+service_discovery:
+  enabled: false

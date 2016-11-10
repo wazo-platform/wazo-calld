@@ -56,3 +56,6 @@ enabled_plugins:
   - plugin_list
   - status
   - transfers
+
+service_discovery:
+  enabled: false
