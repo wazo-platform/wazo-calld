@@ -56,6 +56,7 @@ enabled_plugins:
   - plugin_list
   - status
   - transfers
+  - voicemails
 
 service_discovery:
   enabled: false

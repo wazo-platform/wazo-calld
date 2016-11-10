@@ -104,6 +104,7 @@ enabled_plugins:
   - presences
   - status
   - transfers
+  - voicemails
 
 # Service discovery configuration. all time intervals are in seconds
 service_discovery:

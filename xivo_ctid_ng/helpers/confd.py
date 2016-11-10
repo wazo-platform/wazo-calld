@@ -9,6 +9,8 @@ from xivo_ctid_ng.core.exceptions import XiVOConfdUnreachable
 
 from .exceptions import InvalidUserUUID
 from .exceptions import InvalidUserLine
+from .exceptions import NoSuchUserVoicemail
+from .exceptions import NoSuchVoicemail
 from .exceptions import UserMissingMainLine
 
 
@@ -67,7 +69,7 @@ class Line(object):
         except HTTPError as e:
             raise
         except RequestException as e:
-            raise XiVOConfdUnreachable(self._confd_config, e)
+            raise XiVOConfdUnreachable(self._confd, e)
 
     def context(self):
         line = self._get()
@@ -76,3 +78,25 @@ class Line(object):
     def interface(self):
         line = self._get()
         return "{}/{}".format(line['protocol'], line['name'])
+
+
+def get_user_voicemail(user_uuid, confd_client):
+    try:
+        return confd_client.users.relations(user_uuid).get_voicemail()
+    except HTTPError as e:
+        if not_found(e):
+            raise NoSuchUserVoicemail(user_uuid)
+        raise
+    except RequestException as e:
+        raise XiVOConfdUnreachable(confd_client, e)
+
+
+def get_voicemail(voicemail_id, confd_client):
+    try:
+        return confd_client.voicemails.get(voicemail_id)
+    except HTTPError as e:
+        if not_found(e):
+            raise NoSuchVoicemail(voicemail_id)
+        raise
+    except RequestException as e:
+        raise XiVOConfdUnreachable(confd_client, e)

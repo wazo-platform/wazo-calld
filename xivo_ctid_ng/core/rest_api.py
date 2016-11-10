@@ -36,7 +36,7 @@ class CoreRestApi(object):
     def __init__(self, global_config):
         self.config = global_config['rest_api']
         http_helpers.add_logger(app, logger)
-        app.after_request(http_helpers.log_request)
+        app.after_request(http_helpers.log_request_hide_token)
         app.secret_key = os.urandom(24)
         app.permanent_session_lifetime = timedelta(minutes=5)
         auth_verifier.set_config(global_config['auth'])

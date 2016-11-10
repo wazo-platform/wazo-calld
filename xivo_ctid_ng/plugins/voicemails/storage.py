@@ -1,0 +1,272 @@
+# -*- coding: utf-8 -*-
+# Copyright 2016 Proformatique Inc.
+# SPDX-License-Identifier: GPL-3.0+
+
+import errno
+import logging
+import os.path
+
+from operator import itemgetter
+
+from xivo import caller_id
+
+from .exceptions import NoSuchVoicemailFolder
+from .exceptions import NoSuchVoicemailMessage
+from .exceptions import VoicemailMessageStorageError
+
+logger = logging.getLogger(__name__)
+
+class VoicemailFolderType(object):
+    new = u'new'
+    old = u'old'
+    urgent = u'urgent'
+    other = u'other'
+
+
+def new_filesystem_storage(base_path='/var/spool/asterisk/voicemail'):
+    folders = _VoicemailFolders([
+        _VoicemailFolder(1, 'INBOX', VoicemailFolderType.new, True),
+        _VoicemailFolder(2, 'Old', VoicemailFolderType.old),
+        _VoicemailFolder(3, 'Urgent', VoicemailFolderType.urgent, True),
+        _VoicemailFolder(4, 'Work'),
+        _VoicemailFolder(5, 'Family'),
+        _VoicemailFolder(6, 'Friends'),
+    ])
+    return _VoicemailFilesystemStorage(base_path, folders)
+
+
+class _VoicemailFolder(object):
+
+    def __init__(self, id_, path, type_=VoicemailFolderType.other, is_unread=False):
+        self.id = id_
+        self.path = path
+        self.type = type_
+        self.name = self.path.lower().decode('utf-8')
+        self.is_unread = is_unread
+
+
+class _VoicemailFolders(object):
+
+    def __init__(self, folders):
+        self._folders = folders
+
+    def get_folder_by_id(self, folder_id):
+        for folder in self._folders:
+            if folder.id == folder_id:
+                return folder
+        raise NoSuchVoicemailFolder(folder_id=folder_id)
+
+    def get_folder_by_type(self, folder_type):
+        for folder in self._folders:
+            if folder.type == folder_type:
+                return folder
+        raise NoSuchVoicemailFolder(folder_type=folder_type)
+
+    def __iter__(self):
+        return iter(self._folders)
+
+
+class _VoicemailFilesystemStorage(object):
+
+    def __init__(self, base_path, folders):
+        self._base_path = base_path
+        self._folders = folders
+
+    def get_voicemail_info(self, vm_conf):
+        vm_access = _VoicemailAccess(self._base_path, self._folders, vm_conf)
+        vm_info = vm_access.info()
+        for folder_access in vm_access.folders():
+            folder_info = folder_access.info()
+            for message_access in folder_access.messages():
+                folder_info[u'messages'].append(message_access.info())
+            self._sort_messages(folder_info[u'messages'])
+            vm_info[u'folders'].append(folder_info)
+        return vm_info
+
+    def get_folder_info(self, vm_conf, folder_id):
+        vm_access = _VoicemailAccess(self._base_path, self._folders, vm_conf)
+        folder_access = vm_access.folder(folder_id)
+        folder_info = folder_access.info()
+        for message_access in folder_access.messages():
+            folder_info[u'messages'].append(message_access.info())
+        self._sort_messages(folder_info[u'messages'])
+        return folder_info
+
+    def get_folder_by_id(self, folder_id):
+        return self._folders.get_folder_by_id(folder_id)
+
+    def get_folder_by_type(self, folder_type):
+        return self._folders.get_folder_by_type(folder_type)
+
+    def get_message_info(self, vm_conf, message_id):
+        vm_access = _VoicemailAccess(self._base_path, self._folders, vm_conf)
+        message_access = vm_access.get_message(message_id)
+        return message_access.info()
+
+    def get_message_info_and_recording(self, vm_conf, message_id):
+        vm_access = _VoicemailAccess(self._base_path, self._folders, vm_conf)
+        message_access = vm_access.get_message(message_id)
+        return message_access.info(), message_access.recording()
+
+    def _sort_messages(self, messages):
+        messages.sort(key=itemgetter('timestamp'), reverse=True)
+
+
+class _VoicemailAccess(object):
+
+    def __init__(self, base_path, folders, vm_conf):
+        self.path = os.path.join(base_path,
+                                 vm_conf[u'context'].encode('utf-8'),
+                                 vm_conf[u'number'].encode('utf-8'))
+        self._folders = folders
+        self.vm_conf = vm_conf
+
+    def folder(self, folder_id):
+        return _FolderAccess(self, self._folders.get_folder_by_id(folder_id))
+
+    def folders(self):
+        for folder in self._folders:
+            yield _FolderAccess(self, folder)
+
+    def get_message(self, message_id):
+        for folder_access in self.folders():
+            for message_access in folder_access.messages():
+                if message_access.id == message_id:
+                    return message_access
+        raise NoSuchVoicemailMessage(message_id)
+
+    def info(self):
+        return {
+            u'id': self.vm_conf[u'id'],
+            u'number': self.vm_conf[u'number'],
+            u'name': self.vm_conf[u'name'],
+            u'folders': [],
+        }
+
+
+class _FolderAccess(object):
+
+    def __init__(self, vm_access, folder):
+        self.vm_access = vm_access
+        self.folder = folder
+        self.path = os.path.join(vm_access.path, folder.path)
+
+    def messages(self):
+        try:
+            names = os.listdir(self.path)
+        except OSError as e:
+            if e.errno == errno.ENOENT:
+                # probably: no messages have been left in this folder
+                return
+            raise
+        for name in names:
+            if name.endswith('.txt'):
+                yield _MessageAccess(self, name)
+
+    def info(self):
+        return {
+            u'id': self.folder.id,
+            u'name': self.folder.name,
+            u'type': self.folder.type,
+            u'messages': [],
+        }
+
+
+class _MessageInfoParser(object):
+
+    def __init__(self):
+        self._parse_table = [
+            ('callerid=', self._extract_value, self._parse_callerid),
+            ('msg_id=', self._extract_value, self._parse_msg_id),
+            ('origtime=', self._extract_value, self._parse_origtime),
+            ('duration=', self._extract_value, self._parse_duration),
+        ]
+
+    def parse(self, fobj):
+        result = {}
+        parsed = set()
+        for line in fobj:
+            for prefix, extract, parse in self._parse_table:
+                if line.startswith(prefix):
+                    parsed.add(prefix)
+                    value = extract(line)
+                    parse(value, result)
+        # check that everything was parsed
+        for prefix, _, _ in self._parse_table:
+            if prefix not in parsed:
+                raise Exception('no line starting with {}'.format(prefix))
+        return result
+
+    @staticmethod
+    def _extract_value(line):
+        return line.split('=', 1)[1].rstrip()
+
+    @staticmethod
+    def _parse_callerid(value, result):
+        value = value.decode('utf-8')
+        if value == u'Unknown':
+            result[u'caller_id_name'] = None
+            result[u'caller_id_num'] = None
+        elif caller_id.is_complete_caller_id(value):
+            result[u'caller_id_name'] = caller_id.extract_displayname(value)
+            result[u'caller_id_num'] = caller_id.extract_number(value)
+        else:
+            result[u'caller_id_name'] = None
+            result[u'caller_id_num'] = value
+
+    @staticmethod
+    def _parse_msg_id(value, result):
+        result[u'id'] = value.decode('ascii')
+
+    @staticmethod
+    def _parse_origtime(value, result):
+        result[u'timestamp'] = int(value)
+
+    @staticmethod
+    def _parse_duration(value, result):
+        result[u'duration'] = int(value)
+
+
+class _MessageAccess(object):
+
+    _MESSAGE_INFO_PARSER = _MessageInfoParser()
+
+    def __init__(self, folder_access, message_info_name):
+        self.folder_access = folder_access
+        self.name_prefix = os.path.splitext(message_info_name)[0]
+        self.path_prefix = os.path.join(folder_access.path, self.name_prefix)
+        self._read_message_info_file()
+
+    def _read_message_info_file(self):
+        path = self.path_prefix + '.txt'
+        try:
+            with open(path) as fobj:
+                self.parse_result = self._MESSAGE_INFO_PARSER.parse(fobj)
+            self.id = self.parse_result[u'id']
+        except IOError as e:
+            if e.errno == errno.ENOENT:
+                # probably: the message has been deleted/moved
+                logger.error('could not read voicemail message %s: no such file', path)
+                raise VoicemailMessageStorageError()
+            raise
+        except Exception as e:
+            logger.error('error while parsing voicemail message info %s', path, exc_info=True)
+            raise VoicemailMessageStorageError()
+
+    def info(self):
+        info = dict(self.parse_result)
+        info[u'folder'] = self.folder_access.folder
+        info[u'vm_conf'] = self.folder_access.vm_access.vm_conf
+        return info
+
+    def recording(self):
+        path = self.path_prefix + '.wav'
+        try:
+            with open(path, 'rb') as fobj:
+                return fobj.read()
+        except IOError as e:
+            if e.errno == errno.ENOENT:
+                # probably: the message has been deleted/moved or the recording is not stored as a wav
+                logger.error('could not read voicemail recording %s: no such file', path)
+                raise VoicemailMessageStorageError()
+            raise
