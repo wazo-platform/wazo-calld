@@ -41,3 +41,6 @@ enabled_plugins:
   - calls
   - status
   - transfers
+
+service_discovery:
+  enabled: false

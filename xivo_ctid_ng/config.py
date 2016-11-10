@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) 2015-2016 Avencall
+# Copyright (C) 2016 Proformatique, Inc.
 # SPDX-License-Identifier: GPL-3.0+
 
 
@@ -10,6 +11,7 @@ from xivo.config_helper import read_config_file_hierarchy, parse_config_file
 from xivo.http_helpers import DEFAULT_CIPHERS
 from xivo.xivo_logging import get_log_level_by_name
 
+_CERT_FILE = '/usr/share/xivo-certs/server.crt'
 _DEFAULT_CONFIG = {
     'config_file': '/etc/xivo-ctid-ng/config.yml',
     'extra_config_files': '/etc/xivo-ctid-ng/conf.d/',
@@ -22,7 +24,7 @@ _DEFAULT_CONFIG = {
     'rest_api': {
         'listen': '127.0.0.1',
         'port': 9485,
-        'certificate': '/usr/share/xivo-certs/server.crt',
+        'certificate': _CERT_FILE,
         'private_key': '/usr/share/xivo-certs/server.key',
         'ciphers': DEFAULT_CIPHERS,
         'cors': {
@@ -34,7 +36,7 @@ _DEFAULT_CONFIG = {
     'amid': {
         'host': 'localhost',
         'port': 9491,
-        'verify_certificate': '/usr/share/xivo-certs/server.crt',
+        'verify_certificate': _CERT_FILE,
     },
     'ari': {
         'connection': {
@@ -49,7 +51,7 @@ _DEFAULT_CONFIG = {
     'auth': {
         'host': 'localhost',
         'port': 9497,
-        'verify_certificate': '/usr/share/xivo-certs/server.crt',
+        'verify_certificate': _CERT_FILE,
         'key_file': '/var/lib/xivo-auth-keys/xivo-ctid-ng-key.yml',
     },
     'bus': {
@@ -66,7 +68,22 @@ _DEFAULT_CONFIG = {
     'confd': {
         'host': 'localhost',
         'port': 9486,
-        'verify_certificate': '/usr/share/xivo-certs/server.crt',
+        'verify_certificate': _CERT_FILE,
+    },
+    'consul': {
+        'host': 'localhost',
+        'port': 8500,
+        'scheme': 'https',
+        'verify': _CERT_FILE,
+    },
+    'service_discovery': {
+        'enabled': True,
+        'advertise_address': 'auto',
+        'advertise_address_interface': 'eth0',
+        'advertise_port': 9500,
+        'ttl_interval': 30,
+        'refresh_interval': 27,
+        'retry_interval': 2,
     },
 }
 

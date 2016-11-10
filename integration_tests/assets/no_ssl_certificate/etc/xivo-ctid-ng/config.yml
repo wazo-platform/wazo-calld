@@ -31,3 +31,6 @@ bus:
   password: guest
   host: rabbitmq
   port: 5672
+
+service_discovery:
+  enabled: false
