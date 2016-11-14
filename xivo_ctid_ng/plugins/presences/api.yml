@@ -9,6 +9,11 @@ paths:
         description: The user's UUID
         required: true
         type: string
+      - name: xivo_uuid
+        in: query
+        description: The XiVO UUID of the given user. Defaults to the local XiVO UUID
+        required: False
+        type: string
       tags:
       - presences
       responses:

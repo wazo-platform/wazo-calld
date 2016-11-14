@@ -18,8 +18,9 @@ class Plugin(object):
 
         auth_client = AuthClient(**config['auth'])
         ctid_client = CtidClient(**config['ctid'])
+        local_xivo_uuid = config['uuid']
 
-        user_presences_service = UserPresencesService(bus_publisher, ctid_client, config['ctid'])
+        user_presences_service = UserPresencesService(bus_publisher, ctid_client, config['ctid'], local_xivo_uuid)
         line_presences_service = LinePresencesService(ctid_client, config['ctid'])
 
         api.add_resource(UserPresencesResource, '/users/<user_uuid>/presences', resource_class_args=[user_presences_service])

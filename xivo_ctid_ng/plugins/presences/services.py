@@ -18,12 +18,13 @@ def _is_404(exception):
 
 class UserPresencesService(object):
 
-    def __init__(self, bus_publisher, ctid_client, ctid_config):
+    def __init__(self, bus_publisher, ctid_client, ctid_config, local_xivo_uuid):
         self._bus_publisher = bus_publisher
         self._ctid_client = ctid_client
         self._ctid_config = ctid_config
+        self._xivo_uuid = local_xivo_uuid
 
-    def get_presence(self, user_uuid):
+    def get_local_presence(self, user_uuid):
         try:
             response = self._ctid_client.users.get(user_uuid)
             return response['origin_uuid'], response['presence']
@@ -31,6 +32,15 @@ class UserPresencesService(object):
             if _is_404(e):
                 raise NoSuchUser(user_uuid)
             raise XiVOCtidUnreachable(self._ctid_config, e)
+
+    def get_remote_presence(self, xivo_uuid, user_uuid):
+        return
+
+    def get_presence(self, xivo_uuid, user_uuid):
+        if xivo_uuid in [None, self._xivo_uuid]:
+            return self.get_local_presence(user_uuid)
+        else:
+            return self.get_remote_presence(xivo_uuid, user_uuid)
 
     def update_presence(self, user_uuid, status):
         bus_event = UserStatusUpdateEvent(user_uuid, status)
