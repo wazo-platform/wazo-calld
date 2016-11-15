@@ -3,16 +3,15 @@
 # SPDX-License-Identifier: GPL-3.0+
 
 from xivo_ctid_ng.helpers import confd
-from .storage import new_filesystem_storage
 from .storage import VoicemailFolderType
 
 
 class VoicemailsService(object):
 
-    def __init__(self, ari, confd_client):
+    def __init__(self, ari, confd_client, voicemail_storage):
         self._ari = ari
         self._confd_client = confd_client
-        self._storage = new_filesystem_storage()
+        self._storage = voicemail_storage
 
     def get_voicemail(self, voicemail_id):
         vm_conf = confd.get_voicemail(voicemail_id, self._confd_client)

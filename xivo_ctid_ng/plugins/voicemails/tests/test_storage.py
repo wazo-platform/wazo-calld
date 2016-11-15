@@ -2,14 +2,19 @@
 # Copyright 2016 Proformatique Inc.
 # SPDX-License-Identifier: GPL-3.0+
 
+from mock import Mock
 from hamcrest import assert_that
 from hamcrest import calling
+from hamcrest import contains
+from hamcrest import empty
 from hamcrest import equal_to
 from hamcrest import raises
 from StringIO import StringIO
 from unittest import TestCase
 
 from ..storage import _MessageInfoParser
+from ..storage import _VoicemailMessagesCache
+from ..storage import _VoicemailFolder
 
 
 class TestMessageInfoParser(TestCase):
@@ -70,3 +75,79 @@ msg_id=1478200319-00000000
 
     def _parse(self, content):
         return self.parser.parse(StringIO(content))
+
+
+class TestVoicemailMessagesCache(TestCase):
+
+    def setUp(self):
+        self.number = u'1001'
+        self.context = u'internal'
+        self.cache_key = (self.number, self.context)
+        self.storage = Mock()
+        self.cache = _VoicemailMessagesCache(self.storage)
+        self.folder1 = _VoicemailFolder(1, 'Folder1')
+        self.folder2 = _VoicemailFolder(1, 'Folder2')
+        self.message_info1 = {
+            u'id': u'msg1',
+            u'folder': self.folder1,
+        }
+        self.message_info2 = {
+            u'id': u'msg1',
+            u'folder': self.folder2,
+        }
+
+    def test_diff_when_message_created(self):
+        self.storage.get_voicemail_info.return_value = {
+            u'folders': [{
+                u'messages': [self.message_info1],
+            }],
+        }
+
+        diff = self.cache.get_diff(self.number, self.context)
+
+        assert_that(diff.created_messages, contains(self.message_info1))
+        assert_that(diff.updated_messages, empty())
+        assert_that(diff.deleted_messages, empty())
+
+    def test_diff_when_message_updated(self):
+        self.storage.get_voicemail_info.return_value = {
+            u'folders': [{
+                u'messages': [self.message_info2],
+            }],
+        }
+        self.cache._cache[self.cache_key] = {
+            self.message_info1[u'id']: self.message_info1,
+        }
+
+        diff = self.cache.get_diff(self.number, self.context)
+
+        assert_that(diff.created_messages, empty())
+        assert_that(diff.updated_messages, contains(self.message_info2))
+        assert_that(diff.deleted_messages, empty())
+
+    def test_diff_when_message_deleted(self):
+        self.storage.get_voicemail_info.return_value = {
+            u'folders': [],
+        }
+        self.cache._cache[self.cache_key] = {
+            self.message_info1[u'id']: self.message_info1,
+        }
+
+        diff = self.cache.get_diff(self.number, self.context)
+
+        assert_that(diff.created_messages, empty())
+        assert_that(diff.updated_messages, empty())
+        assert_that(diff.deleted_messages, contains(self.message_info1))
+
+    def test_diff_twice_in_a_row(self):
+        self.storage.get_voicemail_info.return_value = {
+            u'folders': [{
+                u'messages': [self.message_info1],
+            }],
+        }
+
+        diff1 = self.cache.get_diff(self.number, self.context)
+        diff2 = self.cache.get_diff(self.number, self.context)
+
+        assert_that(diff1.created_messages, contains(self.message_info1))
+        assert_that(diff2.created_messages, empty())

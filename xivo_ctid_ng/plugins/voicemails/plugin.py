@@ -5,6 +5,7 @@
 from xivo_auth_client import Client as AuthClient
 from xivo_confd_client import Client as ConfdClient
 
+from .bus_consume import VoicemailsBusEventHandler
 from .resources import UserVoicemailFolderResource
 from .resources import UserVoicemailMessageResource
 from .resources import UserVoicemailRecordingResource
@@ -14,6 +15,8 @@ from .resources import VoicemailMessageResource
 from .resources import VoicemailRecordingResource
 from .resources import VoicemailResource
 from .services import VoicemailsService
+from .storage import new_cache
+from .storage import new_filesystem_storage
 
 
 class Plugin(object):
@@ -21,6 +24,8 @@ class Plugin(object):
     def load(self, dependencies):
         api = dependencies['api']
         ari = dependencies['ari']
+        bus_consumer = dependencies['bus_consumer']
+        bus_publisher = dependencies['bus_publisher']
         config = dependencies['config']
         token_changed_subscribe = dependencies['token_changed_subscribe']
 
@@ -29,7 +34,12 @@ class Plugin(object):
 
         token_changed_subscribe(confd_client.set_token)
 
-        voicemails_service = VoicemailsService(ari.client, confd_client)
+        voicemail_storage = new_filesystem_storage()
+        voicemail_cache = new_cache(voicemail_storage)
+        voicemails_service = VoicemailsService(ari.client, confd_client, voicemail_storage)
+
+        voicemails_bus_event_handler = VoicemailsBusEventHandler(confd_client, bus_publisher, voicemail_cache)
+        voicemails_bus_event_handler.subscribe(bus_consumer)
 
         api.add_resource(VoicemailResource,
                          '/voicemails/<voicemail_id>',
