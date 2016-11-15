@@ -31,6 +31,7 @@ class Plugin(object):
         bus_consumer = dependencies['bus_consumer']
         bus_publisher = dependencies['bus_publisher']
         config = dependencies['config']
+        status_aggregator = dependencies['status_aggregator']
         token_changed_subscribe = dependencies['token_changed_subscribe']
 
         auth_client = AuthClient(**config['auth'])
@@ -39,15 +40,17 @@ class Plugin(object):
         token_changed_subscribe(confd_client.set_token)
 
         voicemail_storage = new_filesystem_storage()
-        voicemail_cache = new_cache(voicemail_storage)
+        self._voicemail_cache = new_cache(voicemail_storage)
         try:
-            voicemail_cache.refresh_cache()
+            self._voicemail_cache.refresh_cache()
         except Exception:
             logger.exception('fail to refresh voicemail cache')
         voicemails_service = VoicemailsService(ari.client, confd_client, voicemail_storage)
 
-        voicemails_bus_event_handler = VoicemailsBusEventHandler(confd_client, bus_publisher, voicemail_cache)
+        voicemails_bus_event_handler = VoicemailsBusEventHandler(confd_client, bus_publisher, self._voicemail_cache)
         voicemails_bus_event_handler.subscribe(bus_consumer)
+
+        status_aggregator.add_provider(self._provide_status)
 
         api.add_resource(VoicemailResource,
                          '/voicemails/<voicemail_id>',
@@ -73,3 +76,6 @@ class Plugin(object):
         api.add_resource(UserVoicemailRecordingResource,
                          '/users/me/voicemails/messages/<message_id>/recording',
                          resource_class_args=[auth_client, voicemails_service])
+
+    def _provide_status(self, status):
+        status['plugins']['voicemails']['cache_items'] = len(self._voicemail_cache)

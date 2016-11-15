@@ -18,6 +18,7 @@ from xivo_ctid_ng.core.bus import CoreBusPublisher
 from xivo_ctid_ng.core.collectd import CoreCollectd
 from xivo_ctid_ng.core.ari_ import CoreARI
 from xivo_ctid_ng.core.rest_api import api, CoreRestApi
+from xivo_ctid_ng.core.status import StatusAggregator
 from .service_discovery import self_check
 
 logger = logging.getLogger(__name__)
@@ -35,6 +36,7 @@ class Controller(object):
         self.bus_consumer = CoreBusConsumer(config)
         self.collectd = CoreCollectd(config)
         self.rest_api = CoreRestApi(config)
+        self.status_aggregator = StatusAggregator()
         self.token_renewer = TokenRenewer(auth_client)
         self._load_plugins(config)
         self._service_registration_params = ['xivo-ctid-ng',
@@ -48,6 +50,8 @@ class Controller(object):
 
     def run(self):
         logger.info('xivo-ctid-ng starting...')
+        self.status_aggregator.add_provider(self.ari.provide_status)
+        self.status_aggregator.add_provider(self.bus_consumer.provide_status)
         bus_producer_thread = Thread(target=self.bus_publisher.run, name='bus_producer_thread')
         bus_producer_thread.start()
         collectd_thread = Thread(target=self.collectd.run, name='collectd_thread')
@@ -83,6 +87,7 @@ class Controller(object):
             'bus_consumer': self.bus_consumer,
             'collectd': self.collectd,
             'config': global_config,
+            'status_aggregator': self.status_aggregator,
             'token_changed_subscribe': self.token_renewer.subscribe_to_token_change,
         }]
         plugin_manager.load_plugins(global_config['enabled_plugins'], load_args)

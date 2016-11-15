@@ -3,16 +3,12 @@
 # SPDX-License-Identifier: GPL-3.0+
 
 from .resources import StatusResource
-from .services import StatusService
 
 
 class Plugin(object):
 
     def load(self, dependencies):
         api = dependencies['api']
-        ari = dependencies['ari']
-        bus_consumer = dependencies['bus_consumer']
+        status_aggregator = dependencies['status_aggregator']
 
-        status_service = StatusService(ari, bus_consumer)
-
-        api.add_resource(StatusResource, '/status', resource_class_args=[status_service])
+        api.add_resource(StatusResource, '/status', resource_class_args=[status_aggregator])

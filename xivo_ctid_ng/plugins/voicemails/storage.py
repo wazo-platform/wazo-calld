@@ -367,6 +367,9 @@ class _VoicemailMessagesCache(object):
                 diff.created_messages.append(new_message_info)
         return diff
 
+    def __len__(self):
+        return len(self._cache)
+
 
 class _VoicemailMessagesDiff(object):
 
