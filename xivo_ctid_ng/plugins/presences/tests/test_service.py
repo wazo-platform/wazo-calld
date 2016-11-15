@@ -9,7 +9,7 @@ from hamcrest import assert_that, contains, equal_to
 from mock import Mock, patch, sentinel as s
 from xivo_bus.resources.cti.event import UserStatusUpdateEvent
 
-from xivo_ctid_ng.plugins.presences.services import UserPresencesService
+from ..services import UserPresencesService
 
 
 class TestPresencesService(unittest.TestCase):
@@ -19,7 +19,11 @@ class TestPresencesService(unittest.TestCase):
         self.xivo_uuid = 'xivo-uuid'
         self.ctid_client = Mock()
         ctid_config = dict()
-        self.service = UserPresencesService(self.bus_publisher, self.ctid_client, ctid_config, s.local_xivo_uuid)
+        self.service = UserPresencesService(self.bus_publisher,
+                                            self.ctid_client,
+                                            ctid_config,
+                                            s.local_xivo_uuid,
+                                            Mock())
         self.user_uuid = 'efd089b0-b803-4536-b8f0-91bab5b94604'
         self.presence = 'available'
 

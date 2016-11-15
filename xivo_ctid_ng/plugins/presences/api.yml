@@ -21,8 +21,12 @@ paths:
           description: The current presence of the user
           schema:
             $ref: '#/definitions/PresenceUser'
+        '400':
+          $ref: '#/responses/MissingCredentials'
         '404':
           $ref: '#/responses/UnknownUser'
+        '502':
+          $ref: '#/responses/InvalidCredentials'
         '503':
           $ref: '#/responses/AnotherServiceUnavailable'
     put:
@@ -141,6 +145,14 @@ definitions:
         description: Current status for the line. The list of presences and their
           meaning are available in the CTI phone hints configuration.
 responses:
+  InvalidCredentials:
+    description: The configured service_id and service_id are not allowed to do that query
+    schema:
+      $ref: '#/definitions/Error'
+  MissingCredentials:
+    description: The xivo_uuid does not have any service_id and service_key configured
+    schema:
+      $ref: '#/definitions/Error'
   UnknownUser:
     description: The specified user does not exists
     schema:

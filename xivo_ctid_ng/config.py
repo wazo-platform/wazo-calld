@@ -85,6 +85,8 @@ _DEFAULT_CONFIG = {
         'refresh_interval': 27,
         'retry_interval': 2,
     },
+    'remote_credentials': {
+    },
 }
 
 
