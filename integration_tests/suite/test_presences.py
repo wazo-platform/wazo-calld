@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) 2016 Avencall
+# Copyright (C) 2016 Proformatique, Inc.
 # SPDX-License-Identifier: GPL-3.0+
 
 from hamcrest import assert_that
@@ -38,6 +39,11 @@ class TestGetUserPresence(IntegrationTest):
         assert_that(result.json(), has_entries({'user_uuid': contains_string(self.token_user_uuid),
                                                 'xivo_uuid': contains_string(XIVO_UUID),
                                                 'presence': contains_string('available')}))
+
+    def test_get_presence_with_unknown_values(self):
+        result = self.ctid_ng.get_user_presence_result('unknown-user', token=VALID_TOKEN)
+
+        assert_that(result.status_code, equal_to(404))
 
 
 class TestGetUserMePresence(IntegrationTest):
@@ -154,3 +160,9 @@ class TestGetLinePresence(IntegrationTest):
         assert_that(result.json(), has_entries({'line_id': equal_to(int(line_id)),
                                                 'xivo_uuid': contains_string(XIVO_UUID),
                                                 'presence': instance_of(int)}))
+
+    def test_get_presence_with_unknown_values(self):
+        line_id = 6
+        result = self.ctid_ng.get_line_presence_result(line_id, token=VALID_TOKEN)
+
+        assert_that(result.status_code, equal_to(404))

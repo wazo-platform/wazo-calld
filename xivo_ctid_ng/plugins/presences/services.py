@@ -1,12 +1,19 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) 2016 Avencall
+# Copyright (C) 2016 Proformatique, Inc.
 # SPDX-License-Identifier: GPL-3.0+
 
 from xivo_bus.resources.cti.event import UserStatusUpdateEvent
 
 import requests
 
-from .exceptions import XiVOCtidUnreachable
+from .exceptions import NoSuchUser, NoSuchLine, XiVOCtidUnreachable
+
+
+def _is_404(exception):
+    response = getattr(exception, 'response')
+    status_code = getattr(response, 'status_code')
+    return status_code == 404
 
 
 class UserPresencesService(object):
@@ -21,6 +28,8 @@ class UserPresencesService(object):
             response = self._ctid_client.users.get(user_uuid)
             return response['origin_uuid'], response['presence']
         except requests.RequestException as e:
+            if _is_404(e):
+                raise NoSuchUser(user_uuid)
             raise XiVOCtidUnreachable(self._ctid_config, e)
 
     def update_presence(self, user_uuid, status):
@@ -39,4 +48,6 @@ class LinePresencesService(object):
             response = self._ctid_client.endpoints.get(line_id)
             return response['id'], response['origin_uuid'], response['status']
         except requests.RequestException as e:
+            if _is_404(e):
+                raise NoSuchLine(line_id)
             raise XiVOCtidUnreachable(self._ctid_config, e)
