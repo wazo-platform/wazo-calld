@@ -16,6 +16,8 @@ paths:
           description: The current presence of the user
           schema:
             $ref: '#/definitions/PresenceUser'
+        '404':
+          $ref: '#/responses/UnknownUser'
         '503':
           $ref: '#/responses/AnotherServiceUnavailable'
     put:
@@ -52,6 +54,8 @@ paths:
           description: The current presence of the authenticated user
           schema:
             $ref: '#/definitions/PresenceUser'
+        '404':
+          $ref: '#/responses/UnknownUser'
         '503':
           $ref: '#/responses/AnotherServiceUnavailable'
     put:
@@ -90,6 +94,8 @@ paths:
           description: The current status of the line
           schema:
             $ref: '#/definitions/PresenceLine'
+        '404':
+          $ref: '#/responses/UnknownLine'
         '503':
           $ref: '#/responses/AnotherServiceUnavailable'
 definitions:
@@ -129,3 +135,12 @@ definitions:
         type: integer
         description: Current status for the line. The list of presences and their
           meaning are available in the CTI phone hints configuration.
+responses:
+  UnknownUser:
+    description: The specified user does not exists
+    schema:
+      $ref: '#/definitions/Error'
+  UnknownLine:
+    description: The specified line does not exists
+    schema:
+      $ref: '#/definitions/Error'
