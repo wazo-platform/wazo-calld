@@ -78,6 +78,18 @@ class _VoicemailFilesystemStorage(object):
         self._base_path = base_path
         self._folders = folders
 
+    def list_voicemails_number_and_context(self):
+        for context in os.listdir(self._base_path):
+            context_path = os.path.join(self._base_path, context)
+            try:
+                numbers = os.listdir(context_path)
+            except OSError as e:
+                logger.error('unexpected error while listing %s: %s', context_path, e)
+            else:
+                context = context.decode('utf-8')
+                for number in numbers:
+                    yield number.decode('utf-8'), context
+
     def get_voicemails_info(self):
         for context in os.listdir(self._base_path):
             context_path = os.path.join(self._base_path, context)
@@ -299,10 +311,11 @@ class _VoicemailMessagesCache(object):
 
     _EMPTY_CACHE_ENTRY = {}
 
-    def __init__(self, voicemail_storage):
-        # TODO add something to remove old cache entry
+    def __init__(self, voicemail_storage, cache_cleanup_counter_max=1500):
         self._storage = voicemail_storage
         self._cache = {}
+        self._cache_cleanup_counter = 0
+        self._cache_cleanup_counter_max = cache_cleanup_counter_max
 
     def refresh_cache(self):
         self._cache = {}
@@ -318,7 +331,22 @@ class _VoicemailMessagesCache(object):
         new_vm_info = self._storage.get_voicemail_info(vm_conf)
         new_cache_entry = self._vm_info_to_cache_entry(new_vm_info)
         self._cache[key] = new_cache_entry
+        self._maybe_clean_cache()
         return self._compute_diff(old_cache_entry, new_cache_entry)
+
+    def _maybe_clean_cache(self):
+        if self._cache_cleanup_counter == self._cache_cleanup_counter_max:
+            self._cache_cleanup_counter = 0
+            self._clean_cache()
+        else:
+            self._cache_cleanup_counter += 1
+
+    def _clean_cache(self):
+        logger.info('cleaning voicemail cache')
+        cached_keys = set(self._cache)
+        keys_to_purge = cached_keys.difference(self._storage.list_voicemails_number_and_context())
+        for key in keys_to_purge:
+            del self._cache[key]
 
     def _vm_info_to_cache_entry(self, vm_info):
         cache_entry = {}

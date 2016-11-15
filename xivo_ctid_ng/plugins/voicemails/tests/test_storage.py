@@ -8,6 +8,8 @@ from hamcrest import calling
 from hamcrest import contains
 from hamcrest import empty
 from hamcrest import equal_to
+from hamcrest import has_key
+from hamcrest import not_
 from hamcrest import raises
 from StringIO import StringIO
 from unittest import TestCase
@@ -84,6 +86,9 @@ class TestVoicemailMessagesCache(TestCase):
         self.context = u'internal'
         self.cache_key = (self.number, self.context)
         self.storage = Mock()
+        self.storage.get_voicemail_info.return_value = {
+            u'folders': [],
+        }
         self.cache = _VoicemailMessagesCache(self.storage)
         self.folder1 = _VoicemailFolder(1, 'Folder1')
         self.folder2 = _VoicemailFolder(1, 'Folder2')
@@ -151,3 +156,33 @@ class TestVoicemailMessagesCache(TestCase):
 
         assert_that(diff1.created_messages, contains(self.message_info1))
         assert_that(diff2.created_messages, empty())
+
+    def test_cache_cleanup(self):
+        key1 = (u'1001', u'default')
+        key2 = (u'1002', u'default')
+        self.storage.list_voicemails_number_and_context.return_value = [key1]
+        cache = _VoicemailMessagesCache(self.storage, 0)
+        cache._cache = {
+            key1: {},
+            key2: {},
+        }
+
+        cache.get_diff(self.number, self.context)
+
+        assert_that(cache._cache, has_key(key1))
+        assert_that(cache._cache, not_(has_key(key2)))
+
+    def test_cache_is_cleaned_periodically(self):
+        cache = _VoicemailMessagesCache(self.storage, 1)
+        cache._cache[self.cache_key] = {}
+        self.storage.list_voicemails_number_and_context.return_value = []
+
+        cache.get_diff(self.number, self.context)
+
+        assert_that(cache._cache, has_key(self.cache_key))
+
+        cache.get_diff(self.number, self.context)
+
+        print cache._cache
+        assert_that(cache._cache, not_(has_key(self.cache_key)))
+        self.storage.list_voicemails_number_and_context.assert_called_once_with()
