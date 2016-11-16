@@ -45,6 +45,27 @@ class TestGetUserPresence(IntegrationTest):
 
         assert_that(result.status_code, equal_to(404))
 
+    def test_get_presence_with_unknown_xivo_uuid(self):
+        result = self.ctid_ng.get_user_presence_result(self.token_user_uuid,
+                                                       xivo_uuid='unknown',
+                                                       token=VALID_TOKEN)
+
+        assert_that(result.status_code, equal_to(400))
+
+    def test_get_presence_with_an_unregistered_xivo_auth(self):
+        result = self.ctid_ng.get_user_presence_result(self.token_user_uuid,
+                                                       xivo_uuid='582fbd45-73a3-41dd-9079-4c6d16fe1aad',
+                                                       token=VALID_TOKEN)
+
+        assert_that(result.status_code, equal_to(503))
+
+    def test_get_presence_with_invalid_credentials(self):
+        result = self.ctid_ng.get_user_presence_result(self.token_user_uuid,
+                                                       xivo_uuid='51400e55-2dc3-4cfc-a2f2-a4d4f0f8b217',
+                                                       token=VALID_TOKEN)
+
+        assert_that(result.status_code, equal_to(502))
+
 
 class TestGetUserMePresence(IntegrationTest):
 

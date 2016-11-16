@@ -45,6 +45,11 @@ confd:
   port: 9486
   verify_certificate: /usr/local/share/ssl/confd/server.crt
 
+consul:
+  host: consul
+  scheme: https
+  verify: /usr/local/share/ssl/consul/server.crt
+
 ctid:
   host: ctid
   port: 9495
@@ -60,3 +65,13 @@ enabled_plugins:
 
 service_discovery:
   enabled: false
+
+remote_credentials:
+  not_registered:
+    xivo_uuid: 582fbd45-73a3-41dd-9079-4c6d16fe1aad
+    service_id: test
+    service_key: idbehold
+  invalid_credentials:
+    xivo_uuid: 51400e55-2dc3-4cfc-a2f2-a4d4f0f8b217
+    service_id: test
+    service_key: foobar

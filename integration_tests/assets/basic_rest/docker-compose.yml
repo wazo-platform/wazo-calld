@@ -5,11 +5,12 @@ sync:
     - ari
     - auth
     - confd
+    - consul
     - ctid
     - ctid-ng
     - rabbitmq
   environment:
-    PORTS: "5039 5672 9486 9491 9495 9497 9500"
+    PORTS: "5039 5672 8500 9486 9491 9495 9497 9500"
     TIMEOUT: "${INTEGRATION_TEST_TIMEOUT}"
 
 amid:
@@ -58,6 +59,15 @@ confd:
     - "./ssl:/usr/local/share/ssl"
   command: "python /usr/local/share/xivo-confd/mock-xivo-confd.py 9486"
 
+consul:
+  image: p0bailey/docker-flask
+  ports:
+    - "8500"
+  volumes:
+    - "./consul:/usr/local/share/consul"
+    - "./ssl:/usr/local/share/ssl"
+  command: "python /usr/local/share/consul/mock-consul.py 8500"
+
 ctid-ng:
   image: xivo-ctid-ng-test
   volumes:
@@ -73,6 +83,7 @@ ctid-ng:
     - ari
     - auth
     - confd
+    - consul
     - ctid
     - rabbitmq
 
