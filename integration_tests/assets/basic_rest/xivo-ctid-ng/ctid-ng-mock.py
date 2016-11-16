@@ -20,6 +20,10 @@ def presences(user_uuid):
         return '', 401
     elif user_uuid == 'unknown':
         return '', 404
+    else:
+        return jsonify({'user_uuid': user_uuid,
+                        'xivo_uuid': xivo_uuid,
+                        'presence': 'available'})
 
 
 if __name__ == "__main__":
