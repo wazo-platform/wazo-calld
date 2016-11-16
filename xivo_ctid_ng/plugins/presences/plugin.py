@@ -24,7 +24,8 @@ class Plugin(object):
             config['consul'], config['remote_credentials'])
         user_presences_service = UserPresencesService(
             bus_publisher, ctid_client, config['ctid'], local_xivo_uuid, ctid_ng_client_factory)
-        line_presences_service = LinePresencesService(ctid_client, config['ctid'])
+        line_presences_service = LinePresencesService(
+            ctid_client, config['ctid'], local_xivo_uuid, ctid_ng_client_factory)
 
         api.add_resource(UserPresencesResource, '/users/<user_uuid>/presences', resource_class_args=[user_presences_service])
         api.add_resource(UserMePresencesResource, '/users/me/presences', resource_class_args=[auth_client, user_presences_service])

@@ -223,3 +223,10 @@ class TestGetLinePresence(IntegrationTest):
         result = self.ctid_ng.get_line_presence_result(line_id, token=VALID_TOKEN)
 
         assert_that(result.status_code, equal_to(404))
+
+    def test_get_presence_with_unknown_xivo_uuid(self):
+        result = self.ctid_ng.get_line_presence_result(42,
+                                                       xivo_uuid='unknown',
+                                                       token=VALID_TOKEN)
+
+        assert_that(result.status_code, equal_to(400))

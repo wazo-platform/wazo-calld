@@ -77,20 +77,43 @@ class UserPresencesService(object):
 
 class LinePresencesService(object):
 
-    def __init__(self, ctid_client, ctid_config):
+    def __init__(self, ctid_client, ctid_config, local_xivo_uuid, ctid_ng_client_factory):
         self._ctid_client = ctid_client
         self._ctid_config = ctid_config
+        self._xivo_uuid = local_xivo_uuid
+        self._ctid_ng_client_factory = ctid_ng_client_factory
 
-    def get_presence(self, line_id):
+    def get_presence(self, xivo_uuid, line_id):
+        if xivo_uuid in [None, self._xivo_uuid]:
+            return self.get_local_presence(line_id)
+        else:
+            return self.get_remote_presence(xivo_uuid, line_id)
+
+    def get_local_presence(self, line_id):
         try:
             response = self._ctid_client.endpoints.get(line_id)
             return response['id'], response['origin_uuid'], response['status']
         except requests.RequestException as e:
             status_code = _extract_status_code(e)
             if status_code == 404:
-                raise NoSuchLine(line_id)
+                raise NoSuchLine(self._xivo_uuid, line_id)
             else:
                 raise XiVOCtidUnreachable(self._ctid_config, e)
+
+    def get_remote_presence(self, xivo_uuid, line_id):
+        logger.debug('looking for remote line presence: %s@%s', line_id, xivo_uuid)
+        c = self._ctid_ng_client_factory.new_ctid_ng_client(xivo_uuid)
+        try:
+            response = c.line_presences.get_presence(line_id, xivo_uuid=xivo_uuid)
+            return response['xivo_uuid'], response['presence']
+        except requests.RequestException as e:
+            status_code = _extract_status_code(e)
+            if status_code == 401:
+                raise InvalidCredentials(xivo_uuid)
+            elif status_code == 404:
+                raise NoSuchLine(xivo_uuid, line_id)
+            else:
+                raise XiVOCtidNgUnreachable(xivo_uuid, e)
 
 
 class CtidNgClientFactory(object):

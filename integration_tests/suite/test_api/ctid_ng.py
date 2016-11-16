@@ -346,10 +346,14 @@ class CtidNgClient(object):
                               verify=False)
         return result
 
-    def get_line_presence_result(self, line_id, token=None):
+    def get_line_presence_result(self, line_id, xivo_uuid=None, token=None):
         url = self.url('lines', line_id, 'presences')
+        params = {}
+        if xivo_uuid:
+            params['xivo_uuid'] = xivo_uuid
         result = requests.get(url,
                               headers={'X-Auth-Token': token},
+                              params=params,
                               verify=False)
         return result
 
