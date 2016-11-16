@@ -230,3 +230,12 @@ class TestGetLinePresence(IntegrationTest):
                                                        token=VALID_TOKEN)
 
         assert_that(result.status_code, equal_to(400))
+
+    def test_get_presence_with_an_unregistered_xivo_auth(self):
+        result = self.ctid_ng.get_line_presence_result(42,
+                                                       xivo_uuid='582fbd45-73a3-41dd-9079-4c6d16fe1aad',
+                                                       token=VALID_TOKEN)
+
+        assert_that(result.status_code, equal_to(503))
+        missing_service = result.json()['details']['service']
+        assert_that(missing_service, equal_to('xivo-auth'))
