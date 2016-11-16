@@ -58,6 +58,8 @@ class TestGetUserPresence(IntegrationTest):
                                                        token=VALID_TOKEN)
 
         assert_that(result.status_code, equal_to(503))
+        missing_service = result.json()['details']['service']
+        assert_that(missing_service, equal_to('xivo-auth'))
 
     def test_get_presence_with_invalid_credentials(self):
         result = self.ctid_ng.get_user_presence_result(self.token_user_uuid,
@@ -65,6 +67,15 @@ class TestGetUserPresence(IntegrationTest):
                                                        token=VALID_TOKEN)
 
         assert_that(result.status_code, equal_to(502))
+
+    def test_get_presence_with_an_unregistered_xivo_ctid_ng(self):
+        result = self.ctid_ng.get_user_presence_result(self.token_user_uuid,
+                                                       xivo_uuid='196e42b9-bbfe-4c03-b3d4-684dffd01603',
+                                                       token=VALID_TOKEN)
+
+        assert_that(result.status_code, equal_to(503))
+        missing_service = result.json()['details']['service']
+        assert_that(missing_service, equal_to('xivo-ctid-ng'))
 
 
 class TestGetUserMePresence(IntegrationTest):

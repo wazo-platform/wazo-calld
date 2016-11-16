@@ -69,6 +69,7 @@ class XiVOAuthUnreachable(APIException):
             details={
                 'xivo_uuid': xivo_uuid,
                 'original_error': str(error),
+                'service': 'xivo-auth',
             }
         )
 
@@ -83,6 +84,7 @@ class XiVOCtidNgUnreachable(APIException):
             details={
                 'xivo_uuid': xivo_uuid,
                 'original_error': str(error),
+                'service': 'xivo-ctid-ng',
             }
         )
 
@@ -97,5 +99,6 @@ class XiVOCtidUnreachable(APIException):
             details={
                 'xivo_ctid_config': xivo_ctid_config,
                 'original_error': str(error),
+                'service': 'xivo-ctid',
             }
         )

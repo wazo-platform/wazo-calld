@@ -10,14 +10,17 @@ app = Flask(__name__)
 
 port = int(sys.argv[1])
 
-services = {
-    'xivo-auth': {
-        '51400e55-2dc3-4cfc-a2f2-a4d4f0f8b217': {
-            'Service': 'xivo-auth',
+
+def default_auth(xivo_uuid):
+    return {'Service': 'xivo-auth',
             'Address': 'auth',
             'Port': 9497,
-            'Tags': ['51400e55-2dc3-4cfc-a2f2-a4d4f0f8b217', 'xivo-auth'],
-        },
+            'Tags': [xivo_uuid, 'xivo-auth']}
+
+services = {
+    'xivo-auth': {
+        '51400e55-2dc3-4cfc-a2f2-a4d4f0f8b217': default_auth('51400e55-2dc3-4cfc-a2f2-a4d4f0f8b217'),
+        '196e42b9-bbfe-4c03-b3d4-684dffd01603': default_auth('196e42b9-bbfe-4c03-b3d4-684dffd01603'),
     },
 }
 
