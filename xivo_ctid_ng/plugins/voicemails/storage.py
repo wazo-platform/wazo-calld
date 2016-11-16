@@ -35,6 +35,12 @@ def new_filesystem_storage(base_path='/var/spool/asterisk/voicemail'):
     return _VoicemailFilesystemStorage(base_path, folders)
 
 
+def new_cache(voicemail_storage):
+    cache = _VoicemailMessagesCache(voicemail_storage)
+    cache.refresh_cache()
+    return cache
+
+
 class _VoicemailFolder(object):
 
     def __init__(self, id_, path, type_=VoicemailFolderType.other, is_unread=False):
@@ -71,6 +77,34 @@ class _VoicemailFilesystemStorage(object):
     def __init__(self, base_path, folders):
         self._base_path = base_path
         self._folders = folders
+
+    def list_voicemails_number_and_context(self):
+        for context in os.listdir(self._base_path):
+            context_path = os.path.join(self._base_path, context)
+            try:
+                numbers = os.listdir(context_path)
+            except OSError as e:
+                logger.error('unexpected error while listing %s: %s', context_path, e)
+            else:
+                context = context.decode('utf-8')
+                for number in numbers:
+                    yield number.decode('utf-8'), context
+
+    def get_voicemails_info(self):
+        for context in os.listdir(self._base_path):
+            context_path = os.path.join(self._base_path, context)
+            try:
+                numbers = os.listdir(context_path)
+            except OSError as e:
+                logger.error('unexpected error while listing %s: %s', context_path, e)
+            else:
+                for number in numbers:
+                    vm_conf = _fake_vm_conf(number.decode('utf-8'), context.decode('utf-8'))
+                    try:
+                        yield self.get_voicemail_info(vm_conf)
+                    except Exception as e:
+                        logger.exception('unexpected error while getting voicemail info %s@%s: %s',
+                                         number, context, e)
 
     def get_voicemail_info(self, vm_conf):
         vm_access = _VoicemailAccess(self._base_path, self._folders, vm_conf)
@@ -139,6 +173,7 @@ class _VoicemailAccess(object):
         return {
             u'id': self.vm_conf[u'id'],
             u'number': self.vm_conf[u'number'],
+            u'context': self.vm_conf[u'context'],
             u'name': self.vm_conf[u'name'],
             u'folders': [],
         }
@@ -270,3 +305,85 @@ class _MessageAccess(object):
                 logger.error('could not read voicemail recording %s: no such file', path)
                 raise VoicemailMessageStorageError()
             raise
+
+
+class _VoicemailMessagesCache(object):
+
+    _EMPTY_CACHE_ENTRY = {}
+
+    def __init__(self, voicemail_storage, cache_cleanup_counter_max=1500):
+        self._storage = voicemail_storage
+        self._cache = {}
+        self._cache_cleanup_counter = 0
+        self._cache_cleanup_counter_max = cache_cleanup_counter_max
+
+    def refresh_cache(self):
+        self._cache = {}
+        for vm_info in self._storage.get_voicemails_info():
+            cache_entry = self._vm_info_to_cache_entry(vm_info)
+            key = (vm_info[u'number'], vm_info[u'context'])
+            self._cache[key] = cache_entry
+
+    def get_diff(self, number, context):
+        key = (number, context)
+        vm_conf = _fake_vm_conf(number, context)
+        old_cache_entry = self._cache.get(key, self._EMPTY_CACHE_ENTRY)
+        new_vm_info = self._storage.get_voicemail_info(vm_conf)
+        new_cache_entry = self._vm_info_to_cache_entry(new_vm_info)
+        self._cache[key] = new_cache_entry
+        self._maybe_clean_cache()
+        return self._compute_diff(old_cache_entry, new_cache_entry)
+
+    def _maybe_clean_cache(self):
+        if self._cache_cleanup_counter == self._cache_cleanup_counter_max:
+            self._cache_cleanup_counter = 0
+            self._clean_cache()
+        else:
+            self._cache_cleanup_counter += 1
+
+    def _clean_cache(self):
+        logger.info('cleaning voicemail cache')
+        cached_keys = set(self._cache)
+        keys_to_purge = cached_keys.difference(self._storage.list_voicemails_number_and_context())
+        for key in keys_to_purge:
+            del self._cache[key]
+
+    def _vm_info_to_cache_entry(self, vm_info):
+        cache_entry = {}
+        for folder_info in vm_info[u'folders']:
+            for message_info in folder_info[u'messages']:
+                cache_entry[message_info[u'id']] = message_info
+        return cache_entry
+
+    def _compute_diff(self, old_cache_entry, new_cache_entry):
+        diff = _VoicemailMessagesDiff()
+        for message_id, old_message_info in old_cache_entry.iteritems():
+            new_message_info = new_cache_entry.get(message_id)
+            if new_message_info is None:
+                diff.deleted_messages.append(old_message_info)
+            elif old_message_info != new_message_info:
+                diff.updated_messages.append(new_message_info)
+        for message_id, new_message_info in new_cache_entry.iteritems():
+            if message_id not in old_cache_entry:
+                diff.created_messages.append(new_message_info)
+        return diff
+
+
+class _VoicemailMessagesDiff(object):
+
+    def __init__(self):
+        self.created_messages = []
+        self.updated_messages = []
+        self.deleted_messages = []
+
+    def is_empty(self):
+        return not self.created_messages and not self.updated_messages and not self.deleted_messages
+
+
+def _fake_vm_conf(number, context):
+    return {
+        u'id': 0,
+        u'name': u'fake-vm-conf',
+        u'number': number,
+        u'context': context,
+    }
