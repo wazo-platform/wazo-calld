@@ -83,3 +83,8 @@ remote_credentials:
     xivo_uuid: 04b0087e-1661-4a42-8181-4b61e198204d
     service_id: test
     service_key: iddqd
+  working:
+    xivo_uuid: 5720ee16-61cc-412e-93c9-ae06fa0be845
+    service_id: test
+    service_key: 5ecr37
+

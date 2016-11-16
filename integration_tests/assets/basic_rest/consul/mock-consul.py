@@ -17,19 +17,23 @@ def default_auth(xivo_uuid):
             'Port': 9497,
             'Tags': [xivo_uuid, 'xivo-auth']}
 
+
+def default_ctid_ng(xivo_uuid):
+    return {'Service': 'xivo-ctid-ng',
+            'Address': 'remote_ctid_ng',
+            'Port': 9501,
+            'Tags': [xivo_uuid, 'xivo-ctid-ng']}
+
 services = {
     'xivo-auth': {
         '51400e55-2dc3-4cfc-a2f2-a4d4f0f8b217': default_auth('51400e55-2dc3-4cfc-a2f2-a4d4f0f8b217'),
         '196e42b9-bbfe-4c03-b3d4-684dffd01603': default_auth('196e42b9-bbfe-4c03-b3d4-684dffd01603'),
         '04b0087e-1661-4a42-8181-4b61e198204d': default_auth('04b0087e-1661-4a42-8181-4b61e198204d'),
+        '5720ee16-61cc-412e-93c9-ae06fa0be845': default_auth('5720ee16-61cc-412e-93c9-ae06fa0be845'),
     },
     'xivo-ctid-ng': {
-        '04b0087e-1661-4a42-8181-4b61e198204d': {
-            'Service': 'xivo-ctid-ng',
-            'Address': 'remote_ctid_ng',
-            'Port': 9501,
-            'Tags': ['04b0087e-1661-4a42-8181-4b61e198204d', 'xivo-ctid-ng'],
-        },
+        '04b0087e-1661-4a42-8181-4b61e198204d': default_ctid_ng('04b0087e-1661-4a42-8181-4b61e198204d'),
+        '5720ee16-61cc-412e-93c9-ae06fa0be845': default_ctid_ng('5720ee16-61cc-412e-93c9-ae06fa0be845'),
     },
 }
 

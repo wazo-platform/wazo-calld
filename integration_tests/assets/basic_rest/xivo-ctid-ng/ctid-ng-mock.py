@@ -18,6 +18,8 @@ def presences(user_uuid):
     xivo_uuid = request.args.get('xivo_uuid')
     if xivo_uuid == invalid_credentials_uuid:
         return '', 401
+    elif user_uuid == 'unknown':
+        return '', 404
 
 
 if __name__ == "__main__":
