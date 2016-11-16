@@ -223,3 +223,60 @@ class TestGetLinePresence(IntegrationTest):
         result = self.ctid_ng.get_line_presence_result(line_id, token=VALID_TOKEN)
 
         assert_that(result.status_code, equal_to(404))
+
+    def test_get_presence_with_unknown_xivo_uuid(self):
+        result = self.ctid_ng.get_line_presence_result(42,
+                                                       xivo_uuid='unknown',
+                                                       token=VALID_TOKEN)
+
+        assert_that(result.status_code, equal_to(400))
+
+    def test_get_presence_with_an_unregistered_xivo_auth(self):
+        result = self.ctid_ng.get_line_presence_result(42,
+                                                       xivo_uuid='582fbd45-73a3-41dd-9079-4c6d16fe1aad',
+                                                       token=VALID_TOKEN)
+
+        assert_that(result.status_code, equal_to(503))
+        missing_service = result.json()['details']['service']
+        assert_that(missing_service, equal_to('xivo-auth'))
+
+    def test_get_presence_with_invalid_credentials(self):
+        result = self.ctid_ng.get_line_presence_result(42,
+                                                       xivo_uuid='51400e55-2dc3-4cfc-a2f2-a4d4f0f8b217',
+                                                       token=VALID_TOKEN)
+
+        assert_that(result.status_code, equal_to(502))
+
+    def test_get_presence_with_an_unregistered_xivo_ctid_ng(self):
+        result = self.ctid_ng.get_line_presence_result(42,
+                                                       xivo_uuid='196e42b9-bbfe-4c03-b3d4-684dffd01603',
+                                                       token=VALID_TOKEN)
+
+        assert_that(result.status_code, equal_to(503))
+        missing_service = result.json()['details']['service']
+        assert_that(missing_service, equal_to('xivo-ctid-ng'))
+
+    def test_get_presence_with_401_from_the_remote_ctid_ng(self):
+        result = self.ctid_ng.get_line_presence_result(42,
+                                                       xivo_uuid='04b0087e-1661-4a42-8181-4b61e198204d',
+                                                       token=VALID_TOKEN)
+
+        assert_that(result.status_code, equal_to(502))
+
+    def test_get_presence_with_404_from_the_remote_ctid_ng(self):
+        result = self.ctid_ng.get_line_presence_result(13,
+                                                       xivo_uuid='5720ee16-61cc-412e-93c9-ae06fa0be845',
+                                                       token=VALID_TOKEN)
+
+        assert_that(result.status_code, equal_to(404))
+
+    def test_get_presence_with_a_result_from_the_remote_ctid_ng(self):
+        line_id, xivo_uuid = 42, '5720ee16-61cc-412e-93c9-ae06fa0be845'
+        result = self.ctid_ng.get_line_presence_result(line_id,
+                                                       xivo_uuid=xivo_uuid,
+                                                       token=VALID_TOKEN)
+
+        assert_that(result.status_code, equal_to(200))
+        assert_that(result.json(), has_entries({'line_id': equal_to(42),
+                                                'xivo_uuid': contains_string(xivo_uuid),
+                                                'presence': equal_to(8)}))

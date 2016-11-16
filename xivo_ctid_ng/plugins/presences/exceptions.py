@@ -34,13 +34,14 @@ class MissingCredentials(APIException):
 
 class NoSuchLine(APIException):
 
-    def __init__(self, line_id):
+    def __init__(self, xivo_uuid, line_id):
         super(NoSuchLine, self).__init__(
             status_code=404,
             message='no such line',
             error_id='no-such-line',
             details={
                 'line_id': line_id,
+                'xivo_uuid': xivo_uuid,
             },
         )
 

@@ -81,6 +81,7 @@ class LinePresencesResource(AuthResource):
 
     @required_acl('ctid-ng.lines.{line_id}.presences.read')
     def get(self, line_id):
-        line_id, xivo_uuid, status = self._presences_service.get_presence(line_id)
+        xivo_uuid = request.args.get('xivo_uuid')
+        line_id, xivo_uuid, status = self._presences_service.get_presence(xivo_uuid, line_id)
 
         return line_presence_body(xivo_uuid, line_id, status), 200
