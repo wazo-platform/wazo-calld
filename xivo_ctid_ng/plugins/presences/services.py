@@ -24,8 +24,8 @@ logger = logging.getLogger(__name__)
 
 
 def _extract_status_code(exception):
-    response = getattr(exception, 'response')
-    return getattr(response, 'status_code')
+    response = getattr(exception, 'response', None)
+    return getattr(response, 'status_code', None)
 
 
 class UserPresencesService(object):

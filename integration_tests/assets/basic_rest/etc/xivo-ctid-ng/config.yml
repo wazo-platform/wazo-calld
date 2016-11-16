@@ -79,3 +79,7 @@ remote_credentials:
     xivo_uuid: 196e42b9-bbfe-4c03-b3d4-684dffd01603
     service_id: test
     service_key: idbehold
+  ctid_ng_invalid_credentials:
+    xivo_uuid: 04b0087e-1661-4a42-8181-4b61e198204d
+    service_id: test
+    service_key: iddqd

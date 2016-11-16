@@ -77,6 +77,13 @@ class TestGetUserPresence(IntegrationTest):
         missing_service = result.json()['details']['service']
         assert_that(missing_service, equal_to('xivo-ctid-ng'))
 
+    def test_get_presence_with_401_from_the_remote_ctid_ng(self):
+        result = self.ctid_ng.get_user_presence_result(self.token_user_uuid,
+                                                       xivo_uuid='04b0087e-1661-4a42-8181-4b61e198204d',
+                                                       token=VALID_TOKEN)
+
+        assert_that(result.status_code, equal_to(502))
+
 
 class TestGetUserMePresence(IntegrationTest):
 
