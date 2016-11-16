@@ -105,7 +105,7 @@ class LinePresencesService(object):
         c = self._ctid_ng_client_factory.new_ctid_ng_client(xivo_uuid)
         try:
             response = c.line_presences.get_presence(line_id, xivo_uuid=xivo_uuid)
-            return response['xivo_uuid'], response['presence']
+            return response['line_id'], response['xivo_uuid'], response['presence']
         except requests.RequestException as e:
             status_code = _extract_status_code(e)
             if status_code == 401:
