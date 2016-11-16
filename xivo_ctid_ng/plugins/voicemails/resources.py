@@ -242,6 +242,7 @@ def _validate_folder_id(folder_id):
 
 _MESSAGE_ID_REGEX = re.compile('^[-a-zA-Z0-9]+$')
 
+
 def _validate_message_id(message_id):
     # the check could be more restrictive but the goal is just to make
     # sure message_id is safe to use for file system operations

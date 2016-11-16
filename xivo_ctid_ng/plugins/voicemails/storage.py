@@ -16,6 +16,7 @@ from .exceptions import VoicemailMessageStorageError
 
 logger = logging.getLogger(__name__)
 
+
 class VoicemailFolderType(object):
     new = u'new'
     old = u'old'
