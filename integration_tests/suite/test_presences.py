@@ -269,3 +269,14 @@ class TestGetLinePresence(IntegrationTest):
                                                        token=VALID_TOKEN)
 
         assert_that(result.status_code, equal_to(404))
+
+    def test_get_presence_with_a_result_from_the_remote_ctid_ng(self):
+        line_id, xivo_uuid = 42, '5720ee16-61cc-412e-93c9-ae06fa0be845'
+        result = self.ctid_ng.get_line_presence_result(line_id,
+                                                       xivo_uuid=xivo_uuid,
+                                                       token=VALID_TOKEN)
+
+        assert_that(result.status_code, equal_to(200))
+        assert_that(result.json(), has_entries({'line_id': equal_to(42),
+                                                'xivo_uuid': contains_string(xivo_uuid),
+                                                'presence': equal_to(8)}))
