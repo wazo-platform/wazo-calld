@@ -36,9 +36,7 @@ def new_filesystem_storage(base_path='/var/spool/asterisk/voicemail'):
 
 
 def new_cache(voicemail_storage):
-    cache = _VoicemailMessagesCache(voicemail_storage)
-    cache.refresh_cache()
-    return cache
+    return _VoicemailMessagesCache(voicemail_storage)
 
 
 class _VoicemailFolder(object):

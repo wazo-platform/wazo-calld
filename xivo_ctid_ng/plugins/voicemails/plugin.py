@@ -2,6 +2,8 @@
 # Copyright 2016 Proformatique Inc.
 # SPDX-License-Identifier: GPL-3.0+
 
+import logging
+
 from xivo_auth_client import Client as AuthClient
 from xivo_confd_client import Client as ConfdClient
 
@@ -17,6 +19,8 @@ from .resources import VoicemailResource
 from .services import VoicemailsService
 from .storage import new_cache
 from .storage import new_filesystem_storage
+
+logger = logging.getLogger(__name__)
 
 
 class Plugin(object):
@@ -36,6 +40,10 @@ class Plugin(object):
 
         voicemail_storage = new_filesystem_storage()
         voicemail_cache = new_cache(voicemail_storage)
+        try:
+            voicemail_cache.refresh_cache()
+        except Exception:
+            logger.exception('fail to refresh voicemail cache')
         voicemails_service = VoicemailsService(ari.client, confd_client, voicemail_storage)
 
         voicemails_bus_event_handler = VoicemailsBusEventHandler(confd_client, bus_publisher, voicemail_cache)

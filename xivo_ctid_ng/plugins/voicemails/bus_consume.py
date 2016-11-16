@@ -34,8 +34,8 @@ class VoicemailsBusEventHandler(object):
             for user in voicemail[u'users']:
                 for bus_msg in self._create_bus_msgs_from_diff(user['uuid'], voicemail[u'id'], diff):
                     self._bus_publisher.publish(bus_msg)
-        except Exception as e:
-            logger.exception('fail to publish voicemail message to bus: %s', e)
+        except Exception:
+            logger.exception('fail to publish voicemail message to bus')
 
     def _get_voicemail(self, number, context):
         response = self._confd_client.voicemails.list(number=number, context=context)
