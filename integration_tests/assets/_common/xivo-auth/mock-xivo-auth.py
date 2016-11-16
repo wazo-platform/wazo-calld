@@ -14,6 +14,8 @@ context = ('/usr/local/share/ssl/auth/server.crt', '/usr/local/share/ssl/auth/se
 
 valid_tokens = {'valid-token': 'uuid'}
 wrong_acl_tokens = {'invalid-acl-token'}
+invalid_username_passwords = [('test', 'foobar')]
+token_that_will_be_invalid_when_used = [('test', 'iddqd')]
 
 
 @app.route("/_set_token", methods=['POST'])
@@ -53,12 +55,15 @@ def token_get(token):
 
 @app.route("/0.1/token", methods=['POST'])
 def token_post():
-    return jsonify({
-        'data': {
-            'auth_id': valid_tokens['valid-token'],
-            'token': 'valid-token',
-        }
-    })
+    auth = request.authorization['username'], request.authorization['password']
+    if auth in invalid_username_passwords:
+        return '', 401
+    elif auth in token_that_will_be_invalid_when_used:
+        return jsonify({'data': {'auth_id': valid_tokens['valid-token'],
+                                 'token': 'expired'}})
+    else:
+        return jsonify({'data': {'auth_id': valid_tokens['valid-token'],
+                                 'token': 'valid-token'}})
 
 
 if __name__ == "__main__":

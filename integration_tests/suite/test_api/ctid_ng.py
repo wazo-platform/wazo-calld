@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) 2015-2016 Avencall
+# Copyright (C) 2016 Proformatique, Inc.
 # SPDX-License-Identifier: GPL-3.0+
 
 import json
@@ -318,10 +319,14 @@ class CtidNgClient(object):
                               verify=False)
         return result
 
-    def get_user_presence_result(self, user_uuid, token=None):
+    def get_user_presence_result(self, user_uuid, xivo_uuid=None, token=None):
         url = self.url('users', user_uuid, 'presences')
+        params = {}
+        if xivo_uuid:
+            params['xivo_uuid'] = xivo_uuid
         result = requests.get(url,
                               headers={'X-Auth-Token': token},
+                              params=params,
                               verify=False)
         return result
 

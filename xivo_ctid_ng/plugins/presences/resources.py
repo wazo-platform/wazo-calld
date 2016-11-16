@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) 2016 Avencall
+# Copyright (C) 2016 Proformatique, Inc.
 # SPDX-License-Identifier: GPL-3.0+
 
 from flask import request
@@ -36,7 +37,8 @@ class UserPresencesResource(AuthResource):
 
     @required_acl('ctid-ng.users.{user_uuid}.presences.read')
     def get(self, user_uuid):
-        xivo_uuid, status = self._presences_service.get_presence(user_uuid)
+        xivo_uuid = request.args.get('xivo_uuid')
+        xivo_uuid, status = self._presences_service.get_presence(xivo_uuid, user_uuid)
 
         return user_presence_body(xivo_uuid, user_uuid, status), 200
 
@@ -58,7 +60,7 @@ class UserMePresencesResource(AuthResource):
     @required_acl('ctid-ng.users.me.presences.read')
     def get(self):
         user_uuid = get_token_user_uuid_from_request(self._auth_client)
-        xivo_uuid, status = self._presences_service.get_presence(user_uuid)
+        xivo_uuid, status = self._presences_service.get_presence(None, user_uuid)
 
         return user_presence_body(xivo_uuid, user_uuid, status), 200
 
