@@ -239,3 +239,10 @@ class TestGetLinePresence(IntegrationTest):
         assert_that(result.status_code, equal_to(503))
         missing_service = result.json()['details']['service']
         assert_that(missing_service, equal_to('xivo-auth'))
+
+    def test_get_presence_with_invalid_credentials(self):
+        result = self.ctid_ng.get_line_presence_result(42,
+                                                       xivo_uuid='51400e55-2dc3-4cfc-a2f2-a4d4f0f8b217',
+                                                       token=VALID_TOKEN)
+
+        assert_that(result.status_code, equal_to(502))
