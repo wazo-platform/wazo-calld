@@ -171,5 +171,5 @@ class CtidNgClientFactory(object):
             return service
 
     def _is_valid(self, token):
-        very_soon = (datetime.now() + timedelta(seconds=5.0)).isoformat()
-        return token and token.get('expires_at') > very_soon
+        very_soon = (datetime.utcnow() + timedelta(seconds=5.0)).isoformat()
+        return token and token.get('utc_expires_at') > very_soon
