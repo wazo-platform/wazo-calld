@@ -13,6 +13,7 @@ from contextlib import contextmanager
 from requests.exceptions import HTTPError
 from websocket import WebSocketException
 
+from .status import Status
 from .exceptions import ARIUnreachable
 
 logger = logging.getLogger(__name__)
@@ -91,6 +92,9 @@ class CoreARI(object):
 
     def is_running(self):
         return self._is_running
+
+    def provide_status(self, status):
+        status['connections']['ari'] = Status.ok if self.is_running() else Status.fail
 
     def _connection_error(self, error):
         logger.warning('ARI connection error: %s...', error)
