@@ -6,6 +6,7 @@
 import ari
 import os
 import logging
+import tempfile
 import time
 
 from ari.exceptions import ARINotFound
@@ -55,6 +56,9 @@ class IntegrationTest(AssetLaunchingTestCase):
             cls.reset_bus_client()
             cls.wait_strategy.wait(cls)
         except Exception:
+            with tempfile.NamedTemporaryFile(delete=False) as logfile:
+                logfile.write(cls.log_containers())
+                logger.debug('Container logs dumped to %s', logfile.name)
             cls.tearDownClass()
             raise
 
