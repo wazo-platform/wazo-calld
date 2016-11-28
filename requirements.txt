@@ -1,13 +1,13 @@
 git+https://github.com/digium/swagger-py.git  # the release 0.2.1 has blocking bugs, so we need master
-https://github.com/xivo-pbx/ari-py/archive/0.2.2.zip
-git+https://github.com/xivo-pbx/xivo-amid-client.git
-git+https://github.com/xivo-pbx/xivo-auth-client.git
-git+https://github.com/xivo-pbx/xivo-bus.git
-git+https://github.com/xivo-pbx/xivo-confd-client.git
-git+https://github.com/xivo-pbx/xivo-ctid-client.git
-git+https://github.com/xivo-pbx/xivo-ctid-ng-client.git
-git+https://github.com/xivo-pbx/xivo-lib-python.git
-git+https://github.com/xivo-pbx/xivo-lib-rest-client.git
+https://github.com/wazo-pbx/ari-py/archive/0.2.2.zip
+git+https://github.com/wazo-pbx/xivo-amid-client.git
+git+https://github.com/wazo-pbx/xivo-auth-client.git
+git+https://github.com/wazo-pbx/xivo-bus.git
+git+https://github.com/wazo-pbx/xivo-confd-client.git
+git+https://github.com/wazo-pbx/xivo-ctid-client.git
+git+https://github.com/wazo-pbx/xivo-ctid-ng-client.git
+git+https://github.com/wazo-pbx/xivo-lib-python.git
+git+https://github.com/wazo-pbx/xivo-lib-rest-client.git
 cherrypy==3.7.0
 flask==0.10.1
 flask-restful==0.3.5
