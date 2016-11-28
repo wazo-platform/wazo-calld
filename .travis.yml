@@ -6,7 +6,7 @@ script: nosetests .
 notifications:
   email:
     recipients:
-      - tests-reports@avencall.com
+      - dev+tests-reports@proformatique.com
     on_success: change
     on_failure: change
 branches:
