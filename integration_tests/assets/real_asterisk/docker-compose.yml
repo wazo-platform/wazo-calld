@@ -12,7 +12,7 @@ sync:
     TIMEOUT: "${INTEGRATION_TEST_TIMEOUT}"
 
 amid:
-  image: xivo/xivo-amid
+  image: wazopbx/xivo-amid
   expose:
     - "9491"
   volumes:
