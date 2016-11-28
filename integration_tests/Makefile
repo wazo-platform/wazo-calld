@@ -18,8 +18,8 @@ docker-pull:
 	docker pull p0bailey/docker-flask
 	docker pull python:2.7
 	docker pull swaggerapi/swagger-validator
-	docker pull xivo/asterisk
-	docker pull xivo/xivo-amid
+	docker pull wazopbx/asterisk
+	docker pull wazopbx/xivo-amid
 
 egg-info:
 	cd .. && python setup.py egg_info
