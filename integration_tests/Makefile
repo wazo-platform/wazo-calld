@@ -5,7 +5,7 @@ CHAN_TEST_DIR ?= ../../chan-test
 test-setup: build-ctid-ng build-ari docker-pull
 
 build-ctid-ng: docker-pull egg-info
-	docker build -t xivo/xivo-ctid-ng ..
+	docker build -t wazopbx/xivo-ctid-ng ..
 	docker build --no-cache -t xivo-ctid-ng-test -f docker/Dockerfile-ctid-ng-test ..
 
 build-ari: docker-pull
