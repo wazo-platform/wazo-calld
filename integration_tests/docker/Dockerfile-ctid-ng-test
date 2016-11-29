@@ -1,4 +1,4 @@
-FROM xivo/xivo-ctid-ng
+FROM wazopbx/xivo-ctid-ng
 
 ADD . /usr/src/xivo-ctid-ng
 WORKDIR /usr/src/xivo-ctid-ng
