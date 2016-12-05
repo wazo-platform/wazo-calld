@@ -1,6 +1,6 @@
 swagger: '2.0'
 info:
-  title: XiVO CTId ng
+  title: Wazo CTId ng
   description: Control your calls from a REST API
   version: 1.0.0
 schemes:
