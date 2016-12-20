@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) 2016 Proformatique Inc.
+# Copyright (C) 2016 The Wazo Authors  (see AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 from marshmallow import Schema, fields

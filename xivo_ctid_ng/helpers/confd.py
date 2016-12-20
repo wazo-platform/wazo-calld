@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2016 by Avencall
+# Copyright (C) 2016 The Wazo Authors  (see AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 from requests import HTTPError
