@@ -32,6 +32,7 @@ class CallRequestSchema(Schema):
 class UserCallRequestSchema(Schema):
     extension = fields.String(validate=Length(min=1), required=True)
     line_id = fields.Integer()
+    from_mobile = fields.Boolean(missing=False)
     variables = StrictDict(key_field=fields.String(required=True, validate=Length(min=1)),
                            value_field=fields.String(required=True, validate=Length(min=1)),
                            missing=dict)

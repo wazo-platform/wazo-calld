@@ -96,7 +96,7 @@ class CallsService(object):
         return channel.id
 
     def originate_user(self, request, user_uuid):
-        if 'line_id' in request:
+        if 'line_id' in request and not request['from_mobile']:
             context = User(user_uuid, self._confd).line(request['line_id']).context()
         else:
             context = User(user_uuid, self._confd).main_line().context()
@@ -104,7 +104,8 @@ class CallsService(object):
             'destination': {'context': context,
                             'extension': request['extension'],
                             'priority': 1},
-            'source': {'user': user_uuid},
+            'source': {'user': user_uuid,
+                       'from_mobile': request['from_mobile']},
             'variables': request['variables']
         }
         if 'line_id' in request:

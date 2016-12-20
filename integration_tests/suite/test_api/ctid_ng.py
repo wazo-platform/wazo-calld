@@ -121,7 +121,7 @@ class CtidNgClient(object):
                                verify=False)
         return result
 
-    def originate_me(self, extension, variables=None, line_id=None, token=VALID_TOKEN):
+    def originate_me(self, extension, variables=None, line_id=None, from_mobile=False, token=VALID_TOKEN):
         body = {
             'extension': extension
         }
@@ -129,6 +129,8 @@ class CtidNgClient(object):
             body['variables'] = variables
         if line_id:
             body['line_id'] = line_id
+        if from_mobile:
+            body['from_mobile'] = from_mobile
         response = self.post_user_me_call_result(body, token=token)
         assert_that(response.status_code, equal_to(201))
         return response.json()
