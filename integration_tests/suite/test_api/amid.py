@@ -24,13 +24,8 @@ class AmidClient(object):
         self.set_action_result(result)
 
     def set_valid_exten(self, context, exten, priority='1'):
-        result = [
-            {'Event': 'ListDialplan',
-             'Context': context,
-             'Exten': exten,
-             'Priority': str(priority)}
-        ]
-        self.set_action_result(result)
+        body = {'context': context, 'exten': exten, 'priority': priority}
+        requests.post(self.url('_set_valid_exten'), json=body, verify=False)
 
     def reset(self):
         url = self.url('_reset')

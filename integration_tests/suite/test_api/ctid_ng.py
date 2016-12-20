@@ -80,7 +80,7 @@ class CtidNgClient(object):
         assert_that(response.status_code, equal_to(200))
         return response.json()
 
-    def post_call_result(self, source, priority, extension, context, variables=None, line_id=None, token=None):
+    def post_call_result(self, source, priority, extension, context, variables=None, line_id=None, from_mobile=False, token=None):
         body = {
             'source': {
                 'user': source,
@@ -95,6 +95,8 @@ class CtidNgClient(object):
             body['variables'] = variables
         if line_id:
             body['source']['line_id'] = line_id
+        if from_mobile:
+            body['source']['from_mobile'] = from_mobile
 
         return self.post_call_raw(body, token)
 
@@ -106,8 +108,8 @@ class CtidNgClient(object):
                                verify=False)
         return result
 
-    def originate(self, source, priority, extension, context, variables=None, line_id=None, token=VALID_TOKEN):
-        response = self.post_call_result(source, priority, extension, context, variables, line_id, token=token)
+    def originate(self, source, priority, extension, context, variables=None, line_id=None, from_mobile=False, token=VALID_TOKEN):
+        response = self.post_call_result(source, priority, extension, context, variables, line_id, from_mobile, token=token)
         assert_that(response.status_code, equal_to(201))
         return response.json()
 

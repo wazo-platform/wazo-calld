@@ -14,6 +14,7 @@ from ari.exceptions import ARINotFound
 
 from .call import Call
 from .exceptions import CallConnectError
+from .exceptions import CallCreationError
 from .exceptions import NoSuchCall
 from .state_persistor import ReadOnlyStatePersistor
 
@@ -59,7 +60,18 @@ class CallsService(object):
 
     def originate(self, request):
         source_user = request['source']['user']
-        if 'line_id' in request['source']:
+        if request['source']['from_mobile']:
+            source_mobile = User(source_user, self._confd).mobile_phone_number()
+            if not source_mobile:
+                raise CallCreationError('User has no mobile phone number', details={'user': source_user})
+            source_context = User(source_user, self._confd).main_line().context()
+            if not ami.extension_exists(self._ami, source_context, source_mobile, priority=1):
+                details = {'user': source_user,
+                           'mobile_exten': source_mobile,
+                           'mobile_context': source_context}
+                raise CallCreationError('User has invalid mobile phone number', details=details)
+            endpoint = 'local/{mobile}@{context}'.format(mobile=source_mobile, context=source_context)
+        elif 'line_id' in request['source']:
             endpoint = User(source_user, self._confd).line(request['source']['line_id']).interface()
         else:
             endpoint = User(source_user, self._confd).main_line().interface()

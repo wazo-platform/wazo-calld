@@ -10,6 +10,7 @@ from xivo_ctid_ng.helpers.mallow import StrictDict
 
 
 class CallRequestSourceSchema(Schema):
+    from_mobile = fields.Boolean(missing=False)
     line_id = fields.Integer()
     user = fields.String(required=True)
 

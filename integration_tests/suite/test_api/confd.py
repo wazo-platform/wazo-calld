@@ -45,9 +45,10 @@ class ConfdClient(object):
 
 class MockUser(object):
 
-    def __init__(self, uuid, line_ids=None):
+    def __init__(self, uuid, line_ids=None, mobile=None):
         self._uuid = uuid
         self._line_ids = line_ids or []
+        self._mobile = mobile
 
     def uuid(self):
         return self._uuid
@@ -56,6 +57,7 @@ class MockUser(object):
         return {
             'uuid': self._uuid,
             'lines': [{'id': line_id} for line_id in self._line_ids],
+            'mobile_phone_number': self._mobile,
         }
 
 

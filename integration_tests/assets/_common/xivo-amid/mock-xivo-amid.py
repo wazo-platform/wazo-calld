@@ -18,14 +18,17 @@ logger = logging.getLogger(__name__)
 context = ('/usr/local/share/ssl/amid/server.crt', '/usr/local/share/ssl/amid/server.key')
 
 action_response = ''
+valid_extens = []
 _requests = []
 
 
 def _reset():
     global _requests
     global action_response
+    global valid_extens
     _requests = []
     action_response = ''
+    valid_extens = []
 
 
 @app.before_request
@@ -57,9 +60,34 @@ def set_action():
     return '', 204
 
 
+@app.route("/_set_valid_exten", methods=['POST'])
+def set_valid_exten():
+    global valid_extens
+    body = request.get_json()
+    valid_extens.append((body['context'], body['exten'], body['priority']))
+    return '', 204
+
+
 @app.route("/1.0/action/<action>", methods=['POST'])
 def action(action):
     return json.dumps(action_response), 200
+
+
+@app.route("/1.0/action/ShowDialplan", methods=['POST'])
+def show_dialplan():
+    global valid_extens
+    body = request.get_json()
+    requested_context = body['Context']
+    requested_exten = body['Extension']
+
+    result = [{'Event': 'ListDialplan',
+               'Context': context,
+               'Exten': exten,
+               'Priority': str(priority)}
+              for (context, exten, priority) in valid_extens
+              if context == requested_context and exten == requested_exten]
+
+    return json.dumps(result), 200
 
 
 if __name__ == "__main__":

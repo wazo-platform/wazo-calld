@@ -56,6 +56,16 @@ class User(object):
 
         return Line(line_id, self._confd)
 
+    def mobile_phone_number(self):
+        try:
+            return self._confd.users.get(self.uuid)['mobile_phone_number']
+        except HTTPError as e:
+            if not_found(e):
+                raise InvalidUserUUID(self.uuid)
+            raise
+        except RequestException as e:
+            raise XiVOConfdUnreachable(self._confd, e)
+
 
 class Line(object):
 

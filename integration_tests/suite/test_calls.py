@@ -679,6 +679,112 @@ class TestCreateCall(IntegrationTest):
                                ['context', 'my-context'],
                                ['endpoint', 'sip/second-line-name'])}))))
 
+    def test_create_call_from_mobile(self):
+        user_uuid = 'user-uuid'
+        priority = 1
+        self.amid.set_valid_exten('my-context', 'my-extension', priority)
+        self.amid.set_valid_exten('my-line-context', 'my-mobile', priority)
+        self.confd.set_users(MockUser(uuid='user-uuid', mobile='my-mobile', line_ids=['line-id']))
+        self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip', context='my-line-context'))
+        self.ari.set_originates(MockChannel(id='new-call-id'))
+
+        self.ctid_ng.originate(source=user_uuid,
+                               from_mobile=True,
+                               priority=priority,
+                               extension='my-extension',
+                               context='my-context')
+
+        assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
+            'method': 'POST',
+            'path': '/ari/channels',
+            'query': has_items(['priority', str(priority)],
+                               ['extension', 'my-extension'],
+                               ['context', 'my-context'],
+                               ['endpoint', 'local/my-mobile@my-line-context'])}))))
+
+    def test_create_call_from_mobile_with_no_line(self):
+        user_uuid = 'user-uuid'
+        priority = 1
+        self.amid.set_valid_exten('my-context', 'my-extension', priority)
+        self.confd.set_users(MockUser(uuid='user-uuid', mobile='my-mobile'))
+        self.ari.set_originates(MockChannel(id='new-call-id'))
+
+        result = self.ctid_ng.post_call_result(source=user_uuid,
+                                               from_mobile=True,
+                                               priority=priority,
+                                               extension='my-extension',
+                                               context='my-context',
+                                               token=VALID_TOKEN)
+
+        assert_that(result.status_code, equal_to(400), result.json())
+        assert_that(result.json()['message'].lower(), all_of(contains_string('line'),
+                                                             contains_string('user')))
+
+    def test_create_call_from_mobile_with_no_mobile(self):
+        user_uuid = 'user-uuid'
+        priority = 1
+        self.amid.set_valid_exten('my-context', 'my-extension', priority)
+        self.confd.set_users(MockUser(uuid='user-uuid', line_ids=['line-id']))
+        self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip', context='my-line-context'))
+        self.ari.set_originates(MockChannel(id='new-call-id'))
+
+        result = self.ctid_ng.post_call_result(source=user_uuid,
+                                               from_mobile=True,
+                                               priority=priority,
+                                               extension='my-extension',
+                                               context='my-context',
+                                               token=VALID_TOKEN)
+
+        assert_that(result.status_code, equal_to(400), result.json())
+        assert_that(result.json()['message'].lower(), all_of(contains_string('mobile'),
+                                                             contains_string('user')))
+
+    def test_create_call_from_mobile_with_invalid_mobile(self):
+        user_uuid = 'user-uuid'
+        priority = 1
+        self.amid.set_valid_exten('my-context', 'my-extension', priority)
+        self.confd.set_users(MockUser(uuid='user-uuid', mobile='invalid', line_ids=['line-id']))
+        self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip', context='my-line-context'))
+        self.ari.set_originates(MockChannel(id='new-call-id'))
+
+        result = self.ctid_ng.post_call_result(source=user_uuid,
+                                               from_mobile=True,
+                                               priority=priority,
+                                               extension='my-extension',
+                                               context='my-context',
+                                               token=VALID_TOKEN)
+
+        assert_that(result.status_code, equal_to(400), result.json())
+        assert_that(result.json()['message'].lower(), all_of(contains_string('mobile'),
+                                                             contains_string('invalid'),
+                                                             contains_string('user')))
+
+    def test_create_call_from_mobile_overrides_line_id(self):
+        user_uuid = 'user-uuid'
+        priority = 1
+        second_line_id = 12345
+        self.amid.set_valid_exten('my-context', 'my-extension', priority)
+        self.amid.set_valid_exten('my-line-context', 'my-mobile', priority)
+        self.confd.set_users(MockUser(uuid='user-uuid', mobile='my-mobile', line_ids=['first-line-id', second_line_id]))
+        self.confd.set_lines(MockLine(id='first-line-id', name='first-line-name', context='my-line-context', protocol='sip',),
+                             MockLine(id=second_line_id, name='second-line-name', protocol='sip'))
+        self.ari.set_originates(MockChannel(id='new-call-id'))
+
+        self.ctid_ng.originate(source=user_uuid,
+                               from_mobile=True,
+                               line_id=second_line_id,
+                               priority=priority,
+                               extension='my-extension',
+                               context='my-context')
+
+        assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
+            'method': 'POST',
+            'path': '/ari/channels',
+            'query': has_items(['priority', str(priority)],
+                               ['extension', 'my-extension'],
+                               ['context', 'my-context'],
+                               ['endpoint', 'local/my-mobile@my-line-context'])}))))
+
 
 class TestUserCreateCall(IntegrationTest):
 

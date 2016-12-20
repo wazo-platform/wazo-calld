@@ -234,6 +234,9 @@ definitions:
           line_id:
             type: integer
             description: ID of the line of the user used to make the call. Default is the main line of the user.
+          from_mobile:
+            type: boolean
+            description: "Start the call from the user's mobile phone"
       variables:
         description: Channel variables to set
         type: object
@@ -285,6 +288,9 @@ definitions:
       line_id:
         type: integer
         description: ID of the line of the user used to make the call. Default is the main line of the user.
+      from_mobile:
+        type: boolean
+        description: "Start the call from the user's mobile phone"
     required:
       - extension
   TalkingTo:
