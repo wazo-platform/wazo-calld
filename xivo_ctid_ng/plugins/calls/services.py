@@ -60,6 +60,7 @@ class CallsService(object):
 
     def originate(self, request):
         source_user = request['source']['user']
+        variables = request.get('variables', {})
         if request['source']['from_mobile']:
             source_mobile = User(source_user, self._confd).mobile_phone_number()
             if not source_mobile:
@@ -71,6 +72,7 @@ class CallsService(object):
                            'mobile_context': source_context}
                 raise CallCreationError('User has invalid mobile phone number', details=details)
             endpoint = 'local/{mobile}@{context}'.format(mobile=source_mobile, context=source_context)
+            variables['XIVO_ORIGINAL_CALLER_ID'] = '"{exten}" <{exten}>'.format(exten=source_mobile)
         elif 'line_id' in request['source']:
             endpoint = User(source_user, self._confd).line(request['source']['line_id']).interface()
         else:
@@ -81,7 +83,6 @@ class CallsService(object):
         if not ami.extension_exists(self._ami, context, extension, priority):
             raise InvalidExtension(context, extension)
 
-        variables = request.get('variables', {})
         variables.setdefault('CONNECTEDLINE(name)', extension)
         variables.setdefault('CONNECTEDLINE(num)', '' if extension.startswith('#') else extension)
         variables.setdefault('CALLERID(name)', extension)
