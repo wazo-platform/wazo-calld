@@ -61,6 +61,10 @@ class CallsService(object):
     def originate(self, request):
         source_user = request['source']['user']
         variables = request.get('variables', {})
+        extension = request['destination']['extension']
+        context = request['destination']['context']
+        priority = request['destination']['priority']
+
         if request['source']['from_mobile']:
             source_mobile = User(source_user, self._confd).mobile_phone_number()
             if not source_mobile:
@@ -72,14 +76,16 @@ class CallsService(object):
                            'mobile_context': source_context}
                 raise CallCreationError('User has invalid mobile phone number', details=details)
             endpoint = 'local/{mobile}@{context}'.format(mobile=source_mobile, context=source_context)
-            variables['XIVO_ORIGINAL_CALLER_ID'] = '"{exten}" <{exten}>'.format(exten=source_mobile)
+            variables['XIVO_ORIGINAL_CALLER_ID'] = '"{exten}" <{exten}>'.format(exten=extension)
+            context, extension, priority = 'wazo-originate-destination-caller-id', 's', 1
+            variables['WAZO_ORIGINATE_DESTINATION_PRIORITY'] = str(request['destination']['priority'])
+            variables['WAZO_ORIGINATE_DESTINATION_EXTENSION'] = request['destination']['extension']
+            variables['WAZO_ORIGINATE_DESTINATION_CONTEXT'] = request['destination']['context']
+            variables['WAZO_ORIGINATE_DESTINATION_CALLERID_ALL'] = '"{exten}" <{exten}>'.format(exten=source_mobile)
         elif 'line_id' in request['source']:
             endpoint = User(source_user, self._confd).line(request['source']['line_id']).interface()
         else:
             endpoint = User(source_user, self._confd).main_line().interface()
-        extension = request['destination']['extension']
-        context = request['destination']['context']
-        priority = request['destination']['priority']
         if not ami.extension_exists(self._ami, context, extension, priority):
             raise InvalidExtension(context, extension)
 

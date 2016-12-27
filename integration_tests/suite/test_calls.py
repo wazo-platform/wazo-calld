@@ -680,8 +680,8 @@ class TestCreateCall(IntegrationTest):
 
     def test_create_call_from_mobile(self):
         user_uuid = 'user-uuid'
-        priority = 1
-        self.amid.set_valid_exten('my-context', 'my-extension', priority)
+        context, extension, priority = 'my-context', 'my-extension', 1
+        self.amid.set_valid_exten('wazo-originate-destination-caller-id', 's', 1)
         self.amid.set_valid_exten('my-line-context', 'my-mobile', priority)
         self.confd.set_users(MockUser(uuid='user-uuid', mobile='my-mobile', line_ids=['line-id']))
         self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip', context='my-line-context'))
@@ -690,21 +690,25 @@ class TestCreateCall(IntegrationTest):
         self.ctid_ng.originate(source=user_uuid,
                                from_mobile=True,
                                priority=priority,
-                               extension='my-extension',
-                               context='my-context')
+                               extension=extension,
+                               context=context)
 
         assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
             'method': 'POST',
             'path': '/ari/channels',
-            'query': has_items(['priority', str(priority)],
-                               ['extension', 'my-extension'],
-                               ['context', 'my-context'],
-                               ['endpoint', 'local/my-mobile@my-line-context'])}))))
+            'query': has_items(['priority', '1'],
+                               ['extension', 's'],
+                               ['context', 'wazo-originate-destination-caller-id'],
+                               ['endpoint', 'local/my-mobile@my-line-context']),
+            'json': has_entry('variables', has_entries({'WAZO_ORIGINATE_DESTINATION_CONTEXT': context,
+                                                        'WAZO_ORIGINATE_DESTINATION_EXTENSION': extension,
+                                                        'WAZO_ORIGINATE_DESTINATION_PRIORITY': str(priority)}))
+        }))))
 
     def test_create_call_from_mobile_with_no_line(self):
         user_uuid = 'user-uuid'
         priority = 1
-        self.amid.set_valid_exten('my-context', 'my-extension', priority)
+        self.amid.set_valid_exten('wazo-originate-destination-caller-id', 's', 1)
         self.confd.set_users(MockUser(uuid='user-uuid', mobile='my-mobile'))
         self.ari.set_originates(MockChannel(id='new-call-id'))
 
@@ -722,7 +726,7 @@ class TestCreateCall(IntegrationTest):
     def test_create_call_from_mobile_with_no_mobile(self):
         user_uuid = 'user-uuid'
         priority = 1
-        self.amid.set_valid_exten('my-context', 'my-extension', priority)
+        self.amid.set_valid_exten('wazo-originate-destination-caller-id', 's', 1)
         self.confd.set_users(MockUser(uuid='user-uuid', line_ids=['line-id']))
         self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip', context='my-line-context'))
         self.ari.set_originates(MockChannel(id='new-call-id'))
@@ -741,7 +745,7 @@ class TestCreateCall(IntegrationTest):
     def test_create_call_from_mobile_with_invalid_mobile(self):
         user_uuid = 'user-uuid'
         priority = 1
-        self.amid.set_valid_exten('my-context', 'my-extension', priority)
+        self.amid.set_valid_exten('wazo-originate-destination-caller-id', 's', 1)
         self.confd.set_users(MockUser(uuid='user-uuid', mobile='invalid', line_ids=['line-id']))
         self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip', context='my-line-context'))
         self.ari.set_originates(MockChannel(id='new-call-id'))
@@ -760,9 +764,9 @@ class TestCreateCall(IntegrationTest):
 
     def test_create_call_from_mobile_overrides_line_id(self):
         user_uuid = 'user-uuid'
-        priority = 1
+        context, extension, priority = 'my-context', 'my-extension', 1
         second_line_id = 12345
-        self.amid.set_valid_exten('my-context', 'my-extension', priority)
+        self.amid.set_valid_exten('wazo-originate-destination-caller-id', 's', 1)
         self.amid.set_valid_exten('my-line-context', 'my-mobile', priority)
         self.confd.set_users(MockUser(uuid='user-uuid', mobile='my-mobile', line_ids=['first-line-id', second_line_id]))
         self.confd.set_lines(MockLine(id='first-line-id', name='first-line-name', context='my-line-context', protocol='sip',),
@@ -773,16 +777,20 @@ class TestCreateCall(IntegrationTest):
                                from_mobile=True,
                                line_id=second_line_id,
                                priority=priority,
-                               extension='my-extension',
-                               context='my-context')
+                               extension=extension,
+                               context=context)
 
         assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
             'method': 'POST',
             'path': '/ari/channels',
-            'query': has_items(['priority', str(priority)],
-                               ['extension', 'my-extension'],
-                               ['context', 'my-context'],
-                               ['endpoint', 'local/my-mobile@my-line-context'])}))))
+            'query': has_items(['priority', '1'],
+                               ['extension', 's'],
+                               ['context', 'wazo-originate-destination-caller-id'],
+                               ['endpoint', 'local/my-mobile@my-line-context']),
+            'json': has_entry('variables', has_entries({'WAZO_ORIGINATE_DESTINATION_CONTEXT': context,
+                                                        'WAZO_ORIGINATE_DESTINATION_EXTENSION': extension,
+                                                        'WAZO_ORIGINATE_DESTINATION_PRIORITY': str(priority)}))
+        }))))
 
 
 class TestUserCreateCall(IntegrationTest):
@@ -994,13 +1002,13 @@ class TestUserCreateCall(IntegrationTest):
 
     def test_create_call_from_mobile(self):
         user_uuid = 'user-uuid'
-        priority = 1
+        context, extension, priority = 'my-context', 'my-extension', 1
         token = 'my-token'
         self.auth.set_token(MockUserToken(token, user_uuid))
         self.confd.set_users(MockUser(uuid='user-uuid', mobile='my-mobile', line_ids=['line-id']))
         self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip', context='my-context'))
         self.ari.set_originates(MockChannel(id='new-call-id'))
-        self.amid.set_valid_exten('my-context', 'my-extension', priority)
+        self.amid.set_valid_exten('wazo-originate-destination-caller-id', 's', 1)
         self.amid.set_valid_exten('my-context', 'my-mobile', priority)
 
         self.ctid_ng.originate_me('my-extension', from_mobile=True, token=token)
@@ -1008,19 +1016,22 @@ class TestUserCreateCall(IntegrationTest):
         assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
             'method': 'POST',
             'path': '/ari/channels',
-            'query': has_items(['priority', str(priority)],
-                               ['extension', 'my-extension'],
-                               ['context', 'my-context'],
-                               ['endpoint', 'local/my-mobile@my-context'])}))))
+            'query': has_items(['priority', '1'],
+                               ['extension', 's'],
+                               ['context', 'wazo-originate-destination-caller-id'],
+                               ['endpoint', 'local/my-mobile@my-context']),
+            'json': has_entry('variables', has_entries({'WAZO_ORIGINATE_DESTINATION_CONTEXT': context,
+                                                        'WAZO_ORIGINATE_DESTINATION_EXTENSION': extension,
+                                                        'WAZO_ORIGINATE_DESTINATION_PRIORITY': str(priority)}))
+        }))))
 
     def test_create_call_from_mobile_with_no_line(self):
         user_uuid = 'user-uuid'
-        priority = 1
         token = 'my-token'
         self.auth.set_token(MockUserToken(token, user_uuid))
         self.confd.set_users(MockUser(uuid='user-uuid', mobile='my-mobile'))
         self.ari.set_originates(MockChannel(id='new-call-id'))
-        self.amid.set_valid_exten('my-context', 'my-extension', priority)
+        self.amid.set_valid_exten('wazo-originate-destination-caller-id', 's', 1)
 
         body = {'extension': 'my-extension', 'from_mobile': True}
         result = self.ctid_ng.post_user_me_call_result(body, token=token)
@@ -1031,13 +1042,12 @@ class TestUserCreateCall(IntegrationTest):
 
     def test_create_call_from_mobile_with_no_mobile(self):
         user_uuid = 'user-uuid'
-        priority = 1
         token = 'my-token'
         self.auth.set_token(MockUserToken(token, user_uuid))
         self.confd.set_users(MockUser(uuid='user-uuid', line_ids=['line-id']))
         self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip', context='my-context'))
         self.ari.set_originates(MockChannel(id='new-call-id'))
-        self.amid.set_valid_exten('my-context', 'my-extension', priority)
+        self.amid.set_valid_exten('wazo-originate-destination-caller-id', 's', 1)
 
         body = {'extension': 'my-extension', 'from_mobile': True}
         result = self.ctid_ng.post_user_me_call_result(body, token=token)
@@ -1048,13 +1058,12 @@ class TestUserCreateCall(IntegrationTest):
 
     def test_create_call_from_mobile_with_invalid_mobile(self):
         user_uuid = 'user-uuid'
-        priority = 1
         token = 'my-token'
         self.auth.set_token(MockUserToken(token, user_uuid))
         self.confd.set_users(MockUser(uuid='user-uuid', mobile='invalid', line_ids=['line-id']))
         self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip', context='my-context'))
         self.ari.set_originates(MockChannel(id='new-call-id'))
-        self.amid.set_valid_exten('my-context', 'my-extension', priority)
+        self.amid.set_valid_exten('wazo-originate-destination-caller-id', 's', 1)
 
         body = {'extension': 'my-extension', 'from_mobile': True}
         result = self.ctid_ng.post_user_me_call_result(body, token=token)
@@ -1066,26 +1075,30 @@ class TestUserCreateCall(IntegrationTest):
 
     def test_create_call_from_mobile_overrides_line_id(self):
         user_uuid = 'user-uuid'
-        priority = 1
+        context, extension, priority = 'my-context', 'my-extension', 1
         second_line_id = 12345
         token = 'my-token'
         self.auth.set_token(MockUserToken(token, user_uuid))
         self.confd.set_users(MockUser(uuid='user-uuid', mobile='my-mobile', line_ids=['first-line-id', second_line_id]))
-        self.confd.set_lines(MockLine(id='first-line-id', name='first-line-name', context='my-context', protocol='sip',),
+        self.confd.set_lines(MockLine(id='first-line-id', name='first-line-name', context=context, protocol='sip',),
                              MockLine(id=second_line_id, name='second-line-name', protocol='sip'))
         self.ari.set_originates(MockChannel(id='new-call-id'))
-        self.amid.set_valid_exten('my-context', 'my-extension', priority)
+        self.amid.set_valid_exten('wazo-originate-destination-caller-id', 's', 1)
         self.amid.set_valid_exten('my-context', 'my-mobile', priority)
 
-        self.ctid_ng.originate_me('my-extension', from_mobile=True, line_id=second_line_id, token=token)
+        self.ctid_ng.originate_me(extension, from_mobile=True, line_id=second_line_id, token=token)
 
         assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
             'method': 'POST',
             'path': '/ari/channels',
-            'query': has_items(['priority', str(priority)],
-                               ['extension', 'my-extension'],
-                               ['context', 'my-context'],
-                               ['endpoint', 'local/my-mobile@my-context'])}))))
+            'query': has_items(['priority', '1'],
+                               ['extension', 's'],
+                               ['context', 'wazo-originate-destination-caller-id'],
+                               ['endpoint', 'local/my-mobile@my-context']),
+            'json': has_entry('variables', has_entries({'WAZO_ORIGINATE_DESTINATION_CONTEXT': context,
+                                                        'WAZO_ORIGINATE_DESTINATION_EXTENSION': extension,
+                                                        'WAZO_ORIGINATE_DESTINATION_PRIORITY': str(priority)}))
+        }))))
 
 
 class TestNoConfd(IntegrationTest):
