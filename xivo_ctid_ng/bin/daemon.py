@@ -27,6 +27,8 @@ def main(argv):
 
     xivo_logging.setup_logging(config['log_filename'], config['foreground'], config['debug'], config['log_level'])
     xivo_logging.silence_loggers(['amqp', 'Flask-Cors', 'iso8601', 'kombu', 'swaggerpy', 'urllib3', 'ari.model'], logging.WARNING)
+    if config['debug']:
+        xivo_logging.silence_loggers(['swaggerpy'], logging.INFO)
 
     set_xivo_uuid(config, logger)
 
