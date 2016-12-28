@@ -3,43 +3,19 @@
 # SPDX-License-Identifier: GPL-3.0+
 
 import json
-import uuid
 
 from kombu import Connection
 from kombu import Consumer
 from kombu import Producer
 from kombu import Queue
 from kombu.exceptions import TimeoutError
+from xivo_test_helpers import bus as bus_helper
 
 from .constants import BUS_QUEUE_NAME
 from .constants import BUS_EXCHANGE_XIVO
 
 
-class BusClient(object):
-
-    def __init__(self, host, port):
-        self._host = host
-        self._port = port
-        self._url = 'amqp://guest:guest@{host}:{port}//'.format(host=self._host, port=self._port)
-
-    def is_up(self):
-        try:
-            with Connection(self._url) as connection:
-                producer = Producer(connection, exchange=BUS_EXCHANGE_XIVO, auto_declare=True)
-                producer.publish('', routing_key='test')
-        except IOError:
-            return False
-        else:
-            return True
-
-    def accumulator(self, routing_key, exchange=BUS_EXCHANGE_XIVO):
-        queue_name = str(uuid.uuid4())
-        with Connection(self._url) as conn:
-            queue = Queue(name=queue_name, exchange=exchange, routing_key=routing_key, channel=conn.channel())
-            queue.declare()
-            queue.purge()
-            accumulator = BusMessageAccumulator(self._host, self._port, queue)
-        return accumulator
+class BusClient(bus_helper.BusClient):
 
     def listen_events(self, routing_key, exchange=BUS_EXCHANGE_XIVO):
         with Connection(self._url) as conn:
@@ -133,27 +109,3 @@ class BusClient(object):
                 'XIVO_USERUUID': 'my-uuid',
             }
         }, 'ami.UserEvent')
-
-
-class BusMessageAccumulator(object):
-
-    def __init__(self, host, port, queue):
-        self._url = 'amqp://guest:guest@{host}:{port}//'.format(host=host, port=port)
-        self._queue = queue
-        self._events = []
-
-    def _on_event(self, body, message):
-        # events are already decoded, thanks to the content-type
-        self._events.append(body)
-        message.ack()
-
-    def accumulate(self):
-        with Connection(self._url) as conn:
-            with Consumer(conn, self._queue, callbacks=[self._on_event]):
-                try:
-                    while True:
-                        conn.drain_events(timeout=0.5)
-                except TimeoutError:
-                    pass
-
-        return self._events

@@ -104,7 +104,7 @@ class IntegrationTest(AssetLaunchingTestCase):
 
         '''
         try:
-            cls.bus = BusClient('localhost', cls.service_port(5672, 'rabbitmq'))
+            cls.bus = BusClient.from_connection_fields(host='localhost', port=cls.service_port(5672, 'rabbitmq'))
         except (NoSuchService, NoSuchPort) as e:
             logger.debug(e)
             cls.bus = WrongClient('bus')
