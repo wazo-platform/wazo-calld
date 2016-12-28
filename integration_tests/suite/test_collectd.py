@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015-2016 by Avencall
+# Copyright (C) 2015-2016 The Wazo Authors  (see AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import os
-import time
+import unittest
 
 from hamcrest import assert_that
 from hamcrest import has_item
@@ -26,7 +26,7 @@ class TestCollectd(IntegrationTest):
     @classmethod
     def setUpClass(cls):
         super(TestCollectd, cls).setUpClass()
-        time.sleep(4)  # wait for xivo-ctid-ng to connect to the bus
+        cls.wait_for_ctid_ng_to_connect_to_bus()
 
     def setUp(self):
         super(TestCollectd, self).setUp()
@@ -35,32 +35,32 @@ class TestCollectd(IntegrationTest):
 
     def test_when_new_channel_then_stat_channel_start(self):
         channel_id = 'channel-id'
-        self.bus.listen_events(routing_key='collectd.channels', exchange=BUS_EXCHANGE_COLLECTD)
+        events = self.bus.accumulator(routing_key='collectd.channels', exchange=BUS_EXCHANGE_COLLECTD)
 
         self.bus.send_ami_newchannel_event(channel_id=channel_id)
 
         def assert_function():
             expected_message = 'PUTVAL [^/]+/channels-global/counter-created .* N:1'
-            assert_that(self.bus.events(), has_item(matches_regexp(expected_message)))
+            assert_that(events.accumulate(), has_item(matches_regexp(expected_message)))
 
         until.assert_(assert_function, tries=5)
 
     def test_when_channel_ends_then_stat_channel_ended(self):
         channel_id = 'channel-id'
-        self.bus.listen_events(routing_key='collectd.channels', exchange=BUS_EXCHANGE_COLLECTD)
+        events = self.bus.accumulator(routing_key='collectd.channels', exchange=BUS_EXCHANGE_COLLECTD)
 
         self.bus.send_ami_hangup_event(channel_id=channel_id)
 
         def assert_function():
             expected_message = 'PUTVAL [^/]+/channels-global/counter-ended .* N:1'
-            assert_that(self.bus.events(), has_item(matches_regexp(expected_message)))
+            assert_that(events.accumulate(), has_item(matches_regexp(expected_message)))
 
         until.assert_(assert_function, tries=5)
 
     def test_when_new_stasis_channel_then_stat_call_start(self):
         call_id = new_call_id()
         self.ari.set_channels(MockChannel(id=call_id))
-        self.bus.listen_events(routing_key='collectd.calls', exchange=BUS_EXCHANGE_COLLECTD)
+        events = self.bus.accumulator(routing_key='collectd.calls', exchange=BUS_EXCHANGE_COLLECTD)
 
         self.stasis.event_stasis_start(channel_id=call_id)
 
@@ -68,14 +68,14 @@ class TestCollectd(IntegrationTest):
             expected_message = 'PUTVAL [^/]+/calls-{app}.{app_instance}/counter-start .* N:1'
             expected_message = expected_message.format(app=STASIS_APP_NAME,
                                                        app_instance=STASIS_APP_INSTANCE_NAME)
-            assert_that(self.bus.events(), has_item(matches_regexp(expected_message)))
+            assert_that(events.accumulate(), has_item(matches_regexp(expected_message)))
 
         until.assert_(assert_function, tries=5)
 
     def test_when_stasis_channel_destroyed_then_stat_call_end(self):
         call_id = new_call_id()
         self.ari.set_channels(MockChannel(id=call_id))
-        self.bus.listen_events(routing_key='collectd.calls', exchange=BUS_EXCHANGE_COLLECTD)
+        events = self.bus.accumulator(routing_key='collectd.calls', exchange=BUS_EXCHANGE_COLLECTD)
 
         self.stasis.event_stasis_start(channel_id=call_id)
         self.stasis.event_channel_destroyed(channel_id=call_id)
@@ -84,14 +84,14 @@ class TestCollectd(IntegrationTest):
             expected_message = 'PUTVAL [^/]+/calls-{app}.{app_instance}/counter-end .* N:1'
             expected_message = expected_message.format(app=STASIS_APP_NAME,
                                                        app_instance=STASIS_APP_INSTANCE_NAME)
-            assert_that(self.bus.events(), has_item(matches_regexp(expected_message)))
+            assert_that(events.accumulate(), has_item(matches_regexp(expected_message)))
 
         until.assert_(assert_function, tries=5)
 
     def test_when_stasis_channel_destroyed_then_stat_call_duration(self):
         call_id = new_call_id()
         self.ari.set_channels(MockChannel(id=call_id))
-        self.bus.listen_events(routing_key='collectd.calls', exchange=BUS_EXCHANGE_COLLECTD)
+        events = self.bus.accumulator(routing_key='collectd.calls', exchange=BUS_EXCHANGE_COLLECTD)
 
         self.stasis.event_stasis_start(channel_id=call_id)
         self.stasis.event_channel_destroyed(channel_id=call_id,
@@ -102,7 +102,7 @@ class TestCollectd(IntegrationTest):
             expected_message = 'PUTVAL [^/]+/calls-{app}.{app_instance}/gauge-duration .* N:3600'
             expected_message = expected_message.format(app=STASIS_APP_NAME,
                                                        app_instance=STASIS_APP_INSTANCE_NAME)
-            assert_that(self.bus.events(), has_item(matches_regexp(expected_message)))
+            assert_that(events.accumulate(), has_item(matches_regexp(expected_message)))
 
         until.assert_(assert_function, tries=5)
 
@@ -126,7 +126,7 @@ class TestCollectd(IntegrationTest):
     def test_given_not_connected_when_stasis_channel_destroyed_then_stat_abandoned_call(self):
         call_id = new_call_id()
         self.ari.set_channels(MockChannel(id=call_id))
-        self.bus.listen_events(routing_key='collectd.calls', exchange=BUS_EXCHANGE_COLLECTD)
+        events = self.bus.accumulator(routing_key='collectd.calls', exchange=BUS_EXCHANGE_COLLECTD)
 
         self.stasis.event_stasis_start(channel_id=call_id)
         self.stasis.event_channel_destroyed(channel_id=call_id)
@@ -135,14 +135,14 @@ class TestCollectd(IntegrationTest):
             expected_message = 'PUTVAL [^/]+/calls-{app}.{app_instance}/counter-abandoned .* N:1'
             expected_message = expected_message.format(app=STASIS_APP_NAME,
                                                        app_instance=STASIS_APP_INSTANCE_NAME)
-            assert_that(self.bus.events(), has_item(matches_regexp(expected_message)))
+            assert_that(events.accumulate(), has_item(matches_regexp(expected_message)))
 
         until.assert_(assert_function, tries=5)
 
     def test_when_connect_then_stat_connect(self):
         call_id = new_call_id()
         self.ari.set_channels(MockChannel(id=call_id))
-        self.bus.listen_events(routing_key='collectd.calls', exchange=BUS_EXCHANGE_COLLECTD)
+        events = self.bus.accumulator(routing_key='collectd.calls', exchange=BUS_EXCHANGE_COLLECTD)
 
         self.stasis.event_stasis_start(channel_id=call_id, stasis_args=['dialed_from', 'another-channel'])
 
@@ -150,7 +150,7 @@ class TestCollectd(IntegrationTest):
             expected_message = 'PUTVAL [^/]+/calls-{app}.{app_instance}/counter-connect .* N:1'
             expected_message = expected_message.format(app=STASIS_APP_NAME,
                                                        app_instance=STASIS_APP_INSTANCE_NAME)
-            assert_that(self.bus.events(), not_(has_item(matches_regexp(expected_message))))
+            assert_that(events.accumulate(), not_(has_item(matches_regexp(expected_message))))
 
         until.assert_(assert_function, tries=3)
 
@@ -167,7 +167,7 @@ class TestCollectdCtidNgRestart(IntegrationTest):
     def test_given_ctid_ng_restarts_during_call_when_stasis_channel_destroyed_then_stat_call_end(self):
         call_id = new_call_id()
         self.ari.set_channels(MockChannel(id=call_id))
-        self.bus.listen_events(routing_key='collectd.calls', exchange=BUS_EXCHANGE_COLLECTD)
+        events = self.bus.accumulator(routing_key='collectd.calls', exchange=BUS_EXCHANGE_COLLECTD)
         self.stasis.event_stasis_start(channel_id=call_id)
 
         self.restart_service('ctid-ng')
@@ -179,7 +179,7 @@ class TestCollectdCtidNgRestart(IntegrationTest):
             expected_message = 'PUTVAL [^/]+/calls-{app}.{app_instance}/counter-end .* N:1'
             expected_message = expected_message.format(app=STASIS_APP_NAME,
                                                        app_instance=STASIS_APP_INSTANCE_NAME)
-            assert_that(self.bus.events(), has_item(matches_regexp(expected_message)))
+            assert_that(events.accumulate(), has_item(matches_regexp(expected_message)))
 
         until.assert_(assert_ctid_ng_sent_end_call_stat, tries=5)
 
@@ -202,13 +202,13 @@ class TestCollectdRabbitMQRestart(IntegrationTest):
         self.reset_bus_client()
         until.true(self.bus.is_up, tries=int(os.environ.get('INTEGRATION_TEST_TIMEOUT', 30)))  # wait for rabbitmq to come back up
 
-        self.bus.listen_events(routing_key='collectd.calls', exchange=BUS_EXCHANGE_COLLECTD)
+        events = self.bus.accumulator(routing_key='collectd.calls', exchange=BUS_EXCHANGE_COLLECTD)
         self.stasis.event_channel_destroyed(channel_id=call_id)
 
         def assert_ctid_ng_sent_end_call_stat():
             expected_message = 'PUTVAL [^/]+/calls-{app}.{app_instance}/counter-end .* N:1'
             expected_message = expected_message.format(app=STASIS_APP_NAME,
                                                        app_instance=STASIS_APP_INSTANCE_NAME)
-            assert_that(self.bus.events(), has_item(matches_regexp(expected_message)))
+            assert_that(events.accumulate(), has_item(matches_regexp(expected_message)))
 
         until.assert_(assert_ctid_ng_sent_end_call_stat, tries=5)

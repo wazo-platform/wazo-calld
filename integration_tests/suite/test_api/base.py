@@ -7,10 +7,10 @@ import ari
 import os
 import logging
 import tempfile
-import time
 
 from ari.exceptions import ARINotFound
 from requests.packages import urllib3
+from xivo_test_helpers import until
 from xivo_test_helpers.asset_launching_test_case import AssetLaunchingTestCase
 from xivo_test_helpers.asset_launching_test_case import NoSuchService
 from xivo_test_helpers.asset_launching_test_case import NoSuchPort
@@ -111,7 +111,7 @@ class IntegrationTest(AssetLaunchingTestCase):
 
     @classmethod
     def wait_for_ctid_ng_to_connect_to_bus(cls):
-        time.sleep(4)
+        until.true(cls.bus.is_up, tries=5)
 
 
 class RealAsteriskIntegrationTest(IntegrationTest):

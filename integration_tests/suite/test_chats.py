@@ -27,7 +27,7 @@ class TestCreateChat(IntegrationTest):
 
     def setUp(self):
         super(TestCreateChat, self).setUp()
-        self.bus.listen_events(routing_key='chat.message.#')
+        self.events = self.bus.accumulator(routing_key='chat.message.#')
         self.chat_msg = new_chat_message()
 
     def test_create_chat_with_correct_values(self):
@@ -47,7 +47,7 @@ class TestCreateChat(IntegrationTest):
     def _assert_chat_msg_sent_on_bus(self):
         def assert_function():
             destination = [self.chat_msg.to_xivo_uuid or XIVO_UUID, self.chat_msg.to]
-            assert_that(self.bus.events(), has_item(equal_to({
+            assert_that(self.events.accumulate(), has_item(equal_to({
                 'name': 'chat_message_event',
                 'origin_uuid': XIVO_UUID,
                 'required_acl': 'events.chat.message.{}.{}'.format(*destination),
@@ -72,7 +72,7 @@ class TestUserCreateChat(IntegrationTest):
 
     def setUp(self):
         super(TestUserCreateChat, self).setUp()
-        self.bus.listen_events(routing_key='chat.message.#')
+        self.events = self.bus.accumulator(routing_key='chat.message.#')
         self.chat_msg = new_user_chat_message()
         self.token_id = 'my-token'
         self.token_user_uuid = 'my-user-uuid'
@@ -86,7 +86,7 @@ class TestUserCreateChat(IntegrationTest):
 
     def _assert_chat_msg_sent_on_bus(self):
         def assert_function():
-            assert_that(self.bus.events(), has_item(equal_to({
+            assert_that(self.events.accumulate(), has_item(equal_to({
                 'name': 'chat_message_event',
                 'origin_uuid': XIVO_UUID,
                 'required_acl': 'events.chat.message.{}.{}'.format(XIVO_UUID, self.chat_msg.to),

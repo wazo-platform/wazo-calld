@@ -203,7 +203,7 @@ class TestTransfers(RealAsteriskIntegrationTest):
                 recipient_channel_id,
                 transfer_id)
 
-    def assert_transfer_is_answered(self, transfer_id, transferred_channel_id, initiator_channel_id, recipient_channel_id=None):
+    def assert_transfer_is_answered(self, transfer_id, transferred_channel_id, initiator_channel_id, events, recipient_channel_id=None):
         transfer = self.ctid_ng.get_transfer(transfer_id)
         assert_that(transfer, has_entries({
             'id': transfer_id,
@@ -239,9 +239,9 @@ class TestTransfers(RealAsteriskIntegrationTest):
         assert_that(recipient_channel_id, self.c.has_variable('XIVO_TRANSFER_ID', transfer_id), 'variable not set')
         assert_that(recipient_channel_id, self.c.has_variable('XIVO_TRANSFER_ROLE', 'recipient'), 'variable not set')
 
-        assert_that(self.bus.events(), has_item(has_entry('name', 'transfer_answered')))
+        assert_that(events.accumulate(), has_item(has_entry('name', 'transfer_answered')))
 
-    def assert_transfer_is_cancelled(self, transfer_id, transferred_channel_id, initiator_channel_id, recipient_channel_id):
+    def assert_transfer_is_cancelled(self, transfer_id, transferred_channel_id, initiator_channel_id, recipient_channel_id, events):
         transfer_bridge = self.ari.bridges.get(bridgeId=transfer_id)
         assert_that(transfer_bridge.json,
                     has_entry('channels',
@@ -262,11 +262,11 @@ class TestTransfers(RealAsteriskIntegrationTest):
         result = self.ctid_ng.get_transfer_result(transfer_id, token=VALID_TOKEN)
         assert_that(result.status_code, equal_to(404), 'transfer not removed')
 
-        events = self.bus.events()
+        events = events.accumulate()
         assert_that(events, has_item(has_entry('name', 'transfer_cancelled')))
         assert_that(events, has_item(has_entry('name', 'transfer_ended')))
 
-    def assert_transfer_is_completed(self, transfer_id, transferred_channel_id, initiator_channel_id, recipient_channel_id):
+    def assert_transfer_is_completed(self, transfer_id, transferred_channel_id, initiator_channel_id, recipient_channel_id, events):
         transfer_bridge = self.ari.bridges.get(bridgeId=transfer_id)
         assert_that(transfer_bridge.json,
                     has_entry('channels',
@@ -287,7 +287,7 @@ class TestTransfers(RealAsteriskIntegrationTest):
         result = self.ctid_ng.get_transfer_result(transfer_id, token=VALID_TOKEN)
         assert_that(result.status_code, equal_to(404))
 
-        events = self.bus.events()
+        events = events.accumulate()
         assert_that(events, has_item(has_entry('name', 'transfer_answered')))
         assert_that(events, has_item(has_entry('name', 'transfer_completed')))
         assert_that(events, has_item(has_entry('name', 'transfer_ended')))
@@ -320,7 +320,7 @@ class TestTransfers(RealAsteriskIntegrationTest):
         assert_that(recipient_channel_id, self.c.has_variable('XIVO_TRANSFER_ID', transfer_id), 'variable not set')
         assert_that(recipient_channel_id, self.c.has_variable('XIVO_TRANSFER_ROLE', 'recipient'), 'variable not set')
 
-    def assert_transfer_is_abandoned(self, transfer_id, transferred_channel_id, initiator_channel_id, recipient_channel_id):
+    def assert_transfer_is_abandoned(self, transfer_id, transferred_channel_id, initiator_channel_id, recipient_channel_id, events):
         transfer_bridge = self.ari.bridges.get(bridgeId=transfer_id)
         assert_that(transfer_bridge.json,
                     has_entry('channels',
@@ -341,11 +341,11 @@ class TestTransfers(RealAsteriskIntegrationTest):
         result = self.ctid_ng.get_transfer_result(transfer_id, token=VALID_TOKEN)
         assert_that(result.status_code, equal_to(404))
 
-        events = self.bus.events()
+        events = events.accumulate()
         assert_that(events, has_item(has_entry('name', 'transfer_abandoned')))
         assert_that(events, has_item(has_entry('name', 'transfer_ended')))
 
-    def assert_transfer_is_hungup(self, transfer_id, transferred_channel_id, initiator_channel_id, recipient_channel_id):
+    def assert_transfer_is_hungup(self, transfer_id, transferred_channel_id, initiator_channel_id, recipient_channel_id, events):
         assert_that(transfer_id, not_(self.b.is_found()), 'transfer still exists')
 
         assert_that(transferred_channel_id, self.c.is_hungup(), 'transferred channel is still talking')
@@ -355,7 +355,7 @@ class TestTransfers(RealAsteriskIntegrationTest):
         result = self.ctid_ng.get_transfer_result(transfer_id, token=VALID_TOKEN)
         assert_that(result.status_code, equal_to(404))
 
-        assert_that(self.bus.events(), has_item(has_entry('name', 'transfer_ended')))
+        assert_that(events.accumulate(), has_item(has_entry('name', 'transfer_ended')))
 
     def assert_everyone_hungup(self, transferred_channel_id, initiator_channel_id, recipient_channel_id):
         assert_that(transferred_channel_id, self.c.is_hungup(), 'transferred channel is still talking')
@@ -497,26 +497,26 @@ class TestCreateTransfer(TestTransfers):
     def test_given_stasis_when_create_then_event_sent_in_bus(self):
         transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()
 
-        self.bus.listen_events('calls.transfer.created')
+        events = self.bus.accumulator('calls.transfer.created')
         self.ctid_ng.create_transfer(transferred_channel_id,
                                      initiator_channel_id,
                                      **RECIPIENT)
 
         def event_is_sent():
-            assert_that(self.bus.events(), has_item(has_entry('name', 'transfer_created')))
+            assert_that(events.accumulate(), has_item(has_entry('name', 'transfer_created')))
 
         until.assert_(event_is_sent, tries=5)
 
     def test_given_non_stasis_when_create_then_event_sent_in_bus(self):
         transferred_channel_id, initiator_channel_id = self.given_bridged_call_not_stasis()
 
-        self.bus.listen_events('calls.transfer.created')
+        events = self.bus.accumulator('calls.transfer.created')
         self.ctid_ng.create_transfer(transferred_channel_id,
                                      initiator_channel_id,
                                      **RECIPIENT)
 
         def event_is_sent():
-            assert_that(self.bus.events(), has_item(has_entry('name', 'transfer_created')))
+            assert_that(events.accumulate(), has_item(has_entry('name', 'transfer_created')))
 
         until.assert_(event_is_sent, tries=5)
 
@@ -633,7 +633,7 @@ class TestUserCreateTransfer(TestTransfers):
     def setUp(self):
         super(TestUserCreateTransfer, self).setUp()
         self.confd.reset()
-        self.bus.listen_events('calls.transfer.*')
+        self.events = self.bus.accumulator('calls.transfer.*')
 
     def given_bridged_call_stasis(self, initiator_uuid):
         transferred_channel_id, initiator_channel_id = super(TestUserCreateTransfer, self).given_bridged_call_stasis()
@@ -833,6 +833,7 @@ class TestUserCreateTransfer(TestTransfers):
                       transfer_id,
                       transferred_channel_id,
                       initiator_channel_id,
+                      self.events,
                       recipient_channel_id,
                       tries=5)
 
@@ -870,7 +871,7 @@ class TestCancelTransfer(TestTransfers):
 class TestUserCancelTransfer(TestTransfers):
     def setUp(self):
         super(TestUserCancelTransfer, self).setUp()
-        self.bus.listen_events('calls.transfer.*')
+        self.events = self.bus.accumulator('calls.transfer.*')
 
     def test_given_no_transfer_when_cancel_transfer_then_error_404(self):
         token = 'my-token'
@@ -907,6 +908,7 @@ class TestUserCancelTransfer(TestTransfers):
                       transferred_channel_id,
                       initiator_channel_id,
                       recipient_channel_id,
+                      self.events,
                       tries=5)
 
 
@@ -921,7 +923,7 @@ class TestCompleteTransfer(TestTransfers):
 class TestUserCompleteTransfer(TestTransfers):
     def setUp(self):
         super(TestUserCompleteTransfer, self).setUp()
-        self.bus.listen_events('calls.transfer.*')
+        self.events = self.bus.accumulator('calls.transfer.*')
 
     def test_given_no_transfer_when_complete_transfer_then_error_404(self):
         token = 'my-token'
@@ -958,6 +960,7 @@ class TestUserCompleteTransfer(TestTransfers):
                       transferred_channel_id,
                       initiator_channel_id,
                       recipient_channel_id,
+                      self.events,
                       tries=5)
 
 
@@ -965,7 +968,7 @@ class TestTransferFromStasis(TestTransfers):
 
     def setUp(self):
         super(TestTransferFromStasis, self).setUp()
-        self.bus.listen_events('calls.transfer.*')
+        self.events = self.bus.accumulator('calls.transfer.*')
 
     def test_given_state_ready_when_transfer_start_and_answer_then_state_answered(self):
         transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()
@@ -986,6 +989,7 @@ class TestTransferFromStasis(TestTransfers):
                       transfer_id,
                       transferred_channel_id,
                       initiator_channel_id,
+                      self.events,
                       recipient_channel_id,
                       tries=5)
 
@@ -1003,6 +1007,7 @@ class TestTransferFromStasis(TestTransfers):
                       transferred_channel_id,
                       initiator_channel_id,
                       recipient_channel_id,
+                      self.events,
                       tries=5)
 
     def test_given_state_ready_when_blind_transfer_then_state_blind_transferred(self):
@@ -1055,6 +1060,7 @@ class TestTransferFromStasis(TestTransfers):
                       transferred_channel_id,
                       initiator_channel_id,
                       recipient_channel_id,
+                      self.events,
                       tries=5)
 
     def test_given_state_ready_when_blind_transfer_and_abandon_then_state_hungup(self):
@@ -1073,6 +1079,7 @@ class TestTransferFromStasis(TestTransfers):
                       transferred_channel_id,
                       initiator_channel_id,
                       recipient_channel_id,
+                      self.events,
                       tries=5)
 
     def test_given_state_ringback_when_cancel_then_state_cancelled(self):
@@ -1088,6 +1095,7 @@ class TestTransferFromStasis(TestTransfers):
                       transferred_channel_id,
                       initiator_channel_id,
                       recipient_channel_id,
+                      self.events,
                       tries=5)
 
     def test_given_state_ringback_when_recipient_hangup_then_state_cancelled(self):
@@ -1103,6 +1111,7 @@ class TestTransferFromStasis(TestTransfers):
                       transferred_channel_id,
                       initiator_channel_id,
                       recipient_channel_id,
+                      self.events,
                       tries=5)
 
     def test_given_state_ringback_when_transferred_hangup_and_recipient_answers_then_state_abandoned(self):
@@ -1119,6 +1128,7 @@ class TestTransferFromStasis(TestTransfers):
                       transferred_channel_id,
                       initiator_channel_id,
                       recipient_channel_id,
+                      self.events,
                       tries=5)
 
     def test_given_state_ringback_when_transferred_hangup_and_recipient_hangup_then_state_hungup(self):
@@ -1135,6 +1145,7 @@ class TestTransferFromStasis(TestTransfers):
                       transferred_channel_id,
                       initiator_channel_id,
                       recipient_channel_id,
+                      self.events,
                       tries=5)
 
     def test_given_state_ringback_when_transferred_hangup_and_initiator_hangup_then_state_hungup(self):
@@ -1151,6 +1162,7 @@ class TestTransferFromStasis(TestTransfers):
                       transferred_channel_id,
                       initiator_channel_id,
                       recipient_channel_id,
+                      self.events,
                       tries=5)
 
     def test_given_state_answered_when_complete_then_state_completed(self):
@@ -1166,6 +1178,7 @@ class TestTransferFromStasis(TestTransfers):
                       transferred_channel_id,
                       initiator_channel_id,
                       recipient_channel_id,
+                      self.events,
                       tries=5)
 
     def test_given_state_answered_when_cancel_then_state_cancelled(self):
@@ -1181,6 +1194,7 @@ class TestTransferFromStasis(TestTransfers):
                       transferred_channel_id,
                       initiator_channel_id,
                       recipient_channel_id,
+                      self.events,
                       tries=5)
 
     def test_given_state_answered_when_recipient_hangup_then_state_cancelled(self):
@@ -1196,6 +1210,7 @@ class TestTransferFromStasis(TestTransfers):
                       transferred_channel_id,
                       initiator_channel_id,
                       recipient_channel_id,
+                      self.events,
                       tries=5)
 
     def test_given_state_answered_when_initiator_hangup_then_state_completed(self):
@@ -1211,6 +1226,7 @@ class TestTransferFromStasis(TestTransfers):
                       transferred_channel_id,
                       initiator_channel_id,
                       recipient_channel_id,
+                      self.events,
                       tries=5)
 
     def test_given_state_answered_when_transferred_hangup_then_state_abandoned(self):
@@ -1226,6 +1242,7 @@ class TestTransferFromStasis(TestTransfers):
                       transferred_channel_id,
                       initiator_channel_id,
                       recipient_channel_id,
+                      self.events,
                       tries=5)
 
     def test_given_state_abandoned_when_initiator_hangup_then_everybody_hungup(self):
@@ -1241,6 +1258,7 @@ class TestTransferFromStasis(TestTransfers):
                       transferred_channel_id,
                       initiator_channel_id,
                       recipient_channel_id,
+                      self.events,
                       tries=5)
 
         self.ari.channels.hangup(channelId=initiator_channel_id)
@@ -1264,6 +1282,7 @@ class TestTransferFromStasis(TestTransfers):
                       transferred_channel_id,
                       initiator_channel_id,
                       recipient_channel_id,
+                      self.events,
                       tries=5)
 
         self.ari.channels.hangup(channelId=recipient_channel_id)
@@ -1279,7 +1298,7 @@ class TestTransferFromNonStasis(TestTransfers):
 
     def setUp(self):
         super(TestTransferFromNonStasis, self).setUp()
-        self.bus.listen_events('calls.transfer.*')
+        self.events = self.bus.accumulator('calls.transfer.*')
 
     def test_given_state_ready_from_not_stasis_when_transfer_start_and_answer_then_state_answered(self):
         transferred_channel_id, initiator_channel_id = self.given_bridged_call_not_stasis()
@@ -1307,6 +1326,7 @@ class TestTransferFromNonStasis(TestTransfers):
                       transfer_id,
                       transferred_channel_id,
                       initiator_channel_id,
+                      self.events,
                       tries=5)
 
     def test_given_state_ready_when_blind_transfer_then_state_blind_transferred(self):
@@ -1385,7 +1405,7 @@ class TestInitialisation(TestTransfers):
 
     def setUp(self):
         super(TestInitialisation, self).setUp()
-        self.bus.listen_events('calls.transfer.*')
+        self.events = self.bus.accumulator('calls.transfer.*')
 
     def test_given_started_transfer_when_xivo_ctid_ng_restarts_then_transfer_may_continue(self):
         (transferred_channel_id,
@@ -1402,6 +1422,7 @@ class TestInitialisation(TestTransfers):
                       transferred_channel_id,
                       initiator_channel_id,
                       recipient_channel_id,
+                      self.events,
                       tries=5)
 
     def test_given_started_transfer_and_initiator_hangs_up_while_ctid_ng_is_down_when_ctid_ng_restarts_then_transfer_is_completed(self):
@@ -1418,6 +1439,7 @@ class TestInitialisation(TestTransfers):
                       transferred_channel_id,
                       initiator_channel_id,
                       recipient_channel_id,
+                      self.events,
                       tries=5)
 
     def test_given_ringing_transfer_and_recipient_answers_while_ctid_ng_is_down_when_ctid_ng_restarts_then_transfer_is_cancelled(self):
@@ -1434,6 +1456,7 @@ class TestInitialisation(TestTransfers):
                       transferred_channel_id,
                       initiator_channel_id,
                       recipient_channel_id,
+                      self.events,
                       tries=5)
 
     def test_given_answered_transfer_and_transferred_hangs_up_while_ctid_ng_is_down_when_ctid_ng_restarts_then_transfer_is_abandoned(self):
@@ -1450,6 +1473,7 @@ class TestInitialisation(TestTransfers):
                       transferred_channel_id,
                       initiator_channel_id,
                       recipient_channel_id,
+                      self.events,
                       tries=5)
 
     @contextmanager

@@ -137,7 +137,7 @@ class TestUpdateUserPresence(IntegrationTest):
 
     def setUp(self):
         super(TestUpdateUserPresence, self).setUp()
-        self.bus.listen_events(routing_key='status.user')
+        self.events = self.bus.accumulator(routing_key='status.user')
         self.presence_msg = new_user_presence_message()
         self.token_user_uuid = 'my-user-uuid'
 
@@ -149,7 +149,7 @@ class TestUpdateUserPresence(IntegrationTest):
 
     def _assert_presence_msg_sent_on_bus(self):
         def assert_function():
-            assert_that(self.bus.events(), has_item(equal_to({
+            assert_that(self.events.accumulate(), has_item(equal_to({
                 'name': 'user_status_update',
                 'origin_uuid': XIVO_UUID,
                 'required_acl': 'events.statuses.users',
@@ -172,7 +172,7 @@ class TestUserMeUpdatePresence(IntegrationTest):
 
     def setUp(self):
         super(TestUserMeUpdatePresence, self).setUp()
-        self.bus.listen_events(routing_key='status.user')
+        self.events = self.bus.accumulator(routing_key='status.user')
         self.presence_msg = new_user_me_presence_message()
         self.token_id = 'my-token'
         self.token_user_uuid = 'my-user-uuid'
@@ -186,7 +186,7 @@ class TestUserMeUpdatePresence(IntegrationTest):
 
     def _assert_presence_msg_sent_on_bus(self):
         def assert_function():
-            assert_that(self.bus.events(), has_item(equal_to({
+            assert_that(self.events.accumulate(), has_item(equal_to({
                 'name': 'user_status_update',
                 'origin_uuid': XIVO_UUID,
                 'required_acl': 'events.statuses.users',

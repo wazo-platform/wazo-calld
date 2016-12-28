@@ -31,12 +31,12 @@ class TestDialedFrom(IntegrationTest):
 
     def test_when_channel_ended_then_bus_event(self):
         call_id = new_call_id()
-        self.bus.listen_events(routing_key='calls.call.ended')
+        events = self.bus.accumulator(routing_key='calls.call.ended')
 
         self.bus.send_ami_hangup_userevent(call_id)
 
         def assert_function():
-            assert_that(self.bus.events(), has_item(has_entries({
+            assert_that(events.accumulate(), has_item(has_entries({
                 'name': 'call_ended',
                 'origin_uuid': XIVO_UUID,
                 'data': has_entry('call_id', call_id)
@@ -47,12 +47,12 @@ class TestDialedFrom(IntegrationTest):
     def test_when_channel_created_then_bus_event(self):
         call_id = new_call_id()
         self.ari.set_channels(MockChannel(id=call_id))
-        self.bus.listen_events(routing_key='calls.call.created')
+        events = self.bus.accumulator(routing_key='calls.call.created')
 
         self.bus.send_ami_newchannel_event(call_id)
 
         def assert_function():
-            assert_that(self.bus.events(), has_item(has_entries({
+            assert_that(events.accumulate(), has_item(has_entries({
                 'name': 'call_created',
                 'origin_uuid': XIVO_UUID,
                 'data': has_entry('call_id', call_id)
@@ -63,12 +63,12 @@ class TestDialedFrom(IntegrationTest):
     def test_when_channel_updated_then_bus_event(self):
         call_id = new_call_id()
         self.ari.set_channels(MockChannel(id=call_id, state='Up'))
-        self.bus.listen_events(routing_key='calls.call.updated')
+        events = self.bus.accumulator(routing_key='calls.call.updated')
 
         self.bus.send_ami_newstate_event(call_id)
 
         def assert_function():
-            assert_that(self.bus.events(), has_item(has_entries({
+            assert_that(events.accumulate(), has_item(has_entries({
                 'name': 'call_updated',
                 'origin_uuid': XIVO_UUID,
                 'data': has_entries({'call_id': call_id, 'status': 'Up'})
@@ -80,7 +80,7 @@ class TestDialedFrom(IntegrationTest):
         call_id = new_call_id()
         self.ari.set_channels(MockChannel(id=call_id))
         self.ari.set_channel_variable({call_id: {'XIVO_ON_HOLD': '1'}})
-        self.bus.listen_events(routing_key='calls.hold.created')
+        events = self.bus.accumulator(routing_key='calls.hold.created')
 
         self.bus.send_ami_hold_event(call_id)
 
@@ -94,7 +94,7 @@ class TestDialedFrom(IntegrationTest):
                     'Value': '1'
                 }),
             })))
-            assert_that(self.bus.events(), has_item(has_entries({
+            assert_that(events.accumulate(), has_item(has_entries({
                 'name': 'call_held',
                 'origin_uuid': XIVO_UUID,
                 'data': has_entries({'call_id': call_id})
@@ -106,7 +106,7 @@ class TestDialedFrom(IntegrationTest):
         call_id = new_call_id()
         self.ari.set_channels(MockChannel(id=call_id))
         self.ari.set_channel_variable({call_id: {'XIVO_ON_HOLD': ''}})
-        self.bus.listen_events(routing_key='calls.hold.deleted')
+        events = self.bus.accumulator(routing_key='calls.hold.deleted')
 
         self.bus.send_ami_unhold_event(call_id)
 
@@ -120,7 +120,7 @@ class TestDialedFrom(IntegrationTest):
                     'Value': ''
                 }),
             })))
-            assert_that(self.bus.events(), has_item(has_entries({
+            assert_that(events.accumulate(), has_item(has_entries({
                 'name': 'call_resumed',
                 'origin_uuid': XIVO_UUID,
                 'data': has_entries({'call_id': call_id})
