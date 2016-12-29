@@ -59,8 +59,16 @@ class CallsService(object):
         return [call for call in calls if call.user_uuid == user_uuid and not Channel(call.id_, self._ari).is_local()]
 
     def originate(self, request):
+        requested_context = request['destination']['context']
+        requested_extension = request['destination']['extension']
+        requested_priority = request['destination']['priority']
+
+        if not ami.extension_exists(self._ami, requested_context, requested_extension, requested_priority):
+            raise InvalidExtension(requested_context, requested_extension)
+
         source_user = request['source']['user']
         variables = request.get('variables', {})
+
         if request['source']['from_mobile']:
             source_mobile = User(source_user, self._confd).mobile_phone_number()
             if not source_mobile:
@@ -72,22 +80,27 @@ class CallsService(object):
                            'mobile_context': source_context}
                 raise CallCreationError('User has invalid mobile phone number', details=details)
             endpoint = 'local/{mobile}@{context}'.format(mobile=source_mobile, context=source_context)
-            variables['XIVO_ORIGINAL_CALLER_ID'] = '"{exten}" <{exten}>'.format(exten=source_mobile)
-        elif 'line_id' in request['source']:
-            endpoint = User(source_user, self._confd).line(request['source']['line_id']).interface()
-        else:
-            endpoint = User(source_user, self._confd).main_line().interface()
-        extension = request['destination']['extension']
-        context = request['destination']['context']
-        priority = request['destination']['priority']
-        if not ami.extension_exists(self._ami, context, extension, priority):
-            raise InvalidExtension(context, extension)
+            context, extension, priority = 'wazo-originate-destination-caller-id', 's', 1
 
-        variables.setdefault('CONNECTEDLINE(name)', extension)
-        variables.setdefault('CONNECTEDLINE(num)', '' if extension.startswith('#') else extension)
-        variables.setdefault('CALLERID(name)', extension)
-        variables.setdefault('CALLERID(num)', extension)
-        variables.setdefault('XIVO_FIX_CALLERID', '1')
+            variables.setdefault('XIVO_FIX_CALLERID', '1')
+            variables.setdefault('XIVO_ORIGINAL_CALLER_ID', '"{exten}" <{exten}>'.format(exten=requested_extension))
+            variables.setdefault('WAZO_ORIGINATE_DESTINATION_PRIORITY', str(requested_priority))
+            variables.setdefault('WAZO_ORIGINATE_DESTINATION_EXTENSION', requested_extension)
+            variables.setdefault('WAZO_ORIGINATE_DESTINATION_CONTEXT', requested_context)
+            variables.setdefault('WAZO_ORIGINATE_DESTINATION_CALLERID_ALL', '"{exten}" <{exten}>'.format(exten=source_mobile))
+        else:
+            if 'line_id' in request['source']:
+                endpoint = User(source_user, self._confd).line(request['source']['line_id']).interface()
+            else:
+                endpoint = User(source_user, self._confd).main_line().interface()
+
+            context, extension, priority = requested_context, requested_extension, requested_priority
+
+            variables.setdefault('XIVO_FIX_CALLERID', '1')
+            variables.setdefault('CONNECTEDLINE(name)', extension)
+            variables.setdefault('CONNECTEDLINE(num)', '' if extension.startswith('#') else extension)
+            variables.setdefault('CALLERID(name)', extension)
+            variables.setdefault('CALLERID(num)', extension)
 
         channel = self._ari.channels.originate(endpoint=endpoint,
                                                extension=extension,

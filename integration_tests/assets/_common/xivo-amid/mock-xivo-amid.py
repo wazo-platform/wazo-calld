@@ -47,6 +47,12 @@ def log_request():
     _requests.append(log)
 
 
+@app.route('/_reset', methods=['POST'])
+def reset():
+    _reset()
+    return '', 204
+
+
 @app.route('/_requests', methods=['GET'])
 def list_requests():
     return jsonify({'requests': _requests})
