@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# Copyright 2015-2016 by Avencall
+# Copyright 2015-2016 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 
@@ -11,10 +11,10 @@ from setuptools import find_packages
 setup(
     name='xivo-ctid-ng',
     version='2.0',
-    description='XiVO CTI Server Daemon',
-    author='Avencall',
-    author_email='xivo-dev@lists.proformatique.com',
-    url='http://www.xivo.io/',
+    description='Wazo CTI Server Daemon',
+    author='Wazo Authors',
+    author_email='dev.wazo@gmail.com',
+    url='http://wazo.community',
     packages=find_packages(),
     package_data={
         'xivo_ctid_ng.plugins': ['*/api.yml'],

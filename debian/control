@@ -1,12 +1,10 @@
 Source: xivo-ctid-ng
 Section: python
 Priority: extra
-Maintainer: XiVO Dev Team <dev@avencall.com>
-Uploaders: XiVO Builder Team <release@xivo.io>
+Maintainer: Wazo Maintainers <dev.wazo@gmail.com>
 Build-Depends: debhelper (>= 9), dh-python, dh-systemd (>= 1.5), python-all (>= 2.7), python-setuptools
-Standards-Version: 3.9.4
+Standards-Version: 3.9.6
 X-Python-Version: >= 2.7
-Homepage: http://xivo.io/
 
 Package: xivo-ctid-ng
 Architecture: all
@@ -28,11 +26,11 @@ Depends: ${python:Depends},
          python-marshmallow,
          python-stevedore,
          python-wsaccel
-Description: XiVO CTI server (new generation)
- XiVO is a system based on a powerful IPBX, to bring an easy to
+Description: Wazo CTI server (new generation)
+ Wazo is a system based on a powerful IPBX, to bring an easy to
  install solution for telephony and related services.
  .
- This is the CTI server for XiVO Asterisk features.
- It provides presence and connection information to the XiVO
+ This is the CTI server for Wazo Asterisk features.
+ It provides presence and connection information to the Wazo
  switchboard clients.
  .
