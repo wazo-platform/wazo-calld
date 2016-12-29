@@ -468,7 +468,8 @@ class TestCreateCall(IntegrationTest):
                                                            'CALLERID(name)': 'my-extension',
                                                            'CALLERID(num)': 'my-extension',
                                                            'CONNECTEDLINE(name)': 'my-connected-line',
-                                                           'CONNECTEDLINE(num)': 'my-extension'})}),
+                                                           'CONNECTEDLINE(num)': 'my-extension',
+                                                           'XIVO_FIX_CALLERID': '1'})}),
         }))))
 
     def test_when_create_call_with_no_variables_then_default_variables_are_set(self):
