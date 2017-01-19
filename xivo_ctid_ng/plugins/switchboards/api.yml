@@ -1,0 +1,48 @@
+paths:
+  /switchboards/{switchboard_uuid}/calls/queued:
+    get:
+      summary: List calls queued in the switchboard
+      description: '**Required ACL:** `ctid-ng.switchboards.{switchboard_uuid}.calls.queued.read`'
+      tags:
+        - switchboards
+      parameters:
+        - $ref: '#/parameters/SwitchboardUUID'
+
+      responses:
+        '200':
+          description: List of calls
+          schema:
+            $ref: '#/definitions/SwitchboardQueuedCalls'
+        '404':
+          $ref: '#/responses/NoSuchSwitchboard'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+parameters:
+  SwitchboardUUID:
+    name: switchboard_uuid
+    in: path
+    description: Unique identifier of the switchboard
+    required: true
+    type: string
+definitions:
+  SwitchboardQueuedCalls:
+    type: object
+    properties:
+      items:
+        type: array
+        items:
+          $ref: '#/definitions/SwitchboardQueuedCall'
+  SwitchboardQueuedCall:
+    type: object
+    properties:
+      id:
+        type: string
+      caller_id_name:
+        type: string
+      caller_id_number:
+        type: string
+responses:
+  NoSuchSwitchboard:
+    description: The specified switchboard does not exist
+    schema:
+      $ref: '#/definitions/Error'

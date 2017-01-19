@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# Copyright 2015-2016 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 
@@ -28,6 +28,7 @@ setup(
             'plugin_list = xivo_ctid_ng.plugins.plugin_list.plugin:Plugin',
             'presences = xivo_ctid_ng.plugins.presences.plugin:Plugin',
             'status = xivo_ctid_ng.plugins.status.plugin:Plugin',
+            'switchboards = xivo_ctid_ng.plugins.switchboards.plugin:Plugin',
             'transfers = xivo_ctid_ng.plugins.transfers.plugin:Plugin',
             'voicemails = xivo_ctid_ng.plugins.voicemails.plugin:Plugin',
         ]

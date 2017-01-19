@@ -50,6 +50,7 @@ enabled_plugins:
   - plugin_list
   - status
   - transfers
+  - switchboards
 
 service_discovery:
   enabled: false
