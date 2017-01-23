@@ -23,7 +23,7 @@ class Plugin(object):
         switchboards_notifier = SwitchboardsNotifier(bus_publisher)
         switchboards_service = SwitchboardsService(ari.client, confd_client, switchboards_notifier)
 
-        switchboards_stasis = SwitchboardsStasis(ari.client, switchboards_service)
+        switchboards_stasis = SwitchboardsStasis(ari.client, switchboards_notifier, switchboards_service)
         switchboards_stasis.subscribe()
 
         api.add_resource(SwitchboardCallsQueuedResource, '/switchboards/<switchboard_uuid>/calls/queued', resource_class_args=[switchboards_service])

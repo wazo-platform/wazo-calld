@@ -49,7 +49,9 @@ class SwitchboardsService(object):
             bridge = self._ari.bridges.createWithId(type='holding', bridgeId=bridge_id)
             bridge.startMoh()
 
-        self._ari.channels.get(channelId=channel_id).answer()
+        channel = self._ari.channels.get(channelId=channel_id)
+        channel.setChannelVar(variable='WAZO_SWITCHBOARD_QUEUE', value=switchboard_uuid)
+        channel.answer()
         bridge.addChannel(channel=channel_id)
 
         self._notifier.queued_calls(switchboard_uuid, self.queued_calls(switchboard_uuid))

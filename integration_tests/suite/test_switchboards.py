@@ -2,6 +2,8 @@
 # Copyright 2017 The Wazo Authors  (see AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
+import unittest
+
 from ari.exceptions import ARINotInStasis
 from hamcrest import assert_that
 from hamcrest import contains
@@ -9,6 +11,7 @@ from hamcrest import contains_inanyorder
 from hamcrest import empty
 from hamcrest import equal_to
 from hamcrest import has_entry
+from hamcrest import is_not
 from xivo_test_helpers import until
 
 from .test_api.base import IntegrationTest
@@ -97,6 +100,38 @@ class TestSwitchboardCallsQueued(TestSwitchboards):
                                                                         new_channel.id))))))
 
         until.assert_(event_received, tries=3)
+
+    def test_given_one_call_queued_when_hangup_then_bus_event(self):
+        switchboard_uuid = 'my-switchboard-uuid'
+        bus_events = self.bus.accumulator('switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid))
+        self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
+        new_channel = self.ari.channels.originate(endpoint=ENDPOINT_AUTOANSWER,
+                                                  app=STASIS_APP,
+                                                  appArgs=[STASIS_APP_QUEUE, switchboard_uuid])
+
+        until.true(bus_events.accumulate, tries=3)
+
+        new_channel.hangup()
+
+        def event_received():
+            assert_that(bus_events.accumulate(),
+                        contains(has_entry('data',
+                                           has_entry('items',
+                                                     is_not(empty()))),
+                                 has_entry('data',
+                                           has_entry('items',
+                                                     empty()))))
+
+        until.assert_(event_received, tries=3)
+
+
+    @unittest.skip
+    def test_given_one_call_queued_answered_held_when_unhold_then_no_queued_calls_updated_bus_event(self):
+        '''
+        To be implemented when holding calls will be possible, testing that
+        WAZO_SWITCHBOARD_QUEUE is reset correctly when leaving the queue
+        '''
+        pass
 
 
 class TestSwitchboardNoConfd(IntegrationTest):
