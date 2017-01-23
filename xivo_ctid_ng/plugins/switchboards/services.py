@@ -13,9 +13,10 @@ BRIDGE_QUEUE_ID = 'switchboard-{uuid}-queue'
 
 class SwitchboardsService(object):
 
-    def __init__(self, ari, confd):
+    def __init__(self, ari, confd, notifier):
         self._ari = ari
         self._confd = confd
+        self._notifier = notifier
 
     def queued_calls(self, switchboard_uuid):
         if not Switchboard(switchboard_uuid, self._confd).exists():
@@ -50,3 +51,5 @@ class SwitchboardsService(object):
 
         self._ari.channels.get(channelId=channel_id).answer()
         bridge.addChannel(channel=channel_id)
+
+        self._notifier.queued_calls(switchboard_uuid, self.queued_calls(switchboard_uuid))

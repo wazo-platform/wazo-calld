@@ -4,6 +4,7 @@
 
 from ari.exceptions import ARINotInStasis
 from hamcrest import assert_that
+from hamcrest import contains
 from hamcrest import contains_inanyorder
 from hamcrest import empty
 from hamcrest import equal_to
@@ -79,6 +80,23 @@ class TestSwitchboardCallsQueued(TestSwitchboards):
                                                                       has_entry('id', new_channel_2.id))))
 
         until.assert_(assert_function, tries=3)
+
+    def test_given_no_calls_when_new_queued_call_then_bus_event(self):
+        switchboard_uuid = 'my-switchboard-uuid'
+        bus_events = self.bus.accumulator('switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid))
+        self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
+        new_channel = self.ari.channels.originate(endpoint=ENDPOINT_AUTOANSWER,
+                                                  app=STASIS_APP,
+                                                  appArgs=[STASIS_APP_QUEUE, switchboard_uuid])
+
+        def event_received():
+            assert_that(bus_events.accumulate(),
+                        contains(has_entry('data',
+                                           has_entry('items',
+                                                     contains(has_entry('id',
+                                                                        new_channel.id))))))
+
+        until.assert_(event_received, tries=3)
 
 
 class TestSwitchboardNoConfd(IntegrationTest):

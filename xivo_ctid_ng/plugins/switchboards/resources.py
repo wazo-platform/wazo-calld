@@ -13,7 +13,7 @@ class QueuedCallSchema(Schema):
     caller_id_name = fields.String()
     caller_id_number = fields.String()
 
-schema = QueuedCallSchema()
+queued_call_schema = QueuedCallSchema()
 
 
 class SwitchboardCallsQueuedResource(AuthResource):
@@ -25,4 +25,4 @@ class SwitchboardCallsQueuedResource(AuthResource):
     def get(self, switchboard_uuid):
         calls = self._service.queued_calls(switchboard_uuid)
 
-        return {'items': schema.dump(calls, many=True).data}
+        return {'items': queued_call_schema.dump(calls, many=True).data}
