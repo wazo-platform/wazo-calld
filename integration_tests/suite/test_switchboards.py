@@ -52,7 +52,7 @@ class TestSwitchboards(RealAsteriskIntegrationTest):
         except StopIteration:
             return False
 
-    def latest_chan_test_channel(self):
+    def latest_chantest_channel(self):
         chan_test_channels = [channel for channel in self.ari.channels.list()
                               if channel.json['name'].startswith('Test/')]
         return max(chan_test_channels, key=attrgetter('id'))
@@ -226,7 +226,7 @@ class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
 
         self.ctid_ng.switchboard_answer_queued_call(switchboard_uuid, caller_call_id, token)
 
-        operator_channel = self.latest_chan_test_channel()
+        operator_channel = self.latest_chantest_channel()
         until.true(self.channels_are_bridged, operator_channel, new_channel, tries=10)
 
 
