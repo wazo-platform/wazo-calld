@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) 2015 Avencall
+# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
 # Copyright (C) 2016 Proformatique
 # SPDX-License-Identifier: GPL-3.0+
 
@@ -87,6 +87,13 @@ def lines_of_user(user_uuid):
     return jsonify({
         'items': _responses['user_lines'].get(user_uuid, [])
     })
+
+
+@app.route('/1.1/switchboards/<switchboard_uuid>')
+def switchboard(switchboard_uuid):
+    if switchboard_uuid not in _responses['switchboards']:
+        return '', 404
+    return jsonify(_responses['switchboards'][switchboard_uuid])
 
 
 if __name__ == '__main__':

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) 2015-2016 The Wazo Authors  (see AUTHORS file)
+# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import requests
@@ -36,6 +36,13 @@ class ConfdClient(object):
         url = self.url('_set_response')
         body = {'response': 'user_lines',
                 'content': content}
+        requests.post(url, json=body, verify=False)
+
+    def set_switchboards(self, *mock_switchboards):
+        url = self.url('_set_response')
+        body = {'response': 'switchboards',
+                'content': {switchboard.uuid(): switchboard.to_dict() for switchboard in mock_switchboards}}
+
         requests.post(url, json=body, verify=False)
 
     def reset(self):
@@ -82,4 +89,20 @@ class MockLine(object):
             'name': self._name,
             'protocol': self._protocol,
             'context': self._context,
+        }
+
+
+class MockSwitchboard(object):
+
+    def __init__(self, uuid, name=None):
+        self._uuid = uuid
+        self._name = name
+
+    def uuid(self):
+        return self._uuid
+
+    def to_dict(self):
+        return {
+            'uuid': self._uuid,
+            'name': self._name
         }

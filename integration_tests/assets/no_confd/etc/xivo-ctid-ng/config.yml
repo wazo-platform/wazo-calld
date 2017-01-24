@@ -40,6 +40,7 @@ confd:
 enabled_plugins:
   - calls
   - status
+  - switchboards
 
 service_discovery:
   enabled: false

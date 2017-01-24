@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) 2015-2016 The Wazo Authors  (see AUTHORS file)
+# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import json
@@ -457,6 +457,24 @@ class CtidNgClient(object):
                               headers={'X-Auth-Token': token},
                               verify=False)
         return result
+
+    def switchboard_queued_calls(self, switchboard_uuid, token=VALID_TOKEN):
+        response = self.get_switchboard_queued_calls_result(switchboard_uuid, token)
+
+        assert_that(response.status_code, equal_to(200))
+        return response.json()
+
+    def get_switchboard_queued_calls_result(self, switchboard_uuid, token=None):
+        url = self.url('switchboards', switchboard_uuid, 'calls', 'queued')
+        return requests.get(url, headers={'X-Auth-Token': token}, verify=False)
+
+    def switchboard_answer_queued_call(self, switchboard_uuid, call_id, token):
+        response = self.put_switchboard_queued_call_answer_result(switchboard_uuid, call_id, token)
+        assert_that(response.status_code, equal_to(204))
+
+    def put_switchboard_queued_call_answer_result(self, switchboard_uuid, call_id, token=None):
+        url = self.url('switchboards', switchboard_uuid, 'calls', 'queued', call_id, 'answer')
+        return requests.put(url, headers={'X-Auth-Token': token}, verify=False)
 
     @contextmanager
     def send_no_content_type(self):
