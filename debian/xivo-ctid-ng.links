@@ -1,2 +1,3 @@
 /var/lib/consul/default_xivo_consul_config.yml /etc/xivo-ctid-ng/conf.d/050-xivo-consul-config.yml
 /var/lib/consul/default_xivo_consul_token.yml /etc/xivo-ctid-ng/conf.d/050-xivo-consul-token.yml
+etc/nginx/locations/https-available/xivo-ctid-ng /etc/nginx/locations/https-enabled/xivo-ctid-ng
