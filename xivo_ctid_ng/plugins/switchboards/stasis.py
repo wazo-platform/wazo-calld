@@ -25,12 +25,25 @@ class SwitchboardsStasis(object):
             return
         if len(event['args']) < 2:
             return
-        if event['args'][0] != 'switchboard_queue':
-            return
+        if event['args'][0] == 'switchboard_queue':
+            self._stasis_start_queue(event_objects, event)
+        elif event['args'][0] == 'switchboard_answer':
+            self._stasis_start_answer(event_objects, event)
 
+    def _stasis_start_queue(self, event_objects, event):
         switchboard_uuid = event['args'][1]
         channel = event_objects['channel']
         self._service.new_queued_call(switchboard_uuid, channel.id)
+
+    def _stasis_start_answer(self, event_objects, event):
+        # switchboard_uuid = event['args'][1]
+        caller_channel_id = event['args'][2]
+        operator_channel_id = event_objects['channel'].id
+
+        self._ari.channels.get(channelId=operator_channel_id).answer()
+        bridge = self._ari.bridges.create(type='mixing')
+        bridge.addChannel(channel=caller_channel_id)
+        bridge.addChannel(channel=operator_channel_id)
 
     def unqueue(self, channel, event):
         switchboard_uuid = channel.json['channelvars']['WAZO_SWITCHBOARD_QUEUE']

@@ -7,12 +7,27 @@ paths:
         - switchboards
       parameters:
         - $ref: '#/parameters/SwitchboardUUID'
-
       responses:
         '200':
           description: List of calls
           schema:
             $ref: '#/definitions/SwitchboardQueuedCalls'
+        '404':
+          $ref: '#/responses/NoSuchSwitchboard'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+  /switchboards/{switchboard_uuid}/calls/queued/{call_id}/answer:
+    put:
+      summary: Answer the specified queued call
+      description: '**Required ACL:** `ctid-ng.switchboards.{switchboard_uuid}.calls.queued.{call_id}.answer.update`'
+      tags:
+        - switchboards
+      parameters:
+        - $ref: '#/parameters/SwitchboardUUID'
+        - $ref: '#/parameters/CallID'
+      responses:
+        '204':
+          description: Answerer was correctly originated
         '404':
           $ref: '#/responses/NoSuchSwitchboard'
         '503':

@@ -4,6 +4,9 @@
 
 from ari.exceptions import ARINotFound
 
+from xivo_ctid_ng.core.ari_ import APPLICATION_NAME
+from xivo_ctid_ng.helpers.confd import User
+
 from .call import QueuedCall
 from .confd import Switchboard
 from .exceptions import NoSuchSwitchboard
@@ -55,3 +58,10 @@ class SwitchboardsService(object):
         bridge.addChannel(channel=channel_id)
 
         self._notifier.queued_calls(switchboard_uuid, self.queued_calls(switchboard_uuid))
+
+    def answer_queued_call(self, switchboard_uuid, call_id, user_uuid):
+        endpoint = User(user_uuid, self._confd).main_line().interface()
+
+        self._ari.channels.originate(endpoint=endpoint,
+                                     app=APPLICATION_NAME,
+                                     appArgs=['switchboard_answer', switchboard_uuid, call_id])

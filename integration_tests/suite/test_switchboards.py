@@ -4,7 +4,7 @@
 
 import unittest
 
-from ari.exceptions import ARINotInStasis
+from ari.exceptions import ARINotFound, ARINotInStasis
 from hamcrest import assert_that
 from hamcrest import contains
 from hamcrest import contains_inanyorder
@@ -12,12 +12,16 @@ from hamcrest import empty
 from hamcrest import equal_to
 from hamcrest import has_entry
 from hamcrest import is_not
+from operator import attrgetter
 from xivo_test_helpers import until
 
+from .test_api.auth import MockUserToken
 from .test_api.base import IntegrationTest
 from .test_api.base import RealAsteriskIntegrationTest
 from .test_api.constants import VALID_TOKEN
 from .test_api.confd import MockSwitchboard
+from .test_api.confd import MockLine
+from .test_api.confd import MockUser
 
 ENDPOINT_AUTOANSWER = 'Test/integration-caller/autoanswer'
 STASIS_APP = 'callcontrol'
@@ -35,6 +39,21 @@ class TestSwitchboards(RealAsteriskIntegrationTest):
             return True
         except ARINotInStasis:
             return False
+
+    def channels_are_bridged(self, caller, callee):
+        try:
+            next(bridge for bridge in self.ari.bridges.list()
+                 if (caller.id in bridge.json['channels'] and
+                     callee.id in bridge.json['channels'] and
+                     bridge.json['bridge_type'] == 'mixing'))
+            return True
+        except StopIteration:
+            return False
+
+    def latest_chan_test_channel(self):
+        chan_test_channels = [channel for channel in self.ari.channels.list()
+                              if channel.json['name'].startswith('Test/')]
+        return max(chan_test_channels, key=attrgetter('id'))
 
 
 class TestSwitchboardCallsQueued(TestSwitchboards):
@@ -124,7 +143,6 @@ class TestSwitchboardCallsQueued(TestSwitchboards):
 
         until.assert_(event_received, tries=3)
 
-
     @unittest.skip
     def test_given_one_call_queued_answered_held_when_unhold_then_no_queued_calls_updated_bus_event(self):
         '''
@@ -132,6 +150,30 @@ class TestSwitchboardCallsQueued(TestSwitchboards):
         WAZO_SWITCHBOARD_QUEUE is reset correctly when leaving the queue
         '''
         pass
+
+
+class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
+
+    def test_given_one_queued_call_and_one_operator_when_answer_then_operator_is_bridged(self):
+        token = 'my-token'
+        user_uuid = 'my-user-uuid'
+        line_id = 'my-line-id'
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
+        switchboard_uuid = 'my-switchboard-uuid'
+        self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
+        self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
+        self.confd.set_lines(MockLine(id=line_id, name='switchboard-operator/autoanswer', protocol='test'))
+        bus_events = self.bus.accumulator('switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid))
+        new_channel = self.ari.channels.originate(endpoint=ENDPOINT_AUTOANSWER,
+                                                  app=STASIS_APP,
+                                                  appArgs=[STASIS_APP_QUEUE, switchboard_uuid])
+        caller_call_id = new_channel.id
+        until.true(bus_events.accumulate, tries=3)
+
+        self.ctid_ng.switchboard_answer_queued_call(switchboard_uuid, caller_call_id, token)
+
+        operator_channel = self.latest_chan_test_channel()
+        until.true(self.channels_are_bridged, operator_channel, new_channel, tries=10)
 
 
 class TestSwitchboardNoConfd(IntegrationTest):
