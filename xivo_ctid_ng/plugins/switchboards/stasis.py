@@ -4,6 +4,8 @@
 
 import logging
 
+from ari.exceptions import ARINotFound
+
 from .exceptions import NoSuchSwitchboard
 
 logger = logging.getLogger(__name__)
@@ -36,14 +38,23 @@ class SwitchboardsStasis(object):
         self._service.new_queued_call(switchboard_uuid, channel.id)
 
     def _stasis_start_answer(self, event_objects, event):
-        # switchboard_uuid = event['args'][1]
+        switchboard_uuid = event['args'][1]
         caller_channel_id = event['args'][2]
-        operator_channel_id = event_objects['channel'].id
+        operator_channel = event_objects['channel']
 
-        self._ari.channels.get(channelId=operator_channel_id).answer()
+        try:
+            self._ari.channels.get(channelId=caller_channel_id)
+        except ARINotFound:
+            logger.warning('caller hung up %s, cancelling answer from switchboard %s',
+                           caller_channel_id,
+                           switchboard_uuid)
+            operator_channel.hangup()
+            return
+
+        operator_channel.answer()
         bridge = self._ari.bridges.create(type='mixing')
         bridge.addChannel(channel=caller_channel_id)
-        bridge.addChannel(channel=operator_channel_id)
+        bridge.addChannel(channel=operator_channel.id)
 
     def unqueue(self, channel, event):
         switchboard_uuid = channel.json['channelvars']['WAZO_SWITCHBOARD_QUEUE']

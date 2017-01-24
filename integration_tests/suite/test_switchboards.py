@@ -23,6 +23,7 @@ from .test_api.constants import VALID_TOKEN
 from .test_api.confd import MockSwitchboard
 from .test_api.confd import MockLine
 from .test_api.confd import MockUser
+from .test_api.hamcrest_ import HamcrestARIChannel
 
 ENDPOINT_AUTOANSWER = 'Test/integration-caller/autoanswer'
 STASIS_APP = 'callcontrol'
@@ -34,6 +35,12 @@ CALL_ID_NOT_FOUND = '99999999.99'
 class TestSwitchboards(RealAsteriskIntegrationTest):
 
     asset = 'real_asterisk'
+
+    def setUp(self):
+        super(TestSwitchboards, self).setUp()
+        self.c = HamcrestARIChannel(self.ari)
+        self.auth.reset()
+        self.confd.reset()
 
     def channel_is_in_stasis(self, channel_id):
         try:
@@ -227,7 +234,34 @@ class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
         self.ctid_ng.switchboard_answer_queued_call(switchboard_uuid, caller_call_id, token)
 
         operator_channel = self.latest_chantest_channel()
-        until.true(self.channels_are_bridged, operator_channel, new_channel, tries=10)
+        until.true(self.channels_are_bridged, operator_channel, new_channel, tries=3)
+
+    def test_given_operator_is_answering_a_hungup_channel_when_answer_then_operator_is_hungup(self):
+        token = 'my-token'
+        user_uuid = 'my-user-uuid'
+        line_id = 'my-line-id'
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
+        switchboard_uuid = 'my-switchboard-uuid'
+        self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
+        self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
+        self.confd.set_lines(MockLine(id=line_id, name='switchboard-operator', protocol='test'))
+        bus_events = self.bus.accumulator('switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid))
+        new_channel = self.ari.channels.originate(endpoint=ENDPOINT_AUTOANSWER,
+                                                  app=STASIS_APP,
+                                                  appArgs=[STASIS_APP_QUEUE, switchboard_uuid])
+        caller_call_id = new_channel.id
+        until.true(bus_events.accumulate, tries=3)
+        self.ctid_ng.switchboard_answer_queued_call(switchboard_uuid, caller_call_id, token)
+        new_channel.hangup()
+
+        operator_channel = self.latest_chantest_channel()
+
+        self.chan_test.answer_channel(operator_channel)
+
+        def operator_is_hungup():
+            assert_that(operator_channel.id, self.c.is_hungup())
+
+        until.assert_(operator_is_hungup, tries=3)
 
 
 class TestSwitchboardNoConfd(IntegrationTest):
