@@ -171,6 +171,43 @@ class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
         assert_that(result.status_code, equal_to(404))
         assert_that(result.json()['message'].lower(), contains_string('call'))
 
+    def test_given_token_with_no_user_when_answer_then_400(self):
+        token = 'my-token'
+        user_uuid = 'my-user-uuid'
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
+        switchboard_uuid = 'my-switchboard-uuid'
+        self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
+        bus_events = self.bus.accumulator('switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid))
+        new_channel = self.ari.channels.originate(endpoint=ENDPOINT_AUTOANSWER,
+                                                  app=STASIS_APP,
+                                                  appArgs=[STASIS_APP_QUEUE, switchboard_uuid])
+        caller_call_id = new_channel.id
+        until.true(bus_events.accumulate, tries=3)
+
+        result = self.ctid_ng.put_switchboard_queued_call_answer_result(switchboard_uuid, caller_call_id, token)
+
+        assert_that(result.status_code, equal_to(400))
+        assert_that(result.json()['message'].lower(), contains_string('user'))
+
+    def test_given_operator_has_no_line_when_answer_then_400(self):
+        token = 'my-token'
+        user_uuid = 'my-user-uuid'
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
+        switchboard_uuid = 'my-switchboard-uuid'
+        self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
+        self.confd.set_users(MockUser(uuid=user_uuid))
+        bus_events = self.bus.accumulator('switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid))
+        new_channel = self.ari.channels.originate(endpoint=ENDPOINT_AUTOANSWER,
+                                                  app=STASIS_APP,
+                                                  appArgs=[STASIS_APP_QUEUE, switchboard_uuid])
+        caller_call_id = new_channel.id
+        until.true(bus_events.accumulate, tries=3)
+
+        result = self.ctid_ng.put_switchboard_queued_call_answer_result(switchboard_uuid, caller_call_id, token)
+
+        assert_that(result.status_code, equal_to(400))
+        assert_that(result.json()['message'].lower(), contains_string('line'))
+
     def test_given_one_queued_call_and_one_operator_when_answer_then_operator_is_bridged(self):
         token = 'my-token'
         user_uuid = 'my-user-uuid'
