@@ -4,9 +4,10 @@
 
 import unittest
 
-from ari.exceptions import ARINotFound, ARINotInStasis
+from ari.exceptions import ARINotInStasis
 from hamcrest import assert_that
 from hamcrest import contains
+from hamcrest import contains_string
 from hamcrest import contains_inanyorder
 from hamcrest import empty
 from hamcrest import equal_to
@@ -27,6 +28,7 @@ ENDPOINT_AUTOANSWER = 'Test/integration-caller/autoanswer'
 STASIS_APP = 'callcontrol'
 STASIS_APP_QUEUE = 'switchboard_queue'
 UUID_NOT_FOUND = '99999999-9999-9999-9999-999999999999'
+CALL_ID_NOT_FOUND = '99999999.99'
 
 
 class TestSwitchboards(RealAsteriskIntegrationTest):
@@ -153,6 +155,21 @@ class TestSwitchboardCallsQueued(TestSwitchboards):
 
 
 class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
+
+    def test_given_no_queued_call_when_answer_then_404(self):
+        token = 'my-token'
+        user_uuid = 'my-user-uuid'
+        line_id = 'my-line-id'
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
+        switchboard_uuid = 'my-switchboard-uuid'
+        self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
+        self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
+        self.confd.set_lines(MockLine(id=line_id, name='switchboard-operator/autoanswer', protocol='test'))
+
+        result = self.ctid_ng.put_switchboard_queued_call_answer_result(switchboard_uuid, CALL_ID_NOT_FOUND, token)
+
+        assert_that(result.status_code, equal_to(404))
+        assert_that(result.json()['message'].lower(), contains_string('call'))
 
     def test_given_one_queued_call_and_one_operator_when_answer_then_operator_is_bridged(self):
         token = 'my-token'

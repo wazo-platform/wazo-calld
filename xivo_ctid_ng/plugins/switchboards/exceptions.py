@@ -16,3 +16,16 @@ class NoSuchSwitchboard(APIException):
                 'switchboard_uuid': switchboard_uuid
             }
         )
+
+
+class NoSuchCall(APIException):
+
+    def __init__(self, call_id):
+        super(NoSuchCall, self).__init__(
+            status_code=404,
+            message='No such call',
+            error_id='no-such-call',
+            details={
+                'call_id': call_id
+            }
+        )

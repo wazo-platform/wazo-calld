@@ -9,6 +9,7 @@ from xivo_ctid_ng.helpers.confd import User
 
 from .call import QueuedCall
 from .confd import Switchboard
+from .exceptions import NoSuchCall
 from .exceptions import NoSuchSwitchboard
 
 BRIDGE_QUEUE_ID = 'switchboard-{uuid}-queue'
@@ -60,6 +61,11 @@ class SwitchboardsService(object):
         self._notifier.queued_calls(switchboard_uuid, self.queued_calls(switchboard_uuid))
 
     def answer_queued_call(self, switchboard_uuid, call_id, user_uuid):
+        try:
+            self._ari.channels.get(channelId=call_id)
+        except ARINotFound:
+            raise NoSuchCall(call_id)
+
         endpoint = User(user_uuid, self._confd).main_line().interface()
 
         self._ari.channels.originate(endpoint=endpoint,
