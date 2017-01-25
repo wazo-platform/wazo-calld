@@ -2,7 +2,9 @@ paths:
   /switchboards/{switchboard_uuid}/calls/queued:
     get:
       summary: List calls queued in the switchboard
-      description: '**Required ACL:** `ctid-ng.switchboards.{switchboard_uuid}.calls.queued.read`'
+      description: "
+        **Required ACL:** `ctid-ng.switchboards.{switchboard_uuid}.calls.queued.read`\n\n
+        **Warning:** This endpoint is still in development and may change in the future."
       tags:
         - switchboards
       parameters:
@@ -19,7 +21,9 @@ paths:
   /switchboards/{switchboard_uuid}/calls/queued/{call_id}/answer:
     put:
       summary: Answer the specified queued call
-      description: '**Required ACL:** `ctid-ng.switchboards.{switchboard_uuid}.calls.queued.{call_id}.answer.update`'
+      description: "
+        **Required ACL:** `ctid-ng.switchboards.{switchboard_uuid}.calls.queued.{call_id}.answer.update`\n\n
+        **Warning:** This endpoint is still in development and may change in the future."
       tags:
         - switchboards
       parameters:
