@@ -39,7 +39,6 @@ class TestSwitchboards(RealAsteriskIntegrationTest):
     def setUp(self):
         super(TestSwitchboards, self).setUp()
         self.c = HamcrestARIChannel(self.ari)
-        self.auth.reset()
         self.confd.reset()
 
     def channel_is_in_stasis(self, channel_id):
