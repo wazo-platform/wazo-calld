@@ -12,9 +12,9 @@ case "$1" in
 		fi
 		chown www-data: "$LOG_FILENAME"
 
-		if dpkg --compare-versions "$2" lt '17.03'; then
+		if dpkg --compare-versions "$2" lt '17.02'; then
 			ln -sf  /etc/nginx/locations/https-available/$DAEMONNAME \
-					/etc/nginx/locations/https-enabled/$DAEMONNAME
+				/etc/nginx/locations/https-enabled/$DAEMONNAME
 		fi
 
 	;;
