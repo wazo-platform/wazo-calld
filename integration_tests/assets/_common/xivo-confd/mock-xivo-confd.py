@@ -14,9 +14,10 @@ from flask import request
 logging.basicConfig(level=logging.DEBUG)
 
 _EMPTY_RESPONSES = {
-    'users': {},
     'lines': {},
+    'switchboards': {},
     'user_lines': {},
+    'users': {},
 }
 
 app = Flask(__name__)
