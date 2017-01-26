@@ -103,6 +103,7 @@ enabled_plugins:
   - chats
   - presences
   - status
+  - switchboards
   - transfers
   - voicemails
 
