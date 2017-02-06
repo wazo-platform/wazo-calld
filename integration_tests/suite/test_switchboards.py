@@ -12,6 +12,8 @@ from hamcrest import contains_inanyorder
 from hamcrest import empty
 from hamcrest import equal_to
 from hamcrest import has_entry
+from hamcrest import has_entries
+from hamcrest import has_item
 from hamcrest import is_not
 from operator import attrgetter
 from xivo_test_helpers import until
@@ -252,6 +254,37 @@ class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
 
         operator_channel = self.ari.channels.get(channelId=result['call_id'])
         until.true(self.channels_are_bridged, operator_channel, new_channel, tries=3)
+
+    def test_given_one_queued_call_and_one_operator_when_answer_then_bus_event(self):
+        token = 'my-token'
+        user_uuid = 'my-user-uuid'
+        line_id = 'my-line-id'
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
+        switchboard_uuid = 'my-switchboard-uuid'
+        self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
+        self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
+        self.confd.set_lines(MockLine(id=line_id, name='switchboard-operator/autoanswer', protocol='test'))
+        queued_bus_events = self.bus.accumulator('switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid))
+        answered_bus_events = self.bus.accumulator('switchboards.{uuid}.calls.queued.*.answer.updated'.format(uuid=switchboard_uuid))
+        new_channel = self.ari.channels.originate(endpoint=ENDPOINT_AUTOANSWER,
+                                                  app=STASIS_APP,
+                                                  appArgs=[STASIS_APP_QUEUE, switchboard_uuid])
+        queued_call_id = new_channel.id
+        until.true(queued_bus_events.accumulate, tries=3)
+
+        result = self.ctid_ng.switchboard_answer_queued_call(switchboard_uuid, queued_call_id, token)
+
+        def answered_event_received():
+            assert_that(answered_bus_events.accumulate(), has_item(has_entries({
+                'name': 'switchboard_queued_call_answered',
+                'data': has_entries({
+                    'switchboard_uuid': switchboard_uuid,
+                    'operator_call_id': result['call_id'],
+                    'queued_call_id': queued_call_id
+                })
+            })))
+
+        until.assert_(answered_event_received, tries=3)
 
     def test_given_operator_is_answering_a_hungup_channel_when_answer_then_operator_is_hungup(self):
         token = 'my-token'

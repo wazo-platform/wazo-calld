@@ -56,6 +56,8 @@ class SwitchboardsStasis(object):
         bridge.addChannel(channel=queued_channel_id)
         bridge.addChannel(channel=operator_channel.id)
 
+        self._notifier.queued_call_answered(switchboard_uuid, operator_channel.id, queued_channel_id)
+
     def unqueue(self, channel, event):
         switchboard_uuid = channel.json['channelvars']['WAZO_SWITCHBOARD_QUEUE']
 
