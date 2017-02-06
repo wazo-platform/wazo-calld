@@ -30,8 +30,10 @@ paths:
         - $ref: '#/parameters/SwitchboardUUID'
         - $ref: '#/parameters/CallID'
       responses:
-        '204':
+        '200':
           description: Answerer was correctly originated
+          schema:
+            $ref: '#/definitions/CallID'
         '400':
           $ref: '#/responses/InvalidRequest'
         '404':

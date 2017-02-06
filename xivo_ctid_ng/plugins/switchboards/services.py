@@ -71,6 +71,8 @@ class SwitchboardsService(object):
 
         endpoint = User(user_uuid, self._confd).main_line().interface()
 
-        self._ari.channels.originate(endpoint=endpoint,
-                                     app=APPLICATION_NAME,
-                                     appArgs=['switchboard_answer', switchboard_uuid, call_id])
+        channel = self._ari.channels.originate(endpoint=endpoint,
+                                               app=APPLICATION_NAME,
+                                               appArgs=['switchboard_answer', switchboard_uuid, call_id])
+
+        return channel.id

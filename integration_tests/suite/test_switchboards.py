@@ -248,9 +248,9 @@ class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
         caller_call_id = new_channel.id
         until.true(bus_events.accumulate, tries=3)
 
-        self.ctid_ng.switchboard_answer_queued_call(switchboard_uuid, caller_call_id, token)
+        result = self.ctid_ng.switchboard_answer_queued_call(switchboard_uuid, caller_call_id, token)
 
-        operator_channel = self.latest_chantest_channel()
+        operator_channel = self.ari.channels.get(channelId=result['call_id'])
         until.true(self.channels_are_bridged, operator_channel, new_channel, tries=3)
 
     def test_given_operator_is_answering_a_hungup_channel_when_answer_then_operator_is_hungup(self):
@@ -268,10 +268,9 @@ class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
                                                   appArgs=[STASIS_APP_QUEUE, switchboard_uuid])
         caller_call_id = new_channel.id
         until.true(bus_events.accumulate, tries=3)
-        self.ctid_ng.switchboard_answer_queued_call(switchboard_uuid, caller_call_id, token)
+        result = self.ctid_ng.switchboard_answer_queued_call(switchboard_uuid, caller_call_id, token)
+        operator_channel = self.ari.channels.get(channelId=result['call_id'])
         new_channel.hangup()
-
-        operator_channel = self.latest_chantest_channel()
 
         self.chan_test.answer_channel(operator_channel)
 

@@ -39,6 +39,6 @@ class SwitchboardCallsQueuedAnswerResource(AuthResource):
     def put(self, switchboard_uuid, call_id):
         user_uuid = get_token_user_uuid_from_request(self._auth_client)
 
-        self._service.answer_queued_call(switchboard_uuid, call_id, user_uuid)
+        call_id = self._service.answer_queued_call(switchboard_uuid, call_id, user_uuid)
 
-        return '', 204
+        return {'call_id': call_id}, 200
