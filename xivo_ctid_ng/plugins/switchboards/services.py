@@ -61,6 +61,9 @@ class SwitchboardsService(object):
         self._notifier.queued_calls(switchboard_uuid, self.queued_calls(switchboard_uuid))
 
     def answer_queued_call(self, switchboard_uuid, call_id, user_uuid):
+        if not Switchboard(switchboard_uuid, self._confd).exists():
+            raise NoSuchSwitchboard(switchboard_uuid)
+
         try:
             self._ari.channels.get(channelId=call_id)
         except ARINotFound:
