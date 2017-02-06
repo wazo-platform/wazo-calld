@@ -32,6 +32,8 @@ paths:
       responses:
         '204':
           description: Answerer was correctly originated
+        '400':
+          $ref: '#/responses/InvalidRequest'
         '404':
           $ref: '#/responses/NoSuchSwitchboard'
         '503':
