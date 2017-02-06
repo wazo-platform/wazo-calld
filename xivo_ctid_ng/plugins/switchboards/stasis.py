@@ -39,21 +39,21 @@ class SwitchboardsStasis(object):
 
     def _stasis_start_answer(self, event_objects, event):
         switchboard_uuid = event['args'][1]
-        caller_channel_id = event['args'][2]
+        queued_channel_id = event['args'][2]
         operator_channel = event_objects['channel']
 
         try:
-            self._ari.channels.get(channelId=caller_channel_id)
+            self._ari.channels.get(channelId=queued_channel_id)
         except ARINotFound:
-            logger.warning('caller hung up %s, cancelling answer from switchboard %s',
-                           caller_channel_id,
+            logger.warning('queued call %s hung up, cancelling answer from switchboard %s',
+                           queued_channel_id,
                            switchboard_uuid)
             operator_channel.hangup()
             return
 
         operator_channel.answer()
         bridge = self._ari.bridges.create(type='mixing')
-        bridge.addChannel(channel=caller_channel_id)
+        bridge.addChannel(channel=queued_channel_id)
         bridge.addChannel(channel=operator_channel.id)
 
     def unqueue(self, channel, event):
