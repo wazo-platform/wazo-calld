@@ -60,19 +60,19 @@ class SwitchboardsService(object):
 
         self._notifier.queued_calls(switchboard_uuid, self.queued_calls(switchboard_uuid))
 
-    def answer_queued_call(self, switchboard_uuid, call_id, user_uuid):
+    def answer_queued_call(self, switchboard_uuid, queued_call_id, user_uuid):
         if not Switchboard(switchboard_uuid, self._confd).exists():
             raise NoSuchSwitchboard(switchboard_uuid)
 
         try:
-            self._ari.channels.get(channelId=call_id)
+            self._ari.channels.get(channelId=queued_call_id)
         except ARINotFound:
-            raise NoSuchCall(call_id)
+            raise NoSuchCall(queued_call_id)
 
         endpoint = User(user_uuid, self._confd).main_line().interface()
 
         channel = self._ari.channels.originate(endpoint=endpoint,
                                                app=APPLICATION_NAME,
-                                               appArgs=['switchboard_answer', switchboard_uuid, call_id])
+                                               appArgs=['switchboard_answer', switchboard_uuid, queued_call_id])
 
         return channel.id
