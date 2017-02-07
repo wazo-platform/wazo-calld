@@ -31,16 +31,17 @@ class SwitchboardsStasis(object):
             self._notifier.queued_calls(switchboard['uuid'], queued_calls)
 
     def stasis_start(self, event_objects, event):
-        if len(event['args']) < 1:
+        if len(event['args']) < 2:
             return
-        if event['args'][0] == 'switchboard_queue':
+        # app_instance = event['args'][0]
+        if event['args'][1] == 'switchboard_queue':
             self._stasis_start_queue(event_objects, event)
-        elif event['args'][0] == 'switchboard_answer':
+        elif event['args'][1] == 'switchboard_answer':
             self._stasis_start_answer(event_objects, event)
 
     def _stasis_start_queue(self, event_objects, event):
         try:
-            switchboard_uuid = event['args'][1]
+            switchboard_uuid = event['args'][2]
         except IndexError:
             logger.warning('Ignoring invalid StasisStart event %s', event)
             return
@@ -49,8 +50,8 @@ class SwitchboardsStasis(object):
 
     def _stasis_start_answer(self, event_objects, event):
         try:
-            switchboard_uuid = event['args'][1]
-            queued_channel_id = event['args'][2]
+            switchboard_uuid = event['args'][2]
+            queued_channel_id = event['args'][3]
         except IndexError:
             logger.warning('Ignoring invalid StasisStart event %s', event)
             return
