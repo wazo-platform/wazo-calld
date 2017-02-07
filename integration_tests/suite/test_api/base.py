@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015-2016 by Avencall
+# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
 # Copyright 2016 by Proformatique Inc.
 # SPDX-License-Identifier: GPL-3.0+
 
@@ -9,6 +9,7 @@ import logging
 import tempfile
 
 from ari.exceptions import ARINotFound
+from contextlib import contextmanager
 from requests.packages import urllib3
 from xivo_test_helpers import until
 from xivo_test_helpers.asset_launching_test_case import AssetLaunchingTestCase
@@ -112,6 +113,28 @@ class IntegrationTest(AssetLaunchingTestCase):
     @classmethod
     def wait_for_ctid_ng_to_connect_to_bus(cls):
         until.true(cls.bus.is_up, tries=5)
+
+    @classmethod
+    @contextmanager
+    def _ctid_ng_stopped(cls):
+        cls._stop_ctid_ng()
+        yield
+        cls._start_ctid_ng()
+
+    @classmethod
+    def _restart_ctid_ng(cls):
+        cls._stop_ctid_ng()
+        cls._start_ctid_ng()
+
+    @classmethod
+    def _stop_ctid_ng(cls):
+        cls.stop_service('ctid-ng')
+
+    @classmethod
+    def _start_ctid_ng(cls):
+        cls.start_service('ctid-ng')
+        cls.reset_clients()
+        until.true(cls.ctid_ng.is_up, tries=5)
 
 
 class RealAsteriskIntegrationTest(IntegrationTest):
