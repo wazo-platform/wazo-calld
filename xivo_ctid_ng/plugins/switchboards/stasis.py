@@ -23,9 +23,7 @@ class SwitchboardsStasis(object):
         self._ari.on_channel_event('ChannelLeftBridge', self.unqueue)
 
     def stasis_start(self, event_objects, event):
-        if 'args' not in event:
-            return
-        if len(event['args']) < 2:
+        if len(event['args']) < 1:
             return
         if event['args'][0] == 'switchboard_queue':
             self._stasis_start_queue(event_objects, event)
@@ -33,13 +31,21 @@ class SwitchboardsStasis(object):
             self._stasis_start_answer(event_objects, event)
 
     def _stasis_start_queue(self, event_objects, event):
-        switchboard_uuid = event['args'][1]
+        try:
+            switchboard_uuid = event['args'][1]
+        except IndexError:
+            logger.warning('Ignoring invalid StasisStart event %s', event)
+            return
         channel = event_objects['channel']
         self._service.new_queued_call(switchboard_uuid, channel.id)
 
     def _stasis_start_answer(self, event_objects, event):
-        switchboard_uuid = event['args'][1]
-        queued_channel_id = event['args'][2]
+        try:
+            switchboard_uuid = event['args'][1]
+            queued_channel_id = event['args'][2]
+        except IndexError:
+            logger.warning('Ignoring invalid StasisStart event %s', event)
+            return
         operator_channel = event_objects['channel']
 
         try:
