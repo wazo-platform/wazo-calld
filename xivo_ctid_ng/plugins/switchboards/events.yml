@@ -1,0 +1,34 @@
+events:
+  switchboard_queued_calls_updated:
+    summary: Update of the list of queued calls in a switchboard
+    description: Sent when a call is queued, hung up while in queue or answered
+    routing_key: switchboards.{switchboard_uuid}.calls.queued.updated
+    required_acl: switchboards.{switchboard_uuid}.calls.queued.updated
+    schema:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              caller_id_name:
+                type: string
+              caller_id_number:
+                type: string
+  switchboard_queued_call_answered:
+    summary: A call queued in a switchboard has been answered by a member
+    description: The event is sent when the queued call is bridged, not when the answer action is requested
+    routing_key: switchboards.{switchboard_uuid}.calls.queued.{call_id}.answer.updated
+    required_acl: switchboards.{switchboard_uuid}.calls.queued.{call_id}.answer.updated
+    schema:
+      type: object
+      properties:
+        switchboard_uuid:
+          type: string
+        operator_call_id:
+          type: string
+        caller_call_id:
+          type: string
