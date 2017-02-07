@@ -4,6 +4,7 @@
 
 from ari.exceptions import ARINotFound
 
+from xivo.caller_id import assemble_caller_id
 from xivo_ctid_ng.core.ari_ import APPLICATION_NAME
 from xivo_ctid_ng.helpers.confd import User
 
@@ -65,14 +66,16 @@ class SwitchboardsService(object):
             raise NoSuchSwitchboard(switchboard_uuid)
 
         try:
-            self._ari.channels.get(channelId=queued_call_id)
+            queued_channel = self._ari.channels.get(channelId=queued_call_id)
         except ARINotFound:
             raise NoSuchCall(queued_call_id)
 
         endpoint = User(user_uuid, self._confd).main_line().interface()
+        caller_id = assemble_caller_id(queued_channel.json['caller']['name'], queued_channel.json['caller']['number']).encode('utf-8')
 
         channel = self._ari.channels.originate(endpoint=endpoint,
                                                app=APPLICATION_NAME,
-                                               appArgs=['switchboard_answer', switchboard_uuid, queued_call_id])
+                                               appArgs=['switchboard_answer', switchboard_uuid, queued_call_id],
+                                               callerId=caller_id)
 
         return channel.id

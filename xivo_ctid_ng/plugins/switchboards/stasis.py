@@ -52,6 +52,12 @@ class SwitchboardsStasis(object):
             return
 
         operator_channel.answer()
+        try:
+            operator_original_caller_id = operator_channel.getChannelVar(variable='XIVO_ORIGINAL_CALLER_ID')['value'].encode('utf-8')
+            operator_channel.setChannelVar(variable='CALLERID(all)', value=operator_original_caller_id)
+        except ARINotFound:
+            pass
+
         bridge = self._ari.bridges.create(type='mixing')
         bridge.addChannel(channel=queued_channel_id)
         bridge.addChannel(channel=operator_channel.id)
