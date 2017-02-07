@@ -5,6 +5,7 @@
 import logging
 
 from ari.exceptions import ARINotFound
+from xivo_ctid_ng.core.ari_ import APPLICATION_NAME
 
 from .exceptions import NoSuchSwitchboard
 
@@ -13,14 +14,21 @@ logger = logging.getLogger(__name__)
 
 class SwitchboardsStasis(object):
 
-    def __init__(self, ari, switchboard_notifier, switchboard_service):
+    def __init__(self, ari, confd, switchboard_notifier, switchboard_service):
         self._ari = ari
+        self._confd = confd
         self._notifier = switchboard_notifier
         self._service = switchboard_service
 
     def subscribe(self):
+        self._ari.on_application_registered(APPLICATION_NAME, self.notify_all_switchboard_queues)
         self._ari.on_channel_event('StasisStart', self.stasis_start)
         self._ari.on_channel_event('ChannelLeftBridge', self.unqueue)
+
+    def notify_all_switchboard_queues(self):
+        for switchboard in self._confd.switchboards.list()['items']:
+            queued_calls = self._service.queued_calls(switchboard['uuid'])
+            self._notifier.queued_calls(switchboard['uuid'], queued_calls)
 
     def stasis_start(self, event_objects, event):
         if len(event['args']) < 1:

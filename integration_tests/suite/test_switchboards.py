@@ -153,6 +153,30 @@ class TestSwitchboardCallsQueued(TestSwitchboards):
 
         until.assert_(event_received, tries=3)
 
+    def test_given_ctid_ng_stopped_and_queued_is_hung_up_when_ctid_ng_starts_then_bus_event(self):
+        switchboard_uuid = 'my-switchboard-uuid'
+        bus_events = self.bus.accumulator('switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid))
+        self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
+        new_channel = self.ari.channels.originate(endpoint=ENDPOINT_AUTOANSWER,
+                                                  app=STASIS_APP,
+                                                  appArgs=[STASIS_APP_QUEUE, switchboard_uuid])
+
+        until.true(bus_events.accumulate, tries=3)
+
+        with self._ctid_ng_stopped():
+            new_channel.hangup()
+
+        def event_received():
+            assert_that(bus_events.accumulate(),
+                        contains(has_entry('data',
+                                           has_entries({'items': is_not(empty()),
+                                                        'switchboard_uuid': switchboard_uuid})),
+                                 has_entry('data',
+                                           has_entries({'items': empty(),
+                                                        'switchboard_uuid': switchboard_uuid}))))
+
+        until.assert_(event_received, tries=3)
+
     @unittest.skip
     def test_given_one_call_queued_answered_held_when_unhold_then_no_queued_calls_updated_bus_event(self):
         '''

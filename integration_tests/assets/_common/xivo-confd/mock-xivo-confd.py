@@ -90,6 +90,11 @@ def lines_of_user(user_uuid):
     })
 
 
+@app.route('/1.1/switchboards')
+def switchboards():
+    return jsonify({'items': _responses['switchboards'].values()})
+
+
 @app.route('/1.1/switchboards/<switchboard_uuid>')
 def switchboard(switchboard_uuid):
     if switchboard_uuid not in _responses['switchboards']:
