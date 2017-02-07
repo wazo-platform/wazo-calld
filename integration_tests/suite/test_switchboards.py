@@ -337,7 +337,7 @@ class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
                                                                             'number': '1234'})))
 
         answered_bus_events = self.bus.accumulator('switchboards.{uuid}.calls.queued.*.answer.updated'.format(uuid=switchboard_uuid))
-        self.chan_test.answer_channel(operator_channel)
+        self.chan_test.answer_channel(operator_channel.id)
         until.true(answered_bus_events.accumulate, tries=3)
 
         operator_channel = self.ari.channels.get(channelId=operator_call_id)
@@ -360,13 +360,13 @@ class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
         queued_call_id = new_channel.id
         until.true(bus_events.accumulate, tries=3)
         result = self.ctid_ng.switchboard_answer_queued_call(switchboard_uuid, queued_call_id, token)
-        operator_channel = self.ari.channels.get(channelId=result['call_id'])
+        operator_channel_id = result['call_id']
         new_channel.hangup()
 
-        self.chan_test.answer_channel(operator_channel)
+        self.chan_test.answer_channel(operator_channel_id)
 
         def operator_is_hungup():
-            assert_that(operator_channel.id, self.c.is_hungup())
+            assert_that(operator_channel_id, self.c.is_hungup())
 
         until.assert_(operator_is_hungup, tries=3)
 

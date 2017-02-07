@@ -89,7 +89,7 @@ class TestTransfers(RealAsteriskIntegrationTest):
     def answer_recipient_channel(self, local_recipient_channel_id):
         recipient_channel = self.ari.channels.get(channelId=local_recipient_channel_id)
         real_recipient_channel = self.dereference_local_channel(recipient_channel)
-        self.chan_test.answer_channel(real_recipient_channel)
+        self.chan_test.answer_channel(real_recipient_channel.id)
 
     def same_linkedid(self, channel_left, exclude=None):
         exclude = exclude or []
