@@ -18,9 +18,13 @@ class SwitchboardsNotifier(object):
         self._bus = bus
 
     def queued_calls(self, switchboard_uuid, calls):
+        body = {
+            'switchboard_uuid': switchboard_uuid,
+            'items': queued_call_schema.dump(calls, many=True).data
+        }
         logger.debug('Notifying updated queued calls for switchboard %s: %s calls', switchboard_uuid, len(calls))
         event = ArbitraryEvent(name='switchboard_queued_calls_updated',
-                               body={'items': queued_call_schema.dump(calls, many=True).data},
+                               body=body,
                                required_acl='switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid))
         event.routing_key = 'switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid)
         self._bus.publish(event)

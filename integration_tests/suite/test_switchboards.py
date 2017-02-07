@@ -145,11 +145,11 @@ class TestSwitchboardCallsQueued(TestSwitchboards):
         def event_received():
             assert_that(bus_events.accumulate(),
                         contains(has_entry('data',
-                                           has_entry('items',
-                                                     is_not(empty()))),
+                                           has_entries({'items': is_not(empty()),
+                                                        'switchboard_uuid': switchboard_uuid})),
                                  has_entry('data',
-                                           has_entry('items',
-                                                     empty()))))
+                                           has_entries({'items': empty(),
+                                                        'switchboard_uuid': switchboard_uuid}))))
 
         until.assert_(event_received, tries=3)
 
