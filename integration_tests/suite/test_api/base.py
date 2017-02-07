@@ -8,7 +8,7 @@ import os
 import logging
 import tempfile
 
-from ari.exceptions import ARINotFound
+from ari.exceptions import ARINotInStasis
 from contextlib import contextmanager
 from requests.packages import urllib3
 from xivo_test_helpers import until
@@ -156,14 +156,20 @@ class RealAsteriskIntegrationTest(IntegrationTest):
     def setUp(self):
         super(RealAsteriskIntegrationTest, self).setUp()
         self.ari = ari.connect(**self.ari_config())
+        self.reset_ari()
 
     def tearDown(self):
-        self.clear_channels()
         super(RealAsteriskIntegrationTest, self).tearDown()
 
-    def clear_channels(self):
+    def reset_ari(self):
         for channel in self.ari.channels.list():
             try:
                 channel.hangup()
-            except ARINotFound:
+            except ARINotInStasis:
+                pass
+
+        for bridge in self.ari.bridges.list():
+            try:
+                bridge.destroy()
+            except ARINotInStasis:
                 pass

@@ -74,8 +74,6 @@ class TestSwitchboardCallsQueued(TestSwitchboards):
         assert_that(result.status_code, equal_to(404))
 
     def test_given_no_bridges_then_return_empty_list(self):
-        for bridge in self.ari.bridges.list():
-            bridge.delete()
         switchboard_uuid = 'my-switchboard-uuid'
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
 
