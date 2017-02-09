@@ -10,3 +10,11 @@ class QueuedCall(object):
         self.creation_time = None
         self.caller_id_name = ''
         self.caller_id_number = ''
+
+
+class HeldCall(object):
+
+    def __init__(self, id_):
+        self.id = id_
+        self.caller_id_name = ''
+        self.caller_id_number = ''

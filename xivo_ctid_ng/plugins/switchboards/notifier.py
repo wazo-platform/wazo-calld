@@ -7,6 +7,7 @@ import logging
 from xivo.permission import escape as escape_permission
 from xivo_bus.resources.common.routing_key import escape as escape_routing_key
 from xivo_bus.resources.common.event import ArbitraryEvent
+from .resources import held_call_schema
 from .resources import queued_call_schema
 
 logger = logging.getLogger(__name__)
@@ -44,4 +45,16 @@ class SwitchboardsNotifier(object):
                                body=body,
                                required_acl=required_acl)
         event.routing_key = routing_key
+        self._bus.publish(event)
+
+    def held_calls(self, switchboard_uuid, calls):
+        body = {
+            'switchboard_uuid': switchboard_uuid,
+            'items': held_call_schema.dump(calls, many=True).data
+        }
+        logger.debug('Notifying updated held calls for switchboard %s: %s calls', switchboard_uuid, len(calls))
+        event = ArbitraryEvent(name='switchboard_held_calls_updated',
+                               body=body,
+                               required_acl='switchboards.{uuid}.calls.held.updated'.format(uuid=switchboard_uuid))
+        event.routing_key = 'switchboards.{uuid}.calls.held.updated'.format(uuid=switchboard_uuid)
         self._bus.publish(event)

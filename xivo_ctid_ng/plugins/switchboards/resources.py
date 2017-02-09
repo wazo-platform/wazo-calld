@@ -17,6 +17,14 @@ class QueuedCallSchema(Schema):
 queued_call_schema = QueuedCallSchema()
 
 
+class HeldCallSchema(Schema):
+    id = fields.String(attribute='id')
+    caller_id_name = fields.String()
+    caller_id_number = fields.String()
+
+held_call_schema = HeldCallSchema()
+
+
 class SwitchboardCallsQueuedResource(AuthResource):
 
     def __init__(self, switchboards_service):
@@ -42,3 +50,14 @@ class SwitchboardCallsQueuedAnswerResource(AuthResource):
         call_id = self._service.answer_queued_call(switchboard_uuid, call_id, user_uuid)
 
         return {'call_id': call_id}, 200
+
+
+class SwitchboardCallHeldResource(AuthResource):
+
+    def __init__(self, switchboards_service):
+        self._service = switchboards_service
+
+    @required_acl('ctid-ng.switchboards.{switchboard_uuid}.calls.held.{call_id}.update')
+    def put(self, switchboard_uuid, call_id):
+        self._service.hold_call(switchboard_uuid, call_id)
+        return '', 204

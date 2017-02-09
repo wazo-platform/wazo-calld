@@ -40,6 +40,29 @@ paths:
           $ref: '#/responses/NoSuchSwitchboard'
         '503':
           $ref: '#/responses/AnotherServiceUnavailable'
+  /switchboards/{switchboard_uuid}/calls/held/{call_id}:
+    put:
+      summary: Put the specified call on hold in the switchboard
+      description: "
+        **Required ACL:** `ctid-ng.switchboards.{switchboard_uuid}.calls.held.{call_id}.update`\n\n
+        **Warning:** This endpoint is still in development and may change in the future.\n\n
+        This action will also hangup the previous call talking to the held call, if there was any."
+      tags:
+        - switchboards
+      parameters:
+        - $ref: '#/parameters/SwitchboardUUID'
+        - $ref: '#/parameters/CallID'
+      responses:
+        '200':
+          description: Call was held correctly
+          schema:
+            $ref: '#/definitions/CallID'
+        '400':
+          $ref: '#/responses/InvalidRequest'
+        '404':
+          $ref: '#/responses/NoSuchSwitchboard'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
 parameters:
   SwitchboardUUID:
     name: switchboard_uuid

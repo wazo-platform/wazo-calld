@@ -6,6 +6,7 @@ from xivo_auth_client import Client as AuthClient
 from xivo_confd_client import Client as ConfdClient
 
 from .notifier import SwitchboardsNotifier
+from .resources import SwitchboardCallHeldResource
 from .resources import SwitchboardCallsQueuedResource
 from .resources import SwitchboardCallsQueuedAnswerResource
 from .services import SwitchboardsService
@@ -35,3 +36,4 @@ class Plugin(object):
 
         api.add_resource(SwitchboardCallsQueuedResource, '/switchboards/<switchboard_uuid>/calls/queued', resource_class_args=[switchboards_service])
         api.add_resource(SwitchboardCallsQueuedAnswerResource, '/switchboards/<switchboard_uuid>/calls/queued/<call_id>/answer', resource_class_args=[auth_client, switchboards_service])
+        api.add_resource(SwitchboardCallHeldResource, '/switchboards/<switchboard_uuid>/calls/held/<call_id>', resource_class_args=[switchboards_service])
