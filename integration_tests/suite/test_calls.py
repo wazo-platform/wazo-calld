@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) 2015-2016 The Wazo Authors  (see AUTHORS file)
+# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import json
@@ -1270,7 +1270,7 @@ class TestCallerID(RealAsteriskIntegrationTest):
         recipient_caller_id_number = u'ring-connected-line'
         bus_events = self.bus.accumulator('calls.call.updated')
 
-        self.chan_test.answer_channel(originator_channel)
+        self.chan_test.answer_channel(originator_channel.id)
 
         def originator_has_correct_connected_line(name, number):
             expected_peer_caller_id = {'name': name,

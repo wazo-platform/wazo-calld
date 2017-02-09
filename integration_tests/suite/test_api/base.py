@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015-2016 by Avencall
+# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
 # Copyright 2016 by Proformatique Inc.
 # SPDX-License-Identifier: GPL-3.0+
 
@@ -8,7 +8,8 @@ import os
 import logging
 import tempfile
 
-from ari.exceptions import ARINotFound
+from ari.exceptions import ARINotInStasis
+from contextlib import contextmanager
 from requests.packages import urllib3
 from xivo_test_helpers import until
 from xivo_test_helpers.asset_launching_test_case import AssetLaunchingTestCase
@@ -113,6 +114,28 @@ class IntegrationTest(AssetLaunchingTestCase):
     def wait_for_ctid_ng_to_connect_to_bus(cls):
         until.true(cls.bus.is_up, tries=5)
 
+    @classmethod
+    @contextmanager
+    def _ctid_ng_stopped(cls):
+        cls._stop_ctid_ng()
+        yield
+        cls._start_ctid_ng()
+
+    @classmethod
+    def _restart_ctid_ng(cls):
+        cls._stop_ctid_ng()
+        cls._start_ctid_ng()
+
+    @classmethod
+    def _stop_ctid_ng(cls):
+        cls.stop_service('ctid-ng')
+
+    @classmethod
+    def _start_ctid_ng(cls):
+        cls.start_service('ctid-ng')
+        cls.reset_clients()
+        until.true(cls.ctid_ng.is_up, tries=5)
+
 
 class RealAsteriskIntegrationTest(IntegrationTest):
     asset = 'real_asterisk'
@@ -133,14 +156,20 @@ class RealAsteriskIntegrationTest(IntegrationTest):
     def setUp(self):
         super(RealAsteriskIntegrationTest, self).setUp()
         self.ari = ari.connect(**self.ari_config())
+        self.reset_ari()
 
     def tearDown(self):
-        self.clear_channels()
         super(RealAsteriskIntegrationTest, self).tearDown()
 
-    def clear_channels(self):
+    def reset_ari(self):
         for channel in self.ari.channels.list():
             try:
                 channel.hangup()
-            except ARINotFound:
+            except ARINotInStasis:
+                pass
+
+        for bridge in self.ari.bridges.list():
+            try:
+                bridge.destroy()
+            except ARINotInStasis:
                 pass

@@ -39,3 +39,4 @@ Environment variables
 Running the integration tests is controlled by the following environment variables:
 
 * `INTEGRATION_TEST_TIMEOUT`: controls the startup timeout of each container
+* `LOCAL_GIT_REPOS`: may be used to mount development python packages inside containers

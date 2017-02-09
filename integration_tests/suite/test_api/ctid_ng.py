@@ -470,7 +470,8 @@ class CtidNgClient(object):
 
     def switchboard_answer_queued_call(self, switchboard_uuid, call_id, token):
         response = self.put_switchboard_queued_call_answer_result(switchboard_uuid, call_id, token)
-        assert_that(response.status_code, equal_to(204))
+        assert_that(response.status_code, equal_to(200))
+        return response.json()
 
     def put_switchboard_queued_call_answer_result(self, switchboard_uuid, call_id, token=None):
         url = self.url('switchboards', switchboard_uuid, 'calls', 'queued', call_id, 'answer')

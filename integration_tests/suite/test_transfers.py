@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2016 by Avencall
+# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
 # Copyright 2016 by Proformatique Inc.
 # SPDX-License-Identifier: GPL-3.0+
 
@@ -9,7 +9,6 @@ import uuid
 
 from ari.exceptions import ARINotFound
 from ari.exceptions import ARINotInStasis
-from contextlib import contextmanager
 from hamcrest import all_of
 from hamcrest import anything
 from hamcrest import assert_that
@@ -90,7 +89,7 @@ class TestTransfers(RealAsteriskIntegrationTest):
     def answer_recipient_channel(self, local_recipient_channel_id):
         recipient_channel = self.ari.channels.get(channelId=local_recipient_channel_id)
         real_recipient_channel = self.dereference_local_channel(recipient_channel)
-        self.chan_test.answer_channel(real_recipient_channel)
+        self.chan_test.answer_channel(real_recipient_channel.id)
 
     def same_linkedid(self, channel_left, exclude=None):
         exclude = exclude or []
@@ -1475,21 +1474,3 @@ class TestInitialisation(TestTransfers):
                       recipient_channel_id,
                       self.events,
                       tries=5)
-
-    @contextmanager
-    def _ctid_ng_stopped(self):
-        self._stop_ctid_ng()
-        yield
-        self._start_ctid_ng()
-
-    def _restart_ctid_ng(self):
-        self._stop_ctid_ng()
-        self._start_ctid_ng()
-
-    def _stop_ctid_ng(self):
-        self.stop_service('ctid-ng')
-
-    def _start_ctid_ng(self):
-        self.start_service('ctid-ng')
-        self.reset_clients()
-        until.true(self.ctid_ng.is_up, tries=5)
