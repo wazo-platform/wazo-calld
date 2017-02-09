@@ -461,6 +461,111 @@ class TestSwitchboardHoldCall(TestSwitchboards):
         until.assert_(event_received, tries=3)
 
 
+class TestSwitchboardCallsHeld(TestSwitchboards):
+
+    def test_given_no_switchboard_then_404(self):
+        result = self.ctid_ng.get_switchboard_held_calls_result(UUID_NOT_FOUND, token=VALID_TOKEN)
+
+        assert_that(result.status_code, equal_to(404))
+
+    def test_given_no_bridges_then_return_empty_list(self):
+        switchboard_uuid = 'my-switchboard-uuid'
+        self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
+
+        calls = self.ctid_ng.switchboard_held_calls(switchboard_uuid)
+
+        assert_that(calls, has_entry('items', empty()))
+
+    def test_given_one_call_hungup_then_return_empty_list(self):
+        switchboard_uuid = 'my-switchboard-uuid'
+        self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
+        queued_bus_events = self.bus.accumulator('switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid))
+        new_channel = self.ari.channels.originate(endpoint=ENDPOINT_AUTOANSWER,
+                                                  app=STASIS_APP,
+                                                  appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, switchboard_uuid])
+        until.true(queued_bus_events.accumulate, tries=3)
+        self.ctid_ng.switchboard_hold_call(switchboard_uuid, new_channel.id)
+        new_channel.hangup()
+
+        calls = self.ctid_ng.switchboard_held_calls(switchboard_uuid)
+
+        assert_that(calls, has_entry('items', empty()))
+
+    def test_given_two_calls_held_then_list_two_calls(self):
+        switchboard_uuid = 'my-switchboard-uuid'
+        self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
+        queued_bus_events = self.bus.accumulator('switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid))
+        new_channel_1 = self.ari.channels.originate(endpoint=ENDPOINT_AUTOANSWER,
+                                                    app=STASIS_APP,
+                                                    appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, switchboard_uuid])
+        new_channel_2 = self.ari.channels.originate(endpoint=ENDPOINT_AUTOANSWER,
+                                                    app=STASIS_APP,
+                                                    appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, switchboard_uuid])
+        until.true(queued_bus_events.accumulate, tries=3)
+        self.ctid_ng.switchboard_hold_call(switchboard_uuid, new_channel_1.id)
+        self.ctid_ng.switchboard_hold_call(switchboard_uuid, new_channel_2.id)
+
+        def assert_function():
+            calls = self.ctid_ng.switchboard_held_calls(switchboard_uuid)
+            assert_that(calls, has_entry('items', contains_inanyorder(has_entry('id', new_channel_1.id),
+                                                                      has_entry('id', new_channel_2.id))))
+
+        until.assert_(assert_function, tries=3)
+
+    def test_given_one_call_held_when_hangup_then_bus_event(self):
+        switchboard_uuid = 'my-switchboard-uuid'
+        queued_bus_events = self.bus.accumulator('switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid))
+        self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
+        new_channel = self.ari.channels.originate(endpoint=ENDPOINT_AUTOANSWER,
+                                                  app=STASIS_APP,
+                                                  appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, switchboard_uuid])
+
+        until.true(queued_bus_events.accumulate, tries=3)
+        held_bus_events = self.bus.accumulator('switchboards.{uuid}.calls.held.updated'.format(uuid=switchboard_uuid))
+        self.ctid_ng.switchboard_hold_call(switchboard_uuid, new_channel.id)
+        until.true(held_bus_events.accumulate, tries=3)
+
+        new_channel.hangup()
+
+        def event_received():
+            assert_that(held_bus_events.accumulate(),
+                        contains(has_entry('data',
+                                           has_entries({'items': is_not(empty()),
+                                                        'switchboard_uuid': switchboard_uuid})),
+                                 has_entry('data',
+                                           has_entries({'items': empty(),
+                                                        'switchboard_uuid': switchboard_uuid}))))
+
+        until.assert_(event_received, tries=3)
+
+    def test_given_ctid_ng_stopped_and_held_is_hung_up_when_ctid_ng_starts_then_bus_event(self):
+        switchboard_uuid = 'my-switchboard-uuid'
+        queued_bus_events = self.bus.accumulator('switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid))
+        self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
+        new_channel = self.ari.channels.originate(endpoint=ENDPOINT_AUTOANSWER,
+                                                  app=STASIS_APP,
+                                                  appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, switchboard_uuid])
+
+        until.true(queued_bus_events.accumulate, tries=3)
+        held_bus_events = self.bus.accumulator('switchboards.{uuid}.calls.held.updated'.format(uuid=switchboard_uuid))
+        self.ctid_ng.switchboard_hold_call(switchboard_uuid, new_channel.id)
+        until.true(held_bus_events.accumulate, tries=3)
+
+        with self._ctid_ng_stopped():
+            new_channel.hangup()
+
+        def event_received():
+            assert_that(held_bus_events.accumulate(),
+                        contains(has_entry('data',
+                                           has_entries({'items': is_not(empty()),
+                                                        'switchboard_uuid': switchboard_uuid})),
+                                 has_entry('data',
+                                           has_entries({'items': empty(),
+                                                        'switchboard_uuid': switchboard_uuid}))))
+
+        until.assert_(event_received, tries=3)
+
+
 class TestSwitchboardNoConfd(IntegrationTest):
 
     asset = 'no_confd'

@@ -61,3 +61,15 @@ class SwitchboardCallHeldResource(AuthResource):
     def put(self, switchboard_uuid, call_id):
         self._service.hold_call(switchboard_uuid, call_id)
         return '', 204
+
+
+class SwitchboardCallsHeldResource(AuthResource):
+
+    def __init__(self, switchboards_service):
+        self._service = switchboards_service
+
+    @required_acl('ctid-ng.switchboards.{switchboard_uuid}.calls.held.read')
+    def get(self, switchboard_uuid):
+        calls = self._service.held_calls(switchboard_uuid)
+
+        return {'items': held_call_schema.dump(calls, many=True).data}

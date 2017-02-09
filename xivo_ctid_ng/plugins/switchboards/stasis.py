@@ -21,14 +21,21 @@ class SwitchboardsStasis(object):
         self._service = switchboard_service
 
     def subscribe(self):
-        self._ari.on_application_registered(APPLICATION_NAME, self.notify_all_switchboard_queues)
+        self._ari.on_application_registered(APPLICATION_NAME, self.notify_all_switchboard_queued)
+        self._ari.on_application_registered(APPLICATION_NAME, self.notify_all_switchboard_held)
         self._ari.on_channel_event('StasisStart', self.stasis_start)
         self._ari.on_channel_event('ChannelLeftBridge', self.unqueue)
+        self._ari.on_channel_event('ChannelLeftBridge', self.unhold)
 
-    def notify_all_switchboard_queues(self):
+    def notify_all_switchboard_queued(self):
         for switchboard in self._confd.switchboards.list()['items']:
             queued_calls = self._service.queued_calls(switchboard['uuid'])
             self._notifier.queued_calls(switchboard['uuid'], queued_calls)
+
+    def notify_all_switchboard_held(self):
+        for switchboard in self._confd.switchboards.list()['items']:
+            held_calls = self._service.held_calls(switchboard['uuid'])
+            self._notifier.held_calls(switchboard['uuid'], held_calls)
 
     def stasis_start(self, event_objects, event):
         if len(event['args']) < 2:
@@ -88,3 +95,13 @@ class SwitchboardsStasis(object):
             return
 
         self._notifier.queued_calls(switchboard_uuid, queued_calls)
+
+    def unhold(self, channel, event):
+        switchboard_uuid = channel.json['channelvars']['WAZO_SWITCHBOARD_HOLD']
+
+        try:
+            held_calls = self._service.held_calls(switchboard_uuid)
+        except NoSuchSwitchboard:
+            return
+
+        self._notifier.held_calls(switchboard_uuid, held_calls)

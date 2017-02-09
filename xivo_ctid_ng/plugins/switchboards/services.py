@@ -104,13 +104,17 @@ class SwitchboardsService(object):
             hold_bridge = self._ari.bridges.createWithId(type='holding', bridgeId=hold_bridge_id)
             hold_bridge.startMoh()
 
-        hold_bridge.addChannel(channel=call_id)
+        hold_bridge.addChannel(channel=channel_to_hold.id)
+        channel_to_hold.setChannelVar(variable='WAZO_SWITCHBOARD_HOLD', value=switchboard_uuid)
 
         held_calls = self.held_calls(switchboard_uuid)
         self._notifier.held_calls(switchboard_uuid, held_calls)
 
         for previous_bridge in previous_bridges:
-            previous_bridge = self._ari.bridges.get(bridgeId=previous_bridge.id)
+            try:
+                previous_bridge = self._ari.bridges.get(bridgeId=previous_bridge.id)
+            except ARINotFound:
+                continue
             if previous_bridge.json['bridge_type'] == 'mixing' and len(previous_bridge.json['channels']) <= 1:
                 logger.debug('emptying bridge %s after switchboard hold', previous_bridge.id)
                 for lone_channel_id in previous_bridge.json['channels']:

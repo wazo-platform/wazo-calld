@@ -40,6 +40,25 @@ paths:
           $ref: '#/responses/NoSuchSwitchboard'
         '503':
           $ref: '#/responses/AnotherServiceUnavailable'
+  /switchboards/{switchboard_uuid}/calls/held:
+    get:
+      summary: List calls held in the switchboard
+      description: "
+        **Required ACL:** `ctid-ng.switchboards.{switchboard_uuid}.calls.held.read`\n\n
+        **Warning:** This endpoint is still in development and may change in the future."
+      tags:
+        - switchboards
+      parameters:
+        - $ref: '#/parameters/SwitchboardUUID'
+      responses:
+        '200':
+          description: List of calls
+          schema:
+            $ref: '#/definitions/SwitchboardHeldCalls'
+        '404':
+          $ref: '#/responses/NoSuchSwitchboard'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
   /switchboards/{switchboard_uuid}/calls/held/{call_id}:
     put:
       summary: Put the specified call on hold in the switchboard
@@ -79,6 +98,22 @@ definitions:
         items:
           $ref: '#/definitions/SwitchboardQueuedCall'
   SwitchboardQueuedCall:
+    type: object
+    properties:
+      id:
+        type: string
+      caller_id_name:
+        type: string
+      caller_id_number:
+        type: string
+  SwitchboardHeldCalls:
+    type: object
+    properties:
+      items:
+        type: array
+        items:
+          $ref: '#/definitions/SwitchboardHeldCall'
+  SwitchboardHeldCall:
     type: object
     properties:
       id:
