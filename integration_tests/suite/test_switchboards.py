@@ -777,8 +777,18 @@ class TestSwitchboardNoConfd(IntegrationTest):
 
         assert_that(result.status_code, equal_to(503))
 
+    def test_given_no_confd_when_answer_queued_call_then_503(self):
+        result = self.ctid_ng.put_switchboard_queued_call_answer_result(UUID_NOT_FOUND, CALL_ID_NOT_FOUND, token=VALID_TOKEN)
+
+        assert_that(result.status_code, equal_to(503))
+
     def test_given_no_confd_when_hold_call_then_503(self):
         result = self.ctid_ng.put_switchboard_held_call_result(UUID_NOT_FOUND, CALL_ID_NOT_FOUND, token=VALID_TOKEN)
+
+        assert_that(result.status_code, equal_to(503))
+
+    def test_given_no_confd_when_list_held_calls_then_503(self):
+        result = self.ctid_ng.get_switchboard_held_calls_result(UUID_NOT_FOUND, token=VALID_TOKEN)
 
         assert_that(result.status_code, equal_to(503))
 
