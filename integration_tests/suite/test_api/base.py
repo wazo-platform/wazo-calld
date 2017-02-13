@@ -8,6 +8,7 @@ import os
 import logging
 import tempfile
 
+from ari.exceptions import ARINotFound
 from ari.exceptions import ARINotInStasis
 from contextlib import contextmanager
 from requests.packages import urllib3
@@ -165,11 +166,11 @@ class RealAsteriskIntegrationTest(IntegrationTest):
         for channel in self.ari.channels.list():
             try:
                 channel.hangup()
-            except ARINotInStasis:
+            except (ARINotInStasis, ARINotFound):
                 pass
 
         for bridge in self.ari.bridges.list():
             try:
                 bridge.destroy()
-            except ARINotInStasis:
+            except (ARINotInStasis, ARINotFound):
                 pass
