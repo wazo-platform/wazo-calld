@@ -16,6 +16,14 @@ class ConfdClient(object):
                                                      port=self._port,
                                                      path='/'.join(parts))
 
+    def is_up(self):
+        url = self.url()
+        try:
+            response = requests.get(url, verify=False)
+            return response.status_code == 404
+        except requests.RequestException:
+            return False
+
     def set_users(self, *mock_users):
         url = self.url('_set_response')
         body = {'response': 'users',

@@ -542,6 +542,18 @@ class TestCreateCall(IntegrationTest):
             'path': '/ari/channels',
         }))))
 
+    def test_create_call_when_no_confd_then_503(self):
+        priority = 1
+        self.amid.set_valid_exten('my-context', 'my-extension', priority)
+        with self.confd_stopped():
+            result = self.ctid_ng.post_call_result(source='user-uuid',
+                                                   priority=priority,
+                                                   extension='my-extension',
+                                                   context='my-context',
+                                                   token=VALID_TOKEN)
+
+        assert_that(result.status_code, equal_to(503))
+
     def test_create_call_with_no_lines(self):
         user_uuid = 'user-uuid'
         priority = 1
@@ -822,6 +834,18 @@ class TestUserCreateCall(IntegrationTest):
         self.amid.reset()
         self.ari.reset()
         self.confd.reset()
+
+    def test_given_no_confd_when_create_then_503(self):
+        user_uuid = 'user-uuid'
+        token = 'my-token'
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
+
+        body = {'extension': 'my-extension'}
+
+        with self.confd_stopped():
+            result = self.ctid_ng.post_user_me_call_result(body, token)
+
+        assert_that(result.status_code, equal_to(503))
 
     def test_given_invalid_input_when_create_then_error_400(self):
         for invalid_body in self.invalid_call_requests():
@@ -1135,31 +1159,6 @@ class TestUserCreateCall(IntegrationTest):
         }))))
 
 
-class TestNoConfd(IntegrationTest):
-
-    asset = 'no_confd'
-
-    def setUp(self):
-        super(TestNoConfd, self).setUp()
-        self.ari.reset()
-
-    def test_given_no_confd_when_originate_then_503(self):
-        result = self.ctid_ng.post_call_result(source='user-uuid',
-                                               priority=SOME_PRIORITY,
-                                               extension='some-extension',
-                                               context='some-context',
-                                               token=VALID_TOKEN)
-
-        assert_that(result.status_code, equal_to(503))
-
-    def test_given_no_confd_when_connect_user_then_503(self):
-        result = self.ctid_ng.put_call_user_result(call_id='call-id',
-                                                   user_uuid='user-uuid',
-                                                   token=VALID_TOKEN)
-
-        assert_that(result.status_code, equal_to(503))
-
-
 class TestFailingARI(IntegrationTest):
 
     asset = 'failing_ari'
@@ -1226,6 +1225,14 @@ class TestConnectUser(IntegrationTest):
             'path': '/ari/channels',
             'query': contains_inanyorder(['app', 'callcontrol'], ['endpoint', 'sip/line-name'], ['appArgs', 'sw1,dialed_from,call-id']),
         }))))
+
+    def test_given_no_confd_when_connect_user_then_503(self):
+        with self.confd_stopped():
+            result = self.ctid_ng.put_call_user_result(call_id='call-id',
+                                                       user_uuid='user-uuid',
+                                                       token=VALID_TOKEN)
+
+        assert_that(result.status_code, equal_to(503))
 
     def test_given_no_user_when_connect_user_then_400(self):
         self.ari.set_channels(MockChannel(id='call-id'))

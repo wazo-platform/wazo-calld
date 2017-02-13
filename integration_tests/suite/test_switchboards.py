@@ -69,6 +69,12 @@ class TestSwitchboards(RealAsteriskIntegrationTest):
 
 class TestSwitchboardCallsQueued(TestSwitchboards):
 
+    def test_given_no_confd_when_list_queued_calls_then_503(self):
+        with self.confd_stopped():
+            result = self.ctid_ng.get_switchboard_queued_calls_result(UUID_NOT_FOUND, token=VALID_TOKEN)
+
+        assert_that(result.status_code, equal_to(503))
+
     def test_given_no_switchboard_then_404(self):
         result = self.ctid_ng.get_switchboard_queued_calls_result(UUID_NOT_FOUND, token=VALID_TOKEN)
 
@@ -186,6 +192,12 @@ class TestSwitchboardCallsQueued(TestSwitchboards):
 
 
 class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
+
+    def test_given_no_confd_when_answer_queued_call_then_503(self):
+        with self.confd_stopped():
+            result = self.ctid_ng.put_switchboard_queued_call_answer_result(UUID_NOT_FOUND, CALL_ID_NOT_FOUND, token=VALID_TOKEN)
+
+        assert_that(result.status_code, equal_to(503))
 
     def test_given_no_switchboard_when_answer_then_404(self):
         token = 'my-token'
@@ -372,6 +384,12 @@ class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
 
 class TestSwitchboardHoldCall(TestSwitchboards):
 
+    def test_given_no_confd_when_hold_call_then_503(self):
+        with self.confd_stopped():
+            result = self.ctid_ng.put_switchboard_held_call_result(UUID_NOT_FOUND, CALL_ID_NOT_FOUND, token=VALID_TOKEN)
+
+        assert_that(result.status_code, equal_to(503))
+
     def test_given_no_switchboard_when_hold_call_then_404(self):
         switchboard_uuid = 'my-switchboard-uuid'
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
@@ -462,6 +480,12 @@ class TestSwitchboardHoldCall(TestSwitchboards):
 
 
 class TestSwitchboardCallsHeld(TestSwitchboards):
+
+    def test_given_no_confd_when_list_held_calls_then_503(self):
+        with self.confd_stopped():
+            result = self.ctid_ng.get_switchboard_held_calls_result(UUID_NOT_FOUND, token=VALID_TOKEN)
+
+        assert_that(result.status_code, equal_to(503))
 
     def test_given_no_switchboard_then_404(self):
         result = self.ctid_ng.get_switchboard_held_calls_result(UUID_NOT_FOUND, token=VALID_TOKEN)
@@ -567,6 +591,12 @@ class TestSwitchboardCallsHeld(TestSwitchboards):
 
 
 class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
+
+    def test_given_no_confd_when_answer_held_call_then_503(self):
+        with self.confd_stopped():
+            result = self.ctid_ng.put_switchboard_held_call_answer_result(UUID_NOT_FOUND, CALL_ID_NOT_FOUND, token=VALID_TOKEN)
+
+        assert_that(result.status_code, equal_to(503))
 
     def test_given_no_switchboard_when_answer_then_404(self):
         token = 'my-token'
@@ -766,33 +796,3 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
             assert_that(operator_channel_id, self.c.is_hungup())
 
         until.assert_(operator_is_hungup, tries=3)
-
-
-class TestSwitchboardNoConfd(IntegrationTest):
-
-    asset = 'no_confd'
-
-    def test_given_no_confd_when_list_queued_calls_then_503(self):
-        result = self.ctid_ng.get_switchboard_queued_calls_result(UUID_NOT_FOUND, token=VALID_TOKEN)
-
-        assert_that(result.status_code, equal_to(503))
-
-    def test_given_no_confd_when_answer_queued_call_then_503(self):
-        result = self.ctid_ng.put_switchboard_queued_call_answer_result(UUID_NOT_FOUND, CALL_ID_NOT_FOUND, token=VALID_TOKEN)
-
-        assert_that(result.status_code, equal_to(503))
-
-    def test_given_no_confd_when_hold_call_then_503(self):
-        result = self.ctid_ng.put_switchboard_held_call_result(UUID_NOT_FOUND, CALL_ID_NOT_FOUND, token=VALID_TOKEN)
-
-        assert_that(result.status_code, equal_to(503))
-
-    def test_given_no_confd_when_list_held_calls_then_503(self):
-        result = self.ctid_ng.get_switchboard_held_calls_result(UUID_NOT_FOUND, token=VALID_TOKEN)
-
-        assert_that(result.status_code, equal_to(503))
-
-    def test_given_no_confd_when_answer_held_call_then_503(self):
-        result = self.ctid_ng.put_switchboard_held_call_answer_result(UUID_NOT_FOUND, CALL_ID_NOT_FOUND, token=VALID_TOKEN)
-
-        assert_that(result.status_code, equal_to(503))
