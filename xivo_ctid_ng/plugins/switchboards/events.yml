@@ -51,3 +51,17 @@ events:
                 type: string
               caller_id_number:
                 type: string
+  switchboard_held_call_answered:
+    summary: A call held in a switchboard has been answered by a member
+    description: The event is sent when the held call is bridged, not when the answer action is requested
+    routing_key: switchboards.{switchboard_uuid}.calls.held.{call_id}.answer.updated
+    required_acl: switchboards.{switchboard_uuid}.calls.held.{call_id}.answer.updated
+    schema:
+      type: object
+      properties:
+        switchboard_uuid:
+          type: string
+        operator_call_id:
+          type: string
+        caller_call_id:
+          type: string

@@ -566,6 +566,208 @@ class TestSwitchboardCallsHeld(TestSwitchboards):
         until.assert_(event_received, tries=3)
 
 
+class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
+
+    def test_given_no_switchboard_when_answer_then_404(self):
+        token = 'my-token'
+        user_uuid = 'my-user-uuid'
+        line_id = 'my-line-id'
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
+        self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
+        self.confd.set_lines(MockLine(id=line_id, name='switchboard-operator/autoanswer', protocol='test'))
+        switchboard_uuid = UUID_NOT_FOUND
+        new_channel = self.ari.channels.originate(endpoint=ENDPOINT_AUTOANSWER,
+                                                  app=STASIS_APP,
+                                                  appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, switchboard_uuid])
+
+        result = self.ctid_ng.put_switchboard_held_call_answer_result(switchboard_uuid, new_channel.id, token)
+
+        assert_that(result.status_code, equal_to(404))
+        assert_that(result.json()['message'].lower(), contains_string('switchboard'))
+
+    def test_given_no_held_call_when_answer_then_404(self):
+        token = 'my-token'
+        user_uuid = 'my-user-uuid'
+        line_id = 'my-line-id'
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
+        switchboard_uuid = 'my-switchboard-uuid'
+        self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
+        self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
+        self.confd.set_lines(MockLine(id=line_id, name='switchboard-operator/autoanswer', protocol='test'))
+
+        result = self.ctid_ng.put_switchboard_held_call_answer_result(switchboard_uuid, CALL_ID_NOT_FOUND, token)
+
+        assert_that(result.status_code, equal_to(404))
+        assert_that(result.json()['message'].lower(), contains_string('call'))
+
+    def test_given_token_with_no_user_when_answer_then_400(self):
+        token = 'my-token'
+        user_uuid = 'my-user-uuid'
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
+        switchboard_uuid = 'my-switchboard-uuid'
+        self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
+        queued_bus_events = self.bus.accumulator('switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid))
+        new_channel = self.ari.channels.originate(endpoint=ENDPOINT_AUTOANSWER,
+                                                  app=STASIS_APP,
+                                                  appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, switchboard_uuid])
+        until.true(queued_bus_events.accumulate, tries=3)
+        held_bus_events = self.bus.accumulator('switchboards.{uuid}.calls.held.updated'.format(uuid=switchboard_uuid))
+        self.ctid_ng.switchboard_hold_call(switchboard_uuid, new_channel.id)
+        until.true(held_bus_events.accumulate, tries=3)
+        held_call_id = new_channel.id
+
+        result = self.ctid_ng.put_switchboard_held_call_answer_result(switchboard_uuid, held_call_id, token)
+
+        assert_that(result.status_code, equal_to(400))
+        assert_that(result.json()['message'].lower(), contains_string('user'))
+
+    def test_given_operator_has_no_line_when_answer_then_400(self):
+        token = 'my-token'
+        user_uuid = 'my-user-uuid'
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
+        switchboard_uuid = 'my-switchboard-uuid'
+        self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
+        self.confd.set_users(MockUser(uuid=user_uuid))
+        queued_bus_events = self.bus.accumulator('switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid))
+        new_channel = self.ari.channels.originate(endpoint=ENDPOINT_AUTOANSWER,
+                                                  app=STASIS_APP,
+                                                  appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, switchboard_uuid])
+        until.true(queued_bus_events.accumulate, tries=3)
+        held_bus_events = self.bus.accumulator('switchboards.{uuid}.calls.held.updated'.format(uuid=switchboard_uuid))
+        self.ctid_ng.switchboard_hold_call(switchboard_uuid, new_channel.id)
+        until.true(held_bus_events.accumulate, tries=3)
+        held_call_id = new_channel.id
+
+        result = self.ctid_ng.put_switchboard_held_call_answer_result(switchboard_uuid, held_call_id, token)
+
+        assert_that(result.status_code, equal_to(400))
+        assert_that(result.json()['message'].lower(), contains_string('line'))
+
+    def test_given_one_held_call_and_one_operator_when_answer_then_operator_is_bridged(self):
+        token = 'my-token'
+        user_uuid = 'my-user-uuid'
+        line_id = 'my-line-id'
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
+        switchboard_uuid = 'my-switchboard-uuid'
+        self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
+        self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
+        self.confd.set_lines(MockLine(id=line_id, name='switchboard-operator/autoanswer', protocol='test'))
+        queued_bus_events = self.bus.accumulator('switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid))
+        new_channel = self.ari.channels.originate(endpoint=ENDPOINT_AUTOANSWER,
+                                                  app=STASIS_APP,
+                                                  appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, switchboard_uuid])
+        until.true(queued_bus_events.accumulate, tries=3)
+        held_bus_events = self.bus.accumulator('switchboards.{uuid}.calls.held.updated'.format(uuid=switchboard_uuid))
+        self.ctid_ng.switchboard_hold_call(switchboard_uuid, new_channel.id)
+        until.true(held_bus_events.accumulate, tries=3)
+        held_call_id = new_channel.id
+
+        result = self.ctid_ng.switchboard_answer_held_call(switchboard_uuid, held_call_id, token)
+
+        operator_channel = self.ari.channels.get(channelId=result['call_id'])
+        until.true(self.channels_are_bridged, operator_channel, new_channel, tries=3)
+
+    def test_given_one_held_call_and_one_operator_when_answer_then_bus_event(self):
+        token = 'my-token'
+        user_uuid = 'my-user-uuid'
+        line_id = 'my-line-id'
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
+        switchboard_uuid = 'my-switchboard-uuid'
+        self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
+        self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
+        self.confd.set_lines(MockLine(id=line_id, name='switchboard-operator/autoanswer', protocol='test'))
+        queued_bus_events = self.bus.accumulator('switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid))
+        new_channel = self.ari.channels.originate(endpoint=ENDPOINT_AUTOANSWER,
+                                                  app=STASIS_APP,
+                                                  appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, switchboard_uuid])
+        until.true(queued_bus_events.accumulate, tries=3)
+        held_bus_events = self.bus.accumulator('switchboards.{uuid}.calls.held.updated'.format(uuid=switchboard_uuid))
+        self.ctid_ng.switchboard_hold_call(switchboard_uuid, new_channel.id)
+        until.true(held_bus_events.accumulate, tries=3)
+        held_call_id = new_channel.id
+        answered_bus_events = self.bus.accumulator('switchboards.{uuid}.calls.held.*.answer.updated'.format(uuid=switchboard_uuid))
+
+        result = self.ctid_ng.switchboard_answer_held_call(switchboard_uuid, held_call_id, token)
+
+        def answered_event_received():
+            assert_that(answered_bus_events.accumulate(), has_item(has_entries({
+                'name': 'switchboard_held_call_answered',
+                'data': has_entries({
+                    'switchboard_uuid': switchboard_uuid,
+                    'operator_call_id': result['call_id'],
+                    'held_call_id': held_call_id
+                })
+            })))
+
+        until.assert_(answered_event_received, tries=3)
+
+    def test_given_one_held_call_and_one_operator_when_answer_then_caller_id_is_correct_before_and_after_phone_answer(self):
+        token = 'my-token'
+        user_uuid = 'my-user-uuid'
+        line_id = 'my-line-id'
+        held_caller_id = u'"câller" <1234>'.encode('utf-8')
+        operator_caller_id = u'"ôperator" <9876>'.encode('utf-8')
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
+        switchboard_uuid = 'my-switchboard-uuid'
+        self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
+        self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
+        self.confd.set_lines(MockLine(id=line_id, name='switchboard-operator', protocol='test'))
+        queued_bus_events = self.bus.accumulator('switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid))
+        new_channel = self.ari.channels.originate(endpoint=ENDPOINT_AUTOANSWER,
+                                                  app=STASIS_APP,
+                                                  appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, switchboard_uuid],
+                                                  callerId=held_caller_id)
+        until.true(queued_bus_events.accumulate, tries=3)
+        held_bus_events = self.bus.accumulator('switchboards.{uuid}.calls.held.updated'.format(uuid=switchboard_uuid))
+        self.ctid_ng.switchboard_hold_call(switchboard_uuid, new_channel.id)
+        until.true(held_bus_events.accumulate, tries=3)
+        held_call_id = new_channel.id
+        result = self.ctid_ng.switchboard_answer_held_call(switchboard_uuid, held_call_id, token)
+        operator_call_id = result['call_id']
+        operator_channel = self.ari.channels.get(channelId=operator_call_id)
+        operator_channel.setChannelVar(variable='XIVO_ORIGINAL_CALLER_ID', value=operator_caller_id, bypassStasis=True)
+
+        assert_that(operator_channel.json, has_entry('caller', has_entries({'name': u'câller',
+                                                                            'number': '1234'})))
+
+        answered_bus_events = self.bus.accumulator('switchboards.{uuid}.calls.held.*.answer.updated'.format(uuid=switchboard_uuid))
+        self.chan_test.answer_channel(operator_channel.id)
+        until.true(answered_bus_events.accumulate, tries=3)
+
+        operator_channel = self.ari.channels.get(channelId=operator_call_id)
+        assert_that(operator_channel.json, has_entry('caller', has_entries({'name': u'ôperator',
+                                                                            'number': '9876'})))
+
+    def test_given_operator_is_answering_a_hungup_channel_when_answer_then_operator_is_hungup(self):
+        token = 'my-token'
+        user_uuid = 'my-user-uuid'
+        line_id = 'my-line-id'
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
+        switchboard_uuid = 'my-switchboard-uuid'
+        self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
+        self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
+        self.confd.set_lines(MockLine(id=line_id, name='switchboard-operator', protocol='test'))
+        queued_bus_events = self.bus.accumulator('switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid))
+        new_channel = self.ari.channels.originate(endpoint=ENDPOINT_AUTOANSWER,
+                                                  app=STASIS_APP,
+                                                  appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, switchboard_uuid])
+        until.true(queued_bus_events.accumulate, tries=3)
+        held_bus_events = self.bus.accumulator('switchboards.{uuid}.calls.held.updated'.format(uuid=switchboard_uuid))
+        self.ctid_ng.switchboard_hold_call(switchboard_uuid, new_channel.id)
+        until.true(held_bus_events.accumulate, tries=3)
+        held_call_id = new_channel.id
+        result = self.ctid_ng.switchboard_answer_held_call(switchboard_uuid, held_call_id, token)
+        operator_channel_id = result['call_id']
+        new_channel.hangup()
+
+        self.chan_test.answer_channel(operator_channel_id)
+
+        def operator_is_hungup():
+            assert_that(operator_channel_id, self.c.is_hungup())
+
+        until.assert_(operator_is_hungup, tries=3)
+
+
 class TestSwitchboardNoConfd(IntegrationTest):
 
     asset = 'no_confd'
@@ -577,5 +779,10 @@ class TestSwitchboardNoConfd(IntegrationTest):
 
     def test_given_no_confd_when_hold_call_then_503(self):
         result = self.ctid_ng.put_switchboard_held_call_result(UUID_NOT_FOUND, CALL_ID_NOT_FOUND, token=VALID_TOKEN)
+
+        assert_that(result.status_code, equal_to(503))
+
+    def test_given_no_confd_when_answer_held_call_then_503(self):
+        result = self.ctid_ng.put_switchboard_held_call_answer_result(UUID_NOT_FOUND, CALL_ID_NOT_FOUND, token=VALID_TOKEN)
 
         assert_that(result.status_code, equal_to(503))

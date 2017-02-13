@@ -146,3 +146,22 @@ class SwitchboardsService(object):
 
             result.append(call)
         return result
+
+    def answer_held_call(self, switchboard_uuid, held_call_id, user_uuid):
+        if not Switchboard(switchboard_uuid, self._confd).exists():
+            raise NoSuchSwitchboard(switchboard_uuid)
+
+        try:
+            held_channel = self._ari.channels.get(channelId=held_call_id)
+        except ARINotFound:
+            raise NoSuchCall(held_call_id)
+
+        endpoint = User(user_uuid, self._confd).main_line().interface()
+        caller_id = assemble_caller_id(held_channel.json['caller']['name'], held_channel.json['caller']['number']).encode('utf-8')
+
+        channel = self._ari.channels.originate(endpoint=endpoint,
+                                               app=APPLICATION_NAME,
+                                               appArgs=['switchboard', 'switchboard_unhold', switchboard_uuid, held_call_id],
+                                               callerId=caller_id)
+
+        return channel.id

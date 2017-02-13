@@ -495,6 +495,15 @@ class CtidNgClient(object):
         url = self.url('switchboards', switchboard_uuid, 'calls', 'held')
         return requests.get(url, headers={'X-Auth-Token': token}, verify=False)
 
+    def switchboard_answer_held_call(self, switchboard_uuid, call_id, token):
+        response = self.put_switchboard_held_call_answer_result(switchboard_uuid, call_id, token)
+        assert_that(response.status_code, equal_to(200))
+        return response.json()
+
+    def put_switchboard_held_call_answer_result(self, switchboard_uuid, call_id, token=None):
+        url = self.url('switchboards', switchboard_uuid, 'calls', 'held', call_id, 'answer')
+        return requests.put(url, headers={'X-Auth-Token': token}, verify=False)
+
     @contextmanager
     def send_no_content_type(self):
         def no_json(decorated):

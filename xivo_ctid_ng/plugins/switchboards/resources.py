@@ -37,7 +37,7 @@ class SwitchboardCallsQueuedResource(AuthResource):
         return {'items': queued_call_schema.dump(calls, many=True).data}
 
 
-class SwitchboardCallsQueuedAnswerResource(AuthResource):
+class SwitchboardCallQueuedAnswerResource(AuthResource):
 
     def __init__(self, auth_client, switchboards_service):
         self._auth_client = auth_client
@@ -73,3 +73,18 @@ class SwitchboardCallsHeldResource(AuthResource):
         calls = self._service.held_calls(switchboard_uuid)
 
         return {'items': held_call_schema.dump(calls, many=True).data}
+
+
+class SwitchboardCallHeldAnswerResource(AuthResource):
+
+    def __init__(self, auth_client, switchboards_service):
+        self._auth_client = auth_client
+        self._service = switchboards_service
+
+    @required_acl('ctid-ng.switchboards.{switchboard_uuid}.calls.held.{call_id}.answer.update')
+    def put(self, switchboard_uuid, call_id):
+        user_uuid = get_token_user_uuid_from_request(self._auth_client)
+
+        call_id = self._service.answer_held_call(switchboard_uuid, call_id, user_uuid)
+
+        return {'call_id': call_id}, 200
