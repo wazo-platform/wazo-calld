@@ -103,11 +103,6 @@ class SwitchboardsService(object):
         except ARINotFound:
             hold_bridge = self._ari.bridges.createWithId(type='holding', bridgeId=hold_bridge_id)
             hold_bridge.startMoh()
-        else:
-            # See https://issues.asterisk.org/jira/browse/ASTERISK-26718
-            if len(hold_bridge.json['channels']) == 0:
-                hold_bridge = self._ari.bridges.createWithId(type='holding', bridgeId=hold_bridge_id)
-                hold_bridge.startMoh()
 
         hold_bridge.addChannel(channel=channel_to_hold.id)
         channel_to_hold.setChannelVar(variable='WAZO_SWITCHBOARD_HOLD', value=switchboard_uuid)
