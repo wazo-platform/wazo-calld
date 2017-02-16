@@ -26,7 +26,7 @@ class SwitchboardsNotifier(object):
         logger.debug('Notifying updated queued calls for switchboard %s: %s calls', switchboard_uuid, len(calls))
         event = ArbitraryEvent(name='switchboard_queued_calls_updated',
                                body=body,
-                               required_acl='switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid))
+                               required_acl='events.switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid))
         event.routing_key = 'switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid)
         self._bus.publish(event)
 
@@ -37,7 +37,7 @@ class SwitchboardsNotifier(object):
             'operator_call_id': operator_call_id,
             'queued_call_id': queued_call_id
         }
-        required_acl = 'switchboards.{uuid}.calls.queued.{call_id}.answer.updated'.format(uuid=switchboard_uuid,
+        required_acl = 'events.switchboards.{uuid}.calls.queued.{call_id}.answer.updated'.format(uuid=switchboard_uuid,
                                                                                           call_id=escape_permission(queued_call_id))
         routing_key = 'switchboards.{uuid}.calls.queued.{call_id}.answer.updated'.format(uuid=switchboard_uuid,
                                                                                          call_id=escape_routing_key(queued_call_id))
@@ -55,7 +55,7 @@ class SwitchboardsNotifier(object):
         logger.debug('Notifying updated held calls for switchboard %s: %s calls', switchboard_uuid, len(calls))
         event = ArbitraryEvent(name='switchboard_held_calls_updated',
                                body=body,
-                               required_acl='switchboards.{uuid}.calls.held.updated'.format(uuid=switchboard_uuid))
+                               required_acl='events.switchboards.{uuid}.calls.held.updated'.format(uuid=switchboard_uuid))
         event.routing_key = 'switchboards.{uuid}.calls.held.updated'.format(uuid=switchboard_uuid)
         self._bus.publish(event)
 
@@ -66,7 +66,7 @@ class SwitchboardsNotifier(object):
             'operator_call_id': operator_call_id,
             'held_call_id': held_call_id
         }
-        required_acl = 'switchboards.{uuid}.calls.held.{call_id}.answer.updated'.format(uuid=switchboard_uuid,
+        required_acl = 'events.switchboards.{uuid}.calls.held.{call_id}.answer.updated'.format(uuid=switchboard_uuid,
                                                                                         call_id=escape_permission(held_call_id))
         routing_key = 'switchboards.{uuid}.calls.held.{call_id}.answer.updated'.format(uuid=switchboard_uuid,
                                                                                        call_id=escape_routing_key(held_call_id))
