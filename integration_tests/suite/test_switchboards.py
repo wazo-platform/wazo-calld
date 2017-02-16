@@ -19,7 +19,6 @@ from operator import attrgetter
 from xivo_test_helpers import until
 
 from .test_api.auth import MockUserToken
-from .test_api.base import IntegrationTest
 from .test_api.base import RealAsteriskIntegrationTest
 from .test_api.constants import VALID_TOKEN
 from .test_api.confd import MockSwitchboard
@@ -117,6 +116,28 @@ class TestSwitchboardCallsQueued(TestSwitchboards):
                                                                       has_entry('id', new_channel_2.id))))
 
         until.assert_(assert_function, tries=3)
+
+    def test_given_two_call_in_queue_and_one_hangup_then_list_one_call(self):
+
+        def calls_are_queued(*expected_call_ids):
+            calls = self.ctid_ng.switchboard_queued_calls(switchboard_uuid)
+            actual_call_ids = [call['id'] for call in calls['items']]
+            assert_that(actual_call_ids, contains_inanyorder(*expected_call_ids))
+
+        switchboard_uuid = 'my-switchboard-uuid'
+        self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
+        new_channel_1 = self.ari.channels.originate(endpoint=ENDPOINT_AUTOANSWER,
+                                                    app=STASIS_APP,
+                                                    appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, switchboard_uuid])
+        new_channel_2 = self.ari.channels.originate(endpoint=ENDPOINT_AUTOANSWER,
+                                                    app=STASIS_APP,
+                                                    appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, switchboard_uuid])
+
+        until.assert_(calls_are_queued, new_channel_1.id, new_channel_2.id, tries=3)
+
+        new_channel_1.hangup()
+
+        until.assert_(calls_are_queued, new_channel_2.id, tries=3)
 
     def test_given_no_calls_when_new_queued_call_then_bus_event(self):
         switchboard_uuid = 'my-switchboard-uuid'
@@ -578,6 +599,32 @@ class TestSwitchboardCallsHeld(TestSwitchboards):
                                                                       has_entry('id', new_channel_2.id))))
 
         until.assert_(assert_function, tries=3)
+
+    def test_given_two_calls_held_and_one_hangup_then_list_one_call(self):
+
+        def calls_are_held(*expected_call_ids):
+            calls = self.ctid_ng.switchboard_held_calls(switchboard_uuid)
+            actual_call_ids = [call['id'] for call in calls['items']]
+            assert_that(actual_call_ids, contains_inanyorder(*expected_call_ids))
+
+        switchboard_uuid = 'my-switchboard-uuid'
+        self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
+        queued_bus_events = self.bus.accumulator('switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid))
+        new_channel_1 = self.ari.channels.originate(endpoint=ENDPOINT_AUTOANSWER,
+                                                    app=STASIS_APP,
+                                                    appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, switchboard_uuid])
+        new_channel_2 = self.ari.channels.originate(endpoint=ENDPOINT_AUTOANSWER,
+                                                    app=STASIS_APP,
+                                                    appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, switchboard_uuid])
+        until.true(queued_bus_events.accumulate, tries=3)
+        self.ctid_ng.switchboard_hold_call(switchboard_uuid, new_channel_1.id)
+        self.ctid_ng.switchboard_hold_call(switchboard_uuid, new_channel_2.id)
+
+        until.assert_(calls_are_held, new_channel_1.id, new_channel_2.id, tries=3)
+
+        new_channel_1.hangup()
+
+        until.assert_(calls_are_held, new_channel_2.id, tries=3)
 
     def test_given_one_call_held_when_hangup_then_bus_event(self):
         switchboard_uuid = 'my-switchboard-uuid'

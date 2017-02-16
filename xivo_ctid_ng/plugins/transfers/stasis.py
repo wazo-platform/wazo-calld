@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2016 by Avencall
+# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import json
@@ -202,6 +202,9 @@ class TransfersStasis(object):
             bridge = self.ari.bridges.get(bridgeId=event['bridge']['id'])
         except ARINotFound:
             return
+        if bridge.json['bridge_type'] != 'mixing':
+            return
+
         logger.debug('cleaning bridge %s', bridge.id)
         try:
             self.ari.channels.get(channelId=channel.id)
