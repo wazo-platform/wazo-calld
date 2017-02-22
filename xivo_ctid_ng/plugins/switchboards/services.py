@@ -105,7 +105,7 @@ class SwitchboardsService(object):
         except ARINotFound:
             hold_bridge = self._ari.bridges.createWithId(type='holding', bridgeId=hold_bridge_id)
 
-        if len(bridge.json['channels']) == 0:
+        if len(hold_bridge.json['channels']) == 0:
             hold_bridge.startMoh()
 
         hold_bridge.addChannel(channel=channel_to_hold.id)
