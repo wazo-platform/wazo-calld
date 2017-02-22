@@ -59,10 +59,12 @@ class SwitchboardsService(object):
         except ARINotFound:
             bridge = self._ari.bridges.createWithId(type='holding', bridgeId=bridge_id)
 
+        if len(bridge.json['channels']) == 0:
+            bridge.startMoh()
+
         channel = self._ari.channels.get(channelId=channel_id)
         channel.setChannelVar(variable='WAZO_SWITCHBOARD_QUEUE', value=switchboard_uuid)
         channel.answer()
-        bridge.startMoh()
         bridge.addChannel(channel=channel_id)
 
         self._notifier.queued_calls(switchboard_uuid, self.queued_calls(switchboard_uuid))
@@ -103,7 +105,9 @@ class SwitchboardsService(object):
         except ARINotFound:
             hold_bridge = self._ari.bridges.createWithId(type='holding', bridgeId=hold_bridge_id)
 
-        hold_bridge.startMoh()
+        if len(bridge.json['channels']) == 0:
+            hold_bridge.startMoh()
+
         hold_bridge.addChannel(channel=channel_to_hold.id)
         channel_to_hold.setChannelVar(variable='WAZO_SWITCHBOARD_HOLD', value=switchboard_uuid)
 
