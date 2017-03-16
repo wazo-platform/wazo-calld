@@ -1,0 +1,50 @@
+events:
+  call_created:
+    summary: A new call has been created
+    routing_key: calls.call.created
+    required_acl: events.calls.{user_uuid}
+    schema:
+      '$ref': '#/definitions/Call'
+  call_updated:
+    summary: A call has been updated
+    description: Sent when a call is updated, i.e. ringing, answered, etc.
+    routing_key: calls.call.updated
+    required_acl: events.calls.{user_uuid}
+    schema:
+      '$ref': '#/definitions/Call'
+  call_ended:
+    summary: A new call has been hung up
+    routing_key: calls.call.ended
+    required_acl: events.calls.{user_uuid}
+    schema:
+      '$ref': '#/definitions/Call'
+definitions:
+  Call:
+    type: object
+    properties:
+      bridges:
+        type: array
+        items:
+          type: string
+      call_id:
+        type: string
+      caller_id_name:
+        type: string
+      caller_id_number:
+        type: string
+      peer_caller_id_name:
+        type: string
+      peer_caller_id_number:
+        type: string
+      creation_time:
+        type: string
+      status:
+        type: string
+      on_hold:
+        type: boolean
+      talking_to:
+        type: object
+      user_uuid:
+        type: string
+      is_caller:
+        type: boolean
