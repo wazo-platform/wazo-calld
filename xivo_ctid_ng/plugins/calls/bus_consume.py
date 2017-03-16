@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2016 by Avencall
+# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
@@ -15,6 +15,8 @@ from xivo_bus.resources.calls.hold import CallResumeEvent
 
 from xivo_ctid_ng.helpers import ami
 from xivo_ctid_ng.helpers.ari_ import Channel
+
+from .schema import call_schema
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +50,7 @@ class CallsBusEventHandler(object):
             logger.debug('channel %s not found', channel_id)
             return
         call = self.services.make_call_from_channel(self.ari, channel)
-        bus_event = CreateCallEvent(call.to_dict())
+        bus_event = CreateCallEvent(call_schema.dump(call).data)
         self.bus_publisher.publish(bus_event)
 
     def _collectd_channel_created(self, event):
@@ -65,14 +67,14 @@ class CallsBusEventHandler(object):
             logger.debug('channel %s not found', channel_id)
             return
         call = self.services.make_call_from_channel(self.ari, channel)
-        bus_event = UpdateCallEvent(call.to_dict())
+        bus_event = UpdateCallEvent(call_schema.dump(call).data)
         self.bus_publisher.publish(bus_event)
 
     def _relay_channel_hung_up(self, event):
         channel_id = event['Uniqueid']
         logger.debug('Relaying to bus: channel %s ended', channel_id)
         call = self.services.make_call_from_ami_event(event)
-        bus_event = EndCallEvent(call.to_dict())
+        bus_event = EndCallEvent(call_schema.dump(call).data)
         self.bus_publisher.publish(bus_event)
 
     def _collectd_channel_ended(self, event):
