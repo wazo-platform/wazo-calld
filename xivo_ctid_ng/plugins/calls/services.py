@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) 2015-2016 The Wazo Authors  (see AUTHORS file)
+# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
@@ -79,9 +79,12 @@ class CallsService(object):
                            'mobile_exten': source_mobile,
                            'mobile_context': source_context}
                 raise CallCreationError('User has invalid mobile phone number', details=details)
-            endpoint = 'local/{mobile}@{context}'.format(mobile=source_mobile, context=source_context)
+            endpoint = 'local/s@wazo-originate-mobile-leg1'
             context, extension, priority = 'wazo-originate-destination-caller-id', 's', 1
 
+            variables.setdefault('WAZO_ORIGINATE_MOBILE_PRIORITY', '1')
+            variables.setdefault('WAZO_ORIGINATE_MOBILE_EXTENSION', source_mobile)
+            variables.setdefault('WAZO_ORIGINATE_MOBILE_CONTEXT', source_context)
             variables.setdefault('XIVO_FIX_CALLERID', '1')
             variables.setdefault('XIVO_ORIGINAL_CALLER_ID', '"{exten}" <{exten}>'.format(exten=requested_extension))
             variables.setdefault('WAZO_ORIGINATE_DESTINATION_PRIORITY', str(requested_priority))
@@ -193,6 +196,7 @@ class CallsService(object):
         call.bridges = [bridge.id for bridge in ari.bridges.list() if channel.id in bridge.json['channels']]
         call.talking_to = {connected_channel.id: connected_channel.user()
                            for connected_channel in Channel(channel.id, ari).connected_channels()}
+        call.is_caller = Channel(channel.id, ari).is_caller()
 
         return call
 

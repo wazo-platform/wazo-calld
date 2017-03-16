@@ -255,6 +255,8 @@ definitions:
         type: string
       on_hold:
         type: boolean
+      is_caller:
+        type: boolean
   CallID:
     type: object
     properties:
