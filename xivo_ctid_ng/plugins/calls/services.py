@@ -80,7 +80,7 @@ class CallsService(object):
                            'mobile_context': source_context}
                 raise CallCreationError('User has invalid mobile phone number', details=details)
             endpoint = 'local/s@wazo-originate-mobile-leg1'
-            context, extension, priority = 'wazo-originate-destination-caller-id', 's', 1
+            context, extension, priority = 'wazo-originate-mobile-leg2', 's', 1
 
             variables.setdefault('WAZO_ORIGINATE_MOBILE_PRIORITY', '1')
             variables.setdefault('WAZO_ORIGINATE_MOBILE_EXTENSION', source_mobile)
