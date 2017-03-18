@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015-2016 by Avencall
+# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import json
@@ -132,3 +132,10 @@ class Channel(object):
             return False
 
         return channel.json['name'].startswith('Local/')
+
+    def is_caller(self):
+        try:
+            direction = self._ari.channels.getChannelVar(channelId=self.id, variable='WAZO_CHANNEL_DIRECTION')['value']
+            return direction == 'to-wazo'
+        except ARINotFound:
+            return False

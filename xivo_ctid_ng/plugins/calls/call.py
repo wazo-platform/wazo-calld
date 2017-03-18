@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015-2016 by Avencall
+# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 
@@ -17,6 +17,7 @@ class Call(object):
         self.peer_caller_id_name = ''
         self.peer_caller_id_number = ''
         self.on_hold = False
+        self.is_caller = False
 
     def to_dict(self):
         return {
@@ -31,4 +32,5 @@ class Call(object):
             'on_hold': self.on_hold,
             'talking_to': self.talking_to,
             'user_uuid': self.user_uuid,
+            'is_caller': self.is_caller,
         }
