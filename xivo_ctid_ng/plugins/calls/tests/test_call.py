@@ -7,6 +7,7 @@ from mock import sentinel as s
 from unittest import TestCase
 
 from ..call import Call
+from ..schema import call_schema
 
 
 class TestCall(TestCase):
@@ -19,11 +20,11 @@ class TestCall(TestCase):
         call.talking_to = s.talking_to
         call.user_uuid = s.user_uuid
 
-        assert_that(call.to_dict(), has_entries({
-            'bridges': s.bridges,
-            'call_id': s.call_id,
-            'creation_time': s.creation_time,
-            'status': s.status,
+        assert_that(call_schema.dump(call).data, has_entries({
+            'bridges': [u'{}'.format(s.bridges)],
+            'call_id': '{}'.format(s.call_id),
+            'creation_time': '{}'.format(s.creation_time),
+            'status': '{}'.format(s.status),
             'talking_to': s.talking_to,
-            'user_uuid': s.user_uuid,
+            'user_uuid': '{}'.format(s.user_uuid),
         }))
