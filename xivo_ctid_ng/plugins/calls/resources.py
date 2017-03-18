@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) 2015-2016 Avencall
+# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
 # Copyright (C) 2016 Proformatique Inc.
 # SPDX-License-Identifier: GPL-3.0+
 
@@ -11,6 +11,7 @@ from xivo_ctid_ng.core.auth import required_acl
 from xivo_ctid_ng.core.auth import get_token_user_uuid_from_request
 from xivo_ctid_ng.core.rest_api import AuthResource
 
+from .schema import call_schema
 from .schema import CallRequestSchema
 from .schema import UserCallRequestSchema
 
@@ -34,7 +35,7 @@ class CallsResource(AuthResource):
         calls = self.calls_service.list_calls(application_filter, application_instance_filter)
 
         return {
-            'items': [call.to_dict() for call in calls],
+            'items': call_schema.dump(calls, many=True).data,
         }, 200
 
     @required_acl('ctid-ng.calls.create')
@@ -61,7 +62,7 @@ class MyCallsResource(AuthResource):
         calls = self.calls_service.list_calls_user(user_uuid, application_filter, application_instance_filter)
 
         return {
-            'items': [call.to_dict() for call in calls],
+            'items': call_schema.dump(calls, many=True).data,
         }, 200
 
     @required_acl('ctid-ng.users.me.calls.create')
@@ -84,7 +85,7 @@ class CallResource(AuthResource):
     def get(self, call_id):
         call = self.calls_service.get(call_id)
 
-        return call.to_dict()
+        return call_schema.dump(call).data
 
     @required_acl('ctid-ng.calls.{call_id}.delete')
     def delete(self, call_id):
@@ -117,4 +118,4 @@ class ConnectCallToUserResource(AuthResource):
         new_call_id = self.calls_service.connect_user(call_id, user_uuid)
         new_call = self.calls_service.get(new_call_id)
 
-        return new_call.to_dict()
+        return call_schema.dump(new_call).data

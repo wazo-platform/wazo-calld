@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2016 by Avencall
+# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
@@ -7,14 +7,14 @@ import logging
 from ari.exceptions import ARINotFound
 from xivo_bus.collectd.channels import ChannelCreatedCollectdEvent
 from xivo_bus.collectd.channels import ChannelEndedCollectdEvent
-from xivo_bus.resources.calls.event import CreateCallEvent
-from xivo_bus.resources.calls.event import EndCallEvent
-from xivo_bus.resources.calls.event import UpdateCallEvent
 from xivo_bus.resources.calls.hold import CallOnHoldEvent
 from xivo_bus.resources.calls.hold import CallResumeEvent
+from xivo_bus.resources.common.event import ArbitraryEvent
 
 from xivo_ctid_ng.helpers import ami
 from xivo_ctid_ng.helpers.ari_ import Channel
+
+from .schema import call_schema
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +48,12 @@ class CallsBusEventHandler(object):
             logger.debug('channel %s not found', channel_id)
             return
         call = self.services.make_call_from_channel(self.ari, channel)
-        bus_event = CreateCallEvent(call.to_dict())
+        bus_event = ArbitraryEvent(
+            name='call_created',
+            body=call_schema.dump(call).data,
+            required_acl='events.calls.{}'.format(call.user_uuid)
+        )
+        bus_event.routing_key = 'calls.call.created'
         self.bus_publisher.publish(bus_event)
 
     def _collectd_channel_created(self, event):
@@ -65,14 +70,24 @@ class CallsBusEventHandler(object):
             logger.debug('channel %s not found', channel_id)
             return
         call = self.services.make_call_from_channel(self.ari, channel)
-        bus_event = UpdateCallEvent(call.to_dict())
+        bus_event = ArbitraryEvent(
+            name='call_updated',
+            body=call_schema.dump(call).data,
+            required_acl='events.calls.{}'.format(call.user_uuid)
+        )
+        bus_event.routing_key = 'calls.call.updated'
         self.bus_publisher.publish(bus_event)
 
     def _relay_channel_hung_up(self, event):
         channel_id = event['Uniqueid']
         logger.debug('Relaying to bus: channel %s ended', channel_id)
         call = self.services.make_call_from_ami_event(event)
-        bus_event = EndCallEvent(call.to_dict())
+        bus_event = ArbitraryEvent(
+            name='call_ended',
+            body=call_schema.dump(call).data,
+            required_acl='events.calls.{}'.format(call.user_uuid)
+        )
+        bus_event.routing_key = 'calls.call.ended'
         self.bus_publisher.publish(bus_event)
 
     def _collectd_channel_ended(self, event):

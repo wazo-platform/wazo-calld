@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) 2016 The Wazo Authors  (see AUTHORS file)
+# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 from marshmallow import Schema, fields
@@ -36,3 +36,20 @@ class UserCallRequestSchema(Schema):
     variables = StrictDict(key_field=fields.String(required=True, validate=Length(min=1)),
                            value_field=fields.String(required=True, validate=Length(min=1)),
                            missing=dict)
+
+
+class CallSchema(Schema):
+    bridges = fields.List(fields.String())
+    call_id = fields.String(attribute='id_')
+    caller_id_name = fields.String()
+    caller_id_number = fields.String()
+    peer_caller_id_name = fields.String()
+    peer_caller_id_number = fields.String()
+    creation_time = fields.String()
+    status = fields.String()
+    on_hold = fields.Boolean()
+    talking_to = StrictDict(key_field=fields.String(), value_field=fields.String())
+    user_uuid = fields.String()
+    is_caller = fields.Boolean()
+
+call_schema = CallSchema()
