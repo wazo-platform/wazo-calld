@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2016 Proformatique Inc.
+# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 from mock import Mock
@@ -183,6 +183,5 @@ class TestVoicemailMessagesCache(TestCase):
 
         cache.get_diff(self.number, self.context)
 
-        print cache._cache
         assert_that(cache._cache, not_(has_key(self.cache_key)))
         self.storage.list_voicemails_number_and_context.assert_called_once_with()
