@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) 2015-2016 Avencall
-# Copyright (C) 2016 Proformatique, Inc.
+# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 
@@ -29,7 +28,7 @@ _DEFAULT_CONFIG = {
         'ciphers': DEFAULT_CIPHERS,
         'cors': {
             'enabled': True,
-            'allow_headers': 'Content-Type'
+            'allow_headers': ['Content-Type'],
         },
     },
     'enabled_plugins': [],
