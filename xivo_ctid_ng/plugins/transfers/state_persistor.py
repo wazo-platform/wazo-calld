@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2016 by Avencall
+# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
@@ -34,18 +34,23 @@ class StatePersistor(object):
 
     def upsert(self, transfer):
         self._transfers.set(transfer.id, transfer.to_dict())
+        logger.debug('transfer: %s upsert starting', transfer.id)
         index = set(self._index.get(default=[]))
         index.add(transfer.id)
         self._index.set(list(index))
+        logger.debug('transfer: %s upsert done', transfer.id)
 
     def remove(self, transfer_id):
         self._transfers.unset(transfer_id)
+        logger.debug('transfer: %s remove starting', transfer_id)
         index = set(self._index.get(default=[]))
         try:
             index.remove(transfer_id)
         except KeyError:
+            logger.debug('transfer: %s remove done, not found', transfer_id)
             return
         self._index.set(list(index))
+        logger.debug('transfer: %s remove done', transfer_id)
 
     def list(self):
         for transfer_id in self._index.get(default=[]):

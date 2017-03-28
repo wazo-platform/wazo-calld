@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2016 by Avencall
+# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
@@ -52,6 +52,7 @@ state_factory = StateFactory()
 def transition(decorated):
     def decorator(*args, **kwargs):
         result = decorated(*args, **kwargs)
+        logger.info('Transition: %s -> %s -> %s', args[0].name, decorated.func_name, result.name)
         result.update_cache()
         return result
     return decorator

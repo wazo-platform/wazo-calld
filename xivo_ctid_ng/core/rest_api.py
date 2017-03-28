@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) 2015-2016 Avencall
+# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
@@ -10,7 +10,7 @@ from ari.exceptions import ARIException
 from ari.exceptions import ARIHTTPError
 from cherrypy import wsgiserver
 from datetime import timedelta
-from flask import Flask
+from flask import Flask, request
 from flask_restful import Api
 from flask_restful import Resource
 from flask_cors import CORS
@@ -31,12 +31,19 @@ api = Api(app, prefix='/{}'.format(VERSION))
 auth_verifier = AuthVerifier()
 
 
+def log_request_params(response):
+    http_helpers.log_request_hide_token(response)
+    logger.debug('request data: %s', request.data or '""')
+    logger.debug('response body: %s', response.data.strip() if response.data else '""')
+    return response
+
+
 class CoreRestApi(object):
 
     def __init__(self, global_config):
         self.config = global_config['rest_api']
         http_helpers.add_logger(app, logger)
-        app.after_request(http_helpers.log_request_hide_token)
+        app.after_request(log_request_params)
         app.secret_key = os.urandom(24)
         app.permanent_session_lifetime = timedelta(minutes=5)
         auth_verifier.set_config(global_config['auth'])

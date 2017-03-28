@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015-2016 by Avencall
+# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import kombu
@@ -41,6 +41,7 @@ class CoreBusPublisher(object):
         return Publisher(bus_producer, bus_marshaler)
 
     def publish(self, event):
+        logger.debug('publishing: %s %s', event.name, event.marshal())
         self._publisher.publish(event)
 
     def stop(self):
