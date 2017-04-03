@@ -106,7 +106,8 @@ class TransfersService(object):
                                                   appArgs=app_args,
                                                   callerId=caller_id,
                                                   variables={'variables': originate_variables},
-                                                  timeout=timeout)
+                                                  timeout=timeout,
+                                                  originator=initiator_call)
         recipient_call = new_channel.id
 
         try:

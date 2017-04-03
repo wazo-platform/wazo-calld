@@ -25,6 +25,7 @@ from hamcrest import has_key
 from hamcrest import instance_of
 from hamcrest import not_
 from hamcrest import raises
+from operator import attrgetter
 from xivo_test_helpers import until
 
 from .test_api.base import IntegrationTest
@@ -83,7 +84,7 @@ class TestTransfers(RealAsteriskIntegrationTest):
         right_name = left_name[:-1] + str(right_suffix)
         local_channel_right = next(channel for channel in self.ari.channels.list()
                                    if channel.json['name'] == right_name)
-        final_channel = self.same_linkedid(local_channel_right, exclude=[local_channel_left])
+        final_channel = self.latest_with_same_linkedid(local_channel_right, exclude=[local_channel_left])
         return final_channel
 
     def answer_recipient_channel(self, local_recipient_channel_id):
@@ -91,10 +92,11 @@ class TestTransfers(RealAsteriskIntegrationTest):
         real_recipient_channel = self.dereference_local_channel(recipient_channel)
         self.chan_test.answer_channel(real_recipient_channel.id)
 
-    def same_linkedid(self, channel_left, exclude=None):
+    def latest_with_same_linkedid(self, channel_left, exclude=None):
         exclude = exclude or []
         linkedid = channel_left.getChannelVar(variable='CHANNEL(linkedid)')['value']
-        for channel_right_candidate in self.ari.channels.list():
+        ordered_candidates = reversed(sorted(self.ari.channels.list(), key=attrgetter('id')))
+        for channel_right_candidate in ordered_candidates:
             try:
                 if (channel_right_candidate.getChannelVar(variable='CHANNEL(linkedid)')['value'] == linkedid and
                         channel_right_candidate.id != channel_left.id and
@@ -151,7 +153,7 @@ class TestTransfers(RealAsteriskIntegrationTest):
 
         def callee_is_ringing(caller):
             try:
-                return self.same_linkedid(caller)
+                return self.latest_with_same_linkedid(caller)
             except Exception:
                 return False
 
