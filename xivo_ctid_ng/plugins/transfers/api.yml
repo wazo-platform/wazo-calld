@@ -23,6 +23,10 @@ paths:
             $ref: '#/definitions/Transfer'
         '400':
           $ref: '#/responses/InvalidRequest'
+        '409':
+            description: A similar transfer (same initiator) is still in progress.
+            schema:
+              $ref: '#/definitions/Error'
         '503':
           $ref: '#/responses/AnotherServiceUnavailable'
   /transfers/{transfer_id}:
