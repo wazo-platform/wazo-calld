@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2016 by Avencall
+# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 from xivo_ctid_ng.core.exceptions import APIException
@@ -87,5 +87,17 @@ class NoSuchTransfer(TransferException):
             error_id='no-such-transfer',
             details={
                 'transfer_id': transfer_id,
+            }
+        )
+
+
+class TransferAlreadyStarted(TransferException):
+    def __init__(self, initiator_call):
+        super(TransferAlreadyStarted, self).__init__(
+            status_code=409,
+            message='Transfer already started with same initiator',
+            error_id='transfer-already-started',
+            details={
+                'initiator_call': initiator_call,
             }
         )

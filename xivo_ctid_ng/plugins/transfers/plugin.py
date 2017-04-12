@@ -1,5 +1,5 @@
-# -*- coding: UTF-8 -*-
-# Copyright 2016 by Avencall
+# -*- coding: utf-8 -*-
+# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 from xivo_amid_client import Client as AmidClient
@@ -17,6 +17,7 @@ from .services import TransfersService
 from .stasis import TransfersStasis
 from .state import state_factory
 from .state_persistor import StatePersistor
+from .transfer_lock import TransferLock
 
 
 class Plugin(object):
@@ -36,15 +37,16 @@ class Plugin(object):
         token_changed_subscribe(confd_client.set_token)
 
         state_persistor = StatePersistor(ari.client)
+        transfer_lock = TransferLock()
 
-        transfers_service = TransfersService(amid_client, ari.client, confd_client, state_factory, state_persistor)
+        transfers_service = TransfersService(amid_client, ari.client, confd_client, state_factory, state_persistor, transfer_lock)
 
         transfers_stasis = TransfersStasis(amid_client, ari.client, transfers_service, state_factory, state_persistor, config['uuid'])
         transfers_stasis.subscribe()
 
         notifier = TransferNotifier(bus_publisher)
 
-        state_factory.set_dependencies(amid_client, ari.client, notifier, transfers_service, state_persistor)
+        state_factory.set_dependencies(amid_client, ari.client, notifier, transfers_service, state_persistor, transfer_lock)
 
         api.add_resource(TransfersResource, '/transfers', resource_class_args=[transfers_service])
         api.add_resource(TransferResource, '/transfers/<transfer_id>', resource_class_args=[transfers_service])

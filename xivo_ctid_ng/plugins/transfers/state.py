@@ -50,9 +50,14 @@ state_factory = StateFactory()
 
 
 def transition(decorated):
-    def decorator(*args, **kwargs):
-        result = decorated(*args, **kwargs)
-        logger.info('Transition: %s -> %s -> %s', args[0].name, decorated.func_name, result.name)
+    def decorator(state, *args, **kwargs):
+        try:
+            result = decorated(state, *args, **kwargs)
+        except Exception:
+            if state.transfer:
+                state._transfer_lock.release(state.transfer.initiator_call)
+            raise
+        logger.info('Transition: %s -> %s -> %s', state.name, decorated.func_name, result.name)
         result.update_cache()
         return result
     return decorator
@@ -60,12 +65,13 @@ def transition(decorated):
 
 class TransferState(object):
 
-    def __init__(self, amid, ari, notifier, services, state_persistor, transfer=None):
+    def __init__(self, amid, ari, notifier, services, state_persistor, transfer_lock, transfer=None):
         self._amid = amid
         self._ari = ari
         self._notifier = notifier
         self._services = services
         self._state_persistor = state_persistor
+        self._transfer_lock = transfer_lock
         self.transfer = transfer
 
     @classmethod
@@ -75,6 +81,7 @@ class TransferState(object):
                         other_state._notifier,
                         other_state._services,
                         other_state._state_persistor,
+                        other_state._transfer_lock,
                         other_state.transfer)
         new_state.transfer.status = new_state.name
         return new_state
@@ -498,4 +505,5 @@ class TransferStateEnded(TransferState):
     def from_state(cls, *args, **kwargs):
         new_state = super(TransferStateEnded, cls).from_state(*args, **kwargs)
         new_state._notifier.ended(new_state.transfer)
+        new_state._transfer_lock.release(new_state.transfer.initiator_call)
         return new_state

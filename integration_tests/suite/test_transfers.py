@@ -629,6 +629,38 @@ class TestCreateTransfer(TestTransfers):
                     raises(ARINotFound))
         # we can't check for missing XIVO_USERUUID because initiator must have XIVO_USERUUID for transfers to work
 
+    def test_when_two_create_with_same_initiator_then_only_one_success(self):
+        transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()
+        body = {
+            'transferred_call': transferred_channel_id,
+            'initiator_call': initiator_channel_id,
+        }
+        body.update(RECIPIENT)
+
+        response1 = self.ctid_ng.post_transfer_result(body, VALID_TOKEN)
+        response2 = self.ctid_ng.post_transfer_result(body, VALID_TOKEN)
+
+        assert_that((response1.status_code, response2.status_code), contains_inanyorder(201, 409))
+
+    def test_when_two_create_with_different_initiators_then_two_success(self):
+        transferred_channel_id1, initiator_channel_id1 = self.given_bridged_call_stasis()
+        transferred_channel_id2, initiator_channel_id2 = self.given_bridged_call_stasis()
+        body1 = {
+            'transferred_call': transferred_channel_id1,
+            'initiator_call': initiator_channel_id1,
+        }
+        body1.update(RECIPIENT)
+        body2 = {
+            'transferred_call': transferred_channel_id2,
+            'initiator_call': initiator_channel_id2,
+        }
+        body2.update(RECIPIENT)
+
+        response1 = self.ctid_ng.post_transfer_result(body1, VALID_TOKEN)
+        response2 = self.ctid_ng.post_transfer_result(body2, VALID_TOKEN)
+
+        assert_that((response1.status_code, response2.status_code), contains(201, 201))
+
 
 class TestUserCreateTransfer(TestTransfers):
     def setUp(self):

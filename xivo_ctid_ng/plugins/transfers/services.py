@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2016 by Avencall
+# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
@@ -18,21 +18,23 @@ from xivo_ctid_ng.plugins.calls.state_persistor import ReadOnlyStatePersistor as
 from xivo_ctid_ng.helpers import ami
 from . import ari_helpers
 from .exceptions import NoSuchTransfer
-from .exceptions import TransferCreationError
 from .exceptions import TooManyTransferredCandidates
+from .exceptions import TransferAlreadyStarted
+from .exceptions import TransferCreationError
 from .state import TransferStateReadyNonStasis, TransferStateReady
 
 logger = logging.getLogger(__name__)
 
 
 class TransfersService(object):
-    def __init__(self, amid_client, ari, confd_client, state_factory, state_persistor):
+    def __init__(self, amid_client, ari, confd_client, state_factory, state_persistor, transfer_lock):
         self.amid_client = amid_client
         self.ari = ari
         self.confd_client = confd_client
         self.state_persistor = state_persistor
         self.state_factory = state_factory
         self.call_states = ReadOnlyCallStates(self.ari)
+        self.transfer_lock = transfer_lock
 
     def list_from_user(self, user_uuid):
         transfers = self.state_persistor.list()
@@ -48,13 +50,20 @@ class TransfersService(object):
         if not ami.extension_exists(self.amid_client, context, exten):
             raise InvalidExtension(context, exten)
 
+        if not self.transfer_lock.acquire(initiator_call):
+            raise TransferAlreadyStarted(initiator_call)
+
         if not (ari_helpers.is_in_stasis(self.ari, transferred_call) and
                 ari_helpers.is_in_stasis(self.ari, initiator_call)):
             transfer_state = self.state_factory.make_from_class(TransferStateReadyNonStasis)
         else:
             transfer_state = self.state_factory.make_from_class(TransferStateReady)
 
-        new_state = transfer_state.create(transferred_channel, initiator_channel, context, exten, variables, timeout)
+        try:
+            new_state = transfer_state.create(transferred_channel, initiator_channel, context, exten, variables, timeout)
+        except Exception:
+            self.transfer_lock.release(initiator_call)
+            raise
         if flow == 'blind':
             new_state = new_state.complete()
 
