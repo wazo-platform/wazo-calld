@@ -21,7 +21,6 @@ from xivo import rest_api_helpers
 
 from .exceptions import AsteriskARIUnreachable
 from .exceptions import AsteriskARIError
-from .exceptions import ValidationError
 
 VERSION = 1.0
 
@@ -91,18 +90,8 @@ def handle_ari_exception(func):
     return wrapper
 
 
-def handle_validation_exception(func):
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        try:
-            return func(*args, **kwargs)
-        except marshmallow.ValidationError as e:
-            raise ValidationError(e.messages)
-    return wrapper
-
-
 class ErrorCatchingResource(Resource):
-    method_decorators = ([handle_validation_exception,
+    method_decorators = ([rest_api_helpers.handle_validation_exception,
                           handle_ari_exception,
                           rest_api_helpers.handle_api_exception] +
                          Resource.method_decorators)

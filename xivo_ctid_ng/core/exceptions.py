@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) 2015-2016 Avencall
+# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
@@ -61,17 +61,6 @@ class AsteriskARIError(APIException):
                 'asterisk_ari_config': asterisk_ari_config,
                 'original_error': str(error),
             }
-        )
-
-
-class ValidationError(APIException):
-
-    def __init__(self, errors):
-        super(ValidationError, self).__init__(
-            status_code=400,
-            message='Sent data is invalid',
-            error_id='invalid-data',
-            details=errors
         )
 
 
