@@ -173,7 +173,8 @@ class CallsService(object):
 
         new_channel = self._ari.channels.originate(endpoint=endpoint,
                                                    app=APPLICATION_NAME,
-                                                   appArgs=[app_instance, 'dialed_from', channel_id])
+                                                   appArgs=[app_instance, 'dialed_from', channel_id],
+                                                   originator=call_id)
 
         # if the caller hangs up, we cancel our originate
         originate_canceller = channel.on_event('StasisEnd', lambda _, __: self.hangup(new_channel.id))
