@@ -17,6 +17,6 @@ kombu==3.0.34
 marshmallow==2.10.3
 pyopenssl==0.14  # from xivo-lib-python
 python-consul==0.6.0
-pyyaml==3.10  # from xivo-lib-python
+pyyaml==3.11  # from xivo-lib-python
 requests==2.4.3
 stevedore==1.17.1
