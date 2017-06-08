@@ -8,7 +8,7 @@ import marshmallow
 
 from ari.exceptions import ARIException
 from ari.exceptions import ARIHTTPError
-from cherrypy import wsgiserver
+from cheroot import wsgi
 from datetime import timedelta
 from flask import Flask, request
 from flask_restful import Api
@@ -59,9 +59,9 @@ class CoreRestApi(object):
     def run(self):
         bind_addr = (self.config['listen'], self.config['port'])
 
-        wsgi_app = wsgiserver.WSGIPathInfoDispatcher({'/': app})
-        self.server = wsgiserver.CherryPyWSGIServer(bind_addr=bind_addr,
-                                                    wsgi_app=wsgi_app)
+        wsgi_app = wsgi.WSGIPathInfoDispatcher({'/': app})
+        self.server = wsgi.WSGIServer(bind_addr=bind_addr,
+                                      wsgi_app=wsgi_app)
         self.server.ssl_adapter = http_helpers.ssl_adapter(self.config['certificate'],
                                                            self.config['private_key'],
                                                            self.config['ciphers'])
