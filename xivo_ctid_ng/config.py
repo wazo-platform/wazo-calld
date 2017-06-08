@@ -7,7 +7,6 @@ import argparse
 
 from xivo.chain_map import ChainMap
 from xivo.config_helper import read_config_file_hierarchy, parse_config_file
-from xivo.http_helpers import DEFAULT_CIPHERS
 from xivo.xivo_logging import get_log_level_by_name
 
 _CERT_FILE = '/usr/share/xivo-certs/server.crt'
@@ -25,7 +24,6 @@ _DEFAULT_CONFIG = {
         'port': 9485,
         'certificate': _CERT_FILE,
         'private_key': '/usr/share/xivo-certs/server.key',
-        'ciphers': DEFAULT_CIPHERS,
         'cors': {
             'enabled': True,
             'allow_headers': ['Content-Type'],
