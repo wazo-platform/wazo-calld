@@ -48,3 +48,4 @@ definitions:
         type: string
       is_caller:
         type: boolean
+        description: This value is only correct when the destination of the call is a user or outgoing call. In other cases, it is always False.
