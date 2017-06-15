@@ -13,7 +13,7 @@ setup(
     version='2.0',
     description='Wazo CTI Server Daemon',
     author='Wazo Authors',
-    author_email='dev.wazo@gmail.com',
+    author_email='dev@wazo.community',
     url='http://wazo.community',
     packages=find_packages(),
     package_data={
