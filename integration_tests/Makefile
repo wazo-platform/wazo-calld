@@ -25,4 +25,4 @@ egg-info:
 	cd .. && python setup.py egg_info
 
 test:
-	nosetests
+	nosetests -x
