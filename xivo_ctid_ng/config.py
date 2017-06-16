@@ -10,6 +10,7 @@ from xivo.config_helper import read_config_file_hierarchy, parse_config_file
 from xivo.xivo_logging import get_log_level_by_name
 
 _CERT_FILE = '/usr/share/xivo-certs/server.crt'
+_DEFAULT_HTTPS_PORT = 9500
 _DEFAULT_CONFIG = {
     'config_file': '/etc/xivo-ctid-ng/config.yml',
     'extra_config_files': '/etc/xivo-ctid-ng/conf.d/',
@@ -20,8 +21,8 @@ _DEFAULT_CONFIG = {
     'pid_filename': '/var/run/xivo-ctid-ng/xivo-ctid-ng.pid',
     'user': 'www-data',
     'rest_api': {
-        'listen': '127.0.0.1',
-        'port': 9485,
+        'listen': '0.0.0.0',
+        'port': _DEFAULT_HTTPS_PORT,
         'certificate': _CERT_FILE,
         'private_key': '/usr/share/xivo-certs/server.key',
         'cors': {
@@ -77,7 +78,7 @@ _DEFAULT_CONFIG = {
         'enabled': True,
         'advertise_address': 'auto',
         'advertise_address_interface': 'eth0',
-        'advertise_port': 9500,
+        'advertise_port': _DEFAULT_HTTPS_PORT,
         'ttl_interval': 30,
         'refresh_interval': 27,
         'retry_interval': 2,
