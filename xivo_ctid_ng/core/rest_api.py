@@ -15,10 +15,12 @@ from flask_restful import Api
 from flask_restful import Resource
 from flask_cors import CORS
 from functools import wraps
+from werkzeug.contrib.fixers import ProxyFix
 from xivo.auth_verifier import AuthVerifier
 from xivo import http_helpers
 from xivo import mallow_helpers
 from xivo import rest_api_helpers
+from xivo.http_helpers import ReverseProxied
 
 from .exceptions import AsteriskARIUnreachable
 from .exceptions import AsteriskARIError
@@ -59,7 +61,7 @@ class CoreRestApi(object):
     def run(self):
         bind_addr = (self.config['listen'], self.config['port'])
 
-        wsgi_app = wsgi.WSGIPathInfoDispatcher({'/': app})
+        wsgi_app = ReverseProxied(ProxyFix(wsgi.WSGIPathInfoDispatcher({'/': app})))
         self.server = wsgi.WSGIServer(bind_addr=bind_addr,
                                       wsgi_app=wsgi_app)
         self.server.ssl_adapter = http_helpers.ssl_adapter(self.config['certificate'],
