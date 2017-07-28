@@ -101,6 +101,7 @@ enabled_plugins:
   - api
   - calls
   - chats
+  - mongooseim
   - presences
   - status
   - switchboards

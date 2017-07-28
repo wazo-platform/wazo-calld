@@ -1,0 +1,44 @@
+paths:
+  /mongooseim/message_callback:
+    post:
+      summary: Send a message from mongooseim server
+      description: '**Warning** There are no authentication on this api, it only listen on localhost.
+      
+      This endpoint must only used by MongooseIM as callback. If you want send a message, use `POST /chats`.
+      '
+      parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          $ref: '#/definitions/MessageRequest'
+      tags:
+      - mongooseim
+      responses:
+        '204':
+          description: Message has been sent
+        '400':
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/Error'
+definitions:
+  MessageRequest:
+    type: object
+    properties:
+      author:
+        description: The user UUID of the sender
+        type: string
+      receiver:
+        description: The user UUID of the receiver
+        type: string
+      server:
+        description: The name of server
+        type: string
+      message:
+        description: The message content
+        type: string
+    required:
+    - author
+    - server
+    - receiver
+    - message
