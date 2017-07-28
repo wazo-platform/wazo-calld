@@ -30,6 +30,11 @@ _DEFAULT_CONFIG = {
             'allow_headers': ['Content-Type'],
         },
     },
+    'adapter_api': {
+        'enabled': True,
+        'listen': '127.0.0.1',
+        'port': 9501,
+    },
     'enabled_plugins': [],
     'amid': {
         'host': 'localhost',
