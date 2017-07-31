@@ -79,6 +79,10 @@ _DEFAULT_CONFIG = {
         'scheme': 'https',
         'verify': _CERT_FILE,
     },
+    'mongooseim': {
+        'host': 'localhost',
+        'port': 8088,
+    },
     'service_discovery': {
         'enabled': True,
         'advertise_address': 'auto',
