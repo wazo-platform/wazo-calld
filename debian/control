@@ -10,6 +10,7 @@ Package: xivo-ctid-ng
 Architecture: all
 Depends: ${python:Depends},
          ${misc:Depends},
+         mongooseim,
          python-asterisk-ari (>= 0.2.2),
          python-cheroot,
          python-flask,
