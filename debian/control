@@ -11,12 +11,6 @@ Architecture: all
 Depends: ${python:Depends},
          ${misc:Depends},
          python-asterisk-ari (>= 0.2.2),
-         xivo-amid-client,
-         xivo-auth-client,
-         xivo-bus (>> 15.19),
-         xivo-confd-client,
-         xivo-ctid-client,
-         xivo-lib-python,
          python-cheroot,
          python-flask,
          python-flask-restful,
@@ -25,7 +19,13 @@ Depends: ${python:Depends},
          python-kombu,
          python-marshmallow,
          python-stevedore,
-         python-wsaccel
+         python-wsaccel,
+         xivo-amid-client,
+         xivo-auth-client,
+         xivo-bus (>> 15.19),
+         xivo-confd-client,
+         xivo-ctid-client,
+         xivo-lib-python
 Description: Wazo CTI server (new generation)
  Wazo is a system based on a powerful IPBX, to bring an easy to
  install solution for telephony and related services.
