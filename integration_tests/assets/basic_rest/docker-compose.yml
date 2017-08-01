@@ -10,10 +10,11 @@ services:
       - consul
       - ctid
       - ctid-ng
+      - mongooseim
       - rabbitmq
       - remote_ctid_ng
     environment:
-      - PORTS=5039 5672 8500 9486 9491 9495 9497 9500 9501
+      - PORTS=5039 5672 8500 8088 9486 9491 9495 9497 9500 9501
       - TIMEOUT=${INTEGRATION_TEST_TIMEOUT}
 
   amid:
@@ -88,6 +89,14 @@ services:
     image: rabbitmq
     ports:
       - 5672
+
+  mongooseim:
+    image: mongooseim/mongooseim:2.1.0beta1
+    hostname: mongooseim-1
+    expose:
+      - 8088
+    volumes:
+      - ./etc/mongooseim:/member
 
   remote_ctid_ng:
     image: p0bailey/docker-flask
