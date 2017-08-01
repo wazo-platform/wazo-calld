@@ -35,7 +35,6 @@ _DEFAULT_CONFIG = {
         'listen': '127.0.0.1',
         'port': 9501,
     },
-    'enabled_plugins': [],
     'amid': {
         'host': 'localhost',
         'port': 9491,
@@ -94,6 +93,17 @@ _DEFAULT_CONFIG = {
     },
     'remote_credentials': {
     },
+    'enabled_plugins': [
+        'api',
+        'calls',
+        'chats',
+        'mongooseim',
+        'presences',
+        'status',
+        'switchboards',
+        'transfers',
+        'voicemails',
+    ]
 }
 
 
