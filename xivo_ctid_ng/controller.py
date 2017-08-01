@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015-2016 by Avencall
-# Copyright (C) 2016 Proformatique, Inc.
+# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
@@ -17,7 +16,7 @@ from xivo_ctid_ng.core.bus import CoreBusConsumer
 from xivo_ctid_ng.core.bus import CoreBusPublisher
 from xivo_ctid_ng.core.collectd import CoreCollectd
 from xivo_ctid_ng.core.ari_ import CoreARI
-from xivo_ctid_ng.core.rest_api import api, CoreRestApi
+from xivo_ctid_ng.core.rest_api import api, api_adapter, CoreRestApi
 from xivo_ctid_ng.core.status import StatusAggregator
 from .service_discovery import self_check
 
@@ -74,6 +73,7 @@ class Controller(object):
             bus_consumer_thread.join()
             collectd_thread.join()
             bus_producer_thread.join()
+            self.rest_api.join()
 
     def stop(self, reason):
         logger.warning('Stopping xivo-ctid-ng: %s', reason)
@@ -82,6 +82,7 @@ class Controller(object):
     def _load_plugins(self, global_config):
         load_args = [{
             'api': api,
+            'api_adapter': api_adapter,
             'ari': self.ari,
             'bus_publisher': self.bus_publisher,
             'bus_consumer': self.bus_consumer,

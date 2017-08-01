@@ -8,6 +8,7 @@ git+https://github.com/wazo-pbx/xivo-ctid-client.git
 git+https://github.com/wazo-pbx/xivo-ctid-ng-client.git
 git+https://github.com/wazo-pbx/xivo-lib-python.git
 git+https://github.com/wazo-pbx/xivo-lib-rest-client.git
+cherrypy==10.2.2
 cheroot==5.5.0
 flask==0.10.1
 flask-restful==0.3.5

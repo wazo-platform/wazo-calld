@@ -2,12 +2,14 @@
 # Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
+import cherrypy
 import logging
 import os
-import marshmallow
 
 from ari.exceptions import ARIException
 from ari.exceptions import ARIHTTPError
+from cherrypy.process.wspbus import states
+from cherrypy.process.servers import ServerAdapter
 from cheroot import wsgi
 from datetime import timedelta
 from flask import Flask, request
@@ -29,7 +31,9 @@ VERSION = 1.0
 
 logger = logging.getLogger(__name__)
 app = Flask('xivo_ctid_ng')
+app_adapter = Flask('xivo_ctid_ng_adapter')
 api = Api(app, prefix='/{}'.format(VERSION))
+api_adapter = Api(app_adapter, prefix='/{}'.format(VERSION))
 auth_verifier = AuthVerifier()
 
 
@@ -44,10 +48,14 @@ class CoreRestApi(object):
 
     def __init__(self, global_config):
         self.config = global_config['rest_api']
+        self.config_adapter = global_config['adapter_api']
         http_helpers.add_logger(app, logger)
+        http_helpers.add_logger(app_adapter, logger)
         app.after_request(log_request_params)
         app.secret_key = os.urandom(24)
         app.permanent_session_lifetime = timedelta(minutes=5)
+        app_adapter.after_request(log_request_params)
+        app_adapter.permanent_session_lifetime = timedelta(minutes=5)
         auth_verifier.set_config(global_config['auth'])
         self._load_cors()
         self.server = None
@@ -59,25 +67,50 @@ class CoreRestApi(object):
             CORS(app, **cors_config)
 
     def run(self):
+        wsgi_app_https = ReverseProxied(ProxyFix(wsgi.WSGIPathInfoDispatcher({'/': app})))
+        wsgi_app_http = ReverseProxied(ProxyFix(wsgi.WSGIPathInfoDispatcher({'/': app_adapter})))
+        cherrypy.server.unsubscribe()
+        cherrypy.config.update({'environment': 'production'})
+
         bind_addr = (self.config['listen'], self.config['port'])
 
-        wsgi_app = ReverseProxied(ProxyFix(wsgi.WSGIPathInfoDispatcher({'/': app})))
-        self.server = wsgi.WSGIServer(bind_addr=bind_addr,
-                                      wsgi_app=wsgi_app)
-        self.server.ssl_adapter = http_helpers.ssl_adapter(self.config['certificate'],
-                                                           self.config['private_key'])
-        logger.debug('WSGIServer starting... uid: %s, listen: %s:%s', os.getuid(), bind_addr[0], bind_addr[1])
+        server_https = wsgi.WSGIServer(bind_addr=bind_addr,
+                                       wsgi_app=wsgi_app_https)
+        server_https.ssl_adapter = http_helpers.ssl_adapter(self.config['certificate'],
+                                                            self.config['private_key'])
+        ServerAdapter(cherrypy.engine, server_https).subscribe()
+        logger.debug('WSGIServer starting... uid: %s, listen: %s:%s',
+                     os.getuid(), bind_addr[0], bind_addr[1])
+
         for route in http_helpers.list_routes(app):
             logger.debug(route)
 
+        if self.config_adapter['enabled']:
+            bind_addr = (self.config_adapter['listen'], self.config_adapter['port'])
+            server_adapter = wsgi.WSGIServer(bind_addr=bind_addr,
+                                             wsgi_app=wsgi_app_http)
+            ServerAdapter(cherrypy.engine, server_adapter).subscribe()
+            logger.debug('WSGIServer starting... uid: %s, listen: %s:%s',
+                         os.getuid(), bind_addr[0], bind_addr[1])
+
+            for route in http_helpers.list_routes(app_adapter):
+                logger.debug(route)
+
+        else:
+            logger.debug('Adapter server is disabled')
+
         try:
-            self.server.start()
+            cherrypy.engine.start()
+            cherrypy.engine.wait([states.STOPPED, states.EXITING])
         except KeyboardInterrupt:
-            self.server.stop()
+            logger.warning('Stopping xivo-ctid-ng: KeyboardInterrupt')
+            cherrypy.engine.exit()
 
     def stop(self):
-        if self.server:
-            self.server.stop()
+        cherrypy.engine.exit()
+
+    def join(self):
+        cherrypy.engine.block()
 
 
 def handle_ari_exception(func):
