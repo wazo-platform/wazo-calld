@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015 by Avencall
+# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 
@@ -18,7 +18,6 @@ def load_plugins(plugins, load_args=None, load_kwargs=None):
                                     names=plugins,
                                     name_order=True,
                                     on_load_failure_callback=plugins_load_fail,
-                                    propagate_map_exceptions=True,
                                     invoke_on_load=True)
 
     try:
