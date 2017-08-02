@@ -6,14 +6,14 @@ import unittest
 import uuid
 
 from requests import RequestException
-from hamcrest import assert_that, has_entry, raises, calling
+from hamcrest import assert_that, equal_to, raises, calling
 from mock import Mock, patch
 
-from xivo_ctid_ng.plugins.chats.services import (
+from ..contexts import ChatsContexts
+from ..services import (
     ChatsService,
     MongooseIMException,
     MongooseIMUnreachable,
-    chat_contexts,
 )
 
 
@@ -22,7 +22,7 @@ class TestChatsService(unittest.TestCase):
     def setUp(self):
         self.xivo_uuid = 'xivo-uuid'
         self.mongooseim_config = {'host': 'localhost', 'port': 8088}
-        self.service = ChatsService(self.xivo_uuid, self.mongooseim_config)
+        self.service = ChatsService(self.xivo_uuid, self.mongooseim_config, ChatsContexts)
         self.alias = 'alice'
         self.msg = 'hello'
         self.from_ = uuid.uuid4()
@@ -67,8 +67,8 @@ class TestChatsService(unittest.TestCase):
 
         self.service.send_message(self.request_body)
 
-        assert_that(chat_contexts, has_entry('{}-{}'.format(self.from_, self.to),
-                                             {'to_xivo_uuid': str(self.to_xivo_uuid), 'alias': self.alias}))
+        context = ChatsContexts.get(self.from_, self.to)
+        assert_that(context, equal_to({'to_xivo_uuid': str(self.to_xivo_uuid), 'alias': self.alias}))
 
     @patch('xivo_ctid_ng.plugins.chats.services.requests')
     def test_send_message_without_to_xivo_uuid(self, requests):
@@ -77,8 +77,8 @@ class TestChatsService(unittest.TestCase):
 
         self.service.send_message(self.request_body)
 
-        assert_that(chat_contexts, has_entry('{}-{}'.format(self.from_, self.to),
-                                             {'to_xivo_uuid': str(self.xivo_uuid), 'alias': self.alias}))
+        context = ChatsContexts.get(self.from_, self.to)
+        assert_that(context, equal_to({'to_xivo_uuid': str(self.xivo_uuid), 'alias': self.alias}))
 
     @patch('xivo_ctid_ng.plugins.chats.services.requests')
     def test_send_message_without_from(self, requests):

@@ -4,9 +4,10 @@
 
 import unittest
 
-from mock import Mock, patch
+from mock import Mock
 from xivo_bus.resources.chat.event import ChatMessageEvent
 
+from xivo_ctid_ng.plugins.chats.contexts import ChatsContexts
 from ..services import MessageCallbackService
 
 
@@ -15,22 +16,19 @@ class TestMessageCallbackService(unittest.TestCase):
     def setUp(self):
         self.bus_publisher = Mock()
         self.xivo_uuid = 'xivo-uuid'
-        self.service = MessageCallbackService(self.bus_publisher, self.xivo_uuid)
+        self.service = MessageCallbackService(self.bus_publisher, self.xivo_uuid, ChatsContexts)
         self.alias = 'GhostBuster'
         self.to_xivo_uuid = 'other-xivo-uuid'
         self.message = 'hello'
         self.author = 'Author'
         self.receiver = 'Receiver'
+        ChatsContexts.add(self.author, self.receiver, to_xivo_uuid=self.to_xivo_uuid, alias=self.alias)
         self.request_body = {
             'author': self.author,
             'receiver': self.receiver,
             'message': self.message,
         }
 
-    @patch('xivo_ctid_ng.plugins.mongooseim.services.chat_contexts', {
-        'Author-Receiver': {'to_xivo_uuid': 'other-xivo-uuid',
-                            'alias': 'GhostBuster'}
-    })
     def test_send_message(self):
         self.service.send_message(self.request_body)
 

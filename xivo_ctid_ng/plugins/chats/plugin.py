@@ -4,6 +4,7 @@
 
 from xivo_auth_client import Client as AuthClient
 
+from .contexts import ChatsContexts
 from .resources import ChatsResource, UserChatsResource
 from .services import ChatsService
 
@@ -16,7 +17,7 @@ class Plugin(object):
 
         auth_client = AuthClient(**config['auth'])
 
-        chats_service = ChatsService(config['uuid'], config['mongooseim'])
+        chats_service = ChatsService(config['uuid'], config['mongooseim'], ChatsContexts)
 
         api.add_resource(ChatsResource, '/chats', resource_class_args=[chats_service])
         api.add_resource(UserChatsResource, '/users/me/chats', resource_class_args=[auth_client, chats_service])

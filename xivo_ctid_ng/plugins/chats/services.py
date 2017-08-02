@@ -6,8 +6,6 @@ import requests
 from requests import RequestException
 from xivo_ctid_ng.core.exceptions import APIException
 
-chat_contexts = {}
-
 
 class MongooseIMUnreachable(APIException):
 
@@ -44,9 +42,10 @@ class MongooseIMException(APIException):
 
 class ChatsService(object):
 
-    def __init__(self, xivo_uuid, mongooseim_config):
+    def __init__(self, xivo_uuid, mongooseim_config, contexts):
         self._xivo_uuid = xivo_uuid
         self.mongooseim_config = mongooseim_config
+        self.contexts = contexts
 
     def send_message(self, request_body, user_uuid=None):
         _, from_ = self._build_from(request_body, user_uuid)
@@ -54,7 +53,7 @@ class ChatsService(object):
         alias = request_body['alias']
         msg = self._escape_buggy_symbols_for_mongooseim(request_body['msg'])
 
-        self._save_context(from_, to, to_xivo_uuid, alias)
+        self.contexts.add(from_, to, to_xivo_uuid=to_xivo_uuid, alias=alias)
         self._send_mongooseim_message(from_, to, msg)
 
     def _escape_buggy_symbols_for_mongooseim(self, msg):
@@ -68,10 +67,6 @@ class ChatsService(object):
         xivo_uuid = str(request_body.get('to_xivo_uuid', self._xivo_uuid))
         user_uuid = str(request_body['to'])
         return (xivo_uuid, user_uuid)
-
-    def _save_context(self, from_, to, to_xivo_uuid, alias):
-        chat_contexts['{}-{}'.format(from_, to)] = {'to_xivo_uuid': to_xivo_uuid,
-                                                    'alias': alias}
 
     def _send_mongooseim_message(self, from_, to, msg):
         url = 'http://{}:{}/api/messages'.format(self.mongooseim_config['host'],
