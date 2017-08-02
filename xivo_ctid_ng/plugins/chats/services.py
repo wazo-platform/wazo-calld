@@ -27,7 +27,7 @@ class MongooseIMUnreachable(APIException):
 
 class MongooseIMException(APIException):
 
-    def __init__(self, xivo_uuid, error):
+    def __init__(self, xivo_uuid, status_code, error):
         super(MongooseIMException, self).__init__(
             status_code=503,
             message='mongooseim error',
@@ -36,6 +36,7 @@ class MongooseIMException(APIException):
             details={
                 'xivo_uuid': xivo_uuid,
                 'original_error': str(error),
+                'original_status_code': status_code,
                 'service': 'xivo-ctid-ng',
             }
         )
@@ -83,5 +84,4 @@ class ChatsService(object):
             raise MongooseIMUnreachable(self._xivo_uuid, e)
 
         if response.status_code != 204:
-            raise MongooseIMException(self._xivo_uuid,
-                                      '{}-{}'.format(response.status_code, response.reason))
+            raise MongooseIMException(self._xivo_uuid, response.status_code, response.reason)
