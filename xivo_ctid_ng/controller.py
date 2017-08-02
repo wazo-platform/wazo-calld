@@ -69,11 +69,17 @@ class Controller(object):
             self.bus_consumer.should_stop = True
             self.collectd.stop()
             self.bus_publisher.stop()
+            logger.debug('joining ari thread')
             ari_thread.join()
+            logger.debug('joining bus consumer thread')
             bus_consumer_thread.join()
+            logger.debug('joining collectd thread')
             collectd_thread.join()
+            logger.debug('joining bus producer thread')
             bus_producer_thread.join()
+            logger.debug('joining rest api threads')
             self.rest_api.join()
+            logger.debug('done joining')
 
     def stop(self, reason):
         logger.warning('Stopping xivo-ctid-ng: %s', reason)
