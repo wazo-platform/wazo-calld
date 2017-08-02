@@ -16,6 +16,7 @@ class MongooseIMUnreachable(APIException):
             status_code=503,
             message='mongooseim server unreachable',
             error_id='mongooseim-unreachable',
+            resource='chats',
             details={
                 'xivo_uuid': xivo_uuid,
                 'original_error': str(error),
@@ -31,6 +32,7 @@ class MongooseIMException(APIException):
             status_code=503,
             message='mongooseim error',
             error_id='mongooseim-exception',
+            resource='chats',
             details={
                 'xivo_uuid': xivo_uuid,
                 'original_error': str(error),
