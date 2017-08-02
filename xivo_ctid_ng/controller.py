@@ -16,7 +16,7 @@ from xivo_ctid_ng.core.bus import CoreBusConsumer
 from xivo_ctid_ng.core.bus import CoreBusPublisher
 from xivo_ctid_ng.core.collectd import CoreCollectd
 from xivo_ctid_ng.core.ari_ import CoreARI
-from xivo_ctid_ng.core.rest_api import api, api_adapter, CoreRestApi
+from xivo_ctid_ng.core.rest_api import api, adapter_api, CoreRestApi
 from xivo_ctid_ng.core.status import StatusAggregator
 from .service_discovery import self_check
 
@@ -88,7 +88,7 @@ class Controller(object):
     def _load_plugins(self, global_config):
         load_args = [{
             'api': api,
-            'api_adapter': api_adapter,
+            'adapter_api': adapter_api,
             'ari': self.ari,
             'bus_publisher': self.bus_publisher,
             'bus_consumer': self.bus_consumer,

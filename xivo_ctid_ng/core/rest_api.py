@@ -31,9 +31,9 @@ VERSION = 1.0
 
 logger = logging.getLogger(__name__)
 app = Flask('xivo_ctid_ng')
-app_adapter = Flask('xivo_ctid_ng_adapter')
+adapter_app = Flask('xivo_ctid_ng_adapter')
 api = Api(app, prefix='/{}'.format(VERSION))
-api_adapter = Api(app_adapter, prefix='/{}'.format(VERSION))
+adapter_api = Api(adapter_app, prefix='/{}'.format(VERSION))
 auth_verifier = AuthVerifier()
 
 
@@ -48,14 +48,14 @@ class CoreRestApi(object):
 
     def __init__(self, global_config):
         self.config = global_config['rest_api']
-        self.config_adapter = global_config['adapter_api']
+        self.adapter_config = global_config['adapter_api']
         http_helpers.add_logger(app, logger)
-        http_helpers.add_logger(app_adapter, logger)
+        http_helpers.add_logger(adapter_app, logger)
         app.after_request(log_request_params)
         app.secret_key = os.urandom(24)
         app.permanent_session_lifetime = timedelta(minutes=5)
-        app_adapter.after_request(log_request_params)
-        app_adapter.permanent_session_lifetime = timedelta(minutes=5)
+        adapter_app.after_request(log_request_params)
+        adapter_app.permanent_session_lifetime = timedelta(minutes=5)
         auth_verifier.set_config(global_config['auth'])
         self._load_cors()
         self.server = None
@@ -68,7 +68,7 @@ class CoreRestApi(object):
 
     def run(self):
         wsgi_app_https = ReverseProxied(ProxyFix(wsgi.WSGIPathInfoDispatcher({'/': app})))
-        wsgi_app_http = ReverseProxied(ProxyFix(wsgi.WSGIPathInfoDispatcher({'/': app_adapter})))
+        wsgi_app_http = ReverseProxied(ProxyFix(wsgi.WSGIPathInfoDispatcher({'/': adapter_app})))
         cherrypy.server.unsubscribe()
         cherrypy.config.update({'environment': 'production'})
 
@@ -85,15 +85,15 @@ class CoreRestApi(object):
         for route in http_helpers.list_routes(app):
             logger.debug(route)
 
-        if self.config_adapter['enabled']:
-            bind_addr = (self.config_adapter['listen'], self.config_adapter['port'])
+        if self.adapter_config['enabled']:
+            bind_addr = (self.adapter_config['listen'], self.adapter_config['port'])
             server_adapter = wsgi.WSGIServer(bind_addr=bind_addr,
                                              wsgi_app=wsgi_app_http)
             ServerAdapter(cherrypy.engine, server_adapter).subscribe()
             logger.debug('WSGIServer starting... uid: %s, listen: %s:%s',
                          os.getuid(), bind_addr[0], bind_addr[1])
 
-            for route in http_helpers.list_routes(app_adapter):
+            for route in http_helpers.list_routes(adapter_app):
                 logger.debug(route)
 
         else:
