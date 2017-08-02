@@ -52,11 +52,13 @@ class ChatsService(object):
         _, from_ = self._build_from(request_body, user_uuid)
         to_xivo_uuid, to = self._build_to(request_body)
         alias = request_body['alias']
-        msg = request_body['msg']
-        msg = msg.replace('&', '#26')
+        msg = self._escape_buggy_symbols_for_mongooseim(request_body['msg'])
 
         self._save_context(from_, to, to_xivo_uuid, alias)
         self._send_mongooseim_message(from_, to, msg)
+
+    def _escape_buggy_symbols_for_mongooseim(self, msg):
+        return msg.replace('&', '#26')
 
     def _build_from(self, request_body, token_user_uuid):
         user_uuid = token_user_uuid or str(request_body['from'])
