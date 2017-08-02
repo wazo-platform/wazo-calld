@@ -78,6 +78,8 @@ services:
       - ../../..:/usr/src/xivo-ctid-ng
       - ./etc/xivo-ctid-ng:/etc/xivo-ctid-ng
       - ./ssl:/usr/local/share/ssl
+    links:
+      - ari
     ports:
       - 9500
     expose:
