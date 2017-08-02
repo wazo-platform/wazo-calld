@@ -101,7 +101,7 @@ class CoreRestApi(object):
 
         try:
             cherrypy.engine.start()
-            cherrypy.engine.wait([states.STOPPED, states.EXITING])
+            cherrypy.engine.wait(states.EXITING)
         except KeyboardInterrupt:
             logger.warning('Stopping xivo-ctid-ng: KeyboardInterrupt')
             cherrypy.engine.exit()
@@ -110,7 +110,8 @@ class CoreRestApi(object):
         cherrypy.engine.exit()
 
     def join(self):
-        cherrypy.engine.block()
+        if cherrypy.engine.state == states.EXITING:
+            cherrypy.engine.block()
 
 
 def handle_ari_exception(func):
