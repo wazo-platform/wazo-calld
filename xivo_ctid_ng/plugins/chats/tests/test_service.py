@@ -85,17 +85,32 @@ class TestChatsService(unittest.TestCase):
         del self.request_body['from']
         requests.post.return_value = Mock(status_code=204)
 
-        self.service.send_message(self.request_body, 'patate-uuid')
+        self.service.send_message(self.request_body, 'user-uuid')
 
-        expected_body = self.expected_body('patate-uuid',
+        expected_body = self.expected_body('user-uuid',
                                            self.request_body['to'],
                                            self.request_body['msg'])
         requests.post.assert_called_once_with(self.expected_url, json=expected_body)
 
-    def expected_body(self, from_, to, msg):
-        bare_jid = '{}@localhost'
-        return {'caller': bare_jid.format(from_),
-                'to': bare_jid.format(to),
+    @patch('xivo_ctid_ng.plugins.chats.services.requests')
+    def test_send_message_with_same_to_xivo_uuid(self, requests):
+        requests.post.return_value = Mock(status_code=204)
+        request_body = self.request_body
+        request_body['to_xivo_uuid'] = self.xivo_uuid
+
+        self.service.send_message(request_body)
+
+        expected_body = self.expected_body(self.request_body['from'],
+                                           self.request_body['to'],
+                                           self.request_body['msg'],
+                                           request_body['to_xivo_uuid'])
+        requests.post.assert_called_once_with(self.expected_url, json=expected_body)
+
+    def expected_body(self, from_, to, msg, to_xivo_uuid=None):
+        if not to_xivo_uuid:
+            to_xivo_uuid = self.to_xivo_uuid
+        return {'caller': '{}@localhost'.format(from_),
+                'to': '{}@{}'.format(to, 'localhost' if to_xivo_uuid == self.xivo_uuid else to_xivo_uuid),
                 'body': msg}
 
     @patch('xivo_ctid_ng.plugins.chats.services.requests')
