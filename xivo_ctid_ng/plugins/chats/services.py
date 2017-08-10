@@ -54,7 +54,7 @@ class ChatsService(object):
         msg = self._escape_buggy_symbols_for_mongooseim(request_body['msg'])
 
         self.contexts.add(from_, to, to_xivo_uuid=to_xivo_uuid, alias=alias)
-        self._send_mongooseim_message(from_, to, msg)
+        self._send_mongooseim_message(from_, to_xivo_uuid, to,  msg)
 
     def _escape_buggy_symbols_for_mongooseim(self, msg):
         return msg.replace('&', '#26')
@@ -68,12 +68,12 @@ class ChatsService(object):
         user_uuid = str(request_body['to'])
         return (xivo_uuid, user_uuid)
 
-    def _send_mongooseim_message(self, from_, to, msg):
+    def _send_mongooseim_message(self, from_, to_domain, to, msg):
         url = 'http://{}:{}/api/messages'.format(self.mongooseim_config['host'],
                                                  self.mongooseim_config['port'])
         bare_jid = '{}@localhost'
         body = {'caller': bare_jid.format(from_),
-                'to': bare_jid.format(to),
+                'to': self._build_remote_jid(to_domain, to),
                 'body': msg}
         try:
             response = requests.post(url, json=body)
@@ -82,3 +82,7 @@ class ChatsService(object):
 
         if response.status_code != 204:
             raise MongooseIMException(self._xivo_uuid, response.status_code, response.reason)
+
+    def _build_remote_jid(self, to_domain, to):
+        domain = 'localhost' if to_domain == self._xivo_uuid else to_domain
+        return '{}@{}'.format(to, domain)
