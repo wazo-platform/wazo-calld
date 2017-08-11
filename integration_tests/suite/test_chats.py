@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) 2016 Avencall
+# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 from hamcrest import assert_that
@@ -18,7 +18,7 @@ from .test_api.constants import XIVO_UUID
 
 class TestCreateChat(IntegrationTest):
 
-    asset = 'basic_rest'
+    asset = 'mongooseim'
 
     @classmethod
     def setUpClass(cls):
@@ -63,7 +63,7 @@ class TestCreateChat(IntegrationTest):
 
 class TestUserCreateChat(IntegrationTest):
 
-    asset = 'basic_rest'
+    asset = 'mongooseim'
 
     @classmethod
     def setUpClass(cls):
