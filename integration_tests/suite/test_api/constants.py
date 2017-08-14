@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) 2015-2016 Avencall
+# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 from kombu import Exchange
@@ -16,3 +16,11 @@ XIVO_UUID = '08c56466-8f29-45c7-9856-92bf1ba89b92'
 STASIS_APP_NAME = 'callcontrol'
 STASIS_APP_INSTANCE_NAME = 'switchboard-red'
 STASIS_APP_ARGS = [STASIS_APP_INSTANCE_NAME]
+DB_URI = 'postgres://{DB_USER}:{DB_PASSWORD}@{HOST}:{PORT}/{DB_NAME}'.format(
+    DB_USER='postgres',
+    DB_PASSWORD='mysecretpassword',
+    HOST='localhost',
+    PORT='{PORT}',
+    DB_NAME='mongooseim'
+)
+MONGOOSEIM_ODBC_START_INTERVAL = 1

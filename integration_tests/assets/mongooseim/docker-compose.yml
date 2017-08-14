@@ -7,9 +7,10 @@ services:
       - auth
       - ctid-ng
       - mongooseim
+      - postgres
       - rabbitmq
     environment:
-      - PORTS=5039 5672 8088 9497 9500 9501
+      - PORTS=5039 5432 5672 8088 9497 9500 9501
       - TIMEOUT=${INTEGRATION_TEST_TIMEOUT}
 
   ari:
@@ -60,3 +61,13 @@ services:
     volumes:
       - ./etc/mongooseim:/member
       - ./mongooseim:/tmp/mongooseim
+
+  postgres:
+    image: postgres:9.4
+    ports:
+      - 5432
+    environment:
+      - POSTGRES_PASSWORD=mysecretpassword
+      - POSTGRES_DB=mongooseim
+    volumes:
+      - ./mongooseim/pg.sql:/docker-entrypoint-initdb.d/pg.sql

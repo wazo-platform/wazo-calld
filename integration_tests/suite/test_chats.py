@@ -24,6 +24,7 @@ class TestCreateChat(IntegrationTest):
     def setUpClass(cls):
         super(TestCreateChat, cls).setUpClass()
         cls.wait_for_ctid_ng_to_connect_to_bus()
+        cls.wait_for_mongooseim_to_connect_to_db()
 
     def setUp(self):
         super(TestCreateChat, self).setUp()
