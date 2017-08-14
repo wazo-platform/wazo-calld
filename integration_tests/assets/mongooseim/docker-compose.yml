@@ -59,3 +59,4 @@ services:
       - 8088
     volumes:
       - ./etc/mongooseim:/member
+      - ./mongooseim:/tmp/mongooseim
