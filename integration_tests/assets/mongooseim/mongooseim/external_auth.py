@@ -1,11 +1,11 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 import sys
 import struct
 
 
 def from_ejabberd():
-    input_length = sys.stdin.read(2)
+    input_length = sys.stdin.read(2).encode('utf-8')
 
     if len(input_length) is not 2:
         return None
@@ -18,7 +18,7 @@ def to_ejabberd(bool):
     answer = 0
     if bool:
         answer = 1
-    token = struct.pack('>hh', 2, answer)
+    token = struct.pack('>hh', 2, answer).decode('utf-8')
     sys.stdout.write(token)
     sys.stdout.flush()
 
