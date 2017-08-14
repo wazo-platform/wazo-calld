@@ -54,7 +54,7 @@ services:
       - 5672
 
   mongooseim:
-    image: mongooseim/mongooseim:2.1.0beta1
+    image: mongooseim/mongooseim:latest
     hostname: mongooseim-1
     expose:
       - 8088
