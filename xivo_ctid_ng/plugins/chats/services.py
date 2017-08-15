@@ -2,11 +2,8 @@
 # Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
-import requests
-
 from datetime import datetime
-from requests import RequestException
-from requests.utils import quote
+from requests import RequestException, HTTPError
 from xivo_ctid_ng.core.exceptions import APIException
 
 
@@ -45,10 +42,10 @@ class MongooseIMException(APIException):
 
 class ChatsService(object):
 
-    def __init__(self, xivo_uuid, mongooseim_config, contexts):
+    def __init__(self, xivo_uuid, mongooseim_client, contexts):
         self._xivo_uuid = xivo_uuid
-        self.mongooseim_config = mongooseim_config
         self.contexts = contexts
+        self.mongooseim_client = mongooseim_client
 
     def get_history(self, user_uuid, args):
         mongooseim_history = self._get_mongooseim_history(user_uuid, args)
@@ -61,26 +58,24 @@ class ChatsService(object):
 
     def _get_mongooseim_history(self, user_uuid, args):
         participant_user = args.get('participant_user_uuid')
-        participant_server = args.get('participant_server_uuid', 'localhost')
+        participant_server = args.get('participant_server_uuid', self._xivo_uuid)
         limit = args.get('limit')
 
-        if participant_user:
-            url = self._build_history_url_with_participant(user_uuid, participant_user, participant_server)
-        else:
-            url = self._build_history_url(user_uuid)
-
-        params = {}
-        if limit:
-            params['limit'] = limit
+        user_jid = self._build_jid(self._xivo_uuid, user_uuid)
         try:
-            response = requests.get(url, params=params)
+            if participant_user:
+                participant_jid = self._build_jid(participant_server, participant_user)
+                result = self.mongooseim_client.get_user_history_with_participant(user_jid,
+                                                                                  participant_jid,
+                                                                                  limit)
+            else:
+                result = self.mongooseim_client.get_user_history(user_jid, limit)
+        except HTTPError as e:
+            raise MongooseIMException(self._xivo_uuid, e.response.status_code, e.response.reason)
         except RequestException as e:
             raise MongooseIMUnreachable(self._xivo_uuid, e)
 
-        if response.status_code != 200:
-            raise MongooseIMException(self._xivo_uuid, response.status_code, response.reason)
-
-        return response.json()
+        return result
 
     def _convert_history_result(self, history, user_uuid, participant_user=None, participant_server=None):
         result = []
@@ -115,34 +110,21 @@ class ChatsService(object):
                            'direction': direction})
         return result
 
-    def _build_history_url(self, user_uuid):
-        user_jid = self._build_escaped_jid(user_uuid, 'localhost')
-        return 'http://{}:{}/api/messages/{}'.format(self.mongooseim_config['host'],
-                                                     self.mongooseim_config['port'],
-                                                     user_jid)
-
-    def _build_history_url_with_participant(self, user_uuid, participant_user, participant_server):
-        user_jid = self._build_remote_jid(self._xivo_uuid, user_uuid)
-        participant_jid = self._build_remote_jid(participant_server, participant_user)
-        return 'http://{}:{}/api/messages/{}/{}'.format(self.mongooseim_config['host'],
-                                                        self.mongooseim_config['port'],
-                                                        quote(user_jid),
-                                                        quote(participant_jid))
-
-    def _build_escaped_jid(self, username, server):
-        return '{}%40{}'.format(username, server)
-
     def send_message(self, request_body, user_uuid=None):
-        _, from_ = self._build_from(request_body, user_uuid)
+        from_xivo_uuid, from_ = self._build_from(request_body, user_uuid)
         to_xivo_uuid, to = self._build_to(request_body)
         alias = request_body['alias']
-        msg = self._escape_buggy_symbols_for_mongooseim(request_body['msg'])
-
+        msg = request_body['msg']
         self.contexts.add(from_, to, to_xivo_uuid=to_xivo_uuid, alias=alias)
-        self._send_mongooseim_message(from_, to_xivo_uuid, to,  msg)
 
-    def _escape_buggy_symbols_for_mongooseim(self, msg):
-        return msg.replace('&', '#26')
+        from_jid = self._build_jid(from_xivo_uuid, from_)
+        to_jid = self._build_jid(to_xivo_uuid, to)
+        try:
+            self.mongooseim_client.send_message(from_jid, to_jid, msg)
+        except HTTPError as e:
+            raise MongooseIMException(self._xivo_uuid, e.response.status_code, e.response.reason)
+        except RequestException as e:
+            raise MongooseIMUnreachable(self._xivo_uuid, e)
 
     def _build_from(self, request_body, token_user_uuid):
         user_uuid = token_user_uuid or str(request_body['from'])
@@ -153,21 +135,6 @@ class ChatsService(object):
         user_uuid = str(request_body['to'])
         return (xivo_uuid, user_uuid)
 
-    def _send_mongooseim_message(self, from_, to_domain, to, msg):
-        url = 'http://{}:{}/api/messages'.format(self.mongooseim_config['host'],
-                                                 self.mongooseim_config['port'])
-        bare_jid = '{}@localhost'
-        body = {'caller': bare_jid.format(from_),
-                'to': self._build_remote_jid(to_domain, to),
-                'body': msg}
-        try:
-            response = requests.post(url, json=body)
-        except RequestException as e:
-            raise MongooseIMUnreachable(self._xivo_uuid, e)
-
-        if response.status_code != 204:
-            raise MongooseIMException(self._xivo_uuid, response.status_code, response.reason)
-
-    def _build_remote_jid(self, to_domain, to):
-        domain = 'localhost' if str(to_domain) == str(self._xivo_uuid) else to_domain
-        return '{}@{}'.format(to, domain)
+    def _build_jid(self, domain, username):
+        domain = 'localhost' if str(domain) == str(self._xivo_uuid) else domain
+        return '{}@{}'.format(username, domain)

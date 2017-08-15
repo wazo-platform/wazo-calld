@@ -5,6 +5,7 @@
 from xivo_auth_client import Client as AuthClient
 
 from .contexts import ChatsContexts
+from .mongooseim import Client as MongooseIMClient
 from .resources import ChatsResource, UserChatsResource
 from .services import ChatsService
 
@@ -16,8 +17,9 @@ class Plugin(object):
         config = dependencies['config']
 
         auth_client = AuthClient(**config['auth'])
+        mongooseim_client = MongooseIMClient(**config['mongooseim'])
 
-        chats_service = ChatsService(config['uuid'], config['mongooseim'], ChatsContexts)
+        chats_service = ChatsService(config['uuid'], mongooseim_client, ChatsContexts)
 
         api.add_resource(ChatsResource, '/chats', resource_class_args=[chats_service])
         api.add_resource(UserChatsResource, '/users/me/chats', resource_class_args=[auth_client, chats_service])
