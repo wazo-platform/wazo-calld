@@ -30,7 +30,7 @@ chat_request_schema = ChatRequestSchema(strict=True)
 class UserChatListRequestSchema(Schema):
     participant_user_uuid = fields.UUID()
     participant_server_uuid = fields.UUID()
-    limit = fields.Integer(validate=Range(min=0))
+    limit = fields.Integer(validate=Range(min=0), missing=100)
 
     class Meta(object):
         strict = True

@@ -81,7 +81,7 @@ parameters:
     name: limit
     in: query
     type: integer
-    description: Maximum number of items to return in the list
+    description: Maximum number of items to return in the list. Default to 100
   participant_user_uuid:
     required: false
     name: participant_user_uuid
