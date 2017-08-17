@@ -10,7 +10,6 @@ services:
       - consul
       - ctid
       - ctid-ng
-      - mongooseim
       - rabbitmq
       - remote_ctid_ng
     environment:
