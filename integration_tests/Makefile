@@ -17,6 +17,7 @@ docker-pull:
 	docker pull mongooseim/mongooseim:2.1.0beta1
 	docker pull n3llyb0y/wait
 	docker pull p0bailey/docker-flask
+	docker pull postgres:9.4
 	docker pull python:2.7
 	docker pull swaggerapi/swagger-validator
 	docker pull wazopbx/asterisk

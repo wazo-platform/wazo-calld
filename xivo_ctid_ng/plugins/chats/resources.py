@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) 2016 Avencall
+# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 from flask import request
 from marshmallow import Schema, fields
+from marshmallow.validate import Range
 
 from xivo_ctid_ng.core.auth import required_acl
 from xivo_ctid_ng.core.auth import get_token_user_uuid_from_request
@@ -24,6 +25,29 @@ class ChatRequestSchema(UserChatRequestSchema):
 
 user_chat_request_schema = UserChatRequestSchema(strict=True)
 chat_request_schema = ChatRequestSchema(strict=True)
+
+
+class UserChatListRequestSchema(Schema):
+    participant_user_uuid = fields.UUID()
+    participant_server_uuid = fields.UUID()
+    limit = fields.Integer(validate=Range(min=0), missing=100)
+
+    class Meta(object):
+        strict = True
+
+
+class UserChatSchema(Schema):
+    date = fields.DateTime()
+    source_user_uuid = fields.UUID()
+    source_server_uuid = fields.UUID()
+    destination_user_uuid = fields.UUID()
+    destination_server_uuid = fields.UUID()
+    msg = fields.String()
+    direction = fields.String()
+
+
+class UserChatListSchema(Schema):
+    items = fields.Nested(UserChatSchema, many=True)
 
 
 class ChatsResource(AuthResource):
@@ -54,3 +78,10 @@ class UserChatsResource(AuthResource):
         self._chats_service.send_message(request_body, user_uuid)
 
         return '', 204
+
+    @required_acl('ctid-ng.users.me.chats.read')
+    def get(self):
+        args = UserChatListRequestSchema().load(request.args).data
+        user_uuid = get_token_user_uuid_from_request(self._auth_client)
+        history = self._chats_service.get_history(user_uuid, args)
+        return UserChatListSchema().dump(history).data

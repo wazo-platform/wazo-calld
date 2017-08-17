@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 # Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
-# Copyright 2016 by Proformatique Inc.
 # SPDX-License-Identifier: GPL-3.0+
 
 import ari
 import os
 import logging
+import psycopg2
 import tempfile
+import time
 
 from ari.exceptions import ARINotFound
 from ari.exceptions import ARINotInStasis
@@ -24,6 +25,8 @@ from .bus import BusClient
 from .chan_test import ChanTest
 from .confd import ConfdClient
 from .constants import ASSET_ROOT
+from .constants import MONGOOSEIM_ODBC_START_INTERVAL
+from .constants import DB_URI
 from .ctid_ng import CtidNgClient
 from .stasis import StasisClient
 from .wait_strategy import CtidNgConnectionsOkWaitStrategy
@@ -114,6 +117,26 @@ class IntegrationTest(AssetLaunchingTestCase):
     @classmethod
     def wait_for_ctid_ng_to_connect_to_bus(cls):
         until.true(cls.bus.is_up, tries=5)
+
+    @classmethod
+    def wait_for_mongooseim_to_connect_to_db(cls):
+        until.true(cls.db_is_ready, tries=40, interval=0.25)
+
+    @classmethod
+    def db_is_ready(cls):
+        try:
+            uri = DB_URI.format(PORT=cls.service_port(5432, 'postgres'))
+            psycopg2.connect(uri)
+            cls.wait_mongooseim_interval()
+            return True
+        except psycopg2.OperationalError as e:
+            print e
+            pass
+        return False
+
+    @classmethod
+    def wait_mongooseim_interval(cls):
+        time.sleep(MONGOOSEIM_ODBC_START_INTERVAL)
 
     @classmethod
     @contextmanager
