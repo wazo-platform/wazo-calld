@@ -1,7 +1,7 @@
 version: '3'
 services:
   sync:
-    image: n3llyb0y/wait
+    image: waisbrot/wait
     links:
       - ari
       - auth
@@ -10,7 +10,7 @@ services:
       - postgres
       - rabbitmq
     environment:
-      - PORTS=5039 5432 5672 8088 9497 9500 9501
+      - TARGETS=ari:5039,postgres:5432,rabbitmq:5672,mongooseim:8088,auth:9497,ctid-ng:9500,ctid-ng:9501
       - TIMEOUT=${INTEGRATION_TEST_TIMEOUT}
 
   ari:

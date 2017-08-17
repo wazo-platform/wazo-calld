@@ -16,6 +16,7 @@ build-ari: docker-pull
 docker-pull:
 	docker pull mongooseim/mongooseim:latest
 	docker pull n3llyb0y/wait
+	docker pull waisbrot/wait
 	docker pull p0bailey/docker-flask
 	docker pull postgres:9.4
 	docker pull python:2.7
