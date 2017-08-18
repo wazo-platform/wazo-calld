@@ -51,7 +51,7 @@ paths:
           schema:
             $ref: '#/definitions/Error'
     get:
-      summary: Send a chat message
+      summary: Get history chat messages
       description: '**Required ACL:** `ctid-ng.users.me.chats`
 
 
