@@ -6,12 +6,12 @@ import logging
 
 from threading import Thread
 from functools import partial
+from xivo import plugin_helpers
 from xivo.config_helper import get_xivo_uuid
 from xivo.consul_helpers import ServiceCatalogRegistration
 from xivo.token_renewer import TokenRenewer
 from xivo_auth_client import Client as AuthClient
 
-from xivo_ctid_ng.core import plugin_manager
 from xivo_ctid_ng.core.bus import CoreBusConsumer
 from xivo_ctid_ng.core.bus import CoreBusPublisher
 from xivo_ctid_ng.core.collectd import CoreCollectd
@@ -37,7 +37,6 @@ class Controller(object):
         self.rest_api = CoreRestApi(config)
         self.status_aggregator = StatusAggregator()
         self.token_renewer = TokenRenewer(auth_client)
-        self._load_plugins(config)
         self._service_registration_params = ['xivo-ctid-ng',
                                              xivo_uuid,
                                              config['consul'],
@@ -46,6 +45,21 @@ class Controller(object):
                                              partial(self_check,
                                                      config['rest_api']['port'],
                                                      config['rest_api']['certificate'])]
+        plugin_helpers.load(
+            namespace='xivo_ctid_ng.plugins',
+            names=plugin_helpers.from_list(config['enabled_plugins']),
+            dependencies={
+                'api': api,
+                'adapter_api': adapter_api,
+                'ari': self.ari,
+                'bus_publisher': self.bus_publisher,
+                'bus_consumer': self.bus_consumer,
+                'collectd': self.collectd,
+                'config': config,
+                'status_aggregator': self.status_aggregator,
+                'token_changed_subscribe': self.token_renewer.subscribe_to_token_change,
+            }
+        )
 
     def run(self):
         logger.info('xivo-ctid-ng starting...')
@@ -84,17 +98,3 @@ class Controller(object):
     def stop(self, reason):
         logger.warning('Stopping xivo-ctid-ng: %s', reason)
         self.rest_api.stop()
-
-    def _load_plugins(self, global_config):
-        load_args = [{
-            'api': api,
-            'adapter_api': adapter_api,
-            'ari': self.ari,
-            'bus_publisher': self.bus_publisher,
-            'bus_consumer': self.bus_consumer,
-            'collectd': self.collectd,
-            'config': global_config,
-            'status_aggregator': self.status_aggregator,
-            'token_changed_subscribe': self.token_renewer.subscribe_to_token_change,
-        }]
-        plugin_manager.load_plugins(global_config['enabled_plugins'], load_args)
