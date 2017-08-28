@@ -35,13 +35,11 @@ ari:
   command: "asterisk -fTvvv"
 
 auth:
-  image: p0bailey/docker-flask
+  image: wazopbx/xivo-auth-mock
   ports:
     - "9497"
   volumes:
-    - "./xivo-auth:/usr/local/share/xivo-auth"
     - "./ssl:/usr/local/share/ssl"
-  command: "python /usr/local/share/xivo-auth/mock-xivo-auth.py 9497"
 
 confd:
   image: p0bailey/docker-flask

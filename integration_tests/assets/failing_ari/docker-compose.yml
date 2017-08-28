@@ -20,13 +20,11 @@ ari:
   command: "python /usr/local/share/ari/mock_ari_fail.py 5039"
 
 auth:
-  image: p0bailey/docker-flask
+  image: wazopbx/xivo-auth-mock
   expose:
     - "9497"
   volumes:
-    - "./xivo-auth:/usr/local/share/xivo-auth"
     - "./ssl:/usr/local/share/ssl"
-  command: "python /usr/local/share/xivo-auth/mock-xivo-auth.py 9497"
 
 confd:
   image: p0bailey/docker-flask
