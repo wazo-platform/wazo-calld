@@ -114,6 +114,15 @@ class CoreARI(object):
             time.sleep(0.1)
 
     def stop(self):
+        logger.info('unsubscribing from stasis channel events')
+        try:
+            self.client.applications.unsubscribe(
+                applicationName=APPLICATION_NAME,
+                eventSource='channel:__AST_CHANNEL_ALL_TOPIC',
+            )
+        except Exception:
+            logger.info('Failed to unregister channel events from stasis')
+
         try:
             self._should_reconnect = False
             self._sync()
