@@ -13,6 +13,7 @@ import requests
 
 from requests.exceptions import HTTPError
 from websocket import WebSocketException
+from xivo.pubsub import Pubsub
 from xivo.status import Status
 
 from .exceptions import ARIUnreachable
@@ -42,6 +43,7 @@ class CoreARI:
         self._is_running = False
         self._should_delay_reconnect = True
         self._should_stop = False
+        self._pubsub = Pubsub()
         self.client = self._new_ari_client(
             config['connection'],
             config['startup_connection_tries'],
@@ -51,7 +53,7 @@ class CoreARI:
     def _new_ari_client(self, ari_config, connection_tries, connection_delay):
         for _ in range(connection_tries):
             try:
-                return ari.connect(**ari_config)
+                client = ari.connect(**ari_config)
             except requests.ConnectionError:
                 logger.info('No ARI server found, retrying in %s seconds...', connection_delay)
                 time.sleep(connection_delay)
@@ -63,7 +65,14 @@ class CoreARI:
                     continue
                 else:
                     raise
+            self._pubsub.publish('client_initialized', message=None)
+            return client
         raise ARIUnreachable(ari_config)
+
+    def client_initialized_subscribe(self, callback):
+        self._pubsub.subscribe('client_initialized', callback)
+        # TODO REMOVE: only to fake the ari client init async
+        self._pubsub.publish('client_initialized', message=None)
 
     def reload(self):
         self._should_delay_reconnect = False
