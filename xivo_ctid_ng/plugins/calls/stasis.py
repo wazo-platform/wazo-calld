@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2016 by Avencall
+# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
@@ -37,9 +37,16 @@ class CallsStasis(object):
         self.ari.on_channel_event('StasisStart', self.stasis_start)
         self.ari.on_channel_event('ChannelDestroyed', self.channel_destroyed)
         self.ari.on_application_registered(APPLICATION_NAME, self.subscribe_to_all_channel_events)
+        self.ari.on_application_deregistered(APPLICATION_NAME, self.unsubscribe_from_all_channel_events)
 
     def subscribe_to_all_channel_events(self):
         self.ari.applications.subscribe(applicationName=APPLICATION_NAME, eventSource='channel:')
+
+    def unsubscribe_from_all_channel_events(self):
+        self.ari.applications.unsubscribe(
+            applicationName=APPLICATION_NAME,
+            eventSource='channel:__AST_CHANNEL_ALL_TOPIC',
+        )
 
     def stasis_start(self, event_objects, event):
         channel = event_objects['channel']
