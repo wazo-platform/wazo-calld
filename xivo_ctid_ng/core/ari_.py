@@ -2,14 +2,16 @@
 # Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
-import ari
 import errno
 import logging
-import requests
 import socket
 import time
 
 from contextlib import contextmanager
+
+import ari
+import requests
+
 from requests.exceptions import HTTPError
 from websocket import WebSocketException
 
