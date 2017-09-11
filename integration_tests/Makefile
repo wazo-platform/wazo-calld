@@ -24,6 +24,12 @@ docker-pull:
 	docker pull wazopbx/asterisk
 	docker pull wazopbx/xivo-amid
 
+clean:
+	docker rmi -f wazopbx/xivo-ctid-ng
+	docker rmi -f wazopbx/xivo-ctid-ng-test
+	docker rmi -f ari-mock
+	docker rmi -f ari-real
+
 egg-info:
 	cd .. && python setup.py egg_info
 
