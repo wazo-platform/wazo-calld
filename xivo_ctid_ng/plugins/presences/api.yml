@@ -16,6 +16,7 @@ paths:
         type: string
       tags:
       - presences
+      - users
       responses:
         '200':
           description: The current presence of the user
@@ -46,6 +47,7 @@ paths:
           $ref: '#/definitions/PresenceRequest'
       tags:
       - presences
+      - users
       responses:
         '204':
           description: Presence has been updated
