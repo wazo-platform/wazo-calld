@@ -26,7 +26,7 @@ docker-pull:
 
 clean:
 	docker rmi -f wazopbx/xivo-ctid-ng
-	docker rmi -f wazopbx/xivo-ctid-ng-test
+	docker rmi -f xivo-ctid-ng-test
 	docker rmi -f ari-mock
 	docker rmi -f ari-real
 
