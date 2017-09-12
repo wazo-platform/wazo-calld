@@ -40,9 +40,9 @@ class CoreBusPublisher(object):
         bus_marshaler = Marshaler(self._uuid)
         return Publisher(bus_producer, bus_marshaler)
 
-    def publish(self, event):
-        logger.debug('publishing: %s %s', event.name, event.marshal())
-        self._publisher.publish(event)
+    def publish(self, event, headers=None):
+        logger.debug('Publishing event "%s": %s', event.name, event.marshal())
+        self._publisher.publish(event, headers)
 
     def stop(self):
         self._publisher.stop()

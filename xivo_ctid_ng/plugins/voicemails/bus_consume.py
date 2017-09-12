@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2016 Proformatique Inc.
+# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
@@ -33,7 +33,7 @@ class VoicemailsBusEventHandler(object):
             voicemail = self._get_voicemail(number, context)
             for user in voicemail[u'users']:
                 for bus_msg in self._create_bus_msgs_from_diff(user['uuid'], voicemail[u'id'], diff):
-                    self._bus_publisher.publish(bus_msg)
+                    self._bus_publisher.publish(bus_msg, headers={'user_uuid': user['uuid']})
         except Exception:
             logger.exception('fail to publish voicemail message to bus')
 

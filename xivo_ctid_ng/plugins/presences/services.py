@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) 2016 Avencall
+# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
 # Copyright (C) 2016 Proformatique, Inc.
 # SPDX-License-Identifier: GPL-3.0+
 
@@ -72,7 +72,7 @@ class UserPresencesService(object):
 
     def update_presence(self, user_uuid, status):
         bus_event = UserStatusUpdateEvent(user_uuid, status)
-        self._bus_publisher.publish(bus_event)
+        self._bus_publisher.publish(bus_event, headers={'user_uuid': user_uuid})
 
 
 class LinePresencesService(object):
