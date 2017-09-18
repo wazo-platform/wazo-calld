@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015 by Avencall
+# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 
 from flask import jsonify
-from xivo_ctid_ng.core.rest_api import AuthResource
+from xivo_ctid_ng.rest_api import AuthResource
 
 
 class PluginList(AuthResource):

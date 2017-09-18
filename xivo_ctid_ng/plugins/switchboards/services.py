@@ -7,7 +7,7 @@ import logging
 from ari.exceptions import ARINotFound
 
 from xivo.caller_id import assemble_caller_id
-from xivo_ctid_ng.core.ari_ import APPLICATION_NAME
+from xivo_ctid_ng.ari_ import APPLICATION_NAME
 from xivo_ctid_ng.helpers.confd import User
 
 from .call import HeldCall

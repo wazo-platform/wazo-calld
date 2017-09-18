@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2016 by Avencall
+# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
@@ -7,7 +7,7 @@ import re
 
 from requests import RequestException
 
-from xivo_ctid_ng.core.exceptions import XiVOAmidError
+from xivo_ctid_ng.exceptions import XiVOAmidError
 
 logger = logging.getLogger(__name__)
 

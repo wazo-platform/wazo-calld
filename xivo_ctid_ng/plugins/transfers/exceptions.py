@@ -2,7 +2,7 @@
 # Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
-from xivo_ctid_ng.core.exceptions import APIException
+from xivo_ctid_ng.exceptions import APIException
 
 
 class InvalidEvent(ValueError):

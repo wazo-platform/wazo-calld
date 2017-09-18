@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015-2016 by Avencall
+# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
@@ -8,7 +8,7 @@ from flask import request
 from requests import HTTPError
 from xivo import auth_verifier
 
-from xivo_ctid_ng.core.exceptions import TokenWithUserUUIDRequiredError
+from xivo_ctid_ng.exceptions import TokenWithUserUUIDRequiredError
 
 logger = logging.getLogger(__name__)
 required_acl = auth_verifier.required_acl

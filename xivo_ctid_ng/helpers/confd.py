@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) 2016 The Wazo Authors  (see AUTHORS file)
+# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 from requests import HTTPError
 from requests import RequestException
 
-from xivo_ctid_ng.core.exceptions import XiVOConfdUnreachable
+from xivo_ctid_ng.exceptions import XiVOConfdUnreachable
 
 from .exceptions import InvalidUserUUID
 from .exceptions import InvalidUserLine

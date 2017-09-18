@@ -5,7 +5,7 @@
 from requests import HTTPError
 from requests import RequestException
 
-from xivo_ctid_ng.core.exceptions import XiVOConfdUnreachable
+from xivo_ctid_ng.exceptions import XiVOConfdUnreachable
 from xivo_ctid_ng.helpers.confd import not_found
 
 

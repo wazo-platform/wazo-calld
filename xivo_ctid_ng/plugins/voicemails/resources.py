@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2016 Proformatique Inc.
+# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import re
@@ -8,10 +8,10 @@ from flask import request
 from flask import Response
 from marshmallow import Schema, fields
 
-from xivo_ctid_ng.core.auth import get_token_user_uuid_from_request
-from xivo_ctid_ng.core.auth import required_acl
-from xivo_ctid_ng.core.auth import extract_token_id_from_query_or_header
-from xivo_ctid_ng.core.rest_api import AuthResource
+from xivo_ctid_ng.auth import get_token_user_uuid_from_request
+from xivo_ctid_ng.auth import required_acl
+from xivo_ctid_ng.auth import extract_token_id_from_query_or_header
+from xivo_ctid_ng.rest_api import AuthResource
 from .exceptions import InvalidVoicemailID
 from .exceptions import InvalidVoicemailFolderID
 from .exceptions import InvalidVoicemailMessageID

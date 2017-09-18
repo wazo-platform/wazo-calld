@@ -4,7 +4,7 @@
 
 from datetime import datetime
 from requests import RequestException, HTTPError
-from xivo_ctid_ng.core.exceptions import APIException
+from xivo_ctid_ng.exceptions import APIException
 
 
 class MongooseIMUnreachable(APIException):

@@ -1,9 +1,9 @@
 # -*- coding: UTF-8 -*-
-# Copyright (C) 2016 Avencall
+# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
-from xivo_ctid_ng.core.auth import required_acl
-from xivo_ctid_ng.core.rest_api import AuthResource
+from xivo_ctid_ng.auth import required_acl
+from xivo_ctid_ng.rest_api import AuthResource
 
 
 class StatusResource(AuthResource):

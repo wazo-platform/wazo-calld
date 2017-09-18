@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2016 Proformatique Inc.
+# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import requests
@@ -10,7 +10,7 @@ from hamcrest import raises
 from mock import Mock
 from unittest import TestCase
 
-from xivo_ctid_ng.core.exceptions import XiVOConfdUnreachable
+from xivo_ctid_ng.exceptions import XiVOConfdUnreachable
 from ..confd import Line
 
 

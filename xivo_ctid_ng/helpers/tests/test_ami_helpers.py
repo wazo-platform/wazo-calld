@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2016 by Avencall
+# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import requests
@@ -11,7 +11,7 @@ from hamcrest import raises
 from mock import Mock
 from unittest import TestCase
 
-from xivo_ctid_ng.core.exceptions import XiVOAmidError
+from xivo_ctid_ng.exceptions import XiVOAmidError
 from ..ami import extension_exists
 from ..ami import moh_class_exists
 

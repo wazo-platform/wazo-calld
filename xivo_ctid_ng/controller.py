@@ -12,13 +12,13 @@ from xivo.consul_helpers import ServiceCatalogRegistration
 from xivo.token_renewer import TokenRenewer
 from xivo_auth_client import Client as AuthClient
 
-from xivo_ctid_ng.core.bus import CoreBusConsumer
-from xivo_ctid_ng.core.bus import CoreBusPublisher
-from xivo_ctid_ng.core.collectd import CoreCollectd
-from xivo_ctid_ng.core.ari_ import CoreARI
-from xivo_ctid_ng.core.rest_api import api, adapter_api, CoreRestApi
-from xivo_ctid_ng.core.status import StatusAggregator
+from .ari_ import CoreARI
+from .bus import CoreBusConsumer
+from .bus import CoreBusPublisher
+from .collectd import CoreCollectd
+from .rest_api import api, adapter_api, CoreRestApi
 from .service_discovery import self_check
+from .status import StatusAggregator
 
 logger = logging.getLogger(__name__)
 

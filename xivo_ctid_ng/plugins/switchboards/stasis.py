@@ -5,7 +5,7 @@
 import logging
 
 from ari.exceptions import ARINotFound
-from xivo_ctid_ng.core.ari_ import APPLICATION_NAME
+from xivo_ctid_ng.ari_ import APPLICATION_NAME
 
 from .exceptions import NoSuchSwitchboard
 

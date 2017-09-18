@@ -5,7 +5,7 @@
 from flask import request
 from marshmallow import Schema, fields
 
-from xivo_ctid_ng.core.rest_api import ErrorCatchingResource
+from xivo_ctid_ng.rest_api import ErrorCatchingResource
 
 
 class MessageRequestSchema(Schema):

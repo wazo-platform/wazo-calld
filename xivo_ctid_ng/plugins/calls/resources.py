@@ -1,15 +1,14 @@
 # -*- coding: utf-8 -*-
 # Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
-# Copyright (C) 2016 Proformatique Inc.
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
 
 from flask import request
 
-from xivo_ctid_ng.core.auth import required_acl
-from xivo_ctid_ng.core.auth import get_token_user_uuid_from_request
-from xivo_ctid_ng.core.rest_api import AuthResource
+from xivo_ctid_ng.auth import required_acl
+from xivo_ctid_ng.auth import get_token_user_uuid_from_request
+from xivo_ctid_ng.rest_api import AuthResource
 
 from .schema import call_schema
 from .schema import CallRequestSchema

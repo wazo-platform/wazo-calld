@@ -6,9 +6,9 @@ import logging
 from ari.exceptions import ARINotFound
 from xivo.caller_id import assemble_caller_id
 
-from xivo_ctid_ng.core.ari_ import APPLICATION_NAME
-from xivo_ctid_ng.core.exceptions import UserPermissionDenied
-from xivo_ctid_ng.core.exceptions import InvalidExtension
+from xivo_ctid_ng.ari_ import APPLICATION_NAME
+from xivo_ctid_ng.exceptions import UserPermissionDenied
+from xivo_ctid_ng.exceptions import InvalidExtension
 from xivo_ctid_ng.helpers.ari_ import Channel
 from xivo_ctid_ng.helpers.confd import User
 from xivo_ctid_ng.helpers.exceptions import NotEnoughChannels

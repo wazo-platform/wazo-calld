@@ -10,8 +10,8 @@ from xivo.pubsub import Pubsub
 from ari.exceptions import ARINotFound
 from ari.exceptions import ARINotInStasis
 
-from xivo_ctid_ng.core.ari_ import APPLICATION_NAME
-from xivo_ctid_ng.core.exceptions import XiVOAmidError
+from xivo_ctid_ng.ari_ import APPLICATION_NAME
+from xivo_ctid_ng.exceptions import XiVOAmidError
 from xivo_ctid_ng.helpers.ari_ import Channel
 
 from . import ari_helpers

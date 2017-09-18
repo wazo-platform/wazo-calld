@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
-# Copyright 2016 by Avencall
+# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 from flask import request
 from marshmallow import Schema, fields
 from marshmallow.validate import OneOf, Length
 
-from xivo_ctid_ng.core.auth import get_token_user_uuid_from_request
-from xivo_ctid_ng.core.auth import required_acl
-from xivo_ctid_ng.core.rest_api import AuthResource
+from xivo_ctid_ng.auth import get_token_user_uuid_from_request
+from xivo_ctid_ng.auth import required_acl
+from xivo_ctid_ng.rest_api import AuthResource
 from xivo_ctid_ng.helpers.mallow import StrictDict
 
 

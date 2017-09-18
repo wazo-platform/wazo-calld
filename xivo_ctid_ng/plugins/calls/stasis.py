@@ -4,7 +4,7 @@
 
 import logging
 
-from xivo_ctid_ng.core.ari_ import APPLICATION_NAME
+from xivo_ctid_ng.ari_ import APPLICATION_NAME
 
 from .event import CallEvent
 from .event import StartCallEvent
