@@ -59,7 +59,6 @@ services:
       - 8088
     volumes:
       - ./etc/mongooseim:/member
-      - ./mongooseim:/tmp/mongooseim
 
   postgres:
     image: postgres:9.4
