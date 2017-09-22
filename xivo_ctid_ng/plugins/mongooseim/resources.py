@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: GPL-3.0+
 
 from flask import request
+from flask import make_response
 from marshmallow import Schema, fields
 
 from xivo_ctid_ng.rest_api import ErrorCatchingResource
@@ -28,3 +29,21 @@ class MessageCallbackResource(ErrorCatchingResource):
         request_body = MessageRequestSchema().load(request.form).data
         self._message_callback_service.send_message(request_body)
         return '', 204
+
+
+def output_plain(data, code, http_headers=None):
+    response = make_response(data, code)
+    response.headers.extend(http_headers or {})
+    return response
+
+
+class CheckPasswordResource(ErrorCatchingResource):
+
+    def get(self):
+        return output_plain('false', 401)
+
+
+class UserExistsResource(ErrorCatchingResource):
+
+    def get(self):
+        return output_plain('true', 200)

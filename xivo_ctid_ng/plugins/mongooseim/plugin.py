@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: GPL-3.0+
 
 from xivo_ctid_ng.plugins.chats.contexts import ChatsContexts
-from .resources import MessageCallbackResource
+from .resources import MessageCallbackResource, CheckPasswordResource, UserExistsResource
 from .services import MessageCallbackService
 
 
@@ -18,3 +18,9 @@ class Plugin(object):
         adapter_api.add_resource(MessageCallbackResource,
                                  '/mongooseim/message_callback',
                                  resource_class_args=[message_callback_service])
+
+        adapter_api.add_resource(CheckPasswordResource,
+                                 '/mongooseim/authentication/check_password')
+
+        adapter_api.add_resource(UserExistsResource,
+                                 '/mongooseim/authentication/user_exists')
