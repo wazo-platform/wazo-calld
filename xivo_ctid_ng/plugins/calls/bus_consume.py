@@ -54,7 +54,7 @@ class CallsBusEventHandler(object):
             required_acl='events.calls.{}'.format(call.user_uuid)
         )
         bus_event.routing_key = 'calls.call.created'
-        self.bus_publisher.publish(bus_event, headers={'user_uuid': call.user_uuid})
+        self.bus_publisher.publish(bus_event, headers={'user_uuid:{uuid}'.format(call.user_uuid): True})
 
     def _collectd_channel_created(self, event):
         channel_id = event['Uniqueid']
@@ -76,7 +76,7 @@ class CallsBusEventHandler(object):
             required_acl='events.calls.{}'.format(call.user_uuid)
         )
         bus_event.routing_key = 'calls.call.updated'
-        self.bus_publisher.publish(bus_event, headers={'user_uuid': call.user_uuid})
+        self.bus_publisher.publish(bus_event, headers={'user_uuid:{uuid}'.format(call.user_uuid): True})
 
     def _relay_channel_hung_up(self, event):
         channel_id = event['Uniqueid']
@@ -88,7 +88,7 @@ class CallsBusEventHandler(object):
             required_acl='events.calls.{}'.format(call.user_uuid)
         )
         bus_event.routing_key = 'calls.call.ended'
-        self.bus_publisher.publish(bus_event, headers={'user_uuid': call.user_uuid})
+        self.bus_publisher.publish(bus_event, headers={'user_uuid:{uuid}'.format(call.user_uuid): True})
 
     def _collectd_channel_ended(self, event):
         channel_id = event['Uniqueid']
@@ -102,7 +102,7 @@ class CallsBusEventHandler(object):
 
         user_uuid = Channel(channel_id, self.ari).user()
         bus_msg = CallOnHoldEvent(channel_id, user_uuid)
-        self.bus_publisher.publish(bus_msg, headers={'user_uuid': user_uuid})
+        self.bus_publisher.publish(bus_msg, headers={'user_uuid:{uuid}'.format(user_uuid): True})
 
     def _channel_unhold(self, event):
         channel_id = event['Uniqueid']
@@ -111,4 +111,4 @@ class CallsBusEventHandler(object):
 
         user_uuid = Channel(channel_id, self.ari).user()
         bus_msg = CallResumeEvent(channel_id, user_uuid)
-        self.bus_publisher.publish(bus_msg, headers={'user_uuid': user_uuid})
+        self.bus_publisher.publish(bus_msg, headers={'user_uuid:{uuid}'.format(user_uuid): True})

@@ -31,7 +31,8 @@ class TestPresencesService(unittest.TestCase):
         self.service.update_presence(self.user_uuid, self.presence)
 
         expected_event = UserStatusUpdateEvent(self.user_uuid, self.presence)
-        self.bus_publisher.publish.assert_called_once_with(expected_event, headers={'user_uuid': self.user_uuid})
+        expected_headers = {'user_uuid:{uuid}'.format(uuid=self.user_uuid): True}
+        self.bus_publisher.publish.assert_called_once_with(expected_event, headers=expected_headers)
 
     def test_get_local_presence(self):
         self.ctid_client.users.get.return_value = {'origin_uuid': s.origin_uuid,
