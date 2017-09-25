@@ -72,7 +72,7 @@ class UserPresencesService(object):
 
     def update_presence(self, user_uuid, status):
         bus_event = UserStatusUpdateEvent(user_uuid, status)
-        self._bus_publisher.publish(bus_event, headers={'user_uuid': user_uuid})
+        self._bus_publisher.publish(bus_event, headers={'user_uuid:{uuid}'.format(uuid=user_uuid): True})
 
 
 class LinePresencesService(object):

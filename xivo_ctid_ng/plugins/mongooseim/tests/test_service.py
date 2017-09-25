@@ -36,4 +36,8 @@ class TestMessageCallbackService(unittest.TestCase):
                                           (self.to_xivo_uuid, self.receiver),
                                           self.alias,
                                           self.message)
-        self.bus_publisher.publish.assert_called_once_with(expected_event)
+        expected_headers = {
+            'user_uuid:{uuid}'.format(uuid=self.author): True,
+            'user_uuid:{uuid}'.format(uuid=self.receiver): True,
+        }
+        self.bus_publisher.publish.assert_called_once_with(expected_event, headers=expected_headers)

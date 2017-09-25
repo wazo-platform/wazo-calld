@@ -23,4 +23,8 @@ class MessageCallbackService(object):
                                      (to_xivo_uuid, to),
                                      alias,
                                      request_body['message'])
-        self._bus_publisher.publish(bus_event)
+        headers = {
+            'user_uuid:{uuid}'.format(uuid=from_): True,
+            'user_uuid:{uuid}'.format(uuid=to): True,
+        }
+        self._bus_publisher.publish(bus_event, headers=headers)
