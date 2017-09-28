@@ -6,6 +6,7 @@ import unittest
 
 from mock import Mock
 from xivo_bus.resources.chat.event import ChatMessageEvent
+from xivo_bus.resources.chat.event import ChatMessageReceived
 
 from xivo_ctid_ng.plugins.chats.contexts import ChatsContexts
 from ..services import MessageCallbackService
@@ -30,14 +31,19 @@ class TestMessageCallbackService(unittest.TestCase):
         }
 
     def test_send_message(self):
-        self.service.send_message(self.request_body)
-
-        expected_event = ChatMessageEvent((self.xivo_uuid, self.author),
-                                          (self.to_xivo_uuid, self.receiver),
-                                          self.alias,
-                                          self.message)
+        expected_event_legacy = ChatMessageEvent((self.xivo_uuid, self.author),
+                                                 (self.to_xivo_uuid, self.receiver),
+                                                 self.alias,
+                                                 self.message)
+        expected_event = ChatMessageReceived((self.xivo_uuid, self.author),
+                                             (self.to_xivo_uuid, self.receiver),
+                                             self.alias,
+                                             self.message)
         expected_headers = {
-            'user_uuid:{uuid}'.format(uuid=self.author): True,
             'user_uuid:{uuid}'.format(uuid=self.receiver): True,
         }
-        self.bus_publisher.publish.assert_called_once_with(expected_event, headers=expected_headers)
+
+        self.service.send_message(self.request_body)
+
+        self.bus_publisher.publish.assert_any_call(expected_event_legacy)
+        self.bus_publisher.publish.assert_any_call(expected_event, headers=expected_headers)
