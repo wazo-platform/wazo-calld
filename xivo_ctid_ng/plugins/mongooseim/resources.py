@@ -6,7 +6,8 @@ from flask import request
 from flask import make_response
 from marshmallow import Schema, fields
 
-from xivo_ctid_ng.rest_api import ErrorCatchingResource
+from xivo_ctid_ng.auth import required_acl
+from xivo_ctid_ng.rest_api import AuthResource, ErrorCatchingResource
 
 
 class MessageRequestSchema(Schema):
@@ -37,10 +38,25 @@ def output_plain(data, code, http_headers=None):
     return response
 
 
-class CheckPasswordResource(ErrorCatchingResource):
+class MongooseIMUserSchema(Schema):
+    user = fields.String()
+    server = fields.String()
+    token = fields.String(required=True, load_from='pass')
 
+    class Meta:
+        strict = True
+
+
+def extract_token_id_from_mongooseim_format():
+    user = MongooseIMUserSchema().load(request.args).data
+    return user['token']
+
+
+class CheckPasswordResource(AuthResource):
+
+    @required_acl('ctid-ng.users.me.chats.create', extract_token_id=extract_token_id_from_mongooseim_format)
     def get(self):
-        return output_plain('false', 401)
+        return output_plain('true', 200)
 
 
 class UserExistsResource(ErrorCatchingResource):
