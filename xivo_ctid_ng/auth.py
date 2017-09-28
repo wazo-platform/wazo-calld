@@ -20,7 +20,7 @@ def get_token_user_uuid_from_request(auth_client):
     try:
         token_infos = auth_client.token.get(token)
     except HTTPError as e:
-        logger.warning('HTTP error from xivo-auth while getting token: %s', e)
+        logger.warning('HTTP error from wazo-auth while getting token: %s', e)
         raise TokenWithUserUUIDRequiredError()
     user_uuid = token_infos['xivo_user_uuid']
     if not user_uuid:

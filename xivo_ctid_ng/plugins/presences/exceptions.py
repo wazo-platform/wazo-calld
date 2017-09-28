@@ -59,17 +59,17 @@ class NoSuchUser(APIException):
         )
 
 
-class XiVOAuthUnreachable(APIException):
+class WazoAuthUnreachable(APIException):
 
     def __init__(self, xivo_uuid, error):
-        super(XiVOAuthUnreachable, self).__init__(
+        super(WazoAuthUnreachable, self).__init__(
             status_code=503,
-            message='xivo-auth server unreachable',
-            error_id='xivo-auth-unreachable',
+            message='wazo-auth server unreachable',
+            error_id='wazo-auth-unreachable',
             details={
                 'xivo_uuid': xivo_uuid,
                 'original_error': str(error),
-                'service': 'xivo-auth',
+                'service': 'wazo-auth',
             }
         )
 

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) 2016 Proformatique, Inc.
+# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import sys
@@ -12,10 +12,10 @@ port = int(sys.argv[1])
 
 
 def default_auth(xivo_uuid):
-    return {'Service': 'xivo-auth',
+    return {'Service': 'wazo-auth',
             'Address': 'auth',
             'Port': 9497,
-            'Tags': [xivo_uuid, 'xivo-auth']}
+            'Tags': [xivo_uuid, 'wazo-auth']}
 
 
 def default_ctid_ng(xivo_uuid):
@@ -24,8 +24,9 @@ def default_ctid_ng(xivo_uuid):
             'Port': 9501,
             'Tags': [xivo_uuid, 'xivo-ctid-ng']}
 
+
 services = {
-    'xivo-auth': {
+    'wazo-auth': {
         '51400e55-2dc3-4cfc-a2f2-a4d4f0f8b217': default_auth('51400e55-2dc3-4cfc-a2f2-a4d4f0f8b217'),
         '196e42b9-bbfe-4c03-b3d4-684dffd01603': default_auth('196e42b9-bbfe-4c03-b3d4-684dffd01603'),
         '04b0087e-1661-4a42-8181-4b61e198204d': default_auth('04b0087e-1661-4a42-8181-4b61e198204d'),

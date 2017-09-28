@@ -11,15 +11,15 @@ produces:
 x-xivo-port: 9500
 x-xivo-name: ctid-ng
 securityDefinitions:
-  xivo_auth_token:
+  wazo_auth_token:
     type: apiKey
     name: X-Auth-Token
     in: header
 security:
-- xivo_auth_token: []
+- wazo_auth_token: []
 responses:
   AnotherServiceUnavailable:
-    description: Another service is unavailable (e.g. xivo-auth, xivo-confd, Asterisk,
+    description: Another service is unavailable (e.g. wazo-auth, xivo-confd, Asterisk,
       ...)
     schema:
       $ref: '#/definitions/Error'
