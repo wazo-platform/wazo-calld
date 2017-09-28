@@ -2,7 +2,10 @@
 # Copyright 2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
-from xivo_bus.resources.chat.event import ChatMessageEvent
+from xivo_bus.resources.chat.event import (
+    ChatMessageEvent,
+    ChatMessageReceived,
+)
 
 
 class MessageCallbackService(object):
@@ -23,8 +26,13 @@ class MessageCallbackService(object):
                                      (to_xivo_uuid, to),
                                      alias,
                                      request_body['message'])
+        self._bus_publisher.publish(bus_event)
+
+        bus_event = ChatMessageReceived((self._xivo_uuid, from_),
+                                        (to_xivo_uuid, to),
+                                        alias,
+                                        request_body['message'])
         headers = {
-            'user_uuid:{uuid}'.format(uuid=from_): True,
             'user_uuid:{uuid}'.format(uuid=to): True,
         }
         self._bus_publisher.publish(bus_event, headers=headers)
