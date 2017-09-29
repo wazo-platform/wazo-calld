@@ -30,7 +30,8 @@ class TestChatsService(unittest.TestCase):
     def setUp(self):
         self.xivo_uuid = 'xivo-uuid'
         self.mongooseim_client = Mock()
-        self.service = ChatsService(self.xivo_uuid, self.mongooseim_client, ChatsContexts)
+        self.bus_publisher = Mock()
+        self.service = ChatsService(self.xivo_uuid, self.mongooseim_client, ChatsContexts, self.bus_publisher)
         self.alias = 'alice'
         self.msg = 'hello'
         self.from_ = str(uuid.uuid4())

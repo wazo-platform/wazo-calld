@@ -8,8 +8,10 @@ from hamcrest import (
     equal_to,
     not_,
     none,
+    has_entry,
     has_entries,
     has_item,
+    has_items,
 )
 from xivo_test_helpers import until
 
@@ -54,17 +56,21 @@ class TestCreateChat(IntegrationTest):
     def _assert_chat_msg_sent_on_bus(self):
         def assert_function():
             destination = [self.chat_msg.to_xivo_uuid or XIVO_UUID, self.chat_msg.to]
-            assert_that(self.events.accumulate(), has_item(equal_to({
-                'name': 'chat_message_event',
-                'origin_uuid': XIVO_UUID,
-                'required_acl': 'events.chat.message.{}.{}'.format(*destination),
-                'data': {
-                    'alias': self.chat_msg.alias,
-                    'to': destination,
-                    'from': [XIVO_UUID, self.chat_msg.from_],
-                    'msg': self.chat_msg.content,
-                }
-            })))
+            assert_that(self.events.accumulate(), has_items(
+                {
+                    'name': 'chat_message_event',
+                    'origin_uuid': XIVO_UUID,
+                    'required_acl': 'events.chat.message.{}.{}'.format(*destination),
+                    'data': {
+                        'alias': self.chat_msg.alias,
+                        'to': destination,
+                        'from': [XIVO_UUID, self.chat_msg.from_],
+                        'msg': self.chat_msg.content,
+                    }
+                },
+                has_entry('name', 'chat_message_received'),
+                has_entry('name', 'chat_message_sent'),
+            ))
         until.assert_(assert_function, tries=5)
 
 
@@ -93,17 +99,21 @@ class TestUserCreateChat(IntegrationTest):
 
     def _assert_chat_msg_sent_on_bus(self, message):
         def assert_function():
-            assert_that(self.events.accumulate(), has_item(equal_to({
-                'name': 'chat_message_event',
-                'origin_uuid': XIVO_UUID,
-                'required_acl': 'events.chat.message.{}.{}'.format(XIVO_UUID, message.to),
-                'data': {
-                    'alias': message.alias,
-                    'to': [XIVO_UUID, message.to],
-                    'from': [XIVO_UUID, self.token_user_uuid],
-                    'msg': message.content,
-                }
-            })))
+            assert_that(self.events.accumulate(), has_items(
+                {
+                    'name': 'chat_message_event',
+                    'origin_uuid': XIVO_UUID,
+                    'required_acl': 'events.chat.message.{}.{}'.format(XIVO_UUID, message.to),
+                    'data': {
+                        'alias': message.alias,
+                        'to': [XIVO_UUID, message.to],
+                        'from': [XIVO_UUID, self.token_user_uuid],
+                        'msg': message.content,
+                    }
+                },
+                has_entry('name', 'chat_message_received'),
+                has_entry('name', 'chat_message_sent'),
+            ))
         until.assert_(assert_function, tries=5)
 
     def test_get_chats(self):

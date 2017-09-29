@@ -4,6 +4,7 @@
 
 from datetime import datetime
 from requests import RequestException, HTTPError
+from xivo_bus.resources.chat.event import ChatMessageSent
 from xivo_ctid_ng.exceptions import APIException
 
 
@@ -42,10 +43,11 @@ class MongooseIMException(APIException):
 
 class ChatsService(object):
 
-    def __init__(self, xivo_uuid, mongooseim_client, contexts):
+    def __init__(self, xivo_uuid, mongooseim_client, contexts, bus_publisher):
         self._xivo_uuid = xivo_uuid
         self.contexts = contexts
         self.mongooseim_client = mongooseim_client
+        self._bus_publisher = bus_publisher
 
     def get_history(self, user_uuid, args):
         mongooseim_history = self._get_mongooseim_history(user_uuid, args)
@@ -125,6 +127,15 @@ class ChatsService(object):
             raise MongooseIMException(self._xivo_uuid, e.response.status_code, e.response.reason)
         except RequestException as e:
             raise MongooseIMUnreachable(self._xivo_uuid, e)
+
+        bus_event = ChatMessageSent((from_xivo_uuid, from_),
+                                    (to_xivo_uuid, to),
+                                    alias,
+                                    msg)
+        headers = {
+            'user_uuid:{uuid}'.format(uuid=from_): True,
+        }
+        self._bus_publisher.publish(bus_event, headers=headers)
 
     def _build_from(self, request_body, token_user_uuid):
         user_uuid = token_user_uuid or str(request_body['from'])

@@ -23,6 +23,7 @@ class ChatRequestSchema(UserChatRequestSchema):
 
     from_ = fields.UUID(attribute='from', load_from='from', required=True)
 
+
 user_chat_request_schema = UserChatRequestSchema(strict=True)
 chat_request_schema = ChatRequestSchema(strict=True)
 
