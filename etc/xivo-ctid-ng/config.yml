@@ -37,7 +37,7 @@ rest_api:
     #Allow JSON preflight requests
     allow_headers: [Content-Type, X-Auth-Token]
 
-# xivo-auth (authentication daemon) connection informations.
+# wazo-auth (authentication daemon) connection informations.
 auth:
   host: localhost
   port: 9497

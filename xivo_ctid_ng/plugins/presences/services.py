@@ -16,7 +16,7 @@ from .exceptions import (InvalidCredentials,
                          MissingCredentials,
                          NoSuchUser,
                          NoSuchLine,
-                         XiVOAuthUnreachable,
+                         WazoAuthUnreachable,
                          XiVOCtidUnreachable,
                          XiVOCtidNgUnreachable)
 
@@ -137,9 +137,9 @@ class CtidNgClientFactory(object):
             if not credentials:
                 raise MissingCredentials(xivo_uuid)
 
-            auth_config = self.find_service_config('xivo-auth', xivo_uuid)
+            auth_config = self.find_service_config('wazo-auth', xivo_uuid)
             if not auth_config:
-                raise XiVOAuthUnreachable(xivo_uuid, 'no running service found')
+                raise WazoAuthUnreachable(xivo_uuid, 'no running service found')
 
             client = AuthClient(username=credentials['service_id'],
                                 password=credentials['service_key'],

@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) 2016 Avencall
-# Copyright (C) 2016 Proformatique, Inc.
+# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 from hamcrest import assert_that
@@ -52,14 +51,14 @@ class TestGetUserPresence(IntegrationTest):
 
         assert_that(result.status_code, equal_to(400))
 
-    def test_get_presence_with_an_unregistered_xivo_auth(self):
+    def test_get_presence_with_an_unregistered_wazo_auth(self):
         result = self.ctid_ng.get_user_presence_result(self.token_user_uuid,
                                                        xivo_uuid='582fbd45-73a3-41dd-9079-4c6d16fe1aad',
                                                        token=VALID_TOKEN)
 
         assert_that(result.status_code, equal_to(503))
         missing_service = result.json()['details']['service']
-        assert_that(missing_service, equal_to('xivo-auth'))
+        assert_that(missing_service, equal_to('wazo-auth'))
 
     def test_get_presence_with_invalid_credentials(self):
         result = self.ctid_ng.get_user_presence_result(self.token_user_uuid,
@@ -231,14 +230,14 @@ class TestGetLinePresence(IntegrationTest):
 
         assert_that(result.status_code, equal_to(400))
 
-    def test_get_presence_with_an_unregistered_xivo_auth(self):
+    def test_get_presence_with_an_unregistered_wazo_auth(self):
         result = self.ctid_ng.get_line_presence_result(42,
                                                        xivo_uuid='582fbd45-73a3-41dd-9079-4c6d16fe1aad',
                                                        token=VALID_TOKEN)
 
         assert_that(result.status_code, equal_to(503))
         missing_service = result.json()['details']['service']
-        assert_that(missing_service, equal_to('xivo-auth'))
+        assert_that(missing_service, equal_to('wazo-auth'))
 
     def test_get_presence_with_invalid_credentials(self):
         result = self.ctid_ng.get_line_presence_result(42,

@@ -1,7 +1,7 @@
 [Unit]
 Description=xivo-ctid-ng server
 ConditionPathExists=!/var/lib/xivo/disabled
-After=network.target asterisk.service rabbitmq-server.service xivo-auth.service xivo-confd.service
+After=network.target asterisk.service rabbitmq-server.service wazo-auth.service xivo-confd.service
 Before=monit.service
 
 [Service]
