@@ -1,0 +1,63 @@
+paths:
+  /users/me/relocates:
+    post:
+      summary: Initiate a relocate from the authenticated user
+      description: '**Required ACL:** `ctid-ng.users.me.relocates.create`'
+      parameters:
+      - name: body
+        in: body
+        description: Parameters of the relocate
+        required: true
+        schema:
+          $ref: '#/definitions/UserRelocateRequest'
+      tags:
+      - relocates
+      - users
+      responses:
+        '201':
+          description: The relocate being created
+          schema:
+            $ref: '#/definitions/Relocate'
+        '400':
+          $ref: '#/responses/InvalidRequest'
+        '403':
+          description: The authenticated user tried to relocate a call owned by someone
+            else
+          schema:
+            $ref: '#/definitions/Error'
+        '409':
+          description: The server could not determine which Call to use as relocated
+            or initiator, usually because too many Calls are eligible
+          schema:
+            $ref: '#/definitions/Error'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+definitions:
+  Relocate:
+    type: object
+    properties:
+      uuid:
+        description: Unique identifier of the relocate
+        type: string
+      relocated_call:
+        description: Call ID of the call being relocated to someone else
+        type: string
+      initiator_call:
+        description: Call ID of the relocate initiator
+        type: string
+      recipient_call:
+        description: Call ID of the recipient of the relocate.
+        type: string
+  UserRelocateRequest:
+    type: object
+    properties:
+      initiator_call:
+        description: Call ID of the relocate initiator. This call must be owned by
+          the authenticated user.
+        type: string
+      destination_line_id:
+        description: "ID of the user's line where the relocated call should be connected"
+        type: integer
+    required:
+    - initiator_call
+    - destination_line_id

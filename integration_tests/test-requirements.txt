@@ -1,9 +1,11 @@
 git+https://github.com/digium/swagger-py.git  # the release 0.2.1 has blocking bugs, so we need master
 git+https://github.com/wazo-pbx/xivo-test-helpers.git
 https://github.com/wazo-pbx/ari-py/archive/0.3.0.zip
+https://github.com/wazo-pbx/xivo-ctid-ng-client/archive/master.zip
 docker-compose
 kombu
 nose
 pyhamcrest
 psycopg2
 requests
+stevedore  # from xivo-ctid-ng-client
