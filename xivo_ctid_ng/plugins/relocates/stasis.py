@@ -9,10 +9,9 @@ logger = logging.getLogger(__name__)
 
 class RelocatesStasis(object):
 
-    def __init__(self, ari_client, relocates, state_factory):
+    def __init__(self, ari_client, relocates):
         self.ari = ari_client
         self.relocates = relocates
-        self.state_factory = state_factory
 
     def subscribe(self):
         self.ari.on_channel_event('StasisStart', self.on_stasis_start)

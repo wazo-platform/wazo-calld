@@ -7,41 +7,30 @@ import logging
 from xivo_ctid_ng.ari_ import APPLICATION_NAME
 
 logger = logging.getLogger(__name__)
+state_index = {}
+
+
+def state(wrapped):
+    state_index[wrapped.name] = wrapped
+    return wrapped
 
 
 class StateFactory(object):
+    def __init__(self, index, ari):
+        self._index = index
+        self._state_args = [ari]
 
-    def __init__(self, ari=None):
-        self._state_constructors = {}
-        self._ari = ari
-        self._configured = False
-
-    def set_dependencies(self, *dependencies):
-        self._dependencies = dependencies
-        self._configured = True
-
-    def make(self, state_name):
-        if not self._configured:
-            raise RuntimeError('StateFactory is not configured')
-        return self._state_constructors[state_name](*self._dependencies)
-
-    def state(self, wrapped_class):
-        self._state_constructors[wrapped_class.name] = wrapped_class
-        return wrapped_class
-
-
-state_factory = StateFactory()
+    def make(self, name):
+        return self._index[name](*self._state_args)
 
 
 class RelocateState(object):
 
-    def __init__(self, ari, services, relocate_lock):
+    def __init__(self, ari):
         self._ari = ari
-        self._services = services
-        self._relocate_lock = relocate_lock
 
 
-@state_factory.state
+@state
 class RelocateStateReady(RelocateState):
 
     name = 'ready'
@@ -58,7 +47,7 @@ class RelocateStateReady(RelocateState):
         relocate.set_state('recipient_ring')
 
 
-@state_factory.state
+@state
 class RelocateStateRecipientRing(RelocateState):
 
     name = 'recipient_ring'
@@ -72,7 +61,7 @@ class RelocateStateRecipientRing(RelocateState):
         relocate.set_state('ended')
 
 
-@state_factory.state
+@state
 class RelocateStateEnded(RelocateState):
 
     name = 'ended'

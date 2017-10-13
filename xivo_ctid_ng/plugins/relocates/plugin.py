@@ -8,7 +8,7 @@ from xivo_confd_client import Client as ConfdClient
 from .resources import UserRelocatesResource
 from .services import RelocatesService
 from .stasis import RelocatesStasis
-from .state import state_factory
+from .state import StateFactory, state_index
 from .relocate_lock import RelocateLock
 from .relocate import RelocateCollection
 
@@ -28,12 +28,11 @@ class Plugin(object):
 
         relocates = RelocateCollection()
         relocate_lock = RelocateLock()
+        state_factory = StateFactory(state_index, ari.client)
 
         relocates_service = RelocatesService(ari.client, confd_client, relocates, state_factory,  relocate_lock)
 
-        relocates_stasis = RelocatesStasis(ari.client, relocates, state_factory)
+        relocates_stasis = RelocatesStasis(ari.client, relocates)
         relocates_stasis.subscribe()
-
-        state_factory.set_dependencies(ari.client, relocates_service, relocate_lock)
 
         api.add_resource(UserRelocatesResource, '/users/me/relocates', resource_class_args=[auth_client, relocates_service])
