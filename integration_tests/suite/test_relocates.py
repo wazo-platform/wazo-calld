@@ -38,7 +38,7 @@ class TestRelocates(RealAsteriskIntegrationTest):
     def make_ctid_ng(self, token):
         return CtidNGClient('localhost', self.service_port(9500, 'ctid-ng'), token=token, verify_certificate=False)
 
-    def add_channel_to_bridge(self, bridge):
+    def stasis_channel(self):
         def channel_is_in_stasis(channel_id):
             try:
                 self.ari.channels.setChannelVar(channelId=channel_id, variable='TEST_STASIS', value='')
@@ -50,19 +50,22 @@ class TestRelocates(RealAsteriskIntegrationTest):
                                                   app=STASIS_APP,
                                                   appArgs=[STASIS_APP_INSTANCE])
         until.true(channel_is_in_stasis, new_channel.id, tries=2)
-        bridge.addChannel(channel=new_channel.id)
 
         return new_channel
 
     def given_bridged_call_stasis(self, caller_uuid=None, callee_uuid=None):
-        caller_uuid = caller_uuid or str(uuid.uuid4())
-        callee_uuid = callee_uuid or str(uuid.uuid4())
         bridge = self.ari.bridges.create(type='mixing')
         bus_events = self.bus.accumulator('calls.call.created')
-        caller = self.add_channel_to_bridge(bridge)
+
+        caller = self.stasis_channel()
+        caller_uuid = caller_uuid or str(uuid.uuid4())
         caller.setChannelVar(variable='XIVO_USERUUID', value=caller_uuid)
-        callee = self.add_channel_to_bridge(bridge)
+        bridge.addChannel(channel=caller.id)
+
+        callee = self.stasis_channel()
+        callee_uuid = callee_uuid or str(uuid.uuid4())
         callee.setChannelVar(variable='XIVO_USERUUID', value=callee_uuid)
+        bridge.addChannel(channel=callee.id)
 
         def channels_have_been_created_in_ctid_ng(caller_id, callee_id):
             created_channel_ids = [message['data']['call_id'] for message in bus_events.accumulate()]
