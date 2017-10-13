@@ -64,6 +64,7 @@ class InterfaceDestination(Destination):
 
 
 class RelocatesService(object):
+
     def __init__(self, ari, confd_client, relocates, state_factory, relocate_lock):
         self.ari = ari
         self.confd_client = confd_client
@@ -72,7 +73,7 @@ class RelocatesService(object):
         self.relocates = relocates
         self.relocate_lock = relocate_lock
 
-    def create(self, initiator_call, destination_type, destination_details, flow, variables, timeout):
+    def create(self, initiator_call, destination, location):
         try:
             relocated_channel = Channel(initiator_call, self.ari).only_connected_channel()
         except TooManyChannels as e:
@@ -85,7 +86,7 @@ class RelocatesService(object):
         except ARINotFound:
             raise RelocateCreationError('channel not found')
 
-        destination = self.destination_factory.from_type(destination_type, destination_details)
+        destination = self.destination_factory.from_type(destination, location)
 
         if (not self.relocate_lock.acquire(initiator_call)
                 or self.relocates.find_by_channel(initiator_call)):
@@ -101,18 +102,19 @@ class RelocatesService(object):
 
         return relocate
 
-    def create_from_user(self, initiator_call, destination_line_id, flow, timeout, user_uuid):
+    def create_from_user(self, initiator_call, destination, location, user_uuid):
         if not Channel(initiator_call, self.ari).exists():
             raise RelocateCreationError('initiator channel not found')
 
         if Channel(initiator_call, self.ari).user() != user_uuid:
             raise UserPermissionDenied(user_uuid, {'call': initiator_call})
 
-        try:
-            destination_interface = User(user_uuid, self.confd_client).line(destination_line_id).interface()
-        except (InvalidUserUUID, InvalidUserLine):
-            raise RelocateCreationError('invalid line for user', details={'user_uuid': user_uuid, 'line_id': destination_line_id})
-        destination_type = 'interface'
-        destination_details = {'interface': destination_interface}
+        if destination == 'line':
+            try:
+                destination_interface = User(user_uuid, self.confd_client).line(location['line_id']).interface()
+            except (InvalidUserUUID, InvalidUserLine):
+                raise RelocateCreationError('invalid line for user', details={'user_uuid': user_uuid, 'line_id': location['line_id']})
+        destination = 'interface'
+        location = {'interface': destination_interface}
 
-        return self.create(initiator_call, destination_type, destination_details, flow, variables={}, timeout=timeout)
+        return self.create(initiator_call, destination, location)

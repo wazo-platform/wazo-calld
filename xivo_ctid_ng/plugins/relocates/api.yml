@@ -55,9 +55,14 @@ definitions:
         description: Call ID of the relocate initiator. This call must be owned by
           the authenticated user.
         type: string
-      destination_line_id:
-        description: "ID of the user's line where the relocated call should be connected"
-        type: integer
+      destination:
+        description: What kind of destination the relocated call should be connected
+        type: string
+        enum:
+          - line
+      location:
+        description: Describes where exactly the relocated call should be connected. Attributes depend on the `destination` value.
+        type: object
     required:
-    - initiator_call
-    - destination_line_id
+      - initiator_call
+      - destination

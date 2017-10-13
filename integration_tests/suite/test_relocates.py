@@ -116,7 +116,7 @@ class TestCreateUserRelocate(TestRelocates):
         relocated_channel_id, initiator_channel_id = self.given_bridged_call_stasis(callee_uuid=user_uuid)
         ctid_ng = self.make_ctid_ng(token)
 
-        relocate = ctid_ng.relocates.create_from_user(initiator_channel_id, line_id)
+        relocate = ctid_ng.relocates.create_from_user(initiator_channel_id, 'line', {'line_id': line_id})
 
         until.assert_(
             self.assert_relocate_is_completed,
