@@ -20,6 +20,8 @@ from .test_api.auth import MockUserToken
 from .test_api.hamcrest_ import HamcrestARIChannel
 
 ENDPOINT_AUTOANSWER = 'Test/integration-caller/autoanswer'
+SOME_USER_UUID = '68b884c3-515b-4acf-9034-c77896877acb'
+SOME_CONTEXT = 'some-context'
 STASIS_APP = 'callcontrol'
 STASIS_APP_INSTANCE = 'integration-tests'
 
@@ -82,15 +84,6 @@ class TestRelocates(RealAsteriskIntegrationTest):
 
         return token
 
-    def given_user_with_line(self, context, line_id=None, line_name=None, line_protocol=None):
-        user_uuid = 'some-user-id'
-        line_id = line_id or 'some-line-id'
-        line_name = line_name or 'some-line-name'
-        line_protocol = line_protocol or 'sip'
-        self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
-        self.confd.set_lines(MockLine(id=line_id, name=line_name, protocol=line_protocol, context=context))
-        return user_uuid
-
     def assert_relocate_is_completed(self, relocate_uuid, relocated_channel_id, initiator_channel_id, recipient_channel_id):
         try:
             relocate_bridge = next(bridge for bridge in self.ari.bridges.list() if bridge.json['name'] == 'relocate:{}'.format(relocate_uuid))
@@ -115,9 +108,10 @@ class TestCreateUserRelocate(TestRelocates):
         self.confd.reset()
 
     def test_given_stasis_channels_a_b_when_b_relocate_to_c_and_answer_then_a_c(self):
+        user_uuid = SOME_USER_UUID
         line_id = 12
-        context = 'my-context'
-        user_uuid = self.given_user_with_line(context, line_id, line_name='recipient_autoanswer@local', line_protocol='local')
+        self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
+        self.confd.set_lines(MockLine(id=line_id, name='recipient_autoanswer@local', protocol='local', context=SOME_CONTEXT))
         token = self.given_user_token(user_uuid)
         relocated_channel_id, initiator_channel_id = self.given_bridged_call_stasis(callee_uuid=user_uuid)
         ctid_ng = self.make_ctid_ng(token)
