@@ -124,5 +124,5 @@ class TestCreateUserRelocate(TestRelocates):
             relocated_channel_id,
             initiator_channel_id,
             relocate['recipient_call'],
-            tries=5
+            timeout=5,
         )
