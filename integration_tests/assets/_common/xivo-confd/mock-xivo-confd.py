@@ -21,6 +21,7 @@ _EMPTY_RESPONSES = {
 }
 
 app = Flask(__name__)
+logger = logging.getLogger('confd-mock')
 
 _requests = []
 _responses = {}
@@ -43,6 +44,21 @@ def log_request():
                'body': request.data,
                'headers': dict(request.headers)}
         _requests.append(log)
+
+
+@app.after_request
+def print_request_response(response):
+    logger.debug('request: %s', {
+        'method': request.method,
+        'path': request.path,
+        'query': request.args.items(multi=True),
+        'body': request.data,
+        'headers': dict(request.headers)
+    })
+    logger.debug('response: %s', {
+        'body': response.data,
+    })
+    return response
 
 
 @app.route('/_requests', methods=['GET'])
