@@ -105,9 +105,10 @@ class Channel(object):
         if len(connected_channels) > 1:
             raise TooManyChannels(channel.id for channel in connected_channels)
         try:
-            return connected_channels.pop().id
+            channel_id = connected_channels.pop().id
         except KeyError:
             raise NotEnoughChannels()
+        return Channel(channel_id, self._ari)
 
     def user(self, default=None):
         if self.is_local():

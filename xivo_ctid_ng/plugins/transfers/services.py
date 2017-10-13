@@ -77,7 +77,7 @@ class TransfersService(object):
             raise UserPermissionDenied(user_uuid, {'call': initiator_call})
 
         try:
-            transferred_call = Channel(initiator_call, self.ari).only_connected_channel()
+            transferred_call = Channel(initiator_call, self.ari).only_connected_channel().id
         except TooManyChannels as e:
             raise TooManyTransferredCandidates(e.channels)
         except NotEnoughChannels as e:
