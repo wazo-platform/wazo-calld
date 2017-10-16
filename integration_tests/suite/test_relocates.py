@@ -8,18 +8,25 @@ import uuid
 
 from ari.exceptions import ARINotInStasis
 from hamcrest import assert_that
+from hamcrest import calling
 from hamcrest import contains_inanyorder
 from hamcrest import has_entry
+from hamcrest import has_property
 from xivo_test_helpers import until
+from xivo_test_helpers.hamcrest.raises import raises
 from xivo_ctid_ng_client import Client as CtidNGClient
+from xivo_ctid_ng_client.exceptions import CtidNGError
 
+from .test_api.auth import MockUserToken
 from .test_api.base import RealAsteriskIntegrationTest
 from .test_api.confd import MockUser
 from .test_api.confd import MockLine
-from .test_api.auth import MockUserToken
+from .test_api.constants import INVALID_ACL_TOKEN
 from .test_api.hamcrest_ import HamcrestARIChannel
 
 ENDPOINT_AUTOANSWER = 'Test/integration-caller/autoanswer'
+SOME_CALL_ID = '12345.6789'
+SOME_LINE_ID = 12
 SOME_USER_UUID = '68b884c3-515b-4acf-9034-c77896877acb'
 SOME_CONTEXT = 'some-context'
 STASIS_APP = 'callcontrol'
@@ -106,6 +113,12 @@ class TestCreateUserRelocate(TestRelocates):
     def setUp(self):
         super(TestCreateUserRelocate, self).setUp()
         self.confd.reset()
+
+    def test_given_wrong_token_when_relocate_then_401(self):
+        ctid_ng = self.make_ctid_ng(INVALID_ACL_TOKEN)
+
+        assert_that(calling(ctid_ng.relocates.create_from_user).with_args(SOME_CALL_ID, 'destination'),
+                    raises(CtidNGError).matching(has_property('status_code', 401)))
 
     def test_given_stasis_channels_a_b_when_b_relocate_to_c_and_answer_then_a_c(self):
         user_uuid = SOME_USER_UUID
