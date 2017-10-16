@@ -132,6 +132,22 @@ class TestCreateUserRelocate(TestRelocates):
                         'error_id': 'invalid-data',
                     })))
 
+    def test_given_token_without_user_when_relocate_then_400(self):
+        token = 'some-token'
+        self.auth.set_token(MockUserToken(token, user_uuid=None))
+        ctid_ng = self.make_ctid_ng(token)
+
+        assert_that(
+            calling(ctid_ng.relocates.create_from_user).with_args(
+                SOME_CALL_ID,
+                'line',
+                {'line_id': SOME_LINE_ID}
+            ),
+            raises(CtidNGError).matching(has_properties({
+                'status_code': 400,
+                'error_id': 'token-with-user-uuid-required',
+            })))
+
     def test_given_stasis_channels_a_b_when_b_relocate_to_c_and_answer_then_a_c(self):
         user_uuid = SOME_USER_UUID
         line_id = 12
