@@ -93,6 +93,20 @@ class TestRelocates(RealAsteriskIntegrationTest):
 
         return token
 
+    def given_ringing_user_relocate(self):
+        user_uuid = SOME_USER_UUID
+        relocated_channel_id, initiator_channel_id = self.given_bridged_call_stasis(callee_uuid=user_uuid)
+        line_id = SOME_LINE_ID
+        token = self.given_user_token(user_uuid)
+        self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
+        self.confd.set_lines(MockLine(id=line_id, name='recipient@local', protocol='local', context=SOME_CONTEXT))
+        ctid_ng = self.make_ctid_ng(token)
+        destination = 'line'
+        location = {'line_id': line_id}
+        relocate = ctid_ng.relocates.create_from_user(initiator_channel_id, destination, location)
+
+        return relocate, user_uuid, destination, location
+
     def assert_relocate_is_completed(self, relocate_uuid, relocated_channel_id, initiator_channel_id, recipient_channel_id):
         try:
             relocate_bridge = next(bridge for bridge in self.ari.bridges.list() if bridge.json['name'] == 'relocate:{}'.format(relocate_uuid))
@@ -242,6 +256,22 @@ class TestCreateUserRelocate(TestRelocates):
             raises(CtidNGError).matching(has_properties({
                 'status_code': 400,
                 'error_id': 'relocate-creation-error',
+            })))
+
+    def test_given_relocate_started_when_relocate_again_then_409(self):
+        relocate, user_uuid, destination, location = self.given_ringing_user_relocate()
+        token = self.given_user_token(user_uuid)
+        ctid_ng = self.make_ctid_ng(token)
+
+        assert_that(
+            calling(ctid_ng.relocates.create_from_user).with_args(
+                relocate['initiator_call'],
+                destination,
+                location,
+            ),
+            raises(CtidNGError).matching(has_properties({
+                'status_code': 409,
+                'error_id': 'relocate-already-started',
             })))
 
     def test_given_stasis_channels_a_b_when_b_relocate_to_c_and_answer_then_a_c(self):
