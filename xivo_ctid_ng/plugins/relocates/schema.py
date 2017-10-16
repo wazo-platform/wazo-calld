@@ -12,13 +12,14 @@ class LineLocationSchema(Schema):
 
 class LocationField(fields.Field):
 
-    _locations = {
+    locations = {
         'line': fields.Nested(LineLocationSchema),
+        'mobile': None,
     }
 
     def _deserialize(self, value, attr, data):
         method = data.get('destination')
-        concrete_location = self._locations.get(method)
+        concrete_location = self.locations.get(method)
         if not concrete_location:
             return {}
         return concrete_location._deserialize(value, attr, data)
@@ -26,7 +27,7 @@ class LocationField(fields.Field):
 
 class UserRelocateRequestSchema(Schema):
     initiator_call = fields.Str(validate=Length(min=1), required=True)
-    destination = fields.Str(validate=OneOf('line'))
+    destination = fields.Str(validate=OneOf(LocationField.locations))
     location = LocationField(missing=dict)
 
 
