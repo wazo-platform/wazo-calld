@@ -33,7 +33,7 @@ class Plugin(object):
         relocate_lock = RelocateLock()
         state_factory = StateFactory(state_index, amid_client, ari.client)
 
-        relocates_service = RelocatesService(ari.client, confd_client, relocates, state_factory,  relocate_lock)
+        relocates_service = RelocatesService(amid_client, ari.client, confd_client, relocates, state_factory,  relocate_lock)
 
         relocates_stasis = RelocatesStasis(ari.client, relocates)
         relocates_stasis.subscribe()
