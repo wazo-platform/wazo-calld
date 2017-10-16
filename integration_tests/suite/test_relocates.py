@@ -11,6 +11,7 @@ from hamcrest import assert_that
 from hamcrest import calling
 from hamcrest import contains_inanyorder
 from hamcrest import has_entry
+from hamcrest import has_properties
 from hamcrest import has_property
 from xivo_test_helpers import until
 from xivo_test_helpers.hamcrest.raises import raises
@@ -119,6 +120,17 @@ class TestCreateUserRelocate(TestRelocates):
 
         assert_that(calling(ctid_ng.relocates.create_from_user).with_args(SOME_CALL_ID, 'destination'),
                     raises(CtidNGError).matching(has_property('status_code', 401)))
+
+    def test_given_invalid_request_when_relocate_then_400(self):
+        user_uuid = SOME_USER_UUID
+        token = self.given_user_token(user_uuid)
+        ctid_ng = self.make_ctid_ng(token)
+
+        assert_that(calling(ctid_ng.relocates.create_from_user).with_args(SOME_CALL_ID, 'wrong-destination'),
+                    raises(CtidNGError).matching(has_properties({
+                        'status_code': 400,
+                        'error_id': 'invalid-data',
+                    })))
 
     def test_given_stasis_channels_a_b_when_b_relocate_to_c_and_answer_then_a_c(self):
         user_uuid = SOME_USER_UUID
