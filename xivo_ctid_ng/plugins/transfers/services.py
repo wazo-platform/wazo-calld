@@ -53,8 +53,8 @@ class TransfersService(object):
         if not self.transfer_lock.acquire(initiator_call):
             raise TransferAlreadyStarted(initiator_call)
 
-        if not (ari_helpers.is_in_stasis(self.ari, transferred_call) and
-                ari_helpers.is_in_stasis(self.ari, initiator_call)):
+        if not (Channel(transferred_call, self.ari).is_in_stasis() and
+                Channel(initiator_call, self.ari).is_in_stasis()):
             transfer_state = self.state_factory.make_from_class(TransferStateReadyNonStasis)
         else:
             transfer_state = self.state_factory.make_from_class(TransferStateReady)

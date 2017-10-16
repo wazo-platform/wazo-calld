@@ -13,14 +13,6 @@ from xivo_ctid_ng.helpers import ami
 logger = logging.getLogger(__name__)
 
 
-def is_in_stasis(ari, call_id):
-    try:
-        ari.channels.setChannelVar(channelId=call_id, variable='XIVO_TEST_STASIS')
-        return True
-    except ARINotInStasis:
-        return False
-
-
 def hold_transferred_call(ari, amid, transferred_call):
     ari.channels.mute(channelId=transferred_call, direction='in')
     ari.channels.hold(channelId=transferred_call)
