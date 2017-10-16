@@ -11,6 +11,7 @@ from hamcrest import assert_that
 from hamcrest import calling
 from hamcrest import contains_inanyorder
 from hamcrest import has_entry
+from hamcrest import has_entries
 from hamcrest import has_properties
 from hamcrest import has_property
 from xivo_test_helpers import until
@@ -146,6 +147,23 @@ class TestCreateUserRelocate(TestRelocates):
             raises(CtidNGError).matching(has_properties({
                 'status_code': 400,
                 'error_id': 'token-with-user-uuid-required',
+            })))
+
+    def test_given_no_channel_when_relocate_then_400(self):
+        user_uuid = SOME_USER_UUID
+        token = self.given_user_token(user_uuid)
+        ctid_ng = self.make_ctid_ng(token)
+
+        assert_that(
+            calling(ctid_ng.relocates.create_from_user).with_args(
+                SOME_CALL_ID,
+                'line',
+                {'line_id': SOME_LINE_ID}
+            ),
+            raises(CtidNGError).matching(has_properties({
+                'status_code': 400,
+                'error_id': 'relocate-creation-error',
+                'details': has_entries({'initiator_call': SOME_CALL_ID}),
             })))
 
     def test_given_stasis_channels_a_b_when_b_relocate_to_c_and_answer_then_a_c(self):

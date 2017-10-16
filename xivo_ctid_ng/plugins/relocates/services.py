@@ -104,7 +104,8 @@ class RelocatesService(object):
 
     def create_from_user(self, initiator_call, destination, location, user_uuid):
         if not Channel(initiator_call, self.ari).exists():
-            raise RelocateCreationError('initiator channel not found')
+            details = {'initiator_call': initiator_call}
+            raise RelocateCreationError('initiator call not found', details)
 
         if Channel(initiator_call, self.ari).user() != user_uuid:
             raise UserPermissionDenied(user_uuid, {'call': initiator_call})
