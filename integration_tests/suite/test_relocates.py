@@ -184,6 +184,25 @@ class TestCreateUserRelocate(TestRelocates):
                 'details': has_entries({'user': user_uuid}),
             })))
 
+    def test_given_invalid_user_when_relocate_then_400(self):
+        user_uuid = SOME_USER_UUID
+        line_id = SOME_LINE_ID
+        token = self.given_user_token(user_uuid)
+        relocated_channel_id, initiator_channel_id = self.given_bridged_call_stasis(callee_uuid=user_uuid)
+        ctid_ng = self.make_ctid_ng(token)
+
+        assert_that(
+            calling(ctid_ng.relocates.create_from_user).with_args(
+                initiator_channel_id,
+                'line',
+                {'line_id': line_id}
+            ),
+            raises(CtidNGError).matching(has_properties({
+                'status_code': 400,
+                'error_id': 'relocate-creation-error',
+                'details': has_entries({'user_uuid': user_uuid}),
+            })))
+
     def test_given_invalid_line_when_relocate_then_400(self):
         user_uuid = SOME_USER_UUID
         line_id = SOME_LINE_ID
