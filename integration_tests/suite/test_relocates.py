@@ -87,6 +87,27 @@ class TestRelocates(RealAsteriskIntegrationTest):
 
         return caller.id, callee.id
 
+    def given_bridged_call_not_stasis(self, caller_uuid=None, callee_uuid=None):
+        caller_uuid = caller_uuid or str(uuid.uuid4())
+        callee_uuid = callee_uuid or str(uuid.uuid4())
+        caller = self.ari.channels.originate(endpoint=ENDPOINT_AUTOANSWER,
+                                             context='local',
+                                             extension='dial-autoanswer',
+                                             variables={'variables': {'XIVO_USERUUID': caller_uuid,
+                                                                      '__CALLEE_XIVO_USERUUID': callee_uuid}})
+
+        def bridged_channel(caller):
+            try:
+                bridge = next(bridge for bridge in self.ari.bridges.list()
+                              if caller.id in bridge.json['channels'])
+                callee_channel_id = next(iter(set(bridge.json['channels']) - {caller.id}))
+                return callee_channel_id
+            except StopIteration:
+                return False
+
+        callee_channel_id = until.true(bridged_channel, caller, timeout=3)
+        return caller.id, callee_channel_id
+
     def given_user_token(self, user_uuid):
         token = 'my-token'
         self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
@@ -118,7 +139,8 @@ class TestRelocates(RealAsteriskIntegrationTest):
                               contains_inanyorder(
                                   relocated_channel_id,
                                   recipient_channel_id
-                              )))
+                              )),
+                    'relocate is missing a channel')
         assert_that(relocated_channel_id, self.c.is_talking(), 'relocated channel not talking')
         assert_that(initiator_channel_id, self.c.is_hungup(), 'initiator channel is still talking')
         assert_that(recipient_channel_id, self.c.is_talking(), 'recipient channel not talking')
@@ -281,6 +303,26 @@ class TestCreateUserRelocate(TestRelocates):
         self.confd.set_lines(MockLine(id=line_id, name='recipient_autoanswer@local', protocol='local', context=SOME_CONTEXT))
         token = self.given_user_token(user_uuid)
         relocated_channel_id, initiator_channel_id = self.given_bridged_call_stasis(callee_uuid=user_uuid)
+        ctid_ng = self.make_ctid_ng(token)
+
+        relocate = ctid_ng.relocates.create_from_user(initiator_channel_id, 'line', {'line_id': line_id})
+
+        until.assert_(
+            self.assert_relocate_is_completed,
+            relocate['uuid'],
+            relocated_channel_id,
+            initiator_channel_id,
+            relocate['recipient_call'],
+            timeout=5,
+        )
+
+    def test_given_non_stasis_channels_a_b_when_b_relocate_to_c_and_answer_then_a_c(self):
+        user_uuid = SOME_USER_UUID
+        line_id = 12
+        self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
+        self.confd.set_lines(MockLine(id=line_id, name='recipient_autoanswer@local', protocol='local', context=SOME_CONTEXT))
+        token = self.given_user_token(user_uuid)
+        relocated_channel_id, initiator_channel_id = self.given_bridged_call_not_stasis(callee_uuid=user_uuid)
         ctid_ng = self.make_ctid_ng(token)
 
         relocate = ctid_ng.relocates.create_from_user(initiator_channel_id, 'line', {'line_id': line_id})

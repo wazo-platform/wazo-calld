@@ -2,6 +2,7 @@
 # Copyright 2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
+from xivo_amid_client import Client as AmidClient
 from xivo_auth_client import Client as AuthClient
 from xivo_confd_client import Client as ConfdClient
 
@@ -21,14 +22,16 @@ class Plugin(object):
         config = dependencies['config']
         token_changed_subscribe = dependencies['token_changed_subscribe']
 
+        amid_client = AmidClient(**config['amid'])
         auth_client = AuthClient(**config['auth'])
         confd_client = ConfdClient(**config['confd'])
 
+        token_changed_subscribe(amid_client.set_token)
         token_changed_subscribe(confd_client.set_token)
 
         relocates = RelocateCollection()
         relocate_lock = RelocateLock()
-        state_factory = StateFactory(state_index, ari.client)
+        state_factory = StateFactory(state_index, amid_client, ari.client)
 
         relocates_service = RelocatesService(ari.client, confd_client, relocates, state_factory,  relocate_lock)
 
