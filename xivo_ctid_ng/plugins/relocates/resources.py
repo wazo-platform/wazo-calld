@@ -20,15 +20,6 @@ class UserRelocatesResource(AuthResource):
         self._auth_client = auth_client
         self._relocates_service = relocates_service
 
-    @required_acl('ctid-ng.users.me.relocates.read')
-    def get(self):
-        user_uuid = get_token_user_uuid_from_request(self._auth_client)
-        relocates = self._relocates_service.list_from_user(user_uuid)
-
-        return {
-            'items': [relocate.to_dict() for relocate in relocates]
-        }, 200
-
     @required_acl('ctid-ng.users.me.relocates.create')
     def post(self):
         request_body = user_relocate_request_schema.load(request.get_json(force=True)).data
