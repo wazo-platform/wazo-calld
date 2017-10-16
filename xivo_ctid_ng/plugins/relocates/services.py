@@ -86,7 +86,11 @@ class RelocatesService(object):
             details = {'initiator_call': initiator_call}
             raise RelocateCreationError('initiator call not found', details)
 
-        destination = self.destination_factory.from_type(destination, location)
+        try:
+            destination = self.destination_factory.from_type(destination, location)
+        except InvalidDestination:
+            details = {'destination': destination, 'location': location}
+            raise RelocateCreationError('invalid destination', details)
 
         if (not self.relocate_lock.acquire(initiator_call)
                 or self.relocates.find_by_channel(initiator_call)):
