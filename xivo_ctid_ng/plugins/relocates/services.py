@@ -81,10 +81,10 @@ class RelocatesService(object):
         except NotEnoughChannels as e:
             raise RelocateCreationError('relocated channel not found')
 
-        try:
-            initiator_channel = self.ari.channels.get(channelId=initiator_call)
-        except ARINotFound:
-            raise RelocateCreationError('channel not found')
+        initiator_channel = Channel(initiator_call, self.ari)
+        if not initiator_channel.exists():
+            details = {'initiator_call': initiator_call}
+            raise RelocateCreationError('initiator call not found', details)
 
         destination = self.destination_factory.from_type(destination, location)
 
@@ -103,10 +103,6 @@ class RelocatesService(object):
         return relocate
 
     def create_from_user(self, initiator_call, destination, location, user_uuid):
-        if not Channel(initiator_call, self.ari).exists():
-            details = {'initiator_call': initiator_call}
-            raise RelocateCreationError('initiator call not found', details)
-
         if Channel(initiator_call, self.ari).user() != user_uuid:
             raise UserPermissionDenied(user_uuid, {'call': initiator_call})
 

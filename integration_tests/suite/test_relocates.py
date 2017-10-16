@@ -149,7 +149,7 @@ class TestCreateUserRelocate(TestRelocates):
                 'error_id': 'token-with-user-uuid-required',
             })))
 
-    def test_given_no_channel_when_relocate_then_400(self):
+    def test_given_no_channel_when_relocate_then_403(self):
         user_uuid = SOME_USER_UUID
         token = self.given_user_token(user_uuid)
         ctid_ng = self.make_ctid_ng(token)
@@ -161,9 +161,9 @@ class TestCreateUserRelocate(TestRelocates):
                 {'line_id': SOME_LINE_ID}
             ),
             raises(CtidNGError).matching(has_properties({
-                'status_code': 400,
-                'error_id': 'relocate-creation-error',
-                'details': has_entries({'initiator_call': SOME_CALL_ID}),
+                'status_code': 403,
+                'error_id': 'user-permission-denied',
+                'details': has_entries({'user': user_uuid}),
             })))
 
     def test_given_channel_does_not_belong_to_user_when_relocate_then_403(self):
