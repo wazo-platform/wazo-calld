@@ -86,9 +86,7 @@ paths:
         '200':
           description: The list of transfers
           schema:
-            type: array
-            items:
-              $ref: '#/definitions/Transfer'
+            $ref: '#/definitions/TransferList'
         '503':
           $ref: '#/responses/AnotherServiceUnavailable'
     post:
@@ -179,10 +177,16 @@ definitions:
     enum:
     - attended
     - blind
+  TransferList:
+    type: object
+    properties:
+      items:
+        type: array
+        items:
+          $ref: '#/definitions/Transfer'
   TransferTimeout:
     description: Maximum ringing time before cancelling the transfer (in seconds). Default (or null) is an unlimited ring time.
     type: integer
-
   TransferRequest:
     type: object
     properties:
