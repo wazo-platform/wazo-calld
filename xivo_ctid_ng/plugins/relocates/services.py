@@ -89,9 +89,9 @@ class RelocatesService(object):
         self.relocate_lock = relocate_lock
 
     def list_from_user(self, user_uuid):
-        return self.relocates.list()
+        return self.relocates.list(user_uuid)
 
-    def create(self, initiator_call, destination, location):
+    def create(self, initiator_call, destination, location, relocate=None):
         try:
             relocated_channel = Channel(initiator_call, self.ari).only_connected_channel()
         except TooManyChannels as e:
@@ -114,7 +114,11 @@ class RelocatesService(object):
                 or self.relocates.find_by_channel(initiator_call)):
             raise RelocateAlreadyStarted(initiator_call)
 
-        relocate = Relocate(self.state_factory, relocated_channel.id, initiator_channel.id)
+        if not relocate:
+            relocate = Relocate(self.state_factory)
+
+        relocate.relocated_channel = relocated_channel.id
+        relocate.initiator_channel = initiator_channel.id
         self.relocates.add(relocate)
         try:
             with relocate.locked():
@@ -147,4 +151,7 @@ class RelocatesService(object):
             location = {'exten': mobile,
                         'context': line_context}
 
-        return self.create(initiator_call, destination, location)
+        relocate = Relocate(self.state_factory)
+        relocate.initiator = user_uuid
+
+        return self.create(initiator_call, destination, location, relocate=relocate)

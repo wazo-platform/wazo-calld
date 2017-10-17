@@ -118,7 +118,7 @@ class TestRelocates(RealAsteriskIntegrationTest):
         return token
 
     def given_ringing_user_relocate(self):
-        user_uuid = SOME_USER_UUID
+        user_uuid = str(uuid.uuid4())
         relocated_channel_id, initiator_channel_id = self.given_bridged_call_stasis(callee_uuid=user_uuid)
         line_id = SOME_LINE_ID
         token = self.given_user_token(user_uuid)
@@ -211,6 +211,18 @@ class TestListUserRelocate(TestRelocates):
         relocates = ctid_ng.relocates.list_from_user()
 
         assert_that(relocates['items'], not_(contains(has_entry('uuid', relocate['uuid']))))
+
+    def test_given_two_relocates_when_list_then_relocates_are_filtered_by_user(self):
+        relocate1, user_uuid1, _, __ = self.given_ringing_user_relocate()
+        relocate2, user_uuid2, _, __ = self.given_ringing_user_relocate()
+        token = self.given_user_token(user_uuid2)
+        ctid_ng = self.make_ctid_ng(token)
+
+        result = ctid_ng.relocates.list_from_user()
+
+        assert_that(result['items'], contains(has_entries({
+            'uuid': relocate2['uuid'],
+        })))
 
 
 class TestCreateUserRelocate(TestRelocates):

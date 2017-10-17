@@ -20,12 +20,13 @@ class RelocateRole(object):
 
 class Relocate(object):
 
-    def __init__(self, state_factory, relocated_channel, initiator_channel):
+    def __init__(self, state_factory):
         self.uuid = str(uuid.uuid4())
         self._state_factory = state_factory
-        self.relocated_channel = relocated_channel
-        self.initiator_channel = initiator_channel
+        self.relocated_channel = None
+        self.initiator_channel = None
         self.recipient_channel = None
+        self.initiator = None
         self.set_state('ready')
         self._lock = threading.Lock()
         self.events = Pubsub()
@@ -117,5 +118,7 @@ class RelocateCollection(object):
 
         return None
 
-    def list(self):
-        return self._relocates.values()
+    def list(self, user_uuid):
+        return [relocate
+                for relocate in self._relocates.values()
+                if relocate.initiator == user_uuid]
