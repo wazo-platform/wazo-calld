@@ -19,6 +19,7 @@ class RelocatesStasis(object):
         self.ari.on_channel_event('StasisEnd', self.on_hangup)
 
     def on_stasis_start(self, event_objects, event):
+        logger.debug('on_stasis_start: %(id)s (%(name)s)', event['channel'])
         try:
             sub_app, relocate_uuid, role = event['args']
         except ValueError:
@@ -39,6 +40,7 @@ class RelocatesStasis(object):
                 relocate.relocated_answered()
 
     def on_hangup(self, channel, event):
+        logger.debug('on_hangup: %(id)s (%(name)s)', event['channel'])
         try:
             relocate = self.relocates.get_by_channel(channel.id)
         except KeyError:

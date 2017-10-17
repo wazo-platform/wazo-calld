@@ -39,24 +39,31 @@ class Relocate(object):
             self.end()
 
     def initiate(self, destination):
+        logger.debug('Relocate %s: initiate', self.uuid)
         self._state.initiate(self, destination)
 
     def recipient_answered(self):
+        logger.debug('Relocate %s: recipient answered', self.uuid)
         self._state.recipient_answered(self)
 
     def relocated_answered(self):
+        logger.debug('Relocate %s: relocated answered', self.uuid)
         self._state.relocated_answered(self)
 
     def initiator_hangup(self):
+        logger.debug('Relocate %s: initiator hangup', self.uuid)
         self._state.initiator_hangup(self)
 
     def recipient_hangup(self):
+        logger.debug('Relocate %s: recipient hangup', self.uuid)
         self._state.recipient_hangup(self)
 
     def relocated_hangup(self):
+        logger.debug('Relocate %s: relocated hangup', self.uuid)
         self._state.relocated_hangup(self)
 
     def end(self):
+        logger.debug('Relocate %s: end', self.uuid)
         self.events.publish('ended', self)
 
     def role(self, channel_id):
