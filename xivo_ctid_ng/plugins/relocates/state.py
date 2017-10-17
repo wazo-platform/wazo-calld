@@ -57,6 +57,12 @@ class RelocateStateRecipientRing(RelocateState):
 
     name = 'recipient_ring'
 
+    def recipient_hangup(self, relocate):
+        relocate.set_state('ended')
+
+    def initiator_hangup(self, relocate):
+        relocate.set_state('ended')
+
     def recipient_answered(self, relocate):
         if Channel(relocate.relocated_channel, self._ari).is_in_stasis():
             bridge = self._ari.bridges.create(type='mixing', name='relocate:{}'.format(relocate.uuid))

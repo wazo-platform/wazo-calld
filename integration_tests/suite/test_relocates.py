@@ -16,6 +16,7 @@ from hamcrest import has_entry
 from hamcrest import has_entries
 from hamcrest import has_properties
 from hamcrest import has_property
+from hamcrest import not_
 from xivo_test_helpers import until
 from xivo_test_helpers.hamcrest.raises import raises
 from xivo_ctid_ng_client import Client as CtidNGClient
@@ -130,6 +131,29 @@ class TestRelocates(RealAsteriskIntegrationTest):
 
         return relocate, user_uuid, destination, location
 
+    def given_completed_user_relocate(self):
+        user_uuid = SOME_USER_UUID
+        relocated_channel_id, initiator_channel_id = self.given_bridged_call_stasis(callee_uuid=user_uuid)
+        line_id = SOME_LINE_ID
+        token = self.given_user_token(user_uuid)
+        self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
+        self.confd.set_lines(MockLine(id=line_id, name='recipient_autoanswer@local', protocol='local', context=SOME_CONTEXT))
+        ctid_ng = self.make_ctid_ng(token)
+        destination = 'line'
+        location = {'line_id': line_id}
+        relocate = ctid_ng.relocates.create_from_user(initiator_channel_id, destination, location)
+
+        until.assert_(
+            self.assert_relocate_is_completed,
+            relocate['uuid'],
+            relocate['relocated_call'],
+            relocate['initiator_call'],
+            relocate['recipient_call'],
+            timeout=5,
+        )
+
+        return relocate, user_uuid
+
     def assert_relocate_is_completed(self, relocate_uuid, relocated_channel_id, initiator_channel_id, recipient_channel_id):
         try:
             relocate_bridge = next(bridge for bridge in self.ari.bridges.list() if bridge.json['name'] == 'relocate:{}'.format(relocate_uuid))
@@ -177,6 +201,16 @@ class TestListUserRelocate(TestRelocates):
             'initiator_call': relocate['initiator_call'],
             'recipient_call': relocate['recipient_call'],
         }))
+
+    def test_given_one_completed_relocate_when_list_then_relocate_not_found(self):
+        user_uuid = SOME_USER_UUID
+        token = self.given_user_token(user_uuid)
+        ctid_ng = self.make_ctid_ng(token)
+        relocate, user_uuid = self.given_completed_user_relocate()
+
+        relocates = ctid_ng.relocates.list_from_user()
+
+        assert_that(relocates['items'], not_(contains(has_entry('uuid', relocate['uuid']))))
 
 
 class TestCreateUserRelocate(TestRelocates):

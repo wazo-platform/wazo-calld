@@ -34,6 +34,9 @@ class Relocate(object):
         logger.debug('Relocate %s: setting state to "%s"', self.uuid, state_name)
         self._state = self._state_factory.make(state_name)
 
+        if state_name == 'ended':
+            self.end()
+
     def initiate(self, destination):
         self._state.initiate(self, destination)
 
@@ -92,7 +95,7 @@ class RelocateCollection(object):
         relocate.events.subscribe('ended', self.remove)
 
     def remove(self, relocate):
-        self._relocate.pop(relocate.uuid, None)
+        self._relocates.pop(relocate.uuid, None)
 
     def get(self, relocate_uuid):
         return self._relocates[relocate_uuid]
