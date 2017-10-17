@@ -52,3 +52,5 @@ class RelocatesStasis(object):
                 relocate.recipient_hangup()
             elif role == 'relocated':
                 relocate.relocated_hangup()
+            elif role == 'initiator':
+                relocate.initiator_hangup()

@@ -57,10 +57,15 @@ class RelocateStateRecipientRing(RelocateState):
 
     name = 'recipient_ring'
 
-    def recipient_hangup(self, relocate):
+    def relocated_hangup(self, relocate):
+        self._ari.channels.hangup(channelId=relocate.recipient_channel)
         relocate.set_state('ended')
 
     def initiator_hangup(self, relocate):
+        self._ari.channels.hangup(channelId=relocate.recipient_channel)
+        relocate.set_state('ended')
+
+    def recipient_hangup(self, relocate):
         relocate.set_state('ended')
 
     def recipient_answered(self, relocate):
