@@ -248,6 +248,18 @@ class TestGetUserRelocate(TestRelocates):
                         'error_id': 'no-such-relocate',
                     })))
 
+    def test_given_relocate_when_get_then_result(self):
+        relocate, user_uuid, _, __ = self.given_ringing_user_relocate()
+        token = self.given_user_token(user_uuid)
+        ctid_ng = self.make_ctid_ng(token)
+
+        result = ctid_ng.relocates.get_from_user(relocate['uuid'])
+
+        assert_that(result, has_entries({
+            'uuid': relocate['uuid'],
+        }))
+
+
 class TestCreateUserRelocate(TestRelocates):
 
     def setUp(self):
