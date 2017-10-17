@@ -10,6 +10,7 @@ from ari.exceptions import ARINotInStasis
 from hamcrest import assert_that
 from hamcrest import calling
 from hamcrest import contains_inanyorder
+from hamcrest import empty
 from hamcrest import has_entry
 from hamcrest import has_entries
 from hamcrest import has_properties
@@ -144,6 +145,22 @@ class TestRelocates(RealAsteriskIntegrationTest):
         assert_that(relocated_channel_id, self.c.is_talking(), 'relocated channel not talking')
         assert_that(initiator_channel_id, self.c.is_hungup(), 'initiator channel is still talking')
         assert_that(recipient_channel_id, self.c.is_talking(), 'recipient channel not talking')
+
+
+class TestListUserRelocate(TestRelocates):
+
+    def setUp(self):
+        super(TestListUserRelocate, self).setUp()
+        self.confd.reset()
+
+    def test_given_no_relocates_when_list_then_list_empty(self):
+        user_uuid = SOME_USER_UUID
+        token = self.given_user_token(user_uuid)
+        ctid_ng = self.make_ctid_ng(token)
+
+        result = ctid_ng.relocates.list_from_user()
+
+        assert_that(result['items'], empty())
 
 
 class TestCreateUserRelocate(TestRelocates):

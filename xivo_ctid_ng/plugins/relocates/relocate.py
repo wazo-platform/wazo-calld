@@ -113,3 +113,6 @@ class RelocateCollection(object):
                 return relocate
 
         return None
+
+    def list(self):
+        return self._relocates.values()

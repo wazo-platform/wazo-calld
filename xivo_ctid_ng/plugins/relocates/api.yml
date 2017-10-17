@@ -1,5 +1,20 @@
 paths:
   /users/me/relocates:
+    get:
+      summary: Get the relocates of the authenticated user
+      description: '**Required ACL:** `ctid-ng.users.me.relocates.read`'
+      tags:
+      - relocates
+      - users
+      responses:
+        '200':
+          description: The list of relocates
+          schema:
+            type: object
+            items:
+              $ref: '#/definitions/Relocate'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
     post:
       summary: Initiate a relocate from the authenticated user
       description: '**Required ACL:** `ctid-ng.users.me.relocates.create`'

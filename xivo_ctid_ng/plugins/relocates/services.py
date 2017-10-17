@@ -88,6 +88,9 @@ class RelocatesService(object):
         self.relocates = relocates
         self.relocate_lock = relocate_lock
 
+    def list_from_user(self, user_uuid):
+        return self.relocates.list()
+
     def create(self, initiator_call, destination, location):
         try:
             relocated_channel = Channel(initiator_call, self.ari).only_connected_channel()
