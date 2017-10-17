@@ -9,6 +9,7 @@ import uuid
 from ari.exceptions import ARINotInStasis
 from hamcrest import assert_that
 from hamcrest import calling
+from hamcrest import contains
 from hamcrest import contains_inanyorder
 from hamcrest import empty
 from hamcrest import has_entry
@@ -161,6 +162,21 @@ class TestListUserRelocate(TestRelocates):
         result = ctid_ng.relocates.list_from_user()
 
         assert_that(result['items'], empty())
+
+    def test_given_one_relocate_when_list_then_all_fields_are_listed(self):
+        user_uuid = SOME_USER_UUID
+        token = self.given_user_token(user_uuid)
+        relocate, user_uuid, destination, location = self.given_ringing_user_relocate()
+        ctid_ng = self.make_ctid_ng(token)
+
+        result = ctid_ng.relocates.list_from_user()
+
+        assert_that(result['items'], contains({
+            'uuid': relocate['uuid'],
+            'relocated_call': relocate['relocated_call'],
+            'initiator_call': relocate['initiator_call'],
+            'recipient_call': relocate['recipient_call'],
+        }))
 
 
 class TestCreateUserRelocate(TestRelocates):
