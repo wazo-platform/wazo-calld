@@ -225,6 +225,19 @@ class TestListUserRelocate(TestRelocates):
         })))
 
 
+class TestGetUserRelocate(TestRelocates):
+
+    def test_given_no_relocate_when_get_then_error_404(self):
+        token = self.given_user_token(SOME_USER_UUID)
+        ctid_ng = self.make_ctid_ng(token)
+
+        assert_that(calling(ctid_ng.relocates.get_from_user).with_args(relocate_uuid='not-found'),
+                    raises(CtidNGError).matching(has_properties({
+                        'status_code': 404,
+                        'error_id': 'no-such-relocate',
+                    })))
+
+
 class TestCreateUserRelocate(TestRelocates):
 
     def setUp(self):

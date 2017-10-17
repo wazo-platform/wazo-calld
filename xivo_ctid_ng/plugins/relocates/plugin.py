@@ -6,7 +6,10 @@ from xivo_amid_client import Client as AmidClient
 from xivo_auth_client import Client as AuthClient
 from xivo_confd_client import Client as ConfdClient
 
-from .resources import UserRelocatesResource
+from .resources import (
+    UserRelocatesResource,
+    UserRelocateResource,
+)
 from .services import RelocatesService
 from .stasis import RelocatesStasis
 from .state import StateFactory, state_index
@@ -39,3 +42,4 @@ class Plugin(object):
         relocates_stasis.subscribe()
 
         api.add_resource(UserRelocatesResource, '/users/me/relocates', resource_class_args=[auth_client, relocates_service])
+        api.add_resource(UserRelocateResource, '/users/me/relocates/<relocate_uuid>', resource_class_args=[auth_client, relocates_service])

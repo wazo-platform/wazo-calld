@@ -98,8 +98,13 @@ class RelocateCollection(object):
     def remove(self, relocate):
         self._relocates.pop(relocate.uuid, None)
 
-    def get(self, relocate_uuid):
-        return self._relocates[relocate_uuid]
+    def get(self, relocate_uuid, user_uuid=None):
+        result = self._relocates[relocate_uuid]
+
+        if user_uuid and result.initiator != user_uuid:
+            raise KeyError(relocate_uuid)
+
+        return result
 
     def get_by_channel(self, channel_id):
         result = self.find_by_channel(channel_id)

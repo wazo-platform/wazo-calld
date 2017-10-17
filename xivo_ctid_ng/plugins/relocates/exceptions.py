@@ -43,3 +43,16 @@ class RelocateAlreadyStarted(RelocateException):
                 'initiator_call': initiator_call,
             }
         )
+
+
+class NoSuchRelocate(RelocateException):
+
+    def __init__(self, relocate_id):
+        super(NoSuchRelocate, self).__init__(
+            status_code=404,
+            message='No such relocate',
+            error_id='no-such-relocate',
+            details={
+                'relocate_id': relocate_id,
+            }
+        )

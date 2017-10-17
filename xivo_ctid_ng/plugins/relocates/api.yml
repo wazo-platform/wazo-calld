@@ -47,6 +47,28 @@ paths:
             $ref: '#/definitions/Error'
         '503':
           $ref: '#/responses/AnotherServiceUnavailable'
+  /users/me/relocates/{relocate_uuid}:
+    get:
+      summary: Get details of a relocate
+      description: '**Required ACL:** `ctid-ng.relocates.users.me.{relocate_id}.read`'
+      parameters:
+      - $ref: '#/parameters/RelocateUUID'
+      tags:
+      - relocates
+      responses:
+        '200':
+          description: The details of the relocate
+          schema:
+            $ref: '#/definitions/Relocate'
+        '404':
+          $ref: '#/responses/NoSuchRelocate'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+responses:
+  NoSuchRelocate:
+    description: The specified relocate does not exist
+    schema:
+      $ref: '#/definitions/Error'
 definitions:
   Relocate:
     type: object
@@ -81,3 +103,10 @@ definitions:
     required:
       - initiator_call
       - destination
+parameters:
+  RelocateUUID:
+    name: relocate_uuid
+    in: path
+    description: Unique identifier of the relocate
+    required: true
+    type: string

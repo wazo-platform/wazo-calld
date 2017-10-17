@@ -15,9 +15,12 @@ from xivo_ctid_ng.helpers.exceptions import (
     InvalidUserUUID,
 )
 
-from .exceptions import TooManyChannelCandidates
-from .exceptions import RelocateAlreadyStarted
-from .exceptions import RelocateCreationError
+from .exceptions import (
+    NoSuchRelocate,
+    TooManyChannelCandidates,
+    RelocateAlreadyStarted,
+    RelocateCreationError,
+)
 from .relocate import Relocate
 
 logger = logging.getLogger(__name__)
@@ -90,6 +93,12 @@ class RelocatesService(object):
 
     def list_from_user(self, user_uuid):
         return self.relocates.list(user_uuid)
+
+    def get_from_user(self, relocate_uuid, user_uuid):
+        try:
+            return self.relocates.get(relocate_uuid, user_uuid)
+        except KeyError:
+            raise NoSuchRelocate(relocate_uuid)
 
     def create(self, initiator_call, destination, location, relocate=None):
         try:
