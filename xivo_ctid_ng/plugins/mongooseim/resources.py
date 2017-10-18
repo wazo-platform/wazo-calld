@@ -54,7 +54,7 @@ def extract_token_id_from_mongooseim_format():
 
 class CheckPasswordResource(AuthResource):
 
-    @required_acl('ctid-ng.users.me.chats.create', extract_token_id=extract_token_id_from_mongooseim_format)
+    @required_acl('websocketd', extract_token_id=extract_token_id_from_mongooseim_format)
     def get(self):
         return output_plain('true', 200)
 
