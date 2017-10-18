@@ -104,8 +104,16 @@ class RelocateStateWaitingForRelocated(RelocateState):
 
         relocate.set_state('ended')
 
-    def recipient_hangup(self, relocate):
+    def relocated_hangup(self, relocate):
+        self._ari.channels.hangup(channelId=relocate.recipient_channel)
+        relocate.set_state('ended')
+
+    def initiator_hangup(self, relocate):
         pass
+
+    def recipient_hangup(self, relocate):
+        self._ari.channels.hangup(channelId=relocate.relocated_channel)
+        relocate.set_state('ended')
 
 
 @state

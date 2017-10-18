@@ -90,14 +90,16 @@ class TestRelocates(RealAsteriskIntegrationTest):
 
         return caller.id, callee.id
 
-    def given_bridged_call_not_stasis(self, caller_uuid=None, callee_uuid=None):
+    def given_bridged_call_not_stasis(self, caller_uuid=None, callee_uuid=None, caller_variables=None):
         caller_uuid = caller_uuid or str(uuid.uuid4())
         callee_uuid = callee_uuid or str(uuid.uuid4())
+        variables = {'XIVO_USERUUID': caller_uuid,
+                     '__CALLEE_XIVO_USERUUID': callee_uuid}
+        variables.update(caller_variables or {})
         caller = self.ari.channels.originate(endpoint=ENDPOINT_AUTOANSWER,
                                              context='local',
                                              extension='dial-autoanswer',
-                                             variables={'variables': {'XIVO_USERUUID': caller_uuid,
-                                                                      '__CALLEE_XIVO_USERUUID': callee_uuid}})
+                                             variables={'variables': variables})
 
         def bridged_channel(caller):
             try:
@@ -130,6 +132,27 @@ class TestRelocates(RealAsteriskIntegrationTest):
         relocate = ctid_ng.relocates.create_from_user(initiator_channel_id, destination, location)
 
         return relocate, user_uuid, destination, location
+
+    def given_waiting_relocated_user_relocate(self):
+        user_uuid = str(uuid.uuid4())
+        relocated_channel_id, initiator_channel_id = self.given_bridged_call_not_stasis(callee_uuid=user_uuid, caller_variables={'WAIT_BEFORE_STASIS': '60'})
+        line_id = SOME_LINE_ID
+        token = self.given_user_token(user_uuid)
+        self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
+        self.confd.set_lines(MockLine(id=line_id, name='recipient_autoanswer@local', protocol='local', context=SOME_CONTEXT))
+        ctid_ng = self.make_ctid_ng(token)
+        destination = 'line'
+        location = {'line_id': line_id}
+        relocate = ctid_ng.relocates.create_from_user(initiator_channel_id, destination, location)
+
+        def relocate_waiting_relocated():
+            assert_that(relocated_channel_id, self.c.is_talking(), 'relocated channel not talking')
+            assert_that(initiator_channel_id, self.c.is_hungup(), 'initiator channel is still talking')
+            assert_that(relocate['recipient_call'], self.c.is_talking(), 'recipient channel not talking')
+
+        until.assert_(relocate_waiting_relocated, timeout=5)
+
+        return relocate, user_uuid
 
     def given_completed_user_relocate(self):
         user_uuid = SOME_USER_UUID
@@ -505,3 +528,27 @@ class TestCreateUserRelocate(TestRelocates):
             assert_that(relocate['recipient_call'], self.c.is_hungup(), 'recipient not hungup')
 
         until.assert_(relocate_cancelled, timeout=3)
+
+    def test_given_relocate_waiting_relocated_when_relocated_hangs_up_then_all_hangup(self):
+        relocate, user_uuid = self.given_waiting_relocated_user_relocate()
+
+        self.ari.channels.hangup(channelId=relocate['relocated_call'])
+
+        def all_hungup():
+            assert_that(relocate['relocated_call'], self.c.is_hungup(), 'relocated not hungup')
+            assert_that(relocate['initiator_call'], self.c.is_hungup(), 'initiator not hungup')
+            assert_that(relocate['recipient_call'], self.c.is_hungup(), 'recipient not hungup')
+
+        until.assert_(all_hungup, timeout=3)
+
+    def test_given_relocate_waiting_relocated_when_recipient_hangs_up_then_all_hangup(self):
+        relocate, user_uuid = self.given_waiting_relocated_user_relocate()
+
+        self.ari.channels.hangup(channelId=relocate['recipient_call'])
+
+        def all_hungup():
+            assert_that(relocate['relocated_call'], self.c.is_hungup(), 'relocated not hungup')
+            assert_that(relocate['initiator_call'], self.c.is_hungup(), 'initiator not hungup')
+            assert_that(relocate['recipient_call'], self.c.is_hungup(), 'recipient not hungup')
+
+        until.assert_(all_hungup, timeout=3)
