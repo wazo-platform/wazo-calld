@@ -5,6 +5,10 @@
 from marshmallow import Schema, fields
 from marshmallow.validate import OneOf, Length, Range
 
+VALID_COMPLETIONS = [
+    'answer'
+]
+
 
 class LineLocationSchema(Schema):
     line_id = fields.Integer(validate=Range(min=1), required=True)
@@ -29,6 +33,7 @@ class UserRelocateRequestSchema(Schema):
     initiator_call = fields.Str(validate=Length(min=1), required=True)
     destination = fields.Str(validate=OneOf(LocationField.locations))
     location = LocationField(missing=dict)
+    completions = fields.List(fields.Str(validate=OneOf(VALID_COMPLETIONS)), missing=['answer'])
 
 
 user_relocate_request_schema = UserRelocateRequestSchema(strict=True)
@@ -39,6 +44,7 @@ class RelocateSchema(Schema):
     relocated_call = fields.Str(validate=Length(min=1), required=True, attribute='relocated_channel')
     initiator_call = fields.Str(validate=Length(min=1), required=True, attribute='initiator_channel')
     recipient_call = fields.Str(validate=Length(min=1), required=True, attribute='recipient_channel')
+    completions = fields.List(fields.Str(validate=OneOf(VALID_COMPLETIONS)), missing=['answer'])
 
     class Meta:
         strict = True

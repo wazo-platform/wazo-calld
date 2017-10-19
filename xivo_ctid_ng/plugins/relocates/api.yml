@@ -89,11 +89,23 @@ definitions:
       recipient_call:
         description: Call ID of the recipient of the relocate.
         type: string
+      completions:
+        $ref: '#/definitions/RelocateCompletions'
   RelocateList:
     type: object
     properties:
       items:
         $ref: '#/definitions/Relocate'
+  RelocateCompletions:
+    description: How the relocate will behave. "answer" will complete the relocate as soon as the destination answers. "api" will wait for a call to API `/complete`. "answer" overrides all other values.
+    type: array
+    items:
+      $ref: '#/definitions/RelocateCompletion'
+  RelocateCompletion:
+    type: string
+    default: answer
+    enum:
+      - answer
   UserRelocateRequest:
     type: object
     properties:
@@ -120,6 +132,8 @@ definitions:
         properties:
           line:
             $ref: '#/definitions/LocationLine'
+      completions:
+        $ref: '#/definitions/RelocateCompletions'
     example:
       initiator_call: '123456.789'
       destination: line

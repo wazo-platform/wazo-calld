@@ -36,6 +36,7 @@ class UserRelocatesResource(AuthResource):
         relocate = self._relocates_service.create_from_user(request_body['initiator_call'],
                                                             request_body['destination'],
                                                             request_body['location'],
+                                                            request_body['completions'],
                                                             user_uuid)
         result = relocate_schema.dump(relocate).data
         return result, 201

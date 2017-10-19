@@ -223,6 +223,7 @@ class TestListUserRelocate(TestRelocates):
             'relocated_call': relocate['relocated_call'],
             'initiator_call': relocate['initiator_call'],
             'recipient_call': relocate['recipient_call'],
+            'completions': 'answer',
         }))
 
     def test_given_one_completed_relocate_when_list_then_relocate_not_found(self):

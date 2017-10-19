@@ -27,6 +27,8 @@ class Relocate(object):
         self.initiator_channel = None
         self.recipient_channel = None
         self.initiator = None
+        self.completions = None
+
         self.set_state('ready')
         self._lock = threading.Lock()
         self.events = Pubsub()
