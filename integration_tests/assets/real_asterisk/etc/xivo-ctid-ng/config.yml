@@ -48,6 +48,7 @@ confd:
 enabled_plugins:
   - calls
   - plugin_list
+  - relocates
   - status
   - transfers
   - switchboards

@@ -103,6 +103,7 @@ enabled_plugins:
   - chats
   - mongooseim
   - presences
+  - relocates
   - status
   - switchboards
   - transfers

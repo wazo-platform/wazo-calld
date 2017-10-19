@@ -99,6 +99,7 @@ _DEFAULT_CONFIG = {
         'chats',
         'mongooseim',
         'presences',
+        'relocates',
         'status',
         'switchboards',
         'transfers',

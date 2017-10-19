@@ -4,7 +4,7 @@
 
 import json
 
-from ari.exceptions import ARINotFound
+from ari.exceptions import ARINotFound, ARINotInStasis
 
 from .exceptions import NotEnoughChannels
 from .exceptions import TooManyChannels
@@ -105,9 +105,10 @@ class Channel(object):
         if len(connected_channels) > 1:
             raise TooManyChannels(channel.id for channel in connected_channels)
         try:
-            return connected_channels.pop().id
+            channel_id = connected_channels.pop().id
         except KeyError:
             raise NotEnoughChannels()
+        return Channel(channel_id, self._ari)
 
     def user(self, default=None):
         if self.is_local():
@@ -138,4 +139,11 @@ class Channel(object):
             direction = self._ari.channels.getChannelVar(channelId=self.id, variable='WAZO_CHANNEL_DIRECTION')['value']
             return direction == 'to-wazo'
         except ARINotFound:
+            return False
+
+    def is_in_stasis(self):
+        try:
+            self._ari.channels.setChannelVar(channelId=self.id, variable='WAZO_TEST_STASIS')
+            return True
+        except ARINotInStasis:
             return False
