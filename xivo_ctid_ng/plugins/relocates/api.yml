@@ -68,6 +68,12 @@ responses:
     schema:
       $ref: '#/definitions/Error'
 definitions:
+  LocationLine:
+    type: object
+    properties:
+      line_id:
+        type: integer
+        description: the ID of the line where the relocated call should be connected
   Relocate:
     type: object
     properties:
@@ -92,17 +98,33 @@ definitions:
     type: object
     properties:
       initiator_call:
-        description: Call ID of the relocate initiator. This call must be owned by
-          the authenticated user.
+        description: Call ID of the relocate initiator. This call must be owned by the authenticated user.
         type: string
       destination:
-        description: What kind of destination the relocated call should be connected
         type: string
+        description: What kind of destination the relocated call should be connected
         enum:
-          - line
+        - line
+        - mobile
       location:
-        description: Describes where exactly the relocated call should be connected. Attributes depend on the `destination` value.
+        description: |
+          Describes where exactly the relocated call should be connected. Attributes depend on the `destination` value. Example
+          ```
+          {
+            ...
+            destination: line
+            location: {line_id: 14}
+          }
+          ```
         type: object
+        properties:
+          line:
+            $ref: '#/definitions/LocationLine'
+    example:
+      initiator_call: '123456.789'
+      destination: line
+      location:
+        line_id: 14
     required:
       - initiator_call
       - destination
