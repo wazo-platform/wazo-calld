@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
+import threading
 
 from xivo_ctid_ng.exceptions import UserPermissionDenied
 from xivo_ctid_ng.helpers import ami
@@ -89,7 +90,7 @@ class RelocatesService(object):
         self.state_factory = state_factory
         self.destination_factory = DestinationFactory(amid)
         self.relocates = relocates
-        self.relocate_lock = relocate_lock
+        self.duplicate_relocate_lock = threading.Lock()
 
     def list_from_user(self, user_uuid):
         return self.relocates.list(user_uuid)
@@ -119,21 +120,19 @@ class RelocatesService(object):
             details = {'destination': destination, 'location': location}
             raise RelocateCreationError('invalid destination', details)
 
-        if (not self.relocate_lock.acquire(initiator_call)
-                or self.relocates.find_by_channel(initiator_call)):
-            raise RelocateAlreadyStarted(initiator_call)
+        with self.duplicate_relocate_lock:
+            if self.relocates.find_by_channel(initiator_channel.id):
+                raise RelocateAlreadyStarted(initiator_channel.id)
 
-        if not relocate:
-            relocate = Relocate(self.state_factory)
+            if not relocate:
+                relocate = Relocate(self.state_factory)
 
-        relocate.relocated_channel = relocated_channel.id
-        relocate.initiator_channel = initiator_channel.id
-        self.relocates.add(relocate)
-        try:
-            with relocate.locked():
-                relocate.initiate(destination)
-        finally:
-            self.relocate_lock.release(initiator_call)
+            relocate.relocated_channel = relocated_channel.id
+            relocate.initiator_channel = initiator_channel.id
+            self.relocates.add(relocate)
+
+        with relocate.locked():
+            relocate.initiate(destination)
 
         return relocate
 
