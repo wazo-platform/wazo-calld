@@ -10,9 +10,7 @@ paths:
         '200':
           description: The list of relocates
           schema:
-            type: object
-            items:
-              $ref: '#/definitions/Relocate'
+            $ref: '#/definitions/RelocateList'
         '503':
           $ref: '#/responses/AnotherServiceUnavailable'
     post:
@@ -85,6 +83,11 @@ definitions:
       recipient_call:
         description: Call ID of the recipient of the relocate.
         type: string
+  RelocateList:
+    type: object
+    properties:
+      items:
+        $ref: '#/definitions/Relocate'
   UserRelocateRequest:
     type: object
     properties:
