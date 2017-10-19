@@ -13,7 +13,6 @@ from .resources import (
 from .services import RelocatesService
 from .stasis import RelocatesStasis
 from .state import StateFactory, state_index
-from .relocate_lock import RelocateLock
 from .relocate import RelocateCollection
 
 
@@ -33,10 +32,9 @@ class Plugin(object):
         token_changed_subscribe(confd_client.set_token)
 
         relocates = RelocateCollection()
-        relocate_lock = RelocateLock()
         state_factory = StateFactory(state_index, amid_client, ari.client)
 
-        relocates_service = RelocatesService(amid_client, ari.client, confd_client, relocates, state_factory,  relocate_lock)
+        relocates_service = RelocatesService(amid_client, ari.client, confd_client, relocates, state_factory)
 
         relocates_stasis = RelocatesStasis(ari.client, relocates)
         relocates_stasis.subscribe()

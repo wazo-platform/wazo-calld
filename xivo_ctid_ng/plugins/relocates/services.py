@@ -84,7 +84,7 @@ class ExtensionDestination(Destination):
 
 class RelocatesService(object):
 
-    def __init__(self, amid, ari, confd_client, relocates, state_factory, relocate_lock):
+    def __init__(self, amid, ari, confd_client, relocates, state_factory):
         self.ari = ari
         self.confd_client = confd_client
         self.state_factory = state_factory
