@@ -62,6 +62,24 @@ paths:
           $ref: '#/responses/NoSuchRelocate'
         '503':
           $ref: '#/responses/AnotherServiceUnavailable'
+  /users/me/relocates/{relocate_id}/complete:
+    put:
+      summary: Complete a relocate
+      description: '**Required ACL:** `ctid-ng.users.me.relocates.{relocate_id}.complete.update`'
+      parameters:
+      - $ref: '#/parameters/RelocateID'
+      tags:
+      - relocates
+      - users
+      responses:
+        '204':
+          description: The relocate was completed
+        '400':
+          $ref: '#/responses/InvalidRequest'
+        '404':
+          $ref: '#/responses/NoSuchRelocate'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
 responses:
   NoSuchRelocate:
     description: The specified relocate does not exist
@@ -106,6 +124,7 @@ definitions:
     default: answer
     enum:
       - answer
+      - api
   UserRelocateRequest:
     type: object
     properties:

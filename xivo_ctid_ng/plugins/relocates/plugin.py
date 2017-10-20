@@ -7,8 +7,9 @@ from xivo_auth_client import Client as AuthClient
 from xivo_confd_client import Client as ConfdClient
 
 from .resources import (
-    UserRelocatesResource,
+    UserRelocateCompleteResource,
     UserRelocateResource,
+    UserRelocatesResource,
 )
 from .services import RelocatesService
 from .stasis import RelocatesStasis
@@ -41,3 +42,4 @@ class Plugin(object):
 
         api.add_resource(UserRelocatesResource, '/users/me/relocates', resource_class_args=[auth_client, relocates_service])
         api.add_resource(UserRelocateResource, '/users/me/relocates/<relocate_uuid>', resource_class_args=[auth_client, relocates_service])
+        api.add_resource(UserRelocateCompleteResource, '/users/me/relocates/<relocate_uuid>/complete', resource_class_args=[auth_client, relocates_service])

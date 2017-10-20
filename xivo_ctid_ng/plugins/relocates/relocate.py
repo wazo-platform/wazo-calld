@@ -64,6 +64,10 @@ class Relocate(object):
         logger.debug('Relocate %s: relocated hangup', self.uuid)
         self._state.relocated_hangup(self)
 
+    def complete(self):
+        logger.debug('Relocate %s: complete', self.uuid)
+        self._state.complete(self)
+
     def end(self):
         logger.debug('Relocate %s: end', self.uuid)
         self.events.publish('ended', self)

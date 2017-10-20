@@ -10,6 +10,8 @@ from xivo_ctid_ng.exceptions import XiVOAmidError
 from xivo_ctid_ng.helpers import ami
 from xivo_ctid_ng.helpers.ari_ import Channel
 
+from .exceptions import RelocateCompletionError
+
 logger = logging.getLogger(__name__)
 state_index = {}
 
@@ -69,6 +71,43 @@ class RelocateStateRecipientRing(RelocateState):
         relocate.set_state('ended')
 
     def recipient_answered(self, relocate):
+        if 'answer' in relocate.completions:
+            if Channel(relocate.relocated_channel, self._ari).is_in_stasis():
+                bridge = self._ari.bridges.create(type='mixing', name='relocate:{}'.format(relocate.uuid))
+                bridge.addChannel(channel=relocate.recipient_channel)
+                bridge.addChannel(channel=relocate.relocated_channel)
+                self._ari.channels.hangup(channelId=relocate.initiator_channel)
+
+                relocate.set_state('ended')
+            else:
+                self._ari.channels.setChannelVar(channelId=relocate.relocated_channel,
+                                                variable='WAZO_RELOCATE_UUID',
+                                                value=relocate.uuid,
+                                                bypassStasis=True)
+                try:
+                    ami.redirect(self._amid,
+                                relocate.relocated_channel,
+                                context='convert_to_stasis',
+                                exten='relocate')
+                except XiVOAmidError as e:
+                    logger.exception('xivo-amid error: %s', e.__dict__)
+
+                relocate.set_state('waiting_for_relocated')
+        elif 'api' in relocate.completions:
+            relocate.set_state('waiting_for_completion')
+        else:
+            raise NotImplementedError()
+
+    def complete(self, relocate):
+        raise RelocateCompletionError('Requested completion is too early')
+
+
+@state
+class RelocateStateWaitingForCompletion(RelocateState):
+
+    name = 'waiting_for_completion'
+
+    def complete(self, relocate):
         if Channel(relocate.relocated_channel, self._ari).is_in_stasis():
             bridge = self._ari.bridges.create(type='mixing', name='relocate:{}'.format(relocate.uuid))
             bridge.addChannel(channel=relocate.recipient_channel)
@@ -115,6 +154,9 @@ class RelocateStateWaitingForRelocated(RelocateState):
         self._ari.channels.hangup(channelId=relocate.relocated_channel)
         relocate.set_state('ended')
 
+    def complete(self, relocate):
+        pass
+
 
 @state
 class RelocateStateEnded(RelocateState):
@@ -128,4 +170,7 @@ class RelocateStateEnded(RelocateState):
         pass
 
     def relocated_hangup(self, relocate):
+        pass
+
+    def complete(self, relocate):
         pass

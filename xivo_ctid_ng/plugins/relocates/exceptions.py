@@ -56,3 +56,16 @@ class NoSuchRelocate(RelocateException):
                 'relocate_id': relocate_id,
             }
         )
+
+
+class RelocateCompletionError(RelocateException):
+
+    def __init__(self, message, details=None):
+        details = details or {}
+        details.setdefault('message', message)
+        super(RelocateCompletionError, self).__init__(
+            status_code=400,
+            message='Relocate completion error',
+            error_id='relocate-completion-error',
+            details=details
+        )

@@ -154,6 +154,28 @@ class TestRelocates(RealAsteriskIntegrationTest):
 
         return relocate, user_uuid
 
+    def given_answered_user_relocate(self):
+        user_uuid = SOME_USER_UUID
+        relocated_channel_id, initiator_channel_id = self.given_bridged_call_stasis(callee_uuid=user_uuid)
+        line_id = SOME_LINE_ID
+        token = self.given_user_token(user_uuid)
+        self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
+        self.confd.set_lines(MockLine(id=line_id, name='recipient_autoanswer@local', protocol='local', context=SOME_CONTEXT))
+        ctid_ng = self.make_ctid_ng(token)
+        destination = 'line'
+        location = {'line_id': line_id}
+        completions = ['api']
+        relocate = ctid_ng.relocates.create_from_user(initiator_channel_id, destination, location, completions)
+
+        def all_talking():
+            assert_that(relocate['relocated_call'], self.c.is_talking(), 'relocated channel not talking')
+            assert_that(relocate['initiator_call'], self.c.is_talking(), 'initiator channel not talking')
+            assert_that(relocate['recipient_call'], self.c.is_talking(), 'recipient channel not talking')
+
+        until.assert_(all_talking, timeout=5)
+
+        return relocate, user_uuid
+
     def given_completed_user_relocate(self):
         user_uuid = SOME_USER_UUID
         relocated_channel_id, initiator_channel_id = self.given_bridged_call_stasis(callee_uuid=user_uuid)
@@ -572,3 +594,19 @@ class TestCreateUserRelocate(TestRelocates):
             assert_that(relocate['recipient_call'], self.c.is_hungup(), 'recipient not hungup')
 
         until.assert_(all_hungup, timeout=3)
+
+    def test_given_relocate_completion_api_when_api_complete_then_relocate_completed(self):
+        relocate, user_uuid = self.given_answered_user_relocate()
+        token = self.given_user_token(user_uuid)
+        ctid_ng = self.make_ctid_ng(token)
+
+        ctid_ng.relocates.complete_from_user(relocate['uuid'])
+
+        until.assert_(
+            self.assert_relocate_is_completed,
+            relocate['uuid'],
+            relocate['relocated_call'],
+            relocate['initiator_call'],
+            relocate['recipient_call'],
+            timeout=5,
+        )
