@@ -473,6 +473,25 @@ class TestCreateUserRelocate(TestRelocates):
             timeout=5,
         )
 
+    def test_given_b_has_no_mobile_when_b_relocate_to_mobile_then_400(self):
+        user_uuid = SOME_USER_UUID
+        line_id = 12
+        self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id], mobile=None))
+        self.confd.set_lines(MockLine(id=line_id, context='local'))
+        token = self.given_user_token(user_uuid)
+        relocated_channel_id, initiator_channel_id = self.given_bridged_call_stasis(callee_uuid=user_uuid)
+        ctid_ng = self.make_ctid_ng(token)
+
+        assert_that(
+            calling(ctid_ng.relocates.create_from_user).with_args(
+                initiator_channel_id,
+                'mobile',
+            ),
+            raises(CtidNGError).matching(has_properties({
+                'status_code': 400,
+                'error_id': 'relocate-creation-error',
+            })))
+
     def test_given_stasis_channels_a_b_when_b_relocate_to_mobile_and_answer_then_a_talks_with_mobile(self):
         user_uuid = SOME_USER_UUID
         line_id = 12

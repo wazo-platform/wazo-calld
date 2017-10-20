@@ -76,7 +76,11 @@ class ExtensionDestination(Destination):
         super(ExtensionDestination, self).__init__(details)
 
     def is_valid(self):
-        return ami.extension_exists(self._amid, self._context, self._exten)
+        return (
+            self._exten is not None and
+            self._context is not None and
+            ami.extension_exists(self._amid, self._context, self._exten)
+        )
 
     def ari_endpoint(self):
         return 'Local/{exten}@{context}'.format(exten=self._exten, context=self._context)
