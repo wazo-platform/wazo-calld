@@ -175,4 +175,5 @@ class RelocatesService(object):
         except KeyError:
             raise NoSuchRelocate(relocate_uuid)
 
-        relocate.complete()
+        with relocate.locked():
+            relocate.complete()
