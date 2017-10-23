@@ -610,3 +610,39 @@ class TestCreateUserRelocate(TestRelocates):
             relocate['recipient_call'],
             timeout=5,
         )
+
+    def test_given_relocate_waiting_completion_when_initiator_hangs_up_then_all_hangup(self):
+        relocate, user_uuid = self.given_answered_user_relocate()
+
+        self.ari.channels.hangup(channelId=relocate['initiator_call'])
+
+        def all_hungup():
+            assert_that(relocate['relocated_call'], self.c.is_hungup(), 'relocated not hungup')
+            assert_that(relocate['initiator_call'], self.c.is_hungup(), 'initiator not hungup')
+            assert_that(relocate['recipient_call'], self.c.is_hungup(), 'recipient not hungup')
+
+        until.assert_(all_hungup, timeout=3)
+
+    def test_given_relocate_waiting_completion_when_relocated_hangs_up_then_all_hangup(self):
+        relocate, user_uuid = self.given_answered_user_relocate()
+
+        self.ari.channels.hangup(channelId=relocate['relocated_call'])
+
+        def all_hungup():
+            assert_that(relocate['relocated_call'], self.c.is_hungup(), 'relocated not hungup')
+            assert_that(relocate['initiator_call'], self.c.is_hungup(), 'initiator not hungup')
+            assert_that(relocate['recipient_call'], self.c.is_hungup(), 'recipient not hungup')
+
+        until.assert_(all_hungup, timeout=3)
+
+    def test_given_relocate_waiting_completion_when_recipient_hangs_up_then_cancelled(self):
+        relocate, user_uuid = self.given_answered_user_relocate()
+
+        self.ari.channels.hangup(channelId=relocate['recipient_call'])
+
+        def relocate_cancelled():
+            assert_that(relocate['relocated_call'], self.c.is_talking(), 'relocated not talking')
+            assert_that(relocate['initiator_call'], self.c.is_talking(), 'initiator not talking')
+            assert_that(relocate['recipient_call'], self.c.is_hungup(), 'recipient not hungup')
+
+        until.assert_(relocate_cancelled, timeout=3)

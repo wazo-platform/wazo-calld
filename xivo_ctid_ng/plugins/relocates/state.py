@@ -130,6 +130,17 @@ class RelocateStateWaitingForCompletion(RelocateState):
             completer.move_to_stasis(relocate)
             relocate.set_state('waiting_for_relocated')
 
+    def relocated_hangup(self, relocate):
+        self._ari.channels.hangup(channelId=relocate.recipient_channel)
+        relocate.set_state('ended')
+
+    def initiator_hangup(self, relocate):
+        self._ari.channels.hangup(channelId=relocate.recipient_channel)
+        relocate.set_state('ended')
+
+    def recipient_hangup(self, relocate):
+        relocate.set_state('ended')
+
 
 @state
 class RelocateStateWaitingForRelocated(RelocateState):
