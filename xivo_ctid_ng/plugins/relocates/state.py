@@ -21,6 +21,31 @@ def state(wrapped):
     return wrapped
 
 
+class RelocateCompleter(object):
+
+    def __init__(self, amid, ari):
+        self._amid = amid
+        self._ari = ari
+
+    def bridge(self, relocate):
+        bridge = self._ari.bridges.create(type='mixing', name='relocate:{}'.format(relocate.uuid))
+        bridge.addChannel(channel=relocate.recipient_channel)
+        bridge.addChannel(channel=relocate.relocated_channel)
+
+    def move_to_stasis(self, relocate):
+        self._ari.channels.setChannelVar(channelId=relocate.relocated_channel,
+                                         variable='WAZO_RELOCATE_UUID',
+                                         value=relocate.uuid,
+                                         bypassStasis=True)
+        try:
+            ami.redirect(self._amid,
+                         relocate.relocated_channel,
+                         context='convert_to_stasis',
+                         exten='relocate')
+        except XiVOAmidError as e:
+            logger.exception('xivo-amid error: %s', e.__dict__)
+
+
 class StateFactory(object):
     def __init__(self, index, amid, ari):
         self._index = index
@@ -72,26 +97,13 @@ class RelocateStateRecipientRing(RelocateState):
 
     def recipient_answered(self, relocate):
         if 'answer' in relocate.completions:
+            completer = RelocateCompleter(self._amid, self._ari)
             if Channel(relocate.relocated_channel, self._ari).is_in_stasis():
-                bridge = self._ari.bridges.create(type='mixing', name='relocate:{}'.format(relocate.uuid))
-                bridge.addChannel(channel=relocate.recipient_channel)
-                bridge.addChannel(channel=relocate.relocated_channel)
+                completer.bridge(relocate)
                 self._ari.channels.hangup(channelId=relocate.initiator_channel)
-
                 relocate.set_state('ended')
             else:
-                self._ari.channels.setChannelVar(channelId=relocate.relocated_channel,
-                                                variable='WAZO_RELOCATE_UUID',
-                                                value=relocate.uuid,
-                                                bypassStasis=True)
-                try:
-                    ami.redirect(self._amid,
-                                relocate.relocated_channel,
-                                context='convert_to_stasis',
-                                exten='relocate')
-                except XiVOAmidError as e:
-                    logger.exception('xivo-amid error: %s', e.__dict__)
-
+                completer.move_to_stasis(relocate)
                 relocate.set_state('waiting_for_relocated')
         elif 'api' in relocate.completions:
             relocate.set_state('waiting_for_completion')
@@ -108,26 +120,14 @@ class RelocateStateWaitingForCompletion(RelocateState):
     name = 'waiting_for_completion'
 
     def complete(self, relocate):
-        if Channel(relocate.relocated_channel, self._ari).is_in_stasis():
-            bridge = self._ari.bridges.create(type='mixing', name='relocate:{}'.format(relocate.uuid))
-            bridge.addChannel(channel=relocate.recipient_channel)
-            bridge.addChannel(channel=relocate.relocated_channel)
-            self._ari.channels.hangup(channelId=relocate.initiator_channel)
+        completer = RelocateCompleter(self._amid, self._ari)
 
+        if Channel(relocate.relocated_channel, self._ari).is_in_stasis():
+            completer.bridge(relocate)
+            self._ari.channels.hangup(channelId=relocate.initiator_channel)
             relocate.set_state('ended')
         else:
-            self._ari.channels.setChannelVar(channelId=relocate.relocated_channel,
-                                             variable='WAZO_RELOCATE_UUID',
-                                             value=relocate.uuid,
-                                             bypassStasis=True)
-            try:
-                ami.redirect(self._amid,
-                             relocate.relocated_channel,
-                             context='convert_to_stasis',
-                             exten='relocate')
-            except XiVOAmidError as e:
-                logger.exception('xivo-amid error: %s', e.__dict__)
-
+            completer.move_to_stasis(relocate)
             relocate.set_state('waiting_for_relocated')
 
 
@@ -137,9 +137,7 @@ class RelocateStateWaitingForRelocated(RelocateState):
     name = 'waiting_for_relocated'
 
     def relocated_answered(self, relocate):
-        bridge = self._ari.bridges.create(type='mixing', name='relocate:{}'.format(relocate.uuid))
-        bridge.addChannel(channel=relocate.recipient_channel)
-        bridge.addChannel(channel=relocate.relocated_channel)
+        RelocateCompleter(self._amid, self._ari).bridge(relocate)
 
         relocate.set_state('ended')
 
