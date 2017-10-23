@@ -646,3 +646,17 @@ class TestCreateUserRelocate(TestRelocates):
             assert_that(relocate['recipient_call'], self.c.is_hungup(), 'recipient not hungup')
 
         until.assert_(relocate_cancelled, timeout=3)
+
+    def test_given_ringing_relocate_when_api_complete_then_400(self):
+        relocate, user_uuid, _, __ = self.given_ringing_user_relocate()
+        token = self.given_user_token(user_uuid)
+        ctid_ng = self.make_ctid_ng(token)
+
+        assert_that(
+            calling(ctid_ng.relocates.complete_from_user).with_args(
+                relocate['uuid'],
+            ),
+            raises(CtidNGError).matching(has_properties({
+                'status_code': 400,
+                'error_id': 'relocate-completion-error',
+            })))
