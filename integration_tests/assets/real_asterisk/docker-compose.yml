@@ -32,7 +32,7 @@ ari:
   volumes:
     - "./etc/asterisk:/etc/asterisk"
     - "./ssl:/usr/local/share/ssl"
-  command: "asterisk -fTvvv"
+  command: "asterisk -fT"
 
 auth:
   image: wazopbx/xivo-auth-mock
