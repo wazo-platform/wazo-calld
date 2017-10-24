@@ -2,7 +2,11 @@
 # Copyright 2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
-from marshmallow import Schema, fields
+from marshmallow import (
+    fields,
+    Schema,
+    ValidationError,
+)
 from marshmallow.validate import OneOf, Length, Range
 
 VALID_COMPLETIONS = [
@@ -23,8 +27,18 @@ class LocationField(fields.Field):
     }
 
     def _deserialize(self, value, attr, data):
-        method = data.get('destination')
-        concrete_location = self.locations.get(method)
+        destination = data.get('destination')
+        try:
+            concrete_location = self.locations.get(destination)
+        except TypeError:
+            raise ValidationError({
+                'message': 'Invalid destination',
+                'constraint_id': 'destination-type',
+                'constraint': {
+                    'type': 'string',
+                }
+            })
+
         if not concrete_location:
             return {}
         return concrete_location._deserialize(value, attr, data)
