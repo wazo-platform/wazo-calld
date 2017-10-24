@@ -32,6 +32,7 @@ from .test_api.hamcrest_ import HamcrestARIChannel
 ENDPOINT_AUTOANSWER = 'Test/integration-caller/autoanswer'
 SOME_CALL_ID = '12345.6789'
 SOME_LINE_ID = 12
+SOME_LINE_NAME = 'line-name'
 SOME_USER_UUID = '68b884c3-515b-4acf-9034-c77896877acb'
 SOME_CONTEXT = 'some-context'
 STASIS_APP = 'callcontrol'
@@ -112,6 +113,29 @@ class TestRelocates(RealAsteriskIntegrationTest):
 
         callee_channel_id = until.true(bridged_channel, caller, timeout=3)
         return caller.id, callee_channel_id
+
+    def given_mobile_call(self):
+        user_uuid = str(uuid.uuid4())
+        line_id = SOME_LINE_ID
+        self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id], mobile='dial-autoanswer'))
+        self.confd.set_lines(MockLine(id=line_id, name=SOME_LINE_NAME, protocol='local', context='local'))
+        token = self.given_user_token(user_uuid)
+        ctid_ng = self.make_ctid_ng(token)
+
+        call = ctid_ng.calls.make_call_from_user(extension='dial-autoanswer', from_mobile=True, variables={'CALLEE_XIVO_USERUUID': user_uuid})
+
+        def bridged_channel(caller):
+            try:
+                bridge = next(bridge for bridge in self.ari.bridges.list()
+                              if caller in bridge.json['channels'])
+                callee = next(iter(set(bridge.json['channels']) - {caller}))
+                return callee
+            except StopIteration:
+                return False
+
+        callee = until.true(bridged_channel, call['call_id'], timeout=3)
+
+        return call['call_id'], callee, user_uuid
 
     def given_user_token(self, user_uuid):
         token = 'my-token'
@@ -660,3 +684,24 @@ class TestCreateUserRelocate(TestRelocates):
                 'status_code': 400,
                 'error_id': 'relocate-completion-error',
             })))
+
+    def test_given_mobile_call_when_relocate_to_line_then_relocate_completed(self):
+        mobile_channel, other_channel, mobile_user_uuid = self.given_mobile_call()
+        token = self.given_user_token(mobile_user_uuid)
+        line_id = SOME_LINE_ID
+        ctid_ng = self.make_ctid_ng(token)
+        self.confd.set_users(MockUser(uuid=mobile_user_uuid, line_ids=[line_id]))
+        self.confd.set_lines(MockLine(id=line_id, name='recipient_autoanswer@local', protocol='local', context=SOME_CONTEXT))
+        destination = 'line'
+        location = {'line_id': line_id}
+
+        relocate = ctid_ng.relocates.create_from_user(mobile_channel, destination, location)
+
+        until.assert_(
+            self.assert_relocate_is_completed,
+            relocate['uuid'],
+            relocate['relocated_call'],
+            relocate['initiator_call'],
+            relocate['recipient_call'],
+            timeout=5,
+        )
