@@ -48,7 +48,7 @@ paths:
   /users/me/relocates/{relocate_uuid}:
     get:
       summary: Get details of a relocate
-      description: '**Required ACL:** `ctid-ng.relocates.users.me.{relocate_id}.read`'
+      description: '**Required ACL:** `ctid-ng.relocates.users.me.{relocate_uuid}.read`'
       parameters:
       - $ref: '#/parameters/RelocateUUID'
       tags:
@@ -58,6 +58,24 @@ paths:
           description: The details of the relocate
           schema:
             $ref: '#/definitions/Relocate'
+        '404':
+          $ref: '#/responses/NoSuchRelocate'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+  /users/me/relocates/{relocate_uuid}/complete:
+    put:
+      summary: Complete a relocate
+      description: '**Required ACL:** `ctid-ng.users.me.relocates.{relocate_uuid}.complete.update`'
+      parameters:
+      - $ref: '#/parameters/RelocateUUID'
+      tags:
+      - relocates
+      - users
+      responses:
+        '204':
+          description: The relocate was completed
+        '400':
+          $ref: '#/responses/InvalidRequest'
         '404':
           $ref: '#/responses/NoSuchRelocate'
         '503':
@@ -89,11 +107,24 @@ definitions:
       recipient_call:
         description: Call ID of the recipient of the relocate.
         type: string
+      completions:
+        description: How the relocate will behave. "answer" will complete the relocate as soon as the destination answers. "api" will wait for a call to API `/complete`. "answer" overrides all other values.
+        $ref: '#/definitions/RelocateCompletions'
   RelocateList:
     type: object
     properties:
       items:
         $ref: '#/definitions/Relocate'
+  RelocateCompletions:
+    type: array
+    items:
+      $ref: '#/definitions/RelocateCompletion'
+  RelocateCompletion:
+    type: string
+    default: answer
+    enum:
+      - answer
+      - api
   UserRelocateRequest:
     type: object
     properties:
@@ -117,17 +148,23 @@ definitions:
           }
           ```
         type: object
-        properties:
-          line:
-            $ref: '#/definitions/LocationLine'
+        $ref: '#/definitions/UserRelocateLocation'
+      completions:
+        $ref: '#/definitions/RelocateCompletions'
     example:
       initiator_call: '123456.789'
       destination: line
       location:
         line_id: 14
+      completions:
+        - "answer"
     required:
       - initiator_call
       - destination
+  UserRelocateLocation:
+    properties:
+      line:
+        $ref: '#/definitions/LocationLine'
 parameters:
   RelocateUUID:
     name: relocate_uuid

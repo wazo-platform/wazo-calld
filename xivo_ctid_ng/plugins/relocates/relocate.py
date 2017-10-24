@@ -27,6 +27,8 @@ class Relocate(object):
         self.initiator_channel = None
         self.recipient_channel = None
         self.initiator = None
+        self.completions = None
+
         self.set_state('ready')
         self._lock = threading.Lock()
         self.events = Pubsub()
@@ -61,6 +63,10 @@ class Relocate(object):
     def relocated_hangup(self):
         logger.debug('Relocate %s: relocated hangup', self.uuid)
         self._state.relocated_hangup(self)
+
+    def complete(self):
+        logger.debug('Relocate %s: complete', self.uuid)
+        self._state.complete(self)
 
     def end(self):
         logger.debug('Relocate %s: end', self.uuid)
