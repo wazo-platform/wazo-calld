@@ -79,9 +79,11 @@ class CallsService(object):
                            'mobile_exten': source_mobile,
                            'mobile_context': source_context}
                 raise CallCreationError('User has invalid mobile phone number', details=details)
-            endpoint = 'local/s@wazo-originate-mobile-leg1'
+            endpoint = 'local/s@wazo-originate-mobile-leg1/n'
             context, extension, priority = 'wazo-originate-mobile-leg2', 's', 1
 
+            variables.setdefault('_XIVO_USERUUID', source_user)
+            variables.setdefault('WAZO_DEREFERENCED_USERUUID', source_user)
             variables.setdefault('WAZO_ORIGINATE_MOBILE_PRIORITY', '1')
             variables.setdefault('WAZO_ORIGINATE_MOBILE_EXTENSION', source_mobile)
             variables.setdefault('WAZO_ORIGINATE_MOBILE_CONTEXT', source_context)

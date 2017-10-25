@@ -112,7 +112,12 @@ class Channel(object):
 
     def user(self, default=None):
         if self.is_local():
-            return default
+            try:
+                uuid = self._ari.channels.getChannelVar(channelId=self.id, variable='WAZO_DEREFERENCED_USERUUID')['value']
+            except ARINotFound:
+                return default
+            return uuid
+
         try:
             uuid = self._ari.channels.getChannelVar(channelId=self.id, variable='XIVO_USERUUID')['value']
             return uuid
