@@ -72,7 +72,8 @@ class RelocateStateReady(RelocateState):
             endpoint=destination.ari_endpoint(),
             app=APPLICATION_NAME,
             appArgs=['relocate', relocate.uuid, 'recipient'],
-            originator=relocate.relocated_channel
+            originator=relocate.relocated_channel,
+            variables={'variables': relocate.recipient_variables},
         )
 
         relocate.recipient_channel = new_channel.id

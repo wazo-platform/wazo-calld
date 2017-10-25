@@ -152,6 +152,7 @@ class RelocatesService(object):
                 raise RelocateCreationError('invalid line for user', details={'user_uuid': user_uuid, 'line_id': location['line_id']})
             destination = 'interface'
             location = {'interface': destination_interface}
+            variables = {}
         elif destination == 'mobile':
             try:
                 user = User(user_uuid, self.confd_client)
@@ -163,9 +164,11 @@ class RelocatesService(object):
             destination = 'extension'
             location = {'exten': mobile,
                         'context': line_context}
+            variables = {'WAZO_DEREFERENCED_USERUUID': user_uuid}
 
         relocate = Relocate(self.state_factory)
         relocate.initiator = user_uuid
+        relocate.recipient_variables = variables
 
         return self.create(initiator_call, destination, location, completions, relocate=relocate)
 

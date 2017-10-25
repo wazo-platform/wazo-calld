@@ -705,3 +705,42 @@ class TestCreateUserRelocate(TestRelocates):
             relocate['recipient_call'],
             timeout=5,
         )
+
+    def test_given_call_when_relocate_to_mobile_and_relocate_to_line_then_relocate_completed(self):
+        user_uuid = SOME_USER_UUID
+        initiator_channel, callee_channel = self.given_bridged_call_stasis(caller_uuid=user_uuid)
+        token = self.given_user_token(user_uuid)
+        line_id = SOME_LINE_ID
+        ctid_ng = self.make_ctid_ng(token)
+        self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id], mobile='recipient_autoanswer'))
+        self.confd.set_lines(MockLine(id=line_id, name='recipient_autoanswer@local', protocol='local', context='local'))
+
+        relocate = ctid_ng.relocates.create_from_user(initiator_channel, destination='mobile')
+
+        def relocate_finished(relocate):
+            assert_that(calling(ctid_ng.relocates.get_from_user).with_args(relocate['uuid']),
+                        raises(CtidNGError).matching(has_properties({
+                            'status_code': 404,
+                            'error_id': 'no-such-relocate',
+                        })))
+
+        until.assert_(
+            relocate_finished,
+            relocate,
+            timeout=5,
+        )
+
+        initiator_channel = relocate['recipient_call']
+        destination = 'line'
+        location = {'line_id': line_id}
+
+        relocate = ctid_ng.relocates.create_from_user(initiator_channel, destination, location)
+
+        until.assert_(
+            self.assert_relocate_is_completed,
+            relocate['uuid'],
+            relocate['relocated_call'],
+            relocate['initiator_call'],
+            relocate['recipient_call'],
+            timeout=5,
+        )
