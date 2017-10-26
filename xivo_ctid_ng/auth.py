@@ -13,10 +13,12 @@ from xivo_ctid_ng.exceptions import TokenWithUserUUIDRequiredError
 logger = logging.getLogger(__name__)
 required_acl = auth_verifier.required_acl
 extract_token_id_from_query_or_header = auth_verifier.extract_token_id_from_query_or_header
+Unauthorized = auth_verifier.Unauthorized
 
 
-def get_token_user_uuid_from_request(auth_client):
-    token = request.headers.get('X-Auth-Token') or request.args.get('token')
+def get_token_user_uuid_from_request(auth_client, token=None):
+    if not token:
+        token = request.headers.get('X-Auth-Token') or request.args.get('token')
     try:
         token_infos = auth_client.token.get(token)
     except HTTPError as e:

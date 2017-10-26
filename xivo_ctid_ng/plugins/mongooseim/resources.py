@@ -6,7 +6,8 @@ from flask import request
 from flask import make_response
 from marshmallow import Schema, fields
 
-from xivo_ctid_ng.auth import required_acl
+from xivo_ctid_ng.auth import required_acl, Unauthorized
+from xivo_ctid_ng.auth import get_token_user_uuid_from_request
 from xivo_ctid_ng.rest_api import AuthResource, ErrorCatchingResource
 
 
@@ -39,7 +40,7 @@ def output_plain(data, code, http_headers=None):
 
 
 class MongooseIMUserSchema(Schema):
-    user = fields.String()
+    user = fields.String(required=True)
     server = fields.String()
     token = fields.String(required=True, load_from='pass')
 
@@ -54,8 +55,16 @@ def extract_token_id_from_mongooseim_format():
 
 class CheckPasswordResource(AuthResource):
 
+    def __init__(self, auth_client):
+        self._auth_client = auth_client
+
     @required_acl('websocketd', extract_token_id=extract_token_id_from_mongooseim_format)
     def get(self):
+        user = MongooseIMUserSchema().load(request.args).data
+        user_uuid = get_token_user_uuid_from_request(self._auth_client, user['token'])
+        if user['user'] != user_uuid:
+            raise Unauthorized(user['token'])
+
         return output_plain('true', 200)
 
 
