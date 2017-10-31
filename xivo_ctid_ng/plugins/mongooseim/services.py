@@ -6,6 +6,7 @@ from xivo_bus.resources.chat.event import (
     ChatMessageEvent,
     ChatMessageReceived,
 )
+from xivo_bus.resources.cti.event import UserStatusUpdateEvent
 
 
 class MessageCallbackService(object):
@@ -36,3 +37,16 @@ class MessageCallbackService(object):
             'user_uuid:{uuid}'.format(uuid=to): True,
         }
         self._bus_publisher.publish(bus_event, headers=headers)
+
+
+class PresenceCallbackService(object):
+
+    def __init__(self, bus_publisher, xivo_uuid):
+        self._bus_publisher = bus_publisher
+        self._xivo_uuid = xivo_uuid
+
+    def send_message(self, request_body):
+        user_uuid = request_body['user']
+        status = request_body['status']
+        bus_event = UserStatusUpdateEvent(user_uuid, status)
+        self._bus_publisher.publish(bus_event, headers={'user_uuid:{uuid}'.format(uuid=user_uuid): True})

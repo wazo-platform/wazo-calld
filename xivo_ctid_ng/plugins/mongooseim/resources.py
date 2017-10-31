@@ -11,15 +11,17 @@ from xivo_ctid_ng.auth import get_token_user_uuid_from_request
 from xivo_ctid_ng.rest_api import AuthResource, ErrorCatchingResource
 
 
-class MessageRequestSchema(Schema):
+class BaseSchema(Schema):
+    class Meta:
+        strict = True
+
+
+class MessageRequestSchema(BaseSchema):
 
     author = fields.String(required=True)
     server = fields.String()
     receiver = fields.String(required=True)
     message = fields.String(required=True)
-
-    class Meta:
-        strict = True
 
 
 class MessageCallbackResource(ErrorCatchingResource):
@@ -33,19 +35,36 @@ class MessageCallbackResource(ErrorCatchingResource):
         return '', 204
 
 
+class PresenceRequestSchema(BaseSchema):
+
+    user = fields.String(required=True)
+    server = fields.String(required=True)
+    resource = fields.String()
+    status = fields.String(required=True)
+
+
+class PresenceCallbackResource(ErrorCatchingResource):
+
+    def __init__(self, presence_callback_service):
+        self._presence_callback_service = presence_callback_service
+
+    def post(self):
+        request_body = PresenceRequestSchema().load(request.get_json()).data
+        self._presence_callback_service.send_message(request_body)
+        return '', 204
+
+
 def output_plain(data, code, http_headers=None):
     response = make_response(data, code)
     response.headers.extend(http_headers or {})
     return response
 
 
-class MongooseIMUserSchema(Schema):
+class MongooseIMUserSchema(BaseSchema):
+
     user = fields.String(required=True)
     server = fields.String()
     token = fields.String(required=True, load_from='pass')
-
-    class Meta:
-        strict = True
 
 
 def extract_token_id_from_mongooseim_format():
