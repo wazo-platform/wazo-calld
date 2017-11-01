@@ -14,6 +14,7 @@ class PresenceRequestSchema(Schema):
 
     presence = fields.Str(required=True)
 
+
 presence_request_schema = PresenceRequestSchema(strict=True)
 
 
