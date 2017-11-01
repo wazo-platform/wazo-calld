@@ -54,6 +54,12 @@ ctid:
   host: ctid
   port: 9495
 
+websocketd:
+  wss: False
+  host: websocketd
+  port: 9502
+  verify_certificate: False
+
 enabled_plugins:
   - calls
   - chats

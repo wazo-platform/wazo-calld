@@ -12,8 +12,9 @@ services:
       - ctid-ng
       - rabbitmq
       - remote_ctid_ng
+      - websocketd
     environment:
-      - TARGETS=ari:5039,rabbitmq:5672,consul:8500,confd:9486,amid:9491,ctid:9495,auth:9497,ctid-ng:9500,remote_ctid_ng:9501
+      - TARGETS=ari:5039,rabbitmq:5672,consul:8500,confd:9486,amid:9491,ctid:9495,auth:9497,ctid-ng:9500,remote_ctid_ng:9501,websocketd:9502
       - TIMEOUT=${INTEGRATION_TEST_TIMEOUT}
 
   amid:
@@ -95,3 +96,13 @@ services:
       - ./xivo-ctid-ng:/usr/local/share/ctid-ng
       - ./ssl:/usr/local/share/ssl
     command: python /usr/local/share/ctid-ng/ctid-ng-mock.py 9501
+
+  websocketd:
+    image: xivo-websocketd-mock
+    ports:
+      - 9502
+    volumes:
+      - ./xivo-websocketd:/usr/local/share/websocketd
+    environment:
+      - PYTHONPATH=/usr/local/share/websocketd
+    command: gunicorn -b 0.0.0.0:9502 -k flask_sockets.worker mock_websocketd:app

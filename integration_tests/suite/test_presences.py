@@ -32,14 +32,28 @@ class TestGetUserPresence(IntegrationTest):
         self.token_user_uuid = 'my-user-uuid'
 
     def test_get_presence_with_correct_values(self):
+        self.websocketd.set_get_presence(presence='dnd')
         result = self.ctid_ng.get_user_presence_result(self.token_user_uuid, token=VALID_TOKEN)
 
         assert_that(result.status_code, equal_to(200))
         assert_that(result.json(), has_entries({'user_uuid': contains_string(self.token_user_uuid),
                                                 'xivo_uuid': contains_string(XIVO_UUID),
-                                                'presence': contains_string('available')}))
+                                                'presence': contains_string('dnd')}))
+
+    def test_get_presence_when_websocketd_nok(self):
+        self.websocketd.set_get_presence(code=1234)
+        result = self.ctid_ng.get_user_presence_result(self.token_user_uuid, token=VALID_TOKEN)
+
+        assert_that(result.status_code, equal_to(503))
+
+    def test_get_presence_when_websocketd_unauthorized(self):
+        self.websocketd.set_get_presence(code=401)
+        result = self.ctid_ng.get_user_presence_result(self.token_user_uuid, token=VALID_TOKEN)
+
+        assert_that(result.status_code, equal_to(503))
 
     def test_get_presence_with_unknown_values(self):
+        self.websocketd.set_get_presence(code=404)
         result = self.ctid_ng.get_user_presence_result('unknown-user', token=VALID_TOKEN)
 
         assert_that(result.status_code, equal_to(404))
@@ -117,6 +131,7 @@ class TestGetUserMePresence(IntegrationTest):
         self.auth.set_token(MockUserToken('my-token', self.token_user_uuid))
 
     def test_get_presence_with_correct_values(self):
+        self.websocketd.set_get_presence(presence='available')
         result = self.ctid_ng.get_user_me_presence_result(token=self.token_id)
 
         assert_that(result.status_code, equal_to(200))
