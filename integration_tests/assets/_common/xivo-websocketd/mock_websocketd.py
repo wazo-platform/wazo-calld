@@ -31,19 +31,6 @@ def _reset():
     _responses = {}
 
 
-@app.before_request
-def log_request():
-    if not request.path.startswith('/_'):
-        path = request.path
-        log = {'method': request.method,
-               'path': path,
-               'query': request.args.items(multi=True),
-               'body': request.data,
-               'json': request.json,
-               'headers': dict(request.headers)}
-        _requests.append(log)
-
-
 @app.route('/_requests', methods=['GET'])
 def list_requests():
     return jsonify({'requests': _requests})
@@ -77,12 +64,15 @@ def websockets():
 @sockets.route('/')
 def echo_socket(ws):
     global websocket
+    global _requests
+    _requests = []
     websocket = ws
     init = {'op': 'init', 'code': 0}
     ws.send(json.dumps(init))
     while True:
         try:
             command = json.loads(ws.receive())
+            _requests.append(command)
             response = _responses[command['op']]
             ws.send(json.dumps(response))
         except (KeyError, TypeError, ValueError, Exception):

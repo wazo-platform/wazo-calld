@@ -31,7 +31,7 @@ class Client(object):
         self._url = self._url_fmt.format(scheme='wss' if wss else 'ws', host=host, port=port)
         self._token_id = None
 
-    def get_presence(self, user_uuid):
+    def _presence(self, action):
         try:
             ws = create_connection(self._url,
                                    header=['X-Auth-Token: {}'.format(self._token_id)],
@@ -49,8 +49,7 @@ class Client(object):
             if result.get('op') != 'init' or result.get('code') != 0:
                 raise WrongOPException(result)
 
-            msg = {'op': 'get_presence', 'data': {'user_uuid': user_uuid}}
-            ws.send(json.dumps(msg))
+            ws.send(json.dumps(action))
             result = json.loads(ws.recv())
         except ValueError:
             raise XiVOWebsocketdError(self, 'xivo-websocketd has closed session')
@@ -59,7 +58,7 @@ class Client(object):
         finally:
             ws.close()
 
-        if result.get('op') != 'get_presence':
+        if result.get('op') != action['op']:
             raise XiVOWebsocketdError(self, 'xivo-websocketd return: "{}"'.format(result))
 
         code = result.get('code')
@@ -70,7 +69,16 @@ class Client(object):
         elif code != 0:
             raise XiVOWebsocketdError(self, 'xivo-websocketd return NOK')
 
+        return result
+
+    def get_presence(self, user_uuid):
+        action = {'op': 'get_presence', 'data': {'user_uuid': user_uuid}}
+        result = self._presence(action)
         return result['msg']['presence']
+
+    def set_presence(self, user_uuid, presence):
+        action = {'op': 'presence', 'data': {'user_uuid': user_uuid, 'presence': presence}}
+        self._presence(action)
 
     def _ssl_options(self):
         if self._verify_certificate is False:

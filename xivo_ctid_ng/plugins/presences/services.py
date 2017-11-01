@@ -10,7 +10,6 @@ import requests
 from xivo.consul_helpers import ServiceFinder
 from xivo_auth_client import Client as AuthClient
 from xivo_ctid_ng_client import Client as CtidNgClient
-from xivo_bus.resources.cti.event import UserStatusUpdateEvent
 
 from .websocketd_client import NotFoundException
 from .exceptions import (InvalidCredentials,
@@ -67,8 +66,10 @@ class UserPresencesService(object):
             return self.get_remote_presence(xivo_uuid, user_uuid)
 
     def update_presence(self, user_uuid, status):
-        bus_event = UserStatusUpdateEvent(user_uuid, status)
-        self._bus_publisher.publish(bus_event, headers={'user_uuid:{uuid}'.format(uuid=user_uuid): True})
+        try:
+            self._websocketd_client.set_presence(user_uuid, status)
+        except NotFoundException:
+            raise NoSuchUser(self._xivo_uuid, user_uuid)
 
 
 class LinePresencesService(object):
