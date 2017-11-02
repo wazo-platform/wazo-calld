@@ -104,7 +104,7 @@ class IntegrationTest(AssetLaunchingTestCase):
             cls.websocketd = WebsocketdClient('localhost', cls.service_port(9502, 'websocketd'))
         except (NoSuchService, NoSuchPort) as e:
             logger.debug(e)
-            cls.stasis = WrongClient('websocketd')
+            cls.websocketd = WrongClient('websocketd')
 
     @classmethod
     def reset_bus_client(cls):
