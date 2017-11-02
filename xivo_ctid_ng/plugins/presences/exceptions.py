@@ -5,6 +5,22 @@
 from xivo_ctid_ng.exceptions import APIException
 
 
+class XiVOWebsocketdError(APIException):
+
+    def __init__(self, xivo_websocketd_client, error):
+        super(XiVOWebsocketdError, self).__init__(
+            status_code=503,
+            message='xivo-websocketd request error',
+            error_id='xivo-websocketd-error',
+            details={
+                'xivo_websocketd_config': {'host': xivo_websocketd_client._host,
+                                           'port': xivo_websocketd_client._port,
+                                           'verify_certificate': xivo_websocketd_client._verify_certificate},
+                'original_error': str(error),
+            }
+        )
+
+
 class InvalidCredentials(APIException):
 
     def __init__(self, xivo_uuid):

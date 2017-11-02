@@ -5,10 +5,10 @@
 from flask import request
 from flask import make_response
 from marshmallow import Schema, fields
+from requests import HTTPError
 
-from xivo_ctid_ng.auth import required_acl, Unauthorized
-from xivo_ctid_ng.auth import get_token_user_uuid_from_request
-from xivo_ctid_ng.rest_api import AuthResource, ErrorCatchingResource
+from xivo_ctid_ng.auth import Unauthorized
+from xivo_ctid_ng.rest_api import ErrorCatchingResource
 
 
 class BaseSchema(Schema):
@@ -72,19 +72,34 @@ def extract_token_id_from_mongooseim_format():
     return user['token']
 
 
-class CheckPasswordResource(AuthResource):
+class CheckPasswordResource(ErrorCatchingResource):
 
     def __init__(self, auth_client):
         self._auth_client = auth_client
 
-    @required_acl('websocketd', extract_token_id=extract_token_id_from_mongooseim_format)
     def get(self):
-        user = MongooseIMUserSchema().load(request.args).data
-        user_uuid = get_token_user_uuid_from_request(self._auth_client, user['token'])
-        if user['user'] != user_uuid:
-            raise Unauthorized(user['token'])
+        token_id = extract_token_id_from_mongooseim_format()
+        try:
+            self._check_admin_authorization(token_id)
+        except Unauthorized:
+            self._check_user_authorization(token_id)
 
         return output_plain('true', 200)
+
+    def _check_admin_authorization(self, token_id):
+        if not self._auth_client.token.is_valid(token_id, required_acl='mongooseim.admin'):
+            raise Unauthorized(token_id)
+
+    def _check_user_authorization(self, token_id):
+        user = MongooseIMUserSchema().load(request.args).data
+
+        try:
+            token = self._auth_client.token.get(token_id, required_acl='websocketd')
+        except HTTPError:
+            raise Unauthorized(token_id)
+
+        if user['user'] != token['xivo_user_uuid']:
+            raise Unauthorized(token_id)
 
 
 class UserExistsResource(ErrorCatchingResource):

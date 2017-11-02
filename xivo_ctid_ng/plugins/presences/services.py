@@ -10,8 +10,8 @@ import requests
 from xivo.consul_helpers import ServiceFinder
 from xivo_auth_client import Client as AuthClient
 from xivo_ctid_ng_client import Client as CtidNgClient
-from xivo_bus.resources.cti.event import UserStatusUpdateEvent
 
+from .websocketd_client import NotFoundException
 from .exceptions import (InvalidCredentials,
                          MissingCredentials,
                          NoSuchUser,
@@ -30,24 +30,19 @@ def _extract_status_code(exception):
 
 class UserPresencesService(object):
 
-    def __init__(self, bus_publisher, ctid_client, ctid_config, local_xivo_uuid, ctid_ng_client_factory):
+    def __init__(self, bus_publisher, websocketd_client, local_xivo_uuid, ctid_ng_client_factory):
         self._bus_publisher = bus_publisher
-        self._ctid_client = ctid_client
-        self._ctid_config = ctid_config
+        self._websocketd_client = websocketd_client
         self._xivo_uuid = local_xivo_uuid
         self._ctid_ng_client_factory = ctid_ng_client_factory
 
     def get_local_presence(self, user_uuid):
         logger.debug('looking for local user presence: %s', user_uuid)
         try:
-            response = self._ctid_client.users.get(user_uuid)
-            return response['origin_uuid'], response['presence']
-        except requests.RequestException as e:
-            status_code = _extract_status_code(e)
-            if status_code == 404:
-                raise NoSuchUser(self._xivo_uuid, user_uuid)
-            else:
-                raise XiVOCtidUnreachable(self._ctid_config, e)
+            presence = self._websocketd_client.get_presence(user_uuid)
+        except NotFoundException:
+            raise NoSuchUser(self._xivo_uuid, user_uuid)
+        return self._xivo_uuid, presence
 
     def get_remote_presence(self, xivo_uuid, user_uuid):
         logger.debug('looking for remote user presence: %s@%s', user_uuid, xivo_uuid)
@@ -71,8 +66,10 @@ class UserPresencesService(object):
             return self.get_remote_presence(xivo_uuid, user_uuid)
 
     def update_presence(self, user_uuid, status):
-        bus_event = UserStatusUpdateEvent(user_uuid, status)
-        self._bus_publisher.publish(bus_event, headers={'user_uuid:{uuid}'.format(uuid=user_uuid): True})
+        try:
+            self._websocketd_client.set_presence(user_uuid, status)
+        except NotFoundException:
+            raise NoSuchUser(self._xivo_uuid, user_uuid)
 
 
 class LinePresencesService(object):

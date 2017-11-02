@@ -7,6 +7,7 @@ test-setup: build-ctid-ng build-ari docker-pull
 build-ctid-ng: docker-pull egg-info
 	docker build -t wazopbx/xivo-ctid-ng ..
 	docker build --no-cache -t xivo-ctid-ng-test -f docker/Dockerfile-ctid-ng-test ..
+	docker build -t xivo-websocketd-mock -f docker/Dockerfile-websocketd-mock .
 
 build-ari: docker-pull
 	test -d $(CHAN_TEST_DIR)

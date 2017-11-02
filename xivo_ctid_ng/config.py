@@ -82,6 +82,11 @@ _DEFAULT_CONFIG = {
         'host': 'localhost',
         'port': 8088,
     },
+    'websocketd': {
+        'host': 'localhost',
+        'port': 9502,
+        'verify_certificate': _CERT_FILE,
+    },
     'service_discovery': {
         'enabled': True,
         'advertise_address': 'auto',

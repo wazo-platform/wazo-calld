@@ -29,6 +29,7 @@ from .constants import MONGOOSEIM_ODBC_START_INTERVAL
 from .constants import DB_URI
 from .ctid_ng import CtidNgClient
 from .stasis import StasisClient
+from .websocketd import WebsocketdClient
 from .wait_strategy import CtidNgConnectionsOkWaitStrategy
 
 logger = logging.getLogger(__name__)
@@ -99,6 +100,11 @@ class IntegrationTest(AssetLaunchingTestCase):
         except (NoSuchService, NoSuchPort) as e:
             logger.debug(e)
             cls.stasis = WrongClient('stasis')
+        try:
+            cls.websocketd = WebsocketdClient('localhost', cls.service_port(9502, 'websocketd'))
+        except (NoSuchService, NoSuchPort) as e:
+            logger.debug(e)
+            cls.stasis = WrongClient('websocketd')
 
     @classmethod
     def reset_bus_client(cls):
