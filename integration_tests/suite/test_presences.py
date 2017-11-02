@@ -148,7 +148,7 @@ class TestUpdateUserPresence(IntegrationTest):
         self.token_user_uuid = 'my-user-uuid'
 
     def test_create_presence_with_correct_values(self):
-        self.websocketd.set_presence()
+        self.websocketd.set_set_presence()
         result = self.ctid_ng.put_user_presence_result(self.presence_msg, self.token_user_uuid, token=VALID_TOKEN)
 
         assert_that(result.status_code, equal_to(204))
@@ -170,7 +170,7 @@ class TestUserMeUpdatePresence(IntegrationTest):
         self.auth.set_token(MockUserToken('my-token', self.token_user_uuid))
 
     def test_create_presence_with_correct_values(self):
-        self.websocketd.set_presence()
+        self.websocketd.set_set_presence()
         result = self.ctid_ng.put_user_me_presence_result(self.presence_msg, token=self.token_id)
 
         assert_that(result.status_code, equal_to(204))

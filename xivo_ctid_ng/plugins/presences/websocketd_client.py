@@ -77,7 +77,7 @@ class Client(object):
         return result['msg']['presence']
 
     def set_presence(self, user_uuid, presence):
-        action = {'op': 'presence', 'data': {'user_uuid': user_uuid, 'presence': presence}}
+        action = {'op': 'set_presence', 'data': {'user_uuid': user_uuid, 'presence': presence}}
         self._presence(action)
 
     def _ssl_options(self):
