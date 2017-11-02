@@ -98,6 +98,10 @@ class CoreBusConsumer(ConsumerMixin):
 
     def _on_bus_message(self, body, message):
         event = body['data']
+        if 'Event' not in event:
+            logger.error('Wrong AMI event message received: %s', event)
+            message.ack()
+            return
         event_type = event['Event']
         self._events_pubsub.publish(event_type, event)
         message.ack()
