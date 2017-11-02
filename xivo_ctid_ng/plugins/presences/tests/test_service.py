@@ -1,13 +1,11 @@
 # -*- coding: utf-8 -*-
 # Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
-# Copyright (C) 2016 Proformatique, Inc.
 # SPDX-License-Identifier: GPL-3.0+
 
 import unittest
 
 from hamcrest import assert_that, contains, equal_to
 from mock import Mock, patch, sentinel as s
-from xivo_bus.resources.cti.event import UserStatusUpdateEvent
 
 from ..services import UserPresencesService
 
@@ -17,31 +15,21 @@ class TestPresencesService(unittest.TestCase):
     def setUp(self):
         self.bus_publisher = Mock()
         self.xivo_uuid = 'xivo-uuid'
-        self.ctid_client = Mock()
-        ctid_config = dict()
+        self.websocketd_client = Mock()
         self.service = UserPresencesService(self.bus_publisher,
-                                            self.ctid_client,
-                                            ctid_config,
+                                            self.websocketd_client,
                                             s.local_xivo_uuid,
                                             Mock())
         self.user_uuid = 'efd089b0-b803-4536-b8f0-91bab5b94604'
         self.presence = 'available'
 
-    def test_update_presence(self):
-        self.service.update_presence(self.user_uuid, self.presence)
-
-        expected_event = UserStatusUpdateEvent(self.user_uuid, self.presence)
-        expected_headers = {'user_uuid:{uuid}'.format(uuid=self.user_uuid): True}
-        self.bus_publisher.publish.assert_called_once_with(expected_event, headers=expected_headers)
-
     def test_get_local_presence(self):
-        self.ctid_client.users.get.return_value = {'origin_uuid': s.origin_uuid,
-                                                   'presence': s.presence}
+        self.websocketd_client.get_presence.return_value = s.presence
 
         response = self.service.get_local_presence(s.user_uuid)
 
-        assert_that(response, contains(s.origin_uuid, s.presence))
-        self.ctid_client.users.get.assert_called_once_with(s.user_uuid)
+        assert_that(response, contains(s.local_xivo_uuid, s.presence))
+        self.websocketd_client.get_presence.assert_called_once_with(s.user_uuid)
 
     def test_get_presence_with_local_xivo_uuid(self):
         with patch.object(self.service, 'get_local_presence') as get_local_presence:
