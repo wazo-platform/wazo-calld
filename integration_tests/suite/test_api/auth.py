@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) 2015-2016 Avencall
+# Copyright 2013-2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import requests
@@ -23,12 +23,14 @@ class AuthClient(object):
 
 class MockUserToken(object):
 
-    def __init__(self, token, user_uuid):
+    def __init__(self, token, user_uuid, acls=None):
         self._token = token
         self._auth_id = user_uuid
+        self._acls = acls
 
     def to_dict(self):
-        return {
-            'token': self._token,
-            'auth_id': self._auth_id,
-        }
+        result = {'token': self._token,
+                  'auth_id': self._auth_id}
+        if self._acls:
+            result['acls'] = self._acls
+        return result
