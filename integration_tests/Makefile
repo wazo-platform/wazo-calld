@@ -15,7 +15,7 @@ build-ari: docker-pull
 	docker build -t ari-real -f $(CHAN_TEST_DIR)/Dockerfile $(CHAN_TEST_DIR)
 
 docker-pull:
-	docker pull mongooseim/mongooseim:latest
+	docker pull mongooseim/mongooseim:2.1.0
 	docker pull n3llyb0y/wait
 	docker pull waisbrot/wait
 	docker pull p0bailey/docker-flask
