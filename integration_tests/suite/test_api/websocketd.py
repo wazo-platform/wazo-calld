@@ -25,7 +25,7 @@ class WebsocketdClient(object):
     def set_set_presence(self, code=0):
         url = self.url('_set_response')
         body = {'response': 'set_presence',
-                'content': {'op': 'presence', 'code': code}}
+                'content': {'op': 'set_presence', 'code': code}}
         requests.post(url, json=body)
 
     def reset(self):

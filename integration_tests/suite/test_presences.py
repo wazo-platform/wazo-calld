@@ -153,8 +153,8 @@ class TestUpdateUserPresence(IntegrationTest):
 
         assert_that(result.status_code, equal_to(204))
         assert_that(self.websocketd.requests()['requests'], contains(
-            {'op': 'presence', 'data': {'presence': 'available',
-                                        'user_uuid': self.token_user_uuid}}
+            {'op': 'set_presence', 'data': {'presence': 'available',
+                                            'user_uuid': self.token_user_uuid}}
         ))
 
 
@@ -175,8 +175,8 @@ class TestUserMeUpdatePresence(IntegrationTest):
 
         assert_that(result.status_code, equal_to(204))
         assert_that(self.websocketd.requests()['requests'], contains(
-            {'op': 'presence', 'data': {'presence': 'available',
-                                        'user_uuid': self.token_user_uuid}}
+            {'op': 'set_presence', 'data': {'presence': 'available',
+                                            'user_uuid': self.token_user_uuid}}
         ))
 
 
