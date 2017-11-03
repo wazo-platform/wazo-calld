@@ -487,6 +487,7 @@ class TestCreateUserRelocate(TestRelocates):
         self.confd.set_lines(MockLine(id=line_id, name='recipient_autoanswer@local', protocol='local', context=SOME_CONTEXT))
         token = self.given_user_token(user_uuid)
         relocated_channel_id, initiator_channel_id = self.given_bridged_call_stasis(callee_uuid=user_uuid)
+        events = self.bus.accumulator('calls.relocate.*')
         ctid_ng = self.make_ctid_ng(token)
 
         relocate = ctid_ng.relocates.create_from_user(initiator_channel_id, 'line', {'line_id': line_id})
@@ -499,6 +500,28 @@ class TestCreateUserRelocate(TestRelocates):
             relocate['recipient_call'],
             timeout=5,
         )
+
+        def relocate_events_received():
+            assert_that(events.accumulate(), contains(
+                has_entries({
+                    'name': 'relocate_initiated',
+                    'data': relocate,
+                }),
+                has_entries({
+                    'name': 'relocate_answered',
+                    'data': relocate,
+                }),
+                has_entries({
+                    'name': 'relocate_completed',
+                    'data': relocate,
+                }),
+                has_entries({
+                    'name': 'relocate_ended',
+                    'data': relocate,
+                }),
+            ))
+
+        until.assert_(relocate_events_received)
 
     def test_given_non_stasis_channels_a_b_when_b_relocate_to_c_and_answer_then_a_c(self):
         user_uuid = SOME_USER_UUID
@@ -507,6 +530,7 @@ class TestCreateUserRelocate(TestRelocates):
         self.confd.set_lines(MockLine(id=line_id, name='recipient_autoanswer@local', protocol='local', context=SOME_CONTEXT))
         token = self.given_user_token(user_uuid)
         relocated_channel_id, initiator_channel_id = self.given_bridged_call_not_stasis(callee_uuid=user_uuid)
+        events = self.bus.accumulator('calls.relocate.*')
         ctid_ng = self.make_ctid_ng(token)
 
         relocate = ctid_ng.relocates.create_from_user(initiator_channel_id, 'line', {'line_id': line_id})
@@ -519,6 +543,28 @@ class TestCreateUserRelocate(TestRelocates):
             relocate['recipient_call'],
             timeout=5,
         )
+
+        def relocate_events_received():
+            assert_that(events.accumulate(), contains(
+                has_entries({
+                    'name': 'relocate_initiated',
+                    'data': relocate,
+                }),
+                has_entries({
+                    'name': 'relocate_answered',
+                    'data': relocate,
+                }),
+                has_entries({
+                    'name': 'relocate_completed',
+                    'data': relocate,
+                }),
+                has_entries({
+                    'name': 'relocate_ended',
+                    'data': relocate,
+                }),
+            ))
+
+        until.assert_(relocate_events_received)
 
     def test_given_b_has_no_mobile_when_b_relocate_to_mobile_then_400(self):
         user_uuid = SOME_USER_UUID
