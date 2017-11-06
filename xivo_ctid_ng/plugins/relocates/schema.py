@@ -60,6 +60,7 @@ class RelocateSchema(Schema):
     initiator_call = fields.Str(validate=Length(min=1), required=True, attribute='initiator_channel')
     recipient_call = fields.Str(validate=Length(min=1), required=True, attribute='recipient_channel')
     completions = fields.List(fields.Str(validate=OneOf(VALID_COMPLETIONS)), missing=['answer'])
+    initiator = fields.Str(validate=Length(equal=36), required=True)
 
     class Meta:
         strict = True

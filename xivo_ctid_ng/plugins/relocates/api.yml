@@ -110,6 +110,9 @@ definitions:
       completions:
         description: How the relocate will behave. "answer" will complete the relocate as soon as the destination answers. "api" will wait for a call to API `/complete`. "answer" overrides all other values.
         $ref: '#/definitions/RelocateCompletions'
+      initiator:
+        description: The user UUID of the relocate initiator
+        type: string
   RelocateList:
     type: object
     properties:
