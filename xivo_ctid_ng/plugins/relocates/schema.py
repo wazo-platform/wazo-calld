@@ -49,6 +49,7 @@ class UserRelocateRequestSchema(Schema):
     destination = fields.Str(validate=OneOf(LocationField.locations))
     location = LocationField(missing=dict)
     completions = fields.List(fields.Str(validate=OneOf(VALID_COMPLETIONS)), missing=['answer'])
+    timeout = fields.Integer(validate=Range(min=1), missing=30)
 
 
 user_relocate_request_schema = UserRelocateRequestSchema(strict=True)
@@ -60,6 +61,7 @@ class RelocateSchema(Schema):
     initiator_call = fields.Str(validate=Length(min=1), required=True, attribute='initiator_channel')
     recipient_call = fields.Str(validate=Length(min=1), required=True, attribute='recipient_channel')
     completions = fields.List(fields.Str(validate=OneOf(VALID_COMPLETIONS)), missing=['answer'])
+    timeout = fields.Integer(validate=Range(min=1), missing=30)
 
     class Meta:
         strict = True

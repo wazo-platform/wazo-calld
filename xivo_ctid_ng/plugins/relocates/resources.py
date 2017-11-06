@@ -37,6 +37,7 @@ class UserRelocatesResource(AuthResource):
                                                             request_body['destination'],
                                                             request_body['location'],
                                                             request_body['completions'],
+                                                            request_body['timeout'],
                                                             user_uuid)
         result = relocate_schema.dump(relocate).data
         return result, 201
