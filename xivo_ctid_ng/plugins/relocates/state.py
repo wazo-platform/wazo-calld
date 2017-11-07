@@ -43,7 +43,6 @@ class RelocateCompleter(object):
                          relocate.relocated_channel,
                          context='convert_to_stasis',
                          exten='relocate')
-            relocate.events.publish('completed', relocate)
         except XiVOAmidError as e:
             logger.exception('xivo-amid error: %s', e.__dict__)
 
