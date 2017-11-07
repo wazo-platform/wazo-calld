@@ -88,9 +88,10 @@ class ExtensionDestination(Destination):
 
 class RelocatesService(object):
 
-    def __init__(self, amid, ari, confd_client, relocates, state_factory):
+    def __init__(self, amid, ari, confd_client, notifier, relocates, state_factory):
         self.ari = ari
         self.confd_client = confd_client
+        self.notifier = notifier
         self.state_factory = state_factory
         self.destination_factory = DestinationFactory(amid)
         self.relocates = relocates
@@ -135,6 +136,7 @@ class RelocatesService(object):
             relocate.initiator_channel = initiator_channel.id
             relocate.completions = completions
             self.relocates.add(relocate)
+            self.notifier.observe(relocate)
 
         with relocate.locked():
             relocate.initiate(destination)

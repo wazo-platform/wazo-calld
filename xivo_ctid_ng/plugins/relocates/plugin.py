@@ -6,6 +6,7 @@ from xivo_amid_client import Client as AmidClient
 from xivo_auth_client import Client as AuthClient
 from xivo_confd_client import Client as ConfdClient
 
+from .notifier import RelocatesNotifier
 from .resources import (
     UserRelocateCompleteResource,
     UserRelocateResource,
@@ -22,6 +23,7 @@ class Plugin(object):
     def load(self, dependencies):
         api = dependencies['api']
         ari = dependencies['ari']
+        bus_publisher = dependencies['bus_publisher']
         config = dependencies['config']
         token_changed_subscribe = dependencies['token_changed_subscribe']
 
@@ -35,7 +37,8 @@ class Plugin(object):
         relocates = RelocateCollection()
         state_factory = StateFactory(state_index, amid_client, ari.client)
 
-        relocates_service = RelocatesService(amid_client, ari.client, confd_client, relocates, state_factory)
+        notifier = RelocatesNotifier(bus_publisher)
+        relocates_service = RelocatesService(amid_client, ari.client, confd_client, notifier, relocates, state_factory)
 
         relocates_stasis = RelocatesStasis(ari.client, relocates)
         relocates_stasis.subscribe()

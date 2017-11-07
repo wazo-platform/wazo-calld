@@ -31,6 +31,7 @@ class RelocateCompleter(object):
         bridge = self._ari.bridges.create(type='mixing', name='relocate:{}'.format(relocate.uuid))
         bridge.addChannel(channel=relocate.recipient_channel)
         bridge.addChannel(channel=relocate.relocated_channel)
+        relocate.events.publish('completed', relocate)
 
     def move_to_stasis(self, relocate):
         self._ari.channels.setChannelVar(channelId=relocate.relocated_channel,
@@ -42,6 +43,7 @@ class RelocateCompleter(object):
                          relocate.relocated_channel,
                          context='convert_to_stasis',
                          exten='relocate')
+            relocate.events.publish('completed', relocate)
         except XiVOAmidError as e:
             logger.exception('xivo-amid error: %s', e.__dict__)
 
@@ -78,6 +80,7 @@ class RelocateStateReady(RelocateState):
 
         relocate.recipient_channel = new_channel.id
         relocate.set_state('recipient_ring')
+        relocate.events.publish('initiated', relocate)
 
 
 @state
@@ -97,6 +100,7 @@ class RelocateStateRecipientRing(RelocateState):
         relocate.set_state('ended')
 
     def recipient_answered(self, relocate):
+        relocate.events.publish('answered', relocate)
         if 'answer' in relocate.completions:
             completer = RelocateCompleter(self._amid, self._ari)
             if Channel(relocate.relocated_channel, self._ari).is_in_stasis():
