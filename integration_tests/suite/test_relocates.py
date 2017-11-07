@@ -271,6 +271,7 @@ class TestListUserRelocate(TestRelocates):
             'recipient_call': relocate['recipient_call'],
             'completions': ['answer'],
             'initiator': user_uuid,
+            'timeout': 30,
         }))
 
     def test_given_one_completed_relocate_when_list_then_relocate_not_found(self):
