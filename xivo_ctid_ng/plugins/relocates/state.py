@@ -76,6 +76,7 @@ class RelocateStateReady(RelocateState):
             appArgs=['relocate', relocate.uuid, 'recipient'],
             originator=relocate.relocated_channel,
             variables={'variables': relocate.recipient_variables},
+            timeout=relocate.timeout,
         )
 
         relocate.recipient_channel = new_channel.id

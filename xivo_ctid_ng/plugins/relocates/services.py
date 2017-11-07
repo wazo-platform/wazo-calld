@@ -106,7 +106,7 @@ class RelocatesService(object):
         except KeyError:
             raise NoSuchRelocate(relocate_uuid)
 
-    def create(self, initiator_call, destination, location, completions, relocate=None):
+    def create(self, initiator_call, destination, location, completions, timeout, relocate=None):
         try:
             relocated_channel = Channel(initiator_call, self.ari).only_connected_channel()
         except TooManyChannels as e:
@@ -135,6 +135,7 @@ class RelocatesService(object):
             relocate.relocated_channel = relocated_channel.id
             relocate.initiator_channel = initiator_channel.id
             relocate.completions = completions
+            relocate.timeout = timeout
             self.relocates.add(relocate)
             self.notifier.observe(relocate)
 
@@ -143,7 +144,7 @@ class RelocatesService(object):
 
         return relocate
 
-    def create_from_user(self, initiator_call, destination, location, completions, user_uuid):
+    def create_from_user(self, initiator_call, destination, location, completions, timeout, user_uuid):
         if Channel(initiator_call, self.ari).user() != user_uuid:
             raise UserPermissionDenied(user_uuid, {'call': initiator_call})
 
@@ -172,7 +173,7 @@ class RelocatesService(object):
         relocate.initiator = user_uuid
         relocate.recipient_variables = variables
 
-        return self.create(initiator_call, destination, location, completions, relocate=relocate)
+        return self.create(initiator_call, destination, location, completions, timeout, relocate=relocate)
 
     def complete_from_user(self, relocate_uuid, user_uuid):
         try:

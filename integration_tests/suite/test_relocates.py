@@ -791,3 +791,26 @@ class TestCreateUserRelocate(TestRelocates):
             relocate['recipient_call'],
             timeout=5,
         )
+
+    def test_given_timeout_when_relocate_noanswer_then_relocate_cancelled(self):
+        user_uuid = SOME_USER_UUID
+        line_id = 12
+        self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
+        self.confd.set_lines(MockLine(id=line_id, name='ring@local', protocol='local', context=SOME_CONTEXT))
+        token = self.given_user_token(user_uuid)
+        relocated_channel_id, initiator_channel_id = self.given_bridged_call_stasis(callee_uuid=user_uuid)
+        ctid_ng = self.make_ctid_ng(token)
+
+        relocate = ctid_ng.relocates.create_from_user(initiator_channel_id, 'line', {'line_id': line_id}, timeout=1)
+
+        def relocate_cancelled():
+            assert_that(relocate['relocated_call'], self.c.is_talking(), 'relocated not talking')
+            assert_that(relocate['initiator_call'], self.c.is_talking(), 'initiator not talking')
+            assert_that(relocate['recipient_call'], self.c.is_hungup(), 'recipient not hungup')
+            assert_that(calling(ctid_ng.relocates.get_from_user).with_args(relocate['uuid']),
+                        raises(CtidNGError).matching(has_properties({
+                            'status_code': 404,
+                            'error_id': 'no-such-relocate',
+                        })))
+
+        until.assert_(relocate_cancelled, timeout=3)
