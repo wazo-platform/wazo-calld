@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) 2015-2016 Avencall
+# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
-from .test_api.base import IntegrationTest
-from .test_api.chat import new_chat_message, new_user_chat_message
-from .test_api.constants import INVALID_ACL_TOKEN, VALID_TOKEN
-from .test_api.presence import new_user_presence_message, new_user_me_presence_message
-from .test_api.wait_strategy import CtidNgUpWaitStrategy
+from .helpers.base import IntegrationTest
+from .helpers.chat import new_chat_message, new_user_chat_message
+from .helpers.constants import INVALID_ACL_TOKEN, VALID_TOKEN
+from .helpers.presence import new_user_presence_message, new_user_me_presence_message
+from .helpers.wait_strategy import CtidNgUpWaitStrategy
 
 from hamcrest import assert_that
 from hamcrest import contains_string

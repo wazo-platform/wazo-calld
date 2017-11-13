@@ -7,8 +7,8 @@ import pprint
 
 from hamcrest import assert_that, empty
 
-from .test_api.base import IntegrationTest
-from .test_api.wait_strategy import NoWaitStrategy
+from .helpers.base import IntegrationTest
+from .helpers.wait_strategy import NoWaitStrategy
 
 
 class TestDocumentation(IntegrationTest):

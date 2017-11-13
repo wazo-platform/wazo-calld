@@ -15,13 +15,13 @@ from hamcrest import (
 )
 from xivo_test_helpers import until
 
-from .test_api.auth import MockUserToken
-from .test_api.base import IntegrationTest
-from .test_api.chat import new_chat_message
-from .test_api.chat import new_user_chat_message
-from .test_api.chat import new_uuid_str
-from .test_api.constants import VALID_TOKEN
-from .test_api.constants import XIVO_UUID
+from .helpers.auth import MockUserToken
+from .helpers.base import IntegrationTest
+from .helpers.chat import new_chat_message
+from .helpers.chat import new_user_chat_message
+from .helpers.chat import new_uuid_str
+from .helpers.constants import VALID_TOKEN
+from .helpers.constants import XIVO_UUID
 
 
 class TestCreateChat(IntegrationTest):

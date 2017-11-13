@@ -22,12 +22,12 @@ from xivo_test_helpers.hamcrest.raises import raises
 from xivo_ctid_ng_client import Client as CtidNGClient
 from xivo_ctid_ng_client.exceptions import CtidNGError
 
-from .test_api.auth import MockUserToken
-from .test_api.base import RealAsteriskIntegrationTest
-from .test_api.confd import MockUser
-from .test_api.confd import MockLine
-from .test_api.constants import INVALID_ACL_TOKEN
-from .test_api.hamcrest_ import HamcrestARIChannel
+from .helpers.auth import MockUserToken
+from .helpers.base import RealAsteriskIntegrationTest
+from .helpers.confd import MockUser
+from .helpers.confd import MockLine
+from .helpers.constants import INVALID_ACL_TOKEN
+from .helpers.hamcrest_ import HamcrestARIChannel
 
 ENDPOINT_AUTOANSWER = 'Test/integration-caller/autoanswer'
 SOME_CALL_ID = '12345.6789'

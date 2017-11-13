@@ -9,12 +9,12 @@ from hamcrest import equal_to
 from hamcrest import has_entries
 from hamcrest import instance_of
 
-from .test_api.auth import MockUserToken
-from .test_api.base import IntegrationTest
-from .test_api.presence import new_user_presence_message
-from .test_api.presence import new_user_me_presence_message
-from .test_api.constants import VALID_TOKEN
-from .test_api.constants import XIVO_UUID
+from .helpers.auth import MockUserToken
+from .helpers.base import IntegrationTest
+from .helpers.presence import new_user_presence_message
+from .helpers.presence import new_user_me_presence_message
+from .helpers.constants import VALID_TOKEN
+from .helpers.constants import XIVO_UUID
 
 
 class TestGetUserPresence(IntegrationTest):

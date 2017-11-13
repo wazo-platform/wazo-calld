@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) 2015-2016 The Wazo Authors  (see AUTHORS file)
+# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import os
@@ -11,12 +11,12 @@ from hamcrest import matches_regexp
 from hamcrest import not_
 from xivo_test_helpers import until
 
-from .test_api.ari_ import MockChannel
-from .test_api.base import IntegrationTest
-from .test_api.constants import BUS_EXCHANGE_COLLECTD
-from .test_api.constants import STASIS_APP_NAME
-from .test_api.constants import STASIS_APP_INSTANCE_NAME
-from .test_api.ctid_ng import new_call_id
+from .helpers.ari_ import MockChannel
+from .helpers.base import IntegrationTest
+from .helpers.constants import BUS_EXCHANGE_COLLECTD
+from .helpers.constants import STASIS_APP_NAME
+from .helpers.constants import STASIS_APP_INSTANCE_NAME
+from .helpers.ctid_ng import new_call_id
 
 
 class TestCollectd(IntegrationTest):

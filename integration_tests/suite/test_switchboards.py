@@ -18,13 +18,13 @@ from hamcrest import is_not
 from operator import attrgetter
 from xivo_test_helpers import until
 
-from .test_api.auth import MockUserToken
-from .test_api.base import RealAsteriskIntegrationTest
-from .test_api.constants import VALID_TOKEN
-from .test_api.confd import MockSwitchboard
-from .test_api.confd import MockLine
-from .test_api.confd import MockUser
-from .test_api.hamcrest_ import HamcrestARIChannel
+from .helpers.auth import MockUserToken
+from .helpers.base import RealAsteriskIntegrationTest
+from .helpers.constants import VALID_TOKEN
+from .helpers.confd import MockSwitchboard
+from .helpers.confd import MockLine
+from .helpers.confd import MockUser
+from .helpers.hamcrest_ import HamcrestARIChannel
 
 ENDPOINT_AUTOANSWER = 'Test/integration-caller/autoanswer'
 STASIS_APP = 'callcontrol'

@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) 2015-2016 Avencall
+# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 from hamcrest import assert_that
 from hamcrest import contains_string
 from xivo_test_helpers import until
 
-from .test_api.base import IntegrationTest
-from .test_api.wait_strategy import NoWaitStrategy
+from .helpers.base import IntegrationTest
+from .helpers.wait_strategy import NoWaitStrategy
 
 
 class TestHTTPSMissingCertificate(IntegrationTest):

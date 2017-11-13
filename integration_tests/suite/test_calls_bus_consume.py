@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2016 by Avencall
+# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 from hamcrest import assert_that
@@ -8,10 +8,10 @@ from hamcrest import has_entry
 from hamcrest import has_item
 from xivo_test_helpers import until
 
-from .test_api.base import IntegrationTest
-from .test_api.ari_ import MockChannel
-from .test_api.ctid_ng import new_call_id
-from .test_api.constants import XIVO_UUID
+from .helpers.base import IntegrationTest
+from .helpers.ari_ import MockChannel
+from .helpers.ctid_ng import new_call_id
+from .helpers.constants import XIVO_UUID
 
 
 class TestDialedFrom(IntegrationTest):

@@ -17,16 +17,16 @@ from hamcrest import has_items
 from hamcrest import contains_string
 from xivo_test_helpers import until
 
-from .test_api.ari_ import MockApplication
-from .test_api.ari_ import MockBridge
-from .test_api.ari_ import MockChannel
-from .test_api.auth import MockUserToken
-from .test_api.base import IntegrationTest
-from .test_api.base import RealAsteriskIntegrationTest
-from .test_api.confd import MockLine
-from .test_api.confd import MockUser
-from .test_api.constants import VALID_TOKEN
-from .test_api.wait_strategy import CtidNgUpWaitStrategy
+from .helpers.ari_ import MockApplication
+from .helpers.ari_ import MockBridge
+from .helpers.ari_ import MockChannel
+from .helpers.auth import MockUserToken
+from .helpers.base import IntegrationTest
+from .helpers.base import RealAsteriskIntegrationTest
+from .helpers.confd import MockLine
+from .helpers.confd import MockUser
+from .helpers.constants import VALID_TOKEN
+from .helpers.wait_strategy import CtidNgUpWaitStrategy
 
 SOME_LOCAL_CHANNEL_NAME = 'Local/channel'
 SOME_PRIORITY = 1

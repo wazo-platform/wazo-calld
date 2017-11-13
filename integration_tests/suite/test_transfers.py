@@ -28,15 +28,15 @@ from hamcrest import raises
 from operator import attrgetter
 from xivo_test_helpers import until
 
-from .test_api.base import IntegrationTest
-from .test_api.base import RealAsteriskIntegrationTest
-from .test_api.constants import VALID_TOKEN
-from .test_api.confd import MockUser
-from .test_api.confd import MockLine
-from .test_api.auth import MockUserToken
-from .test_api.hamcrest_ import HamcrestARIBridge
-from .test_api.hamcrest_ import HamcrestARIChannel
-from .test_api.wait_strategy import CtidNgUpWaitStrategy
+from .helpers.base import IntegrationTest
+from .helpers.base import RealAsteriskIntegrationTest
+from .helpers.constants import VALID_TOKEN
+from .helpers.confd import MockUser
+from .helpers.confd import MockLine
+from .helpers.auth import MockUserToken
+from .helpers.hamcrest_ import HamcrestARIBridge
+from .helpers.hamcrest_ import HamcrestARIChannel
+from .helpers.wait_strategy import CtidNgUpWaitStrategy
 
 ENDPOINT_AUTOANSWER = 'Test/integration-caller/autoanswer'
 RECIPIENT = {

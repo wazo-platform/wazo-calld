@@ -5,8 +5,8 @@
 import requests
 from hamcrest import assert_that, equal_to
 
-from .test_api.base import IntegrationTest
-from .test_api.auth import MockUserToken
+from .helpers.base import IntegrationTest
+from .helpers.auth import MockUserToken
 
 CTID_NG_VERSION = '1.0'
 BASE_URL = 'http://localhost:{port}/{version}'

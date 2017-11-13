@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) 2015-2016 Avencall
+# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import json
@@ -10,13 +10,13 @@ from hamcrest import has_entry
 from hamcrest import has_items
 from xivo_test_helpers import until
 
-from .test_api.ari_ import MockChannel
-from .test_api.base import IntegrationTest
-from .test_api.constants import STASIS_APP_NAME
-from .test_api.constants import STASIS_APP_INSTANCE_NAME
-from .test_api.ctid_ng import new_call_id
-from .test_api.confd import MockLine
-from .test_api.confd import MockUser
+from .helpers.ari_ import MockChannel
+from .helpers.base import IntegrationTest
+from .helpers.constants import STASIS_APP_NAME
+from .helpers.constants import STASIS_APP_INSTANCE_NAME
+from .helpers.ctid_ng import new_call_id
+from .helpers.confd import MockLine
+from .helpers.confd import MockUser
 
 
 class TestDialedFrom(IntegrationTest):
