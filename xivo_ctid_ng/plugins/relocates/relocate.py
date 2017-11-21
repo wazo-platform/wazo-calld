@@ -136,7 +136,5 @@ class RelocateCollection(object):
 
         return None
 
-    def list(self, user_uuid):
-        return [relocate
-                for relocate in self._relocates.values()
-                if relocate.initiator == user_uuid]
+    def list(self):
+        return self._relocates.values()

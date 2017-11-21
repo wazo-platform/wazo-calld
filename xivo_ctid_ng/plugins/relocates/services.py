@@ -98,7 +98,9 @@ class RelocatesService(object):
         self.duplicate_relocate_lock = threading.Lock()
 
     def list_from_user(self, user_uuid):
-        return self.relocates.list(user_uuid)
+        return [relocate
+                for relocate in self.relocates.list()
+                if relocate.initiator == user_uuid]
 
     def get_from_user(self, relocate_uuid, user_uuid):
         try:
