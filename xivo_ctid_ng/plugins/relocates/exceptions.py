@@ -69,3 +69,16 @@ class RelocateCompletionError(RelocateException):
             error_id='relocate-completion-error',
             details=details
         )
+
+
+class RelocateCancellationError(RelocateException):
+
+    def __init__(self, message, details=None):
+        details = details or {}
+        details.setdefault('message', message)
+        super(RelocateCancellationError, self).__init__(
+            status_code=400,
+            message='Relocate cancellation error',
+            error_id='relocate-cancellation-error',
+            details=details
+        )

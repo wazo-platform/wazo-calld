@@ -8,6 +8,7 @@ from xivo_confd_client import Client as ConfdClient
 
 from .notifier import RelocatesNotifier
 from .resources import (
+    UserRelocateCancelResource,
     UserRelocateCompleteResource,
     UserRelocateResource,
     UserRelocatesResource,
@@ -46,3 +47,4 @@ class Plugin(object):
         api.add_resource(UserRelocatesResource, '/users/me/relocates', resource_class_args=[auth_client, relocates_service])
         api.add_resource(UserRelocateResource, '/users/me/relocates/<relocate_uuid>', resource_class_args=[auth_client, relocates_service])
         api.add_resource(UserRelocateCompleteResource, '/users/me/relocates/<relocate_uuid>/complete', resource_class_args=[auth_client, relocates_service])
+        api.add_resource(UserRelocateCancelResource, '/users/me/relocates/<relocate_uuid>/cancel', resource_class_args=[auth_client, relocates_service])

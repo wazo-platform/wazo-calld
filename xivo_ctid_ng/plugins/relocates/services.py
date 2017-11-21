@@ -185,3 +185,12 @@ class RelocatesService(object):
 
         with relocate.locked():
             relocate.complete()
+
+    def cancel_from_user(self, relocate_uuid, user_uuid):
+        try:
+            relocate = self.relocates.get(relocate_uuid, user_uuid)
+        except KeyError:
+            raise NoSuchRelocate(relocate_uuid)
+
+        with relocate.locked():
+            relocate.cancel()

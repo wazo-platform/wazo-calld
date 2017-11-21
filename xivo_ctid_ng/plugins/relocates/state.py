@@ -13,7 +13,10 @@ from xivo_ctid_ng.exceptions import XiVOAmidError
 from xivo_ctid_ng.helpers import ami
 from xivo_ctid_ng.helpers.ari_ import Channel
 
-from .exceptions import RelocateCompletionError
+from .exceptions import (
+    RelocateCancellationError,
+    RelocateCompletionError,
+)
 
 logger = logging.getLogger(__name__)
 state_index = {}
@@ -102,22 +105,10 @@ class RelocateStateRecipientRing(RelocateState):
     name = 'recipient_ring'
 
     def relocated_hangup(self, relocate):
-        try:
-            self._ari.channels.hangup(channelId=relocate.recipient_channel)
-        except ARINotFound:
-            pass
-        except ARIException as e:
-            logger.exception('ARI error: %s', e)
-        relocate.set_state('ended')
+        self._cancel(relocate)
 
     def initiator_hangup(self, relocate):
-        try:
-            self._ari.channels.hangup(channelId=relocate.recipient_channel)
-        except ARINotFound:
-            pass
-        except ARIException as e:
-            logger.exception('ARI error: %s', e)
-        relocate.set_state('ended')
+        self._cancel(relocate)
 
     def recipient_hangup(self, relocate):
         relocate.set_state('ended')
@@ -143,14 +134,29 @@ class RelocateStateRecipientRing(RelocateState):
         else:
             raise NotImplementedError()
 
+    def cancel(self, relocate):
+        self._cancel(relocate)
+
     def complete(self, relocate):
         raise RelocateCompletionError('Requested completion is too early')
+
+    def _cancel(self, relocate):
+        try:
+            self._ari.channels.hangup(channelId=relocate.recipient_channel)
+        except ARINotFound:
+            pass
+        except ARIException as e:
+            logger.exception('ARI error: %s', e)
+        relocate.set_state('ended')
 
 
 @state
 class RelocateStateWaitingForCompletion(RelocateState):
 
     name = 'waiting_for_completion'
+
+    def cancel(self, relocate):
+        self._cancel(relocate)
 
     def complete(self, relocate):
         completer = RelocateCompleter(self._amid, self._ari)
@@ -169,24 +175,21 @@ class RelocateStateWaitingForCompletion(RelocateState):
             relocate.set_state('waiting_for_relocated')
 
     def relocated_hangup(self, relocate):
-        try:
-            self._ari.channels.hangup(channelId=relocate.recipient_channel)
-        except ARINotFound:
-            pass
-        except ARIException as e:
-            logger.exception('ARI error: %s', e)
-        relocate.set_state('ended')
+        self._cancel(relocate)
 
     def initiator_hangup(self, relocate):
+        self._cancel(relocate)
+
+    def recipient_hangup(self, relocate):
+        relocate.set_state('ended')
+
+    def _cancel(self, relocate):
         try:
             self._ari.channels.hangup(channelId=relocate.recipient_channel)
         except ARINotFound:
             pass
         except ARIException as e:
             logger.exception('ARI error: %s', e)
-        relocate.set_state('ended')
-
-    def recipient_hangup(self, relocate):
         relocate.set_state('ended')
 
 
@@ -220,6 +223,9 @@ class RelocateStateWaitingForRelocated(RelocateState):
         except ARIException as e:
             logger.exception('ARI error: %s', e)
         relocate.set_state('ended')
+
+    def cancel(self, relocate):
+        raise RelocateCancellationError('Requested cancellation is too late')
 
     def complete(self, relocate):
         pass

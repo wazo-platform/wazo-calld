@@ -643,6 +643,20 @@ class TestCreateUserRelocate(TestRelocates):
 
         until.assert_(relocate_cancelled, timeout=3)
 
+    def test_given_relocate_ringing_when_api_cancel_then_relocate_cancelled(self):
+        relocate, user_uuid, _, __ = self.given_ringing_user_relocate()
+        token = self.given_user_token(user_uuid)
+        ctid_ng = self.make_ctid_ng(token)
+
+        ctid_ng.relocates.cancel_from_user(relocate['uuid'])
+
+        def relocate_cancelled():
+            assert_that(relocate['relocated_call'], self.c.is_talking(), 'relocated not talking')
+            assert_that(relocate['initiator_call'], self.c.is_talking(), 'initiator not talking')
+            assert_that(relocate['recipient_call'], self.c.is_hungup(), 'recipient not hungup')
+
+        until.assert_(relocate_cancelled, timeout=3)
+
     def test_given_relocate_waiting_relocated_when_relocated_hangs_up_then_all_hangup(self):
         relocate, user_uuid = self.given_waiting_relocated_user_relocate()
 
@@ -667,6 +681,20 @@ class TestCreateUserRelocate(TestRelocates):
 
         until.assert_(all_hungup, timeout=3)
 
+    def test_given_relocate_waiting_relocated_when_api_cancel_then_400(self):
+        relocate, user_uuid = self.given_waiting_relocated_user_relocate()
+        token = self.given_user_token(user_uuid)
+        ctid_ng = self.make_ctid_ng(token)
+
+        assert_that(
+            calling(ctid_ng.relocates.cancel_from_user).with_args(
+                relocate['uuid'],
+            ),
+            raises(CtidNGError).matching(has_properties({
+                'status_code': 400,
+                'error_id': 'relocate-cancellation-error',
+            })))
+
     def test_given_relocate_completion_api_when_api_complete_then_relocate_completed(self):
         relocate, user_uuid = self.given_answered_user_relocate()
         token = self.given_user_token(user_uuid)
@@ -682,6 +710,20 @@ class TestCreateUserRelocate(TestRelocates):
             relocate['recipient_call'],
             timeout=5,
         )
+
+    def test_given_relocate_waiting_completion_when_api_cancel_then_relocate_cancelled(self):
+        relocate, user_uuid = self.given_answered_user_relocate()
+        token = self.given_user_token(user_uuid)
+        ctid_ng = self.make_ctid_ng(token)
+
+        ctid_ng.relocates.cancel_from_user(relocate['uuid'])
+
+        def relocate_cancelled():
+            assert_that(relocate['relocated_call'], self.c.is_talking(), 'relocated not talking')
+            assert_that(relocate['initiator_call'], self.c.is_talking(), 'initiator not talking')
+            assert_that(relocate['recipient_call'], self.c.is_hungup(), 'recipient not hungup')
+
+        until.assert_(relocate_cancelled, timeout=3)
 
     def test_given_relocate_waiting_completion_when_initiator_hangs_up_then_all_hangup(self):
         relocate, user_uuid = self.given_answered_user_relocate()
