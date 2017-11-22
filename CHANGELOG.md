@@ -1,6 +1,14 @@
 Changelog
 =========
 
+17.17
+------
+
+* New API for relocating calls:
+
+  * `PUT /users/me/relocates/{relocate_uuid}/cancel`
+
+
 17.15
 -----
 
