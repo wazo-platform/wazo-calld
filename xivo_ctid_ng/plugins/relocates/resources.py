@@ -69,3 +69,16 @@ class UserRelocateCompleteResource(AuthResource):
         user_uuid = get_token_user_uuid_from_request(self._auth_client)
         self._relocates_service.complete_from_user(relocate_uuid, user_uuid)
         return '', 204
+
+
+class UserRelocateCancelResource(AuthResource):
+
+    def __init__(self, auth_client, relocates_service):
+        self._auth_client = auth_client
+        self._relocates_service = relocates_service
+
+    @required_acl('ctid-ng.users.me.relocates.{relocate_uuid}.cancel.update')
+    def put(self, relocate_uuid):
+        user_uuid = get_token_user_uuid_from_request(self._auth_client)
+        self._relocates_service.cancel_from_user(relocate_uuid, user_uuid)
+        return '', 204

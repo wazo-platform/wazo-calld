@@ -64,6 +64,10 @@ class Relocate(object):
         logger.debug('Relocate %s: relocated hangup', self.uuid)
         self._state.relocated_hangup(self)
 
+    def cancel(self):
+        logger.debug('Relocate %s: cancel', self.uuid)
+        self._state.cancel(self)
+
     def complete(self):
         logger.debug('Relocate %s: complete', self.uuid)
         self._state.complete(self)
