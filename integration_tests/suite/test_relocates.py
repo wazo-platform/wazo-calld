@@ -26,7 +26,10 @@ from .helpers.auth import MockUserToken
 from .helpers.base import RealAsteriskIntegrationTest
 from .helpers.confd import MockUser
 from .helpers.confd import MockLine
-from .helpers.constants import INVALID_ACL_TOKEN
+from .helpers.constants import (
+    INVALID_ACL_TOKEN,
+    VALID_TOKEN,
+)
 from .helpers.hamcrest_ import HamcrestARIChannel
 
 ENDPOINT_AUTOANSWER = 'Test/integration-caller/autoanswer'
@@ -70,7 +73,6 @@ class TestRelocates(RealAsteriskIntegrationTest):
 
     def given_bridged_call_stasis(self, caller_uuid=None, callee_uuid=None):
         bridge = self.ari.bridges.create(type='mixing')
-        bus_events = self.bus.accumulator('calls.call.created')
 
         caller = self.stasis_channel()
         caller_uuid = caller_uuid or str(uuid.uuid4())
@@ -82,10 +84,13 @@ class TestRelocates(RealAsteriskIntegrationTest):
         callee.setChannelVar(variable='XIVO_USERUUID', value=callee_uuid)
         bridge.addChannel(channel=callee.id)
 
+        ctid_ng = self.make_ctid_ng(VALID_TOKEN)
+
         def channels_have_been_created_in_ctid_ng(caller_id, callee_id):
-            created_channel_ids = [message['data']['call_id'] for message in bus_events.accumulate()]
-            return (caller_id in created_channel_ids and
-                    callee_id in created_channel_ids)
+            calls = ctid_ng.calls.list_calls(application_instance=STASIS_APP_INSTANCE)
+            channel_ids = [call['call_id'] for call in calls['items']]
+            return (caller_id in channel_ids and
+                    callee_id in channel_ids)
 
         until.true(channels_have_been_created_in_ctid_ng, callee.id, caller.id, tries=3)
 

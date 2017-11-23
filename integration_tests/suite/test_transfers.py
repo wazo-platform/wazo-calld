@@ -127,16 +127,16 @@ class TestTransfers(RealAsteriskIntegrationTest):
         caller_uuid = caller_uuid or str(uuid.uuid4())
         callee_uuid = callee_uuid or str(uuid.uuid4())
         bridge = self.ari.bridges.create(type='mixing')
-        bus_events = self.bus.accumulator('calls.call.created')
         caller = self.add_channel_to_bridge(bridge)
         caller.setChannelVar(variable='XIVO_USERUUID', value=caller_uuid)
         callee = self.add_channel_to_bridge(bridge)
         callee.setChannelVar(variable='XIVO_USERUUID', value=callee_uuid)
 
         def channels_have_been_created_in_ctid_ng(caller_id, callee_id):
-            created_channel_ids = [message['data']['call_id'] for message in bus_events.accumulate()]
-            return (caller_id in created_channel_ids and
-                    callee_id in created_channel_ids)
+            calls = self.ctid_ng.list_calls(application_instance=STASIS_APP_INSTANCE)
+            channel_ids = [call['call_id'] for call in calls['items']]
+            return (caller_id in channel_ids and
+                    callee_id in channel_ids)
 
         until.true(channels_have_been_created_in_ctid_ng, callee.id, caller.id, tries=3)
 
