@@ -86,21 +86,12 @@ class Relocate(object):
         else:
             raise KeyError(channel_id)
 
-    def acquire(self):
-        self._lock.acquire()
-        logger.debug('Relocate %s: acquired lock', self.uuid)
-
-    def release(self):
-        self._lock.release()
-        logger.debug('Relocate %s: released lock', self.uuid)
-
     @contextmanager
     def locked(self):
-        self.acquire()
-        try:
+        logger.debug('Relocate %s: acquired lock', self.uuid)
+        with self._lock:
             yield
-        finally:
-            self.release()
+        logger.debug('Relocate %s: released lock', self.uuid)
 
 
 class RelocateCollection(object):
