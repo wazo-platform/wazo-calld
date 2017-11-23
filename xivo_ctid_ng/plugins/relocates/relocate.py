@@ -98,13 +98,16 @@ class RelocateCollection(object):
 
     def __init__(self):
         self._relocates = {}
+        self._lock = threading.Lock()
 
     def add(self, relocate):
-        self._relocates[relocate.uuid] = relocate
+        with self._lock:
+            self._relocates[relocate.uuid] = relocate
         relocate.events.subscribe('ended', self.remove)
 
     def remove(self, relocate):
-        self._relocates.pop(relocate.uuid, None)
+        with self._lock:
+            self._relocates.pop(relocate.uuid, None)
 
     def get(self, relocate_uuid, user_uuid=None):
         result = self._relocates[relocate_uuid]
@@ -123,11 +126,12 @@ class RelocateCollection(object):
         return result
 
     def find_by_channel(self, channel_id):
-        for relocate in self._relocates.itervalues():
-            if channel_id in (relocate.relocated_channel,
-                              relocate.initiator_channel,
-                              relocate.recipient_channel):
-                return relocate
+        with self._lock:
+            for relocate in self._relocates.itervalues():
+                if channel_id in (relocate.relocated_channel,
+                                  relocate.initiator_channel,
+                                  relocate.recipient_channel):
+                    return relocate
 
         return None
 
