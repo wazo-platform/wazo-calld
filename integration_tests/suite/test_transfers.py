@@ -133,7 +133,7 @@ class TestTransfers(RealAsteriskIntegrationTest):
         callee.setChannelVar(variable='XIVO_USERUUID', value=callee_uuid)
 
         def channels_have_been_created_in_ctid_ng(caller_id, callee_id):
-            calls = self.ctid_ng.list_calls(application_instance=STASIS_APP_INSTANCE)
+            calls = self.ctid_ng.list_calls(application=STASIS_APP, application_instance=STASIS_APP_INSTANCE)
             channel_ids = [call['call_id'] for call in calls['items']]
             return (caller_id in channel_ids and
                     callee_id in channel_ids)

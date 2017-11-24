@@ -10,7 +10,8 @@ paths:
         type: string
       - name: application_instance
         description: Filter calls by Stasis application instance, e.g. switchboard-sales,green.
-          Args must be separated by commas (,).
+          Args must be separated by commas (,). `application_instance` is ignored if `application`
+          is not set.
         in: query
         type: string
       tags:
