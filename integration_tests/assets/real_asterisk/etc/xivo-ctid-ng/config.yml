@@ -46,6 +46,7 @@ confd:
   verify_certificate: /usr/local/share/ssl/confd/server.crt
 
 enabled_plugins:
+  - api
   - calls
   - plugin_list
   - relocates
