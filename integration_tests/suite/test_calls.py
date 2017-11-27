@@ -149,6 +149,34 @@ class TestListCalls(IntegrationTest):
             has_entries({'call_id': 'first-id'}),
             has_entries({'call_id': 'third-id'}))))
 
+    def test_given_some_calls_and_application_bound_to_all_channels_when_list_calls_by_application_then_all_calls(self):
+        self.ari.set_channels(MockChannel(id='first-id'),
+                              MockChannel(id='second-id'))
+        self.ari.set_applications(MockApplication(name='my-app', channels=['__AST_CHANNEL_ALL_TOPIC']))
+
+        calls = self.ctid_ng.list_calls(application='my-app')
+
+        assert_that(calls,
+                    has_entry('items', contains_inanyorder(
+                        has_entries({'call_id': 'first-id'}),
+                        has_entries({'call_id': 'second-id'}))))
+
+    def test_given_some_calls_and_application_bound_to_all_channels_when_list_calls_by_application_instance_then_calls_are_still_filtered_by_application(self):
+        self.ari.set_channels(MockChannel(id='first-id'),
+                              MockChannel(id='second-id'))
+        self.ari.set_global_variables({'XIVO_CHANNELS_first-id': json.dumps({'app': 'my-app',
+                                                                             'app_instance': 'appX',
+                                                                             'state': 'talking'}),
+                                       'XIVO_CHANNELS_second-id': json.dumps({'app': 'another-app',
+                                                                              'app_instance': 'appX',
+                                                                              'state': 'talking'})})
+        self.ari.set_applications(MockApplication(name='my-app', channels=['__AST_CHANNEL_ALL_TOPIC']))
+
+        calls = self.ctid_ng.list_calls(application='my-app', application_instance='appX', token=VALID_TOKEN)
+
+        assert_that(calls, has_entry('items', contains(
+            has_entries({'call_id': 'first-id'}))))
+
     def test_given_local_channels_when_list_then_talking_to_is_none(self):
         self.ari.set_channels(MockChannel(id='first-id'),
                               MockChannel(id='second-id', name=SOME_LOCAL_CHANNEL_NAME))

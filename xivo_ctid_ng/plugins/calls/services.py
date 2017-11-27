@@ -39,16 +39,18 @@ class CallsService(object):
             except ARINotFound:
                 channel_ids = []
 
-            channels = [channel for channel in channels if channel.id in channel_ids]
+            if '__AST_CHANNEL_ALL_TOPIC' not in channel_ids:
+                channels = [channel for channel in channels if channel.id in channel_ids]
 
             if application_instance_filter:
                 app_instance_channels = []
                 for channel in channels:
                     try:
-                        channel_app_instance = self._state_persistor.get(channel.id).app_instance
+                        channel_cache_entry = self._state_persistor.get(channel.id)
                     except KeyError:
                         continue
-                    if channel_app_instance == application_instance_filter:
+                    if (channel_cache_entry.app == application_filter and
+                            channel_cache_entry.app_instance == application_instance_filter):
                         app_instance_channels.append(channel)
                 channels = app_instance_channels
 
