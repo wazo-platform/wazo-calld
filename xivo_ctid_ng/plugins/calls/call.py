@@ -18,3 +18,4 @@ class Call(object):
         self.peer_caller_id_number = ''
         self.on_hold = False
         self.is_caller = False
+        self.dialed_extension = None

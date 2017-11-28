@@ -114,7 +114,9 @@ class CallsService(object):
                                                context=context,
                                                priority=priority,
                                                variables={'variables': variables})
-        return channel.id
+        call = self.make_call_from_channel(self._ari, channel)
+        call.dialed_extension = request['destination']['extension']
+        return call
 
     def originate_user(self, request, user_uuid):
         if 'line_id' in request and not request['from_mobile']:
@@ -189,6 +191,7 @@ class CallsService(object):
         return new_channel.id
 
     def make_call_from_channel(self, ari, channel):
+        channel_helper = Channel(channel.id, ari)
         call = Call(channel.id)
         call.creation_time = channel.json['creationtime']
         call.status = channel.json['state']
@@ -196,12 +199,13 @@ class CallsService(object):
         call.caller_id_number = channel.json['caller']['number']
         call.peer_caller_id_name = channel.json['connected']['name']
         call.peer_caller_id_number = channel.json['connected']['number']
-        call.user_uuid = Channel(channel.id, ari).user()
+        call.user_uuid = channel_helper.user()
         call.on_hold = self._get_hold_from_channel_id(ari, channel.id) == '1'
         call.bridges = [bridge.id for bridge in ari.bridges.list() if channel.id in bridge.json['channels']]
         call.talking_to = {connected_channel.id: connected_channel.user()
-                           for connected_channel in Channel(channel.id, ari).connected_channels()}
-        call.is_caller = Channel(channel.id, ari).is_caller()
+                           for connected_channel in channel_helper.connected_channels()}
+        call.is_caller = channel_helper.is_caller()
+        call.dialed_extension = channel_helper.dialed_extension()
 
         return call
 
@@ -213,6 +217,7 @@ class CallsService(object):
         call.peer_caller_id_name = event['ConnectedLineName']
         call.peer_caller_id_number = event['ConnectedLineNum']
         call.user_uuid = event.get('XIVO_USERUUID') or None
+        call.dialed_extension = event.get('XIVO_BASE_EXTEN') or None
         call.bridges = []
         call.talking_to = {}
 

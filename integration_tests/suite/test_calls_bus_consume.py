@@ -4,7 +4,6 @@
 
 from hamcrest import assert_that
 from hamcrest import has_entries
-from hamcrest import has_entry
 from hamcrest import has_item
 from xivo_test_helpers import until
 
@@ -33,13 +32,16 @@ class TestDialedFrom(IntegrationTest):
         call_id = new_call_id()
         events = self.bus.accumulator(routing_key='calls.call.ended')
 
-        self.bus.send_ami_hangup_userevent(call_id)
+        self.bus.send_ami_hangup_userevent(call_id, base_exten='*10')
 
         def assert_function():
             assert_that(events.accumulate(), has_item(has_entries({
                 'name': 'call_ended',
                 'origin_uuid': XIVO_UUID,
-                'data': has_entry('call_id', call_id)
+                'data': has_entries({
+                    'call_id': call_id,
+                    'dialed_extension': '*10'
+                })
             })))
 
         until.assert_(assert_function, tries=5)
@@ -47,6 +49,7 @@ class TestDialedFrom(IntegrationTest):
     def test_when_channel_created_then_bus_event(self):
         call_id = new_call_id()
         self.ari.set_channels(MockChannel(id=call_id))
+        self.ari.set_channel_variable({call_id: {'XIVO_BASE_EXTEN': '*10'}})
         events = self.bus.accumulator(routing_key='calls.call.created')
 
         self.bus.send_ami_newchannel_event(call_id)
@@ -55,7 +58,10 @@ class TestDialedFrom(IntegrationTest):
             assert_that(events.accumulate(), has_item(has_entries({
                 'name': 'call_created',
                 'origin_uuid': XIVO_UUID,
-                'data': has_entry('call_id', call_id)
+                'data': has_entries({
+                    'call_id': call_id,
+                    'dialed_extension': '*10',
+                })
             })))
 
         until.assert_(assert_function, tries=5)

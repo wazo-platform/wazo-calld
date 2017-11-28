@@ -152,3 +152,10 @@ class Channel(object):
             return True
         except ARINotInStasis:
             return False
+
+    def dialed_extension(self):
+        try:
+            result = self._ari.channels.getChannelVar(channelId=self.id, variable='XIVO_BASE_EXTEN')['value']
+            return result
+        except ARINotFound:
+            return None

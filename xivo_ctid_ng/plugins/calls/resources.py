@@ -41,9 +41,9 @@ class CallsResource(AuthResource):
     def post(self):
         request_body = call_request_schema.load(request.get_json(force=True)).data
 
-        call_id = self.calls_service.originate(request_body)
+        call = self.calls_service.originate(request_body)
 
-        return {'call_id': call_id}, 201
+        return call_schema.dump(call).data, 201
 
 
 class MyCallsResource(AuthResource):
@@ -70,9 +70,9 @@ class MyCallsResource(AuthResource):
 
         user_uuid = get_token_user_uuid_from_request(self.auth_client)
 
-        call_id = self.calls_service.originate_user(request_body, user_uuid)
+        call = self.calls_service.originate_user(request_body, user_uuid)
 
-        return {'call_id': call_id}, 201
+        return call_schema.dump(call).data, 201
 
 
 class CallResource(AuthResource):

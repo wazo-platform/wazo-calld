@@ -465,7 +465,10 @@ class TestCreateCall(IntegrationTest):
                                         extension='my-extension',
                                         context='my-context')
 
-        assert_that(result, has_entry('call_id', 'new-call-id'))
+        assert_that(result, has_entries({
+            'call_id': 'new-call-id',
+            'dialed_extension': 'my-extension',
+        }))
         assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
             'method': 'POST',
             'path': '/ari/channels',
@@ -931,7 +934,10 @@ class TestUserCreateCall(IntegrationTest):
 
         result = self.ctid_ng.originate_me(extension='my-extension', token=token)
 
-        assert_that(result, has_entry('call_id', 'new-call-id'))
+        assert_that(result, has_entries({
+            'call_id': 'new-call-id',
+            'dialed_extension': 'my-extension',
+        }))
         assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
             'method': 'POST',
             'path': '/ari/channels',
