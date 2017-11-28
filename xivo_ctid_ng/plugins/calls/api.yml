@@ -49,7 +49,7 @@ paths:
         '201':
           description: The new call ID
           schema:
-            $ref: '#/definitions/CallID'
+            $ref: '#/definitions/Call'
         '400':
           description: Invalid request
           schema:
@@ -162,7 +162,7 @@ paths:
         '201':
           description: The new call ID
           schema:
-            $ref: '#/definitions/CallID'
+            $ref: '#/definitions/Call'
         '400':
           description: Invalid request
           schema:
@@ -259,11 +259,6 @@ definitions:
       is_caller:
         type: boolean
         description: This value is only correct when the destination of the call is a user or outgoing call. In other cases, it is always False.
-  CallID:
-    type: object
-    properties:
-      call_id:
-        type: string
   UserCallRequest:
     type: object
     properties:

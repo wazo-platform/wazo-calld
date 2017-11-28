@@ -114,7 +114,8 @@ class CallsService(object):
                                                context=context,
                                                priority=priority,
                                                variables={'variables': variables})
-        return channel.id
+        call = self.make_call_from_channel(self._ari, channel)
+        return call
 
     def originate_user(self, request, user_uuid):
         if 'line_id' in request and not request['from_mobile']:
