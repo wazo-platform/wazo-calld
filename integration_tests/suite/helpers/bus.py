@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) 2015-2016 Avencall
+# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import json
@@ -95,7 +95,7 @@ class BusClient(bus_helper.BusClient):
             }
         }, 'ami.Hangup')
 
-    def send_ami_hangup_userevent(self, channel_id):
+    def send_ami_hangup_userevent(self, channel_id, base_exten=None):
         self.send_event({
             'data': {
                 'Event': 'UserEvent',
@@ -107,5 +107,6 @@ class BusClient(bus_helper.BusClient):
                 'ConnectedLineName': 'peer-name',
                 'ConnectedLineNum': 'peer-num',
                 'XIVO_USERUUID': 'my-uuid',
+                'XIVO_BASE_EXTEN': base_exten if base_exten else '*10',
             }
         }, 'ami.UserEvent')

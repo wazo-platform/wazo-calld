@@ -51,5 +51,7 @@ class CallSchema(Schema):
     talking_to = StrictDict(key_field=fields.String(), value_field=fields.String())
     user_uuid = fields.String()
     is_caller = fields.Boolean()
+    dialed_extension = fields.String()
+
 
 call_schema = CallSchema()

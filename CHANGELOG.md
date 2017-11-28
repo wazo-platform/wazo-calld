@@ -8,6 +8,10 @@ Changelog
 
   * `PUT /users/me/relocates/{relocate_uuid}/cancel`
 
+* New field for calls:
+
+  * `dialed_extension`
+
 
 17.15
 -----
