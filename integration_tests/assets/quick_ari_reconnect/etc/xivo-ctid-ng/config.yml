@@ -40,7 +40,6 @@ confd:
 
 enabled_plugins:
   - calls
-  - plugin_list
   - status
 
 service_discovery:
