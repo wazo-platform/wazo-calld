@@ -457,7 +457,7 @@ class TestCreateCall(IntegrationTest):
         priority = 1
         self.confd.set_users(MockUser(uuid='user-uuid', line_ids=['line-id']))
         self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip'))
-        self.ari.set_originates(MockChannel(id='new-call-id'))
+        self.ari.set_originates(MockChannel(id='new-call-id', connected_line_number=''))
         self.amid.set_valid_exten('my-context', 'my-extension', priority)
 
         result = self.ctid_ng.originate(source=user_uuid,
@@ -468,6 +468,7 @@ class TestCreateCall(IntegrationTest):
         assert_that(result, has_entries({
             'call_id': 'new-call-id',
             'dialed_extension': 'my-extension',
+            'peer_caller_id_number': 'my-extension',
         }))
         assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
             'method': 'POST',
@@ -929,7 +930,7 @@ class TestUserCreateCall(IntegrationTest):
         self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=['line-id']))
         self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip', context='my-context'))
-        self.ari.set_originates(MockChannel(id='new-call-id'))
+        self.ari.set_originates(MockChannel(id='new-call-id', connected_line_number=''))
         self.amid.set_valid_exten('my-context', 'my-extension')
 
         result = self.ctid_ng.originate_me(extension='my-extension', token=token)
@@ -937,6 +938,7 @@ class TestUserCreateCall(IntegrationTest):
         assert_that(result, has_entries({
             'call_id': 'new-call-id',
             'dialed_extension': 'my-extension',
+            'peer_caller_id_number': 'my-extension',
         }))
         assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
             'method': 'POST',

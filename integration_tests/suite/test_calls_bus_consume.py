@@ -13,17 +13,17 @@ from .helpers.ctid_ng import new_call_id
 from .helpers.constants import XIVO_UUID
 
 
-class TestDialedFrom(IntegrationTest):
+class TestBusConsume(IntegrationTest):
 
     asset = 'basic_rest'
 
     @classmethod
     def setUpClass(cls):
-        super(TestDialedFrom, cls).setUpClass()
+        super(TestBusConsume, cls).setUpClass()
         cls.wait_for_ctid_ng_to_connect_to_bus()
 
     def setUp(self):
-        super(TestDialedFrom, self).setUp()
+        super(TestBusConsume, self).setUp()
         self.amid.reset()
         self.ari.reset()
         self.confd.reset()
@@ -40,7 +40,7 @@ class TestDialedFrom(IntegrationTest):
                 'origin_uuid': XIVO_UUID,
                 'data': has_entries({
                     'call_id': call_id,
-                    'dialed_extension': '*10'
+                    'dialed_extension': '*10',
                 })
             })))
 
@@ -48,7 +48,7 @@ class TestDialedFrom(IntegrationTest):
 
     def test_when_channel_created_then_bus_event(self):
         call_id = new_call_id()
-        self.ari.set_channels(MockChannel(id=call_id))
+        self.ari.set_channels(MockChannel(id=call_id, connected_line_number=''))
         self.ari.set_channel_variable({call_id: {'XIVO_BASE_EXTEN': '*10'}})
         events = self.bus.accumulator(routing_key='calls.call.created')
 
@@ -61,6 +61,7 @@ class TestDialedFrom(IntegrationTest):
                 'data': has_entries({
                     'call_id': call_id,
                     'dialed_extension': '*10',
+                    'peer_caller_id_number': '*10',
                 })
             })))
 
