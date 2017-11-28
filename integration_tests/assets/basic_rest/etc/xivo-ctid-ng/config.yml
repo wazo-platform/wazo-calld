@@ -64,7 +64,6 @@ enabled_plugins:
   - calls
   - chats
   - presences
-  - plugin_list
   - status
   - transfers
   - voicemails

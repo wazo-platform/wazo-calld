@@ -156,13 +156,6 @@ class CtidNgClient(object):
         response = self.delete_user_me_call_result(call_id, token=token)
         assert_that(response.status_code, equal_to(204))
 
-    def get_plugins_result(self, token=None):
-        url = self.url('plugins')
-        result = requests.get(url,
-                              headers={'X-Auth-Token': token},
-                              verify=False)
-        return result
-
     def put_call_user_result(self, call_id, user_uuid, token):
         url = self.url('calls', call_id, 'user', user_uuid)
         result = requests.put(url,

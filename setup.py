@@ -3,7 +3,6 @@
 # Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
-
 from setuptools import setup
 from setuptools import find_packages
 
@@ -26,7 +25,6 @@ setup(
             'calls = xivo_ctid_ng.plugins.calls.plugin:Plugin',
             'chats = xivo_ctid_ng.plugins.chats.plugin:Plugin',
             'mongooseim = xivo_ctid_ng.plugins.mongooseim.plugin:Plugin',
-            'plugin_list = xivo_ctid_ng.plugins.plugin_list.plugin:Plugin',
             'presences = xivo_ctid_ng.plugins.presences.plugin:Plugin',
             'relocates = xivo_ctid_ng.plugins.relocates.plugin:Plugin',
             'status = xivo_ctid_ng.plugins.status.plugin:Plugin',

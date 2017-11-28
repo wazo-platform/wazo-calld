@@ -2,15 +2,15 @@
 # Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
+from hamcrest import assert_that
+from hamcrest import contains_string
+from hamcrest import equal_to
+
 from .helpers.base import IntegrationTest
 from .helpers.chat import new_chat_message, new_user_chat_message
 from .helpers.constants import INVALID_ACL_TOKEN, VALID_TOKEN
 from .helpers.presence import new_user_presence_message, new_user_me_presence_message
 from .helpers.wait_strategy import CtidNgUpWaitStrategy
-
-from hamcrest import assert_that
-from hamcrest import contains_string
-from hamcrest import equal_to
 
 
 class TestAuthentication(IntegrationTest):
@@ -86,11 +86,6 @@ class TestAuthenticationCoverage(IntegrationTest):
 
     def test_auth_on_user_hangup(self):
         result = self.ctid_ng.delete_user_me_call_result('my-call')
-
-        assert_that(result.status_code, equal_to(401))
-
-    def test_auth_on_list_plugins(self):
-        result = self.ctid_ng.get_plugins_result()
 
         assert_that(result.status_code, equal_to(401))
 
