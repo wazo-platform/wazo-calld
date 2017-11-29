@@ -216,8 +216,8 @@ class CallsService(object):
         call.caller_id_number = event['CallerIDNum']
         call.peer_caller_id_name = event['ConnectedLineName']
         call.peer_caller_id_number = event['ConnectedLineNum']
-        call.user_uuid = event.get('XIVO_USERUUID') or None
-        call.dialed_extension = event.get('XIVO_BASE_EXTEN') or None
+        call.user_uuid = event['ChanVariable'].get('XIVO_USERUUID') or None
+        call.dialed_extension = event['ChanVariable'].get('XIVO_BASE_EXTEN') or None
         call.bridges = []
         call.talking_to = {}
 

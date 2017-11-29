@@ -32,7 +32,7 @@ class TestBusConsume(IntegrationTest):
         call_id = new_call_id()
         events = self.bus.accumulator(routing_key='calls.call.ended')
 
-        self.bus.send_ami_hangup_userevent(call_id, base_exten='*10')
+        self.bus.send_ami_hangup_event(call_id, base_exten='*10')
 
         def assert_function():
             assert_that(events.accumulate(), has_item(has_entries({

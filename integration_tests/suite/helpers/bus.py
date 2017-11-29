@@ -84,7 +84,7 @@ class BusClient(bus_helper.BusClient):
             }
         }, 'ami.Unhold')
 
-    def send_ami_hangup_event(self, channel_id):
+    def send_ami_hangup_event(self, channel_id, base_exten=None):
         self.send_event({
             'data': {
                 'Event': 'Hangup',
@@ -92,21 +92,11 @@ class BusClient(bus_helper.BusClient):
                 'ChannelStateDesc': 'Up',
                 'CallerIDName': 'my-caller-id-name',
                 'CallerIDNum': 'my-caller-id-num',
-            }
-        }, 'ami.Hangup')
-
-    def send_ami_hangup_userevent(self, channel_id, base_exten=None):
-        self.send_event({
-            'data': {
-                'Event': 'UserEvent',
-                'UserEvent': 'Hangup',
-                'Uniqueid': channel_id,
-                'ChannelStateDesc': 'Up',
-                'CallerIDName': 'my-caller-id-name',
-                'CallerIDNum': 'my-caller-id-num',
                 'ConnectedLineName': 'peer-name',
                 'ConnectedLineNum': 'peer-num',
-                'XIVO_USERUUID': 'my-uuid',
-                'XIVO_BASE_EXTEN': base_exten if base_exten else '*10',
+                'ChanVariable': {
+                    'XIVO_USERUUID': 'my-uuid',
+                    'XIVO_BASE_EXTEN': base_exten if base_exten else '*10',
+                },
             }
-        }, 'ami.UserEvent')
+        }, 'ami.Hangup')
