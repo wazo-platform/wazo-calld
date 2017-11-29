@@ -52,9 +52,6 @@ class CoreBusConsumer(ConsumerMixin):
 
     def __init__(self, global_config):
         self._events_pubsub = Pubsub()
-        self._userevent_pubsub = Pubsub()
-        self._events_pubsub.subscribe('UserEvent',
-                                      lambda message: self._userevent_pubsub.publish(message['UserEvent'], message))
 
         self._bus_url = 'amqp://{username}:{password}@{host}:{port}//'.format(**global_config['bus'])
         self._exchange = Exchange(global_config['bus']['exchange_name'],
@@ -91,10 +88,6 @@ class CoreBusConsumer(ConsumerMixin):
     def on_ami_event(self, event_type, callback):
         self._queue.bindings.add(binding(self._exchange, routing_key='ami.{}'.format(event_type)))
         self._events_pubsub.subscribe(event_type, callback)
-
-    def on_ami_userevent(self, userevent_type, callback):
-        self._queue.bindings.add(binding(self._exchange, routing_key='ami.UserEvent'))
-        self._userevent_pubsub.subscribe(userevent_type, callback)
 
     def _on_bus_message(self, body, message):
         event = body['data']
