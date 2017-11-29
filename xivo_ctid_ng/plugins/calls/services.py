@@ -210,14 +210,15 @@ class CallsService(object):
         return call
 
     def make_call_from_ami_event(self, event):
+        event_variables = event['ChanVariable']
         call = Call(event['Uniqueid'])
         call.status = event['ChannelStateDesc']
         call.caller_id_name = event['CallerIDName']
         call.caller_id_number = event['CallerIDNum']
         call.peer_caller_id_name = event['ConnectedLineName']
         call.peer_caller_id_number = event['ConnectedLineNum']
-        call.user_uuid = event['ChanVariable'].get('XIVO_USERUUID') or None
-        call.dialed_extension = event['ChanVariable'].get('XIVO_BASE_EXTEN') or None
+        call.user_uuid = event_variables.get('WAZO_DEREFERENCED_USERUUID') or event_variables.get('XIVO_USERUUID') or None
+        call.dialed_extension = event_variables.get('XIVO_BASE_EXTEN') or None
         call.bridges = []
         call.talking_to = {}
 
