@@ -36,7 +36,7 @@ class CallsBusEventHandler(object):
         bus_consumer.on_ami_event('NewConnectedLine', self._relay_channel_updated)
         bus_consumer.on_ami_event('Hold', self._channel_hold)
         bus_consumer.on_ami_event('Unhold', self._channel_unhold)
-        bus_consumer.on_ami_userevent('Hangup', self._relay_channel_hung_up)
+        bus_consumer.on_ami_event('Hangup', self._relay_channel_hung_up)
         bus_consumer.on_ami_event('Hangup', self._collectd_channel_ended)
 
     def _relay_channel_created(self, event):
