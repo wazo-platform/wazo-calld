@@ -19,13 +19,7 @@ class Testclassname(TestCase):
         self.services = CallsService(Mock(), Mock(), Mock(), Mock())
 
     def test_given_no_chan_variables_when_make_call_from_ami_event_then_call_has_none_values(self):
-        event = {}
-        event['Uniqueid'] = 'some-value'
-        event['ChannelStateDesc'] = 'some-value'
-        event['CallerIDName'] = 'some-value'
-        event['CallerIDNum'] = 'some-value'
-        event['ConnectedLineName'] = 'some-value'
-        event['ConnectedLineNum'] = 'some-value'
+        event = defaultdict(str)
         event['ChanVariable'] = {}
 
         call = self.services.make_call_from_ami_event(event)
