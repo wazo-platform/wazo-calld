@@ -95,8 +95,8 @@ class CoreBusConsumer(ConsumerMixin):
             event_type = event['Event']
         except KeyError:
             logger.error('Invalid AMI event message received: %s', event)
+        else:
+            self._events_pubsub.publish(event_type, event)
+        finally:
             message.ack()
-            return
 
-        self._events_pubsub.publish(event_type, event)
-        message.ack()
