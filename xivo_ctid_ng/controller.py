@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
@@ -43,8 +43,7 @@ class Controller(object):
                                              config['service_discovery'],
                                              config['bus'],
                                              partial(self_check,
-                                                     config['rest_api']['port'],
-                                                     config['rest_api']['certificate'])]
+                                                     config['rest_api']['port'])]
         plugin_helpers.load(
             namespace='xivo_ctid_ng.plugins',
             names=plugin_helpers.from_list(config['enabled_plugins']),
