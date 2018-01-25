@@ -1,20 +1,25 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import json
+import threading
 
-from hamcrest import all_of
-from hamcrest import assert_that
-from hamcrest import contains
-from hamcrest import contains_inanyorder
-from hamcrest import empty
-from hamcrest import equal_to
-from hamcrest import has_entries
-from hamcrest import has_entry
-from hamcrest import has_item
-from hamcrest import has_items
-from hamcrest import contains_string
+from hamcrest import (
+    all_of,
+    assert_that,
+    contains,
+    contains_inanyorder,
+    contains_string,
+    empty,
+    equal_to,
+    has_entries,
+    has_entry,
+    has_item,
+    has_items,
+    not_,
+    starts_with,
+)
 from xivo_test_helpers import until
 
 from .helpers.ari_ import MockApplication
@@ -1346,3 +1351,37 @@ class TestCallerID(RealAsteriskIntegrationTest):
             return expected_peer_caller_id in peer_caller_ids
 
         until.true(originator_has_correct_connected_line, recipient_caller_id_name, recipient_caller_id_number, tries=3)
+
+
+class TestUserCreateCallFromMobile(RealAsteriskIntegrationTest):
+
+    asset = 'real_asterisk'
+
+    def test_user_create_call_from_mobile(self):
+        user_uuid = 'user-uuid'
+        mobile_context, mobile_extension = 'local', 'mobile'
+        token = 'my-token'
+        self.auth.set_token(MockUserToken(token, user_uuid))
+        self.confd.set_users(MockUser(uuid='user-uuid', mobile=mobile_extension, line_ids=['line-id']))
+        self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip', context=mobile_context))
+
+        result = self.ctid_ng.originate_me('recipient', from_mobile=True, token=token)
+
+        result_channel = self.ari.channels.get(channelId=result['call_id'])
+        assert_that(result_channel.json['name'], not_(starts_with('Local')))
+
+    def test_given_mobile_does_not_dial_when_user_create_call_from_mobile_then_400(self):
+        user_uuid = 'user-uuid'
+        mobile_context, mobile_extension = 'local', 'mobile-no-dial'
+        token = 'my-token'
+        self.auth.set_token(MockUserToken(token, user_uuid))
+        self.confd.set_users(MockUser(uuid='user-uuid', mobile=mobile_extension, line_ids=['line-id']))
+        self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip', context=mobile_context))
+
+        result = self.ctid_ng.post_user_me_call_result({
+            'extension': 'recipient',
+            'from_mobile': True
+        }, token=token)
+
+        assert_that(result.status_code, equal_to(400))
+        assert_that(result.json()['message'].lower(), contains_string('dial'))

@@ -1,5 +1,5 @@
-# -*- coding: UTF-8 -*-
-# Copyright (C) 2015-2016 Avencall
+# -*- coding: utf-8 -*-
+# Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 from xivo_amid_client import Client as AmidClient
@@ -7,6 +7,7 @@ from xivo_auth_client import Client as AuthClient
 from xivo_confd_client import Client as ConfdClient
 
 from .bus_consume import CallsBusEventHandler
+from .dial_echo import DialEchoManager
 from .resources import CallResource
 from .resources import CallsResource
 from .resources import ConnectCallToUserResource
@@ -35,12 +36,14 @@ class Plugin(object):
 
         token_changed_subscribe(confd_client.set_token)
 
-        calls_service = CallsService(amid_client, config['ari']['connection'], ari.client, confd_client)
+        dial_echo_manager = DialEchoManager()
+
+        calls_service = CallsService(amid_client, config['ari']['connection'], ari.client, confd_client, dial_echo_manager)
 
         calls_stasis = CallsStasis(ari.client, collectd, bus_publisher, calls_service, config['uuid'], amid_client)
         calls_stasis.subscribe()
 
-        calls_bus_event_handler = CallsBusEventHandler(amid_client, ari.client, collectd, bus_publisher, calls_service, config['uuid'])
+        calls_bus_event_handler = CallsBusEventHandler(amid_client, ari.client, collectd, bus_publisher, calls_service, config['uuid'], dial_echo_manager)
         calls_bus_event_handler.subscribe(bus_consumer)
 
         api.add_resource(CallsResource, '/calls', resource_class_args=[calls_service])
