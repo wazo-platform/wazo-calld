@@ -100,6 +100,22 @@ class CallsService(object):
             variables.setdefault('WAZO_ORIGINATE_DESTINATION_CALLERID_ALL', '"{exten}" <{exten}>'.format(exten=source_mobile))
             dial_echo_request_id = self._dial_echo_manager.new_dial_echo_request()
             variables.setdefault('_WAZO_DIAL_ECHO_REQUEST_ID', dial_echo_request_id)
+
+            channel = self._ari.channels.originate(endpoint=endpoint,
+                                                   extension=extension,
+                                                   context=context,
+                                                   priority=priority,
+                                                   variables={'variables': variables})
+            try:
+                channel_id = self._dial_echo_manager.wait(dial_echo_request_id, timeout=5)
+            except DialEchoTimeout:
+                details = {
+                    'mobile_extension': source_mobile,
+                    'mobile_context': source_context,
+                }
+                raise CallCreationError('Could not dial mobile number', details=details)
+            channel = self._ari.channels.get(channelId=channel_id)
+
         else:
             if 'line_id' in request['source']:
                 endpoint = User(source_user, self._confd).line(request['source']['line_id']).interface()
@@ -114,21 +130,11 @@ class CallsService(object):
             variables.setdefault('CALLERID(name)', extension)
             variables.setdefault('CALLERID(num)', extension)
 
-        channel = self._ari.channels.originate(endpoint=endpoint,
-                                               extension=extension,
-                                               context=context,
-                                               priority=priority,
-                                               variables={'variables': variables})
-        if dial_echo_request_id:
-            try:
-                channel_id = self._dial_echo_manager.wait(dial_echo_request_id, timeout=5)
-            except DialEchoTimeout:
-                details = {
-                    'mobile_extension': source_mobile,
-                    'mobile_context': source_context,
-                }
-                raise CallCreationError('Could not dial mobile number', details=details)
-            channel = self._ari.channels.get(channelId=channel_id)
+            channel = self._ari.channels.originate(endpoint=endpoint,
+                                                   extension=extension,
+                                                   context=context,
+                                                   priority=priority,
+                                                   variables={'variables': variables})
 
         call = self.make_call_from_channel(self._ari, channel)
         call.dialed_extension = request['destination']['extension']
