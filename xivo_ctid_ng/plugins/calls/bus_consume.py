@@ -117,7 +117,6 @@ class CallsBusEventHandler(object):
 
     def _set_dial_echo_result(self, event):
         if event['UserEvent'] != 'dial_echo':
-            logger.debug('Ignoring UserEvent %s', event['UserEvent'])
             return
 
         logger.debug('Got UserEvent dial_echo: %s', event)
