@@ -20,7 +20,7 @@ docker-pull:
 	docker pull waisbrot/wait
 	docker pull p0bailey/docker-flask
 	docker pull postgres:9.6
-	docker pull python:2.7
+	docker pull python:2.7.13-stretch
 	docker pull swaggerapi/swagger-validator
 	docker pull wazopbx/asterisk
 	docker pull wazopbx/xivo-amid
