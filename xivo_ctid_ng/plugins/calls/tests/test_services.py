@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 from collections import defaultdict
@@ -16,7 +16,7 @@ from ..services import CallsService
 class Testclassname(TestCase):
 
     def setUp(self):
-        self.services = CallsService(Mock(), Mock(), Mock(), Mock())
+        self.services = CallsService(Mock(), Mock(), Mock(), Mock(), Mock())
 
     def test_given_no_chan_variables_when_make_call_from_ami_event_then_call_has_none_values(self):
         event = defaultdict(str)
