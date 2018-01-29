@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
@@ -122,7 +122,7 @@ class TestRelocates(RealAsteriskIntegrationTest):
     def given_mobile_call(self):
         user_uuid = str(uuid.uuid4())
         line_id = SOME_LINE_ID
-        self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id], mobile='dial-autoanswer'))
+        self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id], mobile='mobile-autoanswer'))
         self.confd.set_lines(MockLine(id=line_id, name=SOME_LINE_NAME, protocol='local', context='local'))
         token = self.given_user_token(user_uuid)
         ctid_ng = self.make_ctid_ng(token)
