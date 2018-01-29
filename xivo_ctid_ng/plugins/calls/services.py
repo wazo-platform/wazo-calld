@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
@@ -17,17 +17,19 @@ from .exceptions import CallConnectError
 from .exceptions import CallCreationError
 from .exceptions import NoSuchCall
 from .state_persistor import ReadOnlyStatePersistor
+from .dial_echo import DialEchoTimeout
 
 logger = logging.getLogger(__name__)
 
 
 class CallsService(object):
 
-    def __init__(self, amid_client, ari_config, ari, confd_client):
+    def __init__(self, amid_client, ari_config, ari, confd_client, dial_echo_manager):
         self._ami = amid_client
         self._ari_config = ari_config
         self._ari = ari
         self._confd = confd_client
+        self._dial_echo_manager = dial_echo_manager
         self._state_persistor = ReadOnlyStatePersistor(self._ari)
 
     def list_calls(self, application_filter=None, application_instance_filter=None):
@@ -70,6 +72,7 @@ class CallsService(object):
 
         source_user = request['source']['user']
         variables = request.get('variables', {})
+        dial_echo_request_id = None
 
         if request['source']['from_mobile']:
             source_mobile = User(source_user, self._confd).mobile_phone_number()
@@ -95,6 +98,24 @@ class CallsService(object):
             variables.setdefault('WAZO_ORIGINATE_DESTINATION_EXTENSION', requested_extension)
             variables.setdefault('WAZO_ORIGINATE_DESTINATION_CONTEXT', requested_context)
             variables.setdefault('WAZO_ORIGINATE_DESTINATION_CALLERID_ALL', '"{exten}" <{exten}>'.format(exten=source_mobile))
+            dial_echo_request_id = self._dial_echo_manager.new_dial_echo_request()
+            variables.setdefault('_WAZO_DIAL_ECHO_REQUEST_ID', dial_echo_request_id)
+
+            channel = self._ari.channels.originate(endpoint=endpoint,
+                                                   extension=extension,
+                                                   context=context,
+                                                   priority=priority,
+                                                   variables={'variables': variables})
+            try:
+                channel_id = self._dial_echo_manager.wait(dial_echo_request_id, timeout=5)
+            except DialEchoTimeout:
+                details = {
+                    'mobile_extension': source_mobile,
+                    'mobile_context': source_context,
+                }
+                raise CallCreationError('Could not dial mobile number', details=details)
+            channel = self._ari.channels.get(channelId=channel_id)
+
         else:
             if 'line_id' in request['source']:
                 endpoint = User(source_user, self._confd).line(request['source']['line_id']).interface()
@@ -109,11 +130,12 @@ class CallsService(object):
             variables.setdefault('CALLERID(name)', extension)
             variables.setdefault('CALLERID(num)', extension)
 
-        channel = self._ari.channels.originate(endpoint=endpoint,
-                                               extension=extension,
-                                               context=context,
-                                               priority=priority,
-                                               variables={'variables': variables})
+            channel = self._ari.channels.originate(endpoint=endpoint,
+                                                   extension=extension,
+                                                   context=context,
+                                                   priority=priority,
+                                                   variables={'variables': variables})
+
         call = self.make_call_from_channel(self._ari, channel)
         call.dialed_extension = request['destination']['extension']
         return call

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
@@ -21,13 +21,14 @@ logger = logging.getLogger(__name__)
 
 class CallsBusEventHandler(object):
 
-    def __init__(self, ami, ari, collectd, bus_publisher, services, xivo_uuid):
+    def __init__(self, ami, ari, collectd, bus_publisher, services, xivo_uuid, dial_echo_manager):
         self.ami = ami
         self.ari = ari
         self.collectd = collectd
         self.bus_publisher = bus_publisher
         self.services = services
         self.xivo_uuid = xivo_uuid
+        self.dial_echo_manager = dial_echo_manager
 
     def subscribe(self, bus_consumer):
         bus_consumer.on_ami_event('Newchannel', self._relay_channel_created)
@@ -38,6 +39,7 @@ class CallsBusEventHandler(object):
         bus_consumer.on_ami_event('Unhold', self._channel_unhold)
         bus_consumer.on_ami_event('Hangup', self._relay_channel_hung_up)
         bus_consumer.on_ami_event('Hangup', self._collectd_channel_ended)
+        bus_consumer.on_ami_event('UserEvent', self._set_dial_echo_result)
 
     def _relay_channel_created(self, event):
         channel_id = event['Uniqueid']
@@ -112,3 +114,13 @@ class CallsBusEventHandler(object):
         user_uuid = Channel(channel_id, self.ari).user()
         bus_msg = CallResumeEvent(channel_id, user_uuid)
         self.bus_publisher.publish(bus_msg, headers={'user_uuid:{uuid}'.format(uuid=user_uuid): True})
+
+    def _set_dial_echo_result(self, event):
+        if event['UserEvent'] != 'dial_echo':
+            return
+
+        logger.debug('Got UserEvent dial_echo: %s', event)
+        self.dial_echo_manager.set_dial_echo_result(
+            event['wazo_dial_echo_request_id'],
+            {'channel_id': event['channel_id']}
+        )
