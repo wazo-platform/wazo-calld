@@ -1,12 +1,12 @@
 # -*- coding: UTF-8 -*-
-# Copyright 2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import json
 import ssl
 import socket
 
-from websocket import create_connection
+from websocket import create_connection, WebSocketException
 from .exceptions import XiVOWebsocketdError
 
 
@@ -41,7 +41,7 @@ class Client(object):
             raise XiVOWebsocketdError(self, e)
         except ssl.SSLError as e:
             raise XiVOWebsocketdError(self, e)
-        except socket.WebSocketTimeOutException as e:
+        except WebSocketException as e:
             raise XiVOWebsocketdError(self, e)
 
         try:
