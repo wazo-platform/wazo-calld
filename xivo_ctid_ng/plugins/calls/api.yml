@@ -219,6 +219,10 @@ definitions:
         type: string
       priority:
         type: integer
+    required:
+      - extension
+      - context
+      - priority
   CallRequestSource:
     description: Caller parameters
     type: object
@@ -232,6 +236,8 @@ definitions:
       from_mobile:
         type: boolean
         description: "Start the call from the user's mobile phone. Default is False"
+    required:
+      - user
   Call:
     type: object
     properties:
