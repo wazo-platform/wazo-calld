@@ -200,34 +200,38 @@ definitions:
     type: object
     properties:
       destination:
-        description: Destination parameters
-        type: object
-        properties:
-          extension:
-            type: string
-          context:
-            type: string
-          priority:
-            type: integer
+        $ref: '#/definitions/CallRequestDestination'
       source:
-        description: Caller parameters
-        type: object
-        properties:
-          user:
-            type: string
-            description: UUID of the user making the call
-          line_id:
-            type: integer
-            description: ID of the line of the user used to make the call. Default is the main line of the user.
-          from_mobile:
-            type: boolean
-            description: "Start the call from the user's mobile phone. Default is False"
+        $ref: '#/definitions/CallRequestSource'
       variables:
         description: Channel variables to set
         type: object
     required:
       - destination
       - source
+  CallRequestDestination:
+    description: Destination parameters
+    type: object
+    properties:
+      extension:
+        type: string
+      context:
+        type: string
+      priority:
+        type: integer
+  CallRequestSource:
+    description: Caller parameters
+    type: object
+    properties:
+      user:
+        type: string
+        description: UUID of the user making the call
+      line_id:
+        type: integer
+        description: ID of the line of the user used to make the call. Default is the main line of the user.
+      from_mobile:
+        type: boolean
+        description: "Start the call from the user's mobile phone. Default is False"
   Call:
     type: object
     properties:
