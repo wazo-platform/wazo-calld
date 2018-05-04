@@ -46,12 +46,12 @@ confd:
   verify_certificate: /usr/local/share/ssl/confd/server.crt
 
 enabled_plugins:
-  - api
-  - calls
-  - relocates
-  - status
-  - transfers
-  - switchboards
+  api: true
+  calls: true
+  relocates: true
+  status: true
+  transfers: true
+  switchboards: true
 
 service_discovery:
   enabled: false

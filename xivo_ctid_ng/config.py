@@ -99,16 +99,16 @@ _DEFAULT_CONFIG = {
     'remote_credentials': {
     },
     'enabled_plugins': [
-        'api',
-        'calls',
-        'chats',
-        'mongooseim',
-        'presences',
-        'relocates',
-        'status',
-        'switchboards',
-        'transfers',
-        'voicemails',
+        'api': True,
+        'calls': True,
+        'chats': True,
+        'mongooseim': True,
+        'presences': True,
+        'relocates': True,
+        'status': True,
+        'switchboards': True,
+        'transfers': True,
+        'voicemails': True,
     ]
 }
 

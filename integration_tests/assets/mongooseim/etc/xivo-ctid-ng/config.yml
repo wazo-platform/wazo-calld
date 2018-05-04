@@ -45,9 +45,9 @@ mongooseim:
   port: 8088
 
 enabled_plugins:
-  - chats
-  - mongooseim
-  - status
+  chats: true
+  mongooseim: true
+  status: true
 
 service_discovery:
   enabled: false

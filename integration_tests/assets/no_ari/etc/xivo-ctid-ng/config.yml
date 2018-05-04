@@ -38,8 +38,8 @@ confd:
   verify_certificate: /usr/local/share/ssl/confd/server.crt
 
 enabled_plugins:
-  - calls
-  - status
+  calls: true
+  status: true
 
 service_discovery:
   enabled: false
