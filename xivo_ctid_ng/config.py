@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 
@@ -98,7 +98,7 @@ _DEFAULT_CONFIG = {
     },
     'remote_credentials': {
     },
-    'enabled_plugins': [
+    'enabled_plugins': {
         'api': True,
         'calls': True,
         'chats': True,
@@ -109,7 +109,7 @@ _DEFAULT_CONFIG = {
         'switchboards': True,
         'transfers': True,
         'voicemails': True,
-    ]
+    }
 }
 
 
