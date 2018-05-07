@@ -27,7 +27,7 @@ auth:
   key_file: /etc/xivo-ctid-ng/key.yml
 
 enabled_plugins:
-  - status
+  status: true
 
 service_discovery:
   enabled: false
