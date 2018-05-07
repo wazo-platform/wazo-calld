@@ -55,18 +55,18 @@ ctid:
   port: 9495
 
 websocketd:
-  wss: False
+  wss: false
   host: websocketd
   port: 9502
-  verify_certificate: False
+  verify_certificate: false
 
 enabled_plugins:
-  - calls
-  - chats
-  - presences
-  - status
-  - transfers
-  - voicemails
+  calls: true
+  chats: true
+  presences: true
+  status: true
+  transfers: true
+  voicemails: true
 
 service_discovery:
   enabled: false

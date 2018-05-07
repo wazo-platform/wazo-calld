@@ -98,16 +98,16 @@ consul:
   token: 'the_one_ring'
 
 enabled_plugins:
-  - api
-  - calls
-  - chats
-  - mongooseim
-  - presences
-  - relocates
-  - status
-  - switchboards
-  - transfers
-  - voicemails
+  api: true
+  calls: true
+  chats: true
+  mongooseim: true
+  presences: true
+  relocates: true
+  status: true
+  switchboards: true
+  transfers: true
+  voicemails: true
 
 # Service discovery configuration. all time intervals are in seconds
 service_discovery:

@@ -38,9 +38,9 @@ confd:
   verify_certificate: /usr/local/share/ssl/confd/server.crt
 
 enabled_plugins:
-  - calls
-  - status
-  - transfers
+  calls: true
+  status: true
+  transfers: true
 
 service_discovery:
   enabled: false

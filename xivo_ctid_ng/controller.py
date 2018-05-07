@@ -46,7 +46,7 @@ class Controller(object):
                                                      config['rest_api']['port'])]
         plugin_helpers.load(
             namespace='xivo_ctid_ng.plugins',
-            names=plugin_helpers.from_list(config['enabled_plugins']),
+            names=config['enabled_plugins'],
             dependencies={
                 'api': api,
                 'adapter_api': adapter_api,
