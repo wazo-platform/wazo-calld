@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/bash
 
 set -e
 
@@ -7,12 +7,14 @@ DAEMONNAME='xivo-ctid-ng'
 
 case "$1" in
 	configure)
+		previous_version="$2"
+
 		if [ ! -e "$LOG_FILENAME" ]; then
 			touch "$LOG_FILENAME"
 		fi
 		chown www-data: "$LOG_FILENAME"
 
-		if dpkg --compare-versions "$2" lt '17.02'; then
+		if [[ -z "${previous_version}" ]]; then
 			ln -sf  /etc/nginx/locations/https-available/$DAEMONNAME \
 				/etc/nginx/locations/https-enabled/$DAEMONNAME
 		fi
