@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
-# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
 
-from xivo_bus.resources.voicemail.event import CreateUserVoicemailMessageEvent
-from xivo_bus.resources.voicemail.event import UpdateUserVoicemailMessageEvent
-from xivo_bus.resources.voicemail.event import DeleteUserVoicemailMessageEvent
+from xivo_bus.resources.voicemail.event import (
+    CreateUserVoicemailMessageEvent,
+    UpdateUserVoicemailMessageEvent,
+    DeleteUserVoicemailMessageEvent,
+)
 
 from .resources import voicemail_message_schema
 
@@ -38,7 +40,7 @@ class VoicemailsBusEventHandler(object):
             logger.exception('fail to publish voicemail message to bus')
 
     def _get_voicemail(self, number, context):
-        response = self._confd_client.voicemails.list(number=number, context=context)
+        response = self._confd_client.voicemails.list(number=number, context=context, recurse=True)
         return response[u'items'][0]
 
     def _create_bus_msgs_from_diff(self, user_uuid, voicemail_id, diff):
