@@ -1,38 +1,38 @@
-sync:
-  image: n3llyb0y/wait
-  links:
-    - ctid-ng
-    - rabbitmq
-  environment:
-    PORTS: "5039 5672"
-    TIMEOUT: "${INTEGRATION_TEST_TIMEOUT}"
+version: '3'
+services:
+  sync:
+    image: waisbrot/wait
+    depends_on:
+      - ari
+      - ctid-ng
+      - rabbitmq
+    environment:
+      TARGETS: "ari:5039 rabbitmq:5672"
+      TIMEOUT: "${INTEGRATION_TEST_TIMEOUT}"
 
-ari:
-  image: ari-mock
-  ports:
-    - "5039"
-  volumes:
-    - "./ari:/usr/local/share/ari"
-    - "./ssl/ari:/usr/local/share/ari-ssl"
-  environment:
-    PYTHONPATH: "/usr/local/share/ari"
-  command: "gunicorn -b 0.0.0.0:5039 -k flask_sockets.worker mock_ari:app"
+  ari:
+    image: ari-mock
+    ports:
+      - "5039"
+    volumes:
+      - "./ari:/usr/local/share/ari"
+      - "./ssl/ari:/usr/local/share/ari-ssl"
+    environment:
+      PYTHONPATH: "/usr/local/share/ari"
+    command: "gunicorn -b 0.0.0.0:5039 -k flask_sockets.worker mock_ari:app"
 
-ctid-ng:
-  image: xivo-ctid-ng-test
-  volumes:
-    - "../../..:/usr/src/xivo-ctid-ng"
-    - "./etc/xivo-ctid-ng:/etc/xivo-ctid-ng"
-    - "./ssl-ctid-ng:/usr/share/xivo-certs"
-  ports:
-    - "9500"
-  environment:
-    XIVO_UUID: "08c56466-8f29-45c7-9856-92bf1ba89b92"
-  links:
-    - ari
-    - rabbitmq
+  ctid-ng:
+    image: xivo-ctid-ng-test
+    volumes:
+      - "../../..:/usr/src/xivo-ctid-ng"
+      - "./etc/xivo-ctid-ng:/etc/xivo-ctid-ng"
+      - "./ssl-ctid-ng:/usr/share/xivo-certs"
+    ports:
+      - "9500"
+    environment:
+      XIVO_UUID: "08c56466-8f29-45c7-9856-92bf1ba89b92"
 
-rabbitmq:
-  image: rabbitmq
-  ports:
-    - "5672"
+  rabbitmq:
+    image: rabbitmq
+    ports:
+      - "5672"
