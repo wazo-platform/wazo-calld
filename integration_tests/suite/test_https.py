@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 from hamcrest import assert_that
@@ -22,7 +22,7 @@ class TestHTTPSMissingCertificate(IntegrationTest):
         until.true(ctid_ng_is_stopped, tries=10, message='xivo-ctid-ng did not stop while missing SSL certificate')
 
         log = self.service_logs()
-        assert_that(log, contains_string("No such file or directory: '/usr/share/xivo-certs/server.crt'"))
+        assert_that(log, contains_string("No such file or directory: '/usr/local/share/ssl/ctid-ng/invalid.crt'"))
 
 
 class TestHTTPSMissingPrivateKey(IntegrationTest):
@@ -37,4 +37,4 @@ class TestHTTPSMissingPrivateKey(IntegrationTest):
         until.true(ctid_ng_is_stopped, tries=10, message='xivo-ctid-ng did not stop while missing SSL private key')
 
         log = self.service_logs()
-        assert_that(log, contains_string("No such file or directory: '/usr/share/xivo-certs/server.key'"))
+        assert_that(log, contains_string("No such file or directory: '/usr/local/share/ssl/ctid-ng/invalid.key'"))
