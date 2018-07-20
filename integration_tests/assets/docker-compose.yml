@@ -3,7 +3,7 @@ services:
   sync:
     image: waisbrot/wait
     environment:
-      - TIMEOUT=${INTEGRATION_TEST_TIMEOUT}
+      TIMEOUT: ${INTEGRATION_TEST_TIMEOUT}
 
   amid:
     image: p0bailey/docker-flask
@@ -22,7 +22,7 @@ services:
       - ./ari:/usr/local/share/ari
       - ./ssl/ari:/usr/local/share/ari-ssl
     environment:
-      - PYTHONPATH=/usr/local/share/ari
+      PYTHONPATH: /usr/local/share/ari
     command: gunicorn -b 0.0.0.0:5039 -k flask_sockets.worker mock_ari:app
 
   auth:
@@ -69,7 +69,7 @@ services:
     ports:
       - 9500
     environment:
-      - XIVO_UUID=08c56466-8f29-45c7-9856-92bf1ba89b92
+      XIVO_UUID: 08c56466-8f29-45c7-9856-92bf1ba89b92
 
   rabbitmq:
     image: rabbitmq
@@ -92,5 +92,5 @@ services:
     volumes:
       - ./xivo-websocketd:/usr/local/share/websocketd
     environment:
-      - PYTHONPATH=/usr/local/share/websocketd
+      PYTHONPATH: /usr/local/share/websocketd
     command: gunicorn -b 0.0.0.0:9502 -k flask_sockets.worker mock_websocketd:app

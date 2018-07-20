@@ -9,7 +9,7 @@ services:
       - postgres
       - rabbitmq
     environment:
-      - TARGETS=ari:5039,postgres:5432,rabbitmq:5672,mongooseim:8088,auth:9497,ctid-ng:9500,ctid-ng:9501
+      TARGETS: "ari:5039 postgres:5432 rabbitmq:5672 mongooseim:8088 auth:9497 ctid-ng:9500 ctid-ng:9501"
 
   ctid-ng:
     volumes:
@@ -31,7 +31,7 @@ services:
     ports:
       - 5432
     environment:
-      - POSTGRES_PASSWORD=mysecretpassword
-      - POSTGRES_DB=mongooseim
+      POSTGRES_PASSWORD: mysecretpassword
+      POSTGRES_DB: mongooseim
     volumes:
       - ./mongooseim/pg.sql:/docker-entrypoint-initdb.d/pg.sql
