@@ -7,6 +7,6 @@ docker-compose
 kombu
 nose
 pyhamcrest
-psycopg2
+psycopg2-binary
 requests
 stevedore  # from xivo-ctid-ng-client
