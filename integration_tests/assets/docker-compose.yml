@@ -2,19 +2,7 @@ version: '3'
 services:
   sync:
     image: waisbrot/wait
-    links:
-      - amid
-      - ari
-      - auth
-      - confd
-      - consul
-      - ctid
-      - ctid-ng
-      - rabbitmq
-      - remote_ctid_ng
-      - websocketd
     environment:
-      - TARGETS=ari:5039,rabbitmq:5672,consul:8500,confd:9486,amid:9491,ctid:9495,auth:9497,ctid-ng:9500,remote_ctid_ng:9501,websocketd:9502
       - TIMEOUT=${INTEGRATION_TEST_TIMEOUT}
 
   amid:
@@ -73,11 +61,11 @@ services:
   ctid-ng:
     image: xivo-ctid-ng-test
     volumes:
-      - ../../..:/usr/src/xivo-ctid-ng
-      - ./etc/xivo-ctid-ng:/etc/xivo-ctid-ng
+      - ../..:/usr/src/xivo-ctid-ng
       - ./ssl:/usr/local/share/ssl
-    links:
-      - ari
+      - ./etc/xivo-ctid-ng/key.yml:/etc/xivo-ctid-ng/key.yml
+      # - "${LOCAL_GIT_REPOS}/xivo-lib-python/xivo:/usr/local/lib/python2.7/site-packages/xivo"
+      # - "${LOCAL_GIT_REPOS}/xivo-bus/xivo_bus:/usr/local/lib/python2.7/site-packages/xivo_bus"
     ports:
       - 9500
     environment:
