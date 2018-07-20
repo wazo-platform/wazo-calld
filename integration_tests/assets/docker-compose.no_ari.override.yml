@@ -1,0 +1,14 @@
+version: '3'
+services:
+  sync:
+    depends_on:
+      - auth
+      - confd
+      - ctid-ng
+      - rabbitmq
+    environment:
+      TARGETS: "rabbitmq:5672 confd:9486 auth:9497"
+
+  ctid-ng:
+    volumes:
+      - ./etc/xivo-ctid-ng/conf.d/config.no_ari.yml:/etc/xivo-ctid-ng/conf.d/config.yml
