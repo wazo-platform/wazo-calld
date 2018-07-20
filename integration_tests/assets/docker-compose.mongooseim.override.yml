@@ -1,0 +1,37 @@
+version: '3'
+services:
+  sync:
+    depends_on:
+      - ari
+      - auth
+      - ctid-ng
+      - mongooseim
+      - postgres
+      - rabbitmq
+    environment:
+      - TARGETS=ari:5039,postgres:5432,rabbitmq:5672,mongooseim:8088,auth:9497,ctid-ng:9500,ctid-ng:9501
+
+  ctid-ng:
+    volumes:
+      - ./etc/xivo-ctid-ng/conf.d/config.mongooseim.yml:/etc/xivo-ctid-ng/conf.d/config.yml
+    ports:
+      - 9500
+      - 9501
+
+  mongooseim:
+    image: mongooseim/mongooseim:2.1.0
+    hostname: mongooseim-1
+    expose:
+      - 8088
+    volumes:
+      - ./etc/mongooseim:/member
+
+  postgres:
+    image: postgres:9.6
+    ports:
+      - 5432
+    environment:
+      - POSTGRES_PASSWORD=mysecretpassword
+      - POSTGRES_DB=mongooseim
+    volumes:
+      - ./mongooseim/pg.sql:/docker-entrypoint-initdb.d/pg.sql
