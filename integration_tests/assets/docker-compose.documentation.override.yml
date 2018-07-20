@@ -1,0 +1,18 @@
+version: '3'
+services:
+  sync:
+    depends_on:
+      - ari
+      - ctid-ng
+      - swagger-validator
+    environment:
+      TARGETS: "ari:5039 ctid-ng:9500 swagger-validator:8080"
+
+  ctid-ng:
+    volumes:
+      - ./etc/xivo-ctid-ng/conf.d/config.documentation.yml:/etc/xivo-ctid-ng/conf.d/config.yml
+
+  swagger-validator:
+    image: swaggerapi/swagger-validator
+    ports:
+      - "8080"
