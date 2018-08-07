@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import errno
@@ -49,9 +49,10 @@ class CoreARI(object):
         for _ in xrange(connection_tries):
             try:
                 return ari.connect(**ari_config)
-            except requests.ConnectionError:
-                logger.critical('ARI config: %s', ari_config)
-                raise ARIUnreachable(ari_config)
+            except requests.ConnectionError as e:
+                logger.info('No ARI server found, retrying in %s seconds...', connection_delay)
+                time.sleep(connection_delay)
+                continue
             except requests.HTTPError as e:
                 if asterisk_is_loading(e):
                     logger.info('ARI is not ready yet, retrying in %s seconds...', connection_delay)
@@ -59,6 +60,7 @@ class CoreARI(object):
                     continue
                 else:
                     raise
+        logger.critical('ARI config: %s', ari_config)
         raise ARIUnreachable(ari_config)
 
     def run(self):
