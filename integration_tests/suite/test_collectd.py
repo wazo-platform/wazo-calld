@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import os
-import unittest
 
 from hamcrest import assert_that
 from hamcrest import has_item
@@ -172,7 +171,7 @@ class TestCollectdCtidNgRestart(IntegrationTest):
 
         self.restart_service('ctid-ng')
         self.reset_clients()
-        until.true(self.ari.websockets, tries=5)  # wait for xivo-ctid-ng to come back up
+        until.true(self.ari.websockets, tries=10)  # wait for xivo-ctid-ng to come back up
         self.stasis.event_channel_destroyed(channel_id=call_id)
 
         def assert_ctid_ng_sent_end_call_stat():
