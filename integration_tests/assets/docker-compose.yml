@@ -64,6 +64,7 @@ services:
       - ../..:/usr/src/xivo-ctid-ng
       - ./ssl:/usr/local/share/ssl
       - ./etc/xivo-ctid-ng/key.yml:/etc/xivo-ctid-ng/key.yml
+      - ./etc/xivo-ctid-ng/conf.d/50-base.yml:/etc/xivo-ctid-ng/conf.d/50-base.yml
       # - "${LOCAL_GIT_REPOS}/xivo-lib-python/xivo:/usr/local/lib/python2.7/site-packages/xivo"
       # - "${LOCAL_GIT_REPOS}/xivo-bus/xivo_bus:/usr/local/lib/python2.7/site-packages/xivo_bus"
     ports:

@@ -7,7 +7,3 @@ services:
       - rabbitmq
     environment:
       TARGETS: "ari:5039 rabbitmq:5672 ctid-ng:9500"
-
-  ctid-ng:
-    volumes:
-      - ./etc/xivo-ctid-ng/conf.d/config.no_auth_server.yml:/etc/xivo-ctid-ng/conf.d/config.yml

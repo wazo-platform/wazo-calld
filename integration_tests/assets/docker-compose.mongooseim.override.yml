@@ -13,7 +13,7 @@ services:
 
   ctid-ng:
     volumes:
-      - ./etc/xivo-ctid-ng/conf.d/config.mongooseim.yml:/etc/xivo-ctid-ng/conf.d/config.yml
+      - ./etc/xivo-ctid-ng/conf.d/20-adapter-api.yml:/etc/xivo-ctid-ng/conf.d/20-adapter-api.yml
     ports:
       - 9500
       - 9501

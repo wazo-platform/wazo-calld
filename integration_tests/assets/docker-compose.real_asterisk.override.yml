@@ -33,4 +33,4 @@ services:
 
   ctid-ng:
     volumes:
-      - ./etc/xivo-ctid-ng/conf.d/config.real_asterisk.yml:/etc/xivo-ctid-ng/conf.d/config.yml
+      - ./etc/xivo-ctid-ng/conf.d/20-real-asterisk.yml:/etc/xivo-ctid-ng/conf.d/20-real-asterisk.yml

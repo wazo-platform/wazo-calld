@@ -11,4 +11,4 @@ services:
 
   ctid-ng:
     volumes:
-      - ./etc/xivo-ctid-ng/conf.d/config.no_ssl_certificate.yml:/etc/xivo-ctid-ng/conf.d/config.yml
+      - ./etc/xivo-ctid-ng/conf.d/20-invalid-ssl-certificate.yml:/etc/xivo-ctid-ng/conf.d/20-invalid-ssl-certificate.yml

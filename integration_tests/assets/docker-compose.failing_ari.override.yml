@@ -12,7 +12,3 @@ services:
 
   ari:
     command: "python /usr/local/share/ari/mock_ari_fail.py 5039"
-
-  ctid-ng:
-    volumes:
-      - ./etc/xivo-ctid-ng/conf.d/config.failing_ari.yml:/etc/xivo-ctid-ng/conf.d/config.yml

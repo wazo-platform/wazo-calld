@@ -10,4 +10,4 @@ services:
 
   ctid-ng:
     volumes:
-      - ./etc/xivo-ctid-ng/conf.d/config.no_ssl_private_key.yml:/etc/xivo-ctid-ng/conf.d/config.yml
+      - ./etc/xivo-ctid-ng/conf.d/20-invalid-ssl-key.yml:/etc/xivo-ctid-ng/conf.d/20-invalid-ssl-key.yml

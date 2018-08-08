@@ -11,4 +11,4 @@ services:
 
   ctid-ng:
     volumes:
-      - ./etc/xivo-ctid-ng/conf.d/config.quick_ari_reconnect.yml:/etc/xivo-ctid-ng/conf.d/config.yml
+      - ./etc/xivo-ctid-ng/conf.d/20-ari-quick-reconnect.yml:/etc/xivo-ctid-ng/conf.d/20-ari-quick-reconnect.yml
