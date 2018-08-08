@@ -67,6 +67,10 @@ _DEFAULT_CONFIG = {
     'collectd': {
         'exchange_name': 'collectd',
     },
+    'ctid': {
+        'host': 'localhost',
+        'port': 9495,
+    },
     'confd': {
         'host': 'localhost',
         'port': 9486,
