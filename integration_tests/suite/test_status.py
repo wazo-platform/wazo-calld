@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 from hamcrest import assert_that
@@ -8,8 +8,11 @@ from hamcrest import has_entries
 from xivo_test_helpers import until
 
 from .helpers.base import IntegrationTest
-from .helpers.wait_strategy import CtidNgUpWaitStrategy
-from .helpers.wait_strategy import CtidNgConnectionsOkWaitStrategy
+from .helpers.wait_strategy import (
+    CtidNgConnectionsOkWaitStrategy,
+    CtidNgEverythingOkWaitStrategy,
+    CtidNgUpWaitStrategy,
+)
 
 
 class TestStatusARIStops(IntegrationTest):
@@ -56,13 +59,18 @@ class TestStatusRabbitMQStops(IntegrationTest):
 class TestStatusAllOK(IntegrationTest):
 
     asset = 'real_asterisk'
-    wait_strategy = CtidNgUpWaitStrategy()
+    wait_strategy = CtidNgEverythingOkWaitStrategy()
 
-    def test_given_ari_and_rabbitmq_when_status_then_status_ok(self):
+    def test_given_auth_and_ari_and_rabbitmq_when_status_then_status_ok(self):
 
-        def all_connections_ok():
+        def all_ok():
             result = self.ctid_ng.status()
-            assert_that(result['connections'], has_entries({'ari': 'ok',
-                                                            'bus_consumer': 'ok'}))
+            assert_that(result, has_entries(
+                connections=has_entries(
+                    ari='ok',
+                    bus_consumer='ok',
+                ),
+                service_token='ok',
+            ))
 
-        until.assert_(all_connections_ok, tries=10)
+        until.assert_(all_ok, tries=10)

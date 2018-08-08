@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2016 Proformatique Inc.
+# Copyright 2016-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 from collections import defaultdict
@@ -27,3 +27,15 @@ class StatusAggregator(object):
 
 def _default_dict():
     return defaultdict(_default_dict)
+
+
+class TokenStatus(object):
+
+    def __init__(self):
+        self.has_token = False
+
+    def token_change_callback(self, token):
+        self.has_token = True
+
+    def provide_status(self, status):
+        status['service_token'] = Status.ok if self.has_token else Status.fail

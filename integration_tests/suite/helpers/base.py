@@ -30,7 +30,7 @@ from .constants import DB_URI
 from .ctid_ng import CtidNgClient
 from .stasis import StasisClient
 from .websocketd import WebsocketdClient
-from .wait_strategy import CtidNgConnectionsOkWaitStrategy
+from .wait_strategy import CtidNgEverythingOkWaitStrategy
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +52,7 @@ class IntegrationTest(AssetLaunchingTestCase):
 
     assets_root = ASSET_ROOT
     service = 'ctid-ng'
-    wait_strategy = CtidNgConnectionsOkWaitStrategy()
+    wait_strategy = CtidNgEverythingOkWaitStrategy()
 
     @classmethod
     def _docker_compose_options(cls):
