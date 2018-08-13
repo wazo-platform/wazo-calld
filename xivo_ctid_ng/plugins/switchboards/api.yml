@@ -72,10 +72,8 @@ paths:
         - $ref: '#/parameters/SwitchboardUUID'
         - $ref: '#/parameters/CallID'
       responses:
-        '200':
+        '204':
           description: Call was held correctly
-          schema:
-            $ref: '#/definitions/CallID'
         '400':
           $ref: '#/responses/InvalidRequest'
         '404':
@@ -144,6 +142,12 @@ definitions:
         type: string
       caller_id_number:
         type: string
+  CallID:
+    type: object
+    properties:
+      call_id:
+        type: string
+
 responses:
   NoSuchSwitchboard:
     description: The specified switchboard does not exist
