@@ -1,0 +1,2 @@
+rest_api:
+  certificate: /usr/local/share/ssl/ctid-ng/invalid.crt

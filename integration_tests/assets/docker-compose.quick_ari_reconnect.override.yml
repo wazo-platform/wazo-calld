@@ -1,0 +1,14 @@
+version: '3'
+services:
+  sync:
+    depends_on:
+      - ari
+      - auth
+      - ctid-ng
+      - rabbitmq
+    environment:
+      TARGETS: "ari:5039 rabbitmq:5672 auth:9497 ctid-ng:9500"
+
+  ctid-ng:
+    volumes:
+      - ./etc/xivo-ctid-ng/conf.d/20-ari-quick-reconnect.yml:/etc/xivo-ctid-ng/conf.d/20-ari-quick-reconnect.yml

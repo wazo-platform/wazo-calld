@@ -18,7 +18,7 @@ from .bus import CoreBusPublisher
 from .collectd import CoreCollectd
 from .rest_api import api, adapter_api, CoreRestApi
 from .service_discovery import self_check
-from .status import StatusAggregator
+from .status import StatusAggregator, TokenStatus
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +37,7 @@ class Controller(object):
         self.rest_api = CoreRestApi(config)
         self.status_aggregator = StatusAggregator()
         self.token_renewer = TokenRenewer(auth_client)
+        self.token_status = TokenStatus()
         self._service_registration_params = ['xivo-ctid-ng',
                                              xivo_uuid,
                                              config['consul'],
@@ -62,8 +63,10 @@ class Controller(object):
 
     def run(self):
         logger.info('xivo-ctid-ng starting...')
+        self.token_renewer.subscribe_to_token_change(self.token_status.token_change_callback)
         self.status_aggregator.add_provider(self.ari.provide_status)
         self.status_aggregator.add_provider(self.bus_consumer.provide_status)
+        self.status_aggregator.add_provider(self.token_status.provide_status)
         bus_producer_thread = Thread(target=self.bus_publisher.run, name='bus_producer_thread')
         bus_producer_thread.start()
         collectd_thread = Thread(target=self.collectd.run, name='collectd_thread')

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import ari
@@ -30,7 +30,7 @@ from .constants import DB_URI
 from .ctid_ng import CtidNgClient
 from .stasis import StasisClient
 from .websocketd import WebsocketdClient
-from .wait_strategy import CtidNgConnectionsOkWaitStrategy
+from .wait_strategy import CtidNgEverythingOkWaitStrategy
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +52,15 @@ class IntegrationTest(AssetLaunchingTestCase):
 
     assets_root = ASSET_ROOT
     service = 'ctid-ng'
-    wait_strategy = CtidNgConnectionsOkWaitStrategy()
+    wait_strategy = CtidNgEverythingOkWaitStrategy()
+
+    @classmethod
+    def _docker_compose_options(cls):
+        return [
+            '--file', os.path.join(cls.assets_root, 'docker-compose.yml'),
+            '--file', os.path.join(cls.assets_root, 'docker-compose.{}.override.yml'.format(cls.asset)),
+            '--project-name', cls.service,
+        ]
 
     @classmethod
     def setUpClass(cls):

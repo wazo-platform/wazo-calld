@@ -1,0 +1,14 @@
+version: '3'
+services:
+  sync:
+    depends_on:
+      - auth
+      - ari
+      - confd
+      - ctid-ng
+      - rabbitmq
+    environment:
+      TARGETS: "ari:5039 rabbitmq:5672 confd:9486 auth:9497 ctid-ng:9500"
+
+  ari:
+    command: "python /usr/local/share/ari/mock_ari_fail.py 5039"

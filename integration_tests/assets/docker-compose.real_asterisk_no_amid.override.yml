@@ -1,0 +1,24 @@
+version: '3'
+services:
+  sync:
+    depends_on:
+      - auth
+      - ari
+      - confd
+      - ctid-ng
+      - rabbitmq
+    environment:
+      TARGETS: "ari:5039 ari:5040 rabbitmq:5672 confd:9486 auth:9497 ctid-ng:9500"
+
+  ari:
+    image: ari-real
+    ports:
+      - "5039"
+    volumes:
+      - "./etc/asterisk:/etc/asterisk"
+      - "./ssl:/usr/local/share/ssl"
+    command: "asterisk -fT"
+
+  ctid-ng:
+    volumes:
+      - ./etc/xivo-ctid-ng/conf.d/20-real-asterisk.yml:/etc/xivo-ctid-ng/conf.d/20-real-asterisk.yml

@@ -1,0 +1,10 @@
+version: '3'
+services:
+  sync:
+    depends_on:
+      - auth
+      - confd
+      - ctid-ng
+      - rabbitmq
+    environment:
+      TARGETS: "rabbitmq:5672 confd:9486 auth:9497"

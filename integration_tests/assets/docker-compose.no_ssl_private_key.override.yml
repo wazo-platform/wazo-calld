@@ -1,0 +1,13 @@
+version: '3'
+services:
+  sync:
+    depends_on:
+      - ari
+      - ctid-ng
+      - rabbitmq
+    environment:
+      TARGETS: "ari:5039 rabbitmq:5672"
+
+  ctid-ng:
+    volumes:
+      - ./etc/xivo-ctid-ng/conf.d/20-invalid-ssl-key.yml:/etc/xivo-ctid-ng/conf.d/20-invalid-ssl-key.yml
