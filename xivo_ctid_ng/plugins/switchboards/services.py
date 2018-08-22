@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2017 The Wazo Authors  (see AUTHORS file)
+# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
@@ -7,14 +7,18 @@ import logging
 from ari.exceptions import ARINotFound
 
 from xivo.caller_id import assemble_caller_id
-from xivo_ctid_ng.ari_ import APPLICATION_NAME
+from xivo_ctid_ng.ari_ import DEFAULT_APPLICATION_NAME
 from xivo_ctid_ng.helpers.confd import User
 
-from .call import HeldCall
-from .call import QueuedCall
+from .call import (
+    HeldCall,
+    QueuedCall,
+)
 from .confd import Switchboard
-from .exceptions import NoSuchCall
-from .exceptions import NoSuchSwitchboard
+from .exceptions import (
+    NoSuchCall,
+    NoSuchSwitchboard,
+)
 
 BRIDGE_QUEUE_ID = 'switchboard-{uuid}-queue'
 BRIDGE_HOLD_ID = 'switchboard-{uuid}-hold'
@@ -79,13 +83,18 @@ class SwitchboardsService(object):
             raise NoSuchCall(queued_call_id)
 
         endpoint = User(user_uuid, self._confd).main_line().interface()
-        caller_id = assemble_caller_id(queued_channel.json['caller']['name'], queued_channel.json['caller']['number']).encode('utf-8')
+        caller_id = assemble_caller_id(
+            queued_channel.json['caller']['name'],
+            queued_channel.json['caller']['number']
+        ).encode('utf-8')
 
-        channel = self._ari.channels.originate(endpoint=endpoint,
-                                               app=APPLICATION_NAME,
-                                               appArgs=['switchboard', 'switchboard_answer', switchboard_uuid, queued_call_id],
-                                               callerId=caller_id,
-                                               originator=queued_call_id)
+        channel = self._ari.channels.originate(
+            endpoint=endpoint,
+            app=DEFAULT_APPLICATION_NAME,
+            appArgs=['switchboard', 'switchboard_answer', switchboard_uuid, queued_call_id],
+            callerId=caller_id,
+            originator=queued_call_id,
+        )
 
         return channel.id
 
@@ -98,7 +107,8 @@ class SwitchboardsService(object):
         except ARINotFound:
             raise NoSuchCall(call_id)
 
-        previous_bridges = [bridge for bridge in self._ari.bridges.list() if channel_to_hold.id in bridge.json['channels']]
+        previous_bridges = [bridge for bridge in self._ari.bridges.list()
+                            if channel_to_hold.id in bridge.json['channels']]
 
         hold_bridge_id = BRIDGE_HOLD_ID.format(uuid=switchboard_uuid)
         try:
@@ -162,11 +172,16 @@ class SwitchboardsService(object):
             raise NoSuchCall(held_call_id)
 
         endpoint = User(user_uuid, self._confd).main_line().interface()
-        caller_id = assemble_caller_id(held_channel.json['caller']['name'], held_channel.json['caller']['number']).encode('utf-8')
+        caller_id = assemble_caller_id(
+            held_channel.json['caller']['name'],
+            held_channel.json['caller']['number'],
+        ).encode('utf-8')
 
-        channel = self._ari.channels.originate(endpoint=endpoint,
-                                               app=APPLICATION_NAME,
-                                               appArgs=['switchboard', 'switchboard_unhold', switchboard_uuid, held_call_id],
-                                               callerId=caller_id)
+        channel = self._ari.channels.originate(
+            endpoint=endpoint,
+            app=DEFAULT_APPLICATION_NAME,
+            appArgs=['switchboard', 'switchboard_unhold', switchboard_uuid, held_call_id],
+            callerId=caller_id,
+        )
 
         return channel.id

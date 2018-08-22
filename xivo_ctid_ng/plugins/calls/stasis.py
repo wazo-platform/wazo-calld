@@ -1,20 +1,26 @@
 # -*- coding: utf-8 -*-
-# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
 
-from xivo_ctid_ng.ari_ import APPLICATION_NAME
+from xivo_ctid_ng.ari_ import DEFAULT_APPLICATION_NAME
 
-from .event import CallEvent
-from .event import StartCallEvent
-from .event import ConnectCallEvent
+from .event import (
+    CallEvent,
+    ConnectCallEvent,
+    StartCallEvent,
+)
 from .exceptions import InvalidConnectCallEvent
 from .stat_sender import StatSender
-from .state import state_factory
-from .state import CallStateOnHook
-from .state_persistor import ChannelCacheEntry
-from .state_persistor import StatePersistor
+from .state import (
+    CallStateOnHook,
+    state_factory,
+)
+from .state_persistor import (
+    ChannelCacheEntry,
+    StatePersistor,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -36,15 +42,15 @@ class CallsStasis(object):
     def subscribe(self):
         self.ari.on_channel_event('StasisStart', self.stasis_start)
         self.ari.on_channel_event('ChannelDestroyed', self.channel_destroyed)
-        self.ari.on_application_registered(APPLICATION_NAME, self.subscribe_to_all_channel_events)
-        self.ari.on_application_deregistered(APPLICATION_NAME, self.unsubscribe_from_all_channel_events)
+        self.ari.on_application_registered(DEFAULT_APPLICATION_NAME, self.subscribe_to_all_channel_events)
+        self.ari.on_application_deregistered(DEFAULT_APPLICATION_NAME, self.unsubscribe_from_all_channel_events)
 
     def subscribe_to_all_channel_events(self):
-        self.ari.applications.subscribe(applicationName=APPLICATION_NAME, eventSource='channel:')
+        self.ari.applications.subscribe(applicationName=DEFAULT_APPLICATION_NAME, eventSource='channel:')
 
     def unsubscribe_from_all_channel_events(self):
         self.ari.applications.unsubscribe(
-            applicationName=APPLICATION_NAME,
+            applicationName=DEFAULT_APPLICATION_NAME,
             eventSource='channel:__AST_CHANNEL_ALL_TOPIC',
         )
 

@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
-# Copyright 2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 from xivo_amid_client import Client as AmidClient
 from xivo_auth_client import Client as AuthClient
 from xivo_confd_client import Client as ConfdClient
+
+from xivo_ctid_ng.ari_ import DEFAULT_APPLICATION_NAME
 
 from .notifier import RelocatesNotifier
 from .resources import (
@@ -41,6 +43,7 @@ class Plugin(object):
         notifier = RelocatesNotifier(bus_publisher)
         relocates_service = RelocatesService(amid_client, ari.client, confd_client, notifier, relocates, state_factory)
 
+        ari.register_application(DEFAULT_APPLICATION_NAME)
         relocates_stasis = RelocatesStasis(ari.client, relocates)
         relocates_stasis.subscribe()
 

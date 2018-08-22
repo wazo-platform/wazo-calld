@@ -6,13 +6,17 @@ from xivo_amid_client import Client as AmidClient
 from xivo_auth_client import Client as AuthClient
 from xivo_confd_client import Client as ConfdClient
 
+from xivo_ctid_ng.ari_ import DEFAULT_APPLICATION_NAME
+
 from .bus_consume import CallsBusEventHandler
 from .dial_echo import DialEchoManager
-from .resources import CallResource
-from .resources import CallsResource
-from .resources import ConnectCallToUserResource
-from .resources import MyCallsResource
-from .resources import MyCallResource
+from .resources import (
+    CallResource,
+    CallsResource,
+    ConnectCallToUserResource,
+    MyCallResource,
+    MyCallsResource,
+)
 from .services import CallsService
 from .stasis import CallsStasis
 
@@ -40,6 +44,7 @@ class Plugin(object):
 
         calls_service = CallsService(amid_client, config['ari']['connection'], ari.client, confd_client, dial_echo_manager)
 
+        ari.register_application(DEFAULT_APPLICATION_NAME)
         calls_stasis = CallsStasis(ari.client, collectd, bus_publisher, calls_service, config['uuid'], amid_client)
         calls_stasis.subscribe()
 

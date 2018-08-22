@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import json
@@ -10,15 +10,19 @@ from xivo.pubsub import Pubsub
 from ari.exceptions import ARINotFound
 from ari.exceptions import ARINotInStasis
 
-from xivo_ctid_ng.ari_ import APPLICATION_NAME
+from xivo_ctid_ng.ari_ import DEFAULT_APPLICATION_NAME
 from xivo_ctid_ng.exceptions import XiVOAmidError
 from xivo_ctid_ng.helpers.ari_ import Channel
 
 from . import ari_helpers
-from .event import TransferRecipientAnsweredEvent
-from .event import CreateTransferEvent
-from .exceptions import InvalidEvent
-from .exceptions import TransferException
+from .event import (
+    CreateTransferEvent,
+    TransferRecipientAnsweredEvent
+)
+from .exceptions import (
+    InvalidEvent,
+    TransferException,
+)
 from .lock import HangupLock, InvalidLock
 from .transfer import TransferRole
 
@@ -40,7 +44,7 @@ class TransfersStasis(object):
         self.state_persistor = state_persistor
 
     def subscribe(self):
-        self.ari.on_application_registered(APPLICATION_NAME, self.process_lost_hangups)
+        self.ari.on_application_registered(DEFAULT_APPLICATION_NAME, self.process_lost_hangups)
         self.ari.on_channel_event('ChannelEnteredBridge', self.release_hangup_lock)
         self.ari.on_channel_event('ChannelDestroyed', self.bypass_hangup_lock_from_source)
         self.ari.on_bridge_event('BridgeDestroyed', self.clean_bridge_variables)
