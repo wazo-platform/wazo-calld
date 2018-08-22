@@ -41,7 +41,8 @@ class CoreARI(object):
         self._apps = []
         self.config = config
         self._is_running = False
-        self._should_reconnect = True
+        self._should_delay_reconnect = True
+        self._should_stop = False
         self.client = self._new_ari_client(config['connection'],
                                            config['startup_connection_tries'],
                                            config['startup_connection_delay'])
@@ -61,13 +62,22 @@ class CoreARI(object):
                     continue
                 else:
                     raise
-        logger.critical('ARI config: %s', ari_config)
         raise ARIUnreachable(ari_config)
 
+    def reload(self):
+        self._should_delay_reconnect = False
+        self._trigger_disconnect()
+
     def run(self):
-        self._connect()
-        while self._should_reconnect:
-            self._reconnect()
+        if not self._should_stop:
+            self._connect()
+        while not self._should_stop:
+            if self._should_delay_reconnect:
+                delay = self.config['reconnection_delay']
+                logger.warning('Reconnecting to ARI in %s seconds', delay)
+                time.sleep(delay)
+            self._should_delay_reconnect = True
+            self._connect()
 
     def _connect(self):
         logger.debug('ARI client listening...')
@@ -108,13 +118,6 @@ class CoreARI(object):
     def _connection_error(self, error):
         logger.warning('ARI connection error: %s...', error)
 
-    def _reconnect(self):
-        delay = self.config['reconnection_delay']
-        logger.warning('Reconnecting to ARI in %s seconds', delay)
-        time.sleep(delay)
-
-        self._connect()
-
     def _sync(self):
         '''self.sync() should be called before calling self.stop(), in case the
         ari client does not have the websocket yet'''
@@ -123,9 +126,12 @@ class CoreARI(object):
             time.sleep(0.1)
 
     def stop(self):
+        self._should_stop = True
+        self._trigger_disconnect()
+
+    def _trigger_disconnect(self):
+        self._sync()
         try:
-            self._should_reconnect = False
-            self._sync()
             self.client.close()
         except RuntimeError:
             pass  # bug in ari-py when calling client.close()
