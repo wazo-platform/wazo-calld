@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 from xivo_amid_client import Client as AmidClient
@@ -7,12 +7,14 @@ from xivo_auth_client import Client as AuthClient
 from xivo_confd_client import Client as ConfdClient
 
 from .notifier import TransferNotifier
-from .resources import TransferResource
-from .resources import TransferCompleteResource
-from .resources import TransfersResource
-from .resources import UserTransfersResource
-from .resources import UserTransferResource
-from .resources import UserTransferCompleteResource
+from .resources import (
+    TransferCompleteResource,
+    TransferResource,
+    TransfersResource,
+    UserTransferCompleteResource,
+    UserTransferResource,
+    UserTransfersResource,
+)
 from .services import TransfersService
 from .stasis import TransfersStasis
 from .state import state_factory

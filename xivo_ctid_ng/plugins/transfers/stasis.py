@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import json
@@ -15,10 +15,14 @@ from xivo_ctid_ng.exceptions import XiVOAmidError
 from xivo_ctid_ng.helpers.ari_ import Channel
 
 from . import ari_helpers
-from .event import TransferRecipientAnsweredEvent
-from .event import CreateTransferEvent
-from .exceptions import InvalidEvent
-from .exceptions import TransferException
+from .event import (
+    CreateTransferEvent,
+    TransferRecipientAnsweredEvent
+)
+from .exceptions import (
+    InvalidEvent,
+    TransferException,
+)
 from .lock import HangupLock, InvalidLock
 from .transfer import TransferRole
 

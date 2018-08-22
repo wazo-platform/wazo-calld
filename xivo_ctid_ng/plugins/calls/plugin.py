@@ -8,11 +8,13 @@ from xivo_confd_client import Client as ConfdClient
 
 from .bus_consume import CallsBusEventHandler
 from .dial_echo import DialEchoManager
-from .resources import CallResource
-from .resources import CallsResource
-from .resources import ConnectCallToUserResource
-from .resources import MyCallsResource
-from .resources import MyCallResource
+from .resources import (
+    CallResource,
+    CallsResource,
+    ConnectCallToUserResource,
+    MyCallResource,
+    MyCallsResource,
+)
 from .services import CallsService
 from .stasis import CallsStasis
 
