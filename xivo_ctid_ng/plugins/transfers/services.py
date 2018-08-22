@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
-# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
 from ari.exceptions import ARINotFound
 from xivo.caller_id import assemble_caller_id
 
-from xivo_ctid_ng.ari_ import APPLICATION_NAME
+from xivo_ctid_ng.ari_ import DEFAULT_APPLICATION_NAME
 from xivo_ctid_ng.exceptions import UserPermissionDenied
 from xivo_ctid_ng.exceptions import InvalidExtension
 from xivo_ctid_ng.helpers.ari_ import Channel
@@ -111,7 +111,7 @@ class TransfersService(object):
         timeout = -1 if timeout is None else timeout
 
         new_channel = self.ari.channels.originate(endpoint=recipient_endpoint,
-                                                  app=APPLICATION_NAME,
+                                                  app=DEFAULT_APPLICATION_NAME,
                                                   appArgs=app_args,
                                                   callerId=caller_id,
                                                   variables={'variables': originate_variables},

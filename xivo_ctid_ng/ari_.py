@@ -20,7 +20,7 @@ from .exceptions import ARIUnreachable
 
 logger = logging.getLogger(__name__)
 
-APPLICATION_NAME = 'callcontrol'
+DEFAULT_APPLICATION_NAME = 'callcontrol'
 
 
 def not_found(error):
@@ -38,6 +38,7 @@ def asterisk_is_loading(error):
 class CoreARI(object):
 
     def __init__(self, config):
+        self._apps = []
         self.config = config
         self._is_running = False
         self._should_reconnect = True
@@ -72,7 +73,7 @@ class CoreARI(object):
         logger.debug('ARI client listening...')
         try:
             with self._running():
-                self.client.run(apps=[APPLICATION_NAME])
+                self.client.run(apps=self._apps)
         except socket.error as e:
             if e.errno == errno.EPIPE:
                 # bug in ari-py when calling client.close(): ignore it and stop
@@ -93,6 +94,10 @@ class CoreARI(object):
             yield
         finally:
             self._is_running = False
+
+    def register_application(self, app):
+        if app not in self._apps:
+            self._apps.append(app)
 
     def is_running(self):
         return self._is_running

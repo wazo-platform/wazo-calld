@@ -4,7 +4,7 @@
 
 import logging
 
-from xivo_ctid_ng.ari_ import APPLICATION_NAME
+from xivo_ctid_ng.ari_ import DEFAULT_APPLICATION_NAME
 
 from .event import (
     CallEvent,
@@ -42,15 +42,15 @@ class CallsStasis(object):
     def subscribe(self):
         self.ari.on_channel_event('StasisStart', self.stasis_start)
         self.ari.on_channel_event('ChannelDestroyed', self.channel_destroyed)
-        self.ari.on_application_registered(APPLICATION_NAME, self.subscribe_to_all_channel_events)
-        self.ari.on_application_deregistered(APPLICATION_NAME, self.unsubscribe_from_all_channel_events)
+        self.ari.on_application_registered(DEFAULT_APPLICATION_NAME, self.subscribe_to_all_channel_events)
+        self.ari.on_application_deregistered(DEFAULT_APPLICATION_NAME, self.unsubscribe_from_all_channel_events)
 
     def subscribe_to_all_channel_events(self):
-        self.ari.applications.subscribe(applicationName=APPLICATION_NAME, eventSource='channel:')
+        self.ari.applications.subscribe(applicationName=DEFAULT_APPLICATION_NAME, eventSource='channel:')
 
     def unsubscribe_from_all_channel_events(self):
         self.ari.applications.unsubscribe(
-            applicationName=APPLICATION_NAME,
+            applicationName=DEFAULT_APPLICATION_NAME,
             eventSource='channel:__AST_CHANNEL_ALL_TOPIC',
         )
 

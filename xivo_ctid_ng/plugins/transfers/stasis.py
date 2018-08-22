@@ -10,7 +10,7 @@ from xivo.pubsub import Pubsub
 from ari.exceptions import ARINotFound
 from ari.exceptions import ARINotInStasis
 
-from xivo_ctid_ng.ari_ import APPLICATION_NAME
+from xivo_ctid_ng.ari_ import DEFAULT_APPLICATION_NAME
 from xivo_ctid_ng.exceptions import XiVOAmidError
 from xivo_ctid_ng.helpers.ari_ import Channel
 
@@ -44,7 +44,7 @@ class TransfersStasis(object):
         self.state_persistor = state_persistor
 
     def subscribe(self):
-        self.ari.on_application_registered(APPLICATION_NAME, self.process_lost_hangups)
+        self.ari.on_application_registered(DEFAULT_APPLICATION_NAME, self.process_lost_hangups)
         self.ari.on_channel_event('ChannelEnteredBridge', self.release_hangup_lock)
         self.ari.on_channel_event('ChannelDestroyed', self.bypass_hangup_lock_from_source)
         self.ari.on_bridge_event('BridgeDestroyed', self.clean_bridge_variables)

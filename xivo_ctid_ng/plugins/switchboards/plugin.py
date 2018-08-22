@@ -5,6 +5,8 @@
 from xivo_auth_client import Client as AuthClient
 from xivo_confd_client import Client as ConfdClient
 
+from xivo_ctid_ng.ari_ import DEFAULT_APPLICATION_NAME
+
 from .notifier import SwitchboardsNotifier
 from .resources import (
     SwitchboardCallHeldAnswerResource,
@@ -35,6 +37,7 @@ class Plugin(object):
         switchboards_notifier = SwitchboardsNotifier(bus_publisher)
         switchboards_service = SwitchboardsService(ari.client, confd_client, switchboards_notifier)
 
+        ari.register_application(DEFAULT_APPLICATION_NAME)
         switchboards_stasis = SwitchboardsStasis(ari.client, confd_client, switchboards_notifier, switchboards_service)
         switchboards_stasis.subscribe()
 

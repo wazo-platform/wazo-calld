@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-# Copyright 2017 The Wazo Authors  (see AUTHORS file)
+# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
 
 from ari.exceptions import ARINotFound
-from xivo_ctid_ng.ari_ import APPLICATION_NAME
+from xivo_ctid_ng.ari_ import DEFAULT_APPLICATION_NAME
 
 from .exceptions import NoSuchSwitchboard
 
@@ -21,8 +21,8 @@ class SwitchboardsStasis(object):
         self._service = switchboard_service
 
     def subscribe(self):
-        self._ari.on_application_registered(APPLICATION_NAME, self.notify_all_switchboard_queued)
-        self._ari.on_application_registered(APPLICATION_NAME, self.notify_all_switchboard_held)
+        self._ari.on_application_registered(DEFAULT_APPLICATION_NAME, self.notify_all_switchboard_queued)
+        self._ari.on_application_registered(DEFAULT_APPLICATION_NAME, self.notify_all_switchboard_held)
         self._ari.on_channel_event('StasisStart', self.stasis_start)
         self._ari.on_channel_event('ChannelLeftBridge', self.unqueue)
         self._ari.on_channel_event('ChannelLeftBridge', self.unhold)

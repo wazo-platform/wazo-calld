@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
@@ -8,7 +8,7 @@ from ari.exceptions import (
     ARIException,
     ARINotFound,
 )
-from xivo_ctid_ng.ari_ import APPLICATION_NAME
+from xivo_ctid_ng.ari_ import DEFAULT_APPLICATION_NAME
 from xivo_ctid_ng.exceptions import XiVOAmidError
 from xivo_ctid_ng.helpers import ami
 from xivo_ctid_ng.helpers.ari_ import Channel
@@ -87,7 +87,7 @@ class RelocateStateReady(RelocateState):
     def initiate(self, relocate, destination):
         new_channel = self._ari.channels.originate(
             endpoint=destination.ari_endpoint(),
-            app=APPLICATION_NAME,
+            app=DEFAULT_APPLICATION_NAME,
             appArgs=['relocate', relocate.uuid, 'recipient'],
             originator=relocate.relocated_channel,
             variables={'variables': relocate.recipient_variables},

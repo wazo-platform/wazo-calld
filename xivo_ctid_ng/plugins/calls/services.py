@@ -4,7 +4,7 @@
 
 import logging
 
-from xivo_ctid_ng.ari_ import APPLICATION_NAME
+from xivo_ctid_ng.ari_ import DEFAULT_APPLICATION_NAME
 from xivo_ctid_ng.exceptions import InvalidExtension
 from xivo_ctid_ng.exceptions import UserPermissionDenied
 from xivo_ctid_ng.helpers import ami
@@ -200,7 +200,7 @@ class CallsService(object):
             raise CallConnectError(call_id)
 
         new_channel = self._ari.channels.originate(endpoint=endpoint,
-                                                   app=APPLICATION_NAME,
+                                                   app=DEFAULT_APPLICATION_NAME,
                                                    appArgs=[app_instance, 'dialed_from', channel_id],
                                                    originator=call_id)
 

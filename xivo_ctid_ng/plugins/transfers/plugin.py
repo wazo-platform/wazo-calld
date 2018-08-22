@@ -6,6 +6,8 @@ from xivo_amid_client import Client as AmidClient
 from xivo_auth_client import Client as AuthClient
 from xivo_confd_client import Client as ConfdClient
 
+from xivo_ctid_ng.ari_ import DEFAULT_APPLICATION_NAME
+
 from .notifier import TransferNotifier
 from .resources import (
     TransferCompleteResource,
@@ -43,6 +45,7 @@ class Plugin(object):
 
         transfers_service = TransfersService(amid_client, ari.client, confd_client, state_factory, state_persistor, transfer_lock)
 
+        ari.register_application(DEFAULT_APPLICATION_NAME)
         transfers_stasis = TransfersStasis(amid_client, ari.client, transfers_service, state_factory, state_persistor, config['uuid'])
         transfers_stasis.subscribe()
 
