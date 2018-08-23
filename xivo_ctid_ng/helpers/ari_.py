@@ -1,13 +1,15 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import json
 
 from ari.exceptions import ARINotFound, ARINotInStasis
 
-from .exceptions import NotEnoughChannels
-from .exceptions import TooManyChannels
+from .exceptions import (
+    NotEnoughChannels,
+    TooManyChannels,
+)
 
 
 class GlobalVariableAdapter(object):
@@ -159,3 +161,10 @@ class Channel(object):
             return result
         except ARINotFound:
             return None
+
+    def on_hold(self):
+        try:
+            on_hold = self._ari.channels.getChannelVar(channelId=self.id, variable='XIVO_ON_HOLD')['value']
+            return on_hold == '1'
+        except ARINotFound:
+            return False

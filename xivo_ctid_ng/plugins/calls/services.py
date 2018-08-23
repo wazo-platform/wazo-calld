@@ -222,7 +222,7 @@ class CallsService(object):
         call.peer_caller_id_name = channel.json['connected']['name']
         call.peer_caller_id_number = channel.json['connected']['number']
         call.user_uuid = channel_helper.user()
-        call.on_hold = self._get_hold_from_channel_id(ari, channel.id) == '1'
+        call.on_hold = channel_helper.on_hold()
         call.bridges = [bridge.id for bridge in ari.bridges.list() if channel.id in bridge.json['channels']]
         call.talking_to = {connected_channel.id: connected_channel.user()
                            for connected_channel in channel_helper.connected_channels()}
@@ -245,9 +245,3 @@ class CallsService(object):
         call.talking_to = {}
 
         return call
-
-    def _get_hold_from_channel_id(self, ari, channel_id):
-        try:
-            return ari.channels.getChannelVar(channelId=channel_id, variable='XIVO_ON_HOLD')['value']
-        except ARINotFound:
-            return None
