@@ -8,6 +8,8 @@ from requests import RequestException
 from xivo_ctid_ng.exceptions import XiVOConfdUnreachable
 from xivo_ctid_ng.helpers.confd import not_found
 
+from .exceptions import NoSuchApplication
+
 
 class Application(object):
 
@@ -15,14 +17,17 @@ class Application(object):
         self.uuid = uuid
         self._confd = confd_client
 
-    def exists(self):
+    def _get(self):
         try:
-            self._confd.applications.get(self.uuid)
+            return self._confd.applications.get(self.uuid)
         except HTTPError as e:
             if not_found(e):
-                return False
+                raise NoSuchApplication(self.uuid)
             raise
         except RequestException as e:
             raise XiVOConfdUnreachable(self._confd, e)
-        else:
-            return True
+
+    def get(self):
+        body = self._get()
+        node_uuid = self.uuid if body['destination'] == 'node' else None
+        return {'destination_node_uuid': node_uuid}
