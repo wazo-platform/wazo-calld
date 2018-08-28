@@ -1,0 +1,33 @@
+paths:
+  /applications/{application_uuid}:
+    get:
+      summary: Show an application
+      description: '**Required ACL:** `ctid-ng.applications.{application_uuid}.read`'
+      parameters:
+      - $ref: '#/parameters/ApplicationUUID'
+      tags:
+      - applications
+      responses:
+        '200':
+          description: Application
+          schema:
+            $ref: '#/definitions/Application'
+        '404':
+          description: No such application
+          schema:
+            $ref: '#/definitions/Error'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+definitions:
+  Application:
+    type: object
+    properties:
+      destination_node_uuid:
+        type: string
+parameters:
+  ApplicationUUID:
+    name: application_uuid
+    in: path
+    description: UUID of the application
+    required: true
+    type: string

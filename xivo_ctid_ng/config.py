@@ -104,6 +104,7 @@ _DEFAULT_CONFIG = {
     },
     'enabled_plugins': {
         'api': True,
+        'applications': True,
         'calls': True,
         'chats': True,
         'mongooseim': True,
