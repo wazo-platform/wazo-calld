@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
-# Copyright (C) 2016 Proformatique
+# Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import json
@@ -14,6 +13,7 @@ from flask import request
 logging.basicConfig(level=logging.DEBUG)
 
 _EMPTY_RESPONSES = {
+    'applications': {},
     'lines': {},
     'switchboards': {},
     'user_lines': {},
@@ -104,6 +104,13 @@ def lines_of_user(user_uuid):
     return jsonify({
         'items': _responses['user_lines'].get(user_uuid, [])
     })
+
+
+@app.route('/1.1/applications/<application_uuid>')
+def application(application_uuid):
+    if application_uuid not in _responses['applications']:
+        return '', 404
+    return jsonify(_responses['applications'][application_uuid])
 
 
 @app.route('/1.1/switchboards')

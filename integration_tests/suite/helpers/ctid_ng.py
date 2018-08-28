@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import json
@@ -30,6 +30,11 @@ class CtidNgClient(object):
             return response.status_code == 404
         except requests.RequestException:
             return False
+
+    def get_application(self, application_uuid, token=VALID_TOKEN):
+        url = self.url('applications', application_uuid)
+        response = requests.get(url, headers={'X-Auth-Token': token}, verify=False)
+        return response
 
     def get_calls_result(self, application=None, application_instance=None, token=None):
         url = self.url('calls')
