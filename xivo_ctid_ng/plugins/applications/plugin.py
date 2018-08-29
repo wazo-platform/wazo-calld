@@ -11,27 +11,7 @@ from .resources import (
     ApplicationItem,
 )
 from .services import ApplicationService
-from .stasis import ApplicationStasis, AppNameHelper
-
-
-class RegisterStasisApps(object):
-
-    def __init__(self, ari, confd):
-        self.ari = ari
-        self.confd = confd
-        self._initialized = False
-
-    def trigger_registers(self, token):
-        if self._initialized:
-            return
-
-        self.confd.wait()
-        applications = self.confd.applications.list()['items']
-        for application in applications:
-            app = AppNameHelper.to_name(application['uuid'])
-            self.ari.register_application(app)
-        self.ari.reload()
-        self._initialized = True
+from .stasis import ApplicationStasis
 
 
 class Plugin(object):
@@ -55,11 +35,8 @@ class Plugin(object):
         notifier = ApplicationNotifier(bus_publisher)
         service = ApplicationService(ari.client, confd_client, amid_client, notifier)
 
-        register_stasis_app = RegisterStasisApps(ari, confd_client)
-        token_changed_subscribe(register_stasis_app.trigger_registers)
-
-        stasis = ApplicationStasis(ari.client, confd_client, service, notifier)
-        token_changed_subscribe(stasis.initialize_destination)
+        stasis = ApplicationStasis(ari, confd_client, service, notifier)
+        token_changed_subscribe(stasis.initialize)
 
         api.add_resource(
             ApplicationItem,
