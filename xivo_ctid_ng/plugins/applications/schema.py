@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: GPL-3.0+
 
 from marshmallow import Schema, fields
+from xivo.mallow.validate import Length
 from xivo_ctid_ng.helpers.mallow import StrictDict
 
 
@@ -24,9 +25,19 @@ class ApplicationCallSchema(BaseSchema):
     node_uuid = fields.String()
 
 
+class ApplicationNodeCallSchema(BaseSchema):
+    id = fields.String(attribute='id_', required=True)
+
+
+class ApplicationNodeSchema(BaseSchema):
+    uuid = fields.String(dump_only=True)
+    calls = fields.Nested(ApplicationNodeCallSchema, many=True, validate=Length(min=1), required=True)
+
+
 class ApplicationSchema(Schema):
     destination_node_uuid = fields.String()
 
 
 application_call_schema = ApplicationCallSchema()
+application_node_schema = ApplicationNodeSchema()
 application_schema = ApplicationSchema()

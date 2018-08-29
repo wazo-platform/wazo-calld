@@ -4,6 +4,11 @@
 
 import logging
 
+from .models import (
+    make_call_from_channel,
+    make_node_from_event_bridge,
+)
+
 logger = logging.getLogger(__name__)
 
 
@@ -32,6 +37,17 @@ class ApplicationStasis(object):
         self._notifier = notifier
         self._apps_config = {}
 
+    def channel_update_bridge(self, channel, event):
+        application_uuid = AppNameHelper.to_uuid(event.get('application'))
+        if not application_uuid:
+            return
+
+        node = make_node_from_event_bridge(event.get('bridge'))
+        self._notifier.node_updated(application_uuid, node)
+
+        call = make_call_from_channel(channel)
+        self._notifier.call_updated(application_uuid, call)
+
     def initialize(self, token):
         self._confd.wait()
         self._apps_config = {app['uuid']: app for app in self._confd.applications.list()['items']}
@@ -50,12 +66,15 @@ class ApplicationStasis(object):
 
     def subscribe(self, applications):
         self._ari.on_channel_event('StasisStart', self.stasis_start)
+        self._ari.on_channel_event('ChannelEnteredBridge', self.channel_update_bridge)
 
     def _stasis_start_incoming(self, application_uuid, event_objects, event):
         channel = event_objects['channel']
         logger.debug('new incoming call %s', channel.id)
         self._service.channel_answer(application_uuid, channel)
-        self._service.join_destination_node(channel.id, self._apps_config[application_uuid])
+        application = self._apps_config[application_uuid]
+        if application['destination'] == 'node':
+            self._service.join_destination_node(channel.id, application)
 
     def _register_applications(self):
         configured_apps = set([AppNameHelper.to_name(uuid) for uuid in self._apps_config])

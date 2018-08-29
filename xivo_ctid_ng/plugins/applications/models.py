@@ -52,3 +52,10 @@ def make_node_from_bridge(bridge):
     for channel_id in bridge.json['channels']:
         node.calls.append(ApplicationCall(channel_id))
     return node
+
+
+def make_node_from_event_bridge(bridge):
+    node = ApplicationNode(bridge['id'])
+    for channel_id in bridge['channels']:
+        node.calls.append(ApplicationCall(channel_id))
+    return node

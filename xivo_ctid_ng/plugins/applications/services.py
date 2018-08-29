@@ -48,7 +48,7 @@ class ApplicationService(object):
     def join_destination_node(self, channel_id, application):
         self.create_destination_node(application)
         self.join_node(application['uuid'], application['uuid'], [channel_id])
-        moh = application['destination_options']['music_on_hold']
+        moh = application['destination_options'].get('music_on_hold')
         if moh:
             self._ari.bridges.startMoh(bridgeId=application['uuid'], mohClass=moh)
 

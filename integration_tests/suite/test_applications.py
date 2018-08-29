@@ -72,6 +72,47 @@ class TestStatisIncoming(BaseApplicationsTestCase):
 
         until.assert_(event_received, tries=3)
 
+    def test_entering_stasis_with_a_node(self):
+        app_uuid = 'f569ce99-45bf-46b9-a5db-946071dda71f'
+        app = MockApplication(
+            uuid=app_uuid,
+            name='name',
+            destination='node',
+            type_='holding',
+        )
+        self.confd.set_applications(app)
+        event_accumulator = self.bus.accumulator('applications.{uuid}.#'.format(uuid=app_uuid))
+
+        # TODO: add a way to load new apps without restarting
+        self._restart_ctid_ng()
+
+        self.ari.channels.originate(
+            endpoint=ENDPOINT_AUTOANSWER,
+            app='wazo-app-{}'.format(app_uuid),
+            appArgs='incoming',
+            variables={
+                'variables': {
+                    'WAZO_APP_UUID': app_uuid,
+                    'WAZO_CHANNEL_DIRECTION': 'to-wazo',
+                },
+            }
+        )
+
+        def event_received():
+            # TODO: add more content to the assertions
+            events = event_accumulator.accumulate()
+            assert_that(
+                events,
+                contains(
+                    has_entries(name='application_call_entered'),
+                    has_entries(name='application_destination_node_created'),
+                    has_entries(name='application_node_updated'),
+                    has_entries(name='application_call_updated'),
+                )
+            )
+
+        until.assert_(event_received, tries=3)
+
 
 class TestApplications(BaseApplicationsTestCase):
 
