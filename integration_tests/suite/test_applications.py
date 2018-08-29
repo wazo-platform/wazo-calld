@@ -22,22 +22,31 @@ class BaseApplicationsTestCase(RealAsteriskIntegrationTest):
     def setUp(self):
         super(BaseApplicationsTestCase, self).setUp()
 
+        self.node_app_uuid = 'f569ce99-45bf-46b9-a5db-946071dda71f'
+        node_app = MockApplication(
+            uuid=self.node_app_uuid,
+            name='name',
+            destination='node',
+            type_='holding',
+        )
 
-class TestStatisIncoming(BaseApplicationsTestCase):
-
-    def test_entering_stasis_without_a_node(self):
-        app_uuid = 'b00857f4-cb62-4773-adf7-ca870fa65c8d'
-        app = MockApplication(
-            uuid=app_uuid,
+        self.no_node_app_uuid = 'b00857f4-cb62-4773-adf7-ca870fa65c8d'
+        no_node_app = MockApplication(
+            uuid=self.no_node_app_uuid,
             name='name',
             destination=None,
         )
-        self.confd.set_applications(app)
-        event_accumulator = self.bus.accumulator('applications.{uuid}.#'.format(uuid=app_uuid))
+        self.confd.set_applications(node_app, no_node_app)
 
         # TODO: add a way to load new apps without restarting
         self._restart_ctid_ng()
 
+
+class TestStatisIncoming(BaseApplicationsTestCase):
+
+    def test_entering_stasis_without_a_node(self):
+        app_uuid = self.no_node_app_uuid
+        event_accumulator = self.bus.accumulator('applications.{uuid}.#'.format(uuid=app_uuid))
         channel = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app='wazo-app-{}'.format(app_uuid),
@@ -73,18 +82,8 @@ class TestStatisIncoming(BaseApplicationsTestCase):
         until.assert_(event_received, tries=3)
 
     def test_entering_stasis_with_a_node(self):
-        app_uuid = 'f569ce99-45bf-46b9-a5db-946071dda71f'
-        app = MockApplication(
-            uuid=app_uuid,
-            name='name',
-            destination='node',
-            type_='holding',
-        )
-        self.confd.set_applications(app)
+        app_uuid = self.node_app_uuid
         event_accumulator = self.bus.accumulator('applications.{uuid}.#'.format(uuid=app_uuid))
-
-        # TODO: add a way to load new apps without restarting
-        self._restart_ctid_ng()
 
         self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
@@ -124,33 +123,21 @@ class TestApplications(BaseApplicationsTestCase):
             has_properties(status_code=404),
         )
 
-        app_uuid_with_destination_node = 'b00857f4-cb62-4773-adf7-ca870fa65c8d'
-        app_with_node = MockApplication(
-            uuid=app_uuid_with_destination_node,
-            name='name',
-            destination='node',
-        )
-        app_uuid_without_destination_node = '25707f7d-d429-4366-a3d1-92a7c6b20353'
-        app_without_node = MockApplication(
-            uuid=app_uuid_without_destination_node,
-            name='name',
-        )
-        self.confd.set_applications(app_with_node, app_without_node)
-
-        response = self.ctid_ng.get_application(app_uuid_with_destination_node)
+        response = self.ctid_ng.get_application(self.node_app_uuid)
         assert_that(
             response.json(),
-            has_entries(destination_node_uuid=app_uuid_with_destination_node),
+            has_entries(destination_node_uuid=self.node_app_uuid),
         )
 
-        response = self.ctid_ng.get_application(app_uuid_without_destination_node)
+        response = self.ctid_ng.get_application(self.no_node_app_uuid)
         assert_that(
             response.json(),
             has_entries(destination_node_uuid=None),
         )
 
         with self.confd_stopped():
-            response = self.ctid_ng.get_application(app_uuid_with_destination_node)
+            response = self.ctid_ng.get_application(self.node_app_uuid)
+
         assert_that(
             response,
             has_properties(status_code=503),
