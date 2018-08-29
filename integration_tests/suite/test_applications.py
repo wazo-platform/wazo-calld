@@ -4,11 +4,15 @@
 
 from hamcrest import (
     assert_that,
+    contains,
     has_entries,
     has_properties,
 )
+from xivo_test_helpers import until
 from .helpers.base import RealAsteriskIntegrationTest
 from .helpers.confd import MockApplication
+
+ENDPOINT_AUTOANSWER = 'Test/integration-caller/autoanswer'
 
 
 class BaseApplicationsTestCase(RealAsteriskIntegrationTest):
@@ -17,6 +21,56 @@ class BaseApplicationsTestCase(RealAsteriskIntegrationTest):
 
     def setUp(self):
         super(BaseApplicationsTestCase, self).setUp()
+
+
+class TestStatisIncoming(BaseApplicationsTestCase):
+
+    def test_entering_stasis_without_a_node(self):
+        app_uuid = 'b00857f4-cb62-4773-adf7-ca870fa65c8d'
+        app = MockApplication(
+            uuid=app_uuid,
+            name='name',
+            destination=None,
+        )
+        self.confd.set_applications(app)
+        event_accumulator = self.bus.accumulator('applications.{uuid}.#'.format(uuid=app_uuid))
+
+        # TODO: add a way to load new apps without restarting
+        self._restart_ctid_ng()
+
+        channel = self.ari.channels.originate(
+            endpoint=ENDPOINT_AUTOANSWER,
+            app='wazo-app-{}'.format(app_uuid),
+            appArgs='incoming',
+            variables={
+                'variables': {
+                    'WAZO_APP_UUID': app_uuid,
+                    'WAZO_CHANNEL_DIRECTION': 'to-wazo',
+                },
+            }
+        )
+
+        def event_received():
+            events = event_accumulator.accumulate()
+            assert_that(
+                events,
+                contains(
+                    has_entries(
+                        name='application_call_entered',
+                        data=has_entries(
+                            application_uuid=app_uuid,
+                            call=has_entries(
+                                id=channel.id,
+                                is_caller=True,
+                                status='Up',
+                                on_hold=False,
+                            )
+                        )
+                    )
+                )
+            )
+
+        until.assert_(event_received, tries=3)
 
 
 class TestApplications(BaseApplicationsTestCase):

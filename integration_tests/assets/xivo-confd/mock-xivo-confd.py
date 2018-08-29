@@ -18,6 +18,7 @@ _EMPTY_RESPONSES = {
     'switchboards': {},
     'user_lines': {},
     'users': {},
+    'infos': {},
 }
 
 app = Flask(__name__)
@@ -113,9 +114,19 @@ def application(application_uuid):
     return jsonify(_responses['applications'][application_uuid])
 
 
+@app.route('/1.1/applications')
+def applications():
+    return jsonify({'items': _responses['applications'].values()})
+
+
 @app.route('/1.1/switchboards')
 def switchboards():
     return jsonify({'items': _responses['switchboards'].values()})
+
+
+@app.route('/1.1/infos')
+def infos():
+    return jsonify({'items': _responses['infos'].values()})
 
 
 @app.route('/1.1/switchboards/<switchboard_uuid>')
