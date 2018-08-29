@@ -2,10 +2,6 @@
 # Copyright 2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
-import time
-
-from requests import RequestException
-
 from xivo_amid_client import Client as AmidClient
 from xivo_auth_client import Client as AuthClient
 from xivo_confd_client import Client as ConfdClient
@@ -20,9 +16,6 @@ from .stasis import ApplicationStasis, AppNameHelper
 
 class RegisterStasisApps(object):
 
-    _connection_retry = 10
-    _retry_delay = 0.2
-
     def __init__(self, ari, confd):
         self.ari = ari
         self.confd = confd
@@ -32,16 +25,8 @@ class RegisterStasisApps(object):
         if self._initialized:
             return
 
-        for n in xrange(self._connection_retry):
-            try:
-                applications = self.confd.applications.list()['items']
-                break
-            except RequestException:
-                if n < self._connection_retry - 1:
-                    time.sleep(self._retry_delay)
-                else:
-                    raise
-
+        self.confd.wait()
+        applications = self.confd.applications.list()['items']
         for application in applications:
             app = AppNameHelper.to_name(application['uuid'])
             self.ari.register_application(app)
