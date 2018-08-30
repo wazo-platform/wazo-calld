@@ -38,6 +38,7 @@ class Plugin(object):
 
         stasis = ApplicationStasis(ari, confd_client, service, notifier)
         token_changed_subscribe(stasis.initialize)
+        # TODO: unsubscribe the initialize method after the first renew
 
         api.add_resource(
             ApplicationItem,

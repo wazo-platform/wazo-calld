@@ -49,6 +49,7 @@ class ApplicationStasis(object):
         self._notifier.call_updated(application_uuid, call)
 
     def initialize(self, token):
+        # TODO handle Asterisk restarts
         self._confd.wait()
         self._apps_config = {app['uuid']: app for app in self._confd.applications.list()['items']}
         self._register_applications()
