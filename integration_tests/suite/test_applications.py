@@ -7,6 +7,7 @@ from hamcrest import (
     contains,
     empty,
     has_entries,
+    has_items,
     has_properties,
 )
 from xivo_test_helpers import until
@@ -94,7 +95,8 @@ class TestStatisIncoming(BaseApplicationsTestCase):
 
         until.assert_(event_received, tries=3)
 
-        # TODO check that the call is in the stasis application
+        response = self.ctid_ng.get_application_calls(app_uuid)
+        assert_that(response.json()['items'], has_items(has_entries(id=channel.id)))
 
     def test_entering_stasis_with_a_node(self):
         app_uuid = self.node_app_uuid
@@ -157,6 +159,8 @@ class TestStatisIncoming(BaseApplicationsTestCase):
 
         until.assert_(event_received, tries=3)
 
+        response = self.ctid_ng.get_application_calls(app_uuid)
+        assert_that(response.json()['items'], has_items(has_entries(id=channel.id)))
         # TODO: assert that the call is bridged
 
 
