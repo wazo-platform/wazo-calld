@@ -56,6 +56,20 @@ class ApplicationService(object):
         for call_id in call_ids:
             self._ari.bridges.addChannel(bridgeId=node_uuid, channel=call_id)
 
+    def list_calls(self, application_uuid):
+        try:
+            channels = self._ari.channels.list()
+        except ARINotFound:
+            return
+
+        app_uuid = str(application_uuid)
+        for channel in channels:
+            if str(channel.json['channelvars'].get('WAZO_APP_UUID')) != app_uuid:
+                continue
+
+            variables = self.get_channel_variables(channel)
+            yield make_call_from_channel(channel, ari=self._ari, variables=variables)
+
     @staticmethod
     def _extract_variables(lines):
         prefix = 'X_WAZO_'

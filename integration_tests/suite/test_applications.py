@@ -185,3 +185,37 @@ class TestApplications(BaseApplicationsTestCase):
             response,
             has_properties(status_code=503),
         )
+
+    def test_get_calls(self):
+        response = self.ctid_ng.get_application_calls(self.unknown_uuid)
+        assert_that(
+            response,
+            has_properties(status_code=404),
+        )
+
+        response = self.ctid_ng.get_application_calls(self.no_node_app_uuid)
+        assert_that(
+            response.json(),
+            has_entries(items=empty()),
+        )
+
+        channel = self.call_app(self.no_node_app_uuid, variables={'X_WAZO_FOO': 'bar'})
+        response = self.ctid_ng.get_application_calls(self.no_node_app_uuid)
+        assert_that(
+            response.json(),
+            has_entries(
+                items=contains(
+                    has_entries(
+                        id=channel.id,
+                        status='Up',
+                        caller_id_name='Alice',
+                        caller_id_number='555',
+                        # TODO add missing fields
+                        # node_uuid=None,
+                        # on_hold=False,
+                        is_caller=True,
+                        variables={'FOO': 'bar'},
+                    )
+                )
+            )
+        )

@@ -6,6 +6,7 @@ from xivo_ctid_ng.auth import required_acl
 from xivo_ctid_ng.rest_api import AuthResource
 
 from .schema import (
+    application_call_schema,
     application_schema,
 )
 
@@ -19,3 +20,15 @@ class ApplicationItem(AuthResource):
     def get(self, application_uuid):
         application = self._service.get_application(application_uuid)
         return application_schema.dump(application).data
+
+
+class ApplicationCallList(AuthResource):
+
+    def __init__(self, service):
+        self._service = service
+
+    @required_acl('ctid-ng.applications.{application_uuid}.calls.read')
+    def get(self, application_uuid):
+        self._service.get_application(application_uuid)
+        calls = self._service.list_calls(application_uuid)
+        return {'items': application_call_schema.dump(calls, many=True).data}
