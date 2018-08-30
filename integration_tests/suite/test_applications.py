@@ -23,6 +23,8 @@ class BaseApplicationsTestCase(RealAsteriskIntegrationTest):
     def setUp(self):
         super(BaseApplicationsTestCase, self).setUp()
 
+        self.unknown_uuid = '00000000-0000-0000-0000-000000000000'
+
         self.node_app_uuid = 'f569ce99-45bf-46b9-a5db-946071dda71f'
         node_app = MockApplication(
             uuid=self.node_app_uuid,
@@ -42,23 +44,32 @@ class BaseApplicationsTestCase(RealAsteriskIntegrationTest):
         # TODO: add a way to load new apps without restarting
         self._restart_ctid_ng()
 
+    def call_app(self, app_uuid, variables=None):
+        kwargs = {
+            'endpoint': ENDPOINT_AUTOANSWER,
+            'app': 'wazo-app-{}'.format(app_uuid),
+            'appArgs': 'incoming',
+            'variables': {
+                'variables': {
+                    'WAZO_APP_UUID': app_uuid,
+                    'WAZO_CHANNEL_DIRECTION': 'to-wazo',
+                },
+            }
+        }
+
+        if variables:
+            for key, value in variables.iteritems():
+                kwargs['variables']['variables'][key] = value
+
+        return self.ari.channels.originate(**kwargs)
+
 
 class TestStatisIncoming(BaseApplicationsTestCase):
 
     def test_entering_stasis_without_a_node(self):
         app_uuid = self.no_node_app_uuid
         event_accumulator = self.bus.accumulator('applications.{uuid}.#'.format(uuid=app_uuid))
-        channel = self.ari.channels.originate(
-            endpoint=ENDPOINT_AUTOANSWER,
-            app='wazo-app-{}'.format(app_uuid),
-            appArgs='incoming',
-            variables={
-                'variables': {
-                    'WAZO_APP_UUID': app_uuid,
-                    'WAZO_CHANNEL_DIRECTION': 'to-wazo',
-                },
-            }
-        )
+        channel = self.call_app(app_uuid)
 
         def event_received():
             events = event_accumulator.accumulate()
@@ -87,18 +98,7 @@ class TestStatisIncoming(BaseApplicationsTestCase):
     def test_entering_stasis_with_a_node(self):
         app_uuid = self.node_app_uuid
         event_accumulator = self.bus.accumulator('applications.{uuid}.#'.format(uuid=app_uuid))
-
-        channel = self.ari.channels.originate(
-            endpoint=ENDPOINT_AUTOANSWER,
-            app='wazo-app-{}'.format(app_uuid),
-            appArgs='incoming',
-            variables={
-                'variables': {
-                    'WAZO_APP_UUID': app_uuid,
-                    'WAZO_CHANNEL_DIRECTION': 'to-wazo',
-                },
-            }
-        )
+        channel = self.call_app(app_uuid)
 
         def event_received():
             events = event_accumulator.accumulate()
@@ -160,8 +160,7 @@ class TestStatisIncoming(BaseApplicationsTestCase):
 class TestApplications(BaseApplicationsTestCase):
 
     def test_get(self):
-        unknown_uuid = '00000000-0000-0000-0000-000000000000'
-        response = self.ctid_ng.get_application(unknown_uuid)
+        response = self.ctid_ng.get_application(self.unknown_uuid)
         assert_that(
             response,
             has_properties(status_code=404),
