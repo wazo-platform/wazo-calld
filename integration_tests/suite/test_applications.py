@@ -160,7 +160,9 @@ class TestStatisIncoming(BaseApplicationsTestCase):
 
         response = self.ctid_ng.get_application_calls(app_uuid)
         assert_that(response.json()['items'], has_items(has_entries(id=channel.id)))
-        # TODO: assert that the call is bridged
+
+        response = self.ctid_ng.get_application_node(app_uuid, app_uuid)
+        assert_that(response.json()['calls'], has_items(has_entries(id=channel.id)))
 
 
 class TestApplications(BaseApplicationsTestCase):
