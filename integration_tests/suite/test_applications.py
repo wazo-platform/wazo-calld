@@ -5,6 +5,7 @@
 from hamcrest import (
     assert_that,
     contains,
+    empty,
     has_entries,
     has_properties,
 )
@@ -81,11 +82,13 @@ class TestStatisIncoming(BaseApplicationsTestCase):
 
         until.assert_(event_received, tries=3)
 
+        # TODO check that the call is in the stasis application
+
     def test_entering_stasis_with_a_node(self):
         app_uuid = self.node_app_uuid
         event_accumulator = self.bus.accumulator('applications.{uuid}.#'.format(uuid=app_uuid))
 
-        self.ari.channels.originate(
+        channel = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app='wazo-app-{}'.format(app_uuid),
             appArgs='incoming',
@@ -98,19 +101,60 @@ class TestStatisIncoming(BaseApplicationsTestCase):
         )
 
         def event_received():
-            # TODO: add more content to the assertions
             events = event_accumulator.accumulate()
             assert_that(
                 events,
                 contains(
-                    has_entries(name='application_call_entered'),
-                    has_entries(name='application_destination_node_created'),
-                    has_entries(name='application_node_updated'),
-                    has_entries(name='application_call_updated'),
+                    has_entries(
+                        name='application_call_entered',
+                        data=has_entries(
+                            call=has_entries(
+                                id=channel.id,
+                                is_caller=True,
+                                status='Up',
+                                on_hold=False,
+                            )
+                        )
+                    ),
+                    has_entries(
+                        name='application_destination_node_created',
+                        data=has_entries(
+                            application_uuid=app_uuid,
+                            node=has_entries(
+                                uuid=app_uuid,
+                                calls=empty(),
+                            )
+                        )
+                    ),
+                    has_entries(
+                        name='application_node_updated',
+                        data=has_entries(
+                            application_uuid=app_uuid,
+                            node=has_entries(
+                                uuid=app_uuid,
+                                calls=contains(has_entries(id=channel.id)),
+                            )
+                        )
+                    ),
+                    has_entries(
+                        name='application_call_updated',
+                        data=has_entries(
+                            application_uuid=app_uuid,
+                            call=has_entries(
+                                id=channel.id,
+                                status='Up',
+                                # FIXME: where are the is_caller and on_hold fields???
+                                # is_caller=True,
+                                # on_hold=False,
+                            )
+                        )
+                    )
                 )
             )
 
         until.assert_(event_received, tries=3)
+
+        # TODO: assert that the call is bridged
 
 
 class TestApplications(BaseApplicationsTestCase):
