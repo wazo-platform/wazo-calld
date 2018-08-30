@@ -14,14 +14,15 @@ from .constants import VALID_TOKEN
 
 class CtidNgClient(object):
 
+    _url_tpl = 'https://{host}:{port}/1.0/{path}'
+
     def __init__(self, host, port):
         self._host = host
         self._port = port
 
     def url(self, *parts):
-        return 'https://{host}:{port}/1.0/{path}'.format(host=self._host,
-                                                         port=self._port,
-                                                         path='/'.join(unicode(part) for part in parts))
+        path = '/'.join(unicode(part) for part in parts)
+        return self._url_tpl.format(host=self._host, port=self._port, path=path)
 
     def is_up(self):
         url = self.url()
