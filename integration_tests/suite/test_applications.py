@@ -224,3 +224,40 @@ class TestApplications(BaseApplicationsTestCase):
                 )
             )
         )
+
+    def test_get_node(self):
+        response = self.ctid_ng.get_application_node(self.unknown_uuid, self.unknown_uuid)
+        assert_that(
+            response,
+            has_properties(status_code=404),
+        )
+
+        response = self.ctid_ng.get_application_node(self.no_node_app_uuid, self.unknown_uuid)
+        assert_that(
+            response,
+            has_properties(status_code=404),
+        )
+
+        channel = self.call_app(self.node_app_uuid, variables={'X_WAZO_FOO': 'bar'})
+
+        def node_exists():
+            response = self.ctid_ng.get_application_node(self.node_app_uuid, self.node_app_uuid)
+            assert_that(
+                response.json(),
+                has_entries(
+                    uuid=self.node_app_uuid,
+                    calls=contains(has_entries(id=channel.id)),
+                )
+            )
+
+        until.assert_(node_exists, tries=3)
+
+        channel.hangup()
+        response = self.ctid_ng.get_application_node(self.node_app_uuid, self.node_app_uuid)
+        assert_that(
+            response.json(),
+            has_entries(
+                uuid=self.node_app_uuid,
+                calls=empty(),
+            ),
+        )

@@ -16,3 +16,16 @@ class NoSuchApplication(APIException):
                 'application_uuid': str(application_uuid),
             }
         )
+
+
+class NoSuchNode(APIException):
+
+    def __init__(self, node_uuid):
+        super(NoSuchNode, self).__init__(
+            status_code=404,
+            message='No such node',
+            error_id='no-such-node',
+            details={
+                'node_uuid': str(node_uuid)
+            }
+        )

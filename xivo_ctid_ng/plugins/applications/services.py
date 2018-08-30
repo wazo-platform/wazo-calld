@@ -8,6 +8,9 @@ from .models import (
     make_call_from_channel,
     make_node_from_bridge,
 )
+from .exceptions import (
+    NoSuchNode,
+)
 
 
 class ApplicationService(object):
@@ -44,6 +47,14 @@ class ApplicationService(object):
         command = 'core show channel {}'.format(channel.json['name'])
         result = self._amid.command(command)
         return {var: val for var, val in self._extract_variables(result['response'])}
+
+    def get_node(self, node_uuid):
+        try:
+            bridge = self._ari.bridges.get(bridgeId=node_uuid)
+        except ARINotFound:
+            raise NoSuchNode(node_uuid)
+
+        return make_node_from_bridge(bridge)
 
     def join_destination_node(self, channel_id, application):
         self.create_destination_node(application)

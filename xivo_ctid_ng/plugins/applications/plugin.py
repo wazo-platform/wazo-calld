@@ -10,6 +10,7 @@ from .notifier import ApplicationNotifier
 from .resources import (
     ApplicationCallList,
     ApplicationItem,
+    ApplicationNodeItem,
 )
 from .services import ApplicationService
 from .stasis import ApplicationStasis
@@ -48,5 +49,10 @@ class Plugin(object):
         api.add_resource(
             ApplicationCallList,
             '/applications/<uuid:application_uuid>/calls',
+            resource_class_args=[service],
+        )
+        api.add_resource(
+            ApplicationNodeItem,
+            '/applications/<uuid:application_uuid>/nodes/<uuid:node_uuid>',
             resource_class_args=[service],
         )
