@@ -9,6 +9,7 @@ class ApplicationCall(object):
 
     def __init__(self, id_):
         self.id_ = id_
+        self.node_uuid = None
 
 
 class ApplicationNode(object):
