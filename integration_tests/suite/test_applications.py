@@ -147,10 +147,9 @@ class TestStatisIncoming(BaseApplicationsTestCase):
                             call=has_entries(
                                 id=channel.id,
                                 status='Up',
-                                node_uuid=None,
-                                # FIXME: where are the is_caller and on_hold fields???
-                                # is_caller=True,
-                                # on_hold=False,
+                                node_uuid=app_uuid,
+                                is_caller=True,
+                                on_hold=False,
                             )
                         )
                     )
@@ -218,8 +217,7 @@ class TestApplications(BaseApplicationsTestCase):
                         caller_id_name='Alice',
                         caller_id_number='555',
                         node_uuid=None,
-                        # TODO add missing fields
-                        # on_hold=False,
+                        on_hold=False,
                         is_caller=True,
                         variables={'FOO': 'bar'},
                     )

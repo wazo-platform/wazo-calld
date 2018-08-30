@@ -45,7 +45,7 @@ class ApplicationStasis(object):
         node = make_node_from_event_bridge(event.get('bridge'))
         self._notifier.node_updated(application_uuid, node)
 
-        call = make_call_from_channel(channel)
+        call = make_call_from_channel(channel, self._ari)
         self._notifier.call_updated(application_uuid, call)
 
     def initialize(self, token):
