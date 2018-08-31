@@ -6,7 +6,7 @@ import logging
 
 from .models import (
     make_call_from_channel,
-    make_node_from_event_bridge,
+    make_node_from_bridge_event,
 )
 
 logger = logging.getLogger(__name__)
@@ -42,7 +42,7 @@ class ApplicationStasis(object):
         if not application_uuid:
             return
 
-        node = make_node_from_event_bridge(event.get('bridge'))
+        node = make_node_from_bridge_event(event.get('bridge'))
         self._notifier.node_updated(application_uuid, node)
 
         call = make_call_from_channel(channel, self._ari)

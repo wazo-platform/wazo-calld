@@ -55,7 +55,7 @@ def make_node_from_bridge(bridge):
     return node
 
 
-def make_node_from_event_bridge(bridge):
+def make_node_from_bridge_event(bridge):
     node = ApplicationNode(bridge['id'])
     for channel_id in bridge['channels']:
         node.calls.append(ApplicationCall(channel_id))
