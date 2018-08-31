@@ -45,6 +45,20 @@ class ApplicationCallList(AuthResource):
         return {'items': application_call_schema.dump(calls, many=True).data}
 
 
+class ApplicationNodeCallList(AuthResource):
+
+    def __init__(self, service):
+        self._service = service
+
+    @required_acl('ctid-ng.applications.{application_uuid}.nodes.{node_uuid}.calls.create')
+    def post(self, application_uuid, node_uuid):
+        request_body = application_call_request_schema.load(request.get_json()).data
+        self._service.get_application(application_uuid)
+        self._service.get_node(node_uuid)
+        call = self._service.originate(application_uuid, node_uuid, **request_body)
+        return application_call_schema.dump(call).data, 201
+
+
 class ApplicationNodeItem(AuthResource):
 
     def __init__(self, service):

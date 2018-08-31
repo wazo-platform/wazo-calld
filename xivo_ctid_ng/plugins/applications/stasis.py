@@ -67,7 +67,8 @@ class ApplicationStasis(object):
         if command == 'incoming':
             self._stasis_start_incoming(application_uuid, event_objects, event)
         elif command == 'originate':
-            self._stasis_start_originate(application_uuid, event_objects, event)
+            node_uuid = args[1] if len(args) > 1 else None
+            self._stasis_start_originate(application_uuid, node_uuid, event_objects, event)
 
     def subscribe(self):
         self._ari.on_channel_event('StasisStart', self.stasis_start)
@@ -86,9 +87,11 @@ class ApplicationStasis(object):
         if application['destination'] == 'node':
             self._service.join_destination_node(channel.id, application)
 
-    def _stasis_start_originate(self, application_uuid, event_objects, event):
+    def _stasis_start_originate(self, application_uuid, node_uuid, event_objects, event):
         channel = event_objects['channel']
         self._service.originate_answered(application_uuid, channel)
+        if node_uuid:
+            self._service.join_node(application_uuid, node_uuid, [channel.id])
 
     def _register_applications(self):
         configured_apps = set([AppNameHelper.to_name(uuid) for uuid in self._apps_config])

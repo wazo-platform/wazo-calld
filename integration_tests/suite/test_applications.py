@@ -275,6 +275,92 @@ class TestApplications(BaseApplicationsTestCase):
             )
         )
 
+    def test_post_node_call(self):
+        context, exten = 'local', 'recipient_autoanswer'
+
+        errors = [
+            ((self.unknown_uuid, self.node_app_uuid, context, exten), 404),
+            ((self.no_node_app_uuid, self.no_node_app_uuid, context, exten), 404),
+            ((self.node_app_uuid, self.node_app_uuid, 'not-found', exten), 400),
+            ((self.node_app_uuid, self.node_app_uuid, context, 'not-found'), 400),
+        ]
+
+        for args, status_code in errors:
+            response = self.ctid_ng.application_new_node_call(*args)
+            assert_that(
+                response,
+                has_properties(status_code=status_code),
+                'failed with {}'.format(args)
+            )
+
+        routing_key = 'applications.{uuid}.#'.format(uuid=self.node_app_uuid)
+        event_accumulator = self.bus.accumulator(routing_key)
+
+        call = self.ctid_ng.application_new_node_call(
+            application_uuid=self.node_app_uuid,
+            node_uuid=self.node_app_uuid,
+            context=context,
+            exten=exten,
+        )
+
+        def event_received():
+            events = event_accumulator.accumulate()
+            assert_that(
+                events,
+                contains(
+                    has_entries(
+                        name='application_call_initiated',
+                        data=has_entries(
+                            application_uuid=self.node_app_uuid,
+                            call=has_entries(
+                                id=call.json()['id'],
+                                is_caller=False,
+                                status='Up',
+                                on_hold=False,
+                                node_uuid=None,
+                            )
+                        )
+                    ),
+                    has_entries(
+                        name='application_node_updated',
+                        data=has_entries(
+                            application_uuid=self.node_app_uuid,
+                            node=has_entries(
+                                uuid=self.node_app_uuid,
+                                calls=contains(has_entries(id=call.json()['id']))
+                            )
+                        )
+                    ),
+                    has_entries(
+                        name='application_call_updated',
+                        data=has_entries(
+                            application_uuid=self.node_app_uuid,
+                            call=has_entries(
+                                id=call.json()['id'],
+                                node_uuid=self.node_app_uuid,
+                            )
+                        )
+                    )
+                )
+            )
+
+        until.assert_(event_received, tries=3)
+
+        response = self.ctid_ng.get_application_calls(self.node_app_uuid)
+        assert_that(
+            response.json(),
+            has_entries(
+                items=has_items(has_entries(id=call.json()['id'])),
+            )
+        )
+        response = self.ctid_ng.get_application_node(self.node_app_uuid, self.node_app_uuid)
+        assert_that(
+            response.json(),
+            has_entries(
+                calls=has_items(has_entries(id=call.json()['id'])),
+            )
+        )
+
     def test_get_node(self):
         response = self.ctid_ng.get_application_node(self.unknown_uuid, self.unknown_uuid)
         assert_that(

@@ -10,6 +10,7 @@ from .notifier import ApplicationNotifier
 from .resources import (
     ApplicationCallList,
     ApplicationItem,
+    ApplicationNodeCallList,
     ApplicationNodeItem,
     ApplicationNodeList,
 )
@@ -53,12 +54,17 @@ class Plugin(object):
             resource_class_args=[service],
         )
         api.add_resource(
-            ApplicationNodeList,
-            '/applications/<uuid:application_uuid>/nodes',
+            ApplicationNodeCallList,
+            '/applications/<uuid:application_uuid>/nodes/<uuid:node_uuid>/calls',
             resource_class_args=[service],
         )
         api.add_resource(
             ApplicationNodeItem,
             '/applications/<uuid:application_uuid>/nodes/<uuid:node_uuid>',
+            resource_class_args=[service],
+        )
+        api.add_resource(
+            ApplicationNodeList,
+            '/applications/<uuid:application_uuid>/nodes',
             resource_class_args=[service],
         )
