@@ -21,6 +21,7 @@ class BaseApplicationsTestCase(RealAsteriskIntegrationTest):
 
     asset = 'real_asterisk'
 
+    # TODO: use setUpClass
     def setUp(self):
         super(BaseApplicationsTestCase, self).setUp()
 
@@ -252,7 +253,6 @@ class TestApplications(BaseApplicationsTestCase):
         event_accumulator = self.bus.accumulator(routing_key)
 
         call = self.ctid_ng.application_new_call(self.no_node_app_uuid, context, exten)
-        print call.json()
 
         def event_received():
             events = event_accumulator.accumulate()
