@@ -236,6 +236,18 @@ class TestApplications(BaseApplicationsTestCase):
             has_properties(status_code=404),
         )
 
+        response = self.ctid_ng.application_new_call(self.no_node_app_uuid, context, 'not-found')
+        assert_that(
+            response,
+            has_properties(status_code=400),
+        )
+
+        response = self.ctid_ng.application_new_call(self.no_node_app_uuid, 'not-found', exten)
+        assert_that(
+            response,
+            has_properties(status_code=400),
+        )
+
         routing_key = 'applications.{uuid}.#'.format(uuid=self.no_node_app_uuid)
         event_accumulator = self.bus.accumulator(routing_key)
 

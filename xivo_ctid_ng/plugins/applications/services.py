@@ -3,6 +3,8 @@
 # SPDX-License-Identifier: GPL-3.0+
 
 from ari.exceptions import ARINotFound
+from xivo_ctid_ng.helpers import ami
+from xivo_ctid_ng.exceptions import InvalidExtension
 from .confd import Application
 from .models import (
     make_call_from_channel,
@@ -83,6 +85,9 @@ class ApplicationService(object):
             yield make_call_from_channel(channel, ari=self._ari, variables=variables)
 
     def originate(self, application_uuid, node_uuid, exten, context, autoanswer):
+        if not ami.extension_exists(self._amid, context, exten, 1):
+            raise InvalidExtension(context, exten)
+
         endpoint = 'Local/{}@{}/n'.format(exten, context)
 
         app_args = ['originate']
