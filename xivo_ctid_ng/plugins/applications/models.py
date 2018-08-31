@@ -9,7 +9,6 @@ class ApplicationCall(object):
 
     def __init__(self, id_):
         self.id_ = id_
-        self.node_uuid = None
 
 
 class ApplicationNode(object):
@@ -37,6 +36,7 @@ def make_call_from_channel(channel, ari=None, variables=None, node_uuid=None):
         call.is_caller = channel_helper.is_caller()
         call.dialed_extension = channel_helper.dialed_extension()
 
+        call.node_uuid = getattr(call, 'node_uuid', None)
         for bridge in ari.bridges.list():
             if channel.id in bridge.json['channels']:
                 call.node_uuid = bridge.id
