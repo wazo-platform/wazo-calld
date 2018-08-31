@@ -50,7 +50,7 @@ class ApplicationStasis(object):
 
     def initialize(self, token):
         # TODO handle Asterisk restarts
-        self._confd.wait()
+        self._confd.wait_until_ready()
         self._apps_config = {app['uuid']: app for app in self._confd.applications.list()['items']}
         self._register_applications()
         self.subscribe(self._apps_config.values())
