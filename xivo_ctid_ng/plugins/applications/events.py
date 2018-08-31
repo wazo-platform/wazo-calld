@@ -60,6 +60,11 @@ class CallEntered(_BaseCallListEvent):
     routing_key = 'applications.{}.calls.created'
 
 
+class CallInitiated(_BaseCallListEvent):
+    name = 'application_call_initiated'
+    routing_key = 'applications.{}.calls.created'
+
+
 class CallUpdated(_BaseCallItemEvent):
     name = 'application_call_updated'
     routing_key = 'applications.{}.calls.{}.updated'

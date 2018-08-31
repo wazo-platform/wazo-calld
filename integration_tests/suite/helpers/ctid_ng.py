@@ -32,6 +32,11 @@ class CtidNgClient(object):
         except requests.RequestException:
             return False
 
+    def application_new_call(self, application_uuid, context, exten, token=VALID_TOKEN):
+        url = self.url('applications', application_uuid, 'calls')
+        body = {'context': context, 'exten': exten}
+        return requests.post(url, json=body, headers={'X-Auth-Token': token}, verify=False)
+
     def get_application(self, application_uuid, token=VALID_TOKEN):
         url = self.url('applications', application_uuid)
         response = requests.get(url, headers={'X-Auth-Token': token}, verify=False)

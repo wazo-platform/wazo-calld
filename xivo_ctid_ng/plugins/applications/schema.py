@@ -12,6 +12,12 @@ class BaseSchema(Schema):
         strict = True
 
 
+class ApplicationCallRequestSchema(BaseSchema):
+    exten = fields.String(required=True)
+    context = fields.String(required=True)
+    autoanswer = fields.Boolean(required=False, missing=False)
+
+
 class ApplicationCallSchema(BaseSchema):
     id = fields.String(attribute='id_')
     caller_id_name = fields.String()
@@ -38,6 +44,7 @@ class ApplicationSchema(Schema):
     destination_node_uuid = fields.String()
 
 
+application_call_request_schema = ApplicationCallRequestSchema()
 application_call_schema = ApplicationCallSchema()
 application_node_schema = ApplicationNodeSchema()
 application_schema = ApplicationSchema()

@@ -2,10 +2,13 @@
 # Copyright 2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
+from flask import request
+
 from xivo_ctid_ng.auth import required_acl
 from xivo_ctid_ng.rest_api import AuthResource
 
 from .schema import (
+    application_call_request_schema,
     application_call_schema,
     application_node_schema,
     application_schema,
@@ -27,6 +30,13 @@ class ApplicationCallList(AuthResource):
 
     def __init__(self, service):
         self._service = service
+
+    @required_acl('ctid-ng.applications.{application_uuid}.calls.create')
+    def post(self, application_uuid):
+        request_body = application_call_request_schema.load(request.get_json()).data
+        self._service.get_application(application_uuid)
+        call = self._service.originate(application_uuid, None, **request_body)
+        return application_call_schema.dump(call).data, 201
 
     @required_acl('ctid-ng.applications.{application_uuid}.calls.read')
     def get(self, application_uuid):

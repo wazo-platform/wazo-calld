@@ -227,6 +227,52 @@ class TestApplications(BaseApplicationsTestCase):
             )
         )
 
+    def test_post_call(self):
+        context, exten = 'local', 'recipient_autoanswer'
+
+        response = self.ctid_ng.application_new_call(self.unknown_uuid, context, exten)
+        assert_that(
+            response,
+            has_properties(status_code=404),
+        )
+
+        routing_key = 'applications.{uuid}.#'.format(uuid=self.no_node_app_uuid)
+        event_accumulator = self.bus.accumulator(routing_key)
+
+        call = self.ctid_ng.application_new_call(self.no_node_app_uuid, context, exten)
+        print call.json()
+
+        def event_received():
+            events = event_accumulator.accumulate()
+            assert_that(
+                events,
+                contains(
+                    has_entries(
+                        name='application_call_initiated',
+                        data=has_entries(
+                            application_uuid=self.no_node_app_uuid,
+                            call=has_entries(
+                                id=call.json()['id'],
+                                is_caller=False,
+                                status='Up',
+                                on_hold=False,
+                                node_uuid=None,
+                            )
+                        )
+                    )
+                )
+            )
+
+        until.assert_(event_received, tries=3)
+
+        response = self.ctid_ng.get_application_calls(self.no_node_app_uuid)
+        assert_that(
+            response.json(),
+            has_entries(
+                items=has_items(has_entries(id=call.json()['id'])),
+            )
+        )
+
     def test_get_node(self):
         response = self.ctid_ng.get_application_node(self.unknown_uuid, self.unknown_uuid)
         assert_that(

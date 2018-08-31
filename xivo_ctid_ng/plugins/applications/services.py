@@ -11,6 +11,7 @@ from .models import (
 from .exceptions import (
     NoSuchNode,
 )
+from .stasis import AppNameHelper
 
 
 class ApplicationService(object):
@@ -80,6 +81,38 @@ class ApplicationService(object):
 
             variables = self.get_channel_variables(channel)
             yield make_call_from_channel(channel, ari=self._ari, variables=variables)
+
+    def originate(self, application_uuid, node_uuid, exten, context, autoanswer):
+        endpoint = 'Local/{}@{}/n'.format(exten, context)
+
+        app_args = ['originate']
+        if node_uuid:
+            app_args.append(str(node_uuid))
+
+        originate_kwargs = {
+            'endpoint': endpoint,
+            'app': AppNameHelper.to_name(application_uuid),
+            'appArgs': ','.join(app_args),
+            'variables': {'variables': {'WAZO_APP_UUID': str(application_uuid)}}
+        }
+
+        if autoanswer:
+            originate_kwargs['variables']['variables']['WAZO_AUTO_ANSWER'] = '1'
+
+        channel = self._ari.channels.originate(**originate_kwargs)
+        variables = self.get_channel_variables(channel)
+        return make_call_from_channel(
+            channel,
+            ari=self._ari,
+            variables=variables,
+            node_uuid=node_uuid,
+        )
+
+    def originate_answered(self, application_uuid, channel):
+        channel.answer()
+        variables = self.get_channel_variables(channel)
+        call = make_call_from_channel(channel, ari=self._ari, variables=variables)
+        self._notifier.call_initiated(application_uuid, call)
 
     @staticmethod
     def _extract_variables(lines):

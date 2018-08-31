@@ -10,6 +10,7 @@ from .schema import (
 )
 from .events import (
     CallEntered,
+    CallInitiated,
     CallUpdated,
     DestinationNodeCreated,
     NodeUpdated,
@@ -27,6 +28,12 @@ class ApplicationNotifier(object):
         logger.debug('Application (%s): Call (%s) entered', application_uuid, call.id_)
         call = application_call_schema.dump(call).data
         event = CallEntered(application_uuid, call)
+        self._bus.publish(event)
+
+    def call_initiated(self, application_uuid, call):
+        logger.debug('Application (%s): Call (%s) initialized', application_uuid, call.id_)
+        call = application_call_schema.dump(call).data
+        event = CallInitiated(application_uuid, call)
         self._bus.publish(event)
 
     def call_updated(self, application_uuid, call):
