@@ -18,16 +18,146 @@ paths:
             $ref: '#/definitions/Error'
         '503':
           $ref: '#/responses/AnotherServiceUnavailable'
+
+  /applications/{application_uuid}/calls:
+    get:
+      summary: List calls from the application
+      description: '**Required ACL:** `ctid-ng.applications.{application_uuid}.calls.read`'
+      parameters:
+      - $ref: '#/parameters/ApplicationUUID'
+      tags:
+      - applications
+      responses:
+        '200':
+          description: Application
+          schema:
+            $ref: '#/definitions/ApplicationCalls'
+        '404':
+          description: No such application
+          schema:
+            $ref: '#/definitions/Error'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+    post:
+      summary: Make a new call to the application
+      description: '**Required ACL:** `ctid-ng.applications.{application_uuid}.calls.create`'
+      parameters:
+      - $ref: '#/parameters/ApplicationUUID'
+      - name: body
+        in: body
+        description: node parameters
+        required: true
+        schema:
+          $ref: '#/definitions/ApplicationCallRequest'
+      tags:
+      - applications
+      responses:
+        '201':
+          description: The new call ID
+          schema:
+            $ref: '#/definitions/ApplicationCall'
+        '400':
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/Error'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+
+  /applications/{application_uuid}/nodes/{node_uuid}:
+    get:
+      summary: Show a node
+      description: '**Required ACL:** `ctid-ng.applications.{application_uuid}.nodes.{node_uuid}.read`'
+      parameters:
+      - $ref: '#/parameters/ApplicationUUID'
+      - $ref: '#/parameters/ApplicationNodeUUID'
+      tags:
+      - applications
+      responses:
+        '200':
+          description: ApplicationNode
+          schema:
+            $ref: '#/definitions/ApplicationNode'
+        '404':
+          description: No such application or node
+          schema:
+            $ref: '#/definitions/Error'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+
 definitions:
   Application:
     type: object
     properties:
       destination_node_uuid:
         type: string
+  ApplicationCallRequest:
+    type: object
+    properties:
+      exten:
+        type: string
+      context:
+        type: string
+      autoanswer:
+        type: boolean
+        default: false
+    required:
+      - exten
+      - context
+  ApplicationCall:
+    type: object
+    properties:
+      id:
+        type: string
+      status:
+        type: string
+      caller_id_name:
+        type: string
+      caller_id_number:
+        type: string
+      creation_time:
+        type: string
+      node_uuid:
+        type: string
+      on_hold:
+        type: boolean
+      is_caller:
+        type: boolean
+      dialed_extension:
+        type: string
+      variables:
+        type: object
+        # description: 'Mapping of all variables beginning with `WAZO_`. (e.i. {"WAZO_CUSTOM_VARIABLE": "my value", ...})'
+  ApplicationCalls:
+    type: object
+    properties:
+      items:
+        type: array
+        items:
+          $ref: '#/definitions/ApplicationCall'
+  ApplicationNode:
+    type: object
+    properties:
+      uuid:
+        type: string
+      calls:
+        type: array
+        items:
+          $ref: '#/definitions/ApplicationCallID'
+  ApplicationCallID:
+    type: object
+    properties:
+      id:
+        type: string
 parameters:
   ApplicationUUID:
     name: application_uuid
     in: path
     description: UUID of the application
+    required: true
+    type: string
+  ApplicationNodeUUID:
+    name: node_uuid
+    in: path
+    description: UUID of the node
     required: true
     type: string
