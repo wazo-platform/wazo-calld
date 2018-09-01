@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import json
@@ -14,14 +14,15 @@ from .constants import VALID_TOKEN
 
 class CtidNgClient(object):
 
+    _url_tpl = 'https://{host}:{port}/1.0/{path}'
+
     def __init__(self, host, port):
         self._host = host
         self._port = port
 
     def url(self, *parts):
-        return 'https://{host}:{port}/1.0/{path}'.format(host=self._host,
-                                                         port=self._port,
-                                                         path='/'.join(unicode(part) for part in parts))
+        path = '/'.join(unicode(part) for part in parts)
+        return self._url_tpl.format(host=self._host, port=self._port, path=path)
 
     def is_up(self):
         url = self.url()
@@ -30,6 +31,26 @@ class CtidNgClient(object):
             return response.status_code == 404
         except requests.RequestException:
             return False
+
+    def application_new_call(self, application_uuid, context, exten, token=VALID_TOKEN):
+        url = self.url('applications', application_uuid, 'calls')
+        body = {'context': context, 'exten': exten}
+        return requests.post(url, json=body, headers={'X-Auth-Token': token}, verify=False)
+
+    def get_application(self, application_uuid, token=VALID_TOKEN):
+        url = self.url('applications', application_uuid)
+        response = requests.get(url, headers={'X-Auth-Token': token}, verify=False)
+        return response
+
+    def get_application_calls(self, application_uuid, token=VALID_TOKEN):
+        url = self.url('applications', application_uuid, 'calls')
+        response = requests.get(url, headers={'X-Auth-Token': token}, verify=False)
+        return response
+
+    def get_application_node(self, application_uuid, node_uuid, token=VALID_TOKEN):
+        url = self.url('applications', application_uuid, 'nodes', node_uuid)
+        response = requests.get(url, headers={'X-Auth-Token': token}, verify=False)
+        return response
 
     def get_calls_result(self, application=None, application_instance=None, token=None):
         url = self.url('calls')

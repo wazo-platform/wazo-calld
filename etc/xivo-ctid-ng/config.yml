@@ -99,6 +99,7 @@ consul:
 
 enabled_plugins:
   api: true
+  applications: true
   calls: true
   chats: true
   mongooseim: true

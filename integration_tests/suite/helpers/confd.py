@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import requests
@@ -23,6 +23,13 @@ class ConfdClient(object):
             return response.status_code == 404
         except requests.RequestException:
             return False
+
+    def set_applications(self, *mock_applications):
+        url = self.url('_set_response')
+        body = {'response': 'applications',
+                'content': {app.uuid(): app.to_dict() for app in mock_applications}}
+
+        requests.post(url, json=body, verify=False)
 
     def set_users(self, *mock_users):
         url = self.url('_set_response')
@@ -56,6 +63,30 @@ class ConfdClient(object):
     def reset(self):
         url = self.url('_reset')
         requests.post(url, verify=False)
+
+
+class MockApplication(object):
+
+    def __init__(self, uuid, name, destination=None, type_=None, moh=None):
+        self._uuid = uuid
+        self._name = name
+        self._destination = destination
+        self._destination_options = {}
+        if type_:
+            self._destination_options['type'] = type_
+        if moh:
+            self._destination_options['music_on_hold'] = moh
+
+    def uuid(self):
+        return self._uuid
+
+    def to_dict(self):
+        return {
+            'uuid': self._uuid,
+            'name': self._name,
+            'destination': self._destination,
+            'destination_options': self._destination_options,
+        }
 
 
 class MockUser(object):
