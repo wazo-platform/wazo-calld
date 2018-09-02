@@ -126,7 +126,7 @@ definitions:
         type: string
       variables:
         type: object
-        # description: 'Mapping of all variables beginning with `WAZO_`. (e.i. {"WAZO_CUSTOM_VARIABLE": "my value", ...})'
+        description: 'Mapping of all variables beginning with `X_WAZO_`. (e.i. `{"X_WAZO_CUSTOM_VARIABLE": "my value", ...}`)'
   ApplicationCalls:
     type: object
     properties:
