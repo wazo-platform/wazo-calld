@@ -53,7 +53,7 @@ class ApplicationStasis(object):
         self._confd.wait_until_ready()
         self._apps_config = {app['uuid']: app for app in self._confd.applications.list()['items']}
         self._register_applications()
-        self.subscribe(self._apps_config.values())
+        self.subscribe()
         logger.debug('Stasis applications initialized')
 
     def stasis_start(self, event_objects, event):
@@ -68,7 +68,7 @@ class ApplicationStasis(object):
         elif command == 'originate':
             self._stasis_start_originate(application_uuid, event_objects, event)
 
-    def subscribe(self, applications):
+    def subscribe(self):
         self._ari.on_channel_event('StasisStart', self.stasis_start)
         self._ari.on_channel_event('ChannelEnteredBridge', self.channel_update_bridge)
 
