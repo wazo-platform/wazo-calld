@@ -312,6 +312,44 @@ class TestApplications(BaseApplicationsTestCase):
             ),
         )
 
+    def test_get_nodes(self):
+        response = self.ctid_ng.get_application_nodes(self.unknown_uuid)
+        assert_that(
+            response,
+            has_properties(status_code=404),
+        )
+
+        response = self.ctid_ng.get_application_nodes(self.no_node_app_uuid)
+        assert_that(
+            response.json(),
+            has_entries(items=empty()),
+        )
+
+        response = self.ctid_ng.get_application_nodes(self.node_app_uuid)
+        assert_that(
+            response.json(),
+            has_entries(items=contains(
+                has_entries(uuid=self.node_app_uuid, calls=empty()),
+            ))
+        )
+
+        # TODO: replace precondition with POST /applications/uuid/nodes/uuid/calls
+        channel = self.call_app(self.node_app_uuid)
+
+        def call_entered_node():
+            response = self.ctid_ng.get_application_nodes(self.node_app_uuid)
+            assert_that(
+                response.json(),
+                has_entries(items=contains(
+                    has_entries(
+                        uuid=self.node_app_uuid,
+                        calls=contains(has_entries(id=channel.id)),
+                    )
+                ))
+            )
+
+        until.assert_(call_entered_node, tries=3)
+
     def test_event_destination_node_created(self):
         event_accumulator = self.bus.accumulator('applications.{uuid}.#'.format(uuid=self.node_app_uuid))
         self.reset_ari()

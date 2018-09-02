@@ -11,6 +11,7 @@ from .resources import (
     ApplicationCallList,
     ApplicationItem,
     ApplicationNodeItem,
+    ApplicationNodeList,
 )
 from .services import ApplicationService
 from .stasis import ApplicationStasis
@@ -49,6 +50,11 @@ class Plugin(object):
         api.add_resource(
             ApplicationCallList,
             '/applications/<uuid:application_uuid>/calls',
+            resource_class_args=[service],
+        )
+        api.add_resource(
+            ApplicationNodeList,
+            '/applications/<uuid:application_uuid>/nodes',
             resource_class_args=[service],
         )
         api.add_resource(

@@ -63,6 +63,26 @@ paths:
         '503':
           $ref: '#/responses/AnotherServiceUnavailable'
 
+  /applications/{application_uuid}/nodes:
+    get:
+      summary: List nodes from the application
+      description: '**Required ACL:** `ctid-ng.applications.{application_uuid}.nodes.read`'
+      parameters:
+      - $ref: '#/parameters/ApplicationUUID'
+      tags:
+      - applications
+      responses:
+        '200':
+          description: Application
+          schema:
+            $ref: '#/definitions/ApplicationNodes'
+        '404':
+          description: No such application
+          schema:
+            $ref: '#/definitions/Error'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+
   /applications/{application_uuid}/nodes/{node_uuid}:
     get:
       summary: Show a node
@@ -134,6 +154,13 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/ApplicationCall'
+  ApplicationNodes:
+    type: object
+    properties:
+      items:
+        type: array
+        items:
+          $ref: '#/definitions/ApplicationNode'
   ApplicationNode:
     type: object
     properties:

@@ -83,6 +83,17 @@ class ApplicationService(object):
             variables = self.get_channel_variables(channel)
             yield make_call_from_channel(channel, ari=self._ari, variables=variables)
 
+    def list_nodes(self, application_uuid):
+        try:
+            bridges = self._ari.bridges.list()
+        except ARINotFound:
+            return
+
+        for bridge in bridges:
+            if str(bridge.json['name']) != str(application_uuid):
+                continue
+            yield make_node_from_bridge(bridge)
+
     def originate(self, application_uuid, node_uuid, exten, context, autoanswer):
         if not ami.extension_exists(self._amid, context, exten, 1):
             raise InvalidExtension(context, exten)
