@@ -60,7 +60,6 @@ class ApplicationService(object):
         return make_node_from_bridge(bridge)
 
     def join_destination_node(self, channel_id, application):
-        self.create_destination_node(application)
         self.join_node(application['uuid'], application['uuid'], [channel_id])
         moh = application['destination_options'].get('music_on_hold')
         if moh:

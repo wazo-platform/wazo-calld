@@ -122,16 +122,6 @@ class TestStatisIncoming(BaseApplicationsTestCase):
                         )
                     ),
                     has_entries(
-                        name='application_destination_node_created',
-                        data=has_entries(
-                            application_uuid=app_uuid,
-                            node=has_entries(
-                                uuid=app_uuid,
-                                calls=empty(),
-                            )
-                        )
-                    ),
-                    has_entries(
                         name='application_node_updated',
                         data=has_entries(
                             application_uuid=app_uuid,
@@ -300,7 +290,7 @@ class TestApplications(BaseApplicationsTestCase):
 
         channel = self.call_app(self.node_app_uuid, variables={'X_WAZO_FOO': 'bar'})
 
-        def node_exists():
+        def call_entered_node():
             response = self.ctid_ng.get_application_node(self.node_app_uuid, self.node_app_uuid)
             assert_that(
                 response.json(),
@@ -310,7 +300,7 @@ class TestApplications(BaseApplicationsTestCase):
                 )
             )
 
-        until.assert_(node_exists, tries=3)
+        until.assert_(call_entered_node, tries=3)
 
         channel.hangup()
         response = self.ctid_ng.get_application_node(self.node_app_uuid, self.node_app_uuid)
@@ -321,3 +311,28 @@ class TestApplications(BaseApplicationsTestCase):
                 calls=empty(),
             ),
         )
+
+    def test_event_destination_node_created(self):
+        event_accumulator = self.bus.accumulator('applications.{uuid}.#'.format(uuid=self.node_app_uuid))
+        self.reset_ari()
+        self._restart_ctid_ng()
+
+        def event_received():
+            events = event_accumulator.accumulate()
+            assert_that(
+                events,
+                contains(
+                    has_entries(
+                        name='application_destination_node_created',
+                        data=has_entries(
+                            application_uuid=self.node_app_uuid,
+                            node=has_entries(
+                                uuid=self.node_app_uuid,
+                                calls=empty(),
+                            )
+                        )
+                    ),
+                )
+            )
+
+        until.assert_(event_received, tries=3)

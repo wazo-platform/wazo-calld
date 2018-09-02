@@ -54,6 +54,7 @@ class ApplicationStasis(object):
         self._apps_config = {app['uuid']: app for app in self._confd.applications.list()['items']}
         self._register_applications()
         self.subscribe()
+        self._create_destinations(self._apps_config.values())
         logger.debug('Stasis applications initialized')
 
     def stasis_start(self, event_objects, event):
@@ -71,6 +72,11 @@ class ApplicationStasis(object):
     def subscribe(self):
         self._ari.on_channel_event('StasisStart', self.stasis_start)
         self._ari.on_channel_event('ChannelEnteredBridge', self.channel_update_bridge)
+
+    def _create_destinations(self, applications):
+        for application in applications:
+            if application['destination'] == 'node':
+                self._service.create_destination_node(application)
 
     def _stasis_start_incoming(self, application_uuid, event_objects, event):
         channel = event_objects['channel']
