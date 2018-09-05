@@ -37,6 +37,12 @@ class CtidNgClient(object):
         body = {'context': context, 'exten': exten}
         return requests.post(url, json=body, headers={'X-Auth-Token': token}, verify=False)
 
+    def application_new_node(self, application_uuid, calls=None, token=VALID_TOKEN):
+        calls = calls or {}
+        body = {'calls': [{'id': call} for call in calls]}
+        url = self.url('applications', application_uuid, 'nodes')
+        return requests.post(url, json=body, headers={'X-Auth-Token': token}, verify=False)
+
     def application_new_node_call(
             self, application_uuid, node_uuid, context, exten, token=VALID_TOKEN):
         url = self.url('applications', application_uuid, 'nodes', node_uuid, 'calls')

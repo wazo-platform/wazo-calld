@@ -162,6 +162,10 @@ paths:
           description: Invalid request
           schema:
             $ref: '#/definitions/Error'
+        '404':
+          description: No such application
+          schema:
+            $ref: '#/definitions/Error'
         '503':
           $ref: '#/responses/AnotherServiceUnavailable'
 

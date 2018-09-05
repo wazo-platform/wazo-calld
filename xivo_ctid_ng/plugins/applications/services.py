@@ -2,6 +2,7 @@
 # Copyright 2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
+from requests import HTTPError
 from ari.exceptions import ARINotFound
 from xivo_ctid_ng.helpers import ami
 from xivo_ctid_ng.exceptions import InvalidExtension
@@ -11,6 +12,8 @@ from .models import (
     make_node_from_bridge,
 )
 from .exceptions import (
+    CallAlreadyInNode,
+    NoSuchCall,
     NoSuchNode,
 )
 from .stasis import AppNameHelper
@@ -43,6 +46,25 @@ class ApplicationService(object):
             node = make_node_from_bridge(bridge)
             self._notifier.destination_node_created(application['uuid'], node)
 
+    def create_node_with_calls(self, application_uuid, call_ids):
+        bridges = self._ari.bridges.list()
+        for bridge in bridges:
+            if str(bridge.id) == str(application_uuid):
+                # Allow to switch channel from default bridge
+                continue
+
+            for call_id in call_ids:
+                if call_id in bridge.json['channels']:
+                    raise CallAlreadyInNode(application_uuid, bridge.id, call_id)
+
+        bridge = self._ari.bridges.create(name=application_uuid, type='mixing')
+        node = make_node_from_bridge(bridge)
+        self._notifier.node_created(application_uuid, node)
+
+        self.join_node(application_uuid, bridge.id, call_ids)
+        node = make_node_from_bridge(bridge.get())
+        return node
+
     def get_application(self, application_uuid):
         return Application(application_uuid, self._confd).get()
 
@@ -67,7 +89,16 @@ class ApplicationService(object):
 
     def join_node(self, application_uuid, node_uuid, call_ids):
         for call_id in call_ids:
-            self._ari.bridges.addChannel(bridgeId=node_uuid, channel=call_id)
+            try:
+                self._ari.bridges.addChannel(bridgeId=node_uuid, channel=call_id)
+            except HTTPError as e:
+                response = getattr(e, 'response', None)
+                status_code = getattr(response, 'status_code', None)
+                if status_code == 400:
+                    raise NoSuchCall(call_id, 400)
+                elif status_code == 404:
+                    raise NoSuchNode(node_uuid)
+                raise
 
     def list_calls(self, application_uuid):
         try:

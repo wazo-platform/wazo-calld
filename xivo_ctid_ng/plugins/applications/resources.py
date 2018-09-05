@@ -81,3 +81,11 @@ class ApplicationNodeList(AuthResource):
         self._service.get_application(application_uuid)
         nodes = self._service.list_nodes(application_uuid)
         return {'items': application_node_schema.dump(nodes, many=True).data}
+
+    @required_acl('ctid-ng.applications.{application_uuid}.nodes.create')
+    def post(self, application_uuid):
+        self._service.get_application(application_uuid)
+        form = application_node_schema.load(request.get_json()).data
+        call_ids = [call['id_'] for call in form.get('calls', [])]
+        node = self._service.create_node_with_calls(application_uuid, call_ids)
+        return application_node_schema.dump(node).data, 201

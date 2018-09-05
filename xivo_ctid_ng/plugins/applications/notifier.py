@@ -13,6 +13,7 @@ from .events import (
     CallInitiated,
     CallUpdated,
     DestinationNodeCreated,
+    NodeCreated,
     NodeUpdated,
 )
 
@@ -46,6 +47,12 @@ class ApplicationNotifier(object):
         logger.debug('Application (%s): Destination node (%s) created', application_uuid, node.uuid)
         node = application_node_schema.dump(node).data
         event = DestinationNodeCreated(application_uuid, node)
+        self._bus.publish(event)
+
+    def node_created(self, application_uuid, node):
+        logger.debug('Application (%s): Node (%s) created', application_uuid, node.uuid)
+        node = application_node_schema.dump(node).data
+        event = NodeCreated(application_uuid, node)
         self._bus.publish(event)
 
     def node_updated(self, application_uuid, node):

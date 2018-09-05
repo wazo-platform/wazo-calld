@@ -2,7 +2,7 @@
 # Copyright 2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
-from marshmallow import Schema, fields
+from marshmallow import Schema, fields, pre_load
 from xivo.mallow.validate import Length
 from xivo_ctid_ng.helpers.mallow import StrictDict
 
@@ -10,6 +10,10 @@ from xivo_ctid_ng.helpers.mallow import StrictDict
 class BaseSchema(Schema):
     class Meta:
         strict = True
+
+    @pre_load
+    def ensure_dict(self, data):
+        return data or {}
 
 
 class ApplicationCallRequestSchema(BaseSchema):

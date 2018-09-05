@@ -75,6 +75,11 @@ class DestinationNodeCreated(_BaseNodeListEvent):
     routing_key = 'applications.{}.nodes.created'
 
 
+class NodeCreated(_BaseNodeListEvent):
+    name = 'application_node_created'
+    routing_key = 'applications.{}.nodes.created'
+
+
 class NodeUpdated(_BaseNodeItemEvent):
     name = 'application_node_updated'
     routing_key = 'applications.{}.nodes.{}.updated'

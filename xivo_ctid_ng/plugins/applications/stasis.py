@@ -73,6 +73,7 @@ class ApplicationStasis(object):
     def subscribe(self):
         self._ari.on_channel_event('StasisStart', self.stasis_start)
         self._ari.on_channel_event('ChannelEnteredBridge', self.channel_update_bridge)
+        self._ari.on_channel_event('ChannelLeftBridge', self.channel_update_bridge)
 
     def _create_destinations(self, applications):
         for application in applications:
