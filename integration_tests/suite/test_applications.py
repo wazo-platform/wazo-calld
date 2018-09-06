@@ -54,7 +54,6 @@ class BaseApplicationsTestCase(RealAsteriskIntegrationTest):
             'appArgs': 'incoming',
             'variables': {
                 'variables': {
-                    'WAZO_APP_UUID': app_uuid,
                     'WAZO_CHANNEL_DIRECTION': 'to-wazo',
                 },
             }

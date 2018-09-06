@@ -141,7 +141,6 @@ class ApplicationService(object):
             'endpoint': endpoint,
             'app': AppNameHelper.to_name(application_uuid),
             'appArgs': ','.join(app_args),
-            'variables': {'variables': {'WAZO_APP_UUID': str(application_uuid)}}
         }
 
         if autoanswer:
