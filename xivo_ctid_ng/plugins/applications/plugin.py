@@ -27,6 +27,7 @@ class Plugin(object):
         bus_publisher = dependencies['bus_publisher']
         config = dependencies['config']
         token_changed_subscribe = dependencies['token_changed_subscribe']
+        next_token_changed_subscribe = dependencies['next_token_changed_subscribe']
 
         auth_client = AuthClient(**config['auth'])
         confd_client = ConfdClient(**config['confd'])
@@ -40,8 +41,7 @@ class Plugin(object):
         service = ApplicationService(ari.client, confd_client, amid_client, notifier)
 
         stasis = ApplicationStasis(ari, confd_client, service, notifier)
-        token_changed_subscribe(stasis.initialize)
-        # TODO: unsubscribe the initialize method after the first renew
+        next_token_changed_subscribe(stasis.initialize)
 
         api.add_resource(
             ApplicationItem,
