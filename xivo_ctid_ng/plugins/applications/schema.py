@@ -17,7 +17,7 @@ class BaseSchema(Schema):
 
 
 class ApplicationCallRequestSchema(BaseSchema):
-    exten = fields.String(required=True)
+    exten = fields.String(validate=Length(min=1), required=True)
     context = fields.String(required=True)
     autoanswer = fields.Boolean(required=False, missing=False)
 
