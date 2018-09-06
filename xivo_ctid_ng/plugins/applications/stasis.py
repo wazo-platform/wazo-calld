@@ -36,6 +36,8 @@ class ApplicationStasis(object):
         self._service = service
         self._notifier = notifier
         self._apps_config = {}
+        self._asterisk_started = False
+        self._asterisk_stopped = False
 
     def channel_update_bridge(self, channel, event):
         application_uuid = AppNameHelper.to_uuid(event.get('application'))
@@ -49,12 +51,12 @@ class ApplicationStasis(object):
         self._notifier.call_updated(application_uuid, call)
 
     def initialize(self, token):
-        # TODO handle Asterisk restarts
         self._confd.wait_until_ready()
-        self._apps_config = {app['uuid']: app for app in self._confd.applications.list()['items']}
+        applications = self._confd.applications.list(recurse=True)['items']
+        self._apps_config = {app['uuid']: app for app in applications}
         self._register_applications()
-        self.subscribe()
-        self._create_destinations(self._apps_config.values())
+        self._subscribe()
+        self._create_destinations()
         logger.debug('Stasis applications initialized')
 
     def stasis_start(self, event_objects, event):
@@ -70,13 +72,19 @@ class ApplicationStasis(object):
             node_uuid = args[1] if len(args) > 1 else None
             self._stasis_start_originate(application_uuid, node_uuid, event_objects, event)
 
-    def subscribe(self):
+    def _subscribe(self):
         self._ari.on_channel_event('StasisStart', self.stasis_start)
         self._ari.on_channel_event('ChannelEnteredBridge', self.channel_update_bridge)
         self._ari.on_channel_event('ChannelLeftBridge', self.channel_update_bridge)
 
-    def _create_destinations(self, applications):
-        for application in applications:
+        for application in self._apps_config.values():
+            app_uuid = application['uuid']
+            self._ari.on_application_deregistered(AppNameHelper.to_name(app_uuid), self._on_stop)
+            self._ari.on_application_registered(AppNameHelper.to_name(app_uuid), self._on_start)
+
+    def _create_destinations(self):
+        for application in self._apps_config.values():
+            logger.critical(application)
             if application['destination'] == 'node':
                 self._service.create_destination_node(application)
 
@@ -109,3 +117,20 @@ class ApplicationStasis(object):
             self._core_ari.register_application(app_name)
 
         self._core_ari.reload()
+
+    def _on_start(self):
+        if self._asterisk_started:
+            return
+
+        logger.info('Restarting Asterisk applications')
+        self._asterisk_started = True
+        self._asterisk_stopped = False
+        self._create_destinations()
+
+    def _on_stop(self):
+        if self._asterisk_stopped:
+            return
+
+        logger.info('Asterisk stop detected')
+        self._asterisk_started = False
+        self._asterisk_stopped = True
