@@ -70,18 +70,21 @@ class ApplicationService(object):
     def get_application(self, application_uuid):
         return Application(application_uuid, self._confd).get()
 
-    def delete_call(self, application_uuid, call):
+    def delete_call(self, application_uuid, call_id):
         try:
-            self._ari.channels.hangup(channelId=call.id_)
+            self._ari.channels.hangup(channelId=call_id)
         except ARINotFound:
-            pass  # The channel has already disappeared
+            raise NoSuchCall(call_id)
 
     def delete_node(self, application_uuid, node):
         if str(node.uuid) == str(application_uuid):
             raise DeleteDestinationNode(application_uuid, node.uuid)
 
         for call in node.calls:
-            self.delete_call(application_uuid, call)
+            try:
+                self.delete_call(application_uuid, call.id_)
+            except NoSuchCall:
+                continue
 
         try:
             self._ari.bridges.destroy(bridgeId=node.uuid)

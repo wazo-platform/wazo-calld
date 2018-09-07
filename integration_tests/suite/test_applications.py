@@ -227,6 +227,48 @@ class TestApplications(BaseApplicationsTestCase):
             has_properties(status_code=503),
         )
 
+    def test_delete_calls(self):
+        channel = self.call_app(self.node_app_uuid)
+        routing_key = 'applications.{uuid}.calls.#'.format(uuid=self.node_app_uuid)
+        event_accumulator = self.bus.accumulator(routing_key)
+
+        response = self.ctid_ng.delete_application_call(self.unknown_uuid, channel.id)
+        assert_that(response, has_properties(status_code=404))
+
+        response = self.ctid_ng.delete_application_call(self.node_app_uuid, channel.id)
+        assert_that(response, has_properties(status_code=204))
+
+        def event_received():
+            events = event_accumulator.accumulate()
+            assert_that(
+                events,
+                contains(
+                    has_entries(
+                        name='application_call_updated',
+                        data=has_entries(
+                            application_uuid=self.node_app_uuid,
+                            call=has_entries(
+                                id=channel.id,
+                            )
+                        ),
+                    ),
+                    has_entries(
+                        name='application_call_deleted',
+                        data=has_entries(
+                            application_uuid=self.node_app_uuid,
+                            call=has_entries(
+                                id=channel.id,
+                            )
+                        )
+                    ),
+                )
+            )
+
+        until.assert_(event_received, tries=3)
+
+        response = self.ctid_ng.delete_application_call(self.node_app_uuid, channel.id)
+        assert_that(response, has_properties(status_code=404))
+
     def test_get_calls(self):
         response = self.ctid_ng.get_application_calls(self.unknown_uuid)
         assert_that(

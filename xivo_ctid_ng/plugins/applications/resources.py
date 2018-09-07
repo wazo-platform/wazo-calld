@@ -27,6 +27,18 @@ class ApplicationItem(AuthResource):
         return application_schema.dump(application).data
 
 
+class ApplicationCallItem(AuthResource):
+
+    def __init__(self, service):
+        self._service = service
+
+    @required_acl('ctid-ng.applications.{application_uuid}.calls.{call_id}.delete')
+    def delete(self, application_uuid, call_id):
+        self._service.get_application(application_uuid)
+        self._service.delete_call(application_uuid, call_id)
+        return '', 204
+
+
 class ApplicationCallList(AuthResource):
 
     def __init__(self, service):
