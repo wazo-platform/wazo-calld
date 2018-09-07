@@ -82,11 +82,11 @@ paths:
         '503':
           $ref: '#/responses/AnotherServiceUnavailable'
 
-  /applications/{application_uuid}/calls/{call_id}/play:
+  /applications/{application_uuid}/calls/{call_id}/playbacks:
     post:
       summary: Play file to the call
       description: |
-       **Required ACL:** `ctid-ng.applications.{application_uuid}.calls.{call_id}.play.read`
+       **Required ACL:** `ctid-ng.applications.{application_uuid}.calls.{call_id}.playbacks.read`
 
        URI examples:
 
@@ -101,7 +101,7 @@ paths:
       - $ref: '#/parameters/ApplicationCallID'
       - name: body
         in: body
-        description: play parameters
+        description: playback parameters
         required: true
         schema:
           $ref: '#/definitions/Playback'

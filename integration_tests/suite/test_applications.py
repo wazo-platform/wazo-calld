@@ -521,23 +521,23 @@ class TestApplications(BaseApplicationsTestCase):
         until.assert_(call_entered_node, tries=3)
 
 
-class TestApplicationsCallsPlay(BaseApplicationsTestCase):
+class TestApplicationsCallsPlaybacks(BaseApplicationsTestCase):
 
-    def test_post_play(self):
+    def test_post(self):
         body = {'uri': 'sound:tt-weasels'}
         channel = self.call_app(self.node_app_uuid)
 
-        response = self.ctid_ng.application_call_play(self.unknown_uuid, channel.id, body)
+        response = self.ctid_ng.application_call_playback(self.unknown_uuid, channel.id, body)
         assert_that(response, has_properties(status_code=404))
 
-        response = self.ctid_ng.application_call_play(self.node_app_uuid, self.unknown_uuid, body)
+        response = self.ctid_ng.application_call_playback(self.node_app_uuid, self.unknown_uuid, body)
         assert_that(response, has_properties(status_code=404))
 
         invalid_body = {'uri': 'unknown:foo'}
-        response = self.ctid_ng.application_call_play(self.node_app_uuid, channel.id, invalid_body)
+        response = self.ctid_ng.application_call_playback(self.node_app_uuid, channel.id, invalid_body)
         assert_that(response, has_properties(status_code=400))
 
-        response = self.ctid_ng.application_call_play(self.node_app_uuid, channel.id, body)
+        response = self.ctid_ng.application_call_playback(self.node_app_uuid, channel.id, body)
         assert_that(response, has_properties(status_code=200))
         assert_that(
             response.json(),

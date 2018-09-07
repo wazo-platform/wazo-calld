@@ -184,7 +184,7 @@ class ApplicationService(object):
         call = make_call_from_channel(channel, ari=self._ari, variables=variables)
         self._notifier.call_initiated(application_uuid, call)
 
-    def play(self, application_uuid, call_id, media_uri, language=None):
+    def create_playback(self, application_uuid, call_id, media_uri, language=None):
         kwargs = {
             'channelId': call_id,
             'media': media_uri,
