@@ -22,7 +22,6 @@ class BaseApplicationsTestCase(RealAsteriskIntegrationTest):
 
     asset = 'real_asterisk'
 
-    # TODO: use setUpClass
     def setUp(self):
         super(BaseApplicationsTestCase, self).setUp()
 
@@ -73,7 +72,7 @@ class BaseApplicationsTestCase(RealAsteriskIntegrationTest):
         self.fail('Call start timedout')
 
 
-class TestStasisIncoming(BaseApplicationsTestCase):
+class TestStasisTriggers(BaseApplicationsTestCase):
 
     def test_entering_stasis_without_a_node(self):
         app_uuid = self.no_node_app_uuid
@@ -161,6 +160,42 @@ class TestStasisIncoming(BaseApplicationsTestCase):
 
         response = self.ctid_ng.get_application_node(app_uuid, app_uuid)
         assert_that(response.json()['calls'], has_items(has_entries(id=channel.id)))
+
+    def test_event_destination_node_created(self):
+        event_accumulator = self.bus.accumulator('applications.{uuid}.#'.format(uuid=self.node_app_uuid))
+        self.reset_ari()
+        self._restart_ctid_ng()
+
+        def event_received():
+            events = event_accumulator.accumulate()
+            assert_that(
+                events,
+                contains(
+                    has_entries(
+                        name='application_destination_node_created',
+                        data=has_entries(
+                            application_uuid=self.node_app_uuid,
+                            node=has_entries(
+                                uuid=self.node_app_uuid,
+                                calls=empty(),
+                            )
+                        )
+                    ),
+                )
+            )
+
+        until.assert_(event_received, tries=3)
+
+    def test_when_asterisk_restart_then_reconnect(self):
+        event_accumulator = self.bus.accumulator('applications.{uuid}.#'.format(uuid=self.node_app_uuid))
+        self.restart_service('ari')
+        self.wait_strategy.wait(self)
+
+        def event_received():
+            events = event_accumulator.accumulate()
+            assert_that(events, has_items(has_entries(name='application_destination_node_created')))
+
+        until.assert_(event_received, tries=3)
 
 
 class TestApplications(BaseApplicationsTestCase):
@@ -443,42 +478,6 @@ class TestApplications(BaseApplicationsTestCase):
 
         until.assert_(call_entered_node, tries=3)
 
-    def test_event_destination_node_created(self):
-        event_accumulator = self.bus.accumulator('applications.{uuid}.#'.format(uuid=self.node_app_uuid))
-        self.reset_ari()
-        self._restart_ctid_ng()
-
-        def event_received():
-            events = event_accumulator.accumulate()
-            assert_that(
-                events,
-                contains(
-                    has_entries(
-                        name='application_destination_node_created',
-                        data=has_entries(
-                            application_uuid=self.node_app_uuid,
-                            node=has_entries(
-                                uuid=self.node_app_uuid,
-                                calls=empty(),
-                            )
-                        )
-                    ),
-                )
-            )
-
-        until.assert_(event_received, tries=3)
-
-    def test_when_asterisk_restart_then_reconnect(self):
-        event_accumulator = self.bus.accumulator('applications.{uuid}.#'.format(uuid=self.node_app_uuid))
-        self.restart_service('ari')
-        self.wait_strategy.wait(self)
-
-        def event_received():
-            events = event_accumulator.accumulate()
-            assert_that(events, has_items(has_entries(name='application_destination_node_created')))
-
-        until.assert_(event_received, tries=3)
-
 
 class TestApplicationsNodes(BaseApplicationsTestCase):
 
@@ -627,3 +626,89 @@ class TestApplicationsNodes(BaseApplicationsTestCase):
 
         response = self.ctid_ng.application_new_node(self.node_app_uuid, calls=[channel_id])
         assert_that(response, has_properties(status_code=400))
+
+    def test_delete_unknown_app(self):
+        channel = self.call_app(self.no_node_app_uuid)
+        routing_key = 'applications.{uuid}.#'.format(uuid=self.no_node_app_uuid)
+        event_accumulator = self.bus.accumulator(routing_key)
+        node = self.ctid_ng.application_new_node(self.no_node_app_uuid, calls=[channel.id]).json()
+
+        def event_received():
+            events = event_accumulator.accumulate()
+            assert_that(events, has_items(has_entries(name='application_node_created')))
+
+        until.assert_(event_received, tries=3)
+
+        response = self.ctid_ng.delete_application_node(self.unknown_uuid, node['uuid'])
+        assert_that(response, has_properties(status_code=404))
+
+    def test_delete_destination_node(self):
+        response = self.ctid_ng.delete_application_node(self.node_app_uuid, self.node_app_uuid)
+        assert_that(response, has_properties(status_code=400))
+
+    def test_delete(self):
+        channel = self.call_app(self.no_node_app_uuid)
+        routing_key = 'applications.{uuid}.#'.format(uuid=self.no_node_app_uuid)
+        event_accumulator = self.bus.accumulator(routing_key)
+        node = self.ctid_ng.application_new_node(self.no_node_app_uuid, calls=[channel.id]).json()
+
+        def event_received():
+            events = event_accumulator.accumulate()
+            assert_that(events, has_items(has_entries(name='application_node_created')))
+
+        until.assert_(event_received, tries=3)
+        event_accumulator.reset()
+
+        response = self.ctid_ng.delete_application_node(self.no_node_app_uuid, node['uuid'])
+        assert_that(response, has_properties(status_code=204))
+
+        def event_received():
+            events = event_accumulator.accumulate()
+            assert_that(
+                events,
+                contains(
+                    has_entries(
+                        name='application_node_updated',
+                        data=has_entries(
+                            application_uuid=self.no_node_app_uuid,
+                            node=has_entries(
+                                uuid=node['uuid'],
+                                calls=empty(),
+                            )
+                        )
+                    ),
+                    has_entries(
+                        name='application_call_updated',
+                        data=has_entries(
+                            application_uuid=self.no_node_app_uuid,
+                            call=has_entries(
+                                id=channel.id,
+                                caller_id_name='Alice',
+                                caller_id_number='555',
+                                status='Up',
+                            )
+                        )
+                    ),
+                    has_entries(
+                        name='application_call_deleted',
+                        data=has_entries(
+                            application_uuid=self.no_node_app_uuid,
+                            call=has_entries(
+                                id=channel.id,
+                            )
+                        )
+                    ),
+                    has_entries(
+                        name='application_node_deleted',
+                        data=has_entries(
+                            application_uuid=self.no_node_app_uuid,
+                            node=has_entries(
+                                uuid=node['uuid'],
+                                calls=empty(),
+                            )
+                        )
+                    ),
+                )
+            )
+
+        until.assert_(event_received, tries=3)

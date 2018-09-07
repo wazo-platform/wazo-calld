@@ -60,3 +60,17 @@ class NoSuchNode(APIException):
                 'node_uuid': str(node_uuid)
             }
         )
+
+
+class DeleteDestinationNode(APIException):
+
+    def __init__(self, application_uuid, node_uuid):
+        super(DeleteDestinationNode, self).__init__(
+            status_code=400,
+            message='Cannot delete destination node',
+            error_id='delete-destination-node',
+            details={
+                'application_uuid': str(application_uuid),
+                'node_uuid': str(node_uuid),
+            }
+        )

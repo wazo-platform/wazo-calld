@@ -70,6 +70,13 @@ class ApplicationNodeItem(AuthResource):
         node = self._service.get_node(node_uuid)
         return application_node_schema.dump(node).data
 
+    @required_acl('ctid-ng.applications.{application_uuid}.nodes.{node_uuid}.delete')
+    def delete(self, application_uuid, node_uuid):
+        self._service.get_application(application_uuid)
+        node = self._service.get_node(node_uuid)
+        self._service.delete_node(application_uuid, node)
+        return '', 204
+
 
 class ApplicationNodeList(AuthResource):
 

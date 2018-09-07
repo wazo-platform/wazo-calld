@@ -6,6 +6,7 @@ import logging
 
 from .models import (
     make_call_from_channel,
+    make_node_from_bridge,
     make_node_from_bridge_event,
 )
 
@@ -71,10 +72,28 @@ class ApplicationStasis(object):
             node_uuid = args[1] if len(args) > 1 else None
             self._stasis_start_originate(application_uuid, node_uuid, event_objects, event)
 
+    def stasis_end(self, channel, event):
+        application_uuid = AppNameHelper.to_uuid(event.get('application'))
+        if not application_uuid:
+            return
+
+        call = make_call_from_channel(channel)
+        self._notifier.call_deleted(application_uuid, call)
+
+    def bridge_destroyed(self, bridge, event):
+        application_uuid = AppNameHelper.to_uuid(event.get('application'))
+        if not application_uuid:
+            return
+
+        node = make_node_from_bridge(bridge)
+        self._notifier.node_deleted(application_uuid, node)
+
     def _subscribe(self):
         self._ari.on_channel_event('StasisStart', self.stasis_start)
+        self._ari.on_channel_event('StasisEnd', self.stasis_end)
         self._ari.on_channel_event('ChannelEnteredBridge', self.channel_update_bridge)
         self._ari.on_channel_event('ChannelLeftBridge', self.channel_update_bridge)
+        self._ari.on_bridge_event('BridgeDestroyed', self.bridge_destroyed)
 
         for application in self._apps_config.values():
             app_uuid = application['uuid']

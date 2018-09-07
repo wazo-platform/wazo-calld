@@ -13,6 +13,7 @@ from .models import (
 )
 from .exceptions import (
     CallAlreadyInNode,
+    DeleteDestinationNode,
     NoSuchCall,
     NoSuchNode,
 )
@@ -67,6 +68,24 @@ class ApplicationService(object):
 
     def get_application(self, application_uuid):
         return Application(application_uuid, self._confd).get()
+
+    def delete_call(self, application_uuid, call):
+        try:
+            self._ari.channels.hangup(channelId=call.id_)
+        except ARINotFound:
+            pass  # The channel has already disappeared
+
+    def delete_node(self, application_uuid, node):
+        if str(node.uuid) == str(application_uuid):
+            raise DeleteDestinationNode(application_uuid, node.uuid)
+
+        for call in node.calls:
+            self.delete_call(application_uuid, call)
+
+        try:
+            self._ari.bridges.destroy(bridgeId=node.uuid)
+        except ARINotFound:
+            pass  # The bridge has already disappeared
 
     def get_channel_variables(self, channel):
         command = 'core show channel {}'.format(channel.json['name'])
