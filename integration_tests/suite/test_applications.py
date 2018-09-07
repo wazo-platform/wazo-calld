@@ -73,7 +73,7 @@ class BaseApplicationsTestCase(RealAsteriskIntegrationTest):
         self.fail('Call start timedout')
 
 
-class TestStatisIncoming(BaseApplicationsTestCase):
+class TestStasisIncoming(BaseApplicationsTestCase):
 
     def test_entering_stasis_without_a_node(self):
         app_uuid = self.no_node_app_uuid
@@ -465,6 +465,17 @@ class TestApplications(BaseApplicationsTestCase):
                     ),
                 )
             )
+
+        until.assert_(event_received, tries=3)
+
+    def test_when_asterisk_restart_then_reconnect(self):
+        event_accumulator = self.bus.accumulator('applications.{uuid}.#'.format(uuid=self.node_app_uuid))
+        self.restart_service('ari')
+        self.wait_strategy.wait(self)
+
+        def event_received():
+            events = event_accumulator.accumulate()
+            assert_that(events, has_items(has_entries(name='application_destination_node_created')))
 
         until.assert_(event_received, tries=3)
 
