@@ -111,17 +111,17 @@ class ApplicationService(object):
         if moh:
             self._ari.bridges.startMoh(bridgeId=application['uuid'], mohClass=moh)
 
-    def join_node(self, application_uuid, node_uuid, call_ids):
+    def join_node(self, application_uuid, node_uuid, call_ids, no_call_status_code=400):
         for call_id in call_ids:
             try:
                 self._ari.bridges.addChannel(bridgeId=node_uuid, channel=call_id)
+            except ARINotFound:
+                raise NoSuchNode(node_uuid)
             except HTTPError as e:
                 response = getattr(e, 'response', None)
                 status_code = getattr(response, 'status_code', None)
                 if status_code == 400:
-                    raise NoSuchCall(call_id, 400)
-                elif status_code == 404:
-                    raise NoSuchNode(node_uuid)
+                    raise NoSuchCall(call_id, no_call_status_code)
                 raise
 
     def leave_node(self, application_uuid, node_uuid, call_id):
@@ -131,13 +131,9 @@ class ApplicationService(object):
             raise NoSuchNode(node_uuid)
         except HTTPError as e:
             response = getattr(e, 'response', None)
-            if response is None:
-                raise
-
             status_code = getattr(response, 'status_code', None)
             if status_code in (400, 422):
                 raise NoSuchCall(call_id)
-
             raise
 
     def list_calls(self, application_uuid):
