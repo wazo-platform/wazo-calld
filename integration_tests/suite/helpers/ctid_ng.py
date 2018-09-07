@@ -68,6 +68,10 @@ class CtidNgClient(object):
         response = requests.get(url, headers={'X-Auth-Token': token}, verify=False)
         return response
 
+    def delete_application_call(self, application_uuid, call_id, token=VALID_TOKEN):
+        url = self.url('applications', application_uuid, 'calls', call_id)
+        return requests.delete(url, headers={'X-Auth-Token': token}, verify=False)
+
     def delete_application_node(self, application_uuid, node_uuid, token=VALID_TOKEN):
         url = self.url('applications', application_uuid, 'nodes', node_uuid)
         return requests.delete(url, headers={'X-Auth-Token': token}, verify=False)
