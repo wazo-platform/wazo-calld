@@ -479,6 +479,33 @@ class TestApplications(BaseApplicationsTestCase):
         until.assert_(call_entered_node, tries=3)
 
 
+class TestApplicationsCallsPlay(BaseApplicationsTestCase):
+
+    def test_post_play(self):
+        body = {'uri': 'sound:tt-weasels'}
+        channel = self.call_app(self.node_app_uuid)
+
+        response = self.ctid_ng.application_call_play(self.unknown_uuid, channel.id, body)
+        assert_that(response, has_properties(status_code=404))
+
+        response = self.ctid_ng.application_call_play(self.node_app_uuid, self.unknown_uuid, body)
+        assert_that(response, has_properties(status_code=404))
+
+        invalid_body = {'uri': 'unknown:foo'}
+        response = self.ctid_ng.application_call_play(self.node_app_uuid, channel.id, invalid_body)
+        assert_that(response, has_properties(status_code=400))
+
+        response = self.ctid_ng.application_call_play(self.node_app_uuid, channel.id, body)
+        assert_that(response, has_properties(status_code=200))
+        assert_that(
+            response.json(),
+            has_entries(
+                uuid=uuid_(),
+                **body
+            )
+        )
+
+
 class TestApplicationsNodes(BaseApplicationsTestCase):
 
     def test_post_unknown_app(self):

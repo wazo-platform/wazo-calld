@@ -16,6 +16,12 @@ class BaseSchema(Schema):
         return data or {}
 
 
+class ApplicationCallPlaySchema(BaseSchema):
+    uuid = fields.String(attribute='id', dump_only=True)
+    uri = fields.String(attribute='media_uri', required=True)
+    language = fields.String()
+
+
 class ApplicationCallRequestSchema(BaseSchema):
     exten = fields.String(validate=Length(min=1), required=True)
     context = fields.String(required=True)
@@ -51,4 +57,5 @@ class ApplicationSchema(Schema):
 application_call_request_schema = ApplicationCallRequestSchema()
 application_call_schema = ApplicationCallSchema()
 application_node_schema = ApplicationNodeSchema()
+application_playback_schema = ApplicationCallPlaySchema()
 application_schema = ApplicationSchema()

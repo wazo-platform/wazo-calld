@@ -11,6 +11,7 @@ from .schema import (
     application_call_request_schema,
     application_call_schema,
     application_node_schema,
+    application_playback_schema,
     application_schema,
 )
 
@@ -43,6 +44,19 @@ class ApplicationCallList(AuthResource):
         self._service.get_application(application_uuid)
         calls = self._service.list_calls(application_uuid)
         return {'items': application_call_schema.dump(calls, many=True).data}
+
+
+class ApplicationCallPlay(AuthResource):
+
+    def __init__(self, service):
+        self._service = service
+
+    @required_acl('ctid-ng.applications.{application_uuid}.calls.{call_id}.play.update')
+    def post(self, application_uuid, call_id):
+        self._service.get_application(application_uuid)
+        form = application_playback_schema.load(request.get_json()).data
+        playback = self._service.play(application_uuid, call_id, **form)
+        return application_playback_schema.dump(playback).data
 
 
 class ApplicationNodeCallList(AuthResource):

@@ -15,6 +15,7 @@ from .exceptions import (
     CallAlreadyInNode,
     DeleteDestinationNode,
     NoSuchCall,
+    NoSuchMedia,
     NoSuchNode,
 )
 from .stasis import AppNameHelper
@@ -179,6 +180,26 @@ class ApplicationService(object):
         variables = self.get_channel_variables(channel)
         call = make_call_from_channel(channel, ari=self._ari, variables=variables)
         self._notifier.call_initiated(application_uuid, call)
+
+    def play(self, application_uuid, call_id, media_uri, language=None):
+        kwargs = {
+            'channelId': call_id,
+            'media': media_uri,
+        }
+        if language:
+            kwargs['lang'] = language
+
+        try:
+            playback = self._ari.channels.play(**kwargs)
+        except ARINotFound:
+            raise NoSuchCall(call_id)
+
+        try:
+            playback.get()
+        except ARINotFound:
+            raise NoSuchMedia(media_uri)
+
+        return playback.json
 
     @staticmethod
     def _extract_variables(lines):
