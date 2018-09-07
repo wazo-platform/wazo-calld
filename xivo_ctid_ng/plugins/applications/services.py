@@ -6,7 +6,6 @@ from requests import HTTPError
 from ari.exceptions import ARINotFound
 from xivo_ctid_ng.helpers import ami
 from xivo_ctid_ng.exceptions import InvalidExtension
-from .confd import Application
 from .models import (
     make_call_from_channel,
     make_node_from_bridge,
@@ -14,6 +13,7 @@ from .models import (
 from .exceptions import (
     CallAlreadyInNode,
     DeleteDestinationNode,
+    NoSuchApplication,
     NoSuchCall,
     NoSuchMedia,
     NoSuchNode,
@@ -29,6 +29,7 @@ class ApplicationService(object):
         self._confd = confd
         self._amid = amid
         self._notifier = notifier
+        self._apps_cache = None
 
     def channel_answer(self, application_uuid, channel):
         channel.answer()
@@ -69,7 +70,23 @@ class ApplicationService(object):
         return node
 
     def get_application(self, application_uuid):
-        return Application(application_uuid, self._confd).get()
+        application = self.get_confd_application(application_uuid)
+        node_uuid = application['uuid'] if application['destination'] == 'node' else None
+        return {'destination_node_uuid': node_uuid}
+
+    def get_confd_application(self, application_uuid):
+        if not self._apps_cache:
+            raise NoSuchApplication(application_uuid)
+        application = self._apps_cache.get(str(application_uuid))
+        if not application:
+            raise NoSuchApplication(application_uuid)
+        return application
+
+    def list_confd_applications(self):
+        if self._apps_cache is None:
+            apps = self._confd.applications.list(recurse=True)['items']
+            self._apps_cache = {app['uuid']: app for app in apps}
+        return self._apps_cache.values()
 
     def delete_call(self, application_uuid, call_id):
         try:

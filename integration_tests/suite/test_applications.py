@@ -219,14 +219,6 @@ class TestApplications(BaseApplicationsTestCase):
             has_entries(destination_node_uuid=None),
         )
 
-        with self.confd_stopped():
-            response = self.ctid_ng.get_application(self.node_app_uuid)
-
-        assert_that(
-            response,
-            has_properties(status_code=503),
-        )
-
     def test_delete_calls(self):
         channel = self.call_app(self.node_app_uuid)
         routing_key = 'applications.{uuid}.calls.#'.format(uuid=self.node_app_uuid)
