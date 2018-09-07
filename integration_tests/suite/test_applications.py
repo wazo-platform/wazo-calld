@@ -521,23 +521,23 @@ class TestApplications(BaseApplicationsTestCase):
         until.assert_(call_entered_node, tries=3)
 
 
-class TestApplicationsCallsPlay(BaseApplicationsTestCase):
+class TestApplicationsPlaybacks(BaseApplicationsTestCase):
 
-    def test_post_play(self):
+    def test_post_call_playback(self):
         body = {'uri': 'sound:tt-weasels'}
         channel = self.call_app(self.node_app_uuid)
 
-        response = self.ctid_ng.application_call_play(self.unknown_uuid, channel.id, body)
+        response = self.ctid_ng.application_call_playback(self.unknown_uuid, channel.id, body)
         assert_that(response, has_properties(status_code=404))
 
-        response = self.ctid_ng.application_call_play(self.node_app_uuid, self.unknown_uuid, body)
+        response = self.ctid_ng.application_call_playback(self.node_app_uuid, self.unknown_uuid, body)
         assert_that(response, has_properties(status_code=404))
 
         invalid_body = {'uri': 'unknown:foo'}
-        response = self.ctid_ng.application_call_play(self.node_app_uuid, channel.id, invalid_body)
+        response = self.ctid_ng.application_call_playback(self.node_app_uuid, channel.id, invalid_body)
         assert_that(response, has_properties(status_code=400))
 
-        response = self.ctid_ng.application_call_play(self.node_app_uuid, channel.id, body)
+        response = self.ctid_ng.application_call_playback(self.node_app_uuid, channel.id, body)
         assert_that(response, has_properties(status_code=200))
         assert_that(
             response.json(),
@@ -546,6 +546,20 @@ class TestApplicationsCallsPlay(BaseApplicationsTestCase):
                 **body
             )
         )
+
+    def test_delete(self):
+        body = {'uri': 'sound:tt-weasels'}
+        channel = self.call_app(self.node_app_uuid)
+        playback = self.ctid_ng.application_call_playback(self.node_app_uuid, channel.id, body).json()
+
+        response = self.ctid_ng.application_stop_playback(self.unknown_uuid, playback['uuid'])
+        assert_that(response, has_properties(status_code=404))
+
+        response = self.ctid_ng.application_stop_playback(self.node_app_uuid, self.unknown_uuid)
+        assert_that(response, has_properties(status_code=404))
+
+        response = self.ctid_ng.application_stop_playback(self.node_app_uuid, playback['uuid'])
+        assert_that(response, has_properties(status_code=204))
 
 
 class TestApplicationsNodes(BaseApplicationsTestCase):

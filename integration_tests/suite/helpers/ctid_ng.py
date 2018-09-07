@@ -32,9 +32,13 @@ class CtidNgClient(object):
         except requests.RequestException:
             return False
 
-    def application_call_play(self, application_uuid, call_id, body, token=VALID_TOKEN):
-        url = self.url('applications', application_uuid, 'calls', call_id, 'play')
+    def application_call_playback(self, application_uuid, call_id, body, token=VALID_TOKEN):
+        url = self.url('applications', application_uuid, 'calls', call_id, 'playbacks')
         return requests.post(url, json=body, headers={'X-Auth-Token': token}, verify=False)
+
+    def application_stop_playback(self, application_uuid, playback_id, token=VALID_TOKEN):
+        url = self.url('applications', application_uuid, 'playbacks', playback_id)
+        return requests.delete(url, headers={'X-Auth-Token': token}, verify=False)
 
     def application_new_call(self, application_uuid, context, exten, token=VALID_TOKEN):
         url = self.url('applications', application_uuid, 'calls')
