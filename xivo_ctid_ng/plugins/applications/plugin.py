@@ -9,6 +9,7 @@ from xivo_confd_client import Client as ConfdClient
 from .notifier import ApplicationNotifier
 from .resources import (
     ApplicationCallList,
+    ApplicationCallPlay,
     ApplicationItem,
     ApplicationNodeCallList,
     ApplicationNodeItem,
@@ -51,6 +52,11 @@ class Plugin(object):
         api.add_resource(
             ApplicationCallList,
             '/applications/<uuid:application_uuid>/calls',
+            resource_class_args=[service],
+        )
+        api.add_resource(
+            ApplicationCallPlay,
+            '/applications/<uuid:application_uuid>/calls/<call_id>/play',
             resource_class_args=[service],
         )
         api.add_resource(

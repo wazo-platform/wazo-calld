@@ -112,6 +112,10 @@ paths:
           description: Play has been sent
           schema:
             $ref: '#/definitions/Playback'
+        '400':
+          description: No such playback
+          schema:
+            $ref: '#/definitions/Error'
         '404':
           description: No such application or call
           schema:

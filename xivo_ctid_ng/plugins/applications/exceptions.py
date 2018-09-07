@@ -49,6 +49,19 @@ class NoSuchCall(APIException):
         )
 
 
+class NoSuchMedia(APIException):
+
+    def __init__(self, uri):
+        super(NoSuchMedia, self).__init__(
+            status_code=400,
+            message='No such media',
+            error_id='no-such-media',
+            details={
+                'uri': uri,
+            }
+        )
+
+
 class NoSuchNode(APIException):
 
     def __init__(self, node_uuid):
