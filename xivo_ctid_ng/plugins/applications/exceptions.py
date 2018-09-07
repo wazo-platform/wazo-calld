@@ -75,6 +75,19 @@ class NoSuchNode(APIException):
         )
 
 
+class NoSuchPlayback(APIException):
+
+    def __init__(self, playback_uuid):
+        super(NoSuchPlayback, self).__init__(
+            status_code=404,
+            message='No such playback',
+            error_id='no-such-playback',
+            details={
+                'playback_uuid': str(playback_uuid)
+            }
+        )
+
+
 class DeleteDestinationNode(APIException):
 
     def __init__(self, application_uuid, node_uuid):

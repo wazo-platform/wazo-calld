@@ -17,6 +17,7 @@ from .exceptions import (
     NoSuchCall,
     NoSuchMedia,
     NoSuchNode,
+    NoSuchPlayback,
 )
 from .stasis import AppNameHelper
 
@@ -203,6 +204,12 @@ class ApplicationService(object):
             raise NoSuchMedia(media_uri)
 
         return playback.json
+
+    def delete_playback(self, application_uuid, playback_id):
+        try:
+            self._ari.playbacks.stop(playbackId=playback_id)
+        except ARINotFound:
+            raise NoSuchPlayback(playback_id)
 
     @staticmethod
     def _extract_variables(lines):

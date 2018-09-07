@@ -278,6 +278,24 @@ paths:
             $ref: '#/definitions/Error'
         '503':
           $ref: '#/responses/AnotherServiceUnavailable'
+  /applications/{application_uuid}/playbacks/{playback_uuid}:
+    delete:
+      summary: Stop and remove playback
+      description: '**Required ACL:** `ctid-ng.applications.{application_uuid}.playbacks.{playback_uuid}.delete`'
+      parameters:
+      - $ref: '#/parameters/ApplicationUUID'
+      - $ref: '#/parameters/ApplicationPlaybackUUID'
+      tags:
+      - applications
+      responses:
+        '204':
+          description: Playback has been stopped and removed
+        '404':
+          description: No such application or playback
+          schema:
+            $ref: '#/definitions/Error'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
 
 definitions:
   Application:
@@ -390,5 +408,11 @@ parameters:
     name: node_uuid
     in: path
     description: UUID of the node
+    required: true
+    type: string
+  ApplicationPlaybackUUID:
+    name: playback_uuid
+    in: path
+    description: ID of the playback
     required: true
     type: string

@@ -521,9 +521,9 @@ class TestApplications(BaseApplicationsTestCase):
         until.assert_(call_entered_node, tries=3)
 
 
-class TestApplicationsCallsPlaybacks(BaseApplicationsTestCase):
+class TestApplicationsPlaybacks(BaseApplicationsTestCase):
 
-    def test_post(self):
+    def test_post_call_playback(self):
         body = {'uri': 'sound:tt-weasels'}
         channel = self.call_app(self.node_app_uuid)
 
@@ -546,6 +546,20 @@ class TestApplicationsCallsPlaybacks(BaseApplicationsTestCase):
                 **body
             )
         )
+
+    def test_delete(self):
+        body = {'uri': 'sound:tt-weasels'}
+        channel = self.call_app(self.node_app_uuid)
+        playback = self.ctid_ng.application_call_playback(self.node_app_uuid, channel.id, body).json()
+
+        response = self.ctid_ng.application_stop_playback(self.unknown_uuid, playback['uuid'])
+        assert_that(response, has_properties(status_code=404))
+
+        response = self.ctid_ng.application_stop_playback(self.node_app_uuid, self.unknown_uuid)
+        assert_that(response, has_properties(status_code=404))
+
+        response = self.ctid_ng.application_stop_playback(self.node_app_uuid, playback['uuid'])
+        assert_that(response, has_properties(status_code=204))
 
 
 class TestApplicationsNodes(BaseApplicationsTestCase):
