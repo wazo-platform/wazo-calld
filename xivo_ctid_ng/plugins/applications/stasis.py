@@ -103,7 +103,6 @@ class ApplicationStasis(object):
     def _create_destinations(self):
         logger.info('Creating destination nodes')
         for application in self._apps_config.values():
-            logger.critical(application)
             if application['destination'] == 'node':
                 self._service.create_destination_node(application)
         self._destination_created = True
