@@ -123,17 +123,8 @@ class ApplicationStasis(object):
             self._service.join_node(application_uuid, node_uuid, [channel.id])
 
     def _register_applications(self):
-        configured_apps = set([AppNameHelper.to_name(uuid) for uuid in self._apps_config])
-        if not configured_apps:
-            return
-
-        current_apps = set([app['name'] for app in self._ari.applications.list()])
-        missing_apps = configured_apps - current_apps
-
-        if not missing_apps:
-            return
-
-        for app_name in missing_apps:
+        apps_name = set([AppNameHelper.to_name(uuid) for uuid in self._apps_config])
+        for app_name in apps_name:
             self._core_ari.register_application(app_name)
 
         self._core_ari.reload()
