@@ -65,6 +65,11 @@ class CallInitiated(_BaseCallListEvent):
     routing_key = 'applications.{}.calls.created'
 
 
+class CallDeleted(_BaseCallItemEvent):
+    name = 'application_call_deleted'
+    routing_key = 'applications.{}.calls.{}.deleted'
+
+
 class CallUpdated(_BaseCallItemEvent):
     name = 'application_call_updated'
     routing_key = 'applications.{}.calls.{}.updated'
@@ -78,6 +83,11 @@ class DestinationNodeCreated(_BaseNodeListEvent):
 class NodeCreated(_BaseNodeListEvent):
     name = 'application_node_created'
     routing_key = 'applications.{}.nodes.created'
+
+
+class NodeDeleted(_BaseNodeItemEvent):
+    name = 'application_node_deleted'
+    routing_key = 'applications.{}.nodes.{}.deleted'
 
 
 class NodeUpdated(_BaseNodeItemEvent):

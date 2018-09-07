@@ -9,11 +9,13 @@ from .schema import (
     application_node_schema,
 )
 from .events import (
+    CallDeleted,
     CallEntered,
     CallInitiated,
     CallUpdated,
     DestinationNodeCreated,
     NodeCreated,
+    NodeDeleted,
     NodeUpdated,
 )
 
@@ -24,6 +26,12 @@ class ApplicationNotifier(object):
 
     def __init__(self, bus):
         self._bus = bus
+
+    def call_deleted(self, application_uuid, call):
+        logger.debug('Application (%s): Call (%s) deleted', application_uuid, call.id_)
+        call = application_call_schema.dump(call).data
+        event = CallDeleted(application_uuid, call)
+        self._bus.publish(event)
 
     def call_entered(self, application_uuid, call):
         logger.debug('Application (%s): Call (%s) entered', application_uuid, call.id_)
@@ -53,6 +61,12 @@ class ApplicationNotifier(object):
         logger.debug('Application (%s): Node (%s) created', application_uuid, node.uuid)
         node = application_node_schema.dump(node).data
         event = NodeCreated(application_uuid, node)
+        self._bus.publish(event)
+
+    def node_deleted(self, application_uuid, node):
+        logger.debug('Application (%s): Node (%s) deleted', application_uuid, node.uuid)
+        node = application_node_schema.dump(node).data
+        event = NodeDeleted(application_uuid, node)
         self._bus.publish(event)
 
     def node_updated(self, application_uuid, node):
