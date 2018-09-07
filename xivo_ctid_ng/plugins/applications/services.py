@@ -102,17 +102,19 @@ class ApplicationService(object):
 
     def list_calls(self, application_uuid):
         try:
-            channels = self._ari.channels.list()
+            channel_ids = self._ari.applications.get(
+                applicationName=AppNameHelper.to_name(application_uuid)
+            )['channel_ids']
         except ARINotFound:
             return
 
-        app_uuid = str(application_uuid)
-        for channel in channels:
-            if str(channel.json['channelvars'].get('WAZO_APP_UUID')) != app_uuid:
+        for channel_id in channel_ids:
+            try:
+                channel = self._ari.channels.get(channelId=channel_id)
+                variables = self.get_channel_variables(channel)
+                yield make_call_from_channel(channel, ari=self._ari, variables=variables)
+            except ARINotFound:
                 continue
-
-            variables = self.get_channel_variables(channel)
-            yield make_call_from_channel(channel, ari=self._ari, variables=variables)
 
     def list_nodes(self, application_uuid):
         try:
@@ -139,7 +141,6 @@ class ApplicationService(object):
             'endpoint': endpoint,
             'app': AppNameHelper.to_name(application_uuid),
             'appArgs': ','.join(app_args),
-            'variables': {'variables': {'WAZO_APP_UUID': str(application_uuid)}}
         }
 
         if autoanswer:
