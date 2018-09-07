@@ -94,6 +94,12 @@ class ApplicationNodeCallItem(AuthResource):
         self._service.leave_node(application_uuid, node_uuid, [call_id])
         return '', 204
 
+    @required_acl('ctid-ng.applications.{application_uuid}.nodes.{node_uuid}.calls.{call_id}.update')
+    def put(self, application_uuid, node_uuid, call_id):
+        self._service.get_application(application_uuid)
+        self._service.join_node(application_uuid, node_uuid, [call_id], no_call_status_code=404)
+        return '', 204
+
 
 class ApplicationNodeCallList(AuthResource):
 

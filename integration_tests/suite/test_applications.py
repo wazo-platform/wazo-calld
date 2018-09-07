@@ -872,3 +872,73 @@ class TestApplicationsNodesCalls(BaseApplicationsTestCase):
             channel.id,
         )
         assert_that(response, has_properties(status_code=404))
+
+    def test_put(self):
+        channel_1 = self.call_app(self.no_node_app_uuid)
+        channel_2 = self.call_app(self.no_node_app_uuid)
+        node = self.ctid_ng.application_new_node(self.no_node_app_uuid, calls=[channel_1.id]).json()
+
+        routing_key = 'applications.{uuid}.#'.format(uuid=self.no_node_app_uuid)
+        event_accumulator = self.bus.accumulator(routing_key)
+
+        response = self.ctid_ng.application_node_add_call(
+            self.unknown_uuid,
+            node['uuid'],
+            channel_2.id,
+        )
+        assert_that(response, has_properties(status_code=404))
+
+        response = self.ctid_ng.application_node_add_call(
+            self.no_node_app_uuid,
+            self.unknown_uuid,
+            channel_2.id,
+        )
+        assert_that(response, has_properties(status_code=404))
+
+        response = self.ctid_ng.application_node_add_call(
+            self.no_node_app_uuid,
+            node['uuid'],
+            channel_2.id,
+        )
+        assert_that(response, has_properties(status_code=204))
+
+        def event_received():
+            events = event_accumulator.accumulate()
+            assert_that(
+                events,
+                contains(
+                    has_entries(
+                        name='application_node_updated',
+                        data=has_entries(
+                            application_uuid=self.no_node_app_uuid,
+                            node=has_entries(
+                                uuid=node['uuid'],
+                                calls=contains(
+                                    has_entries(id=channel_1.id),
+                                    has_entries(id=channel_2.id),
+                                )
+                            )
+                        ),
+                    ),
+                    has_entries(
+                        name='application_call_updated',
+                        data=has_entries(
+                            application_uuid=self.no_node_app_uuid,
+                            call=has_entries(
+                                id=channel_2.id,
+                            )
+                        ),
+                    ),
+                )
+            )
+
+        until.assert_(event_received, tries=3)
+
+        channel_2.hangup()
+
+        response = self.ctid_ng.application_node_add_call(
+            self.no_node_app_uuid,
+            node['uuid'],
+            channel_2.id,
+        )
+        assert_that(response, has_properties(status_code=404))
