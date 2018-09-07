@@ -795,3 +795,80 @@ class TestApplicationsNodes(BaseApplicationsTestCase):
             )
 
         until.assert_(event_received, tries=3)
+
+
+class TestApplicationsNodesCalls(BaseApplicationsTestCase):
+
+    def test_delete(self):
+        channel = self.call_app(self.node_app_uuid)
+        routing_key = 'applications.{uuid}.#'.format(uuid=self.node_app_uuid)
+        event_accumulator = self.bus.accumulator(routing_key)
+
+        response = self.ctid_ng.delete_application_node_call(
+            self.unknown_uuid,
+            self.node_app_uuid,
+            channel.id,
+        )
+        assert_that(response, has_properties(status_code=404))
+
+        response = self.ctid_ng.delete_application_node_call(
+            self.node_app_uuid,
+            self.unknown_uuid,
+            channel.id,
+        )
+        assert_that(response, has_properties(status_code=404))
+
+        response = self.ctid_ng.delete_application_node_call(
+            self.node_app_uuid,
+            self.node_app_uuid,
+            channel.id,
+        )
+        assert_that(response, has_properties(status_code=204))
+
+        def event_received():
+            events = event_accumulator.accumulate()
+            assert_that(
+                events,
+                contains(
+                    has_entries(
+                        name='application_node_updated',
+                        data=has_entries(
+                            application_uuid=self.node_app_uuid,
+                            node=has_entries(
+                                uuid=self.node_app_uuid,
+                                calls=empty(),
+                            )
+                        )
+                    ),
+                    has_entries(
+                        name='application_call_updated',
+                        data=has_entries(
+                            application_uuid=self.node_app_uuid,
+                            call=has_entries(
+                                id=channel.id,
+                                caller_id_name='Alice',
+                                caller_id_number='555',
+                                status='Up',
+                            )
+                        )
+                    ),
+                )
+            )
+
+        until.assert_(event_received, tries=3)
+
+        response = self.ctid_ng.delete_application_node_call(
+            self.node_app_uuid,
+            self.node_app_uuid,
+            channel.id,
+        )
+        assert_that(response, has_properties(status_code=404))
+
+        channel.hangup()
+
+        response = self.ctid_ng.delete_application_node_call(
+            self.node_app_uuid,
+            self.node_app_uuid,
+            channel.id,
+        )
+        assert_that(response, has_properties(status_code=404))

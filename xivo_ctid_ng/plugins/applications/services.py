@@ -124,6 +124,22 @@ class ApplicationService(object):
                     raise NoSuchNode(node_uuid)
                 raise
 
+    def leave_node(self, application_uuid, node_uuid, call_id):
+        try:
+            self._ari.bridges.removeChannel(bridgeId=node_uuid, channel=call_id)
+        except ARINotFound:
+            raise NoSuchNode(node_uuid)
+        except HTTPError as e:
+            response = getattr(e, 'response', None)
+            if response is None:
+                raise
+
+            status_code = getattr(response, 'status_code', None)
+            if status_code in (400, 422):
+                raise NoSuchCall(call_id)
+
+            raise
+
     def list_calls(self, application_uuid):
         try:
             channel_ids = self._ari.applications.get(
