@@ -66,7 +66,7 @@ paths:
   /applications/{application_uuid}/calls/{call_id}:
     delete:
       summary: Hangup a call from the application
-      description: '**Required ACL:** `ctid-ng.applications.{application_uuid}.calls.{call_id}.read`'
+      description: '**Required ACL:** `ctid-ng.applications.{application_uuid}.calls.{call_id}.delete`'
       parameters:
       - $ref: '#/parameters/ApplicationUUID'
       - $ref: '#/parameters/ApplicationCallID'
@@ -86,7 +86,7 @@ paths:
     post:
       summary: Play file to the call
       description: |
-       **Required ACL:** `ctid-ng.applications.{application_uuid}.calls.{call_id}.playbacks.read`
+       **Required ACL:** `ctid-ng.applications.{application_uuid}.calls.{call_id}.playbacks.create`
 
        URI examples:
 

@@ -63,7 +63,7 @@ class ApplicationCallPlaybackList(AuthResource):
     def __init__(self, service):
         self._service = service
 
-    @required_acl('ctid-ng.applications.{application_uuid}.calls.{call_id}.playbacks.update')
+    @required_acl('ctid-ng.applications.{application_uuid}.calls.{call_id}.playbacks.create')
     def post(self, application_uuid, call_id):
         self._service.get_application(application_uuid)
         form = application_playback_schema.load(request.get_json()).data
