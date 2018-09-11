@@ -878,9 +878,6 @@ class TestApplicationsNodesCalls(BaseApplicationsTestCase):
         channel_2 = self.call_app(self.no_node_app_uuid)
         node = self.ctid_ng.application_new_node(self.no_node_app_uuid, calls=[channel_1.id]).json()
 
-        routing_key = 'applications.{uuid}.#'.format(uuid=self.no_node_app_uuid)
-        event_accumulator = self.bus.accumulator(routing_key)
-
         response = self.ctid_ng.application_node_add_call(
             self.unknown_uuid,
             node['uuid'],
@@ -894,6 +891,9 @@ class TestApplicationsNodesCalls(BaseApplicationsTestCase):
             channel_2.id,
         )
         assert_that(response, has_properties(status_code=404))
+
+        routing_key = 'applications.{uuid}.#'.format(uuid=self.no_node_app_uuid)
+        event_accumulator = self.bus.accumulator(routing_key)
 
         response = self.ctid_ng.application_node_add_call(
             self.no_node_app_uuid,
