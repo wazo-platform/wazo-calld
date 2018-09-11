@@ -53,7 +53,6 @@ class ApplicationCallList(AuthResource):
 
     @required_acl('ctid-ng.applications.{application_uuid}.calls.read')
     def get(self, application_uuid):
-        self._service.get_application(application_uuid)
         calls = self._service.list_calls(application_uuid)
         return {'items': application_call_schema.dump(calls, many=True).data}
 
