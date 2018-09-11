@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2017 The Wazo Authors  (see AUTHORS file)
+# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import unittest
@@ -14,6 +14,7 @@ from hamcrest import equal_to
 from hamcrest import has_entry
 from hamcrest import has_entries
 from hamcrest import has_item
+from hamcrest import has_items
 from hamcrest import is_not
 from operator import attrgetter
 from xivo_test_helpers import until
@@ -674,16 +675,16 @@ class TestSwitchboardCallsHeld(TestSwitchboards):
 
         def event_received():
             assert_that(held_bus_events.accumulate(),
-                        contains(has_entries({'name': 'switchboard_held_calls_updated',
-                                              'data': has_entries({
-                                                  'switchboard_uuid': switchboard_uuid,
-                                                  'items': is_not(empty())
-                                              })}),
-                                 has_entries({'name': 'switchboard_held_calls_updated',
-                                              'data': has_entries({
-                                                  'switchboard_uuid': switchboard_uuid,
-                                                  'items': empty()
-                                              })})))
+                        has_items(has_entries({'name': 'switchboard_held_calls_updated',
+                                               'data': has_entries({
+                                                   'switchboard_uuid': switchboard_uuid,
+                                                   'items': is_not(empty())
+                                               })}),
+                                  has_entries({'name': 'switchboard_held_calls_updated',
+                                               'data': has_entries({
+                                                   'switchboard_uuid': switchboard_uuid,
+                                                   'items': empty()
+                                               })})))
 
         until.assert_(event_received, tries=3)
 
