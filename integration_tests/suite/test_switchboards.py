@@ -202,16 +202,16 @@ class TestSwitchboardCallsQueued(TestSwitchboards):
 
         def event_received():
             assert_that(bus_events.accumulate(),
-                        contains(has_entries({'name': 'switchboard_queued_calls_updated',
-                                              'data': has_entries({
-                                                  'switchboard_uuid': switchboard_uuid,
-                                                  'items': is_not(empty()),
-                                              })}),
-                                 has_entries({'name': 'switchboard_queued_calls_updated',
-                                              'data': has_entries({
-                                                  'switchboard_uuid': switchboard_uuid,
-                                                  'items': empty(),
-                                              })})))
+                        has_items(has_entries({'name': 'switchboard_queued_calls_updated',
+                                               'data': has_entries({
+                                                   'switchboard_uuid': switchboard_uuid,
+                                                   'items': is_not(empty()),
+                                               })}),
+                                  has_entries({'name': 'switchboard_queued_calls_updated',
+                                               'data': has_entries({
+                                                   'switchboard_uuid': switchboard_uuid,
+                                                   'items': empty(),
+                                               })})))
         until.assert_(event_received, tries=3)
 
     @unittest.skip
