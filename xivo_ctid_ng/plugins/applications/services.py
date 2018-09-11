@@ -75,8 +75,6 @@ class ApplicationService(object):
         return {'destination_node_uuid': node_uuid}
 
     def get_confd_application(self, application_uuid):
-        if not self._apps_cache:
-            raise NoSuchApplication(application_uuid)
         application = self._apps_cache.get(str(application_uuid))
         if not application:
             raise NoSuchApplication(application_uuid)
