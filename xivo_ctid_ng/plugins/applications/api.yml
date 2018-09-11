@@ -379,7 +379,7 @@ definitions:
     properties:
       uuid:
         type: string
-        readOnly: tru
+        readOnly: true
       uri:
         type: string
       language:
