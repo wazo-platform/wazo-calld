@@ -70,9 +70,21 @@ class ApplicationService(object):
         return node
 
     def get_application(self, application_uuid):
-        application = self.get_confd_application(application_uuid)
-        node_uuid = application['uuid'] if application['destination'] == 'node' else None
-        return {'destination_node_uuid': node_uuid}
+        try:
+            application = self._ari.applications.get(
+                applicationName=AppNameHelper.to_name(application_uuid)
+            )
+        except ARINotFound:
+            raise NoSuchApplication(application_uuid)
+
+        node_uuid = None
+        confd_app = self.get_confd_application(application_uuid)
+        if confd_app['destination'] == 'none':
+            node_uuid = application_uuid
+
+        application['destination_node_uuid'] = node_uuid
+        application['uuid'] = application_uuid
+        return application
 
     def get_confd_application(self, application_uuid):
         application = self._apps_cache.get(str(application_uuid))
@@ -85,6 +97,11 @@ class ApplicationService(object):
             apps = self._confd.applications.list(recurse=True)['items']
             self._apps_cache = {app['uuid']: app for app in apps}
         return self._apps_cache.values()
+
+    def get_call_id(self, application, call_id):
+        if call_id not in application['channel_ids']:
+            raise NoSuchCall(call_id)
+        return call_id
 
     def delete_call(self, application_uuid, call_id):
         try:

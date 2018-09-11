@@ -34,7 +34,8 @@ class ApplicationCallItem(AuthResource):
 
     @required_acl('ctid-ng.applications.{application_uuid}.calls.{call_id}.delete')
     def delete(self, application_uuid, call_id):
-        self._service.get_application(application_uuid)
+        application = self._service.get_application(application_uuid)
+        self._service.get_call_id(application, call_id)
         self._service.delete_call(application_uuid, call_id)
         return '', 204
 
@@ -64,7 +65,8 @@ class ApplicationCallPlaybackList(AuthResource):
 
     @required_acl('ctid-ng.applications.{application_uuid}.calls.{call_id}.playbacks.create')
     def post(self, application_uuid, call_id):
-        self._service.get_application(application_uuid)
+        application = self._service.get_application(application_uuid)
+        self._service.get_call_id(application, call_id)
         form = application_playback_schema.load(request.get_json()).data
         playback = self._service.create_playback(application_uuid, call_id, **form)
         return application_playback_schema.dump(playback).data

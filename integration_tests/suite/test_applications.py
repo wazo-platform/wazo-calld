@@ -219,12 +219,15 @@ class TestApplications(BaseApplicationsTestCase):
             has_entries(destination_node_uuid=None),
         )
 
-    def test_delete_calls(self):
+    def test_delete_call(self):
         channel = self.call_app(self.node_app_uuid)
         routing_key = 'applications.{uuid}.calls.#'.format(uuid=self.node_app_uuid)
         event_accumulator = self.bus.accumulator(routing_key)
 
         response = self.ctid_ng.delete_application_call(self.unknown_uuid, channel.id)
+        assert_that(response, has_properties(status_code=404))
+
+        response = self.ctid_ng.delete_application_call(self.no_node_app_uuid, channel.id)
         assert_that(response, has_properties(status_code=404))
 
         response = self.ctid_ng.delete_application_call(self.node_app_uuid, channel.id)
@@ -523,6 +526,9 @@ class TestApplicationsPlaybacks(BaseApplicationsTestCase):
         assert_that(response, has_properties(status_code=404))
 
         response = self.ctid_ng.application_call_playback(self.node_app_uuid, self.unknown_uuid, body)
+        assert_that(response, has_properties(status_code=404))
+
+        response = self.ctid_ng.application_call_playback(self.no_node_app_uuid, channel.id, body)
         assert_that(response, has_properties(status_code=404))
 
         invalid_body = {'uri': 'unknown:foo'}
