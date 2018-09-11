@@ -359,7 +359,7 @@ class TestApplications(BaseApplicationsTestCase):
 
         errors = [
             ((self.unknown_uuid, self.node_app_uuid, context, exten), 404),
-            ((self.no_node_app_uuid, self.no_node_app_uuid, context, exten), 404),
+            ((self.no_node_app_uuid, self.unknown_uuid, context, exten), 404),
             ((self.node_app_uuid, self.node_app_uuid, 'not-found', exten), 400),
             ((self.node_app_uuid, self.node_app_uuid, context, 'not-found'), 400),
         ]
@@ -817,6 +817,13 @@ class TestApplicationsNodesCalls(BaseApplicationsTestCase):
         assert_that(response, has_properties(status_code=404))
 
         response = self.ctid_ng.delete_application_node_call(
+            self.no_node_app_uuid,
+            self.node_app_uuid,
+            channel.id,
+        )
+        assert_that(response, has_properties(status_code=404))
+
+        response = self.ctid_ng.delete_application_node_call(
             self.node_app_uuid,
             self.node_app_uuid,
             channel.id,
@@ -892,6 +899,13 @@ class TestApplicationsNodesCalls(BaseApplicationsTestCase):
 
         routing_key = 'applications.{uuid}.#'.format(uuid=self.no_node_app_uuid)
         event_accumulator = self.bus.accumulator(routing_key)
+
+        response = self.ctid_ng.application_node_add_call(
+            self.node_app_uuid,
+            node['uuid'],
+            channel_2.id,
+        )
+        assert_that(response, has_properties(status_code=404))
 
         response = self.ctid_ng.application_node_add_call(
             self.no_node_app_uuid,

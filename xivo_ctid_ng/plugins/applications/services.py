@@ -129,13 +129,21 @@ class ApplicationService(object):
         result = self._amid.command(command)
         return {var: val for var, val in self._extract_variables(result['response'])}
 
-    def get_node(self, node_uuid):
+    def get_node(self, application, node_uuid, verify_application=True):
+        if verify_application:
+            self.get_node_uuid(application, node_uuid)
+
         try:
             bridge = self._ari.bridges.get(bridgeId=node_uuid)
         except ARINotFound:
             raise NoSuchNode(node_uuid)
 
         return make_node_from_bridge(bridge)
+
+    def get_node_uuid(self, application, node_uuid):
+        if str(node_uuid) not in application['bridge_ids']:
+            raise NoSuchNode(node_uuid)
+        return node_uuid
 
     def join_destination_node(self, channel_id, application):
         self.join_node(application['uuid'], application['uuid'], [channel_id])
