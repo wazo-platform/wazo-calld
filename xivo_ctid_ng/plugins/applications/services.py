@@ -52,14 +52,7 @@ class ApplicationService(object):
 
     def create_node_with_calls(self, application_uuid, call_ids):
         bridges = self._ari.bridges.list()
-        for bridge in bridges:
-            if str(bridge.id) == str(application_uuid):
-                # Allow to switch channel from default bridge
-                continue
-
-            for call_id in call_ids:
-                if call_id in bridge.json['channels']:
-                    raise CallAlreadyInNode(application_uuid, bridge.id, call_id)
+        self.validate_call_not_in_node(application_uuid, bridges, call_ids)
 
         bridge = self._ari.bridges.create(name=application_uuid, type='mixing')
         node = make_node_from_bridge(bridge)
@@ -70,13 +63,23 @@ class ApplicationService(object):
         return node
 
     def get_application(self, application_uuid):
-        application = self.get_confd_application(application_uuid)
-        node_uuid = application['uuid'] if application['destination'] == 'node' else None
-        return {'destination_node_uuid': node_uuid}
+        try:
+            application = self._ari.applications.get(
+                applicationName=AppNameHelper.to_name(application_uuid)
+            )
+        except ARINotFound:
+            raise NoSuchApplication(application_uuid)
+
+        node_uuid = None
+        confd_app = self.get_confd_application(application_uuid)
+        if confd_app['destination'] == 'node':
+            node_uuid = application_uuid
+
+        application['destination_node_uuid'] = node_uuid
+        application['uuid'] = application_uuid
+        return application
 
     def get_confd_application(self, application_uuid):
-        if not self._apps_cache:
-            raise NoSuchApplication(application_uuid)
         application = self._apps_cache.get(str(application_uuid))
         if not application:
             raise NoSuchApplication(application_uuid)
@@ -87,6 +90,11 @@ class ApplicationService(object):
             apps = self._confd.applications.list(recurse=True)['items']
             self._apps_cache = {app['uuid']: app for app in apps}
         return self._apps_cache.values()
+
+    def get_call_id(self, application, call_id):
+        if call_id not in application['channel_ids']:
+            raise NoSuchCall(call_id)
+        return call_id
 
     def delete_call(self, application_uuid, call_id):
         try:
@@ -114,13 +122,27 @@ class ApplicationService(object):
         result = self._amid.command(command)
         return {var: val for var, val in self._extract_variables(result['response'])}
 
-    def get_node(self, node_uuid):
+    def get_node(self, application, node_uuid, verify_application=True):
+        if verify_application:
+            self.get_node_uuid(application, node_uuid)
+
         try:
             bridge = self._ari.bridges.get(bridgeId=node_uuid)
         except ARINotFound:
             raise NoSuchNode(node_uuid)
 
         return make_node_from_bridge(bridge)
+
+    def get_node_uuid(self, application, node_uuid):
+        # TODO: remove when asterisk will be able to create bridge associated to an application
+        #       Otherwise, if the bridge doesn't received call, no bridge will appear in the
+        #       application
+        if application['uuid'] == node_uuid:
+            return node_uuid
+
+        if str(node_uuid) not in application['bridge_ids']:
+            raise NoSuchNode(node_uuid)
+        return node_uuid
 
     def join_destination_node(self, channel_id, application):
         self.join_node(application['uuid'], application['uuid'], [channel_id])
@@ -129,6 +151,9 @@ class ApplicationService(object):
             self._ari.bridges.startMoh(bridgeId=application['uuid'], mohClass=moh)
 
     def join_node(self, application_uuid, node_uuid, call_ids, no_call_status_code=400):
+        bridges = self._ari.bridges.list()
+        self.validate_call_not_in_node(application_uuid, bridges, call_ids)
+
         for call_id in call_ids:
             try:
                 self._ari.bridges.addChannel(bridgeId=node_uuid, channel=call_id)
@@ -140,6 +165,15 @@ class ApplicationService(object):
                 if status_code == 400:
                     raise NoSuchCall(call_id, no_call_status_code)
                 raise
+
+    def validate_call_not_in_node(self, application_uuid, bridges, call_ids):
+        for bridge in bridges:
+            if str(bridge.id) == str(application_uuid):
+                # Allow to switch channel from default bridge
+                continue
+            for call_id in call_ids:
+                if call_id in bridge.json['channels']:
+                    raise CallAlreadyInNode(application_uuid, bridge.id, call_id)
 
     def leave_node(self, application_uuid, node_uuid, call_id):
         try:
@@ -159,7 +193,7 @@ class ApplicationService(object):
                 applicationName=AppNameHelper.to_name(application_uuid)
             )['channel_ids']
         except ARINotFound:
-            return
+            raise NoSuchApplication(application_uuid)
 
         for channel_id in channel_ids:
             try:

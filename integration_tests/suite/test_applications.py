@@ -219,12 +219,21 @@ class TestApplications(BaseApplicationsTestCase):
             has_entries(destination_node_uuid=None),
         )
 
-    def test_delete_calls(self):
+        response = self.ctid_ng.get_application(self.node_app_uuid)
+        assert_that(
+            response.json(),
+            has_entries(destination_node_uuid=self.node_app_uuid),
+        )
+
+    def test_delete_call(self):
         channel = self.call_app(self.node_app_uuid)
         routing_key = 'applications.{uuid}.calls.#'.format(uuid=self.node_app_uuid)
         event_accumulator = self.bus.accumulator(routing_key)
 
         response = self.ctid_ng.delete_application_call(self.unknown_uuid, channel.id)
+        assert_that(response, has_properties(status_code=404))
+
+        response = self.ctid_ng.delete_application_call(self.no_node_app_uuid, channel.id)
         assert_that(response, has_properties(status_code=404))
 
         response = self.ctid_ng.delete_application_call(self.node_app_uuid, channel.id)
@@ -356,7 +365,7 @@ class TestApplications(BaseApplicationsTestCase):
 
         errors = [
             ((self.unknown_uuid, self.node_app_uuid, context, exten), 404),
-            ((self.no_node_app_uuid, self.no_node_app_uuid, context, exten), 404),
+            ((self.no_node_app_uuid, self.unknown_uuid, context, exten), 404),
             ((self.node_app_uuid, self.node_app_uuid, 'not-found', exten), 400),
             ((self.node_app_uuid, self.node_app_uuid, context, 'not-found'), 400),
         ]
@@ -523,6 +532,9 @@ class TestApplicationsPlaybacks(BaseApplicationsTestCase):
         assert_that(response, has_properties(status_code=404))
 
         response = self.ctid_ng.application_call_playback(self.node_app_uuid, self.unknown_uuid, body)
+        assert_that(response, has_properties(status_code=404))
+
+        response = self.ctid_ng.application_call_playback(self.no_node_app_uuid, channel.id, body)
         assert_that(response, has_properties(status_code=404))
 
         invalid_body = {'uri': 'unknown:foo'}
@@ -811,6 +823,13 @@ class TestApplicationsNodesCalls(BaseApplicationsTestCase):
         assert_that(response, has_properties(status_code=404))
 
         response = self.ctid_ng.delete_application_node_call(
+            self.no_node_app_uuid,
+            self.node_app_uuid,
+            channel.id,
+        )
+        assert_that(response, has_properties(status_code=404))
+
+        response = self.ctid_ng.delete_application_node_call(
             self.node_app_uuid,
             self.node_app_uuid,
             channel.id,
@@ -868,29 +887,45 @@ class TestApplicationsNodesCalls(BaseApplicationsTestCase):
     def test_put(self):
         channel_1 = self.call_app(self.no_node_app_uuid)
         channel_2 = self.call_app(self.no_node_app_uuid)
-        node = self.ctid_ng.application_new_node(self.no_node_app_uuid, calls=[channel_1.id]).json()
+        channel_3 = self.call_app(self.no_node_app_uuid)
+        node_1 = self.ctid_ng.application_new_node(self.no_node_app_uuid, calls=[channel_1.id]).json()
+        self.ctid_ng.application_new_node(self.no_node_app_uuid, calls=[channel_2.id]).json()
 
         response = self.ctid_ng.application_node_add_call(
             self.unknown_uuid,
-            node['uuid'],
-            channel_2.id,
+            node_1['uuid'],
+            channel_3.id,
         )
         assert_that(response, has_properties(status_code=404))
 
         response = self.ctid_ng.application_node_add_call(
             self.no_node_app_uuid,
             self.unknown_uuid,
-            channel_2.id,
+            channel_3.id,
         )
         assert_that(response, has_properties(status_code=404))
+
+        response = self.ctid_ng.application_node_add_call(
+            self.node_app_uuid,
+            node_1['uuid'],
+            channel_3.id,
+        )
+        assert_that(response, has_properties(status_code=404))
+
+        response = self.ctid_ng.application_node_add_call(
+            self.no_node_app_uuid,
+            node_1['uuid'],
+            channel_2.id,
+        )
+        assert_that(response, has_properties(status_code=400))
 
         routing_key = 'applications.{uuid}.#'.format(uuid=self.no_node_app_uuid)
         event_accumulator = self.bus.accumulator(routing_key)
 
         response = self.ctid_ng.application_node_add_call(
             self.no_node_app_uuid,
-            node['uuid'],
-            channel_2.id,
+            node_1['uuid'],
+            channel_3.id,
         )
         assert_that(response, has_properties(status_code=204))
 
@@ -904,10 +939,10 @@ class TestApplicationsNodesCalls(BaseApplicationsTestCase):
                         data=has_entries(
                             application_uuid=self.no_node_app_uuid,
                             node=has_entries(
-                                uuid=node['uuid'],
+                                uuid=node_1['uuid'],
                                 calls=contains(
                                     has_entries(id=channel_1.id),
-                                    has_entries(id=channel_2.id),
+                                    has_entries(id=channel_3.id),
                                 )
                             )
                         ),
@@ -917,7 +952,7 @@ class TestApplicationsNodesCalls(BaseApplicationsTestCase):
                         data=has_entries(
                             application_uuid=self.no_node_app_uuid,
                             call=has_entries(
-                                id=channel_2.id,
+                                id=channel_3.id,
                             )
                         ),
                     ),
@@ -926,11 +961,11 @@ class TestApplicationsNodesCalls(BaseApplicationsTestCase):
 
         until.assert_(event_received, tries=3)
 
-        channel_2.hangup()
+        channel_3.hangup()
 
         response = self.ctid_ng.application_node_add_call(
             self.no_node_app_uuid,
-            node['uuid'],
-            channel_2.id,
+            node_1['uuid'],
+            channel_3.id,
         )
         assert_that(response, has_properties(status_code=404))

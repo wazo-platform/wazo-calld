@@ -53,13 +53,13 @@ class Plugin(object):
             resource_class_args=[service],
         )
         api.add_resource(
-            ApplicationCallItem,
-            '/applications/<uuid:application_uuid>/calls/<call_id>',
+            ApplicationCallList,
+            '/applications/<uuid:application_uuid>/calls',
             resource_class_args=[service],
         )
         api.add_resource(
-            ApplicationCallList,
-            '/applications/<uuid:application_uuid>/calls',
+            ApplicationCallItem,
+            '/applications/<uuid:application_uuid>/calls/<call_id>',
             resource_class_args=[service],
         )
         api.add_resource(
@@ -68,13 +68,8 @@ class Plugin(object):
             resource_class_args=[service],
         )
         api.add_resource(
-            ApplicationNodeCallItem,
-            '/applications/<uuid:application_uuid>/nodes/<uuid:node_uuid>/calls/<call_id>',
-            resource_class_args=[service],
-        )
-        api.add_resource(
-            ApplicationNodeCallList,
-            '/applications/<uuid:application_uuid>/nodes/<uuid:node_uuid>/calls',
+            ApplicationNodeList,
+            '/applications/<uuid:application_uuid>/nodes',
             resource_class_args=[service],
         )
         api.add_resource(
@@ -83,8 +78,13 @@ class Plugin(object):
             resource_class_args=[service],
         )
         api.add_resource(
-            ApplicationNodeList,
-            '/applications/<uuid:application_uuid>/nodes',
+            ApplicationNodeCallList,
+            '/applications/<uuid:application_uuid>/nodes/<uuid:node_uuid>/calls',
+            resource_class_args=[service],
+        )
+        api.add_resource(
+            ApplicationNodeCallItem,
+            '/applications/<uuid:application_uuid>/nodes/<uuid:node_uuid>/calls/<call_id>',
             resource_class_args=[service],
         )
         api.add_resource(
