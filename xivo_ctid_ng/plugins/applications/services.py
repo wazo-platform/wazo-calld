@@ -182,7 +182,7 @@ class ApplicationService(object):
                 applicationName=AppNameHelper.to_name(application_uuid)
             )['channel_ids']
         except ARINotFound:
-            return
+            raise NoSuchApplication(application_uuid)
 
         for channel_id in channel_ids:
             try:
