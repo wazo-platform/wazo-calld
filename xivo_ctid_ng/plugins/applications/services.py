@@ -79,7 +79,7 @@ class ApplicationService(object):
 
         node_uuid = None
         confd_app = self.get_confd_application(application_uuid)
-        if confd_app['destination'] == 'none':
+        if confd_app['destination'] == 'node':
             node_uuid = application_uuid
 
         application['destination_node_uuid'] = node_uuid

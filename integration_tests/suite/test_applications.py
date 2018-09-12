@@ -219,6 +219,12 @@ class TestApplications(BaseApplicationsTestCase):
             has_entries(destination_node_uuid=None),
         )
 
+        response = self.ctid_ng.get_application(self.node_app_uuid)
+        assert_that(
+            response.json(),
+            has_entries(destination_node_uuid=self.node_app_uuid),
+        )
+
     def test_delete_call(self):
         channel = self.call_app(self.node_app_uuid)
         routing_key = 'applications.{uuid}.calls.#'.format(uuid=self.node_app_uuid)
