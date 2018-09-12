@@ -887,36 +887,45 @@ class TestApplicationsNodesCalls(BaseApplicationsTestCase):
     def test_put(self):
         channel_1 = self.call_app(self.no_node_app_uuid)
         channel_2 = self.call_app(self.no_node_app_uuid)
-        node = self.ctid_ng.application_new_node(self.no_node_app_uuid, calls=[channel_1.id]).json()
+        channel_3 = self.call_app(self.no_node_app_uuid)
+        node_1 = self.ctid_ng.application_new_node(self.no_node_app_uuid, calls=[channel_1.id]).json()
+        self.ctid_ng.application_new_node(self.no_node_app_uuid, calls=[channel_2.id]).json()
 
         response = self.ctid_ng.application_node_add_call(
             self.unknown_uuid,
-            node['uuid'],
-            channel_2.id,
+            node_1['uuid'],
+            channel_3.id,
         )
         assert_that(response, has_properties(status_code=404))
 
         response = self.ctid_ng.application_node_add_call(
             self.no_node_app_uuid,
             self.unknown_uuid,
-            channel_2.id,
+            channel_3.id,
         )
         assert_that(response, has_properties(status_code=404))
+
+        response = self.ctid_ng.application_node_add_call(
+            self.node_app_uuid,
+            node_1['uuid'],
+            channel_3.id,
+        )
+        assert_that(response, has_properties(status_code=404))
+
+        response = self.ctid_ng.application_node_add_call(
+            self.no_node_app_uuid,
+            node_1['uuid'],
+            channel_2.id,
+        )
+        assert_that(response, has_properties(status_code=400))
 
         routing_key = 'applications.{uuid}.#'.format(uuid=self.no_node_app_uuid)
         event_accumulator = self.bus.accumulator(routing_key)
 
         response = self.ctid_ng.application_node_add_call(
-            self.node_app_uuid,
-            node['uuid'],
-            channel_2.id,
-        )
-        assert_that(response, has_properties(status_code=404))
-
-        response = self.ctid_ng.application_node_add_call(
             self.no_node_app_uuid,
-            node['uuid'],
-            channel_2.id,
+            node_1['uuid'],
+            channel_3.id,
         )
         assert_that(response, has_properties(status_code=204))
 
@@ -930,10 +939,10 @@ class TestApplicationsNodesCalls(BaseApplicationsTestCase):
                         data=has_entries(
                             application_uuid=self.no_node_app_uuid,
                             node=has_entries(
-                                uuid=node['uuid'],
+                                uuid=node_1['uuid'],
                                 calls=contains(
                                     has_entries(id=channel_1.id),
-                                    has_entries(id=channel_2.id),
+                                    has_entries(id=channel_3.id),
                                 )
                             )
                         ),
@@ -943,7 +952,7 @@ class TestApplicationsNodesCalls(BaseApplicationsTestCase):
                         data=has_entries(
                             application_uuid=self.no_node_app_uuid,
                             call=has_entries(
-                                id=channel_2.id,
+                                id=channel_3.id,
                             )
                         ),
                     ),
@@ -952,11 +961,11 @@ class TestApplicationsNodesCalls(BaseApplicationsTestCase):
 
         until.assert_(event_received, tries=3)
 
-        channel_2.hangup()
+        channel_3.hangup()
 
         response = self.ctid_ng.application_node_add_call(
             self.no_node_app_uuid,
-            node['uuid'],
-            channel_2.id,
+            node_1['uuid'],
+            channel_3.id,
         )
         assert_that(response, has_properties(status_code=404))

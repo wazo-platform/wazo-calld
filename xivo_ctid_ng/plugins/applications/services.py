@@ -52,14 +52,7 @@ class ApplicationService(object):
 
     def create_node_with_calls(self, application_uuid, call_ids):
         bridges = self._ari.bridges.list()
-        for bridge in bridges:
-            if str(bridge.id) == str(application_uuid):
-                # Allow to switch channel from default bridge
-                continue
-
-            for call_id in call_ids:
-                if call_id in bridge.json['channels']:
-                    raise CallAlreadyInNode(application_uuid, bridge.id, call_id)
+        self.validate_call_not_in_node(application_uuid, bridges, call_ids)
 
         bridge = self._ari.bridges.create(name=application_uuid, type='mixing')
         node = make_node_from_bridge(bridge)
@@ -152,6 +145,9 @@ class ApplicationService(object):
             self._ari.bridges.startMoh(bridgeId=application['uuid'], mohClass=moh)
 
     def join_node(self, application_uuid, node_uuid, call_ids, no_call_status_code=400):
+        bridges = self._ari.bridges.list()
+        self.validate_call_not_in_node(application_uuid, bridges, call_ids)
+
         for call_id in call_ids:
             try:
                 self._ari.bridges.addChannel(bridgeId=node_uuid, channel=call_id)
@@ -163,6 +159,15 @@ class ApplicationService(object):
                 if status_code == 400:
                     raise NoSuchCall(call_id, no_call_status_code)
                 raise
+
+    def validate_call_not_in_node(self, application_uuid, bridges, call_ids):
+        for bridge in bridges:
+            if str(bridge.id) == str(application_uuid):
+                # Allow to switch channel from default bridge
+                continue
+            for call_id in call_ids:
+                if call_id in bridge.json['channels']:
+                    raise CallAlreadyInNode(application_uuid, bridge.id, call_id)
 
     def leave_node(self, application_uuid, node_uuid, call_id):
         try:
