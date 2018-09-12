@@ -32,11 +32,10 @@ class ApplicationStasis(object):
 
     def __init__(self, ari, confd, service, notifier):
         self._ari = ari.client
-        self._core_ari = ari
         self._confd = confd
+        self._core_ari = ari
         self._service = service
         self._notifier = notifier
-        self._apps_config = {}
         self._destination_created = False
 
     def channel_update_bridge(self, channel, event):
@@ -52,11 +51,10 @@ class ApplicationStasis(object):
 
     def initialize(self, token):
         self._confd.wait_until_ready()
-        applications = self._confd.applications.list(recurse=True)['items']
-        self._apps_config = {app['uuid']: app for app in applications}
-        self._register_applications()
-        self._subscribe()
-        self._create_destinations()
+        applications = self._service.list_confd_applications()
+        self._register_applications(applications)
+        self._subscribe(applications)
+        self._create_destinations(applications)
         logger.debug('Stasis applications initialized')
 
     def stasis_start(self, event_objects, event):
@@ -88,21 +86,21 @@ class ApplicationStasis(object):
         node = make_node_from_bridge(bridge)
         self._notifier.node_deleted(application_uuid, node)
 
-    def _subscribe(self):
+    def _subscribe(self, applications):
         self._ari.on_channel_event('StasisStart', self.stasis_start)
         self._ari.on_channel_event('StasisEnd', self.stasis_end)
         self._ari.on_channel_event('ChannelEnteredBridge', self.channel_update_bridge)
         self._ari.on_channel_event('ChannelLeftBridge', self.channel_update_bridge)
         self._ari.on_bridge_event('BridgeDestroyed', self.bridge_destroyed)
 
-        for application in self._apps_config.values():
+        for application in applications:
             app_uuid = application['uuid']
             self._ari.on_application_deregistered(AppNameHelper.to_name(app_uuid), self._on_stop)
             self._ari.on_application_registered(AppNameHelper.to_name(app_uuid), self._on_start)
 
-    def _create_destinations(self):
+    def _create_destinations(self, applications):
         logger.info('Creating destination nodes')
-        for application in self._apps_config.values():
+        for application in applications:
             if application['destination'] == 'node':
                 self._service.create_destination_node(application)
         self._destination_created = True
@@ -111,7 +109,7 @@ class ApplicationStasis(object):
         channel = event_objects['channel']
         logger.debug('new incoming call %s', channel.id)
         self._service.channel_answer(application_uuid, channel)
-        application = self._apps_config[application_uuid]
+        application = self._service.get_confd_application(application_uuid)
         if application['destination'] == 'node':
             self._service.join_destination_node(channel.id, application)
 
@@ -121,8 +119,8 @@ class ApplicationStasis(object):
         if node_uuid:
             self._service.join_node(application_uuid, node_uuid, [channel.id])
 
-    def _register_applications(self):
-        apps_name = set([AppNameHelper.to_name(uuid) for uuid in self._apps_config])
+    def _register_applications(self, applications):
+        apps_name = set([AppNameHelper.to_name(app['uuid']) for app in applications])
         for app_name in apps_name:
             self._core_ari.register_application(app_name)
 
@@ -132,7 +130,8 @@ class ApplicationStasis(object):
         if self._destination_created:
             return
 
-        self._create_destinations()
+        applications = self._service.list_confd_applications()
+        self._create_destinations(applications)
 
     def _on_stop(self):
         self._destination_created = False
