@@ -134,6 +134,12 @@ class ApplicationService(object):
         return make_node_from_bridge(bridge)
 
     def get_node_uuid(self, application, node_uuid):
+        # TODO: remove when asterisk will be able to create bridge associated to an application
+        #       Otherwise, if the bridge doesn't received call, no bridge will appear in the
+        #       application
+        if application['uuid'] == node_uuid:
+            return node_uuid
+
         if str(node_uuid) not in application['bridge_ids']:
             raise NoSuchNode(node_uuid)
         return node_uuid
