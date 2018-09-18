@@ -1,6 +1,26 @@
 Changelog
 =========
 
+18.10
+-----
+
+* A new API to create custom applications has been added
+
+  * `GET /applications/{application_uuid}`
+  * `GET /applications/{application_uuid}/calls`
+  * `POST /applications/{application_uuid}/calls`
+  * `DELETE /applications/{application_uuid}/calls/{call_id}`
+  * `POST /applications/{application_uuid}/calls/{call_id}/playbacks`
+  * `GET /applications/{application_uuid}/nodes`
+  * `POST /applications/{application_uuid}/nodes`
+  * `GET /applications/{application_uuid}/nodes/{node_uuid}`
+  * `DELETE /applications/{application_uuid}/nodes/{node_uuid}`
+  * `POST /applications/{application_uuid}/nodes/{node_uuid}/calls`
+  * `PUT /applications/{application_uuid}/nodes/{node_uuid}/calls/{call_id}`
+  * `DELETE /applications/{application_uuid}/nodes/{node_uuid}/calls/{call_id}`
+  * `DELETE /applications/{application_uuid}/playbacks/{playback_uuid}`
+
+
 17.17
 ------
 
