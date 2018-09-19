@@ -228,6 +228,7 @@ class ApplicationService(object):
             'endpoint': endpoint,
             'app': AppNameHelper.to_name(application_uuid),
             'appArgs': ','.join(app_args),
+            'variables': {'variables': {}}
         }
 
         if autoanswer:
