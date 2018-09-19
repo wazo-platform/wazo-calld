@@ -1,6 +1,15 @@
 Changelog
 =========
 
+18.11
+-----
+
+* New API to start and stop music on hold on a call in an application
+
+  * `PUT /applications/{application_uuid}/calls/{call_id}/moh/{moh_uuid}/start`
+  * `PUT /applications/{application_uuid}/calls/{call_id}/moh/stop`
+
+
 18.10
 -----
 
