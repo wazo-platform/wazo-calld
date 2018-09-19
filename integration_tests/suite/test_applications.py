@@ -18,12 +18,12 @@ from .helpers.confd import MockApplication
 ENDPOINT_AUTOANSWER = 'Test/integration-caller/autoanswer'
 
 
-class BaseApplicationsTestCase(RealAsteriskIntegrationTest):
+class BaseApplicationTestCase(RealAsteriskIntegrationTest):
 
     asset = 'real_asterisk'
 
     def setUp(self):
-        super(BaseApplicationsTestCase, self).setUp()
+        super(BaseApplicationTestCase, self).setUp()
 
         self.unknown_uuid = '00000000-0000-0000-0000-000000000000'
 
@@ -72,7 +72,7 @@ class BaseApplicationsTestCase(RealAsteriskIntegrationTest):
         self.fail('Call start timedout')
 
 
-class TestStasisTriggers(BaseApplicationsTestCase):
+class TestStasisTriggers(BaseApplicationTestCase):
 
     def test_entering_stasis_without_a_node(self):
         app_uuid = self.no_node_app_uuid
@@ -198,7 +198,7 @@ class TestStasisTriggers(BaseApplicationsTestCase):
         until.assert_(event_received, tries=3)
 
 
-class TestApplications(BaseApplicationsTestCase):
+class TestApplication(BaseApplicationTestCase):
 
     def test_get(self):
         response = self.ctid_ng.get_application(self.unknown_uuid)
@@ -522,7 +522,7 @@ class TestApplications(BaseApplicationsTestCase):
         until.assert_(call_entered_node, tries=3)
 
 
-class TestApplicationsPlaybacks(BaseApplicationsTestCase):
+class TestApplicationPlayback(BaseApplicationTestCase):
 
     def test_post_call_playback(self):
         body = {'uri': 'sound:tt-weasels'}
@@ -566,7 +566,7 @@ class TestApplicationsPlaybacks(BaseApplicationsTestCase):
         assert_that(response, has_properties(status_code=204))
 
 
-class TestApplicationsNodes(BaseApplicationsTestCase):
+class TestApplicationNode(BaseApplicationTestCase):
 
     def test_post_unknown_app(self):
         channel = self.call_app(self.no_node_app_uuid)
@@ -801,7 +801,7 @@ class TestApplicationsNodes(BaseApplicationsTestCase):
         until.assert_(event_received, tries=3)
 
 
-class TestApplicationsNodesCalls(BaseApplicationsTestCase):
+class TestApplicationNodeCall(BaseApplicationTestCase):
 
     def test_delete(self):
         channel = self.call_app(self.node_app_uuid)
