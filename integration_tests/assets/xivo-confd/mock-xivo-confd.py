@@ -19,6 +19,12 @@ _EMPTY_RESPONSES = {
     'user_lines': {},
     'users': {},
     'infos': {},
+    'moh': {
+        '60f123e6-147b-487c-b08a-36395d43346e': {
+            'uuid': '60f123e6-147b-487c-b08a-36395d43346e',
+            'name': 'default',
+        },
+    },
 }
 
 app = Flask(__name__)
@@ -134,6 +140,13 @@ def switchboard(switchboard_uuid):
     if switchboard_uuid not in _responses['switchboards']:
         return '', 404
     return jsonify(_responses['switchboards'][switchboard_uuid])
+
+
+@app.route('/1.1/moh')
+def moh():
+    recurse = request.args.get('recurse')
+    items = _responses['moh'].values() if recurse else []
+    return jsonify({'items': items})
 
 
 if __name__ == '__main__':
