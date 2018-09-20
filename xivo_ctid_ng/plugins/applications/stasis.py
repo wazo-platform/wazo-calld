@@ -4,6 +4,8 @@
 
 import logging
 
+from ari.exceptions import ARINotFound
+
 from .models import (
     make_call_from_channel,
     make_node_from_bridge,
@@ -86,7 +88,29 @@ class ApplicationStasis(object):
         node = make_node_from_bridge(bridge)
         self._notifier.node_deleted(application_uuid, node)
 
+    def channel_moh_started(self, channel, event):
+        application_uuid = AppNameHelper.to_uuid(event.get('application'))
+        if not application_uuid:
+            return
+
+        moh_uuid = self._service.find_moh(event['moh_class'])
+        channel.setChannelVar(variable='WAZO_MOH_UUID', value=moh_uuid)
+
+        # TODO: patch asterisk to make setChannelVar synchronous
+        import time
+        while True:
+            try:
+                logger.critical(channel.getChannelVar(variable='WAZO_MOH_UUID'))
+                break
+            except ARINotFound:
+                logger.critical('waiting for a setvar to complete')
+                time.sleep(0.001)
+
+        call = make_call_from_channel(channel, self._ari)
+        self._notifier.call_updated(application_uuid, call)
+
     def _subscribe(self, applications):
+        self._ari.on_channel_event('ChannelMohStart', self.channel_moh_started)
         self._ari.on_channel_event('StasisStart', self.stasis_start)
         self._ari.on_channel_event('StasisEnd', self.stasis_end)
         self._ari.on_channel_event('ChannelEnteredBridge', self.channel_update_bridge)

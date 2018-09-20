@@ -529,7 +529,7 @@ class TestApplicationMoh(BaseApplicationTestCase):
         app_uuid = self.no_node_app_uuid
         channel = self.call_app(self.no_node_app_uuid)
 
-        routing_key = 'applications.{uuid}.#'.format(uuid=self.no_node_app_uuid)
+        routing_key = 'applications.{uuid}.#'.format(uuid=app_uuid)
         event_accumulator = self.bus.accumulator(routing_key)
 
         response = self.ctid_ng.application_call_moh_start(app_uuid, channel.id, moh_uuid)
@@ -543,7 +543,7 @@ class TestApplicationMoh(BaseApplicationTestCase):
                     has_entries(
                         name='application_call_updated',
                         data=has_entries(
-                            application_uuid=self.no_node_app_uuid,
+                            application_uuid=app_uuid,
                             call=has_entries(
                                 id=channel.id,
                                 moh_uuid=moh_uuid,

@@ -249,6 +249,10 @@ class ApplicationService(object):
         call = make_call_from_channel(channel, ari=self._ari, variables=variables)
         self._notifier.call_initiated(application_uuid, call)
 
+    def start_call_moh(self, call_id, moh_uuid):
+        moh = self._get_moh(moh_uuid)
+        self._ari.channels.startMoh(channelId=call_id, mohClass=moh)
+
     def create_playback(self, application_uuid, call_id, media_uri, language=None):
         kwargs = {
             'channelId': call_id,
@@ -274,6 +278,14 @@ class ApplicationService(object):
             self._ari.playbacks.stop(playbackId=playback_id)
         except ARINotFound:
             raise NoSuchPlayback(playback_id)
+
+    def find_moh(self, moh_class):
+        # TODO: use confd
+        return '60f123e6-147b-487c-b08a-36395d43346e'
+
+    def _get_moh(self, moh_uuid):
+        # TODO: use confd
+        return 'default'
 
     @staticmethod
     def _extract_variables(lines):
