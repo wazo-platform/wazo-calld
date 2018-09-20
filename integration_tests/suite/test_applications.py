@@ -524,6 +524,22 @@ class TestApplication(BaseApplicationTestCase):
 
 class TestApplicationMoh(BaseApplicationTestCase):
 
+    def test_put_moh_start_fail(self):
+        moh_uuid = '60f123e6-147b-487c-b08a-36395d43346e'  # From the confd mock
+        app_uuid = self.no_node_app_uuid
+        channel = self.call_app(self.no_node_app_uuid)
+        unrelated_channel = self.call_app(self.node_app_uuid)
+
+        params = [
+            (self.unknown_uuid, channel.id, moh_uuid),
+            (app_uuid, unrelated_channel.id, moh_uuid),
+            (app_uuid, channel.id, self.unknown_uuid),
+        ]
+
+        for param in params:
+            result = self.ctid_ng.application_call_moh_start(*params)
+            assert_that(result, has_properties(status_code=404), param)
+
     def test_put_moh_start_success(self):
         moh_uuid = '60f123e6-147b-487c-b08a-36395d43346e'  # From the confd mock
         app_uuid = self.no_node_app_uuid

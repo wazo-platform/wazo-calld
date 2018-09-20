@@ -65,6 +65,8 @@ class ApplicationCallMohStartList(AuthResource):
 
     @required_acl('ctid-ng.applications.{application_uuid}.calls.{call_id}.moh.{moh_uuid}.start.update')
     def put(self, application_uuid, call_id, moh_uuid):
+        application = self._service.get_application(application_uuid)
+        self._service.get_call_id(application, call_id)
         self._service.start_call_moh(call_id, moh_uuid)
         return '', 204
 
