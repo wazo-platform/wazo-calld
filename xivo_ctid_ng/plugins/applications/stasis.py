@@ -101,17 +101,44 @@ class ApplicationStasis(object):
             import time
             while True:
                 try:
-                    logger.critical(channel.getChannelVar(variable='WAZO_MOH_UUID'))
-                    break
-                except ARINotFound:
-                    logger.critical('waiting for a setvar to complete')
+                    if channel.getChannelVar(variable='WAZO_MOH_UUID')['value'] == str(moh['uuid']):
+                        break
+
+                    logger.debug('waiting for a setvar to complete')
                     time.sleep(0.001)
+                except ARINotFound:
+                    logger.debug('waiting for a setvar to complete')
+                    time.sleep(0.001)
+
+        call = make_call_from_channel(channel, self._ari)
+        self._notifier.call_updated(application_uuid, call)
+
+    def channel_moh_stopped(self, channel, event):
+        application_uuid = AppNameHelper.to_uuid(event.get('application'))
+        if not application_uuid:
+            return
+
+        channel.setChannelVar(variable='WAZO_MOH_UUID', value='')
+
+        # TODO: patch asterisk to make setChannelVar synchronous
+        import time
+        while True:
+            try:
+                if channel.getChannelVar(variable='WAZO_MOH_UUID')['value'] == '':
+                    break
+
+                logger.debug('waiting for a setvar to complete')
+                time.sleep(0.001)
+            except ARINotFound:
+                logger.debug('waiting for a setvar to complete')
+                time.sleep(0.001)
 
         call = make_call_from_channel(channel, self._ari)
         self._notifier.call_updated(application_uuid, call)
 
     def _subscribe(self, applications):
         self._ari.on_channel_event('ChannelMohStart', self.channel_moh_started)
+        self._ari.on_channel_event('ChannelMohStop', self.channel_moh_stopped)
         self._ari.on_channel_event('StasisStart', self.stasis_start)
         self._ari.on_channel_event('StasisEnd', self.stasis_end)
         self._ari.on_channel_event('ChannelEnteredBridge', self.channel_update_bridge)

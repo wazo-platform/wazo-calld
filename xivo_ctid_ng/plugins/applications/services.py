@@ -259,6 +259,9 @@ class ApplicationService(object):
         moh = self._get_moh(moh_uuid)
         self._ari.channels.startMoh(channelId=call_id, mohClass=moh['name'])
 
+    def stop_call_moh(self, call_id):
+        self._ari.channels.stopMoh(channelId=call_id)
+
     def create_playback(self, application_uuid, call_id, media_uri, language=None):
         kwargs = {
             'channelId': call_id,
