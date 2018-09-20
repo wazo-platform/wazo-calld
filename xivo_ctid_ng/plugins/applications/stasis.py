@@ -93,18 +93,19 @@ class ApplicationStasis(object):
         if not application_uuid:
             return
 
-        moh_uuid = self._service.find_moh(event['moh_class'])
-        channel.setChannelVar(variable='WAZO_MOH_UUID', value=moh_uuid)
+        moh = self._service.find_moh(event['moh_class'])
+        if moh:
+            channel.setChannelVar(variable='WAZO_MOH_UUID', value=str(moh['uuid']))
 
-        # TODO: patch asterisk to make setChannelVar synchronous
-        import time
-        while True:
-            try:
-                logger.critical(channel.getChannelVar(variable='WAZO_MOH_UUID'))
-                break
-            except ARINotFound:
-                logger.critical('waiting for a setvar to complete')
-                time.sleep(0.001)
+            # TODO: patch asterisk to make setChannelVar synchronous
+            import time
+            while True:
+                try:
+                    logger.critical(channel.getChannelVar(variable='WAZO_MOH_UUID'))
+                    break
+                except ARINotFound:
+                    logger.critical('waiting for a setvar to complete')
+                    time.sleep(0.001)
 
         call = make_call_from_channel(channel, self._ari)
         self._notifier.call_updated(application_uuid, call)

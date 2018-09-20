@@ -62,6 +62,19 @@ class NoSuchMedia(APIException):
         )
 
 
+class NoSuchMoh(APIException):
+
+    def __init__(self, uuid):
+        super(NoSuchMoh, self).__init__(
+            status_code=400,
+            message='No such music on hold',
+            error_id='no-such-moh',
+            details={
+                'uuid': str(uuid),
+            }
+        )
+
+
 class NoSuchNode(APIException):
 
     def __init__(self, node_uuid):

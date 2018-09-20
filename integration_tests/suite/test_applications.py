@@ -524,7 +524,7 @@ class TestApplication(BaseApplicationTestCase):
 
 class TestApplicationMoh(BaseApplicationTestCase):
 
-    def test_put_moh_start(self):
+    def test_put_moh_start_success(self):
         moh_uuid = '60f123e6-147b-487c-b08a-36395d43346e'  # From the confd mock
         app_uuid = self.no_node_app_uuid
         channel = self.call_app(self.no_node_app_uuid)
@@ -554,6 +554,17 @@ class TestApplicationMoh(BaseApplicationTestCase):
             )
 
         until.assert_(music_on_hold_started_event_received, tries=3)
+
+        response = self.ctid_ng.get_application_calls(app_uuid)
+        assert_that(
+            response.json()['items'],
+            contains(
+                has_entries(
+                    id=channel.id,
+                    moh_uuid=moh_uuid,
+                )
+            )
+        )
 
 
 class TestApplicationPlayback(BaseApplicationTestCase):
