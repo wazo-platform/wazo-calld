@@ -257,10 +257,16 @@ class ApplicationService(object):
 
     def start_call_moh(self, call_id, moh_uuid):
         moh = self._get_moh(moh_uuid)
-        self._ari.channels.startMoh(channelId=call_id, mohClass=moh['name'])
+        try:
+            self._ari.channels.startMoh(channelId=call_id, mohClass=moh['name'])
+        except ARINotFound:
+            raise NoSuchCall(call_id)
 
     def stop_call_moh(self, call_id):
-        self._ari.channels.stopMoh(channelId=call_id)
+        try:
+            self._ari.channels.stopMoh(channelId=call_id)
+        except ARINotFound:
+            raise NoSuchCall(call_id)
 
     def create_playback(self, application_uuid, call_id, media_uri, language=None):
         kwargs = {
