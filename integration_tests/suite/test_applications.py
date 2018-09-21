@@ -18,12 +18,12 @@ from .helpers.confd import MockApplication
 ENDPOINT_AUTOANSWER = 'Test/integration-caller/autoanswer'
 
 
-class BaseApplicationsTestCase(RealAsteriskIntegrationTest):
+class BaseApplicationTestCase(RealAsteriskIntegrationTest):
 
     asset = 'real_asterisk'
 
     def setUp(self):
-        super(BaseApplicationsTestCase, self).setUp()
+        super(BaseApplicationTestCase, self).setUp()
 
         self.unknown_uuid = '00000000-0000-0000-0000-000000000000'
 
@@ -72,7 +72,7 @@ class BaseApplicationsTestCase(RealAsteriskIntegrationTest):
         self.fail('Call start timedout')
 
 
-class TestStasisTriggers(BaseApplicationsTestCase):
+class TestStasisTriggers(BaseApplicationTestCase):
 
     def test_entering_stasis_without_a_node(self):
         app_uuid = self.no_node_app_uuid
@@ -198,7 +198,7 @@ class TestStasisTriggers(BaseApplicationsTestCase):
         until.assert_(event_received, tries=3)
 
 
-class TestApplications(BaseApplicationsTestCase):
+class TestApplication(BaseApplicationTestCase):
 
     def test_get(self):
         response = self.ctid_ng.get_application(self.unknown_uuid)
@@ -522,7 +522,137 @@ class TestApplications(BaseApplicationsTestCase):
         until.assert_(call_entered_node, tries=3)
 
 
-class TestApplicationsPlaybacks(BaseApplicationsTestCase):
+class TestApplicationMoh(BaseApplicationTestCase):
+
+    def test_put_moh_start_fail(self):
+        moh_uuid = '60f123e6-147b-487c-b08a-36395d43346e'  # From the confd mock
+        app_uuid = self.no_node_app_uuid
+        channel = self.call_app(self.no_node_app_uuid)
+        unrelated_channel = self.call_app(self.node_app_uuid)
+
+        params = [
+            (self.unknown_uuid, channel.id, moh_uuid),
+            (app_uuid, unrelated_channel.id, moh_uuid),
+            (app_uuid, channel.id, self.unknown_uuid),
+        ]
+
+        for param in params:
+            result = self.ctid_ng.application_call_moh_start(*params)
+            assert_that(result, has_properties(status_code=404), param)
+
+    def test_put_moh_stop_fail(self):
+        moh_uuid = '60f123e6-147b-487c-b08a-36395d43346e'  # From the confd mock
+        app_uuid = self.no_node_app_uuid
+        channel = self.call_app(self.no_node_app_uuid)
+        unrelated_channel = self.call_app(self.node_app_uuid)
+        self.ctid_ng.application_call_moh_start(app_uuid, channel.id, moh_uuid)
+
+        params = [
+            (self.unknown_uuid, channel.id),
+            (app_uuid, unrelated_channel.id),
+        ]
+
+        for param in params:
+            result = self.ctid_ng.application_call_moh_stop(*params)
+            assert_that(result, has_properties(status_code=404), param)
+
+    def test_put_moh_start_success(self):
+        moh_uuid = '60f123e6-147b-487c-b08a-36395d43346e'  # From the confd mock
+        app_uuid = self.no_node_app_uuid
+        channel = self.call_app(self.no_node_app_uuid)
+
+        routing_key = 'applications.{uuid}.#'.format(uuid=app_uuid)
+        event_accumulator = self.bus.accumulator(routing_key)
+
+        response = self.ctid_ng.application_call_moh_start(app_uuid, channel.id, moh_uuid)
+        assert_that(response, has_properties(status_code=204))
+
+        def music_on_hold_started_event_received():
+            events = event_accumulator.accumulate()
+            assert_that(
+                events,
+                contains(
+                    has_entries(
+                        name='application_call_updated',
+                        data=has_entries(
+                            application_uuid=app_uuid,
+                            call=has_entries(
+                                id=channel.id,
+                                moh_uuid=moh_uuid,
+                            )
+                        )
+                    )
+                )
+            )
+
+        until.assert_(music_on_hold_started_event_received, tries=3)
+
+        response = self.ctid_ng.get_application_calls(app_uuid)
+        assert_that(
+            response.json()['items'],
+            contains(
+                has_entries(
+                    id=channel.id,
+                    moh_uuid=moh_uuid,
+                )
+            )
+        )
+
+    def test_put_moh_stop_success(self):
+        moh_uuid = '60f123e6-147b-487c-b08a-36395d43346e'  # From the confd mock
+        app_uuid = self.no_node_app_uuid
+        channel = self.call_app(self.no_node_app_uuid)
+
+        routing_key = 'applications.{uuid}.#'.format(uuid=app_uuid)
+        event_accumulator = self.bus.accumulator(routing_key)
+
+        self.ctid_ng.application_call_moh_start(app_uuid, channel.id, moh_uuid)
+        response = self.ctid_ng.application_call_moh_stop(app_uuid, channel.id)
+        assert_that(response, has_properties(status_code=204))
+
+        def call_updated_event_received():
+            events = event_accumulator.accumulate()
+            assert_that(
+                events,
+                contains(
+                    has_entries(
+                        name='application_call_updated',
+                        data=has_entries(
+                            application_uuid=app_uuid,
+                            call=has_entries(
+                                id=channel.id,
+                                moh_uuid=moh_uuid,
+                            )
+                        )
+                    ),
+                    has_entries(
+                        name='application_call_updated',
+                        data=has_entries(
+                            application_uuid=app_uuid,
+                            call=has_entries(
+                                id=channel.id,
+                                moh_uuid=None,
+                            )
+                        )
+                    )
+                )
+            )
+
+        until.assert_(call_updated_event_received, tries=3)
+
+        response = self.ctid_ng.get_application_calls(app_uuid)
+        assert_that(
+            response.json()['items'],
+            contains(
+                has_entries(
+                    id=channel.id,
+                    moh_uuid=None,
+                )
+            )
+        )
+
+
+class TestApplicationPlayback(BaseApplicationTestCase):
 
     def test_post_call_playback(self):
         body = {'uri': 'sound:tt-weasels'}
@@ -566,7 +696,7 @@ class TestApplicationsPlaybacks(BaseApplicationsTestCase):
         assert_that(response, has_properties(status_code=204))
 
 
-class TestApplicationsNodes(BaseApplicationsTestCase):
+class TestApplicationNode(BaseApplicationTestCase):
 
     def test_post_unknown_app(self):
         channel = self.call_app(self.no_node_app_uuid)
@@ -801,7 +931,7 @@ class TestApplicationsNodes(BaseApplicationsTestCase):
         until.assert_(event_received, tries=3)
 
 
-class TestApplicationsNodesCalls(BaseApplicationsTestCase):
+class TestApplicationNodeCall(BaseApplicationTestCase):
 
     def test_delete(self):
         channel = self.call_app(self.node_app_uuid)

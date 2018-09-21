@@ -82,6 +82,49 @@ paths:
         '503':
           $ref: '#/responses/AnotherServiceUnavailable'
 
+  /applications/{application_uuid}/calls/{call_id}/moh/{moh_uuid}/start:
+    put:
+      summary: Starts playing a music on hold
+      description: |
+        **Required ACL:** `ctid-ng.applications.{application_uuid}.calls.{call_id}.moh.{moh_uuid}.start.update`
+
+        Starts playing a music on hold on a call. If the music on hold is interrupted for a playback or another
+        action, the music on hold will not restart automatically after the interruption.
+      parameters:
+      - $ref: '#/parameters/ApplicationUUID'
+      - $ref: '#/parameters/ApplicationCallID'
+      - $ref: '#/parameters/ApplicationMOHUUID'
+      tags:
+      - applications
+      responses:
+        '204':
+          description: The MOH has been started
+        '404':
+          description: No such application, call or moh
+          schema:
+            $ref: '#/definitions/Error'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+
+  /applications/{application_uuid}/calls/{call_id}/moh/stop:
+    put:
+      summary: Stops playing a music on hold
+      description: '**Required ACL:** `ctid-ng.applications.{application_uuid}.calls.{call_id}.moh.{moh_uuid}.stop.update'
+      parameters:
+      - $ref: '#/parameters/ApplicationUUID'
+      - $ref: '#/parameters/ApplicationCallID'
+      tags:
+      - applications
+      responses:
+        '204':
+          description: The MOH has been stopped
+        '404':
+          description: No such application or call
+          schema:
+            $ref: '#/definitions/Error'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+
   /applications/{application_uuid}/calls/{call_id}/playbacks:
     post:
       summary: Play file to the call
@@ -402,6 +445,12 @@ parameters:
     name: application_uuid
     in: path
     description: UUID of the application
+    required: true
+    type: string
+  ApplicationMOHUUID:
+    name: moh_uuid
+    in: path
+    description: UUID of the music on hold
     required: true
     type: string
   ApplicationNodeUUID:

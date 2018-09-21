@@ -39,6 +39,7 @@ class ApplicationCallSchema(BaseSchema):
     dialed_extension = fields.String()
     variables = StrictDict(key_field=fields.String(), value_field=fields.String())
     node_uuid = fields.String()
+    moh_uuid = fields.String()
 
 
 class ApplicationNodeCallSchema(BaseSchema):

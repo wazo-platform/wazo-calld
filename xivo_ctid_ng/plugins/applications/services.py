@@ -2,6 +2,8 @@
 # Copyright 2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
+import logging
+
 from requests import HTTPError
 from ari.exceptions import ARINotFound
 from xivo_ctid_ng.helpers import ami
@@ -16,10 +18,13 @@ from .exceptions import (
     NoSuchApplication,
     NoSuchCall,
     NoSuchMedia,
+    NoSuchMoh,
     NoSuchNode,
     NoSuchPlayback,
 )
 from .stasis import AppNameHelper
+
+logger = logging.getLogger(__name__)
 
 
 class ApplicationService(object):
@@ -30,6 +35,7 @@ class ApplicationService(object):
         self._amid = amid
         self._notifier = notifier
         self._apps_cache = None
+        self._moh_cache = None
 
     def channel_answer(self, application_uuid, channel):
         channel.answer()
@@ -249,6 +255,19 @@ class ApplicationService(object):
         call = make_call_from_channel(channel, ari=self._ari, variables=variables)
         self._notifier.call_initiated(application_uuid, call)
 
+    def start_call_moh(self, call_id, moh_uuid):
+        moh = self._get_moh(moh_uuid)
+        try:
+            self._ari.channels.startMoh(channelId=call_id, mohClass=moh['name'])
+        except ARINotFound:
+            raise NoSuchCall(call_id)
+
+    def stop_call_moh(self, call_id):
+        try:
+            self._ari.channels.stopMoh(channelId=call_id)
+        except ARINotFound:
+            raise NoSuchCall(call_id)
+
     def create_playback(self, application_uuid, call_id, media_uri, language=None):
         kwargs = {
             'channelId': call_id,
@@ -274,6 +293,29 @@ class ApplicationService(object):
             self._ari.playbacks.stop(playbackId=playback_id)
         except ARINotFound:
             raise NoSuchPlayback(playback_id)
+
+    def find_moh(self, moh_class):
+        if self._moh_cache is None:
+            self._fetch_moh()
+
+        for moh in self._moh_cache:
+            if moh['name'] == moh_class:
+                return moh
+
+    def _get_moh(self, moh_uuid):
+        if self._moh_cache is None:
+            self._fetch_moh()
+
+        moh_uuid = str(moh_uuid)
+        for moh in self._moh_cache:
+            if moh['uuid'] == moh_uuid:
+                return moh
+
+        raise NoSuchMoh(moh_uuid)
+
+    def _fetch_moh(self):
+        self._moh_cache = self._confd.moh.list(recurse=True)['items']
+        logger.info('MOH cache initialized: %s', self._moh_cache)
 
     @staticmethod
     def _extract_variables(lines):

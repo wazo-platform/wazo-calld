@@ -2,6 +2,7 @@
 # Copyright 2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
+from ari.exceptions import ARINotFound
 from xivo_ctid_ng.helpers.ari_ import Channel as _ChannelHelper
 
 
@@ -9,6 +10,7 @@ class ApplicationCall(object):
 
     def __init__(self, id_):
         self.id_ = id_
+        self.moh_uuid = None
 
 
 class ApplicationNode(object):
@@ -35,6 +37,10 @@ def make_call_from_channel(channel, ari=None, variables=None, node_uuid=None):
         call.on_hold = channel_helper.on_hold()
         call.is_caller = channel_helper.is_caller()
         call.dialed_extension = channel_helper.dialed_extension()
+        try:
+            call.moh_uuid = channel.getChannelVar(variable='WAZO_MOH_UUID').get('value') or None
+        except ARINotFound:
+            call.moh_uuid = None
 
         call.node_uuid = getattr(call, 'node_uuid', None)
         for bridge in ari.bridges.list():

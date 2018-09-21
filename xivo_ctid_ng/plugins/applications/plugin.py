@@ -10,6 +10,8 @@ from .notifier import ApplicationNotifier
 from .resources import (
     ApplicationCallItem,
     ApplicationCallList,
+    ApplicationCallMohStopList,
+    ApplicationCallMohStartList,
     ApplicationCallPlaybackList,
     ApplicationPlaybackItem,
     ApplicationItem,
@@ -60,6 +62,16 @@ class Plugin(object):
         api.add_resource(
             ApplicationCallItem,
             '/applications/<uuid:application_uuid>/calls/<call_id>',
+            resource_class_args=[service],
+        )
+        api.add_resource(
+            ApplicationCallMohStopList,
+            '/applications/<uuid:application_uuid>/calls/<call_id>/moh/stop',
+            resource_class_args=[service],
+        )
+        api.add_resource(
+            ApplicationCallMohStartList,
+            '/applications/<uuid:application_uuid>/calls/<call_id>/moh/<uuid:moh_uuid>/start',
             resource_class_args=[service],
         )
         api.add_resource(

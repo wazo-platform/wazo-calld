@@ -3,6 +3,9 @@
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
+import time
+
+from ari.exceptions import ARINotFound
 
 from .models import (
     make_call_from_channel,
@@ -86,7 +89,48 @@ class ApplicationStasis(object):
         node = make_node_from_bridge(bridge)
         self._notifier.node_deleted(application_uuid, node)
 
+    def channel_moh_started(self, channel, event):
+        application_uuid = AppNameHelper.to_uuid(event.get('application'))
+        if not application_uuid:
+            return
+
+        moh = self._service.find_moh(event['moh_class'])
+        if moh:
+            self._set_channel_var_sync(channel, 'WAZO_MOH_UUID', str(moh['uuid']))
+
+        call = make_call_from_channel(channel, self._ari)
+        self._notifier.call_updated(application_uuid, call)
+
+    def channel_moh_stopped(self, channel, event):
+        application_uuid = AppNameHelper.to_uuid(event.get('application'))
+        if not application_uuid:
+            return
+
+        self._set_channel_var_sync(channel, 'WAZO_MOH_UUID', '')
+        call = make_call_from_channel(channel, self._ari)
+        self._notifier.call_updated(application_uuid, call)
+
+    def _set_channel_var_sync(self, channel, var, value):
+        # TODO remove this when Asterisk gets fixed to set var synchronously
+        def get_value():
+            try:
+                return channel.getChannelVar(variable=var)['value']
+            except ARINotFound:
+                return None
+
+        channel.setChannelVar(variable=var, value=value)
+        for _ in xrange(20):
+            if get_value() == value:
+                return
+
+            logger.debug('waiting for a setvar to complete')
+            time.sleep(0.001)
+
+        raise Exception('failed to set channel variable {}={}'.format(var, value))
+
     def _subscribe(self, applications):
+        self._ari.on_channel_event('ChannelMohStart', self.channel_moh_started)
+        self._ari.on_channel_event('ChannelMohStop', self.channel_moh_stopped)
         self._ari.on_channel_event('StasisStart', self.stasis_start)
         self._ari.on_channel_event('StasisEnd', self.stasis_end)
         self._ari.on_channel_event('ChannelEnteredBridge', self.channel_update_bridge)
