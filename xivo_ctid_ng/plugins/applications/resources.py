@@ -55,6 +55,19 @@ class ApplicationCallList(_BaseResource):
         return {'items': application_call_schema.dump(calls, many=True).data}
 
 
+class ApplicationCallHoldStartList(_BaseResource):
+
+    @required_acl('ctid-ng.applications.{application_uuid}.calls.{call_id}.hold.start.update')
+    def put(self, application_uuid, call_id):
+        return '', 204
+
+
+class ApplicationCallHoldStopList(_BaseResource):
+
+    @required_acl('ctid-ng.applications.{application_uuid}.calls.{call_id}.hold.stop.update')
+    def put(self, application_uuid, call_id):
+        return '', 204
+
 
 class ApplicationCallMohStartList(_BaseResource):
 

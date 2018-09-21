@@ -8,17 +8,19 @@ from xivo_confd_client import Client as ConfdClient
 
 from .notifier import ApplicationNotifier
 from .resources import (
+    ApplicationCallHoldStartList,
+    ApplicationCallHoldStopList,
     ApplicationCallItem,
     ApplicationCallList,
-    ApplicationCallMohStopList,
     ApplicationCallMohStartList,
+    ApplicationCallMohStopList,
     ApplicationCallPlaybackList,
-    ApplicationPlaybackItem,
     ApplicationItem,
     ApplicationNodeCallItem,
     ApplicationNodeCallList,
     ApplicationNodeItem,
     ApplicationNodeList,
+    ApplicationPlaybackItem,
 )
 from .services import ApplicationService
 from .stasis import ApplicationStasis
@@ -62,6 +64,16 @@ class Plugin(object):
         api.add_resource(
             ApplicationCallItem,
             '/applications/<uuid:application_uuid>/calls/<call_id>',
+            resource_class_args=[service],
+        )
+        api.add_resource(
+            ApplicationCallHoldStartList,
+            '/applications/<uuid:application_uuid>/calls/<call_id>/hold/start',
+            resource_class_args=[service],
+        )
+        api.add_resource(
+            ApplicationCallHoldStopList,
+            '/applications/<uuid:application_uuid>/calls/<call_id>/hold/stop',
             resource_class_args=[service],
         )
         api.add_resource(

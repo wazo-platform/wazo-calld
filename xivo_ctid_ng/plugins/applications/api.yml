@@ -82,6 +82,44 @@ paths:
         '503':
           $ref: '#/responses/AnotherServiceUnavailable'
 
+  /applications/{application_uuid}/calls/{call_id}/hold/start:
+    put:
+      summary: Place a call on hold
+      description: '**Required ACL:** `ctid-ng.applications.{application_uuid}.calls.{call_id}.hold.start.update`'
+      parameters:
+      - $ref: '#/parameters/ApplicationUUID'
+      - $ref: '#/parameters/ApplicationCallID'
+      tags:
+      - applications
+      responses:
+        '204':
+          description: The call is now on hold
+        '404':
+          description: No such application or call
+          schema:
+            $ref: '#/definitions/Error'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+
+  /applications/{application_uuid}/calls/{call_id}/hold/stop:
+    put:
+      summary: Resume a call that has been placed on hold
+      description: '**Required ACL:** `ctid-ng.applications.{application_uuid}.calls.{call_id}.hold.stop.update'
+      parameters:
+      - $ref: '#/parameters/ApplicationUUID'
+      - $ref: '#/parameters/ApplicationCallID'
+      tags:
+      - applications
+      responses:
+        '204':
+          description: The call has been resumed
+        '404':
+          description: No such application or call
+          schema:
+            $ref: '#/definitions/Error'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+
   /applications/{application_uuid}/calls/{call_id}/moh/{moh_uuid}/start:
     put:
       summary: Starts playing a music on hold
