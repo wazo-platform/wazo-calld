@@ -16,10 +16,13 @@ from .schema import (
 )
 
 
-class ApplicationItem(AuthResource):
+class _BaseResource(AuthResource):
 
     def __init__(self, service):
         self._service = service
+
+
+class ApplicationItem(_BaseResource):
 
     @required_acl('ctid-ng.applications.{application_uuid}.read')
     def get(self, application_uuid):
@@ -27,10 +30,7 @@ class ApplicationItem(AuthResource):
         return application_schema.dump(application).data
 
 
-class ApplicationCallItem(AuthResource):
-
-    def __init__(self, service):
-        self._service = service
+class ApplicationCallItem(_BaseResource):
 
     @required_acl('ctid-ng.applications.{application_uuid}.calls.{call_id}.delete')
     def delete(self, application_uuid, call_id):
@@ -40,10 +40,7 @@ class ApplicationCallItem(AuthResource):
         return '', 204
 
 
-class ApplicationCallList(AuthResource):
-
-    def __init__(self, service):
-        self._service = service
+class ApplicationCallList(_BaseResource):
 
     @required_acl('ctid-ng.applications.{application_uuid}.calls.create')
     def post(self, application_uuid):
@@ -58,10 +55,8 @@ class ApplicationCallList(AuthResource):
         return {'items': application_call_schema.dump(calls, many=True).data}
 
 
-class ApplicationCallMohStartList(AuthResource):
 
-    def __init__(self, service):
-        self._service = service
+class ApplicationCallMohStartList(_BaseResource):
 
     @required_acl('ctid-ng.applications.{application_uuid}.calls.{call_id}.moh.{moh_uuid}.start.update')
     def put(self, application_uuid, call_id, moh_uuid):
@@ -71,10 +66,7 @@ class ApplicationCallMohStartList(AuthResource):
         return '', 204
 
 
-class ApplicationCallMohStopList(AuthResource):
-
-    def __init__(self, service):
-        self._service = service
+class ApplicationCallMohStopList(_BaseResource):
 
     @required_acl('ctid-ng.applications.{application_uuid}.calls.{call_id}.moh.stop.update')
     def put(self, application_uuid, call_id):
@@ -84,10 +76,7 @@ class ApplicationCallMohStopList(AuthResource):
         return '', 204
 
 
-class ApplicationCallPlaybackList(AuthResource):
-
-    def __init__(self, service):
-        self._service = service
+class ApplicationCallPlaybackList(_BaseResource):
 
     @required_acl('ctid-ng.applications.{application_uuid}.calls.{call_id}.playbacks.create')
     def post(self, application_uuid, call_id):
@@ -98,10 +87,7 @@ class ApplicationCallPlaybackList(AuthResource):
         return application_playback_schema.dump(playback).data
 
 
-class ApplicationPlaybackItem(AuthResource):
-
-    def __init__(self, service):
-        self._service = service
+class ApplicationPlaybackItem(_BaseResource):
 
     @required_acl('ctid-ng.applications.{application_uuid}.playbacks.{playback_uuid}.delete')
     def delete(self, application_uuid, playback_uuid):
@@ -111,10 +97,7 @@ class ApplicationPlaybackItem(AuthResource):
         return '', 204
 
 
-class ApplicationNodeCallItem(AuthResource):
-
-    def __init__(self, service):
-        self._service = service
+class ApplicationNodeCallItem(_BaseResource):
 
     @required_acl('ctid-ng.applications.{application_uuid}.nodes.{node_uuid}.calls.{call_id}.delete')
     def delete(self, application_uuid, node_uuid, call_id):
@@ -131,10 +114,7 @@ class ApplicationNodeCallItem(AuthResource):
         return '', 204
 
 
-class ApplicationNodeCallList(AuthResource):
-
-    def __init__(self, service):
-        self._service = service
+class ApplicationNodeCallList(_BaseResource):
 
     @required_acl('ctid-ng.applications.{application_uuid}.nodes.{node_uuid}.calls.create')
     def post(self, application_uuid, node_uuid):
@@ -147,10 +127,7 @@ class ApplicationNodeCallList(AuthResource):
         return application_call_schema.dump(call).data, 201
 
 
-class ApplicationNodeItem(AuthResource):
-
-    def __init__(self, service):
-        self._service = service
+class ApplicationNodeItem(_BaseResource):
 
     @required_acl('ctid-ng.applications.{application_uuid}.nodes.{node_uuid}.read')
     def get(self, application_uuid, node_uuid):
@@ -166,10 +143,7 @@ class ApplicationNodeItem(AuthResource):
         return '', 204
 
 
-class ApplicationNodeList(AuthResource):
-
-    def __init__(self, service):
-        self._service = service
+class ApplicationNodeList(_BaseResource):
 
     @required_acl('ctid-ng.applications.{application_uuid}.nodes.read')
     def get(self, application_uuid):
