@@ -522,6 +522,51 @@ class TestApplication(BaseApplicationTestCase):
         until.assert_(call_entered_node, tries=3)
 
 
+class TestApplicationHold(BaseApplicationTestCase):
+
+    def test_put_hold_start_success(self):
+        app_uuid = self.no_node_app_uuid
+        channel = self.call_app(self.no_node_app_uuid)
+
+        routing_key = 'applications.{uuid}.#'.format(uuid=app_uuid)
+        event_accumulator = self.bus.accumulator(routing_key)
+
+        response = self.ctid_ng.application_call_hold_start(app_uuid, channel.id)
+        assert_that(response, has_properties(status_code=204))
+
+        def event_received():
+            events = event_accumulator.accumulate()
+            print events
+            assert_that(
+                events,
+                contains(
+                    has_entries(
+                        name='application_call_updated',
+                        data=has_entries(
+                            application_uuid=app_uuid,
+                            call=has_entries(
+                                id=channel.id,
+                                on_hold=True,
+                            )
+                        )
+                    )
+                )
+            )
+
+        until.assert_(event_received, tries=3)
+
+        response = self.ctid_ng.get_application_calls(app_uuid)
+        assert_that(
+            response.json()['items'],
+            contains(
+                has_entries(
+                    id=channel.id,
+                    on_hold=True,
+                )
+            )
+        )
+
+
 class TestApplicationMoh(BaseApplicationTestCase):
 
     def test_put_moh_start_fail(self):
