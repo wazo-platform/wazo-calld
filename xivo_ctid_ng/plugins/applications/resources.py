@@ -107,6 +107,13 @@ class ApplicationCallPlaybackList(_BaseResource):
         return application_playback_schema.dump(playback).data
 
 
+class ApplicationCallSnoopList(_BaseResource):
+
+    @required_acl('ctid-ng.applications.{application_uuid}.calls.{call_id}.snoops.create')
+    def post(self, application_uuid, call_id):
+        pass
+
+
 class ApplicationPlaybackItem(_BaseResource):
 
     @required_acl('ctid-ng.applications.{application_uuid}.playbacks.{playback_uuid}.delete')
@@ -115,6 +122,28 @@ class ApplicationPlaybackItem(_BaseResource):
         # TODO: verify that playback_uuid is in the application
         self._service.delete_playback(application_uuid, playback_uuid)
         return '', 204
+
+
+class ApplicationSnoopList(_BaseResource):
+
+    @required_acl('ctid-ng.applications.{application_uuid}.snoops.read')
+    def get(self, application_uuid):
+        pass
+
+
+class ApplicationSnoopItem(_BaseResource):
+
+    @required_acl('ctid-ng.applications.{application_uuid}.snoops.{snoop_uuid}.read')
+    def get(self, application_uuid, snoop_uuid):
+        pass
+
+    @required_acl('ctid-ng.applications.{application_uuid}.snoops.{snoop_uuid}.update')
+    def put(self, application_uuid, snoop_uuid):
+        pass
+
+    @required_acl('ctid-ng.applications.{application_uuid}.snoops.{snoop_uuid}.delete')
+    def delete(self, application_uuid, snoop_uuid):
+        pass
 
 
 class ApplicationNodeCallItem(_BaseResource):
