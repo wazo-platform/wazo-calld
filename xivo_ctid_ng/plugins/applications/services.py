@@ -262,6 +262,13 @@ class ApplicationService(object):
         except ARINotFound:
             raise NoSuchCall(call_id)
 
+    def stop_call_hold(self, call_id):
+        try:
+            self._ari.channels.setChannelVar(channelId=call_id, variable='XIVO_ON_HOLD', value='')
+            self._ari.channels.unhold(channelId=call_id)
+        except ARINotFound:
+            raise NoSuchCall(call_id)
+
     def start_call_moh(self, call_id, moh_uuid):
         moh = self._get_moh(moh_uuid)
         try:
