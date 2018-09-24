@@ -59,6 +59,8 @@ class ApplicationCallHoldStartList(_BaseResource):
 
     @required_acl('ctid-ng.applications.{application_uuid}.calls.{call_id}.hold.start.update')
     def put(self, application_uuid, call_id):
+        application = self._service.get_application(application_uuid)
+        self._service.get_call_id(application, call_id)
         self._service.start_call_hold(call_id)
         return '', 204
 

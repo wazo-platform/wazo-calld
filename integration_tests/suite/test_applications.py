@@ -524,19 +524,25 @@ class TestApplication(BaseApplicationTestCase):
 
 class TestApplicationHold(BaseApplicationTestCase):
 
-    def test_put_hold_start_success(self):
+    def test_put_hold_start(self):
         app_uuid = self.no_node_app_uuid
         channel = self.call_app(self.no_node_app_uuid)
+        other_channel = self.call_app(self.node_app_uuid)
 
         routing_key = 'applications.{uuid}.#'.format(uuid=app_uuid)
         event_accumulator = self.bus.accumulator(routing_key)
+
+        response = self.ctid_ng.application_call_hold_start(self.unknown_uuid, channel.id)
+        assert_that(response, has_properties(status_code=404))
+
+        response = self.ctid_ng.application_call_hold_start(app_uuid, other_channel.id)
+        assert_that(response, has_properties(status_code=404))
 
         response = self.ctid_ng.application_call_hold_start(app_uuid, channel.id)
         assert_that(response, has_properties(status_code=204))
 
         def event_received():
             events = event_accumulator.accumulate()
-            print events
             assert_that(
                 events,
                 contains(
