@@ -618,6 +618,91 @@ class TestApplicationHold(BaseApplicationTestCase):
         )
 
 
+class TestApplicationSnoop(BaseApplicationTestCase):
+
+    def setUp(self):
+        super(TestApplicationSnoop, self).setUp()
+        self.app_uuid = self.no_node_app_uuid
+        self.caller_channel = self.call_app(self.no_node_app_uuid)
+        node = self.ctid_ng.application_new_node(
+            self.app_uuid,
+            calls=[self.caller_channel.id],
+        ).json()
+        self.ctid_ng.application_new_node_call(
+            self.app_uuid,
+            node['uuid'],
+            'local',
+            'recipient_autoanswer',
+        )
+
+    def test_post_snoop(self):
+        unrelated_channel = self.call_app(self.node_app_uuid)
+        supervisor_channel = self.ctid_ng.application_new_call(
+            self.app_uuid,
+            'local',
+            'recipient_autoanswer',
+        ).json()
+
+        result = self.ctid_ng.application_call_snoop(
+            self.unknown_uuid,
+            self.caller_channel.id,
+            supervisor_channel['id'],
+            'both',
+        )
+        assert_that(result, has_properties(status_code=404))
+
+        result = self.ctid_ng.application_call_snoop(
+            self.app_uuid,
+            unrelated_channel.id,
+            supervisor_channel['id'],
+            'both',
+        )
+        assert_that(result, has_properties(status_code=404))
+
+        result = self.ctid_ng.application_call_snoop(
+            self.app_uuid,
+            self.caller_channel.id,
+            unrelated_channel.id,
+            'both',
+        )
+        assert_that(result, has_properties(status_code=400))
+
+        invalid_whisper_mode = [
+            'foobar',
+            'In',
+            False,
+            True,
+            42,
+            [],
+            {},
+        ]
+        for whisper_mode in invalid_whisper_mode:
+            result = self.ctid_ng.application_call_snoop(
+                self.app_uuid,
+                self.caller_channel.id,
+                supervisor_channel['id'],
+                whisper_mode,
+            )
+            assert_that(result, has_properties(status_code=400), whisper_mode)
+
+        result = self.ctid_ng.application_call_snoop(
+            self.app_uuid,
+            self.caller_channel.id,
+            supervisor_channel['id'],
+            'both',
+        )
+
+        assert_that(
+            result.json(),
+            has_entries(
+                uuid=uuid_(),
+                whisper_mode='both',
+                snooped_call_id=self.caller_channel.id,
+                snooping_call_id=supervisor_channel['id'],
+            )
+        )
+
+
 class TestApplicationMoh(BaseApplicationTestCase):
 
     def test_put_moh_start_fail(self):
