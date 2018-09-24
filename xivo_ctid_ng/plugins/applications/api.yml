@@ -204,6 +204,41 @@ paths:
         '503':
           $ref: '#/responses/AnotherServiceUnavailable'
 
+  /applications/{application_uuid}/calls/{call_id}/snoops:
+    post:
+      summary: Start snooping on a call
+      description: '**Required ACL:** `ctid-ng.applications.{application_uuid}.calls.{call_id}.snoops.create`'
+      parameters:
+      - $ref: '#/parameters/ApplicationUUID'
+      - $ref: '#/parameters/ApplicationCallID'
+      - name: body
+        in: body
+        description: snoop parameters
+        required: true
+        schema:
+          $ref: '#/definitions/Snoop'
+      tags:
+      - applications
+      responses:
+        '200':
+          description: Snoop started
+          schema:
+            $ref: '#/definitions/Snoop'
+        '400':
+          description: No such call
+          schema:
+            $ref: '#/definitions/Error'
+        '400':
+          description: Invalid whisper mode
+          schema:
+            $ref: '#/definitions/Error'
+        '404':
+          description: No such application or call
+          schema:
+            $ref: '#/definitions/Error'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+
   /applications/{application_uuid}/nodes:
     get:
       summary: List nodes from the application
@@ -359,6 +394,7 @@ paths:
             $ref: '#/definitions/Error'
         '503':
           $ref: '#/responses/AnotherServiceUnavailable'
+
   /applications/{application_uuid}/playbacks/{playback_uuid}:
     delete:
       summary: Stop and remove playback
@@ -373,6 +409,85 @@ paths:
           description: Playback has been stopped and removed
         '404':
           description: No such application or playback
+          schema:
+            $ref: '#/definitions/Error'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+
+  /applications/{application_uuid}/snoops:
+    get:
+      summary: List active snoops
+      description: '**Required ACL:** `ctid-ng.applications.{application_uuid}.snoops.read`'
+      parameters:
+      - $ref: '#/parameters/ApplicationUUID'
+      tags:
+      - applications
+      responses:
+        '200':
+          description: Snoop list
+        '404':
+          description: No such application
+          schema:
+            $ref: '#/definitions/Error'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+
+  /applications/{application_uuid}/snoops/{snoop_uuid}:
+    get:
+      summary: View snooping parameters
+      description: '**Required ACL:** `ctid-ng.applications.{application_uuid}.snoops.{snoop_uuid}.read`'
+      parameters:
+      - $ref: '#/parameters/ApplicationUUID'
+      - $ref: '#/parameters/ApplicationSnoopUUID'
+      tags:
+      - applications
+      responses:
+        '200':
+          description: Snoop parameters
+        '404':
+          description: No such application or snoop
+          schema:
+            $ref: '#/definitions/Error'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+
+    put:
+      summary: Change snooping parameters
+      description: '**Required ACL:** `ctid-ng.applications.{application_uuid}.snoops.{snoop_uuid}.update`'
+      parameters:
+      - $ref: '#/parameters/ApplicationUUID'
+      - $ref: '#/parameters/ApplicationSnoopUUID'
+      - name: body
+        in: body
+        description: snoop parameters
+        required: true
+        schema:
+          $ref: '#/definitions/Snoop'
+      tags:
+      - applications
+      responses:
+        '204':
+          description: Snooping has been modifier
+        '404':
+          description: No such application or snoop
+          schema:
+            $ref: '#/definitions/Error'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+
+    delete:
+      summary: Stop snooping
+      description: '**Required ACL:** `ctid-ng.applications.{application_uuid}.snoops.{snoop_uuid}.delete`'
+      parameters:
+      - $ref: '#/parameters/ApplicationUUID'
+      - $ref: '#/parameters/ApplicationSnoopUUID'
+      tags:
+      - applications
+      responses:
+        '204':
+          description: Snooping has been stopped
+        '404':
+          description: No such application or snoop
           schema:
             $ref: '#/definitions/Error'
         '503':
@@ -465,6 +580,18 @@ definitions:
         type: string
       language:
         type: string
+  Snoop:
+    type: object
+    properties:
+      uuid:
+        type: string
+        readOnly: true
+      snooped_call_id:
+        type: string
+      snooping_call_id:
+        type: string
+      whisper_mode:
+        type: string
 
 parameters:
   ApplicationCallID:
@@ -501,5 +628,11 @@ parameters:
     name: playback_uuid
     in: path
     description: ID of the playback
+    required: true
+    type: string
+  ApplicationSnoopUUID:
+    name: snoop_uuid
+    in: path
+    description: UUID of the snoop
     required: true
     type: string
