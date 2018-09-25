@@ -2,8 +2,17 @@
 # Copyright 2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
-from marshmallow import Schema, fields, pre_load
-from xivo.mallow.validate import Length
+from marshmallow import (
+    Schema,
+    fields,
+    pre_dump,
+    pre_load,
+    post_load,
+)
+from xivo.mallow.validate import (
+    Length,
+    OneOf,
+)
 from xivo_ctid_ng.helpers.mallow import StrictDict
 
 
@@ -51,6 +60,26 @@ class ApplicationNodeSchema(BaseSchema):
     calls = fields.Nested(ApplicationNodeCallSchema, many=True, validate=Length(min=1), required=True)
 
 
+class ApplicationSnoopSchema(BaseSchema):
+    uuid = fields.String(dump_only=True)
+    snooped_call_id = fields.String(dump_only=True)
+    snooping_call_id = fields.String(required=True)
+    whisper_mode = fields.String(validate=OneOf(['in', 'out', 'both']), missing=None)
+
+    @post_load
+    def load_whisper_mode(self, data):
+        whisper_mode = data.get('whisper_mode')
+        if whisper_mode is None:
+            data['whisper_mode'] = 'none'
+        return data
+
+    @pre_dump
+    def dump_whisper_mode(self, data):
+        whisper_mode = data.get('whisper_mode')
+        if whisper_mode == 'none':
+            data['whisper_mode'] = None
+
+
 class ApplicationSchema(Schema):
     destination_node_uuid = fields.String()
 
@@ -60,3 +89,4 @@ application_call_schema = ApplicationCallSchema()
 application_node_schema = ApplicationNodeSchema()
 application_playback_schema = ApplicationCallPlaySchema()
 application_schema = ApplicationSchema()
+application_snoop_schema = ApplicationSnoopSchema()

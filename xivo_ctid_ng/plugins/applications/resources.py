@@ -13,6 +13,7 @@ from .schema import (
     application_node_schema,
     application_playback_schema,
     application_schema,
+    application_snoop_schema,
 )
 
 
@@ -111,7 +112,11 @@ class ApplicationCallSnoopList(_BaseResource):
 
     @required_acl('ctid-ng.applications.{application_uuid}.calls.{call_id}.snoops.create')
     def post(self, application_uuid, call_id):
-        pass
+        form = application_snoop_schema.load(request.get_json()).data
+        application = self._service.get_application(application_uuid)
+        self._service.get_call_id(application, call_id)
+        snoop = self._service.snoop_create(application, call_id, **form)
+        return application_snoop_schema.dump(snoop).data
 
 
 class ApplicationPlaybackItem(_BaseResource):
