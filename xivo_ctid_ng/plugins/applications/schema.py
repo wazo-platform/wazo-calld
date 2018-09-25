@@ -75,9 +75,9 @@ class ApplicationSnoopSchema(BaseSchema):
 
     @pre_dump
     def dump_whisper_mode(self, data):
-        whisper_mode = data.get('whisper_mode')
-        if whisper_mode == 'none':
-            data['whisper_mode'] = None
+        if data.whisper_mode == 'none':
+            data.whisper_mode = None
+        return data
 
 
 class ApplicationSchema(Schema):

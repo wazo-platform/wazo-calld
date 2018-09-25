@@ -8,6 +8,7 @@ from hamcrest import (
     has_entries,
 )
 
+from ..services import _Snoop
 from ..schema import ApplicationSnoopSchema
 
 
@@ -30,12 +31,12 @@ class TestApplicationSnoopSchema(TestCase):
         assert_that(result, has_entries(whisper_mode='none'))
 
     def test_dump(self):
-        data = {
-            'snooping_call_id': self.snooping_call_id,
-            'snooped_call_id': self.snooped_call_id,
-            'uuid': 'bfb38593-8fc4-4dbc-931a-f82e79380708',
-            'whisper_mode': 'none',
-        }
+        snoop = _Snoop(
+            {'uuid': '7fd8f464-bdb0-4416-9b14-bf2f21be797b'},
+            self.snooped_call_id,
+            self.snooping_call_id,
+            'none',
+        )
 
-        result = self.schema.dump(data).data
+        result = self.schema.dump(snoop).data
         assert_that(result, has_entries(whisper_mode=None))

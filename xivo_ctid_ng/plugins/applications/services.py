@@ -28,6 +28,86 @@ from .stasis import AppNameHelper
 logger = logging.getLogger(__name__)
 
 
+class _Snoop(object):
+
+    _bridge_name_tpl = 'wazo-app-snoop-{}'
+
+    def __init__(self, application, snooped_call_id, snooping_call_id, whisper_mode):
+        self.uuid = str(uuid4())
+        self.application = application
+        self.snooped_call_id = snooped_call_id
+        self.snooping_call_id = snooping_call_id
+        self.whisper_mode = whisper_mode
+        self.bridge_name = self._bridge_name_tpl.format(application['uuid'])
+        self._bridge = None
+        self._snoop_channel = None
+
+    def create_bridge(self, ari):
+        self._bridge = ari.bridges.createWithId(
+            bridgeId=self.uuid,
+            name=self.bridge_name,
+            type='mixing',
+        )
+
+        self._bridge.addChannel(channel=self._snoop_channel.id)
+        try:
+            self._bridge.addChannel(channel=self.snooping_call_id)
+        except HTTPError as e:
+            response = getattr(e, 'response', None)
+            status_code = getattr(response, 'status_code', None)
+            if status_code == 400:
+                raise NoSuchCall(self.snooping_call_id, status_code=400)
+            raise
+
+    def create_snoop_channel(self, ari):
+        try:
+            self._snoop_channel = ari.channels.snoopChannelWithId(
+                channelId=self.snooped_call_id,
+                snoopId=self.uuid,
+                spy='both',
+                whisper=self.whisper_mode,
+                app=self.application['name'],
+            )
+        except ARINotFound:
+            raise NoSuchCall(self.snooped_call_id)
+
+    def destroy(self):
+        if self._bridge:
+            try:
+                self._bridge.destroy()
+            except ARINotFound:
+                pass
+
+        if self._snoop_channel:
+            try:
+                self._snoop_channel.hangup()
+            except ARINotFound:
+                pass
+
+    def validate_ownership(self, application, snooped_call_id, snooping_call_id):
+        if snooped_call_id not in application['channel_ids']:
+            raise NoSuchCall(snooped_call_id, status_code=404)
+        if snooping_call_id not in application['channel_ids']:
+            raise NoSuchCall(snooping_call_id, status_code=400)
+
+
+class _SnoopHelper(object):
+
+    def __init__(self, ari):
+        self._ari = ari
+
+    def create(self, application, snooped_call_id, snooping_call_id, whisper_mode):
+        snoop = _Snoop(application, snooped_call_id, snooping_call_id, whisper_mode)
+        snoop.validate_ownership(application, snooped_call_id, snooping_call_id)
+        try:
+            snoop.create_snoop_channel(self._ari)
+            snoop.create_bridge(self._ari)
+        except Exception:
+            snoop.destroy()
+            raise
+        return snoop
+
+
 class ApplicationService(object):
 
     def __init__(self, ari, confd, amid, notifier):
@@ -37,6 +117,7 @@ class ApplicationService(object):
         self._notifier = notifier
         self._apps_cache = None
         self._moh_cache = None
+        self._snoop_helper = _SnoopHelper(self._ari)
 
     def channel_answer(self, application_uuid, channel):
         channel.answer()
@@ -258,70 +339,13 @@ class ApplicationService(object):
         self._notifier.call_initiated(application_uuid, call)
 
     def snoop_create(self, application, snooped_call_id, snooping_call_id, whisper_mode):
-        # This method is WAY too complex
-        snoop_uuid = str(uuid4())
-        bridge_name = 'wazo-app-snoop-{}'.format(application['uuid'])
-
-        self.get_call_id(application, snooping_call_id, status_code=400)
-
-        def clean(bridge, snoop_channel=None):
-            try:
-                bridge.destroy()
-            except ARINotFound:
-                pass
-
-            if snoop_channel:
-                try:
-                    snoop_channel.hangup()
-                except ARINotFound:
-                    pass
-
-        bridge = self._ari.bridges.createWithId(
-            bridgeId=snoop_uuid,
-            name=bridge_name,
-            type='mixing',
+        snoop = self._snoop_helper.create(
+            application,
+            snooped_call_id,
+            snooping_call_id,
+            whisper_mode,
         )
-
-        try:
-            snoop_channel = self._ari.channels.snoopChannelWithId(
-                channelId=snooped_call_id,
-                snoopId=snoop_uuid,
-                spy='both',
-                whisper=whisper_mode,
-                app=AppNameHelper.to_name(application['uuid']),
-            )
-        except ARINotFound:
-            clean(bridge)
-            raise NoSuchCall(snooped_call_id)
-
-        try:
-            bridge.addChannel(
-                bridgeId=snoop_uuid,
-                channel=snoop_channel.id,
-            )
-        except Exception:
-            clean(bridge, snoop_channel)
-            raise
-
-        try:
-            bridge.addChannel(
-                bridgeId=snoop_uuid,
-                channel=snooping_call_id,
-            )
-        except HTTPError as e:
-            response = getattr(e, 'response', None)
-            status_code = getattr(response, 'status_code', None)
-            clean(bridge, snoop_channel)
-            if status_code == 400:
-                raise NoSuchCall(snooping_call_id, status_code=400)
-            raise
-
-        return {
-            'uuid': snoop_uuid,
-            'snooped_call_id': snooped_call_id,
-            'snooping_call_id': snooping_call_id,
-            'whisper_mode': whisper_mode,
-        }
+        return snoop
 
     def start_call_hold(self, call_id):
         try:

@@ -114,7 +114,6 @@ class ApplicationCallSnoopList(_BaseResource):
     def post(self, application_uuid, call_id):
         form = application_snoop_schema.load(request.get_json()).data
         application = self._service.get_application(application_uuid)
-        self._service.get_call_id(application, call_id)
         snoop = self._service.snoop_create(application, call_id, **form)
         return application_snoop_schema.dump(snoop).data
 
