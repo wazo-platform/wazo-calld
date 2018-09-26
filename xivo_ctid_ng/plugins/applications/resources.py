@@ -151,7 +151,9 @@ class ApplicationSnoopItem(_BaseResource):
 
     @required_acl('ctid-ng.applications.{application_uuid}.snoops.{snoop_uuid}.delete')
     def delete(self, application_uuid, snoop_uuid):
-        pass
+        application = self._service.get_application(application_uuid)
+        self._service.snoop_delete(application, snoop_uuid)
+        return '', 204
 
 
 class ApplicationNodeCallItem(_BaseResource):

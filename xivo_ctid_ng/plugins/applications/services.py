@@ -42,8 +42,8 @@ class _Snoop(object):
         self.snooping_call_id = snooping_call_id
         self.whisper_mode = whisper_mode
         self.bridge_name = self._bridge_name_tpl.format(application['uuid'])
-        self._bridge = None
-        self._snoop_channel = None
+        self._bridge = kwargs.get('bridge')
+        self._snoop_channel = kwargs.get('snoop_channel')
 
     def create_bridge(self, ari):
         self._bridge = ari.bridges.createWithId(
@@ -113,7 +113,15 @@ class _Snoop(object):
 
         snooped_call_id = cls.get_snooped_call_id(snoop_channel)
         whisper_mode = cls.get_whisper_mode(snoop_channel)
-        snoop = cls(application, snooped_call_id, snooping_call_id, whisper_mode, uuid=bridge.id)
+        snoop = cls(
+            application,
+            snooped_call_id,
+            snooping_call_id,
+            whisper_mode,
+            uuid=bridge.id,
+            bridge=bridge,
+            snoop_channel=snoop_channel,
+        )
         return snoop
 
     @classmethod
@@ -141,6 +149,10 @@ class _SnoopHelper(object):
             snoop.destroy()
             raise
         return snoop
+
+    def delete(self, application, snoop_uuid):
+        snoop = self.get(application, snoop_uuid)
+        snoop.destroy()
 
     def get(self, application, snoop_uuid):
         uuid = str(snoop_uuid)
@@ -401,6 +413,9 @@ class ApplicationService(object):
             whisper_mode,
         )
         return snoop
+
+    def snoop_delete(self, application, snoop_uuid):
+        return self._snoop_helper.delete(application, snoop_uuid)
 
     def snoop_get(self, application, snoop_uuid):
         snoop = self._snoop_helper.get(application, snoop_uuid)
