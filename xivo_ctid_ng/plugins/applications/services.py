@@ -152,6 +152,10 @@ class _SnoopHelper(object):
 
         raise NoSuchSnoop(snoop_uuid)
 
+    def list_(self, application):
+        for snoop_bridge in self._find_snoop_channels(application):
+            yield _Snoop.from_bridge(self._ari, application, snoop_bridge)
+
     def _find_snoop_channels(self, application):
         bridge_name = 'wazo-app-snoop-{}'.format(str(application['uuid']))
         for bridge in self._ari.bridges.list():
@@ -401,6 +405,10 @@ class ApplicationService(object):
     def snoop_get(self, application, snoop_uuid):
         snoop = self._snoop_helper.get(application, snoop_uuid)
         return snoop
+
+    def snoop_list(self, application):
+        snoops = self._snoop_helper.list_(application)
+        return snoops
 
     def start_call_hold(self, call_id):
         try:

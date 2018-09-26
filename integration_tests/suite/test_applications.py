@@ -5,6 +5,7 @@
 from hamcrest import (
     assert_that,
     contains,
+    contains_inanyorder,
     empty,
     equal_to,
     has_entries,
@@ -634,6 +635,52 @@ class TestApplicationSnoop(BaseApplicationTestCase):
             node['uuid'],
             'local',
             'recipient_autoanswer',
+        )
+
+    def test_list(self):
+        result = self.ctid_ng.application_list_snoops(self.app_uuid)
+        assert_that(
+            result.json(),
+            has_entries(items=empty())
+        )
+
+        result = self.ctid_ng.application_list_snoops(self.unknown_uuid)
+        assert_that(result, has_properties(status_code=404))
+
+        supervisor_1_channel = self.ctid_ng.application_new_call(
+            self.app_uuid,
+            'local',
+            'recipient_autoanswer',
+        ).json()
+        supervisor_2_channel = self.ctid_ng.application_new_call(
+            self.app_uuid,
+            'local',
+            'recipient_autoanswer',
+        ).json()
+
+        snoop_1 = self.ctid_ng.application_call_snoop(
+            self.app_uuid,
+            self.caller_channel.id,
+            supervisor_1_channel['id'],
+            'both',
+        ).json()
+
+        snoop_2 = self.ctid_ng.application_call_snoop(
+            self.app_uuid,
+            self.caller_channel.id,
+            supervisor_2_channel['id'],
+            'both',
+        ).json()
+
+        result = self.ctid_ng.application_list_snoops(self.app_uuid)
+        assert_that(
+            result.json(),
+            has_entries(
+                items=contains_inanyorder(
+                    snoop_1,
+                    snoop_2,
+                )
+            )
         )
 
     def test_get(self):
