@@ -6,6 +6,7 @@ from hamcrest import (
     assert_that,
     contains,
     empty,
+    equal_to,
     has_entries,
     has_items,
     has_properties,
@@ -634,6 +635,28 @@ class TestApplicationSnoop(BaseApplicationTestCase):
             'local',
             'recipient_autoanswer',
         )
+
+    def test_get(self):
+        supervisor_channel = self.ctid_ng.application_new_call(
+            self.app_uuid,
+            'local',
+            'recipient_autoanswer',
+        ).json()
+        snoop = self.ctid_ng.application_call_snoop(
+            self.app_uuid,
+            self.caller_channel.id,
+            supervisor_channel['id'],
+            'both',
+        ).json()
+
+        result = self.ctid_ng.application_get_snoop(self.app_uuid, snoop['uuid'])
+        assert_that(result.json(), equal_to(snoop))
+
+        result = self.ctid_ng.application_get_snoop(self.unknown_uuid, snoop['uuid'])
+        assert_that(result, has_properties(status_code=404))
+
+        result = self.ctid_ng.application_get_snoop(self.app_uuid, self.unknown_uuid)
+        assert_that(result, has_properties(status_code=404))
 
     def test_post_snoop(self):
         unrelated_channel = self.call_app(self.node_app_uuid)

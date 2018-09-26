@@ -22,6 +22,7 @@ from .exceptions import (
     NoSuchMoh,
     NoSuchNode,
     NoSuchPlayback,
+    NoSuchSnoop,
 )
 from .stasis import AppNameHelper
 
@@ -31,9 +32,11 @@ logger = logging.getLogger(__name__)
 class _Snoop(object):
 
     _bridge_name_tpl = 'wazo-app-snoop-{}'
+    _snooped_call_id_chan_var = 'WAZO_SNOOPED_CALL_ID'
+    _whisper_mode_chan_var = 'WAZO_SNOOP_WHISPER_MODE'
 
-    def __init__(self, application, snooped_call_id, snooping_call_id, whisper_mode):
-        self.uuid = str(uuid4())
+    def __init__(self, application, snooped_call_id, snooping_call_id, whisper_mode, **kwargs):
+        self.uuid = kwargs.get('uuid') or str(uuid4())
         self.application = application
         self.snooped_call_id = snooped_call_id
         self.snooping_call_id = snooping_call_id
@@ -90,6 +93,37 @@ class _Snoop(object):
         if snooping_call_id not in application['channel_ids']:
             raise NoSuchCall(snooping_call_id, status_code=400)
 
+    def save_properties(self):
+        self._snoop_channel.setChannelVar(
+            variable=self._snooped_call_id_chan_var,
+            value=self.snooped_call_id
+        )
+        self._snoop_channel.setChannelVar(
+            variable=self._whisper_mode_chan_var,
+            value=self.whisper_mode,
+        )
+
+    @classmethod
+    def from_bridge(cls, ari, application, bridge):
+        for channel_id in bridge.json['channels']:
+            if channel_id == bridge.id:
+                snoop_channel = ari.channels.get(channelId=channel_id)
+            else:
+                snooping_call_id = channel_id
+
+        snooped_call_id = cls.get_snooped_call_id(snoop_channel)
+        whisper_mode = cls.get_whisper_mode(snoop_channel)
+        snoop = cls(application, snooped_call_id, snooping_call_id, whisper_mode, uuid=bridge.id)
+        return snoop
+
+    @classmethod
+    def get_snooped_call_id(cls, snoop_channel):
+        return snoop_channel.getChannelVar(variable=cls._snooped_call_id_chan_var)['value']
+
+    @classmethod
+    def get_whisper_mode(cls, snoop_channel):
+        return snoop_channel.getChannelVar(variable=cls._whisper_mode_chan_var)['value']
+
 
 class _SnoopHelper(object):
 
@@ -102,10 +136,27 @@ class _SnoopHelper(object):
         try:
             snoop.create_snoop_channel(self._ari)
             snoop.create_bridge(self._ari)
+            snoop.save_properties()
         except Exception:
             snoop.destroy()
             raise
         return snoop
+
+    def get(self, application, snoop_uuid):
+        uuid = str(snoop_uuid)
+        for snoop_bridge in self._find_snoop_channels(application):
+            if snoop_bridge.id != uuid:
+                continue
+
+            return _Snoop.from_bridge(self._ari, application, snoop_bridge)
+
+        raise NoSuchSnoop(snoop_uuid)
+
+    def _find_snoop_channels(self, application):
+        bridge_name = 'wazo-app-snoop-{}'.format(str(application['uuid']))
+        for bridge in self._ari.bridges.list():
+            if bridge.json['name'] == bridge_name:
+                yield bridge
 
 
 class ApplicationService(object):
@@ -345,6 +396,10 @@ class ApplicationService(object):
             snooping_call_id,
             whisper_mode,
         )
+        return snoop
+
+    def snoop_get(self, application, snoop_uuid):
+        snoop = self._snoop_helper.get(application, snoop_uuid)
         return snoop
 
     def start_call_hold(self, call_id):

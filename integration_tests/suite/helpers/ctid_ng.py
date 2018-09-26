@@ -61,6 +61,10 @@ class CtidNgClient(object):
         }
         return requests.post(url, json=body, headers={'X-Auth-Token': token}, verify=False)
 
+    def application_get_snoop(self, application_uuid, snoop_uuid, token=VALID_TOKEN):
+        url = self.url('applications', application_uuid, 'snoops', snoop_uuid)
+        return requests.get(url, headers={'X-Auth-Token': token}, verify=False)
+
     def application_stop_playback(self, application_uuid, playback_id, token=VALID_TOKEN):
         url = self.url('applications', application_uuid, 'playbacks', playback_id)
         return requests.delete(url, headers={'X-Auth-Token': token}, verify=False)

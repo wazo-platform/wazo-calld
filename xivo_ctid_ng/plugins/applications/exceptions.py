@@ -101,6 +101,19 @@ class NoSuchPlayback(APIException):
         )
 
 
+class NoSuchSnoop(APIException):
+
+    def __init__(self, snoop_uuid):
+        super(NoSuchSnoop, self).__init__(
+            status_code=404,
+            message='No such snoop',
+            error_id='no-such-snoop',
+            details={
+                'snoop_uuid': str(snoop_uuid)
+            }
+        )
+
+
 class DeleteDestinationNode(APIException):
 
     def __init__(self, application_uuid, node_uuid):

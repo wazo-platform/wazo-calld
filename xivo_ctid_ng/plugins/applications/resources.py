@@ -139,7 +139,9 @@ class ApplicationSnoopItem(_BaseResource):
 
     @required_acl('ctid-ng.applications.{application_uuid}.snoops.{snoop_uuid}.read')
     def get(self, application_uuid, snoop_uuid):
-        pass
+        application = self._service.get_application(application_uuid)
+        snoop = self._service.snoop_get(application, snoop_uuid)
+        return application_snoop_schema.dump(snoop).data
 
     @required_acl('ctid-ng.applications.{application_uuid}.snoops.{snoop_uuid}.update')
     def put(self, application_uuid, snoop_uuid):
