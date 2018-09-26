@@ -35,13 +35,13 @@ class _Snoop(object):
     _snooped_call_id_chan_var = 'WAZO_SNOOPED_CALL_ID'
     _whisper_mode_chan_var = 'WAZO_SNOOP_WHISPER_MODE'
 
-    def __init__(self, application, snooped_call_id, snooping_call_id, whisper_mode, **kwargs):
+    def __init__(self, application, snooped_call_id, snooping_call_id, **kwargs):
         self.uuid = kwargs.get('uuid') or str(uuid4())
         self.application = application
         self.snooped_call_id = snooped_call_id
         self.snooping_call_id = snooping_call_id
-        self.whisper_mode = whisper_mode
         self.bridge_name = self._bridge_name_tpl.format(application['uuid'])
+        self.whisper_mode = kwargs.get('whisper_mode')
         self._bridge = kwargs.get('bridge')
         self._snoop_channel = kwargs.get('snoop_channel')
 
@@ -52,7 +52,6 @@ class _Snoop(object):
             type='mixing',
         )
 
-        self._bridge.addChannel(channel=self._snoop_channel.id)
         try:
             self._bridge.addChannel(channel=self.snooping_call_id)
         except HTTPError as e:
@@ -62,17 +61,46 @@ class _Snoop(object):
                 raise NoSuchCall(self.snooping_call_id, status_code=400)
             raise
 
-    def create_snoop_channel(self, ari):
+    def update_snoop_channel(self, snoop_channel):
+        old_snoop_channel = self._snoop_channel
+        self._snoop_channel = snoop_channel
+        self._bridge.addChannel(channel=self._snoop_channel.id)
+        if old_snoop_channel:
+            old_snoop_channel.hangup()
+
+    def update_snooping_call(self, snooping_call_id):
+        if snooping_call_id == self.snooping_call_id:
+            return
+
+        self._bridge.addChannel(channel=snooping_call_id)
+        self._bridge.removeChannel(channel=self.snooping_call_id)
+
+        self.snooping_call_id = snooping_call_id
+
+    def new_snoop_channel(self, ari, whisper_mode):
+        channel_uuid = '{}.{}'.format(self.uuid, str(uuid4()))
         try:
-            self._snoop_channel = ari.channels.snoopChannelWithId(
+            snoop_channel = ari.channels.snoopChannelWithId(
                 channelId=self.snooped_call_id,
-                snoopId=self.uuid,
+                snoopId=channel_uuid,
                 spy='both',
-                whisper=self.whisper_mode,
+                whisper=whisper_mode,
                 app=self.application['name'],
             )
         except ARINotFound:
             raise NoSuchCall(self.snooped_call_id)
+
+        snoop_channel.setChannelVar(
+            variable=self._whisper_mode_chan_var,
+            value=whisper_mode,
+        )
+        snoop_channel.setChannelVar(
+            variable=self._snooped_call_id_chan_var,
+            value=self.snooped_call_id
+        )
+        self.whisper_mode = whisper_mode
+
+        return snoop_channel
 
     def destroy(self):
         if self._bridge:
@@ -87,26 +115,10 @@ class _Snoop(object):
             except ARINotFound:
                 pass
 
-    def validate_ownership(self, application, snooped_call_id, snooping_call_id):
-        if snooped_call_id not in application['channel_ids']:
-            raise NoSuchCall(snooped_call_id, status_code=404)
-        if snooping_call_id not in application['channel_ids']:
-            raise NoSuchCall(snooping_call_id, status_code=400)
-
-    def save_properties(self):
-        self._snoop_channel.setChannelVar(
-            variable=self._snooped_call_id_chan_var,
-            value=self.snooped_call_id
-        )
-        self._snoop_channel.setChannelVar(
-            variable=self._whisper_mode_chan_var,
-            value=self.whisper_mode,
-        )
-
     @classmethod
     def from_bridge(cls, ari, application, bridge):
         for channel_id in bridge.json['channels']:
-            if channel_id == bridge.id:
+            if channel_id.startswith(bridge.id):
                 snoop_channel = ari.channels.get(channelId=channel_id)
             else:
                 snooping_call_id = channel_id
@@ -117,7 +129,7 @@ class _Snoop(object):
             application,
             snooped_call_id,
             snooping_call_id,
-            whisper_mode,
+            whisper_mode=whisper_mode,
             uuid=bridge.id,
             bridge=bridge,
             snoop_channel=snoop_channel,
@@ -139,12 +151,13 @@ class _SnoopHelper(object):
         self._ari = ari
 
     def create(self, application, snooped_call_id, snooping_call_id, whisper_mode):
-        snoop = _Snoop(application, snooped_call_id, snooping_call_id, whisper_mode)
-        snoop.validate_ownership(application, snooped_call_id, snooping_call_id)
+        self.validate_ownership(application, snooped_call_id, snooping_call_id)
+
+        snoop = _Snoop(application, snooped_call_id, snooping_call_id)
         try:
-            snoop.create_snoop_channel(self._ari)
             snoop.create_bridge(self._ari)
-            snoop.save_properties()
+            snoop_channel = snoop.new_snoop_channel(self._ari, whisper_mode)
+            snoop.update_snoop_channel(snoop_channel)
         except Exception:
             snoop.destroy()
             raise
@@ -153,6 +166,15 @@ class _SnoopHelper(object):
     def delete(self, application, snoop_uuid):
         snoop = self.get(application, snoop_uuid)
         snoop.destroy()
+
+    def edit(self, application, snoop_uuid, snooping_call_id, whisper_mode):
+        snoop = self.get(application, snoop_uuid)
+        self.validate_ownership(application, snoop.snooped_call_id, snooping_call_id)
+
+        snoop_channel = snoop.new_snoop_channel(self._ari, whisper_mode)
+        snoop.update_snoop_channel(snoop_channel)
+        snoop.update_snooping_call(snooping_call_id)
+        return snoop
 
     def get(self, application, snoop_uuid):
         uuid = str(snoop_uuid)
@@ -173,6 +195,12 @@ class _SnoopHelper(object):
         for bridge in self._ari.bridges.list():
             if bridge.json['name'] == bridge_name:
                 yield bridge
+
+    def validate_ownership(self, application, snooped_call_id, snooping_call_id):
+        if snooped_call_id not in application['channel_ids']:
+            raise NoSuchCall(snooped_call_id, status_code=404)
+        if snooping_call_id not in application['channel_ids']:
+            raise NoSuchCall(snooping_call_id, status_code=400)
 
 
 class ApplicationService(object):
@@ -416,6 +444,10 @@ class ApplicationService(object):
 
     def snoop_delete(self, application, snoop_uuid):
         return self._snoop_helper.delete(application, snoop_uuid)
+
+    def snoop_edit(self, application, snoop_uuid, snooping_call_id, whisper_mode):
+        snoop = self._snoop_helper.edit(application, snoop_uuid, snooping_call_id, whisper_mode)
+        return snoop
 
     def snoop_get(self, application, snoop_uuid):
         snoop = self._snoop_helper.get(application, snoop_uuid)

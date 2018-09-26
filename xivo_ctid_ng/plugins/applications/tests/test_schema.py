@@ -35,7 +35,7 @@ class TestApplicationSnoopSchema(TestCase):
             {'uuid': '7fd8f464-bdb0-4416-9b14-bf2f21be797b'},
             self.snooped_call_id,
             self.snooping_call_id,
-            'none',
+            whisper_mode='none',
         )
 
         result = self.schema.dump(snoop).data

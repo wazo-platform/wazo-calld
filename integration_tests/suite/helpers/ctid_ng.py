@@ -61,6 +61,15 @@ class CtidNgClient(object):
         }
         return requests.post(url, json=body, headers={'X-Auth-Token': token}, verify=False)
 
+    def application_edit_snoop(
+            self, application_uuid, snoop_uuid, snooper_call_id, whisper=None, token=VALID_TOKEN):
+        url = self.url('applications', application_uuid, 'snoops', snoop_uuid)
+        body = {
+            'whisper_mode': whisper,
+            'snooping_call_id': snooper_call_id,
+        }
+        return requests.put(url, json=body, headers={'X-Auth-Token': token}, verify=False)
+
     def application_delete_snoop(self, application_uuid, snoop_uuid, token=VALID_TOKEN):
         url = self.url('applications', application_uuid, 'snoops', snoop_uuid)
         return requests.delete(url, headers={'X-Auth-Token': token}, verify=False)

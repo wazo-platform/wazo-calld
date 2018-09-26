@@ -147,7 +147,10 @@ class ApplicationSnoopItem(_BaseResource):
 
     @required_acl('ctid-ng.applications.{application_uuid}.snoops.{snoop_uuid}.update')
     def put(self, application_uuid, snoop_uuid):
-        pass
+        form = application_snoop_schema.load(request.get_json()).data
+        application = self._service.get_application(application_uuid)
+        self._service.snoop_edit(application, snoop_uuid, **form)
+        return '', 204
 
     @required_acl('ctid-ng.applications.{application_uuid}.snoops.{snoop_uuid}.delete')
     def delete(self, application_uuid, snoop_uuid):
