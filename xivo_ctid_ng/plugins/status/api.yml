@@ -16,6 +16,8 @@ definitions:
     properties:
       connections:
         $ref: '#/definitions/ConnectionsStatusSummary'
+      service_token:
+        $ref: '#/definitions/StatusValue'
   ConnectionsStatusSummary:
     type: object
     properties:
