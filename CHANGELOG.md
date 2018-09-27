@@ -9,6 +9,11 @@ Changelog
   * `PUT /applications/{application_uuid}/calls/{call_id}/moh/{moh_uuid}/start`
   * `PUT /applications/{application_uuid}/calls/{call_id}/moh/stop`
 
+* New API to place a call on hold and resume it
+
+  * `PUT /applications/{application_uuid}/calls/{call_id}/hold/start`
+  * `PUT /applications/{application_uuid}/calls/{call_id}/hold/stop`
+
 
 18.10
 -----

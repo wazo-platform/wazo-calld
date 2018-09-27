@@ -255,6 +255,22 @@ class ApplicationService(object):
         call = make_call_from_channel(channel, ari=self._ari, variables=variables)
         self._notifier.call_initiated(application_uuid, call)
 
+    def start_call_hold(self, call_id):
+        try:
+            self._ari.channels.setChannelVar(channelId=call_id, variable='XIVO_ON_HOLD', value='1')
+            self._ari.channels.mute(channelId=call_id, direction='in')
+            self._ari.channels.hold(channelId=call_id)
+        except ARINotFound:
+            raise NoSuchCall(call_id)
+
+    def stop_call_hold(self, call_id):
+        try:
+            self._ari.channels.setChannelVar(channelId=call_id, variable='XIVO_ON_HOLD', value='')
+            self._ari.channels.unmute(channelId=call_id, direction='in')
+            self._ari.channels.unhold(channelId=call_id)
+        except ARINotFound:
+            raise NoSuchCall(call_id)
+
     def start_call_moh(self, call_id, moh_uuid):
         moh = self._get_moh(moh_uuid)
         try:

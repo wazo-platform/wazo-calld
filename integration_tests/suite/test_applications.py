@@ -522,6 +522,117 @@ class TestApplication(BaseApplicationTestCase):
         until.assert_(call_entered_node, tries=3)
 
 
+class TestApplicationHold(BaseApplicationTestCase):
+
+    def test_put_hold_start(self):
+        app_uuid = self.no_node_app_uuid
+        channel = self.call_app(self.no_node_app_uuid)
+        other_channel = self.call_app(self.node_app_uuid)
+
+        routing_key = 'applications.{uuid}.#'.format(uuid=app_uuid)
+        event_accumulator = self.bus.accumulator(routing_key)
+
+        response = self.ctid_ng.application_call_hold_start(self.unknown_uuid, channel.id)
+        assert_that(response, has_properties(status_code=404))
+
+        response = self.ctid_ng.application_call_hold_start(app_uuid, other_channel.id)
+        assert_that(response, has_properties(status_code=404))
+
+        response = self.ctid_ng.application_call_hold_start(app_uuid, channel.id)
+        assert_that(response, has_properties(status_code=204))
+
+        def event_received():
+            events = event_accumulator.accumulate()
+            assert_that(
+                events,
+                contains(
+                    has_entries(
+                        name='application_call_updated',
+                        data=has_entries(
+                            application_uuid=app_uuid,
+                            call=has_entries(
+                                id=channel.id,
+                                on_hold=True,
+                            )
+                        )
+                    )
+                )
+            )
+
+        until.assert_(event_received, tries=3)
+
+        response = self.ctid_ng.get_application_calls(app_uuid)
+        assert_that(
+            response.json()['items'],
+            contains(
+                has_entries(
+                    id=channel.id,
+                    on_hold=True,
+                )
+            )
+        )
+
+    def test_put_hold_stop(self):
+        app_uuid = self.no_node_app_uuid
+        channel = self.call_app(self.no_node_app_uuid)
+        other_channel = self.call_app(self.node_app_uuid)
+
+        response = self.ctid_ng.application_call_hold_stop(self.unknown_uuid, channel.id)
+        assert_that(response, has_properties(status_code=404))
+
+        response = self.ctid_ng.application_call_hold_stop(app_uuid, other_channel.id)
+        assert_that(response, has_properties(status_code=404))
+
+        self.ctid_ng.application_call_hold_start(app_uuid, channel.id)
+
+        def call_held():
+            response = self.ctid_ng.get_application_calls(app_uuid)
+            for body in response.json()['items']:
+                if body['id'] != channel.id:
+                    continue
+                return body['on_hold']
+            return False
+
+        until.true(call_held)
+
+        routing_key = 'applications.{uuid}.#'.format(uuid=app_uuid)
+        event_accumulator = self.bus.accumulator(routing_key)
+
+        response = self.ctid_ng.application_call_hold_stop(app_uuid, channel.id)
+        assert_that(response, has_properties(status_code=204))
+
+        def event_received():
+            events = event_accumulator.accumulate()
+            assert_that(
+                events,
+                contains(
+                    has_entries(
+                        name='application_call_updated',
+                        data=has_entries(
+                            application_uuid=app_uuid,
+                            call=has_entries(
+                                id=channel.id,
+                                on_hold=False,
+                            )
+                        )
+                    )
+                )
+            )
+
+        until.assert_(event_received, tries=3)
+
+        response = self.ctid_ng.get_application_calls(app_uuid)
+        assert_that(
+            response.json()['items'],
+            contains(
+                has_entries(
+                    id=channel.id,
+                    on_hold=False,
+                )
+            )
+        )
+
+
 class TestApplicationMoh(BaseApplicationTestCase):
 
     def test_put_moh_start_fail(self):
