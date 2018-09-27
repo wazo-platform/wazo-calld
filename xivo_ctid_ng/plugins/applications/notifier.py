@@ -7,6 +7,7 @@ import logging
 from .schema import (
     application_call_schema,
     application_node_schema,
+    application_snoop_schema,
 )
 from .events import (
     CallDeleted,
@@ -17,6 +18,9 @@ from .events import (
     NodeCreated,
     NodeDeleted,
     NodeUpdated,
+    SnoopCreated,
+    SnoopDeleted,
+    SnoopUpdated,
 )
 
 logger = logging.getLogger(__name__)
@@ -73,4 +77,22 @@ class ApplicationNotifier(object):
         logger.debug('Application (%s): Node (%s) updated', application_uuid, node.uuid)
         node = application_node_schema.dump(node).data
         event = NodeUpdated(application_uuid, node)
+        self._bus.publish(event)
+
+    def snoop_created(self, application_uuid, snoop):
+        logger.debug('Application (%s): Snoop (%s) created', application_uuid, snoop.uuid)
+        snoop = application_snoop_schema.dump(snoop).data
+        event = SnoopCreated(application_uuid, snoop)
+        self._bus.publish(event)
+
+    def snoop_deleted(self, application_uuid, snoop_uuid):
+        logger.debug('Application (%s): Snoop (%s) deleted', application_uuid, snoop_uuid)
+        snoop = {'uuid': snoop_uuid}
+        event = SnoopDeleted(application_uuid, snoop)
+        self._bus.publish(event)
+
+    def snoop_updated(self, application_uuid, snoop):
+        logger.debug('Application (%s): Snoop (%s) updated', application_uuid, snoop.uuid)
+        snoop = application_snoop_schema.dump(snoop).data
+        event = SnoopUpdated(application_uuid, snoop)
         self._bus.publish(event)

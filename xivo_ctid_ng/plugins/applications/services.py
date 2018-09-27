@@ -440,6 +440,7 @@ class ApplicationService(object):
             snooping_call_id,
             whisper_mode,
         )
+        self._notifier.snoop_created(application['uuid'], snoop)
         return snoop
 
     def snoop_delete(self, application, snoop_uuid):

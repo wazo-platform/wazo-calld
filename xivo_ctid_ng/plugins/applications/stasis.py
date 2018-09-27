@@ -7,6 +7,10 @@ import time
 
 from ari.exceptions import ARINotFound
 
+from .exceptions import (
+    NoSuchSnoop,
+)
+
 from .models import (
     make_call_from_channel,
     make_node_from_bridge,
@@ -77,6 +81,15 @@ class ApplicationStasis(object):
         application_uuid = AppNameHelper.to_uuid(event.get('application'))
         if not application_uuid:
             return
+
+        if event['channel']['name'].startswith('Snoop/'):
+            application = self._service.get_application(application_uuid)
+            snoop_uuid = event['channel']['id'].split('.', 1)[0]
+            try:
+                snoop = self._service.snoop_get(application, snoop_uuid)
+                self._notifier.snoop_updated(application_uuid, snoop)
+            except NoSuchSnoop:
+                self._notifier.snoop_deleted(application_uuid, snoop_uuid)
 
         call = make_call_from_channel(channel)
         self._notifier.call_deleted(application_uuid, call)

@@ -637,6 +637,129 @@ class TestApplicationSnoop(BaseApplicationTestCase):
             'recipient_autoanswer',
         )
 
+    def test_snoop_created_event(self):
+        supervisor_channel = self.ctid_ng.application_new_call(
+            self.app_uuid,
+            'local',
+            'recipient_autoanswer',
+        ).json()
+
+        routing_key = 'applications.{uuid}.snoops.#'.format(uuid=self.app_uuid)
+        event_accumulator = self.bus.accumulator(routing_key)
+
+        whisper_mode = 'both'
+        snoop = self.ctid_ng.application_call_snoop(
+            self.app_uuid,
+            self.caller_channel.id,
+            supervisor_channel['id'],
+            whisper_mode,
+        ).json()
+
+        def event_received():
+            events = event_accumulator.accumulate()
+            assert_that(
+                events,
+                contains(
+                    has_entries(
+                        name='application_snoop_created',
+                        data=has_entries(
+                            application_uuid=self.app_uuid,
+                            snoop=has_entries(
+                                uuid=snoop['uuid'],
+                                snooped_call_id=self.caller_channel.id,
+                                snooping_call_id=supervisor_channel['id'],
+                                whisper_mode=whisper_mode,
+                            )
+                        )
+                    )
+                )
+            )
+
+        until.assert_(event_received, tries=3)
+
+    def test_snoop_deleted_event(self):
+        supervisor_channel = self.ctid_ng.application_new_call(
+            self.app_uuid,
+            'local',
+            'recipient_autoanswer',
+        ).json()
+
+        snoop = self.ctid_ng.application_call_snoop(
+            self.app_uuid,
+            self.caller_channel.id,
+            supervisor_channel['id'],
+            'both',
+        ).json()
+
+        routing_key = 'applications.{uuid}.snoops.#'.format(uuid=self.app_uuid)
+        event_accumulator = self.bus.accumulator(routing_key)
+
+        self.ctid_ng.application_delete_snoop(self.app_uuid, snoop['uuid'])
+
+        def event_received():
+            events = event_accumulator.accumulate()
+            assert_that(
+                events,
+                contains(
+                    has_entries(
+                        name='application_snoop_deleted',
+                        data=has_entries(
+                            application_uuid=self.app_uuid,
+                            snoop=has_entries(uuid=snoop['uuid']),
+                        )
+                    )
+                )
+            )
+
+        until.assert_(event_received, tries=3)
+
+    def test_snoop_updated_event(self):
+        supervisor_channel = self.ctid_ng.application_new_call(
+            self.app_uuid,
+            'local',
+            'recipient_autoanswer',
+        ).json()
+
+        snoop = self.ctid_ng.application_call_snoop(
+            self.app_uuid,
+            self.caller_channel.id,
+            supervisor_channel['id'],
+            'both',
+        ).json()
+
+        routing_key = 'applications.{uuid}.snoops.#'.format(uuid=self.app_uuid)
+        event_accumulator = self.bus.accumulator(routing_key)
+
+        whisper_mode = 'in'
+        self.ctid_ng.application_edit_snoop(
+            self.app_uuid,
+            snoop['uuid'],
+            supervisor_channel['id'],
+            whisper_mode,
+        )
+
+        def event_received():
+            events = event_accumulator.accumulate()
+            assert_that(
+                events,
+                contains(
+                    has_entries(
+                        name='application_snoop_updated',
+                        data=has_entries(
+                            application_uuid=self.app_uuid,
+                            snoop=has_entries(
+                                uuid=snoop['uuid'],
+                                snooped_call_id=self.caller_channel.id,
+                                snooping_call_id=supervisor_channel['id'],
+                                whisper_mode=whisper_mode,
+                            )
+                        )
+                    )
+                )
+            )
+
+        until.assert_(event_received, tries=3)
+
     def test_delete(self):
         supervisor_1_channel = self.ctid_ng.application_new_call(
             self.app_uuid,
