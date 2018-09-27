@@ -258,6 +258,7 @@ class ApplicationService(object):
     def start_call_hold(self, call_id):
         try:
             self._ari.channels.setChannelVar(channelId=call_id, variable='XIVO_ON_HOLD', value='1')
+            self._ari.channels.mute(channelId=call_id, direction='in')
             self._ari.channels.hold(channelId=call_id)
         except ARINotFound:
             raise NoSuchCall(call_id)
@@ -265,6 +266,7 @@ class ApplicationService(object):
     def stop_call_hold(self, call_id):
         try:
             self._ari.channels.setChannelVar(channelId=call_id, variable='XIVO_ON_HOLD', value='')
+            self._ari.channels.unmute(channelId=call_id, direction='in')
             self._ari.channels.unhold(channelId=call_id)
         except ARINotFound:
             raise NoSuchCall(call_id)
