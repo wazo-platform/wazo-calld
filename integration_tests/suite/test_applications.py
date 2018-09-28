@@ -459,21 +459,6 @@ class TestApplication(BaseApplicationTestCase):
             has_properties(status_code=404),
         )
 
-        channel = self.call_app(self.node_app_uuid, variables={'X_WAZO_FOO': 'bar'})
-
-        def call_entered_node():
-            response = self.ctid_ng.get_application_node(self.node_app_uuid, self.node_app_uuid)
-            assert_that(
-                response.json(),
-                has_entries(
-                    uuid=self.node_app_uuid,
-                    calls=contains(has_entries(id=channel.id)),
-                )
-            )
-
-        until.assert_(call_entered_node, tries=3)
-
-        channel.hangup()
         response = self.ctid_ng.get_application_node(self.node_app_uuid, self.node_app_uuid)
         assert_that(
             response.json(),
