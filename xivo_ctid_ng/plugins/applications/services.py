@@ -39,6 +39,18 @@ class ApplicationService(object):
         self._moh_cache = None
         self._snoop_helper = SnoopHelper(self._ari)
 
+    def call_mute(self, call_id):
+        try:
+            self._ari.channels.mute(channelId=call_id, direction='in')
+        except ARINotFound:
+            raise NoSuchCall(call_id)
+
+    def call_unmute(self, call_id):
+        try:
+            self._ari.channels.unmute(channelId=call_id, direction='in')
+        except ARINotFound:
+            raise NoSuchCall(call_id)
+
     def channel_answer(self, application_uuid, channel):
         channel.answer()
         variables = self.get_channel_variables(channel)

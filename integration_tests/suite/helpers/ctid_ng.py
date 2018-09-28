@@ -48,6 +48,14 @@ class CtidNgClient(object):
         url = self.url('applications', application_uuid, 'calls', call_id, 'moh', 'stop')
         return requests.put(url, headers={'X-Auth-Token': token}, verify=False)
 
+    def application_call_mute_start(self, application_uuid, call_id, token=VALID_TOKEN):
+        url = self.url('applications', application_uuid, 'calls', call_id, 'mute', 'start')
+        return requests.put(url, headers={'X-Auth-Token': token}, verify=False)
+
+    def application_call_mute_stop(self, application_uuid, call_id, token=VALID_TOKEN):
+        url = self.url('applications', application_uuid, 'calls', call_id, 'mute', 'stop')
+        return requests.put(url, headers={'X-Auth-Token': token}, verify=False)
+
     def application_call_playback(self, application_uuid, call_id, body, token=VALID_TOKEN):
         url = self.url('applications', application_uuid, 'calls', call_id, 'playbacks')
         return requests.post(url, json=body, headers={'X-Auth-Token': token}, verify=False)

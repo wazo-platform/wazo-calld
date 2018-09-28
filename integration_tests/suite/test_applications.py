@@ -509,6 +509,37 @@ class TestApplication(BaseApplicationTestCase):
         until.assert_(call_entered_node, tries=3)
 
 
+class TestApplicationMute(BaseApplicationTestCase):
+
+    def test_put_mute_start(self):
+        app_uuid = self.no_node_app_uuid
+        channel = self.call_app(self.no_node_app_uuid)
+        other_channel = self.call_app(self.node_app_uuid)
+
+        response = self.ctid_ng.application_call_mute_start(self.unknown_uuid, channel.id)
+        assert_that(response, has_properties(status_code=404))
+
+        response = self.ctid_ng.application_call_mute_start(app_uuid, other_channel.id)
+        assert_that(response, has_properties(status_code=404))
+
+        response = self.ctid_ng.application_call_mute_start(app_uuid, channel.id)
+        assert_that(response, has_properties(status_code=204))
+
+    def test_put_mute_stop(self):
+        app_uuid = self.no_node_app_uuid
+        channel = self.call_app(self.no_node_app_uuid)
+        other_channel = self.call_app(self.node_app_uuid)
+
+        response = self.ctid_ng.application_call_mute_stop(self.unknown_uuid, channel.id)
+        assert_that(response, has_properties(status_code=404))
+
+        response = self.ctid_ng.application_call_mute_stop(app_uuid, other_channel.id)
+        assert_that(response, has_properties(status_code=404))
+
+        response = self.ctid_ng.application_call_mute_stop(app_uuid, channel.id)
+        assert_that(response, has_properties(status_code=204))
+
+
 class TestApplicationHold(BaseApplicationTestCase):
 
     def test_put_hold_start(self):
