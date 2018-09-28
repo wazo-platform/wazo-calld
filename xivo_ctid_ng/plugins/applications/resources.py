@@ -51,7 +51,8 @@ class ApplicationCallList(_BaseResource):
 
     @required_acl('ctid-ng.applications.{application_uuid}.calls.read')
     def get(self, application_uuid):
-        calls = self._service.list_calls(application_uuid)
+        application = self._service.get_application(application_uuid)
+        calls = self._service.list_calls(application)
         return {'items': application_call_schema.dump(calls, many=True).data}
 
 
