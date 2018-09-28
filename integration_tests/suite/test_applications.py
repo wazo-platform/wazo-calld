@@ -299,6 +299,7 @@ class TestApplication(BaseApplicationTestCase):
                         node_uuid=None,
                         on_hold=False,
                         is_caller=True,
+                        muted=False,
                         variables={'FOO': 'bar'},
                     )
                 )
@@ -345,6 +346,7 @@ class TestApplication(BaseApplicationTestCase):
                                 is_caller=False,
                                 status='Up',
                                 on_hold=False,
+                                muted=False,
                                 node_uuid=None,
                             )
                         )
@@ -522,8 +524,41 @@ class TestApplicationMute(BaseApplicationTestCase):
         response = self.ctid_ng.application_call_mute_start(app_uuid, other_channel.id)
         assert_that(response, has_properties(status_code=404))
 
+        routing_key = 'applications.{uuid}.#'.format(uuid=app_uuid)
+        event_accumulator = self.bus.accumulator(routing_key)
+
         response = self.ctid_ng.application_call_mute_start(app_uuid, channel.id)
         assert_that(response, has_properties(status_code=204))
+
+        def event_received():
+            events = event_accumulator.accumulate()
+            assert_that(
+                events,
+                contains(
+                    has_entries(
+                        name='application_call_updated',
+                        data=has_entries(
+                            application_uuid=app_uuid,
+                            call=has_entries(
+                                id=channel.id,
+                                muted=True,
+                            )
+                        )
+                    )
+                )
+            )
+
+        until.assert_(event_received, tries=3)
+
+        assert_that(
+            self.ctid_ng.get_application_calls(app_uuid).json()['items'],
+            contains(
+                has_entries(
+                    id=channel.id,
+                    muted=True,
+                )
+            )
+        )
 
     def test_put_mute_stop(self):
         app_uuid = self.no_node_app_uuid
@@ -536,8 +571,41 @@ class TestApplicationMute(BaseApplicationTestCase):
         response = self.ctid_ng.application_call_mute_stop(app_uuid, other_channel.id)
         assert_that(response, has_properties(status_code=404))
 
+        routing_key = 'applications.{uuid}.#'.format(uuid=app_uuid)
+        event_accumulator = self.bus.accumulator(routing_key)
+
         response = self.ctid_ng.application_call_mute_stop(app_uuid, channel.id)
         assert_that(response, has_properties(status_code=204))
+
+        def event_received():
+            events = event_accumulator.accumulate()
+            assert_that(
+                events,
+                contains(
+                    has_entries(
+                        name='application_call_updated',
+                        data=has_entries(
+                            application_uuid=app_uuid,
+                            call=has_entries(
+                                id=channel.id,
+                                muted=False,
+                            )
+                        )
+                    )
+                )
+            )
+
+        until.assert_(event_received, tries=3)
+
+        assert_that(
+            self.ctid_ng.get_application_calls(app_uuid).json()['items'],
+            contains(
+                has_entries(
+                    id=channel.id,
+                    muted=False,
+                )
+            )
+        )
 
 
 class TestApplicationHold(BaseApplicationTestCase):

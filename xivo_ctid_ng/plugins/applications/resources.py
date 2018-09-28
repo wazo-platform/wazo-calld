@@ -104,7 +104,7 @@ class ApplicationCallMuteStartList(_BaseResource):
     def put(self, application_uuid, call_id):
         application = self._service.get_application(application_uuid)
         self._service.get_call_id(application, call_id)
-        self._service.call_mute(call_id)
+        self._service.call_mute(application, call_id)
         return '', 204
 
 
@@ -114,7 +114,7 @@ class ApplicationCallMuteStopList(_BaseResource):
     def put(self, application_uuid, call_id):
         application = self._service.get_application(application_uuid)
         self._service.get_call_id(application, call_id)
-        self._service.call_unmute(call_id)
+        self._service.call_unmute(application, call_id)
         return '', 204
 
 

@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
+import time
 
 from requests import HTTPError
 from ari.exceptions import ARINotFound
@@ -39,17 +40,27 @@ class ApplicationService(object):
         self._moh_cache = None
         self._snoop_helper = SnoopHelper(self._ari)
 
-    def call_mute(self, call_id):
+    def call_mute(self, application, call_id):
         try:
-            self._ari.channels.mute(channelId=call_id, direction='in')
+            channel = self._ari.channels.get(channelId=call_id)
+            self.set_channel_var_sync(channel, 'WAZO_CALL_MUTED', '1')
+            channel.mute(direction='in')
         except ARINotFound:
             raise NoSuchCall(call_id)
 
-    def call_unmute(self, call_id):
+        call = make_call_from_channel(channel, ari=self._ari)
+        self._notifier.call_updated(application['uuid'], call)
+
+    def call_unmute(self, application, call_id):
         try:
-            self._ari.channels.unmute(channelId=call_id, direction='in')
+            channel = self._ari.channels.get(channelId=call_id)
+            self.set_channel_var_sync(channel, 'WAZO_CALL_MUTED', '')
+            channel.unmute(direction='in')
         except ARINotFound:
             raise NoSuchCall(call_id)
+
+        call = make_call_from_channel(channel, ari=self._ari)
+        self._notifier.call_updated(application['uuid'], call)
 
     def channel_answer(self, application_uuid, channel):
         channel.answer()
@@ -357,6 +368,24 @@ class ApplicationService(object):
         for moh in self._moh_cache:
             if moh['name'] == moh_class:
                 return moh
+
+    def set_channel_var_sync(self, channel, var, value):
+        # TODO remove this when Asterisk gets fixed to set var synchronously
+        def get_value():
+            try:
+                return channel.getChannelVar(variable=var)['value']
+            except ARINotFound:
+                return None
+
+        channel.setChannelVar(variable=var, value=value)
+        for _ in xrange(20):
+            if get_value() == value:
+                return
+
+            logger.debug('waiting for a setvar to complete')
+            time.sleep(0.001)
+
+        raise Exception('failed to set channel variable {}={}'.format(var, value))
 
     def _get_moh(self, moh_uuid):
         if self._moh_cache is None:

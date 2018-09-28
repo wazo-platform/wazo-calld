@@ -19,6 +19,7 @@ class ApplicationCall(object):
     def __init__(self, id_):
         self.id_ = id_
         self.moh_uuid = None
+        self.muted = False
 
 
 class ApplicationNode(object):
@@ -49,6 +50,11 @@ def make_call_from_channel(channel, ari=None, variables=None, node_uuid=None):
             call.moh_uuid = channel.getChannelVar(variable='WAZO_MOH_UUID').get('value') or None
         except ARINotFound:
             call.moh_uuid = None
+
+        try:
+            call.muted = channel.getChannelVar(variable='WAZO_CALL_MUTED').get('value') == '1'
+        except ARINotFound:
+            call.muted = False
 
         call.node_uuid = getattr(call, 'node_uuid', None)
         for bridge in ari.bridges.list():
