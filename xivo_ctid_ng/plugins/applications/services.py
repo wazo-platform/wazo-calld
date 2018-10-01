@@ -49,6 +49,7 @@ class ApplicationService(object):
         except ARINotFound:
             bridge_type = application['destination_options']['type']
             bridge = self._ari.bridges.createWithId(
+                app=AppNameHelper.to_name(application['uuid']),
                 bridgeId=application['uuid'],
                 name=application['uuid'],
                 type=bridge_type,
@@ -60,7 +61,8 @@ class ApplicationService(object):
         bridges = self._ari.bridges.list()
         self.validate_call_not_in_node(application_uuid, bridges, call_ids)
 
-        bridge = self._ari.bridges.create(name=application_uuid, type='mixing')
+        stasis_app = AppNameHelper.to_name(application_uuid)
+        bridge = self._ari.bridges.create(app=stasis_app, name=application_uuid, type='mixing')
         node = make_node_from_bridge(bridge)
         self._notifier.node_created(application_uuid, node)
 
