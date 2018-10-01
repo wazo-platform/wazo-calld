@@ -209,6 +209,11 @@ definitions:
         type: object
       timeout:
         $ref: '#/definitions/TransferTimeout'
+    required:
+      - transferred_call
+      - initiator_call
+      - context
+      - exten
   Transfer:
     type: object
     properties:
