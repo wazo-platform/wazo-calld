@@ -78,7 +78,7 @@ def make_node_from_bridge_event(bridge):
 
 class _Snoop(object):
 
-    _bridge_name_tpl = 'wazo-app-snoop-{}'
+    bridge_name_tpl = 'wazo-app-snoop-{}'
     _snooped_call_id_chan_var = 'WAZO_SNOOPED_CALL_ID'
     _whisper_mode_chan_var = 'WAZO_SNOOP_WHISPER_MODE'
 
@@ -87,7 +87,7 @@ class _Snoop(object):
         self.application = application
         self.snooped_call_id = snooped_call_id
         self.snooping_call_id = snooping_call_id
-        self.bridge_name = self._bridge_name_tpl.format(application['uuid'])
+        self.bridge_name = self.bridge_name_tpl.format(application['uuid'])
         self.whisper_mode = kwargs.get('whisper_mode')
         self._bridge = kwargs.get('bridge')
         self._snoop_channel = kwargs.get('snoop_channel')
@@ -238,7 +238,7 @@ class SnoopHelper(object):
             yield _Snoop.from_bridge(self._ari, application, snoop_bridge)
 
     def _find_snoop_channels(self, application):
-        bridge_name = 'wazo-app-snoop-{}'.format(str(application['uuid']))
+        bridge_name = _Snoop.bridge_name_tpl.format(application['uuid'])
         for bridge in self._ari.bridges.list():
             if bridge.json['name'] == bridge_name:
                 yield bridge

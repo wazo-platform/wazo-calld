@@ -8,7 +8,7 @@ from hamcrest import (
     has_entries,
 )
 
-from ..services import _Snoop
+from ..models import _Snoop
 from ..schema import ApplicationSnoopSchema
 
 
