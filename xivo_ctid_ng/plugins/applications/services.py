@@ -78,10 +78,8 @@ class ApplicationService(object):
         except ARINotFound:
             raise NoSuchApplication(application_uuid)
 
-        node_uuid = None
         confd_app = self.get_confd_application(application_uuid)
-        if confd_app['destination'] == 'node':
-            node_uuid = application_uuid
+        node_uuid = application_uuid if confd_app['destination'] == 'node' else None
 
         application['destination_node_uuid'] = node_uuid
         application['uuid'] = application_uuid
