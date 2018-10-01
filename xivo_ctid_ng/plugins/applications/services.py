@@ -193,21 +193,22 @@ class ApplicationService(object):
                 raise NoSuchCall(call_id)
             raise
 
-    def list_calls(self, application_uuid):
-        try:
-            channel_ids = self._ari.applications.get(
-                applicationName=AppNameHelper.to_name(application_uuid)
-            )['channel_ids']
-        except ARINotFound:
-            raise NoSuchApplication(application_uuid)
+    def list_calls(self, application):
+        def is_wrong_side_of_local_channel(channel):
+            name = channel.json['name']
+            return name.startswith('Local/') and name.endswith(';2')
 
-        for channel_id in channel_ids:
+        for channel_id in application['channel_ids']:
             try:
                 channel = self._ari.channels.get(channelId=channel_id)
-                variables = self.get_channel_variables(channel)
-                yield make_call_from_channel(channel, ari=self._ari, variables=variables)
             except ARINotFound:
                 continue
+
+            if is_wrong_side_of_local_channel(channel):
+                continue
+
+            variables = self.get_channel_variables(channel)
+            yield make_call_from_channel(channel, ari=self._ari, variables=variables)
 
     def list_nodes(self, application_uuid):
         try:
