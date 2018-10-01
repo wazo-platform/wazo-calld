@@ -116,9 +116,25 @@ class Channel(object):
         if self.is_local():
             try:
                 uuid = self._ari.channels.getChannelVar(channelId=self.id, variable='WAZO_DEREFERENCED_USERUUID')['value']
+                return uuid
             except ARINotFound:
-                return default
-            return uuid
+                uuid = None
+
+            if not uuid:
+                try:
+                    channel_name = self._ari.channels.get(channelId=self.id).json['name']
+                    other_side = channel_name.replace(';1', ';2')
+                    other_channel_id = next(channel.id for channel in self._ari.channels.list()
+                                            if channel.json['name'] == other_side)
+                    uuid = self._ari.channels.getChannelVar(
+                        channelId=other_channel_id,
+                        variable='WAZO_DIALED_USER_UUID',
+                    )['value']
+                    return uuid
+                except ARINotFound:
+                    uuid = None
+
+            return default
 
         try:
             uuid = self._ari.channels.getChannelVar(channelId=self.id, variable='XIVO_USERUUID')['value']
