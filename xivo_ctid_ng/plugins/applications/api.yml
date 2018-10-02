@@ -207,7 +207,17 @@ paths:
   /applications/{application_uuid}/calls/{call_id}/snoops:
     post:
       summary: Start snooping on a call
-      description: '**Required ACL:** `ctid-ng.applications.{application_uuid}.calls.{call_id}.snoops.create`'
+      description: |
+        **Required ACL:** `ctid-ng.applications.{application_uuid}.calls.{call_id}.snoops.create`
+
+        The whisper mode indicate which part of the snooped channel can hear the snooper.
+
+        Given Alice calls Bob and Charles snoops on Bob
+
+        * none: No one can hear the snooper
+        * both: Alice and Bob can hear Charles
+        * in: Alice can hear Charles
+        * out: Bob can hear Charles
       parameters:
       - $ref: '#/parameters/ApplicationUUID'
       - $ref: '#/parameters/ApplicationCallID'
