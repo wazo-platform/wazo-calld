@@ -162,8 +162,8 @@ class TestStasisTriggers(BaseApplicationTestCase):
         assert_that(response.json()['calls'], has_items(has_entries(id=channel.id)))
 
     def test_event_destination_node_created(self):
-        event_accumulator = self.bus.accumulator('applications.{uuid}.#'.format(uuid=self.node_app_uuid))
         self.reset_ari()
+        event_accumulator = self.bus.accumulator('applications.{uuid}.#'.format(uuid=self.node_app_uuid))
         self._restart_ctid_ng()
 
         def event_received():
