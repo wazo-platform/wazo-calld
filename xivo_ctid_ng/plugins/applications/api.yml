@@ -435,6 +435,8 @@ paths:
       responses:
         '200':
           description: Snoop list
+          schema:
+            $ref: '#/definitions/ApplicationSnoops'
         '404':
           description: No such application
           schema:
@@ -454,6 +456,8 @@ paths:
       responses:
         '200':
           description: Snoop parameters
+          schema:
+            $ref: '#/definitions/ApplicationSnoop'
         '404':
           description: No such application or snoop
           schema:
@@ -590,6 +594,13 @@ definitions:
         type: string
       language:
         type: string
+  ApplicationSnoops:
+    type: object
+    properties:
+      items:
+        type: array
+        items:
+          $ref: '#/definitions/ApplicationSnoop'
   ApplicationSnoop:
     type: object
     properties:
