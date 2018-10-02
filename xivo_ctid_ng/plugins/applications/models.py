@@ -116,11 +116,9 @@ class _Snoop(object):
             old_snoop_channel.hangup()
 
     def new_snoop_channel(self, ari, whisper_mode):
-        channel_uuid = '{}.{}'.format(self.uuid, str(uuid4()))
         try:
-            snoop_channel = ari.channels.snoopChannelWithId(
+            snoop_channel = ari.channels.snoopChannel(
                 channelId=self.snooped_call_id,
-                snoopId=channel_uuid,
                 spy='both',
                 whisper=whisper_mode,
                 app=self.application['name'],
@@ -156,10 +154,18 @@ class _Snoop(object):
     @classmethod
     def from_bridge(cls, ari, application, bridge):
         for channel_id in bridge.json['channels']:
-            if channel_id.startswith(bridge.id):
-                snoop_channel = ari.channels.get(channelId=channel_id)
+            try:
+                channel = ari.channels.get(channelId=channel_id)
+            except ARINotFound:
+                continue
+
+            if channel.json['name'].startswith('Snoop/'):
+                snoop_channel = channel
             else:
                 snooping_call_id = channel_id
+
+        if not snoop_channel:
+            return None
 
         snooped_call_id = cls.get_snooped_call_id(snoop_channel)
         whisper_mode = cls.get_whisper_mode(snoop_channel)
@@ -219,7 +225,9 @@ class SnoopHelper(object):
             if snoop_bridge.id != uuid:
                 continue
 
-            return _Snoop.from_bridge(self._ari, application, snoop_bridge)
+            snoop = _Snoop.from_bridge(self._ari, application, snoop_bridge)
+            if snoop:
+                return snoop
 
         raise NoSuchSnoop(snoop_uuid)
 
