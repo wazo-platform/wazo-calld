@@ -271,8 +271,8 @@ class ApplicationService(object):
     def snoop_delete(self, application, snoop_uuid):
         return self._snoop_helper.delete(application, snoop_uuid)
 
-    def snoop_edit(self, application, snoop_uuid, snooping_call_id, whisper_mode):
-        snoop = self._snoop_helper.edit(application, snoop_uuid, snooping_call_id, whisper_mode)
+    def snoop_edit(self, application, snoop_uuid, whisper_mode):
+        snoop = self._snoop_helper.edit(application, snoop_uuid, whisper_mode)
         return snoop
 
     def snoop_get(self, application, snoop_uuid):

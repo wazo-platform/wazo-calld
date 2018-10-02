@@ -734,7 +734,6 @@ class TestApplicationSnoop(BaseApplicationTestCase):
         self.ctid_ng.application_edit_snoop(
             self.app_uuid,
             snoop['uuid'],
-            supervisor_channel['id'],
             whisper_mode,
         )
 
@@ -939,13 +938,7 @@ class TestApplicationSnoop(BaseApplicationTestCase):
         )
 
     def test_put(self):
-        unrelated_channel = self.call_app(self.node_app_uuid)
-        supervisor_1_channel = self.ctid_ng.application_new_call(
-            self.app_uuid,
-            'local',
-            'recipient_autoanswer',
-        ).json()
-        supervisor_2_channel = self.ctid_ng.application_new_call(
+        supervisor_channel = self.ctid_ng.application_new_call(
             self.app_uuid,
             'local',
             'recipient_autoanswer',
@@ -954,14 +947,13 @@ class TestApplicationSnoop(BaseApplicationTestCase):
         snoop = self.ctid_ng.application_call_snoop(
             self.app_uuid,
             self.caller_channel.id,
-            supervisor_1_channel['id'],
+            supervisor_channel['id'],
             'both',
         ).json()
 
         result = self.ctid_ng.application_edit_snoop(
             self.unknown_uuid,
             snoop['uuid'],
-            supervisor_1_channel['id'],
             'in',
         )
         assert_that(result, has_properties(status_code=404))
@@ -969,18 +961,9 @@ class TestApplicationSnoop(BaseApplicationTestCase):
         result = self.ctid_ng.application_edit_snoop(
             self.app_uuid,
             self.unknown_uuid,
-            supervisor_1_channel['id'],
             'in',
         )
         assert_that(result, has_properties(status_code=404))
-
-        result = self.ctid_ng.application_edit_snoop(
-            self.app_uuid,
-            snoop['uuid'],
-            unrelated_channel.id,
-            'in',
-        )
-        assert_that(result, has_properties(status_code=400))
 
         invalid_whisper_mode = [
             'foobar',
@@ -995,28 +978,9 @@ class TestApplicationSnoop(BaseApplicationTestCase):
             result = self.ctid_ng.application_edit_snoop(
                 self.app_uuid,
                 snoop['uuid'],
-                supervisor_1_channel['id'],
                 whisper_mode,
             )
             assert_that(result, has_properties(status_code=400), whisper_mode)
-
-        result = self.ctid_ng.application_edit_snoop(
-            self.app_uuid,
-            snoop['uuid'],
-            supervisor_2_channel['id'],
-            'in',
-        )
-        assert_that(result, has_properties(status_code=204))
-
-        assert_that(
-            self.ctid_ng.application_get_snoop(self.app_uuid, snoop['uuid']).json(),
-            has_entries(
-                uuid=snoop['uuid'],
-                whisper_mode='in',
-                snooped_call_id=self.caller_channel.id,
-                snooping_call_id=supervisor_2_channel['id'],
-            )
-        )
 
 
 class TestApplicationMoh(BaseApplicationTestCase):

@@ -80,6 +80,17 @@ class ApplicationSnoopSchema(BaseSchema):
         return data
 
 
+class ApplicationSnoopPutSchema(BaseSchema):
+    whisper_mode = fields.String(validate=OneOf(['in', 'out', 'both']), missing=None)
+
+    @post_load
+    def load_whisper_mode(self, data):
+        whisper_mode = data.get('whisper_mode')
+        if whisper_mode is None:
+            data['whisper_mode'] = 'none'
+        return data
+
+
 class ApplicationSchema(Schema):
     destination_node_uuid = fields.String()
 
@@ -90,3 +101,4 @@ application_node_schema = ApplicationNodeSchema()
 application_playback_schema = ApplicationCallPlaySchema()
 application_schema = ApplicationSchema()
 application_snoop_schema = ApplicationSnoopSchema()
+application_snoop_put_schema = ApplicationSnoopPutSchema()

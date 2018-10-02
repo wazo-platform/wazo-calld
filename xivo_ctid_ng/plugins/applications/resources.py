@@ -14,6 +14,7 @@ from .schema import (
     application_playback_schema,
     application_schema,
     application_snoop_schema,
+    application_snoop_put_schema,
 )
 
 
@@ -147,9 +148,9 @@ class ApplicationSnoopItem(_BaseResource):
 
     @required_acl('ctid-ng.applications.{application_uuid}.snoops.{snoop_uuid}.update')
     def put(self, application_uuid, snoop_uuid):
-        form = application_snoop_schema.load(request.get_json()).data
+        form = application_snoop_put_schema.load(request.get_json()).data
         application = self._service.get_application(application_uuid)
-        self._service.snoop_edit(application, snoop_uuid, **form)
+        self._service.snoop_edit(application, snoop_uuid, form['whisper_mode'])
         return '', 204
 
     @required_acl('ctid-ng.applications.{application_uuid}.snoops.{snoop_uuid}.delete')
