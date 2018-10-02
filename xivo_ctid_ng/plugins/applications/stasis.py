@@ -45,12 +45,19 @@ class ApplicationStasis(object):
         self._notifier = notifier
         self._destination_created = False
 
-    def channel_update_bridge(self, channel, event):
+    def channel_entered_bridge(self, channel, event):
         application_uuid = AppNameHelper.to_uuid(event.get('application'))
         if not application_uuid:
             return
 
-        if channel.json['name'].startswith('Snoop/') and event['type'] == 'ChannelLeftBridge':
+        self._channel_update_bridge(application_uuid, channel, event)
+
+    def channel_left_bridge(self, channel, event):
+        application_uuid = AppNameHelper.to_uuid(event.get('application'))
+        if not application_uuid:
+            return
+
+        if channel.json['name'].startswith('Snoop/'):
             application = self._service.get_application(application_uuid)
             snoop_uuid = event['bridge']['id']
             try:
@@ -59,6 +66,9 @@ class ApplicationStasis(object):
             except NoSuchSnoop:
                 self._notifier.snoop_deleted(application_uuid, snoop_uuid)
 
+        self._channel_update_bridge(application_uuid, channel, event)
+
+    def _channel_update_bridge(self, application_uuid, channel, event):
         node = make_node_from_bridge_event(event.get('bridge'))
         self._notifier.node_updated(application_uuid, node)
 
@@ -146,8 +156,8 @@ class ApplicationStasis(object):
         self._ari.on_channel_event('ChannelMohStop', self.channel_moh_stopped)
         self._ari.on_channel_event('StasisStart', self.stasis_start)
         self._ari.on_channel_event('StasisEnd', self.stasis_end)
-        self._ari.on_channel_event('ChannelEnteredBridge', self.channel_update_bridge)
-        self._ari.on_channel_event('ChannelLeftBridge', self.channel_update_bridge)
+        self._ari.on_channel_event('ChannelEnteredBridge', self.channel_entered_bridge)
+        self._ari.on_channel_event('ChannelLeftBridge', self.channel_left_bridge)
         self._ari.on_bridge_event('BridgeDestroyed', self.bridge_destroyed)
 
         for application in applications:
