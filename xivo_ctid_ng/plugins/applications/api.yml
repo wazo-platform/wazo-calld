@@ -462,7 +462,7 @@ paths:
         description: snoop parameters
         required: true
         schema:
-          $ref: '#/definitions/Snoop'
+          $ref: '#/definitions/SnoopPut'
       tags:
       - applications
       responses:
@@ -590,6 +590,11 @@ definitions:
         type: string
       snooping_call_id:
         type: string
+      whisper_mode:
+        type: string
+  SnoopPut:
+    type: object
+    properties:
       whisper_mode:
         type: string
 
