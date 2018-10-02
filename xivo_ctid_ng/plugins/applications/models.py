@@ -156,13 +156,12 @@ class _Snoop(object):
         for channel_id in bridge.json['channels']:
             try:
                 channel = ari.channels.get(channelId=channel_id)
+                if channel.json['name'].startswith('Snoop/'):
+                    snoop_channel = channel
+                else:
+                    snooping_call_id = channel_id
             except ARINotFound:
                 continue
-
-            if channel.json['name'].startswith('Snoop/'):
-                snoop_channel = channel
-            else:
-                snooping_call_id = channel_id
 
         if not snoop_channel:
             return None
