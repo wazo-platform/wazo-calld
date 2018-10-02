@@ -185,14 +185,14 @@ paths:
         description: playback parameters
         required: true
         schema:
-          $ref: '#/definitions/Playback'
+          $ref: '#/definitions/ApplicationPlayback'
       tags:
       - applications
       responses:
         '200':
           description: Play has been sent
           schema:
-            $ref: '#/definitions/Playback'
+            $ref: '#/definitions/ApplicationPlayback'
         '400':
           description: No such playback
           schema:
@@ -226,14 +226,14 @@ paths:
         description: snoop parameters
         required: true
         schema:
-          $ref: '#/definitions/Snoop'
+          $ref: '#/definitions/ApplicationSnoop'
       tags:
       - applications
       responses:
         '200':
           description: Snoop started
           schema:
-            $ref: '#/definitions/Snoop'
+            $ref: '#/definitions/ApplicationSnoop'
         '400':
           description: No such call
           schema:
@@ -472,7 +472,7 @@ paths:
         description: snoop parameters
         required: true
         schema:
-          $ref: '#/definitions/SnoopPut'
+          $ref: '#/definitions/ApplicationSnoopPut'
       tags:
       - applications
       responses:
@@ -580,7 +580,7 @@ definitions:
     properties:
       id:
         type: string
-  Playback:
+  ApplicationPlayback:
     type: object
     properties:
       uuid:
@@ -590,7 +590,7 @@ definitions:
         type: string
       language:
         type: string
-  Snoop:
+  ApplicationSnoop:
     type: object
     properties:
       uuid:
@@ -603,7 +603,7 @@ definitions:
       whisper_mode:
         type: string
         enum: [in, out, none, both]
-  SnoopPut:
+  ApplicationSnoopPut:
     type: object
     properties:
       whisper_mode:
