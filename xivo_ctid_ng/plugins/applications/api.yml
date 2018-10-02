@@ -592,11 +592,13 @@ definitions:
         type: string
       whisper_mode:
         type: string
+        enum: [in, out, none, both]
   SnoopPut:
     type: object
     properties:
       whisper_mode:
         type: string
+        enum: [in, out, none, both]
 
 parameters:
   ApplicationCallID:
