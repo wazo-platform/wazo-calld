@@ -60,10 +60,7 @@ class ApplicationNodeSchema(BaseSchema):
     calls = fields.Nested(ApplicationNodeCallSchema, many=True, validate=Length(min=1), required=True)
 
 
-class ApplicationSnoopSchema(BaseSchema):
-    uuid = fields.String(dump_only=True)
-    snooped_call_id = fields.String(dump_only=True)
-    snooping_call_id = fields.String(required=True)
+class ApplicationSnoopPutSchema(BaseSchema):
     whisper_mode = fields.String(validate=OneOf(['in', 'out', 'both']), missing=None)
 
     @post_load
@@ -80,15 +77,11 @@ class ApplicationSnoopSchema(BaseSchema):
         return data
 
 
-class ApplicationSnoopPutSchema(BaseSchema):
-    whisper_mode = fields.String(validate=OneOf(['in', 'out', 'both']), missing=None)
-
-    @post_load
-    def load_whisper_mode(self, data):
-        whisper_mode = data.get('whisper_mode')
-        if whisper_mode is None:
-            data['whisper_mode'] = 'none'
-        return data
+class ApplicationSnoopSchema(ApplicationSnoopPutSchema):
+    uuid = fields.String(dump_only=True)
+    snooped_call_id = fields.String(dump_only=True)
+    snooping_call_id = fields.String(required=True)
+    # whisper_mode from parent
 
 
 class ApplicationSchema(Schema):
