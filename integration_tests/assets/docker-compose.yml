@@ -1,4 +1,4 @@
-version: '3'
+version: '3.7'
 services:
   sync:
     image: waisbrot/wait
@@ -76,6 +76,9 @@ services:
     image: rabbitmq
     ports:
       - 5672
+    volumes:
+      - type: tmpfs
+        target: /var/lib/rabbitmq
 
   remote_ctid_ng:
     image: p0bailey/docker-flask
