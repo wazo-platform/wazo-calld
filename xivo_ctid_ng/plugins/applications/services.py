@@ -11,6 +11,7 @@ from xivo_ctid_ng.exceptions import InvalidExtension
 from .models import (
     make_call_from_channel,
     make_node_from_bridge,
+    SnoopHelper,
 )
 from .exceptions import (
     CallAlreadyInNode,
@@ -36,6 +37,7 @@ class ApplicationService(object):
         self._notifier = notifier
         self._apps_cache = None
         self._moh_cache = None
+        self._snoop_helper = SnoopHelper(self._ari)
 
     def channel_answer(self, application_uuid, channel):
         channel.answer()
@@ -97,9 +99,9 @@ class ApplicationService(object):
             self._apps_cache = {app['uuid']: app for app in apps}
         return self._apps_cache.values()
 
-    def get_call_id(self, application, call_id):
+    def get_call_id(self, application, call_id, status_code=404):
         if call_id not in application['channel_ids']:
-            raise NoSuchCall(call_id)
+            raise NoSuchCall(call_id, status_code)
         return call_id
 
     def delete_call(self, application_uuid, call_id):
@@ -255,6 +257,31 @@ class ApplicationService(object):
         variables = self.get_channel_variables(channel)
         call = make_call_from_channel(channel, ari=self._ari, variables=variables)
         self._notifier.call_initiated(application_uuid, call)
+
+    def snoop_create(self, application, snooped_call_id, snooping_call_id, whisper_mode):
+        snoop = self._snoop_helper.create(
+            application,
+            snooped_call_id,
+            snooping_call_id,
+            whisper_mode,
+        )
+        self._notifier.snoop_created(application['uuid'], snoop)
+        return snoop
+
+    def snoop_delete(self, application, snoop_uuid):
+        return self._snoop_helper.delete(application, snoop_uuid)
+
+    def snoop_edit(self, application, snoop_uuid, whisper_mode):
+        snoop = self._snoop_helper.edit(application, snoop_uuid, whisper_mode)
+        return snoop
+
+    def snoop_get(self, application, snoop_uuid):
+        snoop = self._snoop_helper.get(application, snoop_uuid)
+        return snoop
+
+    def snoop_list(self, application):
+        snoops = self._snoop_helper.list_(application)
+        return snoops
 
     def start_call_hold(self, call_id):
         try:

@@ -55,6 +55,17 @@ class _BaseNodeListEvent(_BaseEvent):
         }
 
 
+class _BaseSnoopItemEvent(_BaseEvent):
+
+    def __init__(self, application_uuid, snoop):
+        self.routing_key = self.routing_key.format(application_uuid, snoop['uuid'])
+        self.required_acl = self.required_acl.format(self.routing_key)
+        self._body = {
+            'application_uuid': str(application_uuid),
+            'snoop': snoop
+        }
+
+
 class CallEntered(_BaseCallListEvent):
     name = 'application_call_entered'
     routing_key = 'applications.{}.calls.created'
@@ -93,3 +104,18 @@ class NodeDeleted(_BaseNodeItemEvent):
 class NodeUpdated(_BaseNodeItemEvent):
     name = 'application_node_updated'
     routing_key = 'applications.{}.nodes.{}.updated'
+
+
+class SnoopCreated(_BaseSnoopItemEvent):
+    name = 'application_snoop_created'
+    routing_key = 'applications.{}.snoops.{}.created'
+
+
+class SnoopDeleted(_BaseSnoopItemEvent):
+    name = 'application_snoop_deleted'
+    routing_key = 'applications.{}.snoops.{}.deleted'
+
+
+class SnoopUpdated(_BaseSnoopItemEvent):
+    name = 'application_snoop_updated'
+    routing_key = 'applications.{}.snoops.{}.updated'

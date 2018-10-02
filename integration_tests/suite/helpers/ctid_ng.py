@@ -52,6 +52,32 @@ class CtidNgClient(object):
         url = self.url('applications', application_uuid, 'calls', call_id, 'playbacks')
         return requests.post(url, json=body, headers={'X-Auth-Token': token}, verify=False)
 
+    def application_call_snoop(
+            self, application_uuid, call_id, snooper_call_id, whisper=None, token=VALID_TOKEN):
+        url = self.url('applications', application_uuid, 'calls', call_id, 'snoops')
+        body = {
+            'whisper_mode': whisper,
+            'snooping_call_id': snooper_call_id,
+        }
+        return requests.post(url, json=body, headers={'X-Auth-Token': token}, verify=False)
+
+    def application_edit_snoop(self, application_uuid, snoop_uuid, whisper=None, token=VALID_TOKEN):
+        url = self.url('applications', application_uuid, 'snoops', snoop_uuid)
+        body = {'whisper_mode': whisper}
+        return requests.put(url, json=body, headers={'X-Auth-Token': token}, verify=False)
+
+    def application_delete_snoop(self, application_uuid, snoop_uuid, token=VALID_TOKEN):
+        url = self.url('applications', application_uuid, 'snoops', snoop_uuid)
+        return requests.delete(url, headers={'X-Auth-Token': token}, verify=False)
+
+    def application_get_snoop(self, application_uuid, snoop_uuid, token=VALID_TOKEN):
+        url = self.url('applications', application_uuid, 'snoops', snoop_uuid)
+        return requests.get(url, headers={'X-Auth-Token': token}, verify=False)
+
+    def application_list_snoops(self, application_uuid, token=VALID_TOKEN):
+        url = self.url('applications', application_uuid, 'snoops')
+        return requests.get(url, headers={'X-Auth-Token': token}, verify=False)
+
     def application_stop_playback(self, application_uuid, playback_id, token=VALID_TOKEN):
         url = self.url('applications', application_uuid, 'playbacks', playback_id)
         return requests.delete(url, headers={'X-Auth-Token': token}, verify=False)

@@ -13,6 +13,8 @@ from .schema import (
     application_node_schema,
     application_playback_schema,
     application_schema,
+    application_snoop_schema,
+    application_snoop_put_schema,
 )
 
 
@@ -107,6 +109,16 @@ class ApplicationCallPlaybackList(_BaseResource):
         return application_playback_schema.dump(playback).data
 
 
+class ApplicationCallSnoopList(_BaseResource):
+
+    @required_acl('ctid-ng.applications.{application_uuid}.calls.{call_id}.snoops.create')
+    def post(self, application_uuid, call_id):
+        form = application_snoop_schema.load(request.get_json()).data
+        application = self._service.get_application(application_uuid)
+        snoop = self._service.snoop_create(application, call_id, **form)
+        return application_snoop_schema.dump(snoop).data
+
+
 class ApplicationPlaybackItem(_BaseResource):
 
     @required_acl('ctid-ng.applications.{application_uuid}.playbacks.{playback_uuid}.delete')
@@ -114,6 +126,37 @@ class ApplicationPlaybackItem(_BaseResource):
         self._service.get_application(application_uuid)
         # TODO: verify that playback_uuid is in the application
         self._service.delete_playback(application_uuid, playback_uuid)
+        return '', 204
+
+
+class ApplicationSnoopList(_BaseResource):
+
+    @required_acl('ctid-ng.applications.{application_uuid}.snoops.read')
+    def get(self, application_uuid):
+        application = self._service.get_application(application_uuid)
+        snoops = self._service.snoop_list(application)
+        return {'items': application_snoop_schema.dump(snoops, many=True).data}
+
+
+class ApplicationSnoopItem(_BaseResource):
+
+    @required_acl('ctid-ng.applications.{application_uuid}.snoops.{snoop_uuid}.read')
+    def get(self, application_uuid, snoop_uuid):
+        application = self._service.get_application(application_uuid)
+        snoop = self._service.snoop_get(application, snoop_uuid)
+        return application_snoop_schema.dump(snoop).data
+
+    @required_acl('ctid-ng.applications.{application_uuid}.snoops.{snoop_uuid}.update')
+    def put(self, application_uuid, snoop_uuid):
+        form = application_snoop_put_schema.load(request.get_json()).data
+        application = self._service.get_application(application_uuid)
+        self._service.snoop_edit(application, snoop_uuid, form['whisper_mode'])
+        return '', 204
+
+    @required_acl('ctid-ng.applications.{application_uuid}.snoops.{snoop_uuid}.delete')
+    def delete(self, application_uuid, snoop_uuid):
+        application = self._service.get_application(application_uuid)
+        self._service.snoop_delete(application, snoop_uuid)
         return '', 204
 
 

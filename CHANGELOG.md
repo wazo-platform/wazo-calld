@@ -15,6 +15,15 @@ Changelog
   * `PUT /applications/{application_uuid}/calls/{call_id}/hold/stop`
 
 
+* New API to snoop on calls
+
+  * `GET /applications/{application_uuid}/snoops`
+  * `POST /applications/{application_uuid}/calls/{call_id}/snoop`
+  * `PUT /applications/{application_uuid}/snoops/{snoop_uuid}`
+  * `GET /applications/{application_uuid}/snoops/{snoop_uuid}`
+  * `DELETE /applications/{application_uuid}/snoops/{snoop_uuid}`
+
+
 18.10
 -----
 

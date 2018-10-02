@@ -15,12 +15,15 @@ from .resources import (
     ApplicationCallMohStartList,
     ApplicationCallMohStopList,
     ApplicationCallPlaybackList,
+    ApplicationCallSnoopList,
     ApplicationItem,
     ApplicationNodeCallItem,
     ApplicationNodeCallList,
     ApplicationNodeItem,
     ApplicationNodeList,
     ApplicationPlaybackItem,
+    ApplicationSnoopItem,
+    ApplicationSnoopList,
 )
 from .services import ApplicationService
 from .stasis import ApplicationStasis
@@ -92,6 +95,11 @@ class Plugin(object):
             resource_class_args=[service],
         )
         api.add_resource(
+            ApplicationCallSnoopList,
+            '/applications/<uuid:application_uuid>/calls/<call_id>/snoops',
+            resource_class_args=[service],
+        )
+        api.add_resource(
             ApplicationNodeList,
             '/applications/<uuid:application_uuid>/nodes',
             resource_class_args=[service],
@@ -114,5 +122,15 @@ class Plugin(object):
         api.add_resource(
             ApplicationPlaybackItem,
             '/applications/<uuid:application_uuid>/playbacks/<uuid:playback_uuid>',
+            resource_class_args=[service],
+        )
+        api.add_resource(
+            ApplicationSnoopList,
+            '/applications/<uuid:application_uuid>/snoops',
+            resource_class_args=[service],
+        )
+        api.add_resource(
+            ApplicationSnoopItem,
+            '/applications/<uuid:application_uuid>/snoops/<uuid:snoop_uuid>',
             resource_class_args=[service],
         )

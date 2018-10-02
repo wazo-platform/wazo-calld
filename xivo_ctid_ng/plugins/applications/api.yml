@@ -185,16 +185,61 @@ paths:
         description: playback parameters
         required: true
         schema:
-          $ref: '#/definitions/Playback'
+          $ref: '#/definitions/ApplicationPlayback'
       tags:
       - applications
       responses:
         '200':
           description: Play has been sent
           schema:
-            $ref: '#/definitions/Playback'
+            $ref: '#/definitions/ApplicationPlayback'
         '400':
           description: No such playback
+          schema:
+            $ref: '#/definitions/Error'
+        '404':
+          description: No such application or call
+          schema:
+            $ref: '#/definitions/Error'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+
+  /applications/{application_uuid}/calls/{call_id}/snoops:
+    post:
+      summary: Start snooping on a call
+      description: |
+        **Required ACL:** `ctid-ng.applications.{application_uuid}.calls.{call_id}.snoops.create`
+
+        The whisper mode indicate which part of the snooped channel can hear the snooper.
+
+        Given Alice calls Bob and Charles snoops on Bob
+
+        * none: No one can hear the snooper
+        * both: Alice and Bob can hear Charles
+        * in: Alice can hear Charles
+        * out: Bob can hear Charles
+      parameters:
+      - $ref: '#/parameters/ApplicationUUID'
+      - $ref: '#/parameters/ApplicationCallID'
+      - name: body
+        in: body
+        description: snoop parameters
+        required: true
+        schema:
+          $ref: '#/definitions/ApplicationSnoop'
+      tags:
+      - applications
+      responses:
+        '200':
+          description: Snoop started
+          schema:
+            $ref: '#/definitions/ApplicationSnoop'
+        '400':
+          description: No such call
+          schema:
+            $ref: '#/definitions/Error'
+        '400':
+          description: Invalid whisper mode
           schema:
             $ref: '#/definitions/Error'
         '404':
@@ -359,6 +404,7 @@ paths:
             $ref: '#/definitions/Error'
         '503':
           $ref: '#/responses/AnotherServiceUnavailable'
+
   /applications/{application_uuid}/playbacks/{playback_uuid}:
     delete:
       summary: Stop and remove playback
@@ -373,6 +419,89 @@ paths:
           description: Playback has been stopped and removed
         '404':
           description: No such application or playback
+          schema:
+            $ref: '#/definitions/Error'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+
+  /applications/{application_uuid}/snoops:
+    get:
+      summary: List active snoops
+      description: '**Required ACL:** `ctid-ng.applications.{application_uuid}.snoops.read`'
+      parameters:
+      - $ref: '#/parameters/ApplicationUUID'
+      tags:
+      - applications
+      responses:
+        '200':
+          description: Snoop list
+          schema:
+            $ref: '#/definitions/ApplicationSnoops'
+        '404':
+          description: No such application
+          schema:
+            $ref: '#/definitions/Error'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+
+  /applications/{application_uuid}/snoops/{snoop_uuid}:
+    get:
+      summary: View snooping parameters
+      description: '**Required ACL:** `ctid-ng.applications.{application_uuid}.snoops.{snoop_uuid}.read`'
+      parameters:
+      - $ref: '#/parameters/ApplicationUUID'
+      - $ref: '#/parameters/ApplicationSnoopUUID'
+      tags:
+      - applications
+      responses:
+        '200':
+          description: Snoop parameters
+          schema:
+            $ref: '#/definitions/ApplicationSnoop'
+        '404':
+          description: No such application or snoop
+          schema:
+            $ref: '#/definitions/Error'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+
+    put:
+      summary: Change snooping parameters
+      description: '**Required ACL:** `ctid-ng.applications.{application_uuid}.snoops.{snoop_uuid}.update`'
+      parameters:
+      - $ref: '#/parameters/ApplicationUUID'
+      - $ref: '#/parameters/ApplicationSnoopUUID'
+      - name: body
+        in: body
+        description: snoop parameters
+        required: true
+        schema:
+          $ref: '#/definitions/ApplicationSnoopPut'
+      tags:
+      - applications
+      responses:
+        '204':
+          description: Snooping has been modifier
+        '404':
+          description: No such application or snoop
+          schema:
+            $ref: '#/definitions/Error'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+
+    delete:
+      summary: Stop snooping
+      description: '**Required ACL:** `ctid-ng.applications.{application_uuid}.snoops.{snoop_uuid}.delete`'
+      parameters:
+      - $ref: '#/parameters/ApplicationUUID'
+      - $ref: '#/parameters/ApplicationSnoopUUID'
+      tags:
+      - applications
+      responses:
+        '204':
+          description: Snooping has been stopped
+        '404':
+          description: No such application or snoop
           schema:
             $ref: '#/definitions/Error'
         '503':
@@ -455,7 +584,7 @@ definitions:
     properties:
       id:
         type: string
-  Playback:
+  ApplicationPlayback:
     type: object
     properties:
       uuid:
@@ -465,6 +594,32 @@ definitions:
         type: string
       language:
         type: string
+  ApplicationSnoops:
+    type: object
+    properties:
+      items:
+        type: array
+        items:
+          $ref: '#/definitions/ApplicationSnoop'
+  ApplicationSnoop:
+    type: object
+    properties:
+      uuid:
+        type: string
+        readOnly: true
+      snooped_call_id:
+        type: string
+      snooping_call_id:
+        type: string
+      whisper_mode:
+        type: string
+        enum: [in, out, none, both]
+  ApplicationSnoopPut:
+    type: object
+    properties:
+      whisper_mode:
+        type: string
+        enum: [in, out, none, both]
 
 parameters:
   ApplicationCallID:
@@ -501,5 +656,11 @@ parameters:
     name: playback_uuid
     in: path
     description: ID of the playback
+    required: true
+    type: string
+  ApplicationSnoopUUID:
+    name: snoop_uuid
+    in: path
+    description: UUID of the snoop
     required: true
     type: string
