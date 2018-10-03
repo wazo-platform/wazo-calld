@@ -24,6 +24,12 @@ Changelog
   * `DELETE /applications/{application_uuid}/snoops/{snoop_uuid}`
 
 
+* New API to mute calls
+
+  * `PUT /applications/{application_uuid}/calls/{call_id}/mute/start`
+  * `PUT /applications/{application_uuid}/calls/{call_id}/mute/stop`
+
+
 18.10
 -----
 

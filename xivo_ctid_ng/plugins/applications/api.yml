@@ -163,6 +163,44 @@ paths:
         '503':
           $ref: '#/responses/AnotherServiceUnavailable'
 
+  /applications/{application_uuid}/calls/{call_id}/mute/start:
+    put:
+      summary: Mute a call
+      description: '**Required ACL:** `ctid-ng.applications.{application_uuid}.calls.{call_id}.mute.start.update`'
+      parameters:
+      - $ref: '#/parameters/ApplicationUUID'
+      - $ref: '#/parameters/ApplicationCallID'
+      tags:
+      - applications
+      responses:
+        '204':
+          description: The call is now muted
+        '404':
+          description: No such application or call
+          schema:
+            $ref: '#/definitions/Error'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+
+  /applications/{application_uuid}/calls/{call_id}/mute/stop:
+    put:
+      summary: Unmute a call
+      description: '**Required ACL:** `ctid-ng.applications.{application_uuid}.calls.{call_id}.mute.stop.update'
+      parameters:
+      - $ref: '#/parameters/ApplicationUUID'
+      - $ref: '#/parameters/ApplicationCallID'
+      tags:
+      - applications
+      responses:
+        '204':
+          description: The call is now unmuted
+        '404':
+          description: No such application or call
+          schema:
+            $ref: '#/definitions/Error'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+
   /applications/{application_uuid}/calls/{call_id}/playbacks:
     post:
       summary: Play file to the call

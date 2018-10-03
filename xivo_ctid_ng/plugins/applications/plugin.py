@@ -14,6 +14,8 @@ from .resources import (
     ApplicationCallList,
     ApplicationCallMohStartList,
     ApplicationCallMohStopList,
+    ApplicationCallMuteStartList,
+    ApplicationCallMuteStopList,
     ApplicationCallPlaybackList,
     ApplicationCallSnoopList,
     ApplicationItem,
@@ -87,6 +89,16 @@ class Plugin(object):
         api.add_resource(
             ApplicationCallMohStartList,
             '/applications/<uuid:application_uuid>/calls/<call_id>/moh/<uuid:moh_uuid>/start',
+            resource_class_args=[service],
+        )
+        api.add_resource(
+            ApplicationCallMuteStartList,
+            '/applications/<uuid:application_uuid>/calls/<call_id>/mute/start',
+            resource_class_args=[service],
+        )
+        api.add_resource(
+            ApplicationCallMuteStopList,
+            '/applications/<uuid:application_uuid>/calls/<call_id>/mute/stop',
             resource_class_args=[service],
         )
         api.add_resource(

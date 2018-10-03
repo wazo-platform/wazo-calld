@@ -49,6 +49,7 @@ class ApplicationCallSchema(BaseSchema):
     variables = StrictDict(key_field=fields.String(), value_field=fields.String())
     node_uuid = fields.String()
     moh_uuid = fields.String()
+    muted = fields.Boolean()
 
 
 class ApplicationNodeCallSchema(BaseSchema):

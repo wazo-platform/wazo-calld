@@ -3,9 +3,6 @@
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
-import time
-
-from ari.exceptions import ARINotFound
 
 from .exceptions import (
     NoSuchSnoop,
@@ -119,7 +116,7 @@ class ApplicationStasis(object):
 
         moh = self._service.find_moh(event['moh_class'])
         if moh:
-            self._set_channel_var_sync(channel, 'WAZO_MOH_UUID', str(moh['uuid']))
+            self._service.set_channel_var_sync(channel, 'WAZO_MOH_UUID', str(moh['uuid']))
 
         call = make_call_from_channel(channel, self._ari)
         self._notifier.call_updated(application_uuid, call)
@@ -129,27 +126,9 @@ class ApplicationStasis(object):
         if not application_uuid:
             return
 
-        self._set_channel_var_sync(channel, 'WAZO_MOH_UUID', '')
+        self._service.set_channel_var_sync(channel, 'WAZO_MOH_UUID', '')
         call = make_call_from_channel(channel, self._ari)
         self._notifier.call_updated(application_uuid, call)
-
-    def _set_channel_var_sync(self, channel, var, value):
-        # TODO remove this when Asterisk gets fixed to set var synchronously
-        def get_value():
-            try:
-                return channel.getChannelVar(variable=var)['value']
-            except ARINotFound:
-                return None
-
-        channel.setChannelVar(variable=var, value=value)
-        for _ in xrange(20):
-            if get_value() == value:
-                return
-
-            logger.debug('waiting for a setvar to complete')
-            time.sleep(0.001)
-
-        raise Exception('failed to set channel variable {}={}'.format(var, value))
 
     def _subscribe(self, applications):
         self._ari.on_channel_event('ChannelMohStart', self.channel_moh_started)
