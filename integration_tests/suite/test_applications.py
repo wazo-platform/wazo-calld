@@ -799,7 +799,7 @@ class TestApplicationSnoop(BaseApplicationTestCase):
             events = event_accumulator.accumulate()
             assert_that(
                 events,
-                contains(
+                has_items(
                     has_entries(
                         name='application_snoop_deleted',
                         data=has_entries(
