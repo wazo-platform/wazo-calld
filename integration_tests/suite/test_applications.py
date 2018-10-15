@@ -165,8 +165,9 @@ class TestStasisTriggers(BaseApplicationTestCase):
 
     def test_event_destination_node_created(self):
         self.reset_ari()
+        self._stop_ctid_ng()
         event_accumulator = self.bus.accumulator('applications.{uuid}.#'.format(uuid=self.node_app_uuid))
-        self._restart_ctid_ng()
+        self._start_ctid_ng()
 
         def event_received():
             events = event_accumulator.accumulate()
