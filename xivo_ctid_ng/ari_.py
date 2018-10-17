@@ -14,8 +14,8 @@ import requests
 
 from requests.exceptions import HTTPError
 from websocket import WebSocketException
+from xivo.status import Status
 
-from .status import Status
 from .exceptions import ARIUnreachable
 
 logger = logging.getLogger(__name__)
