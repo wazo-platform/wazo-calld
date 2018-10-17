@@ -82,7 +82,7 @@ class CoreBusConsumer(ConsumerMixin):
         return self._is_running
 
     def provide_status(self, status):
-        status['bus_consumer'] = Status.ok if self.is_running() else Status.fail
+        status['bus_consumer']['status'] = Status.ok if self.is_running() else Status.fail
 
     def on_ami_event(self, event_type, callback):
         self._queue.bindings.add(binding(self._exchange, routing_key='ami.{}'.format(event_type)))

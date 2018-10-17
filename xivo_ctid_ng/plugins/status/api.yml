@@ -15,10 +15,15 @@ definitions:
     type: object
     properties:
       ari:
-        $ref: '#/definitions/StatusValue'
+        $ref: '#/definitions/ComponentWithStatus'
       bus_consumer:
-        $ref: '#/definitions/StatusValue'
+        $ref: '#/definitions/ComponentWithStatus'
       service_token:
+        $ref: '#/definitions/ComponentWithStatus'
+  ComponentWithStatus:
+    type: object
+    properties:
+      status:
         $ref: '#/definitions/StatusValue'
   StatusValue:
     type: string
