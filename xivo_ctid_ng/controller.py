@@ -9,6 +9,7 @@ from functools import partial
 from xivo import plugin_helpers
 from xivo.config_helper import get_xivo_uuid
 from xivo.consul_helpers import ServiceCatalogRegistration
+from xivo.status import StatusAggregator, TokenStatus
 from xivo.token_renewer import TokenRenewer
 from xivo_auth_client import Client as AuthClient
 
@@ -18,7 +19,6 @@ from .bus import CoreBusPublisher
 from .collectd import CoreCollectd
 from .rest_api import api, adapter_api, CoreRestApi
 from .service_discovery import self_check
-from .status import StatusAggregator, TokenStatus
 
 logger = logging.getLogger(__name__)
 

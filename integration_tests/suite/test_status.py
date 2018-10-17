@@ -25,7 +25,7 @@ class TestStatusARIStops(IntegrationTest):
 
         def ari_is_down():
             result = self.ctid_ng.status()
-            assert_that(result['connections']['ari'], equal_to('fail'))
+            assert_that(result['ari'], equal_to('fail'))
 
         until.assert_(ari_is_down, tries=5)
 
@@ -38,7 +38,7 @@ class TestStatusNoRabbitMQ(IntegrationTest):
     def test_given_no_rabbitmq_when_status_then_rabbitmq_fail(self):
         result = self.ctid_ng.status()
 
-        assert_that(result['connections']['bus_consumer'], equal_to('fail'))
+        assert_that(result['bus_consumer'], equal_to('fail'))
 
 
 class TestStatusRabbitMQStops(IntegrationTest):
@@ -51,7 +51,7 @@ class TestStatusRabbitMQStops(IntegrationTest):
 
         def rabbitmq_is_down():
             result = self.ctid_ng.status()
-            assert_that(result['connections']['bus_consumer'], equal_to('fail'))
+            assert_that(result['bus_consumer'], equal_to('fail'))
 
         until.assert_(rabbitmq_is_down, tries=5)
 
@@ -66,10 +66,8 @@ class TestStatusAllOK(IntegrationTest):
         def all_ok():
             result = self.ctid_ng.status()
             assert_that(result, has_entries(
-                connections=has_entries(
-                    ari='ok',
-                    bus_consumer='ok',
-                ),
+                ari='ok',
+                bus_consumer='ok',
                 service_token='ok',
             ))
 

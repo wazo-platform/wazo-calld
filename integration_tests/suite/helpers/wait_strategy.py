@@ -30,8 +30,8 @@ class CtidNgConnectionsOkWaitStrategy(WaitStrategy):
     def wait(self, integration_test):
         def ctid_ng_is_ready():
             status = integration_test.ctid_ng.status()
-            assert_that(status['connections'], has_entries({'ari': 'ok',
-                                                            'bus_consumer': 'ok'}))
+            assert_that(status, has_entries({'ari': 'ok',
+                                             'bus_consumer': 'ok'}))
         until.assert_(ctid_ng_is_ready, tries=10)
 
 
@@ -41,10 +41,8 @@ class CtidNgEverythingOkWaitStrategy(WaitStrategy):
         def ctid_ng_is_ready():
             status = integration_test.ctid_ng.status()
             assert_that(status, has_entries(
-                connections=has_entries(
-                    ari='ok',
-                    bus_consumer='ok',
-                ),
+                ari='ok',
+                bus_consumer='ok',
                 service_token='ok',
             ))
 

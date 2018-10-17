@@ -14,16 +14,11 @@ definitions:
   StatusSummary:
     type: object
     properties:
-      connections:
-        $ref: '#/definitions/ConnectionsStatusSummary'
-      service_token:
-        $ref: '#/definitions/StatusValue'
-  ConnectionsStatusSummary:
-    type: object
-    properties:
       ari:
         $ref: '#/definitions/StatusValue'
       bus_consumer:
+        $ref: '#/definitions/StatusValue'
+      service_token:
         $ref: '#/definitions/StatusValue'
   StatusValue:
     type: string

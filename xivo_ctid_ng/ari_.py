@@ -113,7 +113,7 @@ class CoreARI(object):
         return self._is_running
 
     def provide_status(self, status):
-        status['connections']['ari'] = Status.ok if self.is_running() else Status.fail
+        status['ari'] = Status.ok if self.is_running() else Status.fail
 
     def _connection_error(self, error):
         logger.warning('ARI connection error: %s...', error)

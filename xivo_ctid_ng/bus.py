@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import kombu
@@ -11,11 +11,10 @@ from kombu import Exchange
 from kombu import Producer
 from kombu.mixins import ConsumerMixin
 from xivo.pubsub import Pubsub
+from xivo.status import Status
 from xivo_bus import Marshaler
 from xivo_bus import Publisher
 from xivo_bus import PublishingQueue
-
-from .status import Status
 
 logger = logging.getLogger(__name__)
 
@@ -83,7 +82,7 @@ class CoreBusConsumer(ConsumerMixin):
         return self._is_running
 
     def provide_status(self, status):
-        status['connections']['bus_consumer'] = Status.ok if self.is_running() else Status.fail
+        status['bus_consumer'] = Status.ok if self.is_running() else Status.fail
 
     def on_ami_event(self, event_type, callback):
         self._queue.bindings.add(binding(self._exchange, routing_key='ami.{}'.format(event_type)))
@@ -99,4 +98,3 @@ class CoreBusConsumer(ConsumerMixin):
             self._events_pubsub.publish(event_type, event)
         finally:
             message.ack()
-
