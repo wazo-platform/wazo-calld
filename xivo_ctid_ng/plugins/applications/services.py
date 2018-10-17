@@ -10,6 +10,7 @@ from ari.exceptions import ARINotFound
 from xivo_ctid_ng.helpers import ami
 from xivo_ctid_ng.exceptions import InvalidExtension
 from .models import (
+    CallFormatter,
     make_call_from_channel,
     make_node_from_bridge,
     SnoopHelper,
@@ -231,6 +232,7 @@ class ApplicationService(object):
             name = channel.json['name']
             return name.startswith('Local/') and name.endswith(';2')
 
+        formatter = CallFormatter(self._ari)
         for channel_id in application['channel_ids']:
             try:
                 channel = self._ari.channels.get(channelId=channel_id)
@@ -241,7 +243,7 @@ class ApplicationService(object):
                 continue
 
             variables = self.get_channel_variables(channel)
-            yield make_call_from_channel(channel, ari=self._ari, variables=variables)
+            yield formatter.from_channel(channel, variables=variables)
 
     def list_nodes(self, application_uuid):
         try:
