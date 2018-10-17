@@ -29,43 +29,53 @@ class ApplicationNode(object):
         self.calls = []
 
 
+class CallFormatter(object):
+
+    def __init__(self, ari=None):
+        self._ari = ari
+
+    def from_channel(self, channel, variables=None, node_uuid=None):
+        call = ApplicationCall(channel.id)
+        call.creation_time = channel.json['creationtime']
+        call.status = channel.json['state']
+        call.caller_id_name = channel.json['caller']['name']
+        call.caller_id_number = channel.json['caller']['number']
+
+        if node_uuid:
+            call.node_uuid = node_uuid
+
+        if self._ari is not None:
+            channel_helper = _ChannelHelper(channel.id, self._ari)
+            call.on_hold = channel_helper.on_hold()
+            call.is_caller = channel_helper.is_caller()
+            call.dialed_extension = channel_helper.dialed_extension()
+            try:
+                call.moh_uuid = channel.getChannelVar(variable='WAZO_MOH_UUID').get('value') or None
+            except ARINotFound:
+                call.moh_uuid = None
+
+            try:
+                call.muted = channel.getChannelVar(variable='WAZO_CALL_MUTED').get('value') == '1'
+            except ARINotFound:
+                call.muted = False
+
+            call.node_uuid = getattr(call, 'node_uuid', None)
+            for bridge in self._ari.bridges.list():
+                if channel.id in bridge.json['channels']:
+                    call.node_uuid = bridge.id
+                    break
+
+        if variables is not None:
+            call.variables = variables
+
+        return call
+
+
 def make_call_from_channel(channel, ari=None, variables=None, node_uuid=None):
     # TODO Merge channel_helper and channel object to avoid create another object
     # (ApplicationCall). Also set a cache system in that new object
-    call = ApplicationCall(channel.id)
-    call.creation_time = channel.json['creationtime']
-    call.status = channel.json['state']
-    call.caller_id_name = channel.json['caller']['name']
-    call.caller_id_number = channel.json['caller']['number']
-
-    if node_uuid:
-        call.node_uuid = node_uuid
-
-    if ari is not None:
-        channel_helper = _ChannelHelper(channel.id, ari)
-        call.on_hold = channel_helper.on_hold()
-        call.is_caller = channel_helper.is_caller()
-        call.dialed_extension = channel_helper.dialed_extension()
-        try:
-            call.moh_uuid = channel.getChannelVar(variable='WAZO_MOH_UUID').get('value') or None
-        except ARINotFound:
-            call.moh_uuid = None
-
-        try:
-            call.muted = channel.getChannelVar(variable='WAZO_CALL_MUTED').get('value') == '1'
-        except ARINotFound:
-            call.muted = False
-
-        call.node_uuid = getattr(call, 'node_uuid', None)
-        for bridge in ari.bridges.list():
-            if channel.id in bridge.json['channels']:
-                call.node_uuid = bridge.id
-                break
-
-    if variables is not None:
-        call.variables = variables
-
-    return call
+    formatter = CallFormatter(ari)
+    return formatter.from_channel(channel, variables, node_uuid)
 
 
 def make_node_from_bridge(bridge):
