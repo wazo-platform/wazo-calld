@@ -31,8 +31,10 @@ class ApplicationNode(object):
 
 class CallFormatter(object):
 
-    def __init__(self, ari=None):
+    def __init__(self, application, ari=None):
+        self._application = application
         self._ari = ari
+        self._snoop_list = None
 
     def from_channel(self, channel, variables=None, node_uuid=None):
         call = ApplicationCall(channel.id)
@@ -40,6 +42,7 @@ class CallFormatter(object):
         call.status = channel.json['state']
         call.caller_id_name = channel.json['caller']['name']
         call.caller_id_number = channel.json['caller']['number']
+        call.snoops = self._get_snoops(channel)
 
         if node_uuid:
             call.node_uuid = node_uuid
@@ -70,12 +73,27 @@ class CallFormatter(object):
 
         return call
 
+    def _get_snoops(self, channel):
+        if self._snoop_list is None:
+            if not self._ari:
+                return {}
 
-def make_call_from_channel(channel, ari=None, variables=None, node_uuid=None):
-    # TODO Merge channel_helper and channel object to avoid create another object
-    # (ApplicationCall). Also set a cache system in that new object
-    formatter = CallFormatter(ari)
-    return formatter.from_channel(channel, variables, node_uuid)
+            snoop_helper = SnoopHelper(self._ari)
+            self._snoop_list = list(snoop_helper.list_(self._application))
+
+        result = {}
+        for snoop in self._snoop_list:
+            if channel.id == snoop.snooped_call_id:
+                result[snoop.uuid] = {
+                    'uuid': snoop.uuid,
+                    'role': 'snooped',
+                }
+            elif channel.id == snoop.snooping_call_id:
+                result[snoop.uuid] = {
+                    'uuid': snoop.uuid,
+                    'role': 'snooper',
+                }
+        return result
 
 
 def make_node_from_bridge(bridge):
@@ -169,6 +187,8 @@ class _Snoop(object):
 
     @classmethod
     def from_bridge(cls, ari, application, bridge):
+        snoop_channel = None
+
         for channel_id in bridge.json['channels']:
             try:
                 channel = ari.channels.get(channelId=channel_id)

@@ -581,6 +581,8 @@ definitions:
         type: string
       variables:
         type: object
+      snoops:
+        type: object
   ApplicationCallRequest:
     type: object
     properties:

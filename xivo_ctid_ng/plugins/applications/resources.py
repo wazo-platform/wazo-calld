@@ -47,8 +47,8 @@ class ApplicationCallList(_BaseResource):
     @required_acl('ctid-ng.applications.{application_uuid}.calls.create')
     def post(self, application_uuid):
         request_body = application_call_request_schema.load(request.get_json()).data
-        self._service.get_application(application_uuid)
-        call = self._service.originate(application_uuid, None, **request_body)
+        application = self._service.get_application(application_uuid)
+        call = self._service.originate(application, None, **request_body)
         return application_call_schema.dump(call).data, 201
 
     @required_acl('ctid-ng.applications.{application_uuid}.calls.read')
@@ -206,7 +206,7 @@ class ApplicationNodeCallList(_BaseResource):
         #       But Asterisk doesn't allow to create empty node in an application ...
         self._service.get_node(application, node_uuid, verify_application=False)
         request_body = application_call_request_schema.load(request.get_json()).data
-        call = self._service.originate(application_uuid, node_uuid, **request_body)
+        call = self._service.originate(application, node_uuid, **request_body)
         return application_call_schema.dump(call).data, 201
 
 

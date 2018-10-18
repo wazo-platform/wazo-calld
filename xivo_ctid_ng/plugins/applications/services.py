@@ -11,7 +11,6 @@ from xivo_ctid_ng.helpers import ami
 from xivo_ctid_ng.exceptions import InvalidExtension
 from .models import (
     CallFormatter,
-    make_call_from_channel,
     make_node_from_bridge,
     SnoopHelper,
 )
@@ -49,7 +48,8 @@ class ApplicationService(object):
         except ARINotFound:
             raise NoSuchCall(call_id)
 
-        call = make_call_from_channel(channel, ari=self._ari)
+        formatter = CallFormatter(application, self._ari)
+        call = formatter.from_channel(channel)
         self._notifier.call_updated(application['uuid'], call)
 
     def call_unmute(self, application, call_id):
@@ -60,14 +60,16 @@ class ApplicationService(object):
         except ARINotFound:
             raise NoSuchCall(call_id)
 
-        call = make_call_from_channel(channel, ari=self._ari)
+        formatter = CallFormatter(application, self._ari)
+        call = formatter.from_channel(channel)
         self._notifier.call_updated(application['uuid'], call)
 
-    def channel_answer(self, application_uuid, channel):
+    def channel_answer(self, application, channel):
         channel.answer()
         variables = self.get_channel_variables(channel)
-        call = make_call_from_channel(channel, ari=self._ari, variables=variables)
-        self._notifier.call_entered(application_uuid, call)
+        formatter = CallFormatter(application, self._ari)
+        call = formatter.from_channel(channel, variables=variables)
+        self._notifier.call_entered(application['uuid'], call)
 
     def create_destination_node(self, application):
         try:
@@ -232,7 +234,7 @@ class ApplicationService(object):
             name = channel.json['name']
             return name.startswith('Local/') and name.endswith(';2')
 
-        formatter = CallFormatter(self._ari)
+        formatter = CallFormatter(application, self._ari)
         for channel_id in application['channel_ids']:
             try:
                 channel = self._ari.channels.get(channelId=channel_id)
@@ -256,7 +258,8 @@ class ApplicationService(object):
                 continue
             yield make_node_from_bridge(bridge)
 
-    def originate(self, application_uuid, node_uuid, exten, context, autoanswer):
+    def originate(self, application, node_uuid, exten, context, autoanswer):
+        application_uuid = application['uuid']
         if not ami.extension_exists(self._amid, context, exten, 1):
             raise InvalidExtension(context, exten)
 
@@ -278,18 +281,15 @@ class ApplicationService(object):
 
         channel = self._ari.channels.originate(**originate_kwargs)
         variables = self.get_channel_variables(channel)
-        return make_call_from_channel(
-            channel,
-            ari=self._ari,
-            variables=variables,
-            node_uuid=node_uuid,
-        )
+        formatter = CallFormatter(application, self._ari)
+        return formatter.from_channel(channel, variables=variables, node_uuid=node_uuid)
 
-    def originate_answered(self, application_uuid, channel):
+    def originate_answered(self, application, channel):
         channel.answer()
         variables = self.get_channel_variables(channel)
-        call = make_call_from_channel(channel, ari=self._ari, variables=variables)
-        self._notifier.call_initiated(application_uuid, call)
+        formatter = CallFormatter(application, self._ari)
+        call = formatter.from_channel(channel, variables=variables)
+        self._notifier.call_initiated(application['uuid'], call)
 
     def snoop_create(self, application, snooped_call_id, snooping_call_id, whisper_mode):
         snoop = self._snoop_helper.create(
