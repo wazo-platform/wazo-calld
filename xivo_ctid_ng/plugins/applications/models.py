@@ -29,43 +29,71 @@ class ApplicationNode(object):
         self.calls = []
 
 
-def make_call_from_channel(channel, ari=None, variables=None, node_uuid=None):
-    # TODO Merge channel_helper and channel object to avoid create another object
-    # (ApplicationCall). Also set a cache system in that new object
-    call = ApplicationCall(channel.id)
-    call.creation_time = channel.json['creationtime']
-    call.status = channel.json['state']
-    call.caller_id_name = channel.json['caller']['name']
-    call.caller_id_number = channel.json['caller']['number']
+class CallFormatter(object):
 
-    if node_uuid:
-        call.node_uuid = node_uuid
+    def __init__(self, application, ari=None):
+        self._application = application
+        self._ari = ari
+        self._snoop_list = None
 
-    if ari is not None:
-        channel_helper = _ChannelHelper(channel.id, ari)
-        call.on_hold = channel_helper.on_hold()
-        call.is_caller = channel_helper.is_caller()
-        call.dialed_extension = channel_helper.dialed_extension()
-        try:
-            call.moh_uuid = channel.getChannelVar(variable='WAZO_MOH_UUID').get('value') or None
-        except ARINotFound:
-            call.moh_uuid = None
+    def from_channel(self, channel, variables=None, node_uuid=None):
+        call = ApplicationCall(channel.id)
+        call.creation_time = channel.json['creationtime']
+        call.status = channel.json['state']
+        call.caller_id_name = channel.json['caller']['name']
+        call.caller_id_number = channel.json['caller']['number']
+        call.snoops = self._get_snoops(channel)
 
-        try:
-            call.muted = channel.getChannelVar(variable='WAZO_CALL_MUTED').get('value') == '1'
-        except ARINotFound:
-            call.muted = False
+        if node_uuid:
+            call.node_uuid = node_uuid
 
-        call.node_uuid = getattr(call, 'node_uuid', None)
-        for bridge in ari.bridges.list():
-            if channel.id in bridge.json['channels']:
-                call.node_uuid = bridge.id
-                break
+        if self._ari is not None:
+            channel_helper = _ChannelHelper(channel.id, self._ari)
+            call.on_hold = channel_helper.on_hold()
+            call.is_caller = channel_helper.is_caller()
+            call.dialed_extension = channel_helper.dialed_extension()
+            try:
+                call.moh_uuid = channel.getChannelVar(variable='WAZO_MOH_UUID').get('value') or None
+            except ARINotFound:
+                call.moh_uuid = None
 
-    if variables is not None:
-        call.variables = variables
+            try:
+                call.muted = channel.getChannelVar(variable='WAZO_CALL_MUTED').get('value') == '1'
+            except ARINotFound:
+                call.muted = False
 
-    return call
+            call.node_uuid = getattr(call, 'node_uuid', None)
+            for bridge in self._ari.bridges.list():
+                if channel.id in bridge.json['channels']:
+                    call.node_uuid = bridge.id
+                    break
+
+        if variables is not None:
+            call.variables = variables
+
+        return call
+
+    def _get_snoops(self, channel):
+        if self._snoop_list is None:
+            if not self._ari:
+                return {}
+
+            snoop_helper = SnoopHelper(self._ari)
+            self._snoop_list = snoop_helper.list_(self._application)
+
+        result = {}
+        for snoop in self._snoop_list:
+            if channel.id == snoop.snooped_call_id:
+                result[snoop.uuid] = {
+                    'uuid': snoop.uuid,
+                    'role': 'snooped',
+                }
+            elif channel.id == snoop.snooping_call_id:
+                result[snoop.uuid] = {
+                    'uuid': snoop.uuid,
+                    'role': 'snooper',
+                }
+        return result
 
 
 def make_node_from_bridge(bridge):
@@ -159,6 +187,8 @@ class _Snoop(object):
 
     @classmethod
     def from_bridge(cls, ari, application, bridge):
+        snoop_channel = None
+
         for channel_id in bridge.json['channels']:
             try:
                 channel = ari.channels.get(channelId=channel_id)
@@ -226,7 +256,7 @@ class SnoopHelper(object):
 
     def get(self, application, snoop_uuid):
         uuid = str(snoop_uuid)
-        for snoop_bridge in self._find_snoop_channels(application):
+        for snoop_bridge in self._find_snoop_bridges(application):
             if snoop_bridge.id != uuid:
                 continue
 
@@ -237,10 +267,10 @@ class SnoopHelper(object):
         raise NoSuchSnoop(snoop_uuid)
 
     def list_(self, application):
-        for snoop_bridge in self._find_snoop_channels(application):
-            yield _Snoop.from_bridge(self._ari, application, snoop_bridge)
+        bridges = self._find_snoop_bridges(application)
+        return [_Snoop.from_bridge(self._ari, application, bridge) for bridge in bridges]
 
-    def _find_snoop_channels(self, application):
+    def _find_snoop_bridges(self, application):
         bridge_name = _Snoop.bridge_name_tpl.format(application['uuid'])
         for bridge in self._ari.bridges.list():
             if bridge.json['name'] == bridge_name:

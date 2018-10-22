@@ -9,7 +9,7 @@ from .exceptions import (
 )
 
 from .models import (
-    make_call_from_channel,
+    CallFormatter,
     make_node_from_bridge,
     make_node_from_bridge_event,
 )
@@ -66,10 +66,13 @@ class ApplicationStasis(object):
         self._channel_update_bridge(application_uuid, channel, event)
 
     def _channel_update_bridge(self, application_uuid, channel, event):
+        application = self._service.get_application(application_uuid)
+
         node = make_node_from_bridge_event(event.get('bridge'))
         self._notifier.node_updated(application_uuid, node)
 
-        call = make_call_from_channel(channel, self._ari)
+        formatter = CallFormatter(application, self._ari)
+        call = formatter.from_channel(channel)
         self._notifier.call_updated(application_uuid, call)
 
     def initialize(self, token):
@@ -98,7 +101,9 @@ class ApplicationStasis(object):
         if not application_uuid:
             return
 
-        call = make_call_from_channel(channel)
+        application = self._service.get_application(application_uuid)
+        formatter = CallFormatter(application, self._ari)
+        call = formatter.from_channel(channel)
         self._notifier.call_deleted(application_uuid, call)
 
     def bridge_destroyed(self, bridge, event):
@@ -114,11 +119,14 @@ class ApplicationStasis(object):
         if not application_uuid:
             return
 
+        application = self._service.get_application(application_uuid)
+
         moh = self._service.find_moh(event['moh_class'])
         if moh:
             self._service.set_channel_var_sync(channel, 'WAZO_MOH_UUID', str(moh['uuid']))
 
-        call = make_call_from_channel(channel, self._ari)
+        formatter = CallFormatter(application, self._ari)
+        call = formatter.from_channel(channel)
         self._notifier.call_updated(application_uuid, call)
 
     def channel_moh_stopped(self, channel, event):
@@ -126,8 +134,11 @@ class ApplicationStasis(object):
         if not application_uuid:
             return
 
+        application = self._service.get_application(application_uuid)
+
         self._service.set_channel_var_sync(channel, 'WAZO_MOH_UUID', '')
-        call = make_call_from_channel(channel, self._ari)
+        formatter = CallFormatter(application, self._ari)
+        call = formatter.from_channel(channel)
         self._notifier.call_updated(application_uuid, call)
 
     def _subscribe(self, applications):
@@ -154,14 +165,17 @@ class ApplicationStasis(object):
     def _stasis_start_incoming(self, application_uuid, event_objects, event):
         channel = event_objects['channel']
         logger.debug('new incoming call %s', channel.id)
-        self._service.channel_answer(application_uuid, channel)
-        application = self._service.get_confd_application(application_uuid)
-        if application['destination'] == 'node':
-            self._service.join_destination_node(channel.id, application)
+        application = self._service.get_application(application_uuid)
+        self._service.channel_answer(application, channel)
+
+        confd_application = self._service.get_confd_application(application_uuid)
+        if confd_application['destination'] == 'node':
+            self._service.join_destination_node(channel.id, confd_application)
 
     def _stasis_start_originate(self, application_uuid, node_uuid, event_objects, event):
         channel = event_objects['channel']
-        self._service.originate_answered(application_uuid, channel)
+        application = self._service.get_application(application_uuid)
+        self._service.originate_answered(application, channel)
         if node_uuid:
             self._service.join_node(application_uuid, node_uuid, [channel.id])
 

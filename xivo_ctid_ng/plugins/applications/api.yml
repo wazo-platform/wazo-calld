@@ -581,6 +581,8 @@ definitions:
         type: string
       variables:
         type: object
+      snoops:
+        type: object
   ApplicationCallRequest:
     type: object
     properties:
@@ -647,11 +649,15 @@ definitions:
         readOnly: true
       snooped_call_id:
         type: string
+        readOnly: true
       snooping_call_id:
         type: string
       whisper_mode:
         type: string
         enum: [in, out, none, both]
+   required:
+     - snooping_call_id
+     - whisper_mode
   ApplicationSnoopPut:
     type: object
     properties:

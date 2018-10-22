@@ -2,9 +2,10 @@ Changelog
 =========
 
 18.12
----
+-----
 
 * The body of endpoint `GET /status` has been added a new subkey `status`.
+* The applications calls now contain the snoop fields which list snoop membership
 
 
 18.11

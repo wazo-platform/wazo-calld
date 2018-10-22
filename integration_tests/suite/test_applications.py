@@ -730,7 +730,7 @@ class TestApplicationSnoop(BaseApplicationTestCase):
             self.app_uuid,
             calls=[self.caller_channel.id],
         ).json()
-        self.ctid_ng.application_new_node_call(
+        self.answering_channel = self.ctid_ng.application_new_node_call(
             self.app_uuid,
             node['uuid'],
             'local',
@@ -1034,6 +1034,32 @@ class TestApplicationSnoop(BaseApplicationTestCase):
                 whisper_mode='both',
                 snooped_call_id=self.caller_channel.id,
                 snooping_call_id=supervisor_channel['id'],
+            )
+        )
+
+        calls = self.ctid_ng.get_application_calls(self.app_uuid).json()
+        snoop_uuid = result.json()['uuid']
+        assert_that(
+            calls['items'],
+            has_items(
+                has_entries(
+                    id=self.caller_channel.id,
+                    snoops=has_entries({
+                        snoop_uuid: has_entries(
+                            uuid=snoop_uuid,
+                            role='snooped',
+                        )
+                    })
+                ),
+                has_entries(
+                    id=supervisor_channel['id'],
+                    snoops=has_entries({
+                        snoop_uuid: has_entries(
+                            uuid=snoop_uuid,
+                            role='snooper',
+                        )
+                    })
+                ),
             )
         )
 
