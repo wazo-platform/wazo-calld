@@ -79,7 +79,7 @@ class CallFormatter(object):
                 return {}
 
             snoop_helper = SnoopHelper(self._ari)
-            self._snoop_list = list(snoop_helper.list_(self._application))
+            self._snoop_list = snoop_helper.list_(self._application)
 
         result = {}
         for snoop in self._snoop_list:
@@ -256,7 +256,7 @@ class SnoopHelper(object):
 
     def get(self, application, snoop_uuid):
         uuid = str(snoop_uuid)
-        for snoop_bridge in self._find_snoop_channels(application):
+        for snoop_bridge in self._find_snoop_bridges(application):
             if snoop_bridge.id != uuid:
                 continue
 
@@ -267,10 +267,10 @@ class SnoopHelper(object):
         raise NoSuchSnoop(snoop_uuid)
 
     def list_(self, application):
-        for snoop_bridge in self._find_snoop_channels(application):
-            yield _Snoop.from_bridge(self._ari, application, snoop_bridge)
+        bridges = self._find_snoop_bridges(application)
+        return [_Snoop.from_bridge(self._ari, application, bridge) for bridge in bridges]
 
-    def _find_snoop_channels(self, application):
+    def _find_snoop_bridges(self, application):
         bridge_name = _Snoop.bridge_name_tpl.format(application['uuid'])
         for bridge in self._ari.bridges.list():
             if bridge.json['name'] == bridge_name:
