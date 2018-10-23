@@ -1686,3 +1686,31 @@ class TestApplicationNodeCall(BaseApplicationTestCase):
             channel_3.id,
         )
         assert_that(response, has_properties(status_code=404))
+
+
+class TestDTMFEvents(BaseApplicationTestCase):
+
+    def test_that_events_are_received(self):
+        channel = self.call_app(self.node_app_uuid)
+        routing_key = 'applications.{uuid}.#'.format(uuid=self.node_app_uuid)
+        event_accumulator = self.bus.accumulator(routing_key)
+
+        self.chan_test.send_dtmf(channel.id, '1')
+
+        def event_received():
+            events = event_accumulator.accumulate()
+            assert_that(
+                events,
+                contains(
+                    has_entries(
+                        name='application_call_dtmf_received',
+                        data=has_entries(
+                            application_uuid=self.node_app_uuid,
+                            call_id=channel.id,
+                            dtmf='1',
+                        )
+                    )
+                )
+            )
+
+        until.assert_(event_received, tries=3)

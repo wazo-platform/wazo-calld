@@ -42,6 +42,13 @@ class ApplicationStasis(object):
         self._notifier = notifier
         self._destination_created = False
 
+    def channel_dtmf_received(self, channel, event):
+        application_uuid = AppNameHelper.to_uuid(event.get('application'))
+        if not application_uuid:
+            return
+
+        self._notifier.dtmf_received(application_uuid, channel.id, event['digit'])
+
     def channel_entered_bridge(self, channel, event):
         application_uuid = AppNameHelper.to_uuid(event.get('application'))
         if not application_uuid:
@@ -142,6 +149,7 @@ class ApplicationStasis(object):
         self._notifier.call_updated(application_uuid, call)
 
     def _subscribe(self, applications):
+        self._ari.on_channel_event('ChannelDtmfReceived', self.channel_dtmf_received)
         self._ari.on_channel_event('ChannelMohStart', self.channel_moh_started)
         self._ari.on_channel_event('ChannelMohStop', self.channel_moh_stopped)
         self._ari.on_channel_event('StasisStart', self.stasis_start)

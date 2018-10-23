@@ -66,6 +66,21 @@ class _BaseSnoopItemEvent(_BaseEvent):
         }
 
 
+class DTMFReceived(_BaseEvent):
+
+    name = 'application_call_dtmf_received'
+    routing_key_tpl = 'applications.{}.calls.{}.dtmf.created'
+
+    def __init__(self, application_uuid, call_id, dtmf):
+        self.routing_key = self.routing_key_tpl.format(application_uuid, call_id)
+        self.required_acl = self.required_acl.format(self.routing_key)
+        self._body = {
+            'application_uuid': application_uuid,
+            'call_id': call_id,
+            'dtmf': dtmf,
+        }
+
+
 class CallEntered(_BaseCallListEvent):
     name = 'application_call_entered'
     routing_key = 'applications.{}.calls.created'

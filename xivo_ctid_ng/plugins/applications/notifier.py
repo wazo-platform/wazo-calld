@@ -15,6 +15,7 @@ from .events import (
     CallInitiated,
     CallUpdated,
     DestinationNodeCreated,
+    DTMFReceived,
     NodeCreated,
     NodeDeleted,
     NodeUpdated,
@@ -59,6 +60,11 @@ class ApplicationNotifier(object):
         logger.debug('Application (%s): Destination node (%s) created', application_uuid, node.uuid)
         node = application_node_schema.dump(node).data
         event = DestinationNodeCreated(application_uuid, node)
+        self._bus.publish(event)
+
+    def dtmf_received(self, application_uuid, call_id, dtmf):
+        logger.debug('Application (%s): DTMF (%s) received on %s', application_uuid, dtmf, call_id)
+        event = DTMFReceived(application_uuid, call_id, dtmf)
         self._bus.publish(event)
 
     def node_created(self, application_uuid, node):
