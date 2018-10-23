@@ -655,9 +655,9 @@ definitions:
       whisper_mode:
         type: string
         enum: [in, out, none, both]
-   required:
-     - snooping_call_id
-     - whisper_mode
+    required:
+      - snooping_call_id
+      - whisper_mode
   ApplicationSnoopPut:
     type: object
     properties:
