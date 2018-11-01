@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import cherrypy
@@ -51,6 +51,7 @@ class CoreRestApi(object):
         self.adapter_config = global_config['adapter_api']
         http_helpers.add_logger(app, logger)
         http_helpers.add_logger(adapter_app, logger)
+        app.before_request(http_helpers.log_before_request)
         app.after_request(log_request_params)
         app.secret_key = os.urandom(24)
         app.permanent_session_lifetime = timedelta(minutes=5)
