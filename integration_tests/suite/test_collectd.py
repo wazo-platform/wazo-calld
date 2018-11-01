@@ -168,7 +168,7 @@ class TestCollectdCtidNgRestart(IntegrationTest):
 
         self.restart_service('ctid-ng')
         self.reset_clients()
-        until.true(self.ari.websockets, tries=10)  # wait for xivo-ctid-ng to come back up
+        CtidNgEverythingOkWaitStrategy().wait(self)  # wait for ctid-ng to reconnect to rabbitmq
         self.stasis.event_channel_destroyed(channel_id=call_id)
 
         def assert_ctid_ng_sent_end_call_stat():
@@ -196,7 +196,7 @@ class TestCollectdRabbitMQRestart(IntegrationTest):
 
         self.restart_service('rabbitmq')
         self.reset_bus_client()
-        until.true(self.bus.is_up, tries=int(os.environ.get('INTEGRATION_TEST_TIMEOUT', 30)))  # wait for rabbitmq to come back up
+        CtidNgEverythingOkWaitStrategy().wait(self)  # wait for ctid-ng to reconnect to rabbitmq
 
         events = self.bus.accumulator(routing_key='collectd.calls', exchange=BUS_EXCHANGE_COLLECTD)
         self.stasis.event_channel_destroyed(channel_id=call_id)

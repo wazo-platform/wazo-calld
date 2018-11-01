@@ -193,7 +193,7 @@ class TestStasisTriggers(BaseApplicationTestCase):
     def test_when_asterisk_restart_then_reconnect(self):
         event_accumulator = self.bus.accumulator('applications.{uuid}.#'.format(uuid=self.node_app_uuid))
         self.restart_service('ari')
-        self.wait_strategy.wait(self)
+        CtidNgEverythingOkWaitStrategy().wait(self)
 
         def event_received():
             events = event_accumulator.accumulate()
