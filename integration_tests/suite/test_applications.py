@@ -16,6 +16,7 @@ from xivo_test_helpers import until
 from xivo_test_helpers.hamcrest.uuid_ import uuid_
 from .helpers.base import RealAsteriskIntegrationTest
 from .helpers.confd import MockApplication
+from .helpers.wait_strategy import CtidNgEverythingOkWaitStrategy
 
 ENDPOINT_AUTOANSWER = 'Test/integration-caller/autoanswer'
 
@@ -165,9 +166,9 @@ class TestStasisTriggers(BaseApplicationTestCase):
 
     def test_event_destination_node_created(self):
         self.reset_ari()
-        self._stop_ctid_ng()
-        event_accumulator = self.bus.accumulator('applications.{uuid}.#'.format(uuid=self.node_app_uuid))
-        self._start_ctid_ng()
+        with self._ctid_ng_stopped():
+            event_accumulator = self.bus.accumulator('applications.{uuid}.#'.format(uuid=self.node_app_uuid))
+        CtidNgEverythingOkWaitStrategy().wait(self)
 
         def event_received():
             events = event_accumulator.accumulate()
