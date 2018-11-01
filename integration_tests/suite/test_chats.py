@@ -10,7 +10,6 @@ from hamcrest import (
     none,
     has_entry,
     has_entries,
-    has_item,
     has_items,
 )
 from xivo_test_helpers import until
