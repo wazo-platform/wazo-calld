@@ -16,16 +16,13 @@ from .helpers.constants import BUS_EXCHANGE_COLLECTD
 from .helpers.constants import STASIS_APP_NAME
 from .helpers.constants import STASIS_APP_INSTANCE_NAME
 from .helpers.ctid_ng import new_call_id
+from .helpers.wait_strategy import CtidNgEverythingOkWaitStrategy
 
 
 class TestCollectd(IntegrationTest):
 
     asset = 'basic_rest'
-
-    @classmethod
-    def setUpClass(cls):
-        super(TestCollectd, cls).setUpClass()
-        cls.wait_for_ctid_ng_to_connect_to_bus()
+    wait_strategy = CtidNgEverythingOkWaitStrategy()
 
     def setUp(self):
         super(TestCollectd, self).setUp()

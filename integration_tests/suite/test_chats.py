@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 from hamcrest import (
@@ -22,17 +22,16 @@ from .helpers.chat import new_user_chat_message
 from .helpers.chat import new_uuid_str
 from .helpers.constants import VALID_TOKEN
 from .helpers.constants import XIVO_UUID
+from .helpers.wait_strategy import (
+    CtidNgEverythingOkWaitStrategy,
+    CtidNgMongooseImEverythingOkWaitStrategy,
+)
 
 
 class TestCreateChat(IntegrationTest):
 
     asset = 'mongooseim'
-
-    @classmethod
-    def setUpClass(cls):
-        super(TestCreateChat, cls).setUpClass()
-        cls.wait_for_ctid_ng_to_connect_to_bus()
-        cls.wait_for_mongooseim_to_connect_to_db()
+    wait_strategy = CtidNgMongooseImEverythingOkWaitStrategy()
 
     def setUp(self):
         super(TestCreateChat, self).setUp()
@@ -77,11 +76,7 @@ class TestCreateChat(IntegrationTest):
 class TestUserCreateChat(IntegrationTest):
 
     asset = 'mongooseim'
-
-    @classmethod
-    def setUpClass(cls):
-        super(TestUserCreateChat, cls).setUpClass()
-        cls.wait_for_ctid_ng_to_connect_to_bus()
+    wait_strategy = CtidNgEverythingOkWaitStrategy()
 
     def setUp(self):
         super(TestUserCreateChat, self).setUp()

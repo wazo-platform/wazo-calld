@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 from hamcrest import assert_that
@@ -11,16 +11,13 @@ from .helpers.base import IntegrationTest
 from .helpers.ari_ import MockChannel
 from .helpers.ctid_ng import new_call_id
 from .helpers.constants import XIVO_UUID
+from .helpers.wait_strategy import CtidNgEverythingOkWaitStrategy
 
 
 class TestBusConsume(IntegrationTest):
 
     asset = 'basic_rest'
-
-    @classmethod
-    def setUpClass(cls):
-        super(TestBusConsume, cls).setUpClass()
-        cls.wait_for_ctid_ng_to_connect_to_bus()
+    wait_strategy = CtidNgEverythingOkWaitStrategy()
 
     def setUp(self):
         super(TestBusConsume, self).setUp()
