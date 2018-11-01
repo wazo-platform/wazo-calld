@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2018 The Wazo Authors  (see the AUTHORS file)
 # Copyright 2016 by Proformatique Inc.
 # SPDX-License-Identifier: GPL-3.0+
 
@@ -574,7 +574,7 @@ class TestCreateTransfer(TestTransfers):
             transferred_channel = self.ari.channels.get(channelId=transferred_channel_id)
             assert_that(transferred_channel.json['connected']['name'], equal_to(recipient_caller_id_name))
 
-        until.assert_(caller_id_are_right, tries=5)
+        until.assert_(caller_id_are_right, timeout=10)
 
     def test_given_no_content_type_when_create_then_ok(self):
         transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()
