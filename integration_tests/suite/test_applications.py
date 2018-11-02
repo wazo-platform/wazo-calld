@@ -188,7 +188,7 @@ class TestStasisTriggers(BaseApplicationTestCase):
                 )
             )
 
-        until.assert_(event_received, tries=3)
+        until.assert_(event_received, tries=10)
 
     def test_when_asterisk_restart_then_reconnect(self):
         event_accumulator = self.bus.accumulator('applications.{uuid}.#'.format(uuid=self.node_app_uuid))
