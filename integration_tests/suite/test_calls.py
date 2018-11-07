@@ -34,6 +34,9 @@ from .helpers.wait_strategy import CtidNgUpWaitStrategy
 SOME_LOCAL_CHANNEL_NAME = 'Local/channel'
 SOME_PRIORITY = 1
 
+# TODO PJSIP update to pjsip when migrating
+CONFD_SIP_PROTOCOL = 'sip'
+
 
 class TestListCalls(IntegrationTest):
 
@@ -459,7 +462,7 @@ class TestCreateCall(IntegrationTest):
         user_uuid = 'user-uuid'
         priority = 1
         self.confd.set_users(MockUser(uuid='user-uuid', line_ids=['line-id']))
-        self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip'))
+        self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL))
         self.ari.set_originates(MockChannel(id='new-call-id', connected_line_number=''))
         self.amid.set_valid_exten('my-context', 'my-extension', priority)
 
@@ -482,7 +485,7 @@ class TestCreateCall(IntegrationTest):
         user_uuid = 'user-uuid'
         priority = 1
         self.confd.set_users(MockUser(uuid='user-uuid', line_ids=['line-id']))
-        self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip'))
+        self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL))
         self.ari.set_originates(MockChannel('new-call-id'))
         self.amid.set_valid_exten('my-context', 'my-extension', priority)
 
@@ -501,7 +504,7 @@ class TestCreateCall(IntegrationTest):
             'query': has_items(['priority', str(priority)],
                                ['extension', 'my-extension'],
                                ['context', 'my-context'],
-                               ['endpoint', 'sip/line-name']),
+                               ['endpoint', 'pjsip/line-name']),
             'json': has_entries({'variables': has_entries({'MY_VARIABLE': 'my-value',
                                                            'SECOND_VARIABLE': 'my-second-value',
                                                            'CALLERID(name)': 'my-extension',
@@ -515,7 +518,7 @@ class TestCreateCall(IntegrationTest):
         user_uuid = 'user-uuid'
         priority = 1
         self.confd.set_users(MockUser(uuid='user-uuid', line_ids=['line-id']))
-        self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip'))
+        self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL))
         self.ari.set_originates(MockChannel(id='new-call-id'))
         self.amid.set_valid_exten('my-context', 'my-extension', priority)
 
@@ -543,7 +546,7 @@ class TestCreateCall(IntegrationTest):
         user_uuid = 'user-uuid'
         priority = 1
         self.confd.set_users(MockUser(uuid='user-uuid', line_ids=['line-id']))
-        self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip'))
+        self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL))
         self.ari.set_originates(MockChannel(id='new-call-id'))
         self.amid.set_valid_exten('my-context', '#pound', priority)
 
@@ -566,7 +569,7 @@ class TestCreateCall(IntegrationTest):
         user_uuid = 'user-uuid'
         priority = 1
         self.confd.set_users(MockUser(uuid='user-uuid', line_ids=['line-id', 'line-id2']))
-        self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip'))
+        self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL))
         self.ari.set_originates(MockChannel(id='new-call-id'))
         self.amid.set_valid_exten('my-context', 'my-extension', priority)
 
@@ -636,7 +639,7 @@ class TestCreateCall(IntegrationTest):
         user_uuid = 'user-uuid'
         priority = 1
         self.confd.set_users(MockUser(uuid='user-uuid', line_ids=['line-id']))
-        self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip'))
+        self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL))
         self.ari.set_originates(MockChannel(id='new-call-id'))
         self.amid.set_no_valid_exten()
 
@@ -653,7 +656,7 @@ class TestCreateCall(IntegrationTest):
         user_uuid = 'user-uuid'
         priority = 1
         self.confd.set_users(MockUser(uuid='user-uuid', line_ids=['line-id']))
-        self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip'))
+        self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL))
         self.ari.set_originates(MockChannel(id='new-call-id'))
         self.amid.set_valid_exten('my-context', 'my-extension', priority)
 
@@ -671,7 +674,7 @@ class TestCreateCall(IntegrationTest):
         line_id_not_found = 999999999999999999
         priority = 1
         self.confd.set_users(MockUser(uuid='user-uuid', line_ids=['first-line-id']))
-        self.confd.set_lines(MockLine(id='first-line-id', name='first-line-name', protocol='sip'))
+        self.confd.set_lines(MockLine(id='first-line-id', name='first-line-name', protocol=CONFD_SIP_PROTOCOL))
         self.ari.set_originates(MockChannel(id='new-call-id'))
         self.amid.set_valid_exten('my-context', 'my-extension', priority)
 
@@ -690,8 +693,8 @@ class TestCreateCall(IntegrationTest):
         unassociated_line_id = 987654321
         priority = 1
         self.confd.set_users(MockUser(uuid='user-uuid', line_ids=['first-line-id']))
-        self.confd.set_lines(MockLine(id='first-line-id', name='first-line-name', protocol='sip'),
-                             MockLine(id=unassociated_line_id, name='unassociated-line-name', protocol='sip'))
+        self.confd.set_lines(MockLine(id='first-line-id', name='first-line-name', protocol=CONFD_SIP_PROTOCOL),
+                             MockLine(id=unassociated_line_id, name='unassociated-line-name', protocol=CONFD_SIP_PROTOCOL))
         self.ari.set_originates(MockChannel(id='new-call-id'))
         self.amid.set_valid_exten('my-context', 'my-extension', priority)
 
@@ -711,8 +714,8 @@ class TestCreateCall(IntegrationTest):
         second_line_id = 12345
         priority = 1
         self.confd.set_users(MockUser(uuid='user-uuid', line_ids=['first-line-id', second_line_id]))
-        self.confd.set_lines(MockLine(id='first-line-id', name='first-line-name', protocol='sip'),
-                             MockLine(id=second_line_id, name='second-line-name', protocol='sip'))
+        self.confd.set_lines(MockLine(id='first-line-id', name='first-line-name', protocol=CONFD_SIP_PROTOCOL),
+                             MockLine(id=second_line_id, name='second-line-name', protocol=CONFD_SIP_PROTOCOL))
         self.ari.set_originates(MockChannel(id='new-call-id'))
         self.amid.set_valid_exten('my-context', 'my-extension', priority)
 
@@ -728,7 +731,7 @@ class TestCreateCall(IntegrationTest):
             'query': has_items(['priority', str(priority)],
                                ['extension', 'my-extension'],
                                ['context', 'my-context'],
-                               ['endpoint', 'sip/second-line-name'])}))))
+                               ['endpoint', 'pjsip/second-line-name'])}))))
 
     def test_create_call_from_mobile_with_no_line(self):
         user_uuid = 'user-uuid'
@@ -754,7 +757,7 @@ class TestCreateCall(IntegrationTest):
         context, extension, priority = 'my-context', 'my-extension', 1
         self.amid.set_valid_exten(context, extension, priority)
         self.confd.set_users(MockUser(uuid='user-uuid', line_ids=['line-id']))
-        self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip', context='my-line-context'))
+        self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL, context='my-line-context'))
         self.ari.set_originates(MockChannel(id='new-call-id'))
 
         result = self.ctid_ng.post_call_result(source=user_uuid,
@@ -773,7 +776,7 @@ class TestCreateCall(IntegrationTest):
         context, extension, priority = 'my-context', 'my-extension', 1
         self.amid.set_valid_exten(context, extension, priority)
         self.confd.set_users(MockUser(uuid='user-uuid', mobile='invalid', line_ids=['line-id']))
-        self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip', context='my-line-context'))
+        self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL, context='my-line-context'))
         self.ari.set_originates(MockChannel(id='new-call-id'))
 
         result = self.ctid_ng.post_call_result(source=user_uuid,
@@ -793,7 +796,7 @@ class TestCreateCall(IntegrationTest):
         context, extension, priority = 'my-context', 'my-extension', 1
         self.amid.set_valid_exten('my-line-context', 'my-mobile', priority)
         self.confd.set_users(MockUser(uuid='user-uuid', mobile='my-mobile', line_ids=['line-id']))
-        self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip', context='my-line-context'))
+        self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL, context='my-line-context'))
         self.ari.set_originates(MockChannel(id='new-call-id'))
 
         result = self.ctid_ng.post_call_result(source=user_uuid,
@@ -867,7 +870,7 @@ class TestUserCreateCall(IntegrationTest):
         token = 'my-token'
         self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=['line-id']))
-        self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip', context='my-context'))
+        self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL, context='my-context'))
         self.ari.set_originates(MockChannel(id='new-call-id', connected_line_number=''))
         self.amid.set_valid_exten('my-context', 'my-extension')
 
@@ -888,7 +891,7 @@ class TestUserCreateCall(IntegrationTest):
         token = 'my-token'
         self.auth.set_token(MockUserToken(token, user_uuid))
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=['line-id']))
-        self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip', context='my-context'))
+        self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL, context='my-context'))
         self.ari.set_originates(MockChannel('new-call-id'))
         self.amid.set_valid_exten('my-context', 'my-extension')
 
@@ -905,7 +908,7 @@ class TestUserCreateCall(IntegrationTest):
             'query': has_items(['priority', '1'],
                                ['extension', 'my-extension'],
                                ['context', 'my-context'],
-                               ['endpoint', 'sip/line-name']),
+                               ['endpoint', 'pjsip/line-name']),
             'json': has_entries({'variables': has_entries({'MY_VARIABLE': 'my-value',
                                                            'SECOND_VARIABLE': 'my-second-value',
                                                            'CONNECTEDLINE(name)': 'my-connected-line',
@@ -920,7 +923,7 @@ class TestUserCreateCall(IntegrationTest):
         token = 'my-token'
         self.auth.set_token(MockUserToken(token, user_uuid))
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=['line-id']))
-        self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip', context='my-context'))
+        self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL, context='my-context'))
         self.ari.set_originates(MockChannel(id='new-call-id'))
         self.amid.set_valid_exten('my-context', 'my-extension')
 
@@ -941,7 +944,7 @@ class TestUserCreateCall(IntegrationTest):
         token = 'my-token'
         self.auth.set_token(MockUserToken(token, user_uuid))
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=['line-id', 'line-id2']))
-        self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip', context='my-context'))
+        self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL, context='my-context'))
         self.ari.set_originates(MockChannel(id='new-call-id'))
         self.amid.set_valid_exten('my-context', 'my-extension')
 
@@ -984,7 +987,7 @@ class TestUserCreateCall(IntegrationTest):
         token = 'my-token'
         self.auth.set_token(MockUserToken(token, user_uuid))
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=['line-id']))
-        self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip', context='my-context'))
+        self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL, context='my-context'))
         self.ari.set_originates(MockChannel(id='new-call-id'))
         self.amid.set_no_valid_exten()
 
@@ -999,7 +1002,7 @@ class TestUserCreateCall(IntegrationTest):
         token = 'my-token'
         self.auth.set_token(MockUserToken(token, user_uuid))
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=['line-id']))
-        self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip', context='my-context'))
+        self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL, context='my-context'))
         self.ari.set_originates(MockChannel(id='new-call-id'))
         self.amid.set_valid_exten('my-context', 'my-extension')
 
@@ -1015,8 +1018,8 @@ class TestUserCreateCall(IntegrationTest):
         token = 'my-token'
         self.auth.set_token(MockUserToken(token, user_uuid))
         self.confd.set_users(MockUser(uuid='user-uuid', line_ids=['first-line-id', second_line_id]))
-        self.confd.set_lines(MockLine(id='first-line-id', name='first-line-name', protocol='sip', context='first-context'),
-                             MockLine(id=second_line_id, name='second-line-name', protocol='sip', context='second-context'))
+        self.confd.set_lines(MockLine(id='first-line-id', name='first-line-name', protocol=CONFD_SIP_PROTOCOL, context='first-context'),
+                             MockLine(id=second_line_id, name='second-line-name', protocol=CONFD_SIP_PROTOCOL, context='second-context'))
         self.ari.set_originates(MockChannel(id='new-call-id'))
         self.amid.set_valid_exten('second-context', 'my-extension')
 
@@ -1028,7 +1031,7 @@ class TestUserCreateCall(IntegrationTest):
             'query': has_items(['priority', '1'],
                                ['extension', 'my-extension'],
                                ['context', 'second-context'],
-                               ['endpoint', 'sip/second-line-name'])}))))
+                               ['endpoint', 'pjsip/second-line-name'])}))))
 
 
 class TestFailingARI(IntegrationTest):
@@ -1052,7 +1055,7 @@ class TestFailingARI(IntegrationTest):
 
     def test_given_no_ari_when_originate_then_503(self):
         self.confd.set_users(MockUser(uuid='user-uuid', line_ids=['line-id']))
-        self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip'))
+        self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL))
         result = self.ctid_ng.post_call_result(source='user-uuid',
                                                priority=SOME_PRIORITY,
                                                extension='extension',
@@ -1084,7 +1087,7 @@ class TestConnectUser(IntegrationTest):
                                                                             'app_instance': 'sw1',
                                                                             'state': 'ringing'})})
         self.confd.set_users(MockUser(uuid='user-uuid', line_ids=['line-id']))
-        self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip'))
+        self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL))
         self.ari.set_originates(MockChannel(id='new-call-id'))
 
         new_call = self.ctid_ng.connect_user('call-id', 'user-uuid')
@@ -1095,7 +1098,11 @@ class TestConnectUser(IntegrationTest):
         assert_that(self.ari.requests(), has_entry('requests', has_items(has_entries({
             'method': 'POST',
             'path': '/ari/channels',
-            'query': contains_inanyorder(['app', 'callcontrol'], ['endpoint', 'sip/line-name'], ['appArgs', 'sw1,dialed_from,call-id'], ['originator', 'call-id']),
+            'query': contains_inanyorder(
+                ['app', 'callcontrol'],
+                ['endpoint', 'pjsip/line-name'],
+                ['appArgs', 'sw1,dialed_from,call-id'],
+                ['originator', 'call-id']),
         }))))
 
     def test_given_no_confd_when_connect_user_then_503(self):
@@ -1125,7 +1132,7 @@ class TestConnectUser(IntegrationTest):
 
     def test_given_no_call_when_connect_user_then_404(self):
         self.confd.set_users(MockUser(uuid='user-uuid', line_ids=['line-id']))
-        self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip'))
+        self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL))
 
         result = self.ctid_ng.put_call_user_result('call-id', 'user-uuid', token=VALID_TOKEN)
 
@@ -1174,7 +1181,7 @@ class TestUserCreateCallFromMobile(RealAsteriskIntegrationTest):
         token = 'my-token'
         self.auth.set_token(MockUserToken(token, user_uuid))
         self.confd.set_users(MockUser(uuid='user-uuid', mobile=mobile_extension, line_ids=['line-id']))
-        self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip', context=mobile_context))
+        self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL, context=mobile_context))
 
         result = self.ctid_ng.originate_me('recipient', from_mobile=True, token=token)
 
@@ -1187,7 +1194,7 @@ class TestUserCreateCallFromMobile(RealAsteriskIntegrationTest):
         token = 'my-token'
         self.auth.set_token(MockUserToken(token, user_uuid))
         self.confd.set_users(MockUser(uuid='user-uuid', mobile=mobile_extension, line_ids=['line-id']))
-        self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip', context=mobile_context))
+        self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL, context=mobile_context))
 
         result = self.ctid_ng.post_user_me_call_result({
             'extension': 'recipient',
@@ -1203,7 +1210,7 @@ class TestUserCreateCallFromMobile(RealAsteriskIntegrationTest):
         token = 'my-token'
         self.auth.set_token(MockUserToken(token, user_uuid))
         self.confd.set_users(MockUser(uuid='user-uuid', mobile=mobile_extension, line_ids=['line-id']))
-        self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip', context=mobile_context))
+        self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL, context=mobile_context))
 
         result = self.ctid_ng.originate_me('recipient', from_mobile=True, token=token)
 

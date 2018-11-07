@@ -70,7 +70,7 @@ class TestDialedFrom(IntegrationTest):
                                                                                        'app_instance': 'sw1',
                                                                                        'state': 'ringing'})})
         self.confd.set_users(MockUser(uuid='user-uuid', line_ids=['line-id']))
-        self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='sip'))
+        self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='pjsip'))
         self.ari.set_originates(MockChannel(id=new_call_id))
 
         self.ctid_ng.connect_user(call_id, 'user-uuid')

@@ -1,4 +1,4 @@
-# Copyright (C) 2015-2016 Avencall
+# Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import requests
@@ -48,7 +48,7 @@ class StasisClient:
                 },
                 "id": new_call_id,
                 "language": "en_US",
-                "name": "SIP/my-sip-00000020",
+                "name": "PJSIP/my-sip-00000020",
                 "state": "Up"
             },
             "timestamp": "2015-12-16T15:14:04.269-0500",
@@ -113,7 +113,7 @@ class StasisClient:
                 },
                 "id": channel_id,
                 "language": "en_US",
-                "name": "SIP/my-sip-00000020",
+                "name": "PJSIP/my-sip-00000020",
                 "state": "Up"
             },
             "timestamp": "2015-12-16T15:14:04.269-0500",

@@ -682,7 +682,7 @@ class TestUserCreateTransfer(TestTransfers):
     def given_user_with_line(self, context):
         user_uuid = 'some-user-id'
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=['some-line-id']))
-        self.confd.set_lines(MockLine(id='some-line-id', name='line-name', protocol='sip', context=context))
+        self.confd.set_lines(MockLine(id='some-line-id', name='line-name', protocol='pjsip', context=context))
 
         return user_uuid
 
@@ -783,8 +783,8 @@ class TestUserCreateTransfer(TestTransfers):
     def test_given_multiple_lines_when_create_then_use_main_line(self):
         user_uuid, context = 'my-user-uuid', RECIPIENT['context']
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=['some-line-id', 'some-other-line-id']))
-        self.confd.set_lines(MockLine(id='some-line-id', name='line-name', protocol='sip', context=context),
-                             MockLine(id='some-other-line-id', name='other-line-name', protocol='sip', context='another-context'))
+        self.confd.set_lines(MockLine(id='some-line-id', name='line-name', protocol='pjsip', context=context),
+                             MockLine(id='some-other-line-id', name='other-line-name', protocol='pjsip', context='another-context'))
         transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis(user_uuid)
         token = self.given_user_token(user_uuid)
         body = {
