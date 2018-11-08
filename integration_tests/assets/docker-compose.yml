@@ -41,13 +41,11 @@ services:
     command: python /usr/local/share/xivo-ctid/mock-xivo-ctid.py 9495
 
   confd:
-    image: p0bailey/docker-flask
+    image: wazopbx/xivo-confd-mock
     ports:
       - 9486
     volumes:
-      - ./xivo-confd:/usr/local/share/xivo-confd
       - ./ssl:/usr/local/share/ssl
-    command: python /usr/local/share/xivo-confd/mock-xivo-confd.py 9486
 
   consul:
     image: p0bailey/docker-flask
