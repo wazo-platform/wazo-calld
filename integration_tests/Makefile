@@ -23,6 +23,7 @@ docker-pull:
 	docker pull wazopbx/wait
 	docker pull wazopbx/asterisk
 	docker pull wazopbx/xivo-amid
+	docker pull wazopbx/xivo-auth-mock
 
 clean:
 	docker rmi -f wazopbx/xivo-ctid-ng
