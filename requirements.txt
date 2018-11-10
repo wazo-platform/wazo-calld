@@ -1,5 +1,5 @@
-git+https://github.com/digium/swagger-py.git  # the release 0.2.1 has blocking bugs, so we need master
-https://github.com/wazo-pbx/ari-py/archive/0.3.0.zip
+git+https://github.com/rsichny/swagger-py.git  # the digium release does not support python3
+https://github.com/wazo-pbx/ari-py/archive/0.4.0.zip
 git+https://github.com/wazo-pbx/xivo-amid-client.git
 git+https://github.com/wazo-pbx/xivo-auth-client.git
 git+https://github.com/wazo-pbx/xivo-bus.git
