@@ -18,8 +18,10 @@ setup(
     package_data={
         'xivo_ctid_ng.plugins': ['*/api.yml'],
     },
-    scripts=['bin/xivo-ctid-ng'],
     entry_points={
+        'console_scripts': [
+            'xivo-ctid-ng=xivo_ctid_ng.bin.daemon:main',
+        ],
         'xivo_ctid_ng.plugins': [
             'api = xivo_ctid_ng.plugins.api.plugin:Plugin',
             'applications = xivo_ctid_ng.plugins.applications.plugin:Plugin',
