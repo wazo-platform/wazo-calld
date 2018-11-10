@@ -2,32 +2,38 @@ Source: xivo-ctid-ng
 Section: python
 Priority: extra
 Maintainer: Wazo Maintainers <dev@wazo.community>
-Build-Depends: debhelper (>= 9), dh-python, dh-systemd (>= 1.5), python-all (>= 2.7), python-setuptools
+Build-Depends:
+ debhelper (>= 9),
+ dh-python,
+ dh-systemd (>= 1.5),
+ python3-all,
+ python3-setuptools
 Standards-Version: 3.9.6
-X-Python-Version: >= 2.7
+X-Python-Version: >= 3.5
 
 Package: xivo-ctid-ng
 Architecture: all
-Depends: ${python:Depends},
-         ${misc:Depends},
-         mongooseim,
-         python-asterisk-ari (>= 0.2.2),
-         python-cheroot,
-         python-flask,
-         python-flask-restful,
-         python-flask-cors (>= 3.0.2),
-         python-iso8601,
-         python-kombu,
-         python-marshmallow,
-         python-stevedore,
-         python-wsaccel,
-         xivo-amid-client,
-         xivo-auth-client,
-         xivo-bus (>> 15.19),
-         xivo-confd-client,
-         xivo-ctid-client,
-         xivo-ctid-ng-client,
-         xivo-lib-python
+Depends:
+ ${python3:Depends},
+ ${misc:Depends},
+ mongooseim,
+ python3-asterisk-ari,
+ python3-cheroot,
+ python3-flask,
+ python3-flask-restful,
+ python3-flask-cors (>= 3.0.2),
+ python3-iso8601,
+ python3-kombu,
+ python3-marshmallow,
+ python3-stevedore,
+ python3-wsaccel,
+ xivo-amid-client-python3,
+ xivo-auth-client-python3,
+ xivo-bus (>> 15.19),
+ xivo-confd-client-python3,
+ xivo-ctid-client-python3,
+ xivo-ctid-ng-client-python3,
+ xivo-lib-python-python3
 Description: Wazo CTI server (new generation)
  Wazo is a system based on a powerful IPBX, to bring an easy to
  install solution for telephony and related services.
