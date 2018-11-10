@@ -168,4 +168,4 @@ class CtidNgClientFactory(object):
 
     def _is_valid(self, token):
         very_soon = (datetime.utcnow() + timedelta(seconds=5.0)).isoformat()
-        return token and token.get('utc_expires_at') > very_soon
+        return token and token.get('utc_expires_at') and token['utc_expires_at'] > very_soon
