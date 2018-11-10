@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
-
 # Copyright 2016-2018 The Wazo Authors  (see the AUTHORS file)
-# Copyright 2016 by Proformatique Inc.
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
@@ -541,8 +539,8 @@ class TestCreateTransfer(TestTransfers):
 
     def test_when_create_then_caller_ids_are_right(self):
         transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()
-        initiator_caller_id_name = u'înîtîâtôr'
-        recipient_caller_id_name = u'rêcîpîênt'
+        initiator_caller_id_name = 'înîtîâtôr'
+        recipient_caller_id_name = 'rêcîpîênt'
         self.ari.channels.setChannelVar(channelId=initiator_channel_id, variable='CALLERID(name)', value=initiator_caller_id_name.encode('utf-8'))
 
         response = self.ctid_ng.create_transfer(transferred_channel_id,
@@ -560,9 +558,9 @@ class TestCreateTransfer(TestTransfers):
 
     def test_when_create_blind_transfer_then_caller_ids_are_right(self):
         transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()
-        transferred_caller_id_name = u'trânsfêrrêd'
-        initiator_caller_id_name = u'înîtîâtôr'
-        recipient_caller_id_name = u'rêcîpîênt'
+        transferred_caller_id_name = 'trânsfêrrêd'
+        initiator_caller_id_name = 'înîtîâtôr'
+        recipient_caller_id_name = 'rêcîpîênt'
         self.ari.channels.setChannelVar(channelId=initiator_channel_id, variable='CALLERID(name)', value=initiator_caller_id_name.encode('utf-8'))
         self.ari.channels.setChannelVar(channelId=transferred_channel_id, variable='CALLERID(name)', value=transferred_caller_id_name.encode('utf-8'))
 
@@ -612,7 +610,7 @@ class TestCreateTransfer(TestTransfers):
                     'CHANNEL(language)': 'my-lang',
                     'XIVO_USERID': 'my-userid',
                     'XIVO_USERUUID': 'my-useruuid'}
-        for expected_variable, expected_value in expected.iteritems():
+        for expected_variable, expected_value in expected.items():
             actual_value = self.ari.channels.getChannelVar(channelId=recipient_channel_id,
                                                            variable=expected_variable)['value']
             assert_that(actual_value, equal_to(expected_value))
@@ -1340,7 +1338,7 @@ class TestTransferFromNonStasis(TestTransfers):
                                                 initiator_channel_id,
                                                 **RECIPIENT)
 
-        assert_that(response, all_of(has_entries({'id': instance_of(unicode),
+        assert_that(response, all_of(has_entries({'id': instance_of(str),
                                                   'transferred_call': transferred_channel_id,
                                                   'initiator_call': initiator_channel_id,
                                                   'recipient_call': None,

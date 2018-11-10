@@ -357,8 +357,8 @@ class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
         token = 'my-token'
         user_uuid = 'my-user-uuid'
         line_id = 'my-line-id'
-        queued_caller_id = u'"câller" <1234>'.encode('utf-8')
-        operator_caller_id = u'"ôperator" <9876>'.encode('utf-8')
+        queued_caller_id = '"câller" <1234>'.encode('utf-8')
+        operator_caller_id = '"ôperator" <9876>'.encode('utf-8')
         self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
         switchboard_uuid = 'my-switchboard-uuid'
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
@@ -376,7 +376,7 @@ class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
         operator_channel = self.ari.channels.get(channelId=operator_call_id)
         operator_channel.setChannelVar(variable='XIVO_ORIGINAL_CALLER_ID', value=operator_caller_id, bypassStasis=True)
 
-        assert_that(operator_channel.json, has_entry('caller', has_entries({'name': u'câller',
+        assert_that(operator_channel.json, has_entry('caller', has_entries({'name': 'câller',
                                                                             'number': '1234'})))
 
         answered_bus_events = self.bus.accumulator('switchboards.{uuid}.calls.queued.*.answer.updated'.format(uuid=switchboard_uuid))
@@ -384,7 +384,7 @@ class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
         until.true(answered_bus_events.accumulate, tries=3)
 
         operator_channel = self.ari.channels.get(channelId=operator_call_id)
-        assert_that(operator_channel.json, has_entry('caller', has_entries({'name': u'ôperator',
+        assert_that(operator_channel.json, has_entry('caller', has_entries({'name': 'ôperator',
                                                                             'number': '9876'})))
 
     def test_given_operator_is_answering_a_hungup_channel_when_answer_then_operator_is_hungup(self):
@@ -834,8 +834,8 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
         token = 'my-token'
         user_uuid = 'my-user-uuid'
         line_id = 'my-line-id'
-        held_caller_id = u'"câller" <1234>'.encode('utf-8')
-        operator_caller_id = u'"ôperator" <9876>'.encode('utf-8')
+        held_caller_id = '"câller" <1234>'.encode('utf-8')
+        operator_caller_id = '"ôperator" <9876>'.encode('utf-8')
         self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
         switchboard_uuid = 'my-switchboard-uuid'
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
@@ -856,7 +856,7 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
         operator_channel = self.ari.channels.get(channelId=operator_call_id)
         operator_channel.setChannelVar(variable='XIVO_ORIGINAL_CALLER_ID', value=operator_caller_id, bypassStasis=True)
 
-        assert_that(operator_channel.json, has_entry('caller', has_entries({'name': u'câller',
+        assert_that(operator_channel.json, has_entry('caller', has_entries({'name': 'câller',
                                                                             'number': '1234'})))
 
         answered_bus_events = self.bus.accumulator('switchboards.{uuid}.calls.held.*.answer.updated'.format(uuid=switchboard_uuid))
@@ -864,7 +864,7 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
         until.true(answered_bus_events.accumulate, tries=3)
 
         operator_channel = self.ari.channels.get(channelId=operator_call_id)
-        assert_that(operator_channel.json, has_entry('caller', has_entries({'name': u'ôperator',
+        assert_that(operator_channel.json, has_entry('caller', has_entries({'name': 'ôperator',
                                                                             'number': '9876'})))
 
     def test_given_operator_is_answering_a_hungup_channel_when_answer_then_operator_is_hungup(self):

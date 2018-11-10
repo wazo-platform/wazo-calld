@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 from hamcrest import all_of
@@ -39,7 +39,7 @@ class HamcrestARIChannel(object):
 
     def is_hungup(self):
         channel_ids = (channel.id for channel in self._ari.channels.list())
-        return all_of(instance_of(unicode),
+        return all_of(instance_of(str),
                       not_(is_in(list(channel_ids))))
 
     def has_variable(self, variable, expected_value):

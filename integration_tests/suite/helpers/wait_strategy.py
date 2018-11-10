@@ -80,7 +80,6 @@ class CtidNgMongooseImEverythingOkWaitStrategy(WaitStrategy):
             self._wait_mongooseim_interval()
             return True
         except psycopg2.OperationalError as e:
-            print e
             pass
         return False
 

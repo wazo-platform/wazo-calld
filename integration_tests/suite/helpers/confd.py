@@ -45,7 +45,7 @@ class ConfdClient(object):
 
     def set_user_lines(self, set_user_lines):
         content = {}
-        for user, user_lines in set_user_lines.iteritems():
+        for user, user_lines in set_user_lines.items():
             content[user] = [user_line.to_dict() for user_line in user_lines]
 
         url = self.url('_set_response')

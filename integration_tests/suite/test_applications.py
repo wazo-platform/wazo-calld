@@ -62,12 +62,12 @@ class BaseApplicationTestCase(RealAsteriskIntegrationTest):
         }
 
         if variables:
-            for key, value in variables.iteritems():
+            for key, value in variables.items():
                 kwargs['variables']['variables'][key] = value
 
         event_accumulator = self.bus.accumulator('applications.{uuid}.#'.format(uuid=app_uuid))
         channel = self.ari.channels.originate(**kwargs)
-        for _ in xrange(10):
+        for _ in range(10):
             events = event_accumulator.accumulate()
             for event in events:
                 if event['name'] == 'application_call_entered':

@@ -1146,8 +1146,8 @@ class TestCallerID(RealAsteriskIntegrationTest):
                                                  extension='ring-connected-line',
                                                  context='local')
         originator_channel = self.ari.channels.get(channelId=originator_call['call_id'])
-        recipient_caller_id_name = u'rêcîpîênt'
-        recipient_caller_id_number = u'ring-connected-line'
+        recipient_caller_id_name = 'rêcîpîênt'
+        recipient_caller_id_number = 'ring-connected-line'
         bus_events = self.bus.accumulator('calls.call.updated')
 
         self.chan_test.answer_channel(originator_channel.id)

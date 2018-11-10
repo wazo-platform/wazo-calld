@@ -21,7 +21,7 @@ class CtidNgClient(object):
         self._port = port
 
     def url(self, *parts):
-        path = '/'.join(unicode(part) for part in parts)
+        path = '/'.join(str(part) for part in parts)
         return self._url_tpl.format(host=self._host, port=self._port, path=path)
 
     def is_up(self):
