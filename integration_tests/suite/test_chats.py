@@ -32,7 +32,7 @@ class TestCreateChat(IntegrationTest):
     wait_strategy = CtidNgMongooseImEverythingOkWaitStrategy()
 
     def setUp(self):
-        super(TestCreateChat, self).setUp()
+        super().setUp()
         self.events = self.bus.accumulator(routing_key='chat.message.#')
         self.chat_msg = new_chat_message()
 
@@ -77,7 +77,7 @@ class TestUserCreateChat(IntegrationTest):
     wait_strategy = CtidNgEverythingOkWaitStrategy()
 
     def setUp(self):
-        super(TestUserCreateChat, self).setUp()
+        super().setUp()
         self.events = self.bus.accumulator(routing_key='chat.message.#')
         self.token_id = 'my-token'
         self.token_user_uuid = new_uuid_str()

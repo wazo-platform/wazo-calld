@@ -59,7 +59,7 @@ class IntegrationTest(AssetLaunchingTestCase):
 
     @classmethod
     def setUpClass(cls):
-        super(IntegrationTest, cls).setUpClass()
+        super().setUpClass()
         try:
             cls.reset_clients()
             cls.reset_bus_client()
@@ -160,7 +160,7 @@ class RealAsteriskIntegrationTest(IntegrationTest):
 
     @classmethod
     def setUpClass(cls):
-        super(RealAsteriskIntegrationTest, cls).setUpClass()
+        super().setUpClass()
         cls.chan_test = ChanTest(cls.ari_config())
 
     @classmethod
@@ -172,12 +172,12 @@ class RealAsteriskIntegrationTest(IntegrationTest):
         }
 
     def setUp(self):
-        super(RealAsteriskIntegrationTest, self).setUp()
+        super().setUp()
         self.ari = ari.connect(**self.ari_config())
         self.reset_ari()
 
     def tearDown(self):
-        super(RealAsteriskIntegrationTest, self).tearDown()
+        super().tearDown()
 
     def reset_ari(self):
         for channel in self.ari.channels.list():

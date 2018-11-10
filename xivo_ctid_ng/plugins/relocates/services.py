@@ -1,4 +1,4 @@
-# Copyright 2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
@@ -42,7 +42,7 @@ class DestinationFactory:
 class InvalidDestination(Exception):
     def __init__(self, details):
         self._details = details
-        super(InvalidDestination, self).__init__(details)
+        super().__init__(details)
 
 
 class Destination:
@@ -58,7 +58,7 @@ class Destination:
 class InterfaceDestination(Destination):
     def __init__(self, details):
         self._interface = details['interface']
-        super(InterfaceDestination, self).__init__(details)
+        super().__init__(details)
 
     def is_valid(self):
         return True
@@ -72,7 +72,7 @@ class ExtensionDestination(Destination):
         self._amid = amid
         self._exten = details['exten']
         self._context = details['context']
-        super(ExtensionDestination, self).__init__(details)
+        super().__init__(details)
 
     def is_valid(self):
         return (

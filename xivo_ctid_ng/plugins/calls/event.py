@@ -1,4 +1,4 @@
-# Copyright 2016 by Avencall
+# Copyright 2016-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import iso8601
@@ -48,7 +48,7 @@ class StartCallEvent(CallEvent):
 class ConnectCallEvent(StartCallEvent):
 
     def __init__(self, channel, event, ari, state_persistor):
-        super(ConnectCallEvent, self).__init__(channel, event, state_persistor)
+        super().__init__(channel, event, state_persistor)
         originator_channel_id = self._originator_channel_id(event)
         try:
             self.originator_channel = ari.channels.get(channelId=originator_channel_id)

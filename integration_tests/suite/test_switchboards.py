@@ -39,7 +39,7 @@ class TestSwitchboards(RealAsteriskIntegrationTest):
     asset = 'real_asterisk'
 
     def setUp(self):
-        super(TestSwitchboards, self).setUp()
+        super().setUp()
         self.c = HamcrestARIChannel(self.ari)
         self.confd.reset()
 

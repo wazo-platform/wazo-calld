@@ -1,4 +1,4 @@
-# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
@@ -14,7 +14,7 @@ APIException = rest_api_helpers.APIException
 class XiVOAmidError(APIException):
 
     def __init__(self, xivo_amid_client, error):
-        super(XiVOAmidError, self).__init__(
+        super().__init__(
             status_code=503,
             message='xivo-amid request error',
             error_id='xivo-amid-error',
@@ -30,7 +30,7 @@ class XiVOAmidError(APIException):
 class ARIUnreachable(Exception):
 
     def __init__(self, ari_config, original_error=None):
-        super(ARIUnreachable, self).__init__('ARI server unreachable... stopping')
+        super().__init__('ARI server unreachable... stopping')
         self.ari_config = ari_config
         self.original_error = original_error
 
@@ -38,7 +38,7 @@ class ARIUnreachable(Exception):
 class AsteriskARIUnreachable(APIException):
 
     def __init__(self, asterisk_ari_config, error):
-        super(AsteriskARIUnreachable, self).__init__(
+        super().__init__(
             status_code=503,
             message='Asterisk ARI server unreachable',
             error_id='asterisk-ari-unreachable',
@@ -52,7 +52,7 @@ class AsteriskARIUnreachable(APIException):
 class AsteriskARIError(APIException):
 
     def __init__(self, asterisk_ari_config, error):
-        super(AsteriskARIError, self).__init__(
+        super().__init__(
             status_code=503,
             message='Asterisk ARI internal error',
             error_id='asterisk-ari-error',
@@ -66,7 +66,7 @@ class AsteriskARIError(APIException):
 class TokenWithUserUUIDRequiredError(APIException):
 
     def __init__(self):
-        super(TokenWithUserUUIDRequiredError, self).__init__(
+        super().__init__(
             status_code=400,
             message='A valid token with a user UUID is required',
             error_id='token-with-user-uuid-required',
@@ -76,7 +76,7 @@ class TokenWithUserUUIDRequiredError(APIException):
 class XiVOConfdUnreachable(APIException):
 
     def __init__(self, xivo_confd_client, error):
-        super(XiVOConfdUnreachable, self).__init__(
+        super().__init__(
             status_code=503,
             message='xivo-confd server unreachable',
             error_id='xivo-confd-unreachable',
@@ -94,7 +94,7 @@ class UserPermissionDenied(APIException):
     def __init__(self, user_uuid, details):
         details = dict(details)
         details['user'] = user_uuid
-        super(UserPermissionDenied, self).__init__(
+        super().__init__(
             status_code=403,
             message='User does not have permission to handle objects of other users',
             error_id='user-permission-denied',
@@ -105,7 +105,7 @@ class UserPermissionDenied(APIException):
 class InvalidExtension(APIException):
 
     def __init__(self, context, exten):
-        super(InvalidExtension, self).__init__(
+        super().__init__(
             status_code=400,
             message='Invalid extension',
             error_id='invalid-extension',

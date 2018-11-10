@@ -49,7 +49,7 @@ class TestRelocates(RealAsteriskIntegrationTest):
     asset = 'real_asterisk'
 
     def setUp(self):
-        super(TestRelocates, self).setUp()
+        super().setUp()
         self.c = HamcrestARIChannel(self.ari)
 
     def make_ctid_ng(self, token):
@@ -248,7 +248,7 @@ class TestRelocates(RealAsteriskIntegrationTest):
 class TestListUserRelocate(TestRelocates):
 
     def setUp(self):
-        super(TestListUserRelocate, self).setUp()
+        super().setUp()
         self.confd.reset()
 
     def test_given_no_relocates_when_list_then_list_empty(self):
@@ -339,7 +339,7 @@ class TestGetUserRelocate(TestRelocates):
 class TestCreateUserRelocate(TestRelocates):
 
     def setUp(self):
-        super(TestCreateUserRelocate, self).setUp()
+        super().setUp()
         self.confd.reset()
 
     def test_given_wrong_token_when_relocate_then_401(self):

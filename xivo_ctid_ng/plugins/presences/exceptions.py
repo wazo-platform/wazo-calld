@@ -1,4 +1,4 @@
-# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 from xivo_ctid_ng.exceptions import APIException
@@ -7,7 +7,7 @@ from xivo_ctid_ng.exceptions import APIException
 class XiVOWebsocketdError(APIException):
 
     def __init__(self, xivo_websocketd_client, error):
-        super(XiVOWebsocketdError, self).__init__(
+        super().__init__(
             status_code=503,
             message='xivo-websocketd request error',
             error_id='xivo-websocketd-error',
@@ -23,7 +23,7 @@ class XiVOWebsocketdError(APIException):
 class InvalidCredentials(APIException):
 
     def __init__(self, xivo_uuid):
-        super(InvalidCredentials, self).__init__(
+        super().__init__(
             status_code=502,
             message='invalid credentials cannot authenticate',
             error_id='invalid-credentials',
@@ -36,7 +36,7 @@ class InvalidCredentials(APIException):
 class MissingCredentials(APIException):
 
     def __init__(self, xivo_uuid):
-        super(MissingCredentials, self).__init__(
+        super().__init__(
             status_code=400,
             message='missing credentials cannot authenticate',
             error_id='missing-credentials',
@@ -49,7 +49,7 @@ class MissingCredentials(APIException):
 class NoSuchLine(APIException):
 
     def __init__(self, xivo_uuid, line_id):
-        super(NoSuchLine, self).__init__(
+        super().__init__(
             status_code=404,
             message='no such line',
             error_id='no-such-line',
@@ -63,7 +63,7 @@ class NoSuchLine(APIException):
 class NoSuchUser(APIException):
 
     def __init__(self, xivo_uuid, user_uuid):
-        super(NoSuchUser, self).__init__(
+        super().__init__(
             status_code=404,
             message='no such user',
             error_id='no-such-user',
@@ -77,7 +77,7 @@ class NoSuchUser(APIException):
 class WazoAuthUnreachable(APIException):
 
     def __init__(self, xivo_uuid, error):
-        super(WazoAuthUnreachable, self).__init__(
+        super().__init__(
             status_code=503,
             message='wazo-auth server unreachable',
             error_id='wazo-auth-unreachable',
@@ -92,7 +92,7 @@ class WazoAuthUnreachable(APIException):
 class XiVOCtidNgUnreachable(APIException):
 
     def __init__(self, xivo_uuid, error):
-        super(XiVOCtidNgUnreachable, self).__init__(
+        super().__init__(
             status_code=503,
             message='xivo-ctid-ng server unreachable',
             error_id='xivo-ctid-ng-unreachable',
@@ -107,7 +107,7 @@ class XiVOCtidNgUnreachable(APIException):
 class XiVOCtidUnreachable(APIException):
 
     def __init__(self, xivo_ctid_config, error):
-        super(XiVOCtidUnreachable, self).__init__(
+        super().__init__(
             status_code=503,
             message='xivo-ctid server unreachable',
             error_id='xivo-ctid-unreachable',

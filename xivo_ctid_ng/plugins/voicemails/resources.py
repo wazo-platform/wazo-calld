@@ -1,4 +1,4 @@
-# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import re
@@ -48,6 +48,7 @@ class VoicemailSchema(Schema):
 class VoicemailMessageUpdateSchema(Schema):
     folder_id = fields.Integer(required=True)
 
+
 voicemail_schema = VoicemailSchema(strict=True)
 voicemail_folder_schema = VoicemailFolderSchema(strict=True)
 voicemail_message_schema = VoicemailMessageSchema(strict=True)
@@ -75,7 +76,7 @@ class VoicemailResource(_BaseVoicemailResource):
 class UserVoicemailResource(_BaseVoicemailResource):
 
     def __init__(self, auth_client, voicemails_service):
-        super(UserVoicemailResource, self).__init__(voicemails_service)
+        super().__init__(voicemails_service)
         self._auth_client = auth_client
 
     @required_acl('ctid-ng.users.me.voicemails.read')
@@ -106,7 +107,7 @@ class VoicemailFolderResource(_BaseVoicemailFolderResource):
 class UserVoicemailFolderResource(_BaseVoicemailFolderResource):
 
     def __init__(self, auth_client, voicemails_service):
-        super(UserVoicemailFolderResource, self).__init__(voicemails_service)
+        super().__init__(voicemails_service)
         self._auth_client = auth_client
 
     @required_acl('ctid-ng.users.me.voicemails.folders.{folder_id}.read')
@@ -159,7 +160,7 @@ class VoicemailMessageResource(_BaseVoicemailMessageResource):
 class UserVoicemailMessageResource(_BaseVoicemailMessageResource):
 
     def __init__(self, auth_client, voicemails_service):
-        super(UserVoicemailMessageResource, self).__init__(voicemails_service)
+        super().__init__(voicemails_service)
         self._auth_client = auth_client
 
     @required_acl('ctid-ng.users.me.voicemails.messages.{message_id}.read')
@@ -208,7 +209,7 @@ class VoicemailRecordingResource(_BaseVoicemailRecordingResource):
 class UserVoicemailRecordingResource(_BaseVoicemailRecordingResource):
 
     def __init__(self, auth_client, voicemails_service):
-        super(UserVoicemailRecordingResource, self).__init__(voicemails_service)
+        super().__init__(voicemails_service)
         self._auth_client = auth_client
 
     @required_acl('ctid-ng.users.me.voicemails.messages.{message_id}.recording.read',

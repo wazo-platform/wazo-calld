@@ -1,4 +1,4 @@
-# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 from xivo_ctid_ng.exceptions import APIException
@@ -7,7 +7,7 @@ from xivo_ctid_ng.exceptions import APIException
 class InvalidVoicemailID(APIException):
 
     def __init__(self, voicemail_id):
-        super(InvalidVoicemailID, self).__init__(
+        super().__init__(
             status_code=400,
             message='Invalid voicemail ID',
             error_id='invalid-voicemail-id',
@@ -20,7 +20,7 @@ class InvalidVoicemailID(APIException):
 class InvalidVoicemailFolderID(APIException):
 
     def __init__(self, folder_id):
-        super(InvalidVoicemailFolderID, self).__init__(
+        super().__init__(
             status_code=400,
             message='Invalid voicemail folder ID',
             error_id='invalid-voicemail-folder-id',
@@ -33,7 +33,7 @@ class InvalidVoicemailFolderID(APIException):
 class InvalidVoicemailMessageID(APIException):
 
     def __init__(self, message_id):
-        super(InvalidVoicemailMessageID, self).__init__(
+        super().__init__(
             status_code=400,
             message='Invalid voicemail message ID',
             error_id='invalid-voicemail-message-id',
@@ -46,7 +46,7 @@ class InvalidVoicemailMessageID(APIException):
 class NoSuchVoicemailFolder(APIException):
 
     def __init__(self, **kwargs):
-        super(NoSuchVoicemailFolder, self).__init__(
+        super().__init__(
             status_code=404,
             message='No such voicemail folder',
             error_id='no-such-voicemail-folder',
@@ -57,7 +57,7 @@ class NoSuchVoicemailFolder(APIException):
 class NoSuchVoicemailMessage(APIException):
 
     def __init__(self, message_id):
-        super(NoSuchVoicemailMessage, self).__init__(
+        super().__init__(
             status_code=404,
             message='No such voicemail message',
             error_id='no-such-voicemail-message',
@@ -70,7 +70,7 @@ class NoSuchVoicemailMessage(APIException):
 class VoicemailMessageStorageError(APIException):
 
     def __init__(self):
-        super(VoicemailMessageStorageError, self).__init__(
+        super().__init__(
             status_code=500,
             message='Invalid voicemail message format',
             error_id='invalid-voicemail-message-format',

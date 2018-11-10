@@ -70,7 +70,7 @@ class TestTransfers(RealAsteriskIntegrationTest):
     asset = 'real_asterisk'
 
     def setUp(self):
-        super(TestTransfers, self).setUp()
+        super().setUp()
         self.b = HamcrestARIBridge(self.ari)
         self.c = HamcrestARIChannel(self.ari)
 
@@ -367,7 +367,7 @@ class TestUserListTransfers(TestTransfers):
         (transferred_channel_id,
          initiator_channel_id,
          recipient_channel_id,
-         transfer_id) = super(TestUserListTransfers, self).given_answered_transfer(variables, initiator_uuid)
+         transfer_id) = super().given_answered_transfer(variables, initiator_uuid)
         self.set_initiator_channel(initiator_channel_id, initiator_uuid)
         return (transferred_channel_id, initiator_channel_id, recipient_channel_id, transfer_id)
 
@@ -661,12 +661,12 @@ class TestCreateTransfer(TestTransfers):
 
 class TestUserCreateTransfer(TestTransfers):
     def setUp(self):
-        super(TestUserCreateTransfer, self).setUp()
+        super().setUp()
         self.confd.reset()
         self.events = self.bus.accumulator('calls.transfer.*')
 
     def given_bridged_call_stasis(self, initiator_uuid):
-        transferred_channel_id, initiator_channel_id = super(TestUserCreateTransfer, self).given_bridged_call_stasis()
+        transferred_channel_id, initiator_channel_id = super().given_bridged_call_stasis()
         self.set_initiator_channel(initiator_channel_id, initiator_uuid)
         return transferred_channel_id, initiator_channel_id
 
@@ -900,7 +900,7 @@ class TestCancelTransfer(TestTransfers):
 
 class TestUserCancelTransfer(TestTransfers):
     def setUp(self):
-        super(TestUserCancelTransfer, self).setUp()
+        super().setUp()
         self.events = self.bus.accumulator('calls.transfer.*')
 
     def test_given_no_transfer_when_cancel_transfer_then_error_404(self):
@@ -952,7 +952,7 @@ class TestCompleteTransfer(TestTransfers):
 
 class TestUserCompleteTransfer(TestTransfers):
     def setUp(self):
-        super(TestUserCompleteTransfer, self).setUp()
+        super().setUp()
         self.events = self.bus.accumulator('calls.transfer.*')
 
     def test_given_no_transfer_when_complete_transfer_then_error_404(self):
@@ -997,7 +997,7 @@ class TestUserCompleteTransfer(TestTransfers):
 class TestTransferFromStasis(TestTransfers):
 
     def setUp(self):
-        super(TestTransferFromStasis, self).setUp()
+        super().setUp()
         self.events = self.bus.accumulator('calls.transfer.*')
 
     def test_given_state_ready_when_transfer_start_and_answer_then_state_answered(self):
@@ -1327,7 +1327,7 @@ class TestTransferFromStasis(TestTransfers):
 class TestTransferFromNonStasis(TestTransfers):
 
     def setUp(self):
-        super(TestTransferFromNonStasis, self).setUp()
+        super().setUp()
         self.events = self.bus.accumulator('calls.transfer.*')
 
     def test_given_state_ready_from_not_stasis_when_transfer_start_and_answer_then_state_answered(self):
@@ -1434,7 +1434,7 @@ class TestNoAmid(TestTransfers):
 class TestInitialisation(TestTransfers):
 
     def setUp(self):
-        super(TestInitialisation, self).setUp()
+        super().setUp()
         self.events = self.bus.accumulator('calls.transfer.*')
 
     def test_given_started_transfer_when_xivo_ctid_ng_restarts_then_transfer_may_continue(self):

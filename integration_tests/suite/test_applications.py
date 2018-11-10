@@ -25,7 +25,7 @@ class BaseApplicationTestCase(RealAsteriskIntegrationTest):
     asset = 'real_asterisk'
 
     def setUp(self):
-        super(BaseApplicationTestCase, self).setUp()
+        super().setUp()
 
         self.unknown_uuid = '00000000-0000-0000-0000-000000000000'
 
@@ -723,7 +723,7 @@ class TestApplicationHold(BaseApplicationTestCase):
 class TestApplicationSnoop(BaseApplicationTestCase):
 
     def setUp(self):
-        super(TestApplicationSnoop, self).setUp()
+        super().setUp()
         self.app_uuid = self.no_node_app_uuid
         self.caller_channel = self.call_app(self.no_node_app_uuid)
         node = self.ctid_ng.application_new_node(

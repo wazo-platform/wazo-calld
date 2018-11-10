@@ -475,7 +475,7 @@ class TransferStateAnswered(TransferState):
 
     @classmethod
     def from_state(cls, *args, **kwargs):
-        new_state = super(TransferStateAnswered, cls).from_state(*args, **kwargs)
+        new_state = super().from_state(*args, **kwargs)
         new_state._notifier.answered(new_state.transfer)
         return new_state
 
@@ -502,7 +502,7 @@ class TransferStateEnded(TransferState):
 
     @classmethod
     def from_state(cls, *args, **kwargs):
-        new_state = super(TransferStateEnded, cls).from_state(*args, **kwargs)
+        new_state = super().from_state(*args, **kwargs)
         new_state._notifier.ended(new_state.transfer)
         new_state._transfer_lock.release(new_state.transfer.initiator_call)
         return new_state
