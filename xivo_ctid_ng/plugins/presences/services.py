@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
-# Copyright (C) 2016 Proformatique, Inc.
+# Copyright 2016-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
@@ -119,7 +118,7 @@ class CtidNgClientFactory(object):
         self.finder = ServiceFinder(consul_config)
         self._auth_tokens = {}
         self._credentials = {}
-        for remote in remote_credentials.itervalues():
+        for remote in remote_credentials.values():
             uuid = remote.get('xivo_uuid')
             id_ = remote.get('service_id')
             key = remote.get('service_key')

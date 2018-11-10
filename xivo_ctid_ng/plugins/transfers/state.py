@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
@@ -57,7 +57,7 @@ def transition(decorated):
             if state.transfer:
                 state._transfer_lock.release(state.transfer.initiator_call)
             raise
-        logger.info('Transition: %s -> %s -> %s', state.name, decorated.func_name, result.name)
+        logger.info('Transition: %s -> %s -> %s', state.name, decorated.__name__, result.name)
         result.update_cache()
         return result
     return decorator

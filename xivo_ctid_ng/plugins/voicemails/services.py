@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2016 Proformatique Inc.
+# Copyright 2016-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 from xivo_ctid_ng.helpers import confd
@@ -28,7 +28,7 @@ class VoicemailsService(object):
     def get_message_recording(self, voicemail_id, message_id):
         vm_conf = confd.get_voicemail(voicemail_id, self._confd_client)
         message_info, recording = self._storage.get_message_info_and_recording(vm_conf, message_id)
-        if message_info[u'folder'].is_unread:
+        if message_info['folder'].is_unread:
             dest_folder = self._storage.get_folder_by_type(VoicemailFolderType.old)
             self._move_message(vm_conf, message_info, dest_folder)
         return recording
@@ -41,11 +41,11 @@ class VoicemailsService(object):
 
     def _move_message(self, vm_conf, message_info, dest_folder):
         body = {
-            u'mailbox': vm_conf[u'number'],
-            u'context': vm_conf[u'context'],
-            u'src_folder': message_info[u'folder'].path,
-            u'dest_folder': dest_folder.path,
-            u'message_id': message_info[u'id'],
+            'mailbox': vm_conf['number'],
+            'context': vm_conf['context'],
+            'src_folder': message_info['folder'].path,
+            'dest_folder': dest_folder.path,
+            'message_id': message_info['id'],
         }
         self._ari.xivo.moveVoicemailMessage(body=body)
 
@@ -53,13 +53,13 @@ class VoicemailsService(object):
         vm_conf = confd.get_voicemail(voicemail_id, self._confd_client)
         message_info = self._storage.get_message_info(vm_conf, message_id)
         body = {
-            u'mailbox': vm_conf[u'number'],
-            u'context': vm_conf[u'context'],
-            u'folder': message_info[u'folder'].path,
-            u'message_id': message_id,
+            'mailbox': vm_conf['number'],
+            'context': vm_conf['context'],
+            'folder': message_info['folder'].path,
+            'message_id': message_id,
         }
         self._ari.xivo.deleteVoicemailMessage(body=body)
 
     def get_user_voicemail_id(self, user_uuid):
         user_voicemail_conf = confd.get_user_voicemail(user_uuid, self._confd_client)
-        return user_voicemail_conf[u'voicemail_id']
+        return user_voicemail_conf['voicemail_id']

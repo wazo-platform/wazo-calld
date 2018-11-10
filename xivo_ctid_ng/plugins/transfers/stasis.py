@@ -131,7 +131,8 @@ class TransfersStasis(object):
         transfer_role = transfer.role(channel.id)
         self.hangup_pubsub.publish(transfer_role, transfer)
 
-    def transfer_recipient_answered(self, (channel, event)):
+    def transfer_recipient_answered(self, channel_event):
+        channel, event = channel_event
         event = TransferRecipientAnsweredEvent(event)
 
         try:
@@ -156,7 +157,8 @@ class TransfersStasis(object):
             transfer_state = self.state_factory.make(transfer)
             transfer_state.recipient_answer()
 
-    def create_transfer(self, (channel, event)):
+    def create_transfer(self, channel_event):
+        channel, event = channel_event
         event = CreateTransferEvent(event)
         try:
             bridge = self.ari.bridges.get(bridgeId=event.transfer_id)

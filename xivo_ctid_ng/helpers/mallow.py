@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) 2016 Avencall
+# Copyright 2016-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 from marshmallow import fields
@@ -16,7 +16,7 @@ class StrictDict(fields.Dict):
         value = super(StrictDict, self)._deserialize(value, attr, data)
 
         result = {}
-        for key, inner_value in value.iteritems():
+        for key, inner_value in value.items():
             new_key = self.key_field.deserialize(key, attr, data)
             new_value = self.value_field.deserialize(inner_value, attr, data)
             result[new_key] = new_value

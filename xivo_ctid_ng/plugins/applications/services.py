@@ -131,7 +131,7 @@ class ApplicationService(object):
         if self._apps_cache is None:
             apps = self._confd.applications.list(recurse=True)['items']
             self._apps_cache = {app['uuid']: app for app in apps}
-        return self._apps_cache.values()
+        return list(self._apps_cache.values())
 
     def get_call_id(self, application, call_id, status_code=404):
         if call_id not in application['channel_ids']:
@@ -388,7 +388,7 @@ class ApplicationService(object):
                 return None
 
         channel.setChannelVar(variable=var, value=value)
-        for _ in xrange(20):
+        for _ in range(20):
             if get_value() == value:
                 return
 

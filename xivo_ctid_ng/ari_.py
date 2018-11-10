@@ -48,7 +48,7 @@ class CoreARI(object):
                                            config['startup_connection_delay'])
 
     def _new_ari_client(self, ari_config, connection_tries, connection_delay):
-        for _ in xrange(connection_tries):
+        for _ in range(connection_tries):
             try:
                 return ari.connect(**ari_config)
             except requests.ConnectionError as e:
