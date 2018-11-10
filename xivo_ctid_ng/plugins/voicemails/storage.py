@@ -16,7 +16,7 @@ from .exceptions import VoicemailMessageStorageError
 logger = logging.getLogger(__name__)
 
 
-class VoicemailFolderType(object):
+class VoicemailFolderType:
     new = 'new'
     old = 'old'
     urgent = 'urgent'
@@ -39,7 +39,7 @@ def new_cache(voicemail_storage):
     return _VoicemailMessagesCache(voicemail_storage)
 
 
-class _VoicemailFolder(object):
+class _VoicemailFolder:
 
     def __init__(self, id_, path, type_=VoicemailFolderType.other, is_unread=False):
         self.id = id_
@@ -49,7 +49,7 @@ class _VoicemailFolder(object):
         self.is_unread = is_unread
 
 
-class _VoicemailFolders(object):
+class _VoicemailFolders:
 
     def __init__(self, folders):
         self._folders = folders
@@ -70,7 +70,7 @@ class _VoicemailFolders(object):
         return iter(self._folders)
 
 
-class _VoicemailFilesystemStorage(object):
+class _VoicemailFilesystemStorage:
 
     def __init__(self, base_path, folders):
         self._base_path = base_path
@@ -144,7 +144,7 @@ class _VoicemailFilesystemStorage(object):
         messages.sort(key=itemgetter('timestamp'), reverse=True)
 
 
-class _VoicemailAccess(object):
+class _VoicemailAccess:
 
     def __init__(self, base_path, folders, vm_conf):
         self.path = os.path.join(base_path,
@@ -177,7 +177,7 @@ class _VoicemailAccess(object):
         }
 
 
-class _FolderAccess(object):
+class _FolderAccess:
 
     def __init__(self, vm_access, folder):
         self.vm_access = vm_access
@@ -205,7 +205,7 @@ class _FolderAccess(object):
         }
 
 
-class _MessageInfoParser(object):
+class _MessageInfoParser:
 
     def __init__(self):
         self._parse_table = [
@@ -260,7 +260,7 @@ class _MessageInfoParser(object):
         result['duration'] = int(value)
 
 
-class _MessageAccess(object):
+class _MessageAccess:
 
     _MESSAGE_INFO_PARSER = _MessageInfoParser()
 
@@ -305,7 +305,7 @@ class _MessageAccess(object):
             raise
 
 
-class _VoicemailMessagesCache(object):
+class _VoicemailMessagesCache:
 
     _EMPTY_CACHE_ENTRY = {}
 
@@ -370,7 +370,7 @@ class _VoicemailMessagesCache(object):
         return len(self._cache)
 
 
-class _VoicemailMessagesDiff(object):
+class _VoicemailMessagesDiff:
 
     def __init__(self):
         self.created_messages = []

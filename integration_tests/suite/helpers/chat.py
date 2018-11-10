@@ -4,7 +4,7 @@
 import uuid
 
 
-class ChatMessage(object):
+class ChatMessage:
 
     def __init__(self, alias, content, to, from_=None):
         self.alias = alias

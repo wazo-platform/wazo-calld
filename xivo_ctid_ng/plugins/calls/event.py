@@ -10,7 +10,7 @@ from .exceptions import InvalidConnectCallEvent
 from .exceptions import InvalidStartCallEvent
 
 
-class CallEvent(object):
+class CallEvent:
 
     def __init__(self, channel, event, state_persistor):
         self.channel = channel

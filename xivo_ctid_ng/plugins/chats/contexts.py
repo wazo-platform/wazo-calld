@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0+
 
 
-class ChatsContexts(object):
+class ChatsContexts:
     contexts = {}
 
     @classmethod

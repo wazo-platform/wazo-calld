@@ -28,7 +28,7 @@ from .transfer import TransferRole
 logger = logging.getLogger(__name__)
 
 
-class TransfersStasis(object):
+class TransfersStasis:
 
     def __init__(self, amid_client, ari_client, services, state_factory, state_persistor, xivo_uuid):
         self.ari = ari_client

@@ -40,7 +40,7 @@ class MongooseIMException(APIException):
         )
 
 
-class ChatsService(object):
+class ChatsService:
 
     def __init__(self, xivo_uuid, mongooseim_client, contexts, bus_publisher):
         self._xivo_uuid = xivo_uuid

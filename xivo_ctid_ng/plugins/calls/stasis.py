@@ -24,7 +24,7 @@ from .state_persistor import (
 logger = logging.getLogger(__name__)
 
 
-class CallsStasis(object):
+class CallsStasis:
 
     def __init__(self, ari_client, collectd, bus_publisher, services, xivo_uuid, amid_client):
         self.ari = ari_client

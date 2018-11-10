@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0+
 
 
-class QueuedCall(object):
+class QueuedCall:
 
     def __init__(self, id_):
         self.id = id_
@@ -11,7 +11,7 @@ class QueuedCall(object):
         self.caller_id_number = ''
 
 
-class HeldCall(object):
+class HeldCall:
 
     def __init__(self, id_):
         self.id = id_

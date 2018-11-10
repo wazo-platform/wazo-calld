@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0+
 
 
-class Call(object):
+class Call:
 
     def __init__(self, id_):
         self.id_ = id_

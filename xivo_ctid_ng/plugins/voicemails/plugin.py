@@ -22,7 +22,7 @@ from .storage import new_filesystem_storage
 logger = logging.getLogger(__name__)
 
 
-class Plugin(object):
+class Plugin:
 
     def load(self, dependencies):
         api = dependencies['api']

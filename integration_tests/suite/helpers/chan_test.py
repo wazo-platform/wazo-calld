@@ -4,7 +4,7 @@
 import requests
 
 
-class ChanTest(object):
+class ChanTest:
 
     def __init__(self, ari_config):
         self.config = ari_config

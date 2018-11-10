@@ -9,7 +9,7 @@ from hamcrest import not_
 from ari.exceptions import ARINotFound
 
 
-class HamcrestARIChannel(object):
+class HamcrestARIChannel:
     def __init__(self, ari):
         self._ari = ari
 
@@ -54,7 +54,7 @@ class HamcrestARIChannel(object):
         return is_in(candidates)
 
 
-class HamcrestARIBridge(object):
+class HamcrestARIBridge:
     def __init__(self, ari):
         self._ari = ari
 

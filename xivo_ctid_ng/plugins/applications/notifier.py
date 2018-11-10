@@ -26,7 +26,7 @@ from .events import (
 logger = logging.getLogger(__name__)
 
 
-class ApplicationNotifier(object):
+class ApplicationNotifier:
 
     def __init__(self, bus):
         self._bus = bus

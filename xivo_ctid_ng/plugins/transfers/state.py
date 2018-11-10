@@ -17,7 +17,7 @@ from .transfer import Transfer, TransferStatus
 logger = logging.getLogger(__name__)
 
 
-class StateFactory(object):
+class StateFactory:
 
     def __init__(self, ari=None):
         self._state_constructors = {}
@@ -62,7 +62,7 @@ def transition(decorated):
     return decorator
 
 
-class TransferState(object):
+class TransferState:
 
     def __init__(self, amid, ari, notifier, services, state_persistor, transfer_lock, transfer=None):
         self._amid = amid

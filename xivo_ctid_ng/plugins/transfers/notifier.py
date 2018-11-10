@@ -13,7 +13,7 @@ from xivo_bus.resources.calls.transfer import (AbandonTransferEvent,
 logger = logging.getLogger(__name__)
 
 
-class TransferNotifier(object):
+class TransferNotifier:
 
     def __init__(self, bus_producer):
         self._bus_producer = bus_producer

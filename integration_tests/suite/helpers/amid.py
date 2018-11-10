@@ -4,7 +4,7 @@
 import requests
 
 
-class AmidClient(object):
+class AmidClient:
 
     def __init__(self, host, port):
         self.host = host

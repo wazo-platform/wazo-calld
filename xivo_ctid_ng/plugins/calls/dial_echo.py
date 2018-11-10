@@ -17,7 +17,7 @@ class DialEchoFailure(Exception):
     pass
 
 
-class DialEchoManager(object):
+class DialEchoManager:
     '''This feature has some problems:
 
     - If the echo is not set, the channel is still up. Should we hang it up?

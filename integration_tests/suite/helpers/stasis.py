@@ -10,7 +10,7 @@ from .constants import STASIS_APP_INSTANCE_NAME
 from .constants import STASIS_APP_NAME
 
 
-class StasisClient(object):
+class StasisClient:
 
     def __init__(self, host, port):
         self._host = host

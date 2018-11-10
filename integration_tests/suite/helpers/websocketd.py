@@ -4,7 +4,7 @@
 import requests
 
 
-class WebsocketdClient(object):
+class WebsocketdClient:
 
     def __init__(self, host, port):
         self.host = host

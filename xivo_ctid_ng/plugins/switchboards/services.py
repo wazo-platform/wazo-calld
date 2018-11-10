@@ -25,7 +25,7 @@ BRIDGE_HOLD_ID = 'switchboard-{uuid}-hold'
 logger = logging.getLogger(__name__)
 
 
-class SwitchboardsService(object):
+class SwitchboardsService:
 
     def __init__(self, ari, confd, notifier):
         self._ari = ari

@@ -11,7 +11,7 @@ from hamcrest import assert_that, equal_to
 from .constants import VALID_TOKEN
 
 
-class CtidNgClient(object):
+class CtidNgClient:
 
     _url_tpl = 'https://{host}:{port}/1.0/{path}'
 

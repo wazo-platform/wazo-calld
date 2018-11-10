@@ -4,7 +4,7 @@
 import requests
 
 
-class AuthClient(object):
+class AuthClient:
 
     def __init__(self, host, port):
         self.host = host
@@ -20,7 +20,7 @@ class AuthClient(object):
         requests.post(url, json=token.to_dict(), verify=False)
 
 
-class MockUserToken(object):
+class MockUserToken:
 
     def __init__(self, token, user_uuid, acls=None):
         self._token = token

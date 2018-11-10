@@ -14,7 +14,7 @@ from xivo_bus import PublishingQueue
 logger = logging.getLogger(__name__)
 
 
-class CoreCollectd(object):
+class CoreCollectd:
 
     def __init__(self, global_config):
         self.config = dict(global_config['bus'])

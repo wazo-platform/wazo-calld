@@ -26,7 +26,7 @@ def state(wrapped):
     return wrapped
 
 
-class RelocateCompleter(object):
+class RelocateCompleter:
 
     def __init__(self, amid, ari):
         self._amid = amid
@@ -62,7 +62,7 @@ class RelocateCompleter(object):
             logger.exception('xivo-amid error: %s', e.__dict__)
 
 
-class StateFactory(object):
+class StateFactory:
     def __init__(self, index, amid, ari):
         self._index = index
         self._state_args = [amid, ari]
@@ -71,7 +71,7 @@ class StateFactory(object):
         return self._index[name](*self._state_args)
 
 
-class RelocateState(object):
+class RelocateState:
 
     def __init__(self, amid, ari):
         self._amid = amid

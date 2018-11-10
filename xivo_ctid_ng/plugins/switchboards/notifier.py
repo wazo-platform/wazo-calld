@@ -14,7 +14,7 @@ from .resources import (
 logger = logging.getLogger(__name__)
 
 
-class SwitchboardsNotifier(object):
+class SwitchboardsNotifier:
 
     def __init__(self, bus):
         self._bus = bus

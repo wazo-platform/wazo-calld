@@ -26,7 +26,7 @@ def _extract_status_code(exception):
     return getattr(response, 'status_code', None)
 
 
-class UserPresencesService(object):
+class UserPresencesService:
 
     def __init__(self, bus_publisher, websocketd_client, local_xivo_uuid, ctid_ng_client_factory):
         self._bus_publisher = bus_publisher
@@ -70,7 +70,7 @@ class UserPresencesService(object):
             raise NoSuchUser(self._xivo_uuid, user_uuid)
 
 
-class LinePresencesService(object):
+class LinePresencesService:
 
     def __init__(self, ctid_client, ctid_config, local_xivo_uuid, ctid_ng_client_factory):
         self._ctid_client = ctid_client
@@ -111,7 +111,7 @@ class LinePresencesService(object):
                 raise XiVOCtidNgUnreachable(xivo_uuid, e)
 
 
-class CtidNgClientFactory(object):
+class CtidNgClientFactory:
 
     def __init__(self, consul_config, remote_credentials):
         self.finder = ServiceFinder(consul_config)

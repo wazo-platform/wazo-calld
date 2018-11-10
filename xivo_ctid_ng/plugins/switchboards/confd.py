@@ -8,7 +8,7 @@ from xivo_ctid_ng.exceptions import XiVOConfdUnreachable
 from xivo_ctid_ng.helpers.confd import not_found
 
 
-class Switchboard(object):
+class Switchboard:
     def __init__(self, uuid, confd_client):
         self.uuid = uuid
         self._confd = confd_client

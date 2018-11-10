@@ -34,7 +34,7 @@ def asterisk_is_loading(error):
     return not_found(error) or service_unavailable(error)
 
 
-class CoreARI(object):
+class CoreARI:
 
     def __init__(self, config):
         self._apps = []

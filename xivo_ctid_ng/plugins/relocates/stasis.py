@@ -6,7 +6,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class RelocatesStasis(object):
+class RelocatesStasis:
 
     def __init__(self, ari_client, relocates):
         self.ari = ari_client

@@ -4,7 +4,7 @@
 import uuid
 
 
-class UserPresenceMessage(object):
+class UserPresenceMessage:
 
     def __init__(self, presence, user_uuid=None):
         self.user_uuid = user_uuid or new_uuid_str()

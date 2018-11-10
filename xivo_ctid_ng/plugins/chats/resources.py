@@ -32,7 +32,7 @@ class UserChatListRequestSchema(Schema):
     participant_server_uuid = fields.UUID()
     limit = fields.Integer(validate=Range(min=0), missing=100)
 
-    class Meta(object):
+    class Meta:
         strict = True
 
 

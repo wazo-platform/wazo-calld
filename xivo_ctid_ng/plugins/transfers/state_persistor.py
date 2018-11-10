@@ -12,7 +12,7 @@ from .transfer import Transfer
 logger = logging.getLogger(__name__)
 
 
-class StatePersistor(object):
+class StatePersistor:
     def __init__(self, ari):
         self._transfers = GlobalVariableNameDecorator(GlobalVariableJsonAdapter(GlobalVariableAdapter(ari)),
                                                       'XIVO_TRANSFERS_{}')

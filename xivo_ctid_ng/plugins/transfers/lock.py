@@ -11,7 +11,7 @@ class InvalidLock(ValueError):
     pass
 
 
-class HangupLock(object):
+class HangupLock:
     def __init__(self, ari, source_id, target_id):
         self._source_id = source_id
         self._target_id = target_id

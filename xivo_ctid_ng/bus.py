@@ -18,7 +18,7 @@ from xivo_bus import PublishingQueue
 logger = logging.getLogger(__name__)
 
 
-class CoreBusPublisher(object):
+class CoreBusPublisher:
 
     def __init__(self, global_config):
         self.config = global_config['bus']

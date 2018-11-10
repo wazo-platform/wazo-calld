@@ -26,7 +26,7 @@ from .relocate import Relocate
 logger = logging.getLogger(__name__)
 
 
-class DestinationFactory(object):
+class DestinationFactory:
 
     def __init__(self, amid):
         self.amid = amid
@@ -45,7 +45,7 @@ class InvalidDestination(Exception):
         super(InvalidDestination, self).__init__(details)
 
 
-class Destination(object):
+class Destination:
     def __init__(self, details):
         self._details = details
         self.assert_is_valid()
@@ -85,7 +85,7 @@ class ExtensionDestination(Destination):
         return 'Local/{exten}@{context}'.format(exten=self._exten, context=self._context)
 
 
-class RelocatesService(object):
+class RelocatesService:
 
     def __init__(self, amid, ari, confd_client, notifier, relocates, state_factory):
         self.ari = ari

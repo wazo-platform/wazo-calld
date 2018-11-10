@@ -28,7 +28,7 @@ from .stasis import AppNameHelper
 logger = logging.getLogger(__name__)
 
 
-class ApplicationService(object):
+class ApplicationService:
 
     def __init__(self, ari, confd, amid, notifier):
         self._ari = ari

@@ -5,7 +5,7 @@ import requests
 from requests.utils import quote
 
 
-class Client(object):
+class Client:
 
     def __init__(self, host, port, prefix='/api', https=False):
         self.host = host

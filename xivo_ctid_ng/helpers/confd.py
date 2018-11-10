@@ -17,7 +17,7 @@ def not_found(error):
     return error.response is not None and error.response.status_code == 404
 
 
-class User(object):
+class User:
 
     def __init__(self, user_uuid, confd_client):
         self.uuid = user_uuid
@@ -66,7 +66,7 @@ class User(object):
             raise XiVOConfdUnreachable(self._confd, e)
 
 
-class Line(object):
+class Line:
 
     def __init__(self, line_id, confd_client):
         self.id = line_id

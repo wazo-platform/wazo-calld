@@ -30,7 +30,7 @@ from .services import ApplicationService
 from .stasis import ApplicationStasis
 
 
-class Plugin(object):
+class Plugin:
 
     def load(self, dependencies):
         api = dependencies['api']

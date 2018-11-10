@@ -20,7 +20,7 @@ from .state import StateFactory, state_index
 from .relocate import RelocateCollection
 
 
-class Plugin(object):
+class Plugin:
 
     def load(self, dependencies):
         api = dependencies['api']

@@ -43,7 +43,7 @@ def log_request_params(response):
     return response
 
 
-class CoreRestApi(object):
+class CoreRestApi:
 
     def __init__(self, global_config):
         self.config = global_config['rest_api']

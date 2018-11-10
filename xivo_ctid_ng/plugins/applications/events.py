@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0+
 
 
-class _BaseEvent(object):
+class _BaseEvent:
 
     required_acl = 'events.{}'
 

@@ -14,7 +14,7 @@ from .resources import voicemail_message_schema
 logger = logging.getLogger(__name__)
 
 
-class VoicemailsBusEventHandler(object):
+class VoicemailsBusEventHandler:
 
     def __init__(self, confd_client, bus_publisher, voicemail_cache):
         # voicemail_cache must not be shared with other objects

@@ -14,7 +14,7 @@ from .schema import relocate_schema
 logger = logging.getLogger(__name__)
 
 
-class RelocatesNotifier(object):
+class RelocatesNotifier:
 
     def __init__(self, bus_producer):
         self._bus_producer = bus_producer

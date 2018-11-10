@@ -9,7 +9,7 @@ from .resources import ChatsResource, UserChatsResource
 from .services import ChatsService
 
 
-class Plugin(object):
+class Plugin:
 
     def load(self, dependencies):
         api = dependencies['api']

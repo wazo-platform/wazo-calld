@@ -20,7 +20,7 @@ from .services import CallsService
 from .stasis import CallsStasis
 
 
-class Plugin(object):
+class Plugin:
 
     def load(self, dependencies):
         api = dependencies['api']

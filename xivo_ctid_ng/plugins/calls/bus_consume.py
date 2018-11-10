@@ -18,7 +18,7 @@ from .schema import call_schema
 logger = logging.getLogger(__name__)
 
 
-class CallsBusEventHandler(object):
+class CallsBusEventHandler:
 
     def __init__(self, ami, ari, collectd, bus_publisher, services, xivo_uuid, dial_echo_manager):
         self.ami = ami

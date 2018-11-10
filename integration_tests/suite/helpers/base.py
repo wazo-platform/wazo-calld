@@ -35,7 +35,7 @@ if os.environ.get('TEST_LOGS') != 'verbose':
     logging.getLogger('amqp').setLevel(logging.INFO)
 
 
-class WrongClient(object):
+class WrongClient:
     def __init__(self, client_name):
         self.client_name = client_name
 

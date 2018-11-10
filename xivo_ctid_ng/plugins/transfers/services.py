@@ -25,7 +25,7 @@ from .state import TransferStateReadyNonStasis, TransferStateReady
 logger = logging.getLogger(__name__)
 
 
-class TransfersService(object):
+class TransfersService:
     def __init__(self, amid_client, ari, confd_client, state_factory, state_persistor, transfer_lock):
         self.amid_client = amid_client
         self.ari = ari

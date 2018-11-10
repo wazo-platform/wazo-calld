@@ -14,7 +14,7 @@ from .constants import MONGOOSEIM_ODBC_START_INTERVAL
 from .constants import DB_URI
 
 
-class WaitStrategy(object):
+class WaitStrategy:
 
     def wait(self, integration_test):
         raise NotImplementedError()

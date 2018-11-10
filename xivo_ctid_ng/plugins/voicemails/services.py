@@ -5,7 +5,7 @@ from xivo_ctid_ng.helpers import confd
 from .storage import VoicemailFolderType
 
 
-class VoicemailsService(object):
+class VoicemailsService:
 
     def __init__(self, ari, confd_client, voicemail_storage):
         self._ari = ari

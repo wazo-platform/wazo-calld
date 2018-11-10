@@ -10,7 +10,7 @@ from .services import CtidNgClientFactory, LinePresencesService, UserPresencesSe
 from .websocketd_client import Client as WebsocketdClient
 
 
-class Plugin(object):
+class Plugin:
 
     def load(self, dependencies):
         api = dependencies['api']

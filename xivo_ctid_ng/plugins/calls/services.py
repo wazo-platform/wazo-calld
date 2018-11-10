@@ -21,7 +21,7 @@ from .dial_echo import DialEchoTimeout
 logger = logging.getLogger(__name__)
 
 
-class CallsService(object):
+class CallsService:
 
     def __init__(self, amid_client, ari_config, ari, confd_client, dial_echo_manager):
         self._ami = amid_client

@@ -6,7 +6,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class StateFactory(object):
+class StateFactory:
 
     def __init__(self, ari=None, stat_sender=None):
         self._state_constructors = {}
@@ -30,7 +30,7 @@ class StateFactory(object):
 state_factory = StateFactory()
 
 
-class CallState(object):
+class CallState:
 
     name = None
 
