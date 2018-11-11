@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2016-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
@@ -25,7 +24,7 @@ from .state_persistor import (
 logger = logging.getLogger(__name__)
 
 
-class CallsStasis(object):
+class CallsStasis:
 
     def __init__(self, ari_client, collectd, bus_publisher, services, xivo_uuid, amid_client):
         self.ari = ari_client

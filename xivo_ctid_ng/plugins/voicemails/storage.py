@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-# Copyright 2016 Proformatique Inc.
+# Copyright 2016-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import errno
@@ -17,21 +16,21 @@ from .exceptions import VoicemailMessageStorageError
 logger = logging.getLogger(__name__)
 
 
-class VoicemailFolderType(object):
-    new = u'new'
-    old = u'old'
-    urgent = u'urgent'
-    other = u'other'
+class VoicemailFolderType:
+    new = 'new'
+    old = 'old'
+    urgent = 'urgent'
+    other = 'other'
 
 
 def new_filesystem_storage(base_path='/var/spool/asterisk/voicemail'):
     folders = _VoicemailFolders([
-        _VoicemailFolder(1, 'INBOX', VoicemailFolderType.new, True),
-        _VoicemailFolder(2, 'Old', VoicemailFolderType.old),
-        _VoicemailFolder(3, 'Urgent', VoicemailFolderType.urgent, True),
-        _VoicemailFolder(4, 'Work'),
-        _VoicemailFolder(5, 'Family'),
-        _VoicemailFolder(6, 'Friends'),
+        _VoicemailFolder(1, b'INBOX', VoicemailFolderType.new, True),
+        _VoicemailFolder(2, b'Old', VoicemailFolderType.old),
+        _VoicemailFolder(3, b'Urgent', VoicemailFolderType.urgent, True),
+        _VoicemailFolder(4, b'Work'),
+        _VoicemailFolder(5, b'Family'),
+        _VoicemailFolder(6, b'Friends'),
     ])
     return _VoicemailFilesystemStorage(base_path, folders)
 
@@ -40,7 +39,7 @@ def new_cache(voicemail_storage):
     return _VoicemailMessagesCache(voicemail_storage)
 
 
-class _VoicemailFolder(object):
+class _VoicemailFolder:
 
     def __init__(self, id_, path, type_=VoicemailFolderType.other, is_unread=False):
         self.id = id_
@@ -50,7 +49,7 @@ class _VoicemailFolder(object):
         self.is_unread = is_unread
 
 
-class _VoicemailFolders(object):
+class _VoicemailFolders:
 
     def __init__(self, folders):
         self._folders = folders
@@ -71,7 +70,7 @@ class _VoicemailFolders(object):
         return iter(self._folders)
 
 
-class _VoicemailFilesystemStorage(object):
+class _VoicemailFilesystemStorage:
 
     def __init__(self, base_path, folders):
         self._base_path = base_path
@@ -111,9 +110,9 @@ class _VoicemailFilesystemStorage(object):
         for folder_access in vm_access.folders():
             folder_info = folder_access.info()
             for message_access in folder_access.messages():
-                folder_info[u'messages'].append(message_access.info())
-            self._sort_messages(folder_info[u'messages'])
-            vm_info[u'folders'].append(folder_info)
+                folder_info['messages'].append(message_access.info())
+            self._sort_messages(folder_info['messages'])
+            vm_info['folders'].append(folder_info)
         return vm_info
 
     def get_folder_info(self, vm_conf, folder_id):
@@ -121,8 +120,8 @@ class _VoicemailFilesystemStorage(object):
         folder_access = vm_access.folder(folder_id)
         folder_info = folder_access.info()
         for message_access in folder_access.messages():
-            folder_info[u'messages'].append(message_access.info())
-        self._sort_messages(folder_info[u'messages'])
+            folder_info['messages'].append(message_access.info())
+        self._sort_messages(folder_info['messages'])
         return folder_info
 
     def get_folder_by_id(self, folder_id):
@@ -145,12 +144,12 @@ class _VoicemailFilesystemStorage(object):
         messages.sort(key=itemgetter('timestamp'), reverse=True)
 
 
-class _VoicemailAccess(object):
+class _VoicemailAccess:
 
     def __init__(self, base_path, folders, vm_conf):
         self.path = os.path.join(base_path,
-                                 vm_conf[u'context'].encode('utf-8'),
-                                 vm_conf[u'number'].encode('utf-8'))
+                                 vm_conf['context'].encode('utf-8'),
+                                 vm_conf['number'].encode('utf-8'))
         self._folders = folders
         self.vm_conf = vm_conf
 
@@ -170,15 +169,15 @@ class _VoicemailAccess(object):
 
     def info(self):
         return {
-            u'id': self.vm_conf[u'id'],
-            u'number': self.vm_conf[u'number'],
-            u'context': self.vm_conf[u'context'],
-            u'name': self.vm_conf[u'name'],
-            u'folders': [],
+            'id': self.vm_conf['id'],
+            'number': self.vm_conf['number'],
+            'context': self.vm_conf['context'],
+            'name': self.vm_conf['name'],
+            'folders': [],
         }
 
 
-class _FolderAccess(object):
+class _FolderAccess:
 
     def __init__(self, vm_access, folder):
         self.vm_access = vm_access
@@ -199,21 +198,21 @@ class _FolderAccess(object):
 
     def info(self):
         return {
-            u'id': self.folder.id,
-            u'name': self.folder.name,
-            u'type': self.folder.type,
-            u'messages': [],
+            'id': self.folder.id,
+            'name': self.folder.name,
+            'type': self.folder.type,
+            'messages': [],
         }
 
 
-class _MessageInfoParser(object):
+class _MessageInfoParser:
 
     def __init__(self):
         self._parse_table = [
-            ('callerid=', self._extract_value, self._parse_callerid),
-            ('msg_id=', self._extract_value, self._parse_msg_id),
-            ('origtime=', self._extract_value, self._parse_origtime),
-            ('duration=', self._extract_value, self._parse_duration),
+            (b'callerid=', self._extract_value, self._parse_callerid),
+            (b'msg_id=', self._extract_value, self._parse_msg_id),
+            (b'origtime=', self._extract_value, self._parse_origtime),
+            (b'duration=', self._extract_value, self._parse_duration),
         ]
 
     def parse(self, fobj):
@@ -233,35 +232,35 @@ class _MessageInfoParser(object):
 
     @staticmethod
     def _extract_value(line):
-        return line.split('=', 1)[1].rstrip()
+        return line.split(b'=', 1)[1].rstrip()
 
     @staticmethod
     def _parse_callerid(value, result):
         value = value.decode('utf-8')
-        if value == u'Unknown':
-            result[u'caller_id_name'] = None
-            result[u'caller_id_num'] = None
+        if value == 'Unknown':
+            result['caller_id_name'] = None
+            result['caller_id_num'] = None
         elif caller_id.is_complete_caller_id(value):
-            result[u'caller_id_name'] = caller_id.extract_displayname(value)
-            result[u'caller_id_num'] = caller_id.extract_number(value)
+            result['caller_id_name'] = caller_id.extract_displayname(value)
+            result['caller_id_num'] = caller_id.extract_number(value)
         else:
-            result[u'caller_id_name'] = None
-            result[u'caller_id_num'] = value
+            result['caller_id_name'] = None
+            result['caller_id_num'] = value
 
     @staticmethod
     def _parse_msg_id(value, result):
-        result[u'id'] = value.decode('ascii')
+        result['id'] = value.decode('ascii')
 
     @staticmethod
     def _parse_origtime(value, result):
-        result[u'timestamp'] = int(value)
+        result['timestamp'] = int(value)
 
     @staticmethod
     def _parse_duration(value, result):
-        result[u'duration'] = int(value)
+        result['duration'] = int(value)
 
 
-class _MessageAccess(object):
+class _MessageAccess:
 
     _MESSAGE_INFO_PARSER = _MessageInfoParser()
 
@@ -274,9 +273,9 @@ class _MessageAccess(object):
     def _read_message_info_file(self):
         path = self.path_prefix + '.txt'
         try:
-            with open(path) as fobj:
+            with open(path, 'rb') as fobj:
                 self.parse_result = self._MESSAGE_INFO_PARSER.parse(fobj)
-            self.id = self.parse_result[u'id']
+            self.id = self.parse_result['id']
         except IOError as e:
             if e.errno == errno.ENOENT:
                 # probably: the message has been deleted/moved
@@ -289,8 +288,8 @@ class _MessageAccess(object):
 
     def info(self):
         info = dict(self.parse_result)
-        info[u'folder'] = self.folder_access.folder
-        info[u'vm_conf'] = self.folder_access.vm_access.vm_conf
+        info['folder'] = self.folder_access.folder
+        info['vm_conf'] = self.folder_access.vm_access.vm_conf
         return info
 
     def recording(self):
@@ -306,7 +305,7 @@ class _MessageAccess(object):
             raise
 
 
-class _VoicemailMessagesCache(object):
+class _VoicemailMessagesCache:
 
     _EMPTY_CACHE_ENTRY = {}
 
@@ -320,7 +319,7 @@ class _VoicemailMessagesCache(object):
         self._cache = {}
         for vm_info in self._storage.get_voicemails_info():
             cache_entry = self._vm_info_to_cache_entry(vm_info)
-            key = (vm_info[u'number'], vm_info[u'context'])
+            key = (vm_info['number'], vm_info['context'])
             self._cache[key] = cache_entry
 
     def get_diff(self, number, context):
@@ -349,20 +348,20 @@ class _VoicemailMessagesCache(object):
 
     def _vm_info_to_cache_entry(self, vm_info):
         cache_entry = {}
-        for folder_info in vm_info[u'folders']:
-            for message_info in folder_info[u'messages']:
-                cache_entry[message_info[u'id']] = message_info
+        for folder_info in vm_info['folders']:
+            for message_info in folder_info['messages']:
+                cache_entry[message_info['id']] = message_info
         return cache_entry
 
     def _compute_diff(self, old_cache_entry, new_cache_entry):
         diff = _VoicemailMessagesDiff()
-        for message_id, old_message_info in old_cache_entry.iteritems():
+        for message_id, old_message_info in old_cache_entry.items():
             new_message_info = new_cache_entry.get(message_id)
             if new_message_info is None:
                 diff.deleted_messages.append(old_message_info)
             elif old_message_info != new_message_info:
                 diff.updated_messages.append(new_message_info)
-        for message_id, new_message_info in new_cache_entry.iteritems():
+        for message_id, new_message_info in new_cache_entry.items():
             if message_id not in old_cache_entry:
                 diff.created_messages.append(new_message_info)
         return diff
@@ -371,7 +370,7 @@ class _VoicemailMessagesCache(object):
         return len(self._cache)
 
 
-class _VoicemailMessagesDiff(object):
+class _VoicemailMessagesDiff:
 
     def __init__(self):
         self.created_messages = []
@@ -384,8 +383,8 @@ class _VoicemailMessagesDiff(object):
 
 def _fake_vm_conf(number, context):
     return {
-        u'id': 0,
-        u'name': u'fake-vm-conf',
-        u'number': number,
-        u'context': context,
+        'id': 0,
+        'name': 'fake-vm-conf',
+        'number': number,
+        'context': context,
     }

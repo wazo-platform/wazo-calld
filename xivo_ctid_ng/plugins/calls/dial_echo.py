@@ -2,8 +2,9 @@
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
-import Queue
 import uuid
+
+from queue import Queue, Empty as EmptyQueue
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +17,7 @@ class DialEchoFailure(Exception):
     pass
 
 
-class DialEchoManager(object):
+class DialEchoManager:
     '''This feature has some problems:
 
     - If the echo is not set, the channel is still up. Should we hang it up?
@@ -33,7 +34,7 @@ class DialEchoManager(object):
 
     def new_dial_echo_request(self):
         dial_echo_request_id = str(uuid.uuid4())
-        self._queues[dial_echo_request_id] = Queue.Queue()
+        self._queues[dial_echo_request_id] = Queue()
         logger.debug('Created dial echo request %s', dial_echo_request_id)
         return dial_echo_request_id
 
@@ -46,7 +47,7 @@ class DialEchoManager(object):
         logger.debug('Waiting for dial echo request %s', dial_echo_request_id)
         try:
             result = queue.get(block=True, timeout=timeout)
-        except Queue.Empty:
+        except EmptyQueue:
             self._queues.pop(dial_echo_request_id, None)
             raise DialEchoTimeout()
         logger.debug('Got result from dial echo request %s: %s', dial_echo_request_id, result)

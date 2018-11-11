@@ -19,7 +19,7 @@ from .services import SwitchboardsService
 from .stasis import SwitchboardsStasis
 
 
-class Plugin(object):
+class Plugin:
 
     def load(self, dependencies):
         api = dependencies['api']

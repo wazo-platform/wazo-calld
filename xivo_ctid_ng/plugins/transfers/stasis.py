@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2016-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
@@ -29,7 +28,7 @@ from .transfer import TransferRole
 logger = logging.getLogger(__name__)
 
 
-class TransfersStasis(object):
+class TransfersStasis:
 
     def __init__(self, amid_client, ari_client, services, state_factory, state_persistor, xivo_uuid):
         self.ari = ari_client
@@ -131,7 +130,8 @@ class TransfersStasis(object):
         transfer_role = transfer.role(channel.id)
         self.hangup_pubsub.publish(transfer_role, transfer)
 
-    def transfer_recipient_answered(self, (channel, event)):
+    def transfer_recipient_answered(self, channel_event):
+        channel, event = channel_event
         event = TransferRecipientAnsweredEvent(event)
 
         try:
@@ -156,7 +156,8 @@ class TransfersStasis(object):
             transfer_state = self.state_factory.make(transfer)
             transfer_state.recipient_answer()
 
-    def create_transfer(self, (channel, event)):
+    def create_transfer(self, channel_event):
+        channel, event = channel_event
         event = CreateTransferEvent(event)
         try:
             bridge = self.ari.bridges.get(bridgeId=event.transfer_id)

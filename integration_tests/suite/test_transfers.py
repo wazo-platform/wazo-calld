@@ -1,7 +1,4 @@
-# -*- coding: utf-8 -*-
-
 # Copyright 2016-2018 The Wazo Authors  (see the AUTHORS file)
-# Copyright 2016 by Proformatique Inc.
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
@@ -73,7 +70,7 @@ class TestTransfers(RealAsteriskIntegrationTest):
     asset = 'real_asterisk'
 
     def setUp(self):
-        super(TestTransfers, self).setUp()
+        super().setUp()
         self.b = HamcrestARIBridge(self.ari)
         self.c = HamcrestARIChannel(self.ari)
 
@@ -370,7 +367,7 @@ class TestUserListTransfers(TestTransfers):
         (transferred_channel_id,
          initiator_channel_id,
          recipient_channel_id,
-         transfer_id) = super(TestUserListTransfers, self).given_answered_transfer(variables, initiator_uuid)
+         transfer_id) = super().given_answered_transfer(variables, initiator_uuid)
         self.set_initiator_channel(initiator_channel_id, initiator_uuid)
         return (transferred_channel_id, initiator_channel_id, recipient_channel_id, transfer_id)
 
@@ -541,8 +538,8 @@ class TestCreateTransfer(TestTransfers):
 
     def test_when_create_then_caller_ids_are_right(self):
         transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()
-        initiator_caller_id_name = u'înîtîâtôr'
-        recipient_caller_id_name = u'rêcîpîênt'
+        initiator_caller_id_name = 'înîtîâtôr'
+        recipient_caller_id_name = 'rêcîpîênt'
         self.ari.channels.setChannelVar(channelId=initiator_channel_id, variable='CALLERID(name)', value=initiator_caller_id_name.encode('utf-8'))
 
         response = self.ctid_ng.create_transfer(transferred_channel_id,
@@ -560,9 +557,9 @@ class TestCreateTransfer(TestTransfers):
 
     def test_when_create_blind_transfer_then_caller_ids_are_right(self):
         transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()
-        transferred_caller_id_name = u'trânsfêrrêd'
-        initiator_caller_id_name = u'înîtîâtôr'
-        recipient_caller_id_name = u'rêcîpîênt'
+        transferred_caller_id_name = 'trânsfêrrêd'
+        initiator_caller_id_name = 'înîtîâtôr'
+        recipient_caller_id_name = 'rêcîpîênt'
         self.ari.channels.setChannelVar(channelId=initiator_channel_id, variable='CALLERID(name)', value=initiator_caller_id_name.encode('utf-8'))
         self.ari.channels.setChannelVar(channelId=transferred_channel_id, variable='CALLERID(name)', value=transferred_caller_id_name.encode('utf-8'))
 
@@ -612,7 +609,7 @@ class TestCreateTransfer(TestTransfers):
                     'CHANNEL(language)': 'my-lang',
                     'XIVO_USERID': 'my-userid',
                     'XIVO_USERUUID': 'my-useruuid'}
-        for expected_variable, expected_value in expected.iteritems():
+        for expected_variable, expected_value in expected.items():
             actual_value = self.ari.channels.getChannelVar(channelId=recipient_channel_id,
                                                            variable=expected_variable)['value']
             assert_that(actual_value, equal_to(expected_value))
@@ -664,12 +661,12 @@ class TestCreateTransfer(TestTransfers):
 
 class TestUserCreateTransfer(TestTransfers):
     def setUp(self):
-        super(TestUserCreateTransfer, self).setUp()
+        super().setUp()
         self.confd.reset()
         self.events = self.bus.accumulator('calls.transfer.*')
 
     def given_bridged_call_stasis(self, initiator_uuid):
-        transferred_channel_id, initiator_channel_id = super(TestUserCreateTransfer, self).given_bridged_call_stasis()
+        transferred_channel_id, initiator_channel_id = super().given_bridged_call_stasis()
         self.set_initiator_channel(initiator_channel_id, initiator_uuid)
         return transferred_channel_id, initiator_channel_id
 
@@ -903,7 +900,7 @@ class TestCancelTransfer(TestTransfers):
 
 class TestUserCancelTransfer(TestTransfers):
     def setUp(self):
-        super(TestUserCancelTransfer, self).setUp()
+        super().setUp()
         self.events = self.bus.accumulator('calls.transfer.*')
 
     def test_given_no_transfer_when_cancel_transfer_then_error_404(self):
@@ -955,7 +952,7 @@ class TestCompleteTransfer(TestTransfers):
 
 class TestUserCompleteTransfer(TestTransfers):
     def setUp(self):
-        super(TestUserCompleteTransfer, self).setUp()
+        super().setUp()
         self.events = self.bus.accumulator('calls.transfer.*')
 
     def test_given_no_transfer_when_complete_transfer_then_error_404(self):
@@ -1000,7 +997,7 @@ class TestUserCompleteTransfer(TestTransfers):
 class TestTransferFromStasis(TestTransfers):
 
     def setUp(self):
-        super(TestTransferFromStasis, self).setUp()
+        super().setUp()
         self.events = self.bus.accumulator('calls.transfer.*')
 
     def test_given_state_ready_when_transfer_start_and_answer_then_state_answered(self):
@@ -1330,7 +1327,7 @@ class TestTransferFromStasis(TestTransfers):
 class TestTransferFromNonStasis(TestTransfers):
 
     def setUp(self):
-        super(TestTransferFromNonStasis, self).setUp()
+        super().setUp()
         self.events = self.bus.accumulator('calls.transfer.*')
 
     def test_given_state_ready_from_not_stasis_when_transfer_start_and_answer_then_state_answered(self):
@@ -1340,7 +1337,7 @@ class TestTransferFromNonStasis(TestTransfers):
                                                 initiator_channel_id,
                                                 **RECIPIENT)
 
-        assert_that(response, all_of(has_entries({'id': instance_of(unicode),
+        assert_that(response, all_of(has_entries({'id': instance_of(str),
                                                   'transferred_call': transferred_channel_id,
                                                   'initiator_call': initiator_channel_id,
                                                   'recipient_call': None,
@@ -1437,7 +1434,7 @@ class TestNoAmid(TestTransfers):
 class TestInitialisation(TestTransfers):
 
     def setUp(self):
-        super(TestInitialisation, self).setUp()
+        super().setUp()
         self.events = self.bus.accumulator('calls.transfer.*')
 
     def test_given_started_transfer_when_xivo_ctid_ng_restarts_then_transfer_may_continue(self):

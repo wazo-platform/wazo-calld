@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2016 by Avencall
 # SPDX-License-Identifier: GPL-3.0+
 
@@ -13,7 +12,7 @@ from xivo_bus.collectd.calls import CallStartCollectdEvent
 logger = logging.getLogger(__name__)
 
 
-class StatSender(object):
+class StatSender:
 
     def __init__(self, collectd):
         self.collectd = collectd

@@ -1,5 +1,8 @@
 #!/usr/bin/make -f
 # -*- makefile -*-
 
+export PYBUILD_NAME=xivo-ctid-ng
+export PYBUILD_DISABLE=test
+
 %:
-	dh $@ --with python2,systemd
+	dh $@ --with python3,systemd --buildsystem=pybuild

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
@@ -9,7 +8,7 @@ from xivo_bus.resources.chat.event import (
 from xivo_bus.resources.cti.event import UserStatusUpdateEvent
 
 
-class MessageCallbackService(object):
+class MessageCallbackService:
 
     def __init__(self, bus_publisher, xivo_uuid, contexts):
         self._bus_publisher = bus_publisher
@@ -39,7 +38,7 @@ class MessageCallbackService(object):
         self._bus_publisher.publish(bus_event, headers=headers)
 
 
-class PresenceCallbackService(object):
+class PresenceCallbackService:
 
     def __init__(self, bus_publisher, xivo_uuid):
         self._bus_publisher = bus_publisher

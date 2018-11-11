@@ -13,7 +13,7 @@ from .resources import (
 from .services import MessageCallbackService, PresenceCallbackService
 
 
-class Plugin(object):
+class Plugin:
 
     def load(self, dependencies):
         adapter_api = dependencies['adapter_api']

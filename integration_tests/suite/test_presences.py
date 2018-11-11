@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 from hamcrest import assert_that
@@ -23,10 +22,10 @@ class TestGetUserPresence(IntegrationTest):
 
     @classmethod
     def setUpClass(cls):
-        super(TestGetUserPresence, cls).setUpClass()
+        super().setUpClass()
 
     def setUp(self):
-        super(TestGetUserPresence, self).setUp()
+        super().setUp()
         self.token_user_uuid = 'my-user-uuid'
 
     def test_get_presence_with_correct_values(self):
@@ -120,10 +119,10 @@ class TestGetUserMePresence(IntegrationTest):
 
     @classmethod
     def setUpClass(cls):
-        super(TestGetUserMePresence, cls).setUpClass()
+        super().setUpClass()
 
     def setUp(self):
-        super(TestGetUserMePresence, self).setUp()
+        super().setUp()
         self.token_id = 'my-token'
         self.token_user_uuid = 'my-user-uuid'
         self.auth.set_token(MockUserToken('my-token', self.token_user_uuid))
@@ -143,7 +142,7 @@ class TestUpdateUserPresence(IntegrationTest):
     asset = 'basic_rest'
 
     def setUp(self):
-        super(TestUpdateUserPresence, self).setUp()
+        super().setUp()
         self.presence_msg = new_user_presence_message()
         self.token_user_uuid = 'my-user-uuid'
 
@@ -163,7 +162,7 @@ class TestUserMeUpdatePresence(IntegrationTest):
     asset = 'basic_rest'
 
     def setUp(self):
-        super(TestUserMeUpdatePresence, self).setUp()
+        super().setUp()
         self.presence_msg = new_user_me_presence_message()
         self.token_id = 'my-token'
         self.token_user_uuid = 'my-user-uuid'
@@ -186,10 +185,10 @@ class TestGetLinePresence(IntegrationTest):
 
     @classmethod
     def setUpClass(cls):
-        super(TestGetLinePresence, cls).setUpClass()
+        super().setUpClass()
 
     def setUp(self):
-        super(TestGetLinePresence, self).setUp()
+        super().setUp()
 
     def test_get_presence_with_correct_values(self):
         line_id = 42

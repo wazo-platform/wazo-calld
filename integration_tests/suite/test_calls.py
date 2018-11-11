@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
@@ -41,7 +40,7 @@ class TestListCalls(IntegrationTest):
     asset = 'basic_rest'
 
     def setUp(self):
-        super(TestListCalls, self).setUp()
+        super().setUp()
         self.ari.reset()
         self.confd.reset()
 
@@ -204,7 +203,7 @@ class TestUserListCalls(IntegrationTest):
     asset = 'basic_rest'
 
     def setUp(self):
-        super(TestUserListCalls, self).setUp()
+        super().setUp()
         self.ari.reset()
         self.confd.reset()
 
@@ -318,7 +317,7 @@ class TestGetCall(IntegrationTest):
     asset = 'basic_rest'
 
     def setUp(self):
-        super(TestGetCall, self).setUp()
+        super().setUp()
         self.ari.reset()
         self.confd.reset()
 
@@ -359,7 +358,7 @@ class TestDeleteCall(IntegrationTest):
     asset = 'basic_rest'
 
     def setUp(self):
-        super(TestDeleteCall, self).setUp()
+        super().setUp()
         self.ari.reset()
         self.confd.reset()
 
@@ -387,7 +386,7 @@ class TestUserDeleteCall(IntegrationTest):
     asset = 'basic_rest'
 
     def setUp(self):
-        super(TestUserDeleteCall, self).setUp()
+        super().setUp()
         self.amid.reset()
         self.ari.reset()
         self.confd.reset()
@@ -451,7 +450,7 @@ class TestCreateCall(IntegrationTest):
     asset = 'basic_rest'
 
     def setUp(self):
-        super(TestCreateCall, self).setUp()
+        super().setUp()
         self.amid.reset()
         self.ari.reset()
         self.confd.reset()
@@ -813,7 +812,7 @@ class TestUserCreateCall(IntegrationTest):
     asset = 'basic_rest'
 
     def setUp(self):
-        super(TestUserCreateCall, self).setUp()
+        super().setUp()
         self.amid.reset()
         self.ari.reset()
         self.confd.reset()
@@ -1038,7 +1037,7 @@ class TestFailingARI(IntegrationTest):
     wait_strategy = CtidNgUpWaitStrategy()
 
     def setUp(self):
-        super(TestFailingARI, self).setUp()
+        super().setUp()
         self.confd.reset()
 
     def test_given_no_ari_when_list_calls_then_503(self):
@@ -1073,7 +1072,7 @@ class TestConnectUser(IntegrationTest):
     asset = 'basic_rest'
 
     def setUp(self):
-        super(TestConnectUser, self).setUp()
+        super().setUp()
         self.ari.reset()
         self.confd.reset()
 
@@ -1146,8 +1145,8 @@ class TestCallerID(RealAsteriskIntegrationTest):
                                                  extension='ring-connected-line',
                                                  context='local')
         originator_channel = self.ari.channels.get(channelId=originator_call['call_id'])
-        recipient_caller_id_name = u'rêcîpîênt'
-        recipient_caller_id_number = u'ring-connected-line'
+        recipient_caller_id_name = 'rêcîpîênt'
+        recipient_caller_id_number = 'ring-connected-line'
         bus_events = self.bus.accumulator('calls.call.updated')
 
         self.chan_test.answer_channel(originator_channel.id)

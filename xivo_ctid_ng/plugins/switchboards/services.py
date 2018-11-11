@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
@@ -26,7 +25,7 @@ BRIDGE_HOLD_ID = 'switchboard-{uuid}-hold'
 logger = logging.getLogger(__name__)
 
 
-class SwitchboardsService(object):
+class SwitchboardsService:
 
     def __init__(self, ari, confd, notifier):
         self._ari = ari

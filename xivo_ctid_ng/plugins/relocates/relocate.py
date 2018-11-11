@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-# Copyright 2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
@@ -12,13 +11,13 @@ from xivo.pubsub import Pubsub
 logger = logging.getLogger(__name__)
 
 
-class RelocateRole(object):
+class RelocateRole:
     relocated = 'relocated'
     initiator = 'initiator'
     recipient = 'recipient'
 
 
-class Relocate(object):
+class Relocate:
 
     def __init__(self, state_factory):
         self.uuid = str(uuid.uuid4())
@@ -94,7 +93,7 @@ class Relocate(object):
         logger.debug('Relocate %s: released lock', self.uuid)
 
 
-class RelocateCollection(object):
+class RelocateCollection:
 
     def __init__(self):
         self._relocates = {}
@@ -127,7 +126,7 @@ class RelocateCollection(object):
 
     def find_by_channel(self, channel_id):
         with self._lock:
-            for relocate in self._relocates.itervalues():
+            for relocate in self._relocates.values():
                 if channel_id in (relocate.relocated_channel,
                                   relocate.initiator_channel,
                                   relocate.recipient_channel):
@@ -136,4 +135,4 @@ class RelocateCollection(object):
         return None
 
     def list(self):
-        return self._relocates.values()
+        return list(self._relocates.values())

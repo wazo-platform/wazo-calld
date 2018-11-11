@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
@@ -23,7 +22,7 @@ from .service_discovery import self_check
 logger = logging.getLogger(__name__)
 
 
-class Controller(object):
+class Controller:
 
     def __init__(self, config):
         xivo_uuid = get_xivo_uuid(logger)

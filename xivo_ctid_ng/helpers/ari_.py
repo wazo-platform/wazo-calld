@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
@@ -12,7 +11,7 @@ from .exceptions import (
 )
 
 
-class GlobalVariableAdapter(object):
+class GlobalVariableAdapter:
 
     def __init__(self, ari_client):
         self._ari = ari_client
@@ -32,7 +31,7 @@ class GlobalVariableAdapter(object):
         self._ari.asterisk.setGlobalVar(variable=variable, value='')
 
 
-class GlobalVariableJsonAdapter(object):
+class GlobalVariableJsonAdapter:
 
     def __init__(self, global_variables):
         self._global_variables = global_variables
@@ -52,7 +51,7 @@ class GlobalVariableJsonAdapter(object):
         self._global_variables.unset(variable)
 
 
-class GlobalVariableNameDecorator(object):
+class GlobalVariableNameDecorator:
 
     def __init__(self, global_variables, variable_name_format):
         self._global_variables = global_variables
@@ -68,7 +67,7 @@ class GlobalVariableNameDecorator(object):
         return self._global_variables.unset(self._format.format(variable))
 
 
-class GlobalVariableConstantNameAdapter(object):
+class GlobalVariableConstantNameAdapter:
 
     def __init__(self, global_variables, variable_name):
         self._global_variables = global_variables
@@ -84,7 +83,7 @@ class GlobalVariableConstantNameAdapter(object):
         return self._global_variables.unset(self._variable)
 
 
-class Channel(object):
+class Channel:
 
     def __init__(self, channel_id, ari):
         self.id = channel_id

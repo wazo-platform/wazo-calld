@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-# Copyright 2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
@@ -27,7 +26,7 @@ from .relocate import Relocate
 logger = logging.getLogger(__name__)
 
 
-class DestinationFactory(object):
+class DestinationFactory:
 
     def __init__(self, amid):
         self.amid = amid
@@ -43,10 +42,10 @@ class DestinationFactory(object):
 class InvalidDestination(Exception):
     def __init__(self, details):
         self._details = details
-        super(InvalidDestination, self).__init__(details)
+        super().__init__(details)
 
 
-class Destination(object):
+class Destination:
     def __init__(self, details):
         self._details = details
         self.assert_is_valid()
@@ -59,7 +58,7 @@ class Destination(object):
 class InterfaceDestination(Destination):
     def __init__(self, details):
         self._interface = details['interface']
-        super(InterfaceDestination, self).__init__(details)
+        super().__init__(details)
 
     def is_valid(self):
         return True
@@ -73,7 +72,7 @@ class ExtensionDestination(Destination):
         self._amid = amid
         self._exten = details['exten']
         self._context = details['context']
-        super(ExtensionDestination, self).__init__(details)
+        super().__init__(details)
 
     def is_valid(self):
         return (
@@ -86,7 +85,7 @@ class ExtensionDestination(Destination):
         return 'Local/{exten}@{context}'.format(exten=self._exten, context=self._context)
 
 
-class RelocatesService(object):
+class RelocatesService:
 
     def __init__(self, amid, ari, confd_client, notifier, relocates, state_factory):
         self.ari = ari

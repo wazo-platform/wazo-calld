@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-# Copyright 2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 from xivo_ctid_ng.exceptions import APIException
@@ -13,7 +12,7 @@ class RelocateCreationError(RelocateException):
     def __init__(self, message, details=None):
         details = details or {}
         details.setdefault('message', message)
-        super(RelocateCreationError, self).__init__(
+        super().__init__(
             status_code=400,
             message='Relocate creation error',
             error_id='relocate-creation-error',
@@ -23,7 +22,7 @@ class RelocateCreationError(RelocateException):
 
 class TooManyChannelCandidates(RelocateException):
     def __init__(self, candidates):
-        super(TooManyChannelCandidates, self).__init__(
+        super().__init__(
             status_code=409,
             message='Too many channels candidates',
             error_id='too-many-channels-candidates',
@@ -35,7 +34,7 @@ class TooManyChannelCandidates(RelocateException):
 
 class RelocateAlreadyStarted(RelocateException):
     def __init__(self, initiator_call):
-        super(RelocateAlreadyStarted, self).__init__(
+        super().__init__(
             status_code=409,
             message='Relocate already started with same initiator',
             error_id='relocate-already-started',
@@ -48,7 +47,7 @@ class RelocateAlreadyStarted(RelocateException):
 class NoSuchRelocate(RelocateException):
 
     def __init__(self, relocate_id):
-        super(NoSuchRelocate, self).__init__(
+        super().__init__(
             status_code=404,
             message='No such relocate',
             error_id='no-such-relocate',
@@ -63,7 +62,7 @@ class RelocateCompletionError(RelocateException):
     def __init__(self, message, details=None):
         details = details or {}
         details.setdefault('message', message)
-        super(RelocateCompletionError, self).__init__(
+        super().__init__(
             status_code=400,
             message='Relocate completion error',
             error_id='relocate-completion-error',
@@ -76,7 +75,7 @@ class RelocateCancellationError(RelocateException):
     def __init__(self, message, details=None):
         details = details or {}
         details.setdefault('message', message)
-        super(RelocateCancellationError, self).__init__(
+        super().__init__(
             status_code=400,
             message='Relocate cancellation error',
             error_id='relocate-cancellation-error',

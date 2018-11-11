@@ -18,7 +18,7 @@ class WrongOPException(Exception):
     pass
 
 
-class Client(object):
+class Client:
 
     _url_fmt = '{scheme}://{host}:{port}'
 

@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 from xivo_ctid_ng.exceptions import APIException
@@ -17,7 +16,7 @@ class TransferException(APIException):
 
 class TransferCreationError(TransferException):
     def __init__(self, message):
-        super(TransferCreationError, self).__init__(
+        super().__init__(
             status_code=400,
             message='Transfer creation error',
             error_id='transfer-creation-error',
@@ -29,7 +28,7 @@ class TransferCreationError(TransferException):
 
 class TooManyTransferredCandidates(TransferException):
     def __init__(self, candidates):
-        super(TooManyTransferredCandidates, self).__init__(
+        super().__init__(
             status_code=409,
             message='Too many transferred candidates',
             error_id='too-many-transferred-candidates',
@@ -41,7 +40,7 @@ class TooManyTransferredCandidates(TransferException):
 
 class TransferAnswerError(TransferException):
     def __init__(self, transfer_id, message):
-        super(TransferAnswerError, self).__init__(
+        super().__init__(
             status_code=400,
             message='Transfer answer error',
             error_id='transfer-answer-error',
@@ -54,7 +53,7 @@ class TransferAnswerError(TransferException):
 
 class TransferCompletionError(TransferException):
     def __init__(self, transfer_id, message):
-        super(TransferCompletionError, self).__init__(
+        super().__init__(
             status_code=400,
             message='Transfer completion error',
             error_id='transfer-completion-error',
@@ -67,7 +66,7 @@ class TransferCompletionError(TransferException):
 
 class TransferCancellationError(TransferException):
     def __init__(self, transfer_id, message):
-        super(TransferCancellationError, self).__init__(
+        super().__init__(
             status_code=400,
             message='Transfer cancellation error',
             error_id='transfer-cancellation-error',
@@ -81,7 +80,7 @@ class TransferCancellationError(TransferException):
 class NoSuchTransfer(TransferException):
 
     def __init__(self, transfer_id):
-        super(NoSuchTransfer, self).__init__(
+        super().__init__(
             status_code=404,
             message='No such transfer',
             error_id='no-such-transfer',
@@ -93,7 +92,7 @@ class NoSuchTransfer(TransferException):
 
 class TransferAlreadyStarted(TransferException):
     def __init__(self, initiator_call):
-        super(TransferAlreadyStarted, self).__init__(
+        super().__init__(
             status_code=409,
             message='Transfer already started with same initiator',
             error_id='transfer-already-started',

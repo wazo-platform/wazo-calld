@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
@@ -18,7 +17,7 @@ from .transfer import Transfer, TransferStatus
 logger = logging.getLogger(__name__)
 
 
-class StateFactory(object):
+class StateFactory:
 
     def __init__(self, ari=None):
         self._state_constructors = {}
@@ -57,13 +56,13 @@ def transition(decorated):
             if state.transfer:
                 state._transfer_lock.release(state.transfer.initiator_call)
             raise
-        logger.info('Transition: %s -> %s -> %s', state.name, decorated.func_name, result.name)
+        logger.info('Transition: %s -> %s -> %s', state.name, decorated.__name__, result.name)
         result.update_cache()
         return result
     return decorator
 
 
-class TransferState(object):
+class TransferState:
 
     def __init__(self, amid, ari, notifier, services, state_persistor, transfer_lock, transfer=None):
         self._amid = amid
@@ -476,7 +475,7 @@ class TransferStateAnswered(TransferState):
 
     @classmethod
     def from_state(cls, *args, **kwargs):
-        new_state = super(TransferStateAnswered, cls).from_state(*args, **kwargs)
+        new_state = super().from_state(*args, **kwargs)
         new_state._notifier.answered(new_state.transfer)
         return new_state
 
@@ -503,7 +502,7 @@ class TransferStateEnded(TransferState):
 
     @classmethod
     def from_state(cls, *args, **kwargs):
-        new_state = super(TransferStateEnded, cls).from_state(*args, **kwargs)
+        new_state = super().from_state(*args, **kwargs)
         new_state._notifier.ended(new_state.transfer)
         new_state._transfer_lock.release(new_state.transfer.initiator_call)
         return new_state

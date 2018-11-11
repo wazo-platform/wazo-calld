@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
@@ -12,7 +11,7 @@ from .exceptions import NoSuchSwitchboard
 logger = logging.getLogger(__name__)
 
 
-class SwitchboardsStasis(object):
+class SwitchboardsStasis:
 
     def __init__(self, ari, confd, switchboard_notifier, switchboard_service):
         self._ari = ari

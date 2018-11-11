@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
@@ -18,8 +18,10 @@ setup(
     package_data={
         'xivo_ctid_ng.plugins': ['*/api.yml'],
     },
-    scripts=['bin/xivo-ctid-ng'],
     entry_points={
+        'console_scripts': [
+            'xivo-ctid-ng=xivo_ctid_ng.bin.daemon:main',
+        ],
         'xivo_ctid_ng.plugins': [
             'api = xivo_ctid_ng.plugins.api.plugin:Plugin',
             'applications = xivo_ctid_ng.plugins.applications.plugin:Plugin',

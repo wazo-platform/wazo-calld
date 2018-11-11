@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
@@ -27,7 +26,7 @@ from .events import (
 logger = logging.getLogger(__name__)
 
 
-class ApplicationNotifier(object):
+class ApplicationNotifier:
 
     def __init__(self, bus):
         self._bus = bus

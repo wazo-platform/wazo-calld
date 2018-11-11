@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 from datetime import datetime
@@ -11,7 +10,7 @@ from xivo_ctid_ng.exceptions import APIException
 class MongooseIMUnreachable(APIException):
 
     def __init__(self, xivo_uuid, error):
-        super(MongooseIMUnreachable, self).__init__(
+        super().__init__(
             status_code=503,
             message='mongooseim server unreachable',
             error_id='mongooseim-unreachable',
@@ -27,7 +26,7 @@ class MongooseIMUnreachable(APIException):
 class MongooseIMException(APIException):
 
     def __init__(self, xivo_uuid, status_code, error):
-        super(MongooseIMException, self).__init__(
+        super().__init__(
             status_code=503,
             message='mongooseim error',
             error_id='mongooseim-exception',
@@ -41,7 +40,7 @@ class MongooseIMException(APIException):
         )
 
 
-class ChatsService(object):
+class ChatsService:
 
     def __init__(self, xivo_uuid, mongooseim_client, contexts, bus_publisher):
         self._xivo_uuid = xivo_uuid

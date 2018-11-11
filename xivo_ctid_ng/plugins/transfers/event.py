@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2016 by Avencall
 # SPDX-License-Identifier: GPL-3.0+
 
@@ -9,7 +8,7 @@ from .exceptions import InvalidEvent
 logger = logging.getLogger(__name__)
 
 
-class TransferRecipientAnsweredEvent(object):
+class TransferRecipientAnsweredEvent:
 
     def __init__(self, event):
         try:
@@ -18,7 +17,7 @@ class TransferRecipientAnsweredEvent(object):
             raise InvalidEvent(event)
 
 
-class CreateTransferEvent(object):
+class CreateTransferEvent:
 
     def __init__(self, event):
         try:

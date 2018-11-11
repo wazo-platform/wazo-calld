@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
@@ -25,7 +24,7 @@ class TestCollectd(IntegrationTest):
     wait_strategy = CtidNgEverythingOkWaitStrategy()
 
     def setUp(self):
-        super(TestCollectd, self).setUp()
+        super().setUp()
         self.ari.reset()
         self.confd.reset()
 
@@ -156,7 +155,7 @@ class TestCollectdCtidNgRestart(IntegrationTest):
     asset = 'basic_rest'
 
     def setUp(self):
-        super(TestCollectdCtidNgRestart, self).setUp()
+        super().setUp()
         self.ari.reset()
         self.confd.reset()
 
@@ -185,7 +184,7 @@ class TestCollectdRabbitMQRestart(IntegrationTest):
     asset = 'basic_rest'
 
     def setUp(self):
-        super(TestCollectdRabbitMQRestart, self).setUp()
+        super().setUp()
         self.ari.reset()
         self.confd.reset()
 

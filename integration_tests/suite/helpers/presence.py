@@ -1,11 +1,10 @@
-# -*- coding: utf-8 -*-
 # Copyright 2016 Avencall
 # SPDX-License-Identifier: GPL-3.0+
 
 import uuid
 
 
-class UserPresenceMessage(object):
+class UserPresenceMessage:
 
     def __init__(self, presence, user_uuid=None):
         self.user_uuid = user_uuid or new_uuid_str()

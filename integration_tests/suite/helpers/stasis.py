@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright (C) 2015-2016 Avencall
 # SPDX-License-Identifier: GPL-3.0+
 
@@ -11,7 +10,7 @@ from .constants import STASIS_APP_INSTANCE_NAME
 from .constants import STASIS_APP_NAME
 
 
-class StasisClient(object):
+class StasisClient:
 
     def __init__(self, host, port):
         self._host = host

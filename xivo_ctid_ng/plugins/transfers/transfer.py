@@ -1,9 +1,8 @@
-# -*- coding: utf-8 -*-
 # Copyright 2016 by Avencall
 # SPDX-License-Identifier: GPL-3.0+
 
 
-class Transfer(object):
+class Transfer:
 
     def __init__(self, id_, initiator_uuid):
         self.id = id_
@@ -46,7 +45,7 @@ class Transfer(object):
             raise KeyError(call_id)
 
 
-class TransferStatus(object):
+class TransferStatus:
     answered = 'answered'
     blind_transferred = 'blind_transferred'
     ringback = 'ringback'
@@ -54,7 +53,7 @@ class TransferStatus(object):
     starting = 'starting'
 
 
-class TransferRole(object):
+class TransferRole:
     transferred = 'transferred'
     initiator = 'initiator'
     recipient = 'recipient'

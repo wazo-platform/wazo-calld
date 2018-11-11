@@ -1,11 +1,10 @@
-# -*- coding: utf-8 -*-
 # Copyright 2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import requests
 
 
-class WebsocketdClient(object):
+class WebsocketdClient:
 
     def __init__(self, host, port):
         self.host = host

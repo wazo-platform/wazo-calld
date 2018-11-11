@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import requests
@@ -17,7 +16,7 @@ class TestAuthenticationCoverage(IntegrationTest):
     asset = 'mongooseim'
 
     def setUp(self):
-        super(TestAuthenticationCoverage, self).setUp()
+        super().setUp()
         base_url = BASE_URL.format(port=self.service_port(9501, 'ctid-ng'), version=CTID_NG_VERSION)
         self.url = '{}/mongooseim/authentication/check_password'.format(base_url)
 

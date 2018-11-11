@@ -1,7 +1,5 @@
-# -*- coding: utf-8 -*-
-# Copyright (C) 2015-2016 Avencall
+# Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
-
 
 import logging
 import signal
@@ -19,14 +17,23 @@ from xivo_ctid_ng.config import load as load_config
 logger = logging.getLogger(__name__)
 
 
-def main(argv):
+def main(argv=None):
+    argv = argv or sys.argv[1:]
     config = load_config(argv)
 
     if config['user']:
         change_user(config['user'])
 
-    xivo_logging.setup_logging(config['log_filename'], config['foreground'], config['debug'], config['log_level'])
-    xivo_logging.silence_loggers(['amqp', 'Flask-Cors', 'iso8601', 'kombu', 'swaggerpy', 'urllib3', 'ari.model'], logging.WARNING)
+    xivo_logging.setup_logging(
+        config['log_filename'],
+        config['foreground'],
+        config['debug'],
+        config['log_level']
+    )
+    xivo_logging.silence_loggers(
+        ['amqp', 'Flask-Cors', 'iso8601', 'kombu', 'swaggerpy', 'urllib3', 'ari.model'],
+        logging.WARNING,
+    )
     if config['debug']:
         xivo_logging.silence_loggers(['swaggerpy'], logging.INFO)
 

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
@@ -35,7 +34,7 @@ def asterisk_is_loading(error):
     return not_found(error) or service_unavailable(error)
 
 
-class CoreARI(object):
+class CoreARI:
 
     def __init__(self, config):
         self._apps = []
@@ -48,7 +47,7 @@ class CoreARI(object):
                                            config['startup_connection_delay'])
 
     def _new_ari_client(self, ari_config, connection_tries, connection_delay):
-        for _ in xrange(connection_tries):
+        for _ in range(connection_tries):
             try:
                 return ari.connect(**ari_config)
             except requests.ConnectionError as e:

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
@@ -15,7 +14,7 @@ from .resources import (
 logger = logging.getLogger(__name__)
 
 
-class SwitchboardsNotifier(object):
+class SwitchboardsNotifier:
 
     def __init__(self, bus):
         self._bus = bus

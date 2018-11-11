@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2016-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
@@ -15,7 +14,7 @@ from .constants import MONGOOSEIM_ODBC_START_INTERVAL
 from .constants import DB_URI
 
 
-class WaitStrategy(object):
+class WaitStrategy:
 
     def wait(self, integration_test):
         raise NotImplementedError()
@@ -80,7 +79,6 @@ class CtidNgMongooseImEverythingOkWaitStrategy(WaitStrategy):
             self._wait_mongooseim_interval()
             return True
         except psycopg2.OperationalError as e:
-            print e
             pass
         return False
 

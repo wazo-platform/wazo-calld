@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2016 by Avencall
 # SPDX-License-Identifier: GPL-3.0+
 
@@ -7,7 +6,7 @@ from xivo_ctid_ng.helpers.ari_ import (GlobalVariableAdapter,
                                        GlobalVariableNameDecorator)
 
 
-class ChannelCacheEntry(object):
+class ChannelCacheEntry:
     def __init__(self, app, app_instance, state):
         self.app = app
         self.app_instance = app_instance
@@ -25,7 +24,7 @@ class ChannelCacheEntry(object):
                    state=dict_['state'])
 
 
-class ReadOnlyStatePersistor(object):
+class ReadOnlyStatePersistor:
     def __init__(self, ari):
         self._channels = GlobalVariableNameDecorator(GlobalVariableJsonAdapter(GlobalVariableAdapter(ari)),
                                                      'XIVO_CHANNELS_{}')

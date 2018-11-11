@@ -1,9 +1,8 @@
-# -*- coding: utf-8 -*-
 # Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 
-class Call(object):
+class Call:
 
     def __init__(self, id_):
         self.id_ = id_

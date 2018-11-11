@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
@@ -17,7 +16,7 @@ from .models import (
 logger = logging.getLogger(__name__)
 
 
-class AppNameHelper(object):
+class AppNameHelper:
 
     PREFIX = 'wazo-app-'
 
@@ -32,7 +31,7 @@ class AppNameHelper(object):
         return '{}{}'.format(AppNameHelper.PREFIX, uuid)
 
 
-class ApplicationStasis(object):
+class ApplicationStasis:
 
     def __init__(self, ari, confd, service, notifier):
         self._ari = ari.client

@@ -1,11 +1,10 @@
-# -*- coding: utf-8 -*-
 # Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import requests
 
 
-class ConfdClient(object):
+class ConfdClient:
 
     def __init__(self, host, port):
         self._host = host
@@ -45,7 +44,7 @@ class ConfdClient(object):
 
     def set_user_lines(self, set_user_lines):
         content = {}
-        for user, user_lines in set_user_lines.iteritems():
+        for user, user_lines in set_user_lines.items():
             content[user] = [user_line.to_dict() for user_line in user_lines]
 
         url = self.url('_set_response')
@@ -65,7 +64,7 @@ class ConfdClient(object):
         requests.post(url, verify=False)
 
 
-class MockApplication(object):
+class MockApplication:
 
     def __init__(self, uuid, name, destination=None, type_=None, moh=None):
         self._uuid = uuid
@@ -89,7 +88,7 @@ class MockApplication(object):
         }
 
 
-class MockUser(object):
+class MockUser:
 
     def __init__(self, uuid, line_ids=None, mobile=None):
         self._uuid = uuid
@@ -107,7 +106,7 @@ class MockUser(object):
         }
 
 
-class MockLine(object):
+class MockLine:
 
     def __init__(self, id, name=None, protocol=None, users=None, context=None):
         self._id = id
@@ -131,7 +130,7 @@ class MockLine(object):
         }
 
 
-class MockSwitchboard(object):
+class MockSwitchboard:
 
     def __init__(self, uuid, name=None):
         self._uuid = uuid

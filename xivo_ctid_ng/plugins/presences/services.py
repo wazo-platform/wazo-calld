@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
-# Copyright (C) 2016 Proformatique, Inc.
+# Copyright 2016-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
@@ -28,7 +26,7 @@ def _extract_status_code(exception):
     return getattr(response, 'status_code', None)
 
 
-class UserPresencesService(object):
+class UserPresencesService:
 
     def __init__(self, bus_publisher, websocketd_client, local_xivo_uuid, ctid_ng_client_factory):
         self._bus_publisher = bus_publisher
@@ -72,7 +70,7 @@ class UserPresencesService(object):
             raise NoSuchUser(self._xivo_uuid, user_uuid)
 
 
-class LinePresencesService(object):
+class LinePresencesService:
 
     def __init__(self, ctid_client, ctid_config, local_xivo_uuid, ctid_ng_client_factory):
         self._ctid_client = ctid_client
@@ -113,13 +111,13 @@ class LinePresencesService(object):
                 raise XiVOCtidNgUnreachable(xivo_uuid, e)
 
 
-class CtidNgClientFactory(object):
+class CtidNgClientFactory:
 
     def __init__(self, consul_config, remote_credentials):
         self.finder = ServiceFinder(consul_config)
         self._auth_tokens = {}
         self._credentials = {}
-        for remote in remote_credentials.itervalues():
+        for remote in remote_credentials.values():
             uuid = remote.get('xivo_uuid')
             id_ = remote.get('service_id')
             key = remote.get('service_key')
@@ -169,4 +167,4 @@ class CtidNgClientFactory(object):
 
     def _is_valid(self, token):
         very_soon = (datetime.utcnow() + timedelta(seconds=5.0)).isoformat()
-        return token and token.get('utc_expires_at') > very_soon
+        return token and token.get('utc_expires_at') and token['utc_expires_at'] > very_soon

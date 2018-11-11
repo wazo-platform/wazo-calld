@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
@@ -14,7 +13,7 @@ from .exceptions import (
 )
 
 
-class ApplicationCall(object):
+class ApplicationCall:
 
     def __init__(self, id_):
         self.id_ = id_
@@ -22,14 +21,14 @@ class ApplicationCall(object):
         self.muted = False
 
 
-class ApplicationNode(object):
+class ApplicationNode:
 
     def __init__(self, uuid):
         self.uuid = uuid
         self.calls = []
 
 
-class CallFormatter(object):
+class CallFormatter:
 
     def __init__(self, application, ari=None):
         self._application = application
@@ -110,7 +109,7 @@ def make_node_from_bridge_event(bridge):
     return node
 
 
-class _Snoop(object):
+class _Snoop:
 
     bridge_name_tpl = 'wazo-app-snoop-{}'
     _snooped_call_id_chan_var = 'WAZO_SNOOPED_CALL_ID'
@@ -224,7 +223,7 @@ class _Snoop(object):
         return snoop_channel.getChannelVar(variable=cls._whisper_mode_chan_var)['value']
 
 
-class SnoopHelper(object):
+class SnoopHelper:
 
     def __init__(self, ari):
         self._ari = ari

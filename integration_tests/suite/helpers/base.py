@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
@@ -36,7 +35,7 @@ if os.environ.get('TEST_LOGS') != 'verbose':
     logging.getLogger('amqp').setLevel(logging.INFO)
 
 
-class WrongClient(object):
+class WrongClient:
     def __init__(self, client_name):
         self.client_name = client_name
 
@@ -60,7 +59,7 @@ class IntegrationTest(AssetLaunchingTestCase):
 
     @classmethod
     def setUpClass(cls):
-        super(IntegrationTest, cls).setUpClass()
+        super().setUpClass()
         try:
             cls.reset_clients()
             cls.reset_bus_client()
@@ -161,7 +160,7 @@ class RealAsteriskIntegrationTest(IntegrationTest):
 
     @classmethod
     def setUpClass(cls):
-        super(RealAsteriskIntegrationTest, cls).setUpClass()
+        super().setUpClass()
         cls.chan_test = ChanTest(cls.ari_config())
 
     @classmethod
@@ -173,12 +172,12 @@ class RealAsteriskIntegrationTest(IntegrationTest):
         }
 
     def setUp(self):
-        super(RealAsteriskIntegrationTest, self).setUp()
+        super().setUp()
         self.ari = ari.connect(**self.ari_config())
         self.reset_ari()
 
     def tearDown(self):
-        super(RealAsteriskIntegrationTest, self).tearDown()
+        super().tearDown()
 
     def reset_ari(self):
         for channel in self.ari.channels.list():

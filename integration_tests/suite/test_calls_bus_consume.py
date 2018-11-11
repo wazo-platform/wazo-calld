@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2016-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
@@ -20,7 +19,7 @@ class TestBusConsume(IntegrationTest):
     wait_strategy = CtidNgEverythingOkWaitStrategy()
 
     def setUp(self):
-        super(TestBusConsume, self).setUp()
+        super().setUp()
         self.amid.reset()
         self.ari.reset()
         self.confd.reset()

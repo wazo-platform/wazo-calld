@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
@@ -13,7 +12,7 @@ from .transfer import Transfer
 logger = logging.getLogger(__name__)
 
 
-class StatePersistor(object):
+class StatePersistor:
     def __init__(self, ari):
         self._transfers = GlobalVariableNameDecorator(GlobalVariableJsonAdapter(GlobalVariableAdapter(ari)),
                                                       'XIVO_TRANSFERS_{}')

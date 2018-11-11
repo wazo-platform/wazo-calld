@@ -1,11 +1,10 @@
-# -*- coding: utf-8 -*-
 # Copyright 2015-2016 by Avencall
 # SPDX-License-Identifier: GPL-3.0+
 
 import requests
 
 
-class ARIClient(object):
+class ARIClient:
 
     def __init__(self, host, port):
         self.host = host
@@ -65,7 +64,7 @@ class ARIClient(object):
         return requests.get(url).json()
 
 
-class MockApplication(object):
+class MockApplication:
 
     def __init__(self, name, channels=None):
         self._name = name
@@ -81,7 +80,7 @@ class MockApplication(object):
         }
 
 
-class MockChannel(object):
+class MockChannel:
 
     def __init__(self,
                  id,
@@ -121,7 +120,7 @@ class MockChannel(object):
         }
 
 
-class MockBridge(object):
+class MockBridge:
 
     def __init__(self, id, channels=None):
         self._id = id

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
@@ -12,7 +11,7 @@ from hamcrest import assert_that, equal_to
 from .constants import VALID_TOKEN
 
 
-class CtidNgClient(object):
+class CtidNgClient:
 
     _url_tpl = 'https://{host}:{port}/1.0/{path}'
 
@@ -21,7 +20,7 @@ class CtidNgClient(object):
         self._port = port
 
     def url(self, *parts):
-        path = '/'.join(unicode(part) for part in parts)
+        path = '/'.join(str(part) for part in parts)
         return self._url_tpl.format(host=self._host, port=self._port, path=path)
 
     def is_up(self):

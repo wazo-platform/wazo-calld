@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
@@ -19,7 +18,7 @@ from xivo_bus import PublishingQueue
 logger = logging.getLogger(__name__)
 
 
-class CoreBusPublisher(object):
+class CoreBusPublisher:
 
     def __init__(self, global_config):
         self.config = global_config['bus']
@@ -63,7 +62,7 @@ class CoreBusConsumer(ConsumerMixin):
         with Connection(self._bus_url) as connection:
             self.connection = connection
 
-            super(CoreBusConsumer, self).run()
+            super().run()
 
     def get_consumers(self, Consumer, channel):
         return [
@@ -71,11 +70,11 @@ class CoreBusConsumer(ConsumerMixin):
         ]
 
     def on_connection_error(self, exc, interval):
-        super(CoreBusConsumer, self).on_connection_error(exc, interval)
+        super().on_connection_error(exc, interval)
         self._is_running = False
 
     def on_connection_revived(self):
-        super(CoreBusConsumer, self).on_connection_revived()
+        super().on_connection_revived()
         self._is_running = True
 
     def is_running(self):

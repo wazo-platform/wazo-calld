@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2018 The Wazo Authors  (see AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
@@ -26,7 +25,7 @@ class BaseApplicationTestCase(RealAsteriskIntegrationTest):
     asset = 'real_asterisk'
 
     def setUp(self):
-        super(BaseApplicationTestCase, self).setUp()
+        super().setUp()
 
         self.unknown_uuid = '00000000-0000-0000-0000-000000000000'
 
@@ -62,12 +61,12 @@ class BaseApplicationTestCase(RealAsteriskIntegrationTest):
         }
 
         if variables:
-            for key, value in variables.iteritems():
+            for key, value in variables.items():
                 kwargs['variables']['variables'][key] = value
 
         event_accumulator = self.bus.accumulator('applications.{uuid}.#'.format(uuid=app_uuid))
         channel = self.ari.channels.originate(**kwargs)
-        for _ in xrange(10):
+        for _ in range(10):
             events = event_accumulator.accumulate()
             for event in events:
                 if event['name'] == 'application_call_entered':
@@ -724,7 +723,7 @@ class TestApplicationHold(BaseApplicationTestCase):
 class TestApplicationSnoop(BaseApplicationTestCase):
 
     def setUp(self):
-        super(TestApplicationSnoop, self).setUp()
+        super().setUp()
         self.app_uuid = self.no_node_app_uuid
         self.caller_channel = self.call_app(self.no_node_app_uuid)
         node = self.ctid_ng.application_new_node(

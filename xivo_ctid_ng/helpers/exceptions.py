@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 from xivo_ctid_ng.exceptions import APIException
@@ -17,7 +16,7 @@ class NotEnoughChannels(Exception):
 class UserMissingMainLine(APIException):
 
     def __init__(self, user_uuid):
-        super(UserMissingMainLine, self).__init__(
+        super().__init__(
             status_code=400,
             message='User has no main line',
             error_id='user-missing-main-line',
@@ -30,7 +29,7 @@ class UserMissingMainLine(APIException):
 class InvalidUserUUID(APIException):
 
     def __init__(self, user_uuid):
-        super(InvalidUserUUID, self).__init__(
+        super().__init__(
             status_code=400,
             message='Invalid user: not found',
             error_id='invalid-user',
@@ -43,7 +42,7 @@ class InvalidUserUUID(APIException):
 class InvalidUserLine(APIException):
 
     def __init__(self, user_id, line_id):
-        super(InvalidUserLine, self).__init__(
+        super().__init__(
             status_code=400,
             message='User has no such line',
             error_id='invalid-user-line',
@@ -57,7 +56,7 @@ class InvalidUserLine(APIException):
 class NoSuchUserVoicemail(APIException):
 
     def __init__(self, user_uuid):
-        super(NoSuchUserVoicemail, self).__init__(
+        super().__init__(
             status_code=404,
             message='No such user voicemail',
             error_id='no-such-user-voicemail',
@@ -70,7 +69,7 @@ class NoSuchUserVoicemail(APIException):
 class NoSuchVoicemail(APIException):
 
     def __init__(self, voicemail_id):
-        super(NoSuchVoicemail, self).__init__(
+        super().__init__(
             status_code=404,
             message='No such voicemail',
             error_id='no-such-voicemail',
