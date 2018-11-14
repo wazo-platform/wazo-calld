@@ -15,7 +15,7 @@ from xivo_test_helpers import until
 from xivo_test_helpers.hamcrest.uuid_ import uuid_
 from .helpers.base import RealAsteriskIntegrationTest
 from .helpers.confd import MockApplication
-from .helpers.wait_strategy import CtidNgEverythingOkWaitStrategy
+from .helpers.wait_strategy import CtidNgEverythingOkWaitStrategy, NoWaitStrategy
 
 ENDPOINT_AUTOANSWER = 'Test/integration-caller/autoanswer'
 
@@ -23,6 +23,7 @@ ENDPOINT_AUTOANSWER = 'Test/integration-caller/autoanswer'
 class BaseApplicationTestCase(RealAsteriskIntegrationTest):
 
     asset = 'real_asterisk'
+    wait_strategy = NoWaitStrategy()
 
     def setUp(self):
         super().setUp()
@@ -47,6 +48,7 @@ class BaseApplicationTestCase(RealAsteriskIntegrationTest):
 
         # TODO: add a way to load new apps without restarting
         self._restart_ctid_ng()
+        CtidNgEverythingOkWaitStrategy().wait(self)
 
     def call_app(self, app_uuid, variables=None):
         kwargs = {
