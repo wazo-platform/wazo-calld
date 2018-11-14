@@ -6,7 +6,6 @@ import logging
 from .exceptions import (
     NoSuchSnoop,
 )
-
 from .models import (
     CallFormatter,
     make_node_from_bridge,
@@ -84,9 +83,8 @@ class ApplicationStasis:
     def initialize(self, token):
         self._confd.wait_until_ready()
         applications = self._service.list_confd_applications()
-        self._register_applications(applications)
         self._subscribe(applications)
-        self._create_destinations(applications)
+        self._register_applications(applications)
         logger.debug('Stasis applications initialized')
 
     def stasis_start(self, event_objects, event):
@@ -159,8 +157,9 @@ class ApplicationStasis:
 
         for application in applications:
             app_uuid = application['uuid']
-            self._ari.on_application_deregistered(AppNameHelper.to_name(app_uuid), self._on_stop)
-            self._ari.on_application_registered(AppNameHelper.to_name(app_uuid), self._on_start)
+            app_name = AppNameHelper.to_name(app_uuid)
+            self._ari.on_application_deregistered(app_name, self._on_websocket_stop)
+            self._ari.on_application_registered(app_name, self._on_websocket_start)
 
     def _create_destinations(self, applications):
         logger.info('Creating destination nodes')
@@ -193,12 +192,12 @@ class ApplicationStasis:
 
         self._core_ari.reload()
 
-    def _on_start(self):
+    def _on_websocket_start(self):
         if self._destination_created:
             return
 
         applications = self._service.list_confd_applications()
         self._create_destinations(applications)
 
-    def _on_stop(self):
+    def _on_websocket_stop(self):
         self._destination_created = False
