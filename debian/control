@@ -19,6 +19,7 @@ Depends:
  mongooseim,
  python3-asterisk-ari,
  python3-cheroot,
+ python3-cherrypy3,
  python3-flask,
  python3-flask-restful,
  python3-flask-cors (>= 3.0.2),
