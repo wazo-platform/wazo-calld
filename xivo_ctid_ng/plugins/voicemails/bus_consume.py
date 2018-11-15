@@ -26,7 +26,7 @@ class VoicemailsBusEventHandler:
         bus_consumer.on_ami_event('MessageWaiting', self._voicemail_updated)
 
     def _voicemail_updated(self, event):
-        number, context = event['Mailbox'].decode('utf-8').split('@', 1)
+        number, context = event['Mailbox'].split('@', 1)
         diff = self._voicemail_cache.get_diff(number, context)
         if diff.is_empty():
             return
