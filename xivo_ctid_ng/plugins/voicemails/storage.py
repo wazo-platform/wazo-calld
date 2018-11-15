@@ -23,7 +23,7 @@ class VoicemailFolderType:
     other = 'other'
 
 
-def new_filesystem_storage(base_path='/var/spool/asterisk/voicemail'):
+def new_filesystem_storage(base_path=b'/var/spool/asterisk/voicemail'):
     folders = _VoicemailFolders([
         _VoicemailFolder(1, b'INBOX', VoicemailFolderType.new, True),
         _VoicemailFolder(2, b'Old', VoicemailFolderType.old),
@@ -193,7 +193,7 @@ class _FolderAccess:
                 return
             raise
         for name in names:
-            if name.endswith('.txt'):
+            if name.endswith(b'.txt'):
                 yield _MessageAccess(self, name)
 
     def info(self):
@@ -271,7 +271,7 @@ class _MessageAccess:
         self._read_message_info_file()
 
     def _read_message_info_file(self):
-        path = self.path_prefix + '.txt'
+        path = self.path_prefix + b'.txt'
         try:
             with open(path, 'rb') as fobj:
                 self.parse_result = self._MESSAGE_INFO_PARSER.parse(fobj)
@@ -293,7 +293,7 @@ class _MessageAccess:
         return info
 
     def recording(self):
-        path = self.path_prefix + '.wav'
+        path = self.path_prefix + b'.wav'
         try:
             with open(path, 'rb') as fobj:
                 return fobj.read()
