@@ -136,6 +136,11 @@ class PlaybackCreated(_BasePlaybackItemEvent):
     routing_key = 'applications.{}.playback.{}.created'
 
 
+class PlaybackDeleted(_BasePlaybackItemEvent):
+    name = 'application_playback_deleted'
+    routing_key = 'applications.{}.playback.{}.deleted'
+
+
 class SnoopCreated(_BaseSnoopItemEvent):
     name = 'application_snoop_created'
     routing_key = 'applications.{}.snoops.{}.created'

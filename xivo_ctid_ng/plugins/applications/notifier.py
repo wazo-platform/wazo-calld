@@ -20,6 +20,7 @@ from .events import (
     NodeDeleted,
     NodeUpdated,
     PlaybackCreated,
+    PlaybackDeleted,
     SnoopCreated,
     SnoopDeleted,
     SnoopUpdated,
@@ -90,6 +91,12 @@ class ApplicationNotifier:
         logger.debug('Application (%s): Playback (%s) started', application_uuid, playback['id'])
         playback = application_playback_schema.dump(playback).data
         event = PlaybackCreated(application_uuid, playback)
+        self._bus.publish(event)
+
+    def playback_deleted(self, application_uuid, playback):
+        logger.debug('Application (%s): Playback (%s) deleted', application_uuid, playback['id'])
+        playback = application_playback_schema.dump(playback).data
+        event = PlaybackDeleted(application_uuid, playback)
         self._bus.publish(event)
 
     def snoop_created(self, application_uuid, snoop):
