@@ -6,6 +6,7 @@ import logging
 from .schema import (
     application_call_schema,
     application_node_schema,
+    application_playback_schema,
     application_snoop_schema,
 )
 from .events import (
@@ -18,6 +19,7 @@ from .events import (
     NodeCreated,
     NodeDeleted,
     NodeUpdated,
+    PlaybackCreated,
     SnoopCreated,
     SnoopDeleted,
     SnoopUpdated,
@@ -82,6 +84,12 @@ class ApplicationNotifier:
         logger.debug('Application (%s): Node (%s) updated', application_uuid, node.uuid)
         node = application_node_schema.dump(node).data
         event = NodeUpdated(application_uuid, node)
+        self._bus.publish(event)
+
+    def playback_created(self, application_uuid, playback):
+        logger.debug('Application (%s): Playback (%s) started', application_uuid, playback['id'])
+        playback = application_playback_schema.dump(playback).data
+        event = PlaybackCreated(application_uuid, playback)
         self._bus.publish(event)
 
     def snoop_created(self, application_uuid, snoop):

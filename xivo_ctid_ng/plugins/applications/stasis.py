@@ -145,7 +145,15 @@ class ApplicationStasis:
         call = formatter.from_channel(channel)
         self._notifier.call_updated(application_uuid, call)
 
+    def playback_started(self, playback, event):
+        application_uuid = AppNameHelper.to_uuid(event.get('application'))
+        if not application_uuid:
+            return
+
+        self._notifier.playback_created(application_uuid, playback.json)
+
     def _subscribe(self, applications):
+        self._ari.on_playback_event('PlaybackStarted', self.playback_started)
         self._ari.on_channel_event('ChannelDtmfReceived', self.channel_dtmf_received)
         self._ari.on_channel_event('ChannelMohStart', self.channel_moh_started)
         self._ari.on_channel_event('ChannelMohStop', self.channel_moh_stopped)

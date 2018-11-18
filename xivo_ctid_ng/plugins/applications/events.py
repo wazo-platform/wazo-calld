@@ -54,6 +54,17 @@ class _BaseNodeListEvent(_BaseEvent):
         }
 
 
+class _BasePlaybackItemEvent(_BaseEvent):
+
+    def __init__(self, application_uuid, playback):
+        self.routing_key = self.routing_key.format(application_uuid, playback['uuid'])
+        self.required_acl = self.required_acl.format(self.routing_key)
+        self._body = {
+            'application_uuid': str(application_uuid),
+            'playback': playback,
+        }
+
+
 class _BaseSnoopItemEvent(_BaseEvent):
 
     def __init__(self, application_uuid, snoop):
@@ -118,6 +129,11 @@ class NodeDeleted(_BaseNodeItemEvent):
 class NodeUpdated(_BaseNodeItemEvent):
     name = 'application_node_updated'
     routing_key = 'applications.{}.nodes.{}.updated'
+
+
+class PlaybackCreated(_BasePlaybackItemEvent):
+    name = 'application_playback_created'
+    routing_key = 'applications.{}.playback.{}.created'
 
 
 class SnoopCreated(_BaseSnoopItemEvent):
