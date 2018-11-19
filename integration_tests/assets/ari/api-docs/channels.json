@@ -1519,7 +1519,7 @@
 				"name": {
 					"required": true,
 					"type": "string",
-					"description": "Name of the channel (i.e. SIP/foo-0000a7e3)"
+					"description": "Name of the channel (i.e. PJSIP/foo-0000a7e3)"
 				},
 				"state": {
 					"required": true,

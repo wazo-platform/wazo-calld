@@ -1,4 +1,4 @@
-# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import requests
@@ -60,7 +60,7 @@ class TestExtensionExists(TestCase):
             {
                 "Extension": "some-exten",
                 "Priority": "hint",
-                "Application": "SIP/some-sip",
+                "Application": "PJSIP/some-sip",
                 "Registrar": "pbx_config",
                 "Context": "some-context",
                 "Event": "ListDialplan"
@@ -87,7 +87,7 @@ class TestExtensionExists(TestCase):
             {
                 "Extension": "some-exten",
                 "Priority": "1",
-                "Application": "SIP/some-sip",
+                "Application": "PJSIP/some-sip",
                 "Registrar": "pbx_config",
                 "Context": "some-context",
                 "Event": "ListDialplan"

@@ -1,4 +1,4 @@
-# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 from requests import HTTPError
@@ -86,7 +86,9 @@ class Line:
 
     def interface(self):
         line = self._get()
-        return "{}/{}".format(line['protocol'], line['name'])
+        # TODO PJSIP clean after migration
+        protocol = line['protocol'].replace('sip', 'pjsip')
+        return "{}/{}".format(protocol, line['name'])
 
 
 def get_user_voicemail(user_uuid, confd_client):
