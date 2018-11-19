@@ -1270,6 +1270,37 @@ class TestApplicationPlayback(BaseApplicationTestCase):
             )
         )
 
+    def test_playback_created_event(self):
+        app_uuid = self.node_app_uuid
+        body = {'uri': 'sound:tt-weasels'}
+        channel = self.call_app(app_uuid)
+
+        routing_key = 'applications.{}.#'.format(app_uuid)
+        event_accumulator = self.bus.accumulator(routing_key)
+        response = self.ctid_ng.application_call_playback(app_uuid, channel.id, body)
+        playback = response.json()
+
+        def event_received():
+            events = event_accumulator.accumulate()
+            assert_that(
+                events,
+                contains(
+                    has_entries(
+                        name='application_playback_created',
+                        data=has_entries(
+                            application_uuid=app_uuid,
+                            playback=has_entries(
+                                uuid=playback['uuid'],
+                                language='en',
+                                uri='sound:tt-weasels',
+                            )
+                        )
+                    )
+                )
+            )
+
+        until.assert_(event_received, tries=3)
+
     def test_delete(self):
         body = {'uri': 'sound:tt-weasels'}
         channel = self.call_app(self.node_app_uuid)
@@ -1283,6 +1314,72 @@ class TestApplicationPlayback(BaseApplicationTestCase):
 
         response = self.ctid_ng.application_stop_playback(self.node_app_uuid, playback['uuid'])
         assert_that(response, has_properties(status_code=204))
+
+    def test_playback_deleted_event(self):
+        app_uuid = self.node_app_uuid
+        body = {'uri': 'sound:tt-weasels'}
+        channel = self.call_app(app_uuid)
+
+        response = self.ctid_ng.application_call_playback(app_uuid, channel.id, body)
+
+        routing_key = 'applications.{}.#'.format(app_uuid)
+        event_accumulator = self.bus.accumulator(routing_key)
+        playback = response.json()
+
+        def event_received():
+            events = event_accumulator.accumulate()
+            assert_that(
+                events,
+                contains(
+                    has_entries(
+                        name='application_playback_deleted',
+                        data=has_entries(
+                            application_uuid=app_uuid,
+                            playback=has_entries(
+                                uuid=playback['uuid'],
+                                language='en',
+                                uri='sound:tt-weasels',
+                            )
+                        )
+                    )
+                )
+            )
+
+        until.assert_(event_received, tries=30)
+
+    def test_playback_deleted_event_on_stop(self):
+        app_uuid = self.node_app_uuid
+        body = {'uri': 'sound:tt-weasels'}
+        channel = self.call_app(app_uuid)
+
+        response = self.ctid_ng.application_call_playback(app_uuid, channel.id, body)
+
+        routing_key = 'applications.{}.#'.format(app_uuid)
+        event_accumulator = self.bus.accumulator(routing_key)
+        playback = response.json()
+
+        self.ctid_ng.application_stop_playback(app_uuid, playback['uuid'])
+
+        def event_received():
+            events = event_accumulator.accumulate()
+            assert_that(
+                events,
+                contains(
+                    has_entries(
+                        name='application_playback_deleted',
+                        data=has_entries(
+                            application_uuid=app_uuid,
+                            playback=has_entries(
+                                uuid=playback['uuid'],
+                                language='en',
+                                uri='sound:tt-weasels',
+                            )
+                        )
+                    )
+                )
+            )
+
+        until.assert_(event_received, tries=3)
 
 
 class TestApplicationNode(BaseApplicationTestCase):
