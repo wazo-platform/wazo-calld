@@ -135,7 +135,7 @@ class ApplicationCallSnoopList(_BaseResource):
         form = application_snoop_schema.load(request.get_json()).data
         application = self._service.get_application(application_uuid)
         snoop = self._service.snoop_create(application, call_id, **form)
-        return application_snoop_schema.dump(snoop).data
+        return application_snoop_schema.dump(snoop).data, 201
 
 
 class ApplicationPlaybackItem(_BaseResource):
