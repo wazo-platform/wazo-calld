@@ -142,7 +142,7 @@ class CtidNgClientFactory:
                                 port=auth_config['Port'],
                                 verify_certificate=False)
             try:
-                self._auth_tokens[xivo_uuid] = token = client.token.new('xivo_service')
+                self._auth_tokens[xivo_uuid] = token = client.token.new()
             except requests.RequestException:
                 raise InvalidCredentials(xivo_uuid)
         return token['token']

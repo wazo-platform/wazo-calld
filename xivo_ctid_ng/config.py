@@ -53,7 +53,7 @@ _DEFAULT_CONFIG = {
         'host': 'localhost',
         'port': 9497,
         'verify_certificate': _CERT_FILE,
-        'key_file': '/var/lib/xivo-auth-keys/xivo-ctid-ng-key.yml',
+        'key_file': '/var/lib/wazo-auth-keys/xivo-ctid-ng-key.yml',
     },
     'bus': {
         'username': 'guest',
