@@ -247,7 +247,7 @@ def _validate_message_id(message_id):
     # the check could be more restrictive but the goal is just to make
     # sure message_id is safe to use for file system operations
     if _MESSAGE_ID_REGEX.match(message_id):
-        return message_id.decode('ascii')
+        return message_id
     raise InvalidVoicemailMessageID(message_id)
 
 
