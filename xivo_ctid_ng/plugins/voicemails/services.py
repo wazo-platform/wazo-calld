@@ -42,8 +42,8 @@ class VoicemailsService:
         body = {
             'mailbox': vm_conf['number'],
             'context': vm_conf['context'],
-            'src_folder': message_info['folder'].path,
-            'dest_folder': dest_folder.path,
+            'src_folder': message_info['folder'].path.decode('utf-8'),
+            'dest_folder': dest_folder.path.decode('utf-8'),
             'message_id': message_info['id'],
         }
         self._ari.xivo.moveVoicemailMessage(body=body)
@@ -54,7 +54,7 @@ class VoicemailsService:
         body = {
             'mailbox': vm_conf['number'],
             'context': vm_conf['context'],
-            'folder': message_info['folder'].path,
+            'folder': message_info['folder'].path.decode('utf-8'),
             'message_id': message_id,
         }
         self._ari.xivo.deleteVoicemailMessage(body=body)
