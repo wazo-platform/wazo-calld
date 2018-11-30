@@ -257,7 +257,7 @@ class ApplicationService:
                 continue
             yield make_node_from_bridge(bridge)
 
-    def originate(self, application, node_uuid, exten, context, autoanswer):
+    def originate(self, application, node_uuid, exten, context, autoanswer, variables=None):
         application_uuid = application['uuid']
         if not ami.extension_exists(self._amid, context, exten, 1):
             raise InvalidExtension(context, exten)
@@ -275,8 +275,12 @@ class ApplicationService:
             'variables': {'variables': {}}
         }
 
+        variables = variables or {}
         if autoanswer:
-            originate_kwargs['variables']['variables']['WAZO_AUTO_ANSWER'] = '1'
+            variables['WAZO_AUTO_ANSWER'] = '1'
+
+        for name, value in variables.items():
+            originate_kwargs['variables']['variables'][name] = value
 
         channel = self._ari.channels.originate(**originate_kwargs)
         variables = self.get_channel_variables(channel)

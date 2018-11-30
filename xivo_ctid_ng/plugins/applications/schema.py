@@ -34,6 +34,7 @@ class ApplicationCallRequestSchema(BaseSchema):
     exten = fields.String(validate=Length(min=1), required=True)
     context = fields.String(required=True)
     autoanswer = fields.Boolean(required=False, missing=False)
+    variables = fields.Dict(missing={})
 
 
 class ApplicationCallSchema(BaseSchema):
