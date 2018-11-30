@@ -338,7 +338,15 @@ class TestApplication(BaseApplicationTestCase):
             self.no_node_app_uuid,
             context,
             exten,
+            displayed_caller_id_name='Foo Bar',
+            displayed_caller_id_number='5555555555',
             variables=variables,
+        ).json()
+
+        channel = self.ari.channels.get(channelId=call['id']).json
+        assert_that(
+            channel,
+            has_entries(connected=has_entries(name='Foo Bar', number='5555555555')),
         )
 
         def event_received():
@@ -351,7 +359,7 @@ class TestApplication(BaseApplicationTestCase):
                         data=has_entries(
                             application_uuid=self.no_node_app_uuid,
                             call=has_entries(
-                                id=call.json()['id'],
+                                id=call['id'],
                                 is_caller=False,
                                 status='Up',
                                 on_hold=False,
@@ -372,7 +380,7 @@ class TestApplication(BaseApplicationTestCase):
             has_entries(
                 items=has_items(
                     has_entries(
-                        id=call.json()['id'],
+                        id=call['id'],
                         variables={'FOO': 'BAR'},
                     ),
                 ),
@@ -405,10 +413,17 @@ class TestApplication(BaseApplicationTestCase):
             node_uuid=self.node_app_uuid,
             context=context,
             exten=exten,
+            displayed_caller_id_name='Foo Bar',
+            displayed_caller_id_number='1234',
             variables={'X_WAZO_FOO': 'BAR'}
         ).json()
 
         assert_that(call, has_entries(variables={'FOO': 'BAR'}))
+
+        channel = self.ari.channels.get(channelId=call['id']).json
+        assert_that(
+            channel, has_entries(connected=has_entries(name='Foo Bar', number='1234'))
+        )
 
         def event_received():
             events = event_accumulator.accumulate()

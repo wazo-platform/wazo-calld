@@ -35,6 +35,8 @@ class ApplicationCallRequestSchema(BaseSchema):
     context = fields.String(required=True)
     autoanswer = fields.Boolean(required=False, missing=False)
     variables = fields.Dict(missing={})
+    displayed_caller_id_name = fields.String(missing='', validate=Length(max=256))
+    displayed_caller_id_number = fields.String(missing='', validate=Length(max=256))
 
 
 class ApplicationCallSchema(BaseSchema):

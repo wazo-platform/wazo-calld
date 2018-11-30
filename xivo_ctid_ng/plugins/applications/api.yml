@@ -596,6 +596,10 @@ definitions:
       variables:
         type: object
         description: channel variables that should be assigned on this new channel
+      displayed_caller_id_name:
+        type: string
+      displayed_caller_id_number:
+        type: string
     required:
       - exten
       - context

@@ -9,6 +9,11 @@ Changelog
   * `POST /applications/{application_uuid}/calls`
   * `POST /applications/{application_uuid}/nodes/{node_uuid}/calls`
 
+* The displayed caller id name and number can be specified on the following resources
+
+  * `POST /applications/{application_uuid}/calls`
+  * `POST /applications/{application_uuid}/nodes/{node_uuid}/calls`
+
 
 18.12
 -----
