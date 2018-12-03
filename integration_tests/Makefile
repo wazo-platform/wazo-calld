@@ -23,7 +23,7 @@ docker-pull:
 	docker pull wazopbx/wait
 	docker pull wazopbx/asterisk
 	docker pull wazopbx/xivo-amid
-	docker pull wazopbx/xivo-auth-mock
+	docker pull wazopbx/wazo-auth-mock
 	docker pull wazopbx/xivo-confd-mock
 
 clean:

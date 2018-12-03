@@ -26,7 +26,7 @@ services:
     command: gunicorn -b 0.0.0.0:5039 -k flask_sockets.worker mock_ari:app
 
   auth:
-    image: wazopbx/xivo-auth-mock
+    image: wazopbx/wazo-auth-mock
     ports:
       - 9497
     volumes:
