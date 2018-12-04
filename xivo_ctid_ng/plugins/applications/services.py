@@ -257,7 +257,17 @@ class ApplicationService:
                 continue
             yield make_node_from_bridge(bridge)
 
-    def originate(self, application, node_uuid, exten, context, autoanswer, variables=None):
+    def originate(
+            self,
+            application,
+            node_uuid,
+            exten,
+            context,
+            autoanswer,
+            displayed_caller_id_name,
+            displayed_caller_id_number,
+            variables=None,
+    ):
         application_uuid = application['uuid']
         if not ami.extension_exists(self._amid, context, exten, 1):
             raise InvalidExtension(context, exten)
@@ -274,6 +284,12 @@ class ApplicationService:
             'appArgs': ','.join(app_args),
             'variables': {'variables': {}}
         }
+
+        if displayed_caller_id_name or displayed_caller_id_number:
+            # an empty cid number will result in "asterisk" being displayed
+            number = displayed_caller_id_number or ' '
+            callerid = '"{}" <{}>'.format(displayed_caller_id_name, number)
+            originate_kwargs['callerId'] = callerid
 
         variables = variables or {}
         if autoanswer:
