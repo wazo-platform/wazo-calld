@@ -11,6 +11,7 @@ from marshmallow import (
 from xivo.mallow.validate import (
     Length,
     OneOf,
+    validate_string_dict,
 )
 from xivo_ctid_ng.helpers.mallow import StrictDict
 
@@ -34,7 +35,7 @@ class ApplicationCallRequestSchema(BaseSchema):
     exten = fields.String(validate=Length(min=1), required=True)
     context = fields.String(required=True)
     autoanswer = fields.Boolean(required=False, missing=False)
-    variables = fields.Dict(missing={})
+    variables = fields.Dict(validate=validate_string_dict, missing={})
     displayed_caller_id_name = fields.String(missing='', validate=Length(max=256))
     displayed_caller_id_number = fields.String(missing='', validate=Length(max=256))
 
