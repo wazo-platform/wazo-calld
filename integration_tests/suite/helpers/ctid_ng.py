@@ -89,9 +89,16 @@ class CtidNgClient:
         url = self.url('applications', application_uuid, 'playbacks', playback_id)
         return requests.delete(url, headers={'X-Auth-Token': token}, verify=False)
 
-    def application_new_call(self, application_uuid, context, exten, token=VALID_TOKEN):
+    def application_new_call(
+            self, application_uuid, context, exten,
+            variables=None,
+            token=VALID_TOKEN,
+    ):
         url = self.url('applications', application_uuid, 'calls')
         body = {'context': context, 'exten': exten}
+        if variables:
+            body['variables'] = variables
+
         return requests.post(url, json=body, headers={'X-Auth-Token': token}, verify=False)
 
     def application_new_node(self, application_uuid, calls=None, token=VALID_TOKEN):
@@ -101,9 +108,15 @@ class CtidNgClient:
         return requests.post(url, json=body, headers={'X-Auth-Token': token}, verify=False)
 
     def application_new_node_call(
-            self, application_uuid, node_uuid, context, exten, token=VALID_TOKEN):
+            self, application_uuid, node_uuid, context, exten,
+            variables=None,
+            token=VALID_TOKEN,
+    ):
         url = self.url('applications', application_uuid, 'nodes', node_uuid, 'calls')
         body = {'context': context, 'exten': exten}
+        if variables:
+            body['variables'] = variables
+
         return requests.post(url, json=body, headers={'X-Auth-Token': token}, verify=False)
 
     def application_node_add_call(self, application_uuid, node_uuid, call_id, token=VALID_TOKEN):

@@ -1,6 +1,15 @@
 Changelog
 =========
 
+18.14
+-----
+
+* Channel variables can now be specified on the following resources
+
+  * `POST /applications/{application_uuid}/calls`
+  * `POST /applications/{application_uuid}/nodes/{node_uuid}/calls`
+
+
 18.12
 -----
 

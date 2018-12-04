@@ -333,7 +333,13 @@ class TestApplication(BaseApplicationTestCase):
         routing_key = 'applications.{uuid}.#'.format(uuid=self.no_node_app_uuid)
         event_accumulator = self.bus.accumulator(routing_key)
 
-        call = self.ctid_ng.application_new_call(self.no_node_app_uuid, context, exten)
+        variables = {'X_WAZO_FOO': 'BAR'}
+        call = self.ctid_ng.application_new_call(
+            self.no_node_app_uuid,
+            context,
+            exten,
+            variables=variables,
+        )
 
         def event_received():
             events = event_accumulator.accumulate()
@@ -351,6 +357,7 @@ class TestApplication(BaseApplicationTestCase):
                                 on_hold=False,
                                 muted=False,
                                 node_uuid=None,
+                                variables={'FOO': 'BAR'},
                             )
                         )
                     )
@@ -363,7 +370,12 @@ class TestApplication(BaseApplicationTestCase):
         assert_that(
             response.json(),
             has_entries(
-                items=has_items(has_entries(id=call.json()['id'])),
+                items=has_items(
+                    has_entries(
+                        id=call.json()['id'],
+                        variables={'FOO': 'BAR'},
+                    ),
+                ),
             )
         )
 
@@ -393,7 +405,10 @@ class TestApplication(BaseApplicationTestCase):
             node_uuid=self.node_app_uuid,
             context=context,
             exten=exten,
-        )
+            variables={'X_WAZO_FOO': 'BAR'}
+        ).json()
+
+        assert_that(call, has_entries(variables={'FOO': 'BAR'}))
 
         def event_received():
             events = event_accumulator.accumulate()
@@ -405,11 +420,12 @@ class TestApplication(BaseApplicationTestCase):
                         data=has_entries(
                             application_uuid=self.node_app_uuid,
                             call=has_entries(
-                                id=call.json()['id'],
+                                id=call['id'],
                                 is_caller=False,
                                 status='Up',
                                 on_hold=False,
                                 node_uuid=None,
+                                variables={'FOO': 'BAR'},
                             )
                         )
                     ),
@@ -419,7 +435,7 @@ class TestApplication(BaseApplicationTestCase):
                             application_uuid=self.node_app_uuid,
                             node=has_entries(
                                 uuid=self.node_app_uuid,
-                                calls=contains(has_entries(id=call.json()['id']))
+                                calls=contains(has_entries(id=call['id']))
                             )
                         )
                     ),
@@ -428,7 +444,7 @@ class TestApplication(BaseApplicationTestCase):
                         data=has_entries(
                             application_uuid=self.node_app_uuid,
                             call=has_entries(
-                                id=call.json()['id'],
+                                id=call['id'],
                                 node_uuid=self.node_app_uuid,
                             )
                         )
@@ -442,14 +458,14 @@ class TestApplication(BaseApplicationTestCase):
         assert_that(
             response.json(),
             has_entries(
-                items=has_items(has_entries(id=call.json()['id'])),
+                items=has_items(has_entries(id=call['id'])),
             )
         )
         response = self.ctid_ng.get_application_node(self.node_app_uuid, self.node_app_uuid)
         assert_that(
             response.json(),
             has_entries(
-                calls=has_items(has_entries(id=call.json()['id'])),
+                calls=has_items(has_entries(id=call['id'])),
             )
         )
 
