@@ -274,7 +274,7 @@ class TransferStateStarting(TransferState):
                                                                               variables,
                                                                               timeout)
         except TransferCreationError as e:
-            logger.error(e.message, e.details)
+            logger.error('%s %s', e.message, e.details)
 
         return TransferStateRingback.from_state(self)
 
