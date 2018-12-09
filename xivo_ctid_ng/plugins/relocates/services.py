@@ -28,12 +28,13 @@ logger = logging.getLogger(__name__)
 
 class DestinationFactory:
 
-    def __init__(self, amid):
+    def __init__(self, amid, ari):
         self.amid = amid
+        self.ari = ari
 
-    def from_type(self, type_, details):
+    def from_type(self, type_, details, initiator_call):
         if type_ == 'interface':
-            return InterfaceDestination(details)
+            return InterfaceDestination(self.ari, details, initiator_call)
         elif type_ == 'extension':
             return ExtensionDestination(self.amid, details)
         raise NotImplementedError(type_)
@@ -56,8 +57,14 @@ class Destination:
 
 
 class InterfaceDestination(Destination):
-    def __init__(self, details):
-        self._interface = details['interface']
+    def __init__(self, ari, details, call):
+        interface = details['interface']
+
+        if interface.startswith('pjsip/'):
+            self._interface = self._find_pjsip_endpoint(ari, interface, details, call)
+        else:
+            self._interface = interface
+
         super().__init__(details)
 
     def is_valid(self):
@@ -65,6 +72,29 @@ class InterfaceDestination(Destination):
 
     def ari_endpoint(self):
         return self._interface
+
+    def _find_pjsip_endpoint(self, ari, interface, details, call):
+        aor = interface.split('/', 1)[1]
+        available_contacts = ari.channels.getChannelVariable(
+            channelId=call,
+            variable='PJSIP_DIAL_CONTACTS({})'.format(aor)
+        )['value'].split('&')
+
+        nb_contacts = len(available_contacts)
+        contact = details.get('contact')
+
+        if nb_contacts == 0:
+            raise InvalidDestination(details)
+        if not contact and nb_contacts == 1:
+            return available_contacts[0]
+        elif not contact:
+            raise InvalidDestination(details)
+        else:
+            for available_contact in available_contacts:
+                if contact in available_contact:
+                    return available_contact
+
+            raise InvalidDestination(details)
 
 
 class ExtensionDestination(Destination):
@@ -92,7 +122,7 @@ class RelocatesService:
         self.confd_client = confd_client
         self.notifier = notifier
         self.state_factory = state_factory
-        self.destination_factory = DestinationFactory(amid)
+        self.destination_factory = DestinationFactory(amid, ari)
         self.relocates = relocates
         self.duplicate_relocate_lock = threading.Lock()
 
@@ -121,7 +151,7 @@ class RelocatesService:
             raise RelocateCreationError('initiator call not found', details)
 
         try:
-            destination = self.destination_factory.from_type(destination, location)
+            destination = self.destination_factory.from_type(destination, location, initiator_call)
         except InvalidDestination:
             details = {'destination': destination, 'location': location}
             raise RelocateCreationError('invalid destination', details)

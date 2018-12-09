@@ -1,4 +1,4 @@
-# Copyright 2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 from marshmallow import (
@@ -16,6 +16,7 @@ VALID_COMPLETIONS = [
 
 class LineLocationSchema(Schema):
     line_id = fields.Integer(validate=Range(min=1), required=True)
+    contact = fields.String(required=False)
 
 
 class LocationField(fields.Field):

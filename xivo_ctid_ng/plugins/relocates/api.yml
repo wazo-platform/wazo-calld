@@ -110,6 +110,11 @@ definitions:
       line_id:
         type: integer
         description: the ID of the line where the relocated call should be connected
+      contact:
+        type: string
+        description: the SIP contact to use when multiple registers are used
+    required:
+      - line_id
   Relocate:
     type: object
     properties:
