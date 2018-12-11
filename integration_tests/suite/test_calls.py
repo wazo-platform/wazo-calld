@@ -511,7 +511,8 @@ class TestCreateCall(IntegrationTest):
                                                            'CALLERID(num)': 'my-extension',
                                                            'CONNECTEDLINE(name)': 'my-connected-line',
                                                            'CONNECTEDLINE(num)': 'my-extension',
-                                                           'XIVO_FIX_CALLERID': '1'})}),
+                                                           'XIVO_FIX_CALLERID': '1',
+                                                           'WAZO_CHANNEL_DIRECTION': 'to-wazo'})}),
         }))))
 
     def test_when_create_call_with_no_variables_then_default_variables_are_set(self):
@@ -534,7 +535,8 @@ class TestCreateCall(IntegrationTest):
                                                'CONNECTEDLINE(name)': 'my-extension',
                                                'CALLERID(name)': 'my-extension',
                                                'CALLERID(num)': 'my-extension',
-                                               'XIVO_FIX_CALLERID': '1'}}),
+                                               'XIVO_FIX_CALLERID': '1',
+                                               'WAZO_CHANNEL_DIRECTION': 'to-wazo'}}),
         }))))
 
     def test_when_create_call_with_pound_exten_then_connected_line_num_is_empty(self):
@@ -558,11 +560,10 @@ class TestCreateCall(IntegrationTest):
         assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
             'method': 'POST',
             'path': '/ari/channels',
-            'json': has_entries({'variables': {'CONNECTEDLINE(num)': '',
-                                               'CONNECTEDLINE(name)': '#pound',
-                                               'CALLERID(name)': '#pound',
-                                               'CALLERID(num)': '#pound',
-                                               'XIVO_FIX_CALLERID': '1'}}),
+            'json': has_entries({'variables': has_entries({'CONNECTEDLINE(num)': '',
+                                                           'CONNECTEDLINE(name)': '#pound',
+                                                           'CALLERID(name)': '#pound',
+                                                           'CALLERID(num)': '#pound'})}),
         }))))
 
     def test_create_call_with_multiple_lines(self):
@@ -915,7 +916,8 @@ class TestUserCreateCall(IntegrationTest):
                                                            'CONNECTEDLINE(num)': 'my-extension',
                                                            'CALLERID(name)': 'my-extension',
                                                            'CALLERID(num)': 'my-extension',
-                                                           'XIVO_FIX_CALLERID': '1'})}),
+                                                           'XIVO_FIX_CALLERID': '1',
+                                                           'WAZO_CHANNEL_DIRECTION': 'to-wazo'})}),
         }))))
 
     def test_when_create_call_with_no_variables_then_default_variables_are_set(self):
@@ -936,7 +938,8 @@ class TestUserCreateCall(IntegrationTest):
                                                'CONNECTEDLINE(num)': 'my-extension',
                                                'CALLERID(name)': 'my-extension',
                                                'CALLERID(num)': 'my-extension',
-                                               'XIVO_FIX_CALLERID': '1'}}),
+                                               'XIVO_FIX_CALLERID': '1',
+                                               'WAZO_CHANNEL_DIRECTION': 'to-wazo'}}),
         }))))
 
     def test_create_call_with_multiple_lines(self):
