@@ -128,6 +128,7 @@ class CallsService:
             variables.setdefault('CONNECTEDLINE(num)', '' if extension.startswith('#') else extension)
             variables.setdefault('CALLERID(name)', extension)
             variables.setdefault('CALLERID(num)', extension)
+            variables.setdefault('WAZO_CHANNEL_DIRECTION', 'to-wazo')
 
             channel = self._ari.channels.originate(endpoint=endpoint,
                                                    extension=extension,
