@@ -1,6 +1,14 @@
 Changelog
 =========
 
+19.01
+-----
+
+* Add the ability to specify a PJSIP contact on relocates using the `contact` field in the line location body
+
+  * `POST /users/me/relocates`
+
+
 18.14
 -----
 
