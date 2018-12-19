@@ -16,7 +16,7 @@ VALID_COMPLETIONS = [
 
 class LineLocationSchema(Schema):
     line_id = fields.Integer(validate=Range(min=1), required=True)
-    contact = fields.String(required=False)
+    contact = fields.String()
 
 
 class LocationField(fields.Field):
