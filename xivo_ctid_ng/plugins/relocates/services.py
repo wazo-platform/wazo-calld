@@ -57,7 +57,13 @@ class Destination:
 
 class InterfaceDestination(Destination):
     def __init__(self, details):
-        self._interface = details['interface']
+        interface = details['interface']
+
+        if interface.startswith('pjsip/'):
+            self._interface = details.get('contact') or interface
+        else:
+            self._interface = interface
+
         super().__init__(details)
 
     def is_valid(self):
@@ -155,7 +161,7 @@ class RelocatesService:
             except (InvalidUserUUID, InvalidUserLine):
                 raise RelocateCreationError('invalid line for user', details={'user_uuid': user_uuid, 'line_id': location['line_id']})
             destination = 'interface'
-            location = {'interface': destination_interface}
+            location['interface'] = destination_interface
             variables = {}
         elif destination == 'mobile':
             try:

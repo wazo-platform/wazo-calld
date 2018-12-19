@@ -3,6 +3,8 @@
 
 import logging
 
+from requests.exceptions import HTTPError
+
 from ari.exceptions import (
     ARIException,
     ARINotFound,
@@ -13,6 +15,7 @@ from xivo_ctid_ng.helpers import ami
 from xivo_ctid_ng.helpers.ari_ import Channel
 
 from .exceptions import (
+    RelocateCreationError,
     RelocateCancellationError,
     RelocateCompletionError,
 )
@@ -84,18 +87,25 @@ class RelocateStateReady(RelocateState):
     name = 'ready'
 
     def initiate(self, relocate, destination):
-        new_channel = self._ari.channels.originate(
-            endpoint=destination.ari_endpoint(),
-            app=DEFAULT_APPLICATION_NAME,
-            appArgs=['relocate', relocate.uuid, 'recipient'],
-            originator=relocate.relocated_channel,
-            variables={'variables': relocate.recipient_variables},
-            timeout=relocate.timeout,
-        )
-
-        relocate.recipient_channel = new_channel.id
-        relocate.set_state('recipient_ring')
-        relocate.events.publish('initiated', relocate)
+        endpoint = destination.ari_endpoint()
+        try:
+            new_channel = self._ari.channels.originate(
+                endpoint=endpoint,
+                app=DEFAULT_APPLICATION_NAME,
+                appArgs=['relocate', relocate.uuid, 'recipient'],
+                originator=relocate.relocated_channel,
+                variables={'variables': relocate.recipient_variables},
+                timeout=relocate.timeout,
+            )
+        except HTTPError:
+            logger.error('failed to relocate call. invalid endpoint: %s', endpoint)
+            relocate.set_state('ended')
+            relocate.events.publish('ended', relocate)
+            raise RelocateCreationError('failed to start the new call')
+        else:
+            relocate.recipient_channel = new_channel.id
+            relocate.set_state('recipient_ring')
+            relocate.events.publish('initiated', relocate)
 
 
 @state
