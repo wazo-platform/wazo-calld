@@ -3,6 +3,8 @@
 
 import logging
 
+from requests.exceptions import HTTPError
+
 from ari.exceptions import (
     ARIException,
     ARINotFound,
@@ -95,7 +97,7 @@ class RelocateStateReady(RelocateState):
                 variables={'variables': relocate.recipient_variables},
                 timeout=relocate.timeout,
             )
-        except ARIException:
+        except HTTPError:
             logger.error('failed to relocate call. invalid endpoint: %s', endpoint)
             relocate.set_state('ended')
             relocate.events.publish('ended', relocate)
