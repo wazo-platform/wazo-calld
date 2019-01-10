@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 from setuptools import setup
@@ -27,6 +27,7 @@ setup(
             'applications = xivo_ctid_ng.plugins.applications.plugin:Plugin',
             'calls = xivo_ctid_ng.plugins.calls.plugin:Plugin',
             'chats = xivo_ctid_ng.plugins.chats.plugin:Plugin',
+            'conferences = xivo_ctid_ng.plugins.conferences.plugin:Plugin',
             'mongooseim = xivo_ctid_ng.plugins.mongooseim.plugin:Plugin',
             'presences = xivo_ctid_ng.plugins.presences.plugin:Plugin',
             'relocates = xivo_ctid_ng.plugins.relocates.plugin:Plugin',

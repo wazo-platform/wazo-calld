@@ -1,4 +1,4 @@
-# Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 
@@ -106,6 +106,7 @@ _DEFAULT_CONFIG = {
         'applications': True,
         'calls': True,
         'chats': True,
+        'conferences': True,
         'mongooseim': True,
         'presences': True,
         'relocates': True,

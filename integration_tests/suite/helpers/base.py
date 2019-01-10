@@ -1,4 +1,4 @@
-# Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import ari
@@ -10,6 +10,7 @@ from ari.exceptions import ARINotFound
 from ari.exceptions import ARINotInStasis
 from contextlib import contextmanager
 from requests.packages import urllib3
+from xivo_ctid_ng_client import Client as RealCtidNgClient
 from xivo_test_helpers import until
 from xivo_test_helpers.asset_launching_test_case import AssetLaunchingTestCase
 from xivo_test_helpers.asset_launching_test_case import NoSuchService
@@ -21,7 +22,7 @@ from .auth import AuthClient
 from .bus import BusClient
 from .chan_test import ChanTest
 from .confd import ConfdClient
-from .constants import ASSET_ROOT
+from .constants import ASSET_ROOT, VALID_TOKEN
 from .ctid_ng import CtidNgClient
 from .stasis import StasisClient
 from .websocketd import WebsocketdClient
@@ -114,6 +115,10 @@ class IntegrationTest(AssetLaunchingTestCase):
         except (NoSuchService, NoSuchPort) as e:
             logger.debug(e)
             cls.bus = WrongClient('bus')
+
+    @classmethod
+    def make_ctid_ng(cls):
+        return RealCtidNgClient('localhost', cls.service_port(9500, 'ctid-ng'), verify_certificate=False, token=VALID_TOKEN)
 
     @classmethod
     @contextmanager

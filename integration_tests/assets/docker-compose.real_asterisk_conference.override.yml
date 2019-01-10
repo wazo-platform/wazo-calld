@@ -1,0 +1,42 @@
+version: '3.7'
+services:
+  sync:
+    depends_on:
+      - auth
+      - amid
+      - ari
+      - confd
+      - ctid-ng
+      - rabbitmq
+    environment:
+      TARGETS: "ari:5039 ari:5040 rabbitmq:5672 confd:9486 amid:9491 auth:9497 ctid-ng:9500"
+
+  amid:
+    image: wazopbx/xivo-amid
+    expose:
+      - "9491"
+    volumes:
+      - "./ssl:/usr/local/share/ssl"
+      - "./etc/xivo-amid:/etc/xivo-amid"
+    command: "xivo-amid -fd"
+
+  ari:
+    image: ari-real
+    expose:
+      - "5038"
+    ports:
+      - "5039"
+    volumes:
+      - "./etc/asterisk/ari.conf:/etc/asterisk/ari.conf"
+      - "./etc/asterisk/asterisk.conf:/etc/asterisk/asterisk.conf"
+      - "./etc/asterisk/extensions-conference.conf:/etc/asterisk/extensions.conf"
+      - "./etc/asterisk/http.conf:/etc/asterisk/http.conf"
+      - "./etc/asterisk/logger.conf:/etc/asterisk/logger.conf"
+      - "./etc/asterisk/manager.conf:/etc/asterisk/manager.conf"
+      - "./etc/asterisk/modules.conf:/etc/asterisk/modules.conf"
+      - "./ssl:/usr/local/share/ssl"
+    command: "asterisk -fT"
+
+  ctid-ng:
+    volumes:
+      - ./etc/xivo-ctid-ng/conf.d/20-real-asterisk.yml:/etc/xivo-ctid-ng/conf.d/20-real-asterisk.yml
