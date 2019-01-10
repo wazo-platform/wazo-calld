@@ -96,7 +96,15 @@ class TestListConferenceParticipants(TestConferences):
         }))
 
     def test_list_participants_with_no_confd(self):
-        pass
+        ctid_ng = self.make_ctid_ng()
+        wrong_id = 14
+
+        with self.confd_stopped():
+            assert_that(calling(ctid_ng.conferences.list_participants).with_args(wrong_id),
+                        raises(CtidNGError).matching(has_properties({
+                            'status_code': 503,
+                            'error_id': 'xivo-confd-unreachable',
+                        })))
 
     def test_list_participants_with_wrong_tenant(self):
         pass

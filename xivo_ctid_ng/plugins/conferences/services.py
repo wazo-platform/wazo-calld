@@ -5,7 +5,10 @@ import logging
 
 from marshmallow import ValidationError
 from requests import RequestException
-from xivo_ctid_ng.exceptions import XiVOAmidError
+from xivo_ctid_ng.exceptions import (
+    XiVOAmidError,
+    XiVOConfdUnreachable,
+)
 
 from .exceptions import (
     NoSuchConference,
@@ -23,7 +26,10 @@ class ConferencesService:
         self._confd = confd
 
     def list_participants(self, conference_id, tenant_uuid):
-        conferences = self._confd.conferences.list(tenant_uuid=tenant_uuid)['items']
+        try:
+            conferences = self._confd.conferences.list(tenant_uuid=tenant_uuid)['items']
+        except RequestException as e:
+            raise XiVOConfdUnreachable(self._confd, e)
         if conference_id not in (conference['id'] for conference in conferences):
             raise NoSuchConference(conference_id, tenant_uuid)
 
