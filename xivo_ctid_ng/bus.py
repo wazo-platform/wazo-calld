@@ -1,4 +1,4 @@
-# Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import kombu
@@ -84,6 +84,7 @@ class CoreBusConsumer(ConsumerMixin):
         status['bus_consumer']['status'] = Status.ok if self.is_running() else Status.fail
 
     def on_ami_event(self, event_type, callback):
+        logger.debug('Added callback on AMI event "%s"', event_type)
         self._queue.bindings.add(binding(self._exchange, routing_key='ami.{}'.format(event_type)))
         self._events_pubsub.subscribe(event_type, callback)
 
