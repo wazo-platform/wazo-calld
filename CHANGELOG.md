@@ -1,6 +1,14 @@
 Changelog
 =========
 
+19.02
+---
+
+* List participants of a conference
+
+  * `GET /conferences/{conference_id}/participants`
+
+
 19.01
 -----
 
