@@ -1,8 +1,6 @@
 # Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
-import uuid
-
 from ari.exceptions import ARINotFound
 from hamcrest import (
     assert_that,
@@ -38,10 +36,12 @@ class TestListConferenceParticipants(TestConferences):
 
     def given_call_in_conference(self, conference_extension, caller_id_name=None):
         caller_id_name = caller_id_name or 'caller for {}'.format(conference_extension)
-        channel = self.ari.channels.originate(endpoint=ENDPOINT_AUTOANSWER,
-                                              context='conferences',
-                                              extension=CONFERENCE1_EXTENSION,
-                                              variables={'variables': {'CALLERID(name)': caller_id_name}})
+        channel = self.ari.channels.originate(
+            endpoint=ENDPOINT_AUTOANSWER,
+            context='conferences',
+            extension=CONFERENCE1_EXTENSION,
+            variables={'variables': {'CALLERID(name)': caller_id_name}},
+        )
 
         def channel_is_talking(channel):
             try:
