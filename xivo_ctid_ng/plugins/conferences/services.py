@@ -27,7 +27,7 @@ class ConferencesService:
 
     def list_participants(self, conference_id, tenant_uuid):
         try:
-            conferences = self._confd.conferences.list(tenant_uuid=tenant_uuid)['items']
+            conferences = self._confd.conferences.list(tenant_uuid=tenant_uuid, recurse=True)['items']
         except RequestException as e:
             raise XiVOConfdUnreachable(self._confd, e)
         if conference_id not in (conference['id'] for conference in conferences):
