@@ -1,7 +1,8 @@
 # Copyright 2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
-from marshmallow import Schema, fields
+from marshmallow import Schema
+from xivo.mallow import fields
 
 
 class ParticipantSchema(Schema):

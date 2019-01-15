@@ -65,7 +65,7 @@ class ConferencesService:
             try:
                 participant = participant_schema.load(raw_participant).data
             except ValidationError as e:
-                raise ParticipantListError(conference_id, tenant_uuid, e)
+                raise ParticipantListError(conference_id, tenant_uuid, str(e))
             result.append(participant)
 
         return result
