@@ -57,7 +57,7 @@ class ConferencesService:
                 'caller_id_name': participant_list_item['CallerIDName'],
                 'caller_id_num': participant_list_item['CallerIDNum'],
                 'muted': participant_list_item['Muted'] == 'Yes',
-                'answered_time': participant_list_item['AnsweredTime'],
+                'join_time': participant_list_item['AnsweredTime'],
                 'admin': participant_list_item['Admin'] == 'Yes',
                 'language': participant_list_item['Language'],
                 'call_id': participant_list_item['Uniqueid'],

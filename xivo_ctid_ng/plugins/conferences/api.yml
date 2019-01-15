@@ -51,8 +51,8 @@ definitions:
       muted:
         description: Is the participant muted?
         type: boolean
-      answered_time:
-        description: For how many seconds has the participant been answered
+      join_time:
+        description: Elapsed seconds since the participant joined the conference
         type: integer
       admin:
         description: Is the participant an admin of the conference?

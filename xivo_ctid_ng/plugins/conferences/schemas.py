@@ -14,7 +14,7 @@ class ParticipantSchema(Schema):
     caller_id_name = fields.String()
     caller_id_number = fields.String()
     muted = fields.Boolean()
-    answered_time = fields.Integer()
+    join_time = fields.Integer()
     admin = fields.Boolean()
     language = fields.String()
     call_id = fields.String()
