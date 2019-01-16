@@ -105,6 +105,3 @@ class TestListConferenceParticipants(TestConferences):
                             'status_code': 503,
                             'error_id': 'xivo-confd-unreachable',
                         })))
-
-    def test_list_participants_with_wrong_tenant(self):
-        pass
