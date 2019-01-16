@@ -1,4 +1,4 @@
-# Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import requests
@@ -56,6 +56,13 @@ class ConfdClient:
         url = self.url('_set_response')
         body = {'response': 'switchboards',
                 'content': {switchboard.uuid(): switchboard.to_dict() for switchboard in mock_switchboards}}
+
+        requests.post(url, json=body, verify=False)
+
+    def set_conferences(self, *mock_conferences):
+        url = self.url('_set_response')
+        body = {'response': 'conferences',
+                'content': {conference.id(): conference.to_dict() for conference in mock_conferences}}
 
         requests.post(url, json=body, verify=False)
 
@@ -143,4 +150,31 @@ class MockSwitchboard:
         return {
             'uuid': self._uuid,
             'name': self._name
+        }
+
+
+class MockConference:
+
+    def __init__(self, id, name=None, extension=None, context=None):
+        self._id = id
+        self._name = name
+        self._extension = extension
+        self._context = context
+
+    def id(self):
+        return self._id
+
+    def to_dict(self):
+        extensions = []
+        if self._extension and self._context:
+            extensions = [
+                {
+                    'context': self._context,
+                    'exten': self._extension,
+                }
+            ]
+        return {
+            'id': self._id,
+            'name': self._name,
+            'extensions': extensions,
         }

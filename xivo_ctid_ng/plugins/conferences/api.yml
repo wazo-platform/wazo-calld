@@ -1,0 +1,65 @@
+paths:
+  /conferences/{conference_id}/participants:
+    get:
+      summary: List participants of a conference
+      description: '**Required ACL:** `ctid-ng.conferences.{conference_id}.participants.read`'
+      parameters:
+        - $ref: '#/parameters/ConferenceID'
+      tags:
+        - conferences
+      responses:
+        '200':
+          description: The list of participant is returned
+          schema:
+            $ref: '#/definitions/ParticipantList'
+        '404':
+          $ref: '#/responses/NoSuchConference'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+responses:
+  NoSuchConference:
+    description: The specified conference does not exist
+    schema:
+      $ref: '#/definitions/Error'
+parameters:
+  ConferenceID:
+    name: conference_id
+    in: path
+    description: Unique identifier of the conference
+    required: true
+    type: string
+definitions:
+  ParticipantList:
+    type: object
+    properties:
+      items:
+        type: array
+        items:
+          $ref: '#/definitions/Participant'
+  Participant:
+    type: object
+    properties:
+      id:
+        description: The participant's ID
+        type: string
+      caller_id_name:
+        description: The participant's name
+        type: string
+      caller_id_num:
+        description: The participant's number
+        type: string
+      muted:
+        description: Is the participant muted?
+        type: boolean
+      join_time:
+        description: Elapsed seconds since the participant joined the conference
+        type: integer
+      admin:
+        description: Is the participant an admin of the conference?
+        type: boolean
+      language:
+        description: The participant's language
+        type: string
+      call_id:
+        description: The ID of the participant's call
+        type: string
