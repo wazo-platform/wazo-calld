@@ -16,6 +16,22 @@ paths:
           $ref: '#/responses/NoSuchConference'
         '503':
           $ref: '#/responses/AnotherServiceUnavailable'
+  /conferences/{conference_id}/participants/{participant_id}:
+    delete:
+      summary: Kick participant from a conference
+      description: '**Required ACL:** `ctid-ng.conferences.{conference_id}.participants.{participant_id}.delete`'
+      parameters:
+        - $ref: '#/parameters/ConferenceID'
+        - $ref: '#/parameters/ParticipantID'
+      tags:
+        - conferences
+      responses:
+        '204':
+          description: The participant was kicked from the conference
+        '404':
+          $ref: '#/responses/NoSuchConference'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
 responses:
   NoSuchConference:
     description: The specified conference does not exist
@@ -26,6 +42,12 @@ parameters:
     name: conference_id
     in: path
     description: Unique identifier of the conference
+    required: true
+    type: string
+  ParticipantID:
+    name: participant_id
+    in: path
+    description: Unique identifier of the participant
     required: true
     type: string
 definitions:

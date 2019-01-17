@@ -4,9 +4,10 @@ Changelog
 19.02
 ---
 
-* List participants of a conference
+* New API for conferences:
 
   * `GET /conferences/{conference_id}/participants`
+  * `DELETE /conferences/{conference_id}/participants/{participant_id}`
 
 
 19.01
