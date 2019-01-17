@@ -28,13 +28,13 @@ class ConferencesService:
         self._ari = ari
         self._confd = confd
 
-    def list_participants(self, conference_id, tenant_uuid):
+    def list_participants(self, tenant_uuid, conference_id):
         try:
             conferences = self._confd.conferences.list(tenant_uuid=tenant_uuid, recurse=True)['items']
         except RequestException as e:
             raise XiVOConfdUnreachable(self._confd, e)
         if conference_id not in (conference['id'] for conference in conferences):
-            raise NoSuchConference(conference_id, tenant_uuid)
+            raise NoSuchConference(tenant_uuid, conference_id)
 
         try:
             participant_list = self._amid.action('ConfBridgeList', {'conference': conference_id})
@@ -48,7 +48,10 @@ class ConferencesService:
 
         if participant_list_result['Response'] != 'Success':
             message = participant_list_result['Message']
-            raise ConferenceParticipantError(conference_id, tenant_uuid, message)
+            raise ConferenceParticipantError(tenant_uuid,
+                                             conference_id,
+                                             participant_id=None,
+                                             message=message)
 
         result = []
         for participant_list_item in participant_list:
@@ -68,7 +71,10 @@ class ConferencesService:
             try:
                 participant = participant_schema.load(raw_participant).data
             except ValidationError as e:
-                raise ConferenceParticipantError(conference_id, tenant_uuid, str(e))
+                raise ConferenceParticipantError(tenant_uuid,
+                                                 conference_id,
+                                                 participant_id=None,
+                                                 message=str(e))
             result.append(participant)
 
         return result
@@ -80,9 +86,9 @@ class ConferencesService:
             raise XiVOConfdUnreachable(self._confd, e)
 
         if conference_id not in (conference['id'] for conference in conferences):
-            raise NoSuchConference(conference_id, tenant_uuid)
+            raise NoSuchConference(tenant_uuid, conference_id)
 
-        participants = self.list_participants(conference_id, tenant_uuid)
+        participants = self.list_participants(tenant_uuid, conference_id)
         if participant_id not in [participant['id'] for participant in participants]:
             raise NoSuchParticipant(tenant_uuid, conference_id, participant_id)
 
@@ -100,4 +106,4 @@ class ConferencesService:
         response = response_items[0]
         if response['Response'] != 'Success':
             message = response['Message']
-            raise ConferenceParticipantError(conference_id, tenant_uuid, message, participant_id)
+            raise ConferenceParticipantError(tenant_uuid, conference_id, participant_id, message)

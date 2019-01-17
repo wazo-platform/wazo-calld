@@ -5,7 +5,7 @@ from xivo.rest_api_helpers import APIException
 
 
 class NoSuchConference(APIException):
-    def __init__(self, conference_id, tenant_uuid):
+    def __init__(self, tenant_uuid, conference_id):
         super().__init__(
             status_code=404,
             message='No such conference: id "{}"'.format(conference_id),
@@ -34,7 +34,7 @@ class NoSuchParticipant(APIException):
 
 
 class ConferenceParticipantError(APIException):
-    def __init__(self, conference_id, tenant_uuid, message, participant_id=None):
+    def __init__(self, tenant_uuid, conference_id, participant_id, message):
         super().__init__(
             status_code=500,
             message='Error while operating on participants of conference "{}": "{}"'.format(conference_id, message),

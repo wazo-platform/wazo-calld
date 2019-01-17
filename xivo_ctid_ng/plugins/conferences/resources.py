@@ -17,7 +17,7 @@ class ParticipantsResource(AuthResource):
     @required_acl('ctid-ng.conferences.{conference_id}.participants.read')
     def get(self, conference_id):
         tenant = Tenant.autodetect()
-        participants = self._service.list_participants(conference_id, tenant.uuid)
+        participants = self._service.list_participants(tenant.uuid, conference_id)
         items = {
             'items': participant_schema.dump(participants, many=True).data,
             'total': len(participants),
