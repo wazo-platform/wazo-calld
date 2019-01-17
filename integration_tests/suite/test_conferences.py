@@ -53,6 +53,31 @@ class TestConferenceParticipants(TestConferences):
         until.assert_(channel_is_talking, channel, timeout=5)
         return channel.id
 
+    def test_list_participants_with_no_confd(self):
+        ctid_ng = self.make_ctid_ng()
+        wrong_id = 14
+
+        with self.confd_stopped():
+            assert_that(calling(ctid_ng.conferences.list_participants).with_args(wrong_id),
+                        raises(CtidNGError).matching(has_properties({
+                            'status_code': 503,
+                            'error_id': 'xivo-confd-unreachable',
+                        })))
+
+    def test_list_participants_with_no_amid(self):
+        ctid_ng = self.make_ctid_ng()
+        conference_id = CONFERENCE1_ID
+        self.confd.set_conferences(
+            MockConference(id=conference_id, name='conference'),
+        )
+
+        with self.amid_stopped():
+            assert_that(calling(ctid_ng.conferences.list_participants).with_args(conference_id),
+                        raises(CtidNGError).matching(has_properties({
+                            'status_code': 503,
+                            'error_id': 'xivo-amid-error',
+                        })))
+
     def test_list_participants_with_no_conferences(self):
         ctid_ng = self.make_ctid_ng()
         wrong_id = 14
@@ -94,31 +119,6 @@ class TestConferenceParticipants(TestConferences):
                 has_entry('caller_id_name', 'participant2'),
             )
         }))
-
-    def test_list_participants_with_no_confd(self):
-        ctid_ng = self.make_ctid_ng()
-        wrong_id = 14
-
-        with self.confd_stopped():
-            assert_that(calling(ctid_ng.conferences.list_participants).with_args(wrong_id),
-                        raises(CtidNGError).matching(has_properties({
-                            'status_code': 503,
-                            'error_id': 'xivo-confd-unreachable',
-                        })))
-
-    def test_list_participants_with_no_amid(self):
-        ctid_ng = self.make_ctid_ng()
-        conference_id = CONFERENCE1_ID
-        self.confd.set_conferences(
-            MockConference(id=conference_id, name='conference'),
-        )
-
-        with self.amid_stopped():
-            assert_that(calling(ctid_ng.conferences.list_participants).with_args(conference_id),
-                        raises(CtidNGError).matching(has_properties({
-                            'status_code': 503,
-                            'error_id': 'xivo-amid-error',
-                        })))
 
     def test_kick_participant_with_no_confd(self):
         ctid_ng = self.make_ctid_ng()
