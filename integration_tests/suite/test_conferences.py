@@ -106,6 +106,20 @@ class TestConferenceParticipants(TestConferences):
                             'error_id': 'xivo-confd-unreachable',
                         })))
 
+    def test_list_participants_with_no_amid(self):
+        ctid_ng = self.make_ctid_ng()
+        conference_id = CONFERENCE1_ID
+        self.confd.set_conferences(
+            MockConference(id=conference_id, name='conference'),
+        )
+
+        with self.amid_stopped():
+            assert_that(calling(ctid_ng.conferences.list_participants).with_args(conference_id),
+                        raises(CtidNGError).matching(has_properties({
+                            'status_code': 503,
+                            'error_id': 'xivo-amid-error',
+                        })))
+
     def test_kick_participant_with_no_confd(self):
         ctid_ng = self.make_ctid_ng()
         conference_id = 14
@@ -117,6 +131,24 @@ class TestConferenceParticipants(TestConferences):
                         raises(CtidNGError).matching(has_properties({
                             'status_code': 503,
                             'error_id': 'xivo-confd-unreachable',
+                        })))
+
+    def test_kick_participant_with_no_amid(self):
+        ctid_ng = self.make_ctid_ng()
+        conference_id = CONFERENCE1_ID
+        self.confd.set_conferences(
+            MockConference(id=conference_id, name='conference'),
+        )
+        self.given_call_in_conference(CONFERENCE1_EXTENSION, caller_id_name='participant1')
+        participants = ctid_ng.conferences.list_participants(conference_id)
+        participant = participants['items'][0]
+
+        with self.amid_stopped():
+            assert_that(calling(ctid_ng.conferences.kick_participant)
+                        .with_args(conference_id, participant['id']),
+                        raises(CtidNGError).matching(has_properties({
+                            'status_code': 503,
+                            'error_id': 'xivo-amid-error',
                         })))
 
     def test_kick_participant_with_no_conferences(self):

@@ -153,6 +153,17 @@ class IntegrationTest(AssetLaunchingTestCase):
             cls.reset_clients()
             until.true(cls.confd.is_up, tries=5)
 
+    @classmethod
+    @contextmanager
+    def amid_stopped(cls):
+        cls.stop_service('amid')
+        try:
+            yield
+        finally:
+            cls.start_service('amid')
+            cls.reset_clients()
+            until.true(cls.amid.is_up, tries=5)
+
 
 class RealAsteriskIntegrationTest(IntegrationTest):
     asset = 'real_asterisk'

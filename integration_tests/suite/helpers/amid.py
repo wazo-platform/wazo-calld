@@ -1,4 +1,4 @@
-# Copyright (C) 2015-2016 The Wazo Authors  (see AUTHORS file)
+# Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import requests
@@ -14,6 +14,14 @@ class AmidClient:
         return 'https://{host}:{port}/{path}'.format(host=self.host,
                                                      port=self.port,
                                                      path='/'.join(parts))
+
+    def is_up(self):
+        url = self.url()
+        try:
+            response = requests.get(url, verify=False)
+            return response.status_code == 404
+        except requests.RequestException:
+            return False
 
     def set_action_result(self, result):
         requests.post(self.url('_set_action'), json=result, verify=False)
