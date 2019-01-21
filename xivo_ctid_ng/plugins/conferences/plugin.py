@@ -5,8 +5,9 @@ from xivo_amid_client import Client as AmidClient
 from xivo_confd_client import Client as ConfdClient
 
 from .resources import (
-    ParticipantsResource,
+    ParticipantMuteResource,
     ParticipantResource,
+    ParticipantsResource,
 )
 from .bus_consume import ConferencesBusEventHandler
 from .notifier import ConferencesNotifier
@@ -36,3 +37,4 @@ class Plugin:
 
         api.add_resource(ParticipantsResource, '/conferences/<int:conference_id>/participants', resource_class_args=[conferences_service])
         api.add_resource(ParticipantResource, '/conferences/<int:conference_id>/participants/<participant_id>', resource_class_args=[conferences_service])
+        api.add_resource(ParticipantMuteResource, '/conferences/<int:conference_id>/participants/<participant_id>/mute', resource_class_args=[conferences_service])

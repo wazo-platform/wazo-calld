@@ -5,11 +5,13 @@ from ari.exceptions import ARINotFound
 from hamcrest import (
     assert_that,
     calling,
+    contains,
+    contains_inanyorder,
     empty,
     equal_to,
-    contains_inanyorder,
     has_entries,
     has_entry,
+    has_item,
     has_properties,
 )
 from xivo_test_helpers import until
@@ -231,3 +233,144 @@ class TestConferenceParticipants(TestConferences):
                 'items': empty()
             }))
         until.assert_(no_more_participants, timeout=5, message='Participant was not kicked')
+
+    def test_mute_participant_with_no_confd(self):
+        ctid_ng = self.make_ctid_ng()
+        conference_id = 14
+        participant_id = '12345.67'
+
+        with self.confd_stopped():
+            assert_that(calling(ctid_ng.conferences.mute_participant)
+                        .with_args(conference_id, participant_id),
+                        raises(CtidNGError).matching(has_properties({
+                            'status_code': 503,
+                            'error_id': 'xivo-confd-unreachable',
+                        })))
+            assert_that(calling(ctid_ng.conferences.unmute_participant)
+                        .with_args(conference_id, participant_id),
+                        raises(CtidNGError).matching(has_properties({
+                            'status_code': 503,
+                            'error_id': 'xivo-confd-unreachable',
+                        })))
+
+    def test_mute_participant_with_no_amid(self):
+        ctid_ng = self.make_ctid_ng()
+        conference_id = CONFERENCE1_ID
+        self.confd.set_conferences(
+            MockConference(id=conference_id, name='conference'),
+        )
+        self.given_call_in_conference(CONFERENCE1_EXTENSION, caller_id_name='participant1')
+        participants = ctid_ng.conferences.list_participants(conference_id)
+        participant = participants['items'][0]
+
+        with self.amid_stopped():
+            assert_that(calling(ctid_ng.conferences.mute_participant)
+                        .with_args(conference_id, participant['id']),
+                        raises(CtidNGError).matching(has_properties({
+                            'status_code': 503,
+                            'error_id': 'xivo-amid-error',
+                        })))
+            assert_that(calling(ctid_ng.conferences.unmute_participant)
+                        .with_args(conference_id, participant['id']),
+                        raises(CtidNGError).matching(has_properties({
+                            'status_code': 503,
+                            'error_id': 'xivo-amid-error',
+                        })))
+
+    def test_mute_participant_with_no_conferences(self):
+        ctid_ng = self.make_ctid_ng()
+        conference_id = 14
+        participant_id = '12345.67'
+
+        assert_that(calling(ctid_ng.conferences.mute_participant)
+                    .with_args(conference_id, participant_id),
+                    raises(CtidNGError).matching(has_properties({
+                        'status_code': 404,
+                        'error_id': 'no-such-conference',
+                    })))
+        assert_that(calling(ctid_ng.conferences.unmute_participant)
+                    .with_args(conference_id, participant_id),
+                    raises(CtidNGError).matching(has_properties({
+                        'status_code': 404,
+                        'error_id': 'no-such-conference',
+                    })))
+
+    def test_mute_participant_with_no_participants(self):
+        conference_id = CONFERENCE1_ID
+        participant_id = '12345.67'
+        self.confd.set_conferences(
+            MockConference(id=conference_id, name='conference'),
+        )
+        ctid_ng = self.make_ctid_ng()
+
+        assert_that(calling(ctid_ng.conferences.mute_participant)
+                    .with_args(conference_id, participant_id),
+                    raises(CtidNGError).matching(has_properties({
+                        'status_code': 404,
+                        'error_id': 'no-such-participant',
+                    })))
+        assert_that(calling(ctid_ng.conferences.unmute_participant)
+                    .with_args(conference_id, participant_id),
+                    raises(CtidNGError).matching(has_properties({
+                        'status_code': 404,
+                        'error_id': 'no-such-participant',
+                    })))
+
+    def test_mute_unmute_participant(self):
+        ctid_ng = self.make_ctid_ng()
+        conference_id = CONFERENCE1_ID
+        self.confd.set_conferences(
+            MockConference(id=conference_id, name='conference'),
+        )
+        self.given_call_in_conference(CONFERENCE1_EXTENSION, caller_id_name='participant1')
+        participants = ctid_ng.conferences.list_participants(conference_id)
+        participant = participants['items'][0]
+
+        ctid_ng.conferences.mute_participant(conference_id, participant['id'])
+
+        def participant_is_muted():
+            participants = ctid_ng.conferences.list_participants(conference_id)
+            assert_that(participants, has_entries({
+                'total': 1,
+                'items': contains(has_entry('muted', True))
+            }))
+        until.assert_(participant_is_muted, timeout=5, message='Participant was not muted')
+
+        ctid_ng.conferences.unmute_participant(conference_id, participant['id'])
+
+        def participant_is_not_muted():
+            participants = ctid_ng.conferences.list_participants(conference_id)
+            assert_that(participants, has_entries({
+                'total': 1,
+                'items': contains(has_entry('muted', False))
+            }))
+        until.assert_(participant_is_not_muted, timeout=5, message='Participant is still muted')
+
+    def test_mute_unmute_participant_send_events(self):
+        ctid_ng = self.make_ctid_ng()
+        conference_id = CONFERENCE1_ID
+        self.confd.set_conferences(
+            MockConference(id=conference_id, name='conference'),
+        )
+        self.given_call_in_conference(CONFERENCE1_EXTENSION, caller_id_name='participant1')
+        participants = ctid_ng.conferences.list_participants(conference_id)
+        participant = participants['items'][0]
+        mute_bus_events = self.bus.accumulator('conferences.{}.participants.mute'.format(conference_id))
+
+        ctid_ng.conferences.mute_participant(conference_id, participant['id'])
+
+        def participant_muted_event_received(muted):
+            assert_that(mute_bus_events.accumulate(), has_item(has_entries({
+                'name': 'conference_participant_muted' if muted else 'conference_participant_unmuted',
+                'data': has_entries({
+                    'id': participant['id'],
+                    'conference_id': conference_id,
+                    'muted': muted,
+                })
+            })))
+
+        until.assert_(participant_muted_event_received, muted=True, timeout=5, message='Mute event was not received')
+
+        ctid_ng.conferences.unmute_participant(conference_id, participant['id'])
+
+        until.assert_(participant_muted_event_received, muted=True, timeout=5, message='Unmute event was not received')

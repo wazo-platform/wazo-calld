@@ -6,6 +6,8 @@
 
   * `GET /conferences/{conference_id}/participants`
   * `DELETE /conferences/{conference_id}/participants/{participant_id}`
+  * `POST /conferences/{conference_id}/participants/{participant_id}/mute`
+  * `DELETE /conferences/{conference_id}/participants/{participant_id}/mute`
 
 
 ## 19.01

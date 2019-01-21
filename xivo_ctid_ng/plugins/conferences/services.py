@@ -107,3 +107,61 @@ class ConferencesService:
         if response['Response'] != 'Success':
             message = response['Message']
             raise ConferenceParticipantError(tenant_uuid, conference_id, participant_id, message)
+
+    def mute_participant(self, tenant_uuid, conference_id, participant_id):
+        try:
+            conferences = self._confd.conferences.list(tenant_uuid=tenant_uuid, recurse=True)['items']
+        except RequestException as e:
+            raise XiVOConfdUnreachable(self._confd, e)
+
+        if conference_id not in (conference['id'] for conference in conferences):
+            raise NoSuchConference(tenant_uuid, conference_id)
+
+        participants = self.list_participants(tenant_uuid, conference_id)
+        if participant_id not in [participant['id'] for participant in participants]:
+            raise NoSuchParticipant(tenant_uuid, conference_id, participant_id)
+
+        try:
+            channel = self._ari.channels.get(channelId=participant_id)
+        except ARINotFound:
+            raise NoSuchParticipant(tenant_uuid, conference_id, participant_id)
+
+        try:
+            response_items = self._amid.action('ConfbridgeMute', {'conference': conference_id,
+                                                                  'channel': channel.json['name']})
+        except RequestException as e:
+            raise XiVOAmidError(self._amid, e)
+
+        response = response_items[0]
+        if response['Response'] != 'Success':
+            message = response['Message']
+            raise ConferenceParticipantError(tenant_uuid, conference_id, participant_id, message)
+
+    def unmute_participant(self, tenant_uuid, conference_id, participant_id):
+        try:
+            conferences = self._confd.conferences.list(tenant_uuid=tenant_uuid, recurse=True)['items']
+        except RequestException as e:
+            raise XiVOConfdUnreachable(self._confd, e)
+
+        if conference_id not in (conference['id'] for conference in conferences):
+            raise NoSuchConference(tenant_uuid, conference_id)
+
+        participants = self.list_participants(tenant_uuid, conference_id)
+        if participant_id not in [participant['id'] for participant in participants]:
+            raise NoSuchParticipant(tenant_uuid, conference_id, participant_id)
+
+        try:
+            channel = self._ari.channels.get(channelId=participant_id)
+        except ARINotFound:
+            raise NoSuchParticipant(tenant_uuid, conference_id, participant_id)
+
+        try:
+            response_items = self._amid.action('ConfbridgeUnmute', {'conference': conference_id,
+                                                                    'channel': channel.json['name']})
+        except RequestException as e:
+            raise XiVOAmidError(self._amid, e)
+
+        response = response_items[0]
+        if response['Response'] != 'Success':
+            message = response['Message']
+            raise ConferenceParticipantError(tenant_uuid, conference_id, participant_id, message)
