@@ -120,6 +120,40 @@ class TestConferenceParticipants(TestConferences):
             )
         }))
 
+    def test_participant_joins_sends_event(self):
+        conference_id = CONFERENCE1_ID
+        self.confd.set_conferences(
+            MockConference(id=conference_id, name='conference'),
+        )
+        bus_events = self.bus.accumulator('conferences.{}.participants.joined'.format(conference_id))
+
+        self.given_call_in_conference(CONFERENCE1_EXTENSION, caller_id_name='participant1')
+
+        def participant_joined_event_received(expected_caller_id_name):
+            caller_id_names = [event['data']['caller_id_name']
+                               for event in bus_events.accumulate()]
+            return expected_caller_id_name in caller_id_names
+
+        until.true(participant_joined_event_received, 'participant1', tries=3)
+
+    def test_participant_leaves_sends_event(self):
+        conference_id = CONFERENCE1_ID
+        self.confd.set_conferences(
+            MockConference(id=conference_id, name='conference'),
+        )
+        bus_events = self.bus.accumulator('conferences.{}.participants.left'.format(conference_id))
+
+        channel_id = self.given_call_in_conference(CONFERENCE1_EXTENSION, caller_id_name='participant1')
+
+        self.ari.channels.get(channelId=channel_id).hangup()
+
+        def participant_left_event_received(expected_caller_id_name):
+            caller_id_names = [event['data']['caller_id_name']
+                               for event in bus_events.accumulate()]
+            return expected_caller_id_name in caller_id_names
+
+        until.true(participant_left_event_received, 'participant1', tries=3)
+
     def test_kick_participant_with_no_confd(self):
         ctid_ng = self.make_ctid_ng()
         conference_id = 14
