@@ -346,6 +346,26 @@ class TestConferenceParticipants(TestConferences):
             }))
         until.assert_(participant_is_not_muted, timeout=5, message='Participant is still muted')
 
+    def test_mute_unmute_participant_twice(self):
+        ctid_ng = self.make_ctid_ng()
+        conference_id = CONFERENCE1_ID
+        self.confd.set_conferences(
+            MockConference(id=conference_id, name='conference'),
+        )
+        self.given_call_in_conference(CONFERENCE1_EXTENSION, caller_id_name='participant1')
+        participants = ctid_ng.conferences.list_participants(conference_id)
+        participant = participants['items'][0]
+
+        ctid_ng.conferences.mute_participant(conference_id, participant['id'])
+        ctid_ng.conferences.mute_participant(conference_id, participant['id'])
+
+        # no error
+
+        ctid_ng.conferences.unmute_participant(conference_id, participant['id'])
+        ctid_ng.conferences.unmute_participant(conference_id, participant['id'])
+
+        # no error
+
     def test_mute_unmute_participant_send_events(self):
         ctid_ng = self.make_ctid_ng()
         conference_id = CONFERENCE1_ID
