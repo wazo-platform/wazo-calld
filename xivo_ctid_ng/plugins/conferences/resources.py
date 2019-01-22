@@ -17,9 +17,21 @@ class ParticipantsResource(AuthResource):
     @required_acl('ctid-ng.conferences.{conference_id}.participants.read')
     def get(self, conference_id):
         tenant = Tenant.autodetect()
-        participants = self._service.list_participants(conference_id, tenant.uuid)
+        participants = self._service.list_participants(tenant.uuid, conference_id)
         items = {
             'items': participant_schema.dump(participants, many=True).data,
             'total': len(participants),
         }
         return items, 200
+
+
+class ParticipantResource(AuthResource):
+
+    def __init__(self, conferences_service):
+        self._service = conferences_service
+
+    @required_acl('ctid-ng.conferences.{conference_id}.participants.{participant_id}.delete')
+    def delete(self, conference_id, participant_id):
+        tenant = Tenant.autodetect()
+        self._service.kick_participant(tenant.uuid, conference_id, participant_id)
+        return '', 204

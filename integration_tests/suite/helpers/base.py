@@ -146,10 +146,23 @@ class IntegrationTest(AssetLaunchingTestCase):
     @contextmanager
     def confd_stopped(cls):
         cls.stop_service('confd')
-        yield
-        cls.start_service('confd')
-        cls.reset_clients()
-        until.true(cls.confd.is_up, tries=5)
+        try:
+            yield
+        finally:
+            cls.start_service('confd')
+            cls.reset_clients()
+            until.true(cls.confd.is_up, tries=5)
+
+    @classmethod
+    @contextmanager
+    def amid_stopped(cls):
+        cls.stop_service('amid')
+        try:
+            yield
+        finally:
+            cls.start_service('amid')
+            cls.reset_clients()
+            until.true(cls.amid.is_up, tries=5)
 
 
 class RealAsteriskIntegrationTest(IntegrationTest):

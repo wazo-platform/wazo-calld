@@ -1,24 +1,21 @@
-Changelog
-=========
+# Changelog
 
-19.02
----
+## 19.02
 
-* List participants of a conference
+* New API for conferences:
 
   * `GET /conferences/{conference_id}/participants`
+  * `DELETE /conferences/{conference_id}/participants/{participant_id}`
 
 
-19.01
------
+## 19.01
 
 * Add the ability to specify a PJSIP contact on relocates using the `contact` field in the line location body
 
   * `POST /users/me/relocates`
 
 
-18.14
------
+## 18.14
 
 * Channel variables can now be specified on the following resources
 
@@ -31,15 +28,13 @@ Changelog
   * `POST /applications/{application_uuid}/nodes/{node_uuid}/calls`
 
 
-18.12
------
+## 18.12
 
 * The body of endpoint `GET /status` has been added a new subkey `status`.
 * The applications calls now contain the snoop fields which list snoop membership
 
 
-18.11
------
+## 18.11
 
 * New API to start and stop music on hold on a call in an application
 
@@ -67,8 +62,7 @@ Changelog
   * `PUT /applications/{application_uuid}/calls/{call_id}/mute/stop`
 
 
-18.10
------
+## 18.10
 
 * A new API to create custom applications has been added
 
@@ -87,8 +81,7 @@ Changelog
   * `DELETE /applications/{application_uuid}/playbacks/{playback_uuid}`
 
 
-17.17
-------
+## 17.17
 
 * New API for relocating calls:
 
@@ -99,8 +92,7 @@ Changelog
   * `dialed_extension`
 
 
-17.15
------
+## 17.15
 
 * New APIs for relocating calls:
 
@@ -109,16 +101,14 @@ Changelog
   * `PUT /users/me/relocates/{relocate_uuid}/complete`
 
 
-17.12
------
+## 17.12
 
 * A new API for getting chat history:
 
   * GET `/1.0/users/me/chats`
 
 
-17.05
------
+## 17.05
 
 * New attribute `is_caller` for Call objects in routes:
 
@@ -126,8 +116,7 @@ Changelog
   * `GET /calls/{call_id}`
   * `GET,POST /users/me/calls`
 
-17.03
------
+## 17.03
 
 * New routes for switchboard operations. This is not (yet) related to the current switchboard
   implementation.
@@ -136,8 +125,7 @@ Changelog
   * `PUT /1.0/switchboards/{switchboard_uuid}/calls/held/{call_id}`
   * `PUT /1.0/switchboards/{switchboard_uuid}/calls/held/{call_id}/answer`
 
-17.02
------
+## 17.02
 
 * A new API for switchboard operations. This is not (yet) related to the current switchboard
   implementation.
@@ -145,15 +133,13 @@ Changelog
   * `GET /1.0/switchboards/{switchboard_uuid}/calls/queued`
   * `PUT /1.0/switchboards/{switchboard_uuid}/calls/queued/{call_id}/answer`
 
-17.01
------
+## 17.01
 
 * A new parameter for call creation (`POST /calls` and `POST /users/me/calls`)
 
   * `from_mobile`
 
-16.16
------
+## 16.16
 
 * A new API for managing voicemails messages:
 
@@ -181,24 +167,21 @@ Changelog
     * POST `/1.0/users/me/calls`
 
 
-16.11
------
+## 16.11
 
 * A new API for getting the status of lines:
 
     * GET `/1.0/lines/{id}/presences`
 
 
-16.10
------
+## 16.10
 
 * A new API for checking the status of the daemon:
 
     * GET `/1.0/status`
 
 
-16.09
------
+## 16.09
 
 * A new API for updating user presences:
 
@@ -222,8 +205,7 @@ Changelog
 * Originates (POST `/*/calls`) now return 400 if an invalid extension is given.
 
 
-16.08
------
+## 16.08
 
 * A new API for making calls from the authenticated user:
 
