@@ -25,7 +25,7 @@ class ConferencesBusEventHandler:
         raw_participant = {
             'id': event['Uniqueid'],
             'caller_id_name': event['CallerIDName'],
-            'caller_id_num': event['CallerIDNum'],
+            'caller_id_number': event['CallerIDNum'],
             'muted': event['Muted'] == 'Yes',
             'answered_time': 0,
             'admin': event['Admin'] == 'Yes',
@@ -43,7 +43,7 @@ class ConferencesBusEventHandler:
         raw_participant = {
             'id': event['Uniqueid'],
             'caller_id_name': event['CallerIDName'],
-            'caller_id_num': event['CallerIDNum'],
+            'caller_id_number': event['CallerIDNum'],
             'muted': False,
             'answered_time': '0',
             'admin': event['Admin'] == 'Yes',
@@ -61,7 +61,7 @@ class ConferencesBusEventHandler:
         raw_participant = {
             'id': event['Uniqueid'],
             'caller_id_name': event['CallerIDName'],
-            'caller_id_num': event['CallerIDNum'],
+            'caller_id_number': event['CallerIDNum'],
             'muted': True,
             'answered_time': '0',
             'admin': event['Admin'] == 'Yes',
@@ -79,7 +79,7 @@ class ConferencesBusEventHandler:
         raw_participant = {
             'id': event['Uniqueid'],
             'caller_id_name': event['CallerIDName'],
-            'caller_id_num': event['CallerIDNum'],
+            'caller_id_number': event['CallerIDNum'],
             'muted': False,
             'answered_time': '0',
             'admin': event['Admin'] == 'Yes',

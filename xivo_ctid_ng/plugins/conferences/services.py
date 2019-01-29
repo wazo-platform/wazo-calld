@@ -61,7 +61,7 @@ class ConferencesService:
             raw_participant = {
                 'id': participant_list_item['Uniqueid'],
                 'caller_id_name': participant_list_item['CallerIDName'],
-                'caller_id_num': participant_list_item['CallerIDNum'],
+                'caller_id_number': participant_list_item['CallerIDNum'],
                 'muted': participant_list_item['Muted'] == 'Yes',
                 'join_time': participant_list_item['AnsweredTime'],
                 'admin': participant_list_item['Admin'] == 'Yes',
