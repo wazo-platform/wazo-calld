@@ -518,3 +518,28 @@ class TestConferenceParticipants(TestConferences):
                         'status_code': 400,
                         'error_id': 'conference-not-recorded',
                     })))
+
+    def test_record_send_events(self):
+        ctid_ng = self.make_ctid_ng()
+        conference_id = CONFERENCE1_ID
+        self.confd.set_conferences(
+            MockConference(id=conference_id, name='conference'),
+        )
+        self.given_call_in_conference(CONFERENCE1_EXTENSION, caller_id_name='participant1')
+        record_bus_events = self.bus.accumulator('conferences.{}.record'.format(conference_id))
+
+        ctid_ng.conferences.record(conference_id)
+
+        def record_event_received(record):
+            assert_that(record_bus_events.accumulate(), has_item(has_entries({
+                'name': 'conference_record_started' if record else 'conference_record_stopped',
+                'data': has_entries({
+                    'id': conference_id,
+                })
+            })))
+
+        until.assert_(record_event_received, record=True, timeout=5, message='Record start event was not received')
+
+        ctid_ng.conferences.stop_record(conference_id)
+
+        until.assert_(record_event_received, record=False, timeout=5, message='Record stop event was not received')
