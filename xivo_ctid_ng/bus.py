@@ -89,11 +89,11 @@ class CoreBusConsumer(ConsumerMixin):
         self._events_pubsub.subscribe(event_type, callback)
 
     def _on_bus_message(self, body, message):
-        event = body['data']
         try:
+            event = body['data']
             event_type = event['Event']
         except KeyError:
-            logger.error('Invalid AMI event message received: %s', event)
+            logger.error('Invalid event message received: %s', event)
         else:
             self._events_pubsub.publish(event_type, event)
         finally:
