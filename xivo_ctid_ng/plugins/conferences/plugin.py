@@ -7,6 +7,7 @@ from xivo_confd_client import Client as ConfdClient
 from .resources import (
     ParticipantMuteResource,
     ParticipantResource,
+    ParticipantUnmuteResource,
     ParticipantsResource,
 )
 from .bus_consume import ConferencesBusEventHandler
@@ -38,3 +39,4 @@ class Plugin:
         api.add_resource(ParticipantsResource, '/conferences/<int:conference_id>/participants', resource_class_args=[conferences_service])
         api.add_resource(ParticipantResource, '/conferences/<int:conference_id>/participants/<participant_id>', resource_class_args=[conferences_service])
         api.add_resource(ParticipantMuteResource, '/conferences/<int:conference_id>/participants/<participant_id>/mute', resource_class_args=[conferences_service])
+        api.add_resource(ParticipantUnmuteResource, '/conferences/<int:conference_id>/participants/<participant_id>/unmute', resource_class_args=[conferences_service])

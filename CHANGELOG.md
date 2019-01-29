@@ -1,5 +1,13 @@
 # Changelog
 
+## 19.03
+
+Modification of conference mute API:
+
+  * `PUT /conferences/{conference_id}/participants/{participant_id}/mute`
+  * `PUT /conferences/{conference_id}/participants/{participant_id}/unmute`
+
+
 ## 19.02
 
 * New API for conferences:

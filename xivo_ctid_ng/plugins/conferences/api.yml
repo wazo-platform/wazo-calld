@@ -33,9 +33,9 @@ paths:
         '503':
           $ref: '#/responses/AnotherServiceUnavailable'
   /conferences/{conference_id}/participants/{participant_id}/mute:
-    post:
+    put:
       summary: Mute a participant in a conference
-      description: '**Required ACL:** `ctid-ng.conferences.{conference_id}.participants.{participant_id}.mute.create`'
+      description: '**Required ACL:** `ctid-ng.conferences.{conference_id}.participants.{participant_id}.mute.update`'
       parameters:
         - $ref: '#/parameters/ConferenceID'
         - $ref: '#/parameters/ParticipantID'
@@ -48,9 +48,10 @@ paths:
           $ref: '#/responses/NoSuchConference'
         '503':
           $ref: '#/responses/AnotherServiceUnavailable'
-    delete:
+  /conferences/{conference_id}/participants/{participant_id}/unmute:
+    put:
       summary: Unmute a participant in a conference
-      description: '**Required ACL:** `ctid-ng.conferences.{conference_id}.participants.{participant_id}.mute.delete`'
+      description: '**Required ACL:** `ctid-ng.conferences.{conference_id}.participants.{participant_id}.unmute.update`'
       parameters:
         - $ref: '#/parameters/ConferenceID'
         - $ref: '#/parameters/ParticipantID'

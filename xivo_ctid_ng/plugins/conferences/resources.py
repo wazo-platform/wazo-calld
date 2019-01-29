@@ -42,14 +42,20 @@ class ParticipantMuteResource(AuthResource):
     def __init__(self, conferences_service):
         self._service = conferences_service
 
-    @required_acl('ctid-ng.conferences.{conference_id}.participants.{participant_id}.mute.create')
-    def post(self, conference_id, participant_id):
+    @required_acl('ctid-ng.conferences.{conference_id}.participants.{participant_id}.mute.update')
+    def put(self, conference_id, participant_id):
         tenant = Tenant.autodetect()
         self._service.mute_participant(tenant.uuid, conference_id, participant_id)
         return '', 204
 
-    @required_acl('ctid-ng.conferences.{conference_id}.participants.{participant_id}.mute.delete')
-    def delete(self, conference_id, participant_id):
+
+class ParticipantUnmuteResource(AuthResource):
+
+    def __init__(self, conferences_service):
+        self._service = conferences_service
+
+    @required_acl('ctid-ng.conferences.{conference_id}.participants.{participant_id}.unmute.update')
+    def put(self, conference_id, participant_id):
         tenant = Tenant.autodetect()
         self._service.unmute_participant(tenant.uuid, conference_id, participant_id)
         return '', 204
