@@ -543,3 +543,46 @@ class TestConferenceParticipants(TestConferences):
         ctid_ng.conferences.stop_record(conference_id)
 
         until.assert_(record_event_received, record=False, timeout=5, message='Record stop event was not received')
+
+    def test_participant_talking_sends_event(self):
+        ctid_ng = self.make_ctid_ng()
+        conference_id = CONFERENCE1_ID
+        self.confd.set_conferences(
+            MockConference(id=conference_id, name='conference'),
+        )
+        bus_events = self.bus.accumulator('conferences.{}.participants.talking'.format(conference_id))
+
+        channel_id = self.given_call_in_conference(CONFERENCE1_EXTENSION, caller_id_name='participant1')
+        participants = ctid_ng.conferences.list_participants(conference_id)
+        participant = participants['items'][0]
+
+        def talking_event_received(talking):
+            assert_that(bus_events.accumulate(), has_item(has_entries({
+                'name': 'participant_started_talking' if talking else 'participant_stopped_talking',
+                'data': has_entries({
+                    'id': participant['id'],
+                    'conference_id': conference_id,
+                })
+            })))
+
+        until.assert_(talking_event_received, talking=True, timeout=5, message='Talking start event was not received')
+
+        # send fake "stopped talking" AMI event
+        self.bus.publish(
+            {
+                'name': 'ConfbridgeTalking',
+                'data': {
+                    'Event': 'ConfbridgeTalking',
+                    'Conference': conference_id,
+                    'CallerIDNum': participant['caller_id_number'],
+                    'CallerIDName': participant['caller_id_name'],
+                    'Admin': 'No',
+                    'Language': participant['language'],
+                    'Uniqueid': participant['id'],
+                    'TalkingStatus': 'off',
+                }
+            },
+            routing_key='ami.ConfbridgeTalking'
+        )
+
+        until.assert_(talking_event_received, talking=False, timeout=5, message='Talking stop event was not received')
