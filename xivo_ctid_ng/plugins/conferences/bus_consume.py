@@ -125,6 +125,6 @@ class ConferencesBusEventHandler:
         participant = participant_schema.load(raw_participant).data
 
         if talking:
-            self._notifier.participant_started_talking(conference_id, participant)
+            self._notifier.participant_talk_started(conference_id, participant)
         else:
-            self._notifier.participant_stopped_talking(conference_id, participant)
+            self._notifier.participant_talk_stopped(conference_id, participant)
