@@ -140,7 +140,7 @@ class TestConferenceParticipants(TestConferences):
                                for event in bus_events.accumulate()]
             return expected_caller_id_name in caller_id_names
 
-        until.true(participant_joined_event_received, 'participant1', tries=3)
+        until.true(participant_joined_event_received, 'participant1', timeout=5)
 
     def test_participant_leaves_sends_event(self):
         conference_id = CONFERENCE1_ID
@@ -158,7 +158,7 @@ class TestConferenceParticipants(TestConferences):
                                for event in bus_events.accumulate()]
             return expected_caller_id_name in caller_id_names
 
-        until.true(participant_left_event_received, 'participant1', tries=3)
+        until.true(participant_left_event_received, 'participant1', timeout=5)
 
     def test_kick_participant_with_no_confd(self):
         ctid_ng = self.make_ctid_ng()
