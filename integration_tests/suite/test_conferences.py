@@ -16,6 +16,7 @@ from hamcrest import (
     has_item,
     has_properties,
     is_,
+    less_than,
 )
 from xivo_test_helpers import until
 from xivo_test_helpers.hamcrest.raises import raises
@@ -477,21 +478,30 @@ class TestConferenceParticipants(TestConferences):
         )
         self.given_call_in_conference(CONFERENCE1_EXTENSION, caller_id_name='participant1')
 
+        def latest_record_file():
+            record_files = self.docker_exec(['ls', '-t', '/var/spool/asterisk/monitor'], 'ari')
+            latest_record_file = record_files.split(b'\n')[0].decode('utf-8')
+            return os.path.join('/var/spool/asterisk/monitor', latest_record_file)
+
         def file_size(file_path):
             return int(self.docker_exec(['stat', '-c', '%s', file_path], 'ari').strip())
 
         def record_file_is_growing():
-            record_files = self.docker_exec(['ls', '-t', '/var/spool/asterisk/monitor'], 'ari')
-            record_file = record_files.split(b'\n')[0].decode('utf-8')
-            record_file_size_1 = file_size(os.path.join('/var/spool/asterisk/monitor', record_file))
-            record_file_size_2 = file_size(os.path.join('/var/spool/asterisk/monitor', record_file))
-            return record_file_size_1 < record_file_size_2
+            record_file = latest_record_file()
+            record_file_size_1 = file_size(record_file)
+            record_file_size_2 = file_size(record_file)
+            assert_that(record_file_size_1, less_than(record_file_size_2))
 
         ctid_ng.conferences.record(conference_id)
-        assert_that(record_file_is_growing(), is_(True))
+        until.assert_(record_file_is_growing, timeout=5, message='file did not grow')
+
+        def record_file_is_closed():
+            record_file = latest_record_file()
+            writing_pids = self.docker_exec(['fuser', record_file], 'ari').strip()
+            return writing_pids == b''
 
         ctid_ng.conferences.stop_record(conference_id)
-        assert_that(record_file_is_growing(), is_(False))
+        assert_that(record_file_is_closed(), is_(True))
 
     def test_record_twice(self):
         ctid_ng = self.make_ctid_ng()
