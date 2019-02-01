@@ -20,6 +20,7 @@ class ConferencesBusEventHandler:
         bus_consumer.on_ami_event('ConfbridgeUnmute', self._notify_participant_unmuted)
         bus_consumer.on_ami_event('ConfbridgeRecord', self._notify_record_started)
         bus_consumer.on_ami_event('ConfbridgeStopRecord', self._notify_record_stopped)
+        bus_consumer.on_ami_event('ConfbridgeTalking', self._notify_participant_talking)
 
     def _notify_participant_joined(self, event):
         conference_id = int(event['Conference'])
@@ -104,3 +105,26 @@ class ConferencesBusEventHandler:
         logger.debug('Conference %s is not being recorded', conference_id)
 
         self._notifier.conference_record_stopped(conference_id)
+
+    def _notify_participant_talking(self, event):
+        conference_id = int(event['Conference'])
+        talking = event['TalkingStatus'] == 'on'
+        logger.debug('Participant in conference %s is talking: %s', conference_id, talking)
+
+        raw_participant = {
+            'id': event['Uniqueid'],
+            'caller_id_name': event['CallerIDName'],
+            'caller_id_number': event['CallerIDNum'],
+            'muted': False,
+            'answered_time': '0',
+            'admin': event['Admin'] == 'Yes',
+            'language': event['Language'],
+            'call_id': event['Uniqueid'],
+        }
+
+        participant = participant_schema.load(raw_participant).data
+
+        if talking:
+            self._notifier.participant_talk_started(conference_id, participant)
+        else:
+            self._notifier.participant_talk_stopped(conference_id, participant)
