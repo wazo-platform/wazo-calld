@@ -59,3 +59,21 @@ class ParticipantUnmuteResource(AuthResource):
         tenant = Tenant.autodetect()
         self._service.unmute_participant(tenant.uuid, conference_id, participant_id)
         return '', 204
+
+
+class ConferenceRecordResource(AuthResource):
+
+    def __init__(self, conferences_service):
+        self._service = conferences_service
+
+    @required_acl('ctid-ng.conferences.{conference_id}.record.create')
+    def post(self, conference_id):
+        tenant = Tenant.autodetect()
+        self._service.record(tenant.uuid, conference_id)
+        return '', 204
+
+    @required_acl('ctid-ng.conferences.{conference_id}.record.delete')
+    def delete(self, conference_id):
+        tenant = Tenant.autodetect()
+        self._service.stop_record(tenant.uuid, conference_id)
+        return '', 204

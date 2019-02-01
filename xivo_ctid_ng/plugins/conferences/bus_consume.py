@@ -18,6 +18,8 @@ class ConferencesBusEventHandler:
         bus_consumer.on_ami_event('ConfbridgeLeave', self._notify_participant_left)
         bus_consumer.on_ami_event('ConfbridgeMute', self._notify_participant_muted)
         bus_consumer.on_ami_event('ConfbridgeUnmute', self._notify_participant_unmuted)
+        bus_consumer.on_ami_event('ConfbridgeRecord', self._notify_record_started)
+        bus_consumer.on_ami_event('ConfbridgeStopRecord', self._notify_record_stopped)
 
     def _notify_participant_joined(self, event):
         conference_id = int(event['Conference'])
@@ -90,3 +92,15 @@ class ConferencesBusEventHandler:
         participant = participant_schema.load(raw_participant).data
 
         self._notifier.participant_unmuted(conference_id, participant)
+
+    def _notify_record_started(self, event):
+        conference_id = int(event['Conference'])
+        logger.debug('Conference %s is being recorded', conference_id)
+
+        self._notifier.conference_record_started(conference_id)
+
+    def _notify_record_stopped(self, event):
+        conference_id = int(event['Conference'])
+        logger.debug('Conference %s is not being recorded', conference_id)
+
+        self._notifier.conference_record_stopped(conference_id)

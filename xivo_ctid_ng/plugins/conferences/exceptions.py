@@ -33,6 +33,63 @@ class NoSuchParticipant(APIException):
         )
 
 
+class ConferenceHasNoParticipants(APIException):
+    def __init__(self, tenant_uuid, conference_id):
+        super().__init__(
+            status_code=400,
+            message='Conference "{}" has no participants'.format(conference_id),
+            error_id='conference-has-no-participants',
+            resource='conference',
+            details={
+                'conference_id': conference_id,
+                'tenant_uuid': tenant_uuid,
+            }
+        )
+
+
+class ConferenceAlreadyRecorded(APIException):
+    def __init__(self, tenant_uuid, conference_id):
+        super().__init__(
+            status_code=400,
+            message='Conference "{}" is already being recorded'.format(conference_id),
+            error_id='conference-already-recorded',
+            resource='conference',
+            details={
+                'conference_id': conference_id,
+                'tenant_uuid': tenant_uuid,
+            }
+        )
+
+
+class ConferenceNotRecorded(APIException):
+    def __init__(self, tenant_uuid, conference_id):
+        super().__init__(
+            status_code=400,
+            message='Conference "{}" is not being recorded'.format(conference_id),
+            error_id='conference-not-recorded',
+            resource='conference',
+            details={
+                'conference_id': conference_id,
+                'tenant_uuid': tenant_uuid,
+            }
+        )
+
+
+class ConferenceError(APIException):
+    def __init__(self, tenant_uuid, conference_id, message):
+        super().__init__(
+            status_code=500,
+            message='Error while operating on conference "{}": "{}"'.format(conference_id, message),
+            error_id='conference-error',
+            resource='conference',
+            details={
+                'conference_id': conference_id,
+                'tenant_uuid': tenant_uuid,
+                'original_message': message,
+            }
+        )
+
+
 class ConferenceParticipantError(APIException):
     def __init__(self, tenant_uuid, conference_id, participant_id, message):
         super().__init__(

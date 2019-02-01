@@ -1,6 +1,8 @@
 # Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
+import os
+
 from ari.exceptions import ARINotFound
 from hamcrest import (
     assert_that,
@@ -13,6 +15,8 @@ from hamcrest import (
     has_entry,
     has_item,
     has_properties,
+    is_,
+    less_than,
 )
 from xivo_test_helpers import until
 from xivo_test_helpers.hamcrest.raises import raises
@@ -136,7 +140,7 @@ class TestConferenceParticipants(TestConferences):
                                for event in bus_events.accumulate()]
             return expected_caller_id_name in caller_id_names
 
-        until.true(participant_joined_event_received, 'participant1', tries=3)
+        until.true(participant_joined_event_received, 'participant1', timeout=5)
 
     def test_participant_leaves_sends_event(self):
         conference_id = CONFERENCE1_ID
@@ -154,7 +158,7 @@ class TestConferenceParticipants(TestConferences):
                                for event in bus_events.accumulate()]
             return expected_caller_id_name in caller_id_names
 
-        until.true(participant_left_event_received, 'participant1', tries=3)
+        until.true(participant_left_event_received, 'participant1', timeout=5)
 
     def test_kick_participant_with_no_confd(self):
         ctid_ng = self.make_ctid_ng()
@@ -394,3 +398,159 @@ class TestConferenceParticipants(TestConferences):
         ctid_ng.conferences.unmute_participant(conference_id, participant['id'])
 
         until.assert_(participant_muted_event_received, muted=True, timeout=5, message='Unmute event was not received')
+
+    def test_record_with_no_confd(self):
+        ctid_ng = self.make_ctid_ng()
+        conference_id = 14
+
+        with self.confd_stopped():
+            assert_that(calling(ctid_ng.conferences.record)
+                        .with_args(conference_id),
+                        raises(CtidNGError).matching(has_properties({
+                            'status_code': 503,
+                            'error_id': 'xivo-confd-unreachable',
+                        })))
+            assert_that(calling(ctid_ng.conferences.stop_record)
+                        .with_args(conference_id),
+                        raises(CtidNGError).matching(has_properties({
+                            'status_code': 503,
+                            'error_id': 'xivo-confd-unreachable',
+                        })))
+
+    def test_record_with_no_amid(self):
+        ctid_ng = self.make_ctid_ng()
+        conference_id = CONFERENCE1_ID
+        self.confd.set_conferences(
+            MockConference(id=conference_id, name='conference'),
+        )
+        self.given_call_in_conference(CONFERENCE1_EXTENSION, caller_id_name='participant1')
+
+        with self.amid_stopped():
+            assert_that(calling(ctid_ng.conferences.record)
+                        .with_args(conference_id),
+                        raises(CtidNGError).matching(has_properties({
+                            'status_code': 503,
+                            'error_id': 'xivo-amid-error',
+                        })))
+            assert_that(calling(ctid_ng.conferences.stop_record)
+                        .with_args(conference_id),
+                        raises(CtidNGError).matching(has_properties({
+                            'status_code': 503,
+                            'error_id': 'xivo-amid-error',
+                        })))
+
+    def test_record_with_no_conferences(self):
+        ctid_ng = self.make_ctid_ng()
+        conference_id = 14
+
+        assert_that(calling(ctid_ng.conferences.record)
+                    .with_args(conference_id),
+                    raises(CtidNGError).matching(has_properties({
+                        'status_code': 404,
+                        'error_id': 'no-such-conference',
+                    })))
+        assert_that(calling(ctid_ng.conferences.stop_record)
+                    .with_args(conference_id),
+                    raises(CtidNGError).matching(has_properties({
+                        'status_code': 404,
+                        'error_id': 'no-such-conference',
+                    })))
+
+    def test_record_participant_with_no_participants(self):
+        conference_id = CONFERENCE1_ID
+        self.confd.set_conferences(
+            MockConference(id=conference_id, name='conference'),
+        )
+        ctid_ng = self.make_ctid_ng()
+
+        assert_that(calling(ctid_ng.conferences.record)
+                    .with_args(conference_id),
+                    raises(CtidNGError).matching(has_properties({
+                        'status_code': 400,
+                        'error_id': 'conference-has-no-participants',
+                    })))
+
+    def test_record(self):
+        ctid_ng = self.make_ctid_ng()
+        conference_id = CONFERENCE1_ID
+        self.confd.set_conferences(
+            MockConference(id=conference_id, name='conference'),
+        )
+        self.given_call_in_conference(CONFERENCE1_EXTENSION, caller_id_name='participant1')
+
+        def latest_record_file():
+            record_files = self.docker_exec(['ls', '-t', '/var/spool/asterisk/monitor'], 'ari')
+            latest_record_file = record_files.split(b'\n')[0].decode('utf-8')
+            return os.path.join('/var/spool/asterisk/monitor', latest_record_file)
+
+        def file_size(file_path):
+            return int(self.docker_exec(['stat', '-c', '%s', file_path], 'ari').strip())
+
+        ctid_ng.conferences.record(conference_id)
+        record_file = latest_record_file()
+        record_file_size_1 = file_size(record_file)
+
+        def record_file_is_growing():
+            record_file_size_2 = file_size(record_file)
+            assert_that(record_file_size_1, less_than(record_file_size_2))
+
+        until.assert_(record_file_is_growing, timeout=5, message='file did not grow')
+
+        def record_file_is_closed():
+            record_file = latest_record_file()
+            writing_pids = self.docker_exec(['fuser', record_file], 'ari').strip()
+            return writing_pids == b''
+
+        ctid_ng.conferences.stop_record(conference_id)
+        assert_that(record_file_is_closed(), is_(True))
+
+    def test_record_twice(self):
+        ctid_ng = self.make_ctid_ng()
+        conference_id = CONFERENCE1_ID
+        self.confd.set_conferences(
+            MockConference(id=conference_id, name='conference'),
+        )
+        self.given_call_in_conference(CONFERENCE1_EXTENSION, caller_id_name='participant1')
+
+        # record twice
+        ctid_ng.conferences.record(conference_id)
+        assert_that(calling(ctid_ng.conferences.record)
+                    .with_args(conference_id),
+                    raises(CtidNGError).matching(has_properties({
+                        'status_code': 400,
+                        'error_id': 'conference-already-recorded',
+                    })))
+
+        # stop record twice
+        ctid_ng.conferences.stop_record(conference_id)
+        assert_that(calling(ctid_ng.conferences.stop_record)
+                    .with_args(conference_id),
+                    raises(CtidNGError).matching(has_properties({
+                        'status_code': 400,
+                        'error_id': 'conference-not-recorded',
+                    })))
+
+    def test_record_send_events(self):
+        ctid_ng = self.make_ctid_ng()
+        conference_id = CONFERENCE1_ID
+        self.confd.set_conferences(
+            MockConference(id=conference_id, name='conference'),
+        )
+        self.given_call_in_conference(CONFERENCE1_EXTENSION, caller_id_name='participant1')
+        record_bus_events = self.bus.accumulator('conferences.{}.record'.format(conference_id))
+
+        ctid_ng.conferences.record(conference_id)
+
+        def record_event_received(record):
+            assert_that(record_bus_events.accumulate(), has_item(has_entries({
+                'name': 'conference_record_started' if record else 'conference_record_stopped',
+                'data': has_entries({
+                    'id': conference_id,
+                })
+            })))
+
+        until.assert_(record_event_received, record=True, timeout=5, message='Record start event was not received')
+
+        ctid_ng.conferences.stop_record(conference_id)
+
+        until.assert_(record_event_received, record=False, timeout=5, message='Record stop event was not received')

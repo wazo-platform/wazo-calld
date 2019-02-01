@@ -5,6 +5,7 @@ from xivo_amid_client import Client as AmidClient
 from xivo_confd_client import Client as ConfdClient
 
 from .resources import (
+    ConferenceRecordResource,
     ParticipantMuteResource,
     ParticipantResource,
     ParticipantUnmuteResource,
@@ -40,3 +41,4 @@ class Plugin:
         api.add_resource(ParticipantResource, '/conferences/<int:conference_id>/participants/<participant_id>', resource_class_args=[conferences_service])
         api.add_resource(ParticipantMuteResource, '/conferences/<int:conference_id>/participants/<participant_id>/mute', resource_class_args=[conferences_service])
         api.add_resource(ParticipantUnmuteResource, '/conferences/<int:conference_id>/participants/<participant_id>/unmute', resource_class_args=[conferences_service])
+        api.add_resource(ConferenceRecordResource, '/conferences/<int:conference_id>/record', resource_class_args=[conferences_service])

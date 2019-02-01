@@ -2,6 +2,11 @@
 
 ## 19.03
 
+* New API for conferences:
+
+  * `POST /conferences/{conference_id}/record`
+  * `DELETE /conferences/{conference_id}/record`
+
 Modification of conference mute API:
 
   * `PUT /conferences/{conference_id}/participants/{participant_id}/mute`

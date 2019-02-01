@@ -1,4 +1,4 @@
-# Copyright 2016-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 from requests import HTTPError
@@ -89,6 +89,21 @@ class Line:
         # TODO PJSIP clean after migration
         protocol = line['protocol'].replace('sip', 'pjsip')
         return "{}/{}".format(protocol, line['name'])
+
+
+class Conference:
+
+    def __init__(self, tenant_uuid, conference_id, confd_client):
+        self.tenant_uuid = tenant_uuid
+        self.conference_id = conference_id
+        self._confd = confd_client
+
+    def exists(self):
+        try:
+            conferences = self._confd.conferences.list(tenant_uuid=self.tenant_uuid, recurse=True)['items']
+        except RequestException as e:
+            raise XiVOConfdUnreachable(self._confd, e)
+        return self.conference_id in (conference['id'] for conference in conferences)
 
 
 def get_user_voicemail(user_uuid, confd_client):

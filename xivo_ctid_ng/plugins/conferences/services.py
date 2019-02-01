@@ -6,6 +6,7 @@ import logging
 from ari.exceptions import ARINotFound
 from marshmallow import ValidationError
 from requests import RequestException
+from xivo_ctid_ng.helpers.confd import Conference
 from xivo_ctid_ng.exceptions import (
     XiVOAmidError,
     XiVOConfdUnreachable,
@@ -14,6 +15,10 @@ from xivo_ctid_ng.exceptions import (
 from .exceptions import (
     NoSuchConference,
     NoSuchParticipant,
+    ConferenceAlreadyRecorded,
+    ConferenceNotRecorded,
+    ConferenceError,
+    ConferenceHasNoParticipants,
     ConferenceParticipantError,
 )
 from .schemas import participant_schema
@@ -29,11 +34,7 @@ class ConferencesService:
         self._confd = confd
 
     def list_participants(self, tenant_uuid, conference_id):
-        try:
-            conferences = self._confd.conferences.list(tenant_uuid=tenant_uuid, recurse=True)['items']
-        except RequestException as e:
-            raise XiVOConfdUnreachable(self._confd, e)
-        if conference_id not in (conference['id'] for conference in conferences):
+        if not Conference(tenant_uuid, conference_id, self._confd).exists():
             raise NoSuchConference(tenant_uuid, conference_id)
 
         try:
@@ -80,12 +81,7 @@ class ConferencesService:
         return result
 
     def kick_participant(self, tenant_uuid, conference_id, participant_id):
-        try:
-            conferences = self._confd.conferences.list(tenant_uuid=tenant_uuid, recurse=True)['items']
-        except RequestException as e:
-            raise XiVOConfdUnreachable(self._confd, e)
-
-        if conference_id not in (conference['id'] for conference in conferences):
+        if not Conference(tenant_uuid, conference_id, self._confd).exists():
             raise NoSuchConference(tenant_uuid, conference_id)
 
         participants = self.list_participants(tenant_uuid, conference_id)
@@ -109,12 +105,7 @@ class ConferencesService:
             raise ConferenceParticipantError(tenant_uuid, conference_id, participant_id, message)
 
     def mute_participant(self, tenant_uuid, conference_id, participant_id):
-        try:
-            conferences = self._confd.conferences.list(tenant_uuid=tenant_uuid, recurse=True)['items']
-        except RequestException as e:
-            raise XiVOConfdUnreachable(self._confd, e)
-
-        if conference_id not in (conference['id'] for conference in conferences):
+        if not Conference(tenant_uuid, conference_id, self._confd).exists():
             raise NoSuchConference(tenant_uuid, conference_id)
 
         participants = self.list_participants(tenant_uuid, conference_id)
@@ -138,12 +129,7 @@ class ConferencesService:
             raise ConferenceParticipantError(tenant_uuid, conference_id, participant_id, message)
 
     def unmute_participant(self, tenant_uuid, conference_id, participant_id):
-        try:
-            conferences = self._confd.conferences.list(tenant_uuid=tenant_uuid, recurse=True)['items']
-        except RequestException as e:
-            raise XiVOConfdUnreachable(self._confd, e)
-
-        if conference_id not in (conference['id'] for conference in conferences):
+        if not Conference(tenant_uuid, conference_id, self._confd).exists():
             raise NoSuchConference(tenant_uuid, conference_id)
 
         participants = self.list_participants(tenant_uuid, conference_id)
@@ -165,3 +151,42 @@ class ConferencesService:
         if response['Response'] != 'Success':
             message = response['Message']
             raise ConferenceParticipantError(tenant_uuid, conference_id, participant_id, message)
+
+    def record(self, tenant_uuid, conference_id):
+        if not Conference(tenant_uuid, conference_id, self._confd).exists():
+            raise NoSuchConference(tenant_uuid, conference_id)
+
+        participants = self.list_participants(tenant_uuid, conference_id)
+        if not participants:
+            raise ConferenceHasNoParticipants(tenant_uuid, conference_id)
+
+        body = {
+            'conference': conference_id,
+        }
+        try:
+            response_items = self._amid.action('ConfbridgeStartRecord', body)
+        except RequestException as e:
+            raise XiVOAmidError(self._amid, e)
+
+        response = response_items[0]
+        if response['Response'] != 'Success':
+            message = response['Message']
+            if message == 'Conference is already being recorded.':
+                raise ConferenceAlreadyRecorded(tenant_uuid, conference_id)
+            raise ConferenceError(tenant_uuid, conference_id, message)
+
+    def stop_record(self, tenant_uuid, conference_id):
+        if not Conference(tenant_uuid, conference_id, self._confd).exists():
+            raise NoSuchConference(tenant_uuid, conference_id)
+
+        try:
+            response_items = self._amid.action('ConfbridgeStopRecord', {'conference': conference_id})
+        except RequestException as e:
+            raise XiVOAmidError(self._amid, e)
+
+        response = response_items[0]
+        if response['Response'] != 'Success':
+            message = response['Message']
+            if message == 'Internal error while stopping recording.':
+                raise ConferenceNotRecorded(tenant_uuid, conference_id)
+            raise ConferenceError(tenant_uuid, conference_id, message)

@@ -64,6 +64,43 @@ paths:
           $ref: '#/responses/NoSuchConference'
         '503':
           $ref: '#/responses/AnotherServiceUnavailable'
+  /conferences/{conference_id}/record:
+    post:
+      summary: Record a conference
+      description: '**Required ACL:** `ctid-ng.conferences.{conference_id}.record.create`'
+      parameters:
+        - $ref: '#/parameters/ConferenceID'
+      tags:
+        - conferences
+      responses:
+        '204':
+          description: The conference recording started
+        '400':
+          description: The conference is already being recorded or there are no participants
+          schema:
+            $ref: '#/definitions/Error'
+        '404':
+          $ref: '#/responses/NoSuchConference'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+    delete:
+      summary: Stop recording a conference
+      description: '**Required ACL:** `ctid-ng.conferences.{conference_id}.record.delete`'
+      parameters:
+        - $ref: '#/parameters/ConferenceID'
+      tags:
+        - conferences
+      responses:
+        '204':
+          description: The conference recording stopped
+        '400':
+          description: The conference is already not being recorded
+          schema:
+            $ref: '#/definitions/Error'
+        '404':
+          $ref: '#/responses/NoSuchConference'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
 responses:
   NoSuchConference:
     description: The specified conference does not exist
