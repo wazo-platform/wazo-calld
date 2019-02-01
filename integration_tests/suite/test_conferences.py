@@ -486,13 +486,14 @@ class TestConferenceParticipants(TestConferences):
         def file_size(file_path):
             return int(self.docker_exec(['stat', '-c', '%s', file_path], 'ari').strip())
 
+        ctid_ng.conferences.record(conference_id)
+        record_file = latest_record_file()
+        record_file_size_1 = file_size(record_file)
+
         def record_file_is_growing():
-            record_file = latest_record_file()
-            record_file_size_1 = file_size(record_file)
             record_file_size_2 = file_size(record_file)
             assert_that(record_file_size_1, less_than(record_file_size_2))
 
-        ctid_ng.conferences.record(conference_id)
         until.assert_(record_file_is_growing, timeout=5, message='file did not grow')
 
         def record_file_is_closed():
