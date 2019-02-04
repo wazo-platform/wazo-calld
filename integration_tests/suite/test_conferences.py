@@ -561,7 +561,7 @@ class TestConferenceParticipants(TestConferences):
         self.confd.set_conferences(
             MockConference(id=conference_id, name='conference'),
         )
-        bus_events = self.bus.accumulator('conferences.{}.participants.talking'.format(conference_id))
+        bus_events = self.bus.accumulator('conferences.{}.participants.talk'.format(conference_id))
 
         channel_id = self.given_call_in_conference(CONFERENCE1_EXTENSION, caller_id_name='participant1')
         participants = ctid_ng.conferences.list_participants(conference_id)
@@ -569,7 +569,7 @@ class TestConferenceParticipants(TestConferences):
 
         def talking_event_received(talking):
             assert_that(bus_events.accumulate(), has_item(has_entries({
-                'name': 'participant_started_talking' if talking else 'participant_stopped_talking',
+                'name': 'conference_participant_talk_started' if talking else 'conference_participant_talk_stopped',
                 'data': has_entries({
                     'id': participant['id'],
                     'conference_id': conference_id,
