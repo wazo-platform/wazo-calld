@@ -18,7 +18,7 @@ Running unit tests
 
 ```
 pip install tox
-tox --recreate -e py27
+tox --recreate -e py35
 ```
 
 Running integration tests
