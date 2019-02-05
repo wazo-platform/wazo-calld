@@ -1,5 +1,5 @@
 # Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
-# SPDX-License-Identifier: GPL-3.0+
+# SPDX-License-Identifier: GPL-3.0-or-later
 
 from xivo_amid_client import Client as AmidClient
 from xivo_confd_client import Client as ConfdClient

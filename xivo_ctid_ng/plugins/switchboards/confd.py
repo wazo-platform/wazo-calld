@@ -1,5 +1,5 @@
 # Copyright 2017 The Wazo Authors  (see AUTHORS file)
-# SPDX-License-Identifier: GPL-3.0+
+# SPDX-License-Identifier: GPL-3.0-or-later
 
 from requests import HTTPError
 from requests import RequestException
