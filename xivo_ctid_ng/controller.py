@@ -1,4 +1,4 @@
-# Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -26,9 +26,7 @@ class Controller:
 
     def __init__(self, config):
         xivo_uuid = get_xivo_uuid(logger)
-        auth_config = dict(config['auth'])
-        auth_config.pop('key_file', None)
-        auth_client = AuthClient(**auth_config)
+        auth_client = AuthClient(**config['auth'])
         self.ari = CoreARI(config['ari'])
         self.bus_publisher = CoreBusPublisher(config)
         self.bus_consumer = CoreBusConsumer(config)
