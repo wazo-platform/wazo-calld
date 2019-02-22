@@ -1,4 +1,4 @@
-# Copyright 2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from flask import request
@@ -31,25 +31,6 @@ class MessageCallbackResource(ErrorCatchingResource):
     def post(self):
         request_body = MessageRequestSchema().load(request.form).data
         self._message_callback_service.send_message(request_body)
-        return '', 204
-
-
-class PresenceRequestSchema(BaseSchema):
-
-    user = fields.String(required=True)
-    server = fields.String(required=True)
-    resource = fields.String()
-    status = fields.String(required=True)
-
-
-class PresenceCallbackResource(ErrorCatchingResource):
-
-    def __init__(self, presence_callback_service):
-        self._presence_callback_service = presence_callback_service
-
-    def post(self):
-        request_body = PresenceRequestSchema().load(request.get_json()).data
-        self._presence_callback_service.send_message(request_body)
         return '', 204
 
 
