@@ -30,7 +30,6 @@ setup(
             'conferences = xivo_ctid_ng.plugins.conferences.plugin:Plugin',
             'faxes = xivo_ctid_ng.plugins.faxes.plugin:Plugin',
             'mongooseim = xivo_ctid_ng.plugins.mongooseim.plugin:Plugin',
-            'presences = xivo_ctid_ng.plugins.presences.plugin:Plugin',
             'relocates = xivo_ctid_ng.plugins.relocates.plugin:Plugin',
             'status = xivo_ctid_ng.plugins.status.plugin:Plugin',
             'switchboards = xivo_ctid_ng.plugins.switchboards.plugin:Plugin',

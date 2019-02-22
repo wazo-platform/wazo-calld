@@ -10,7 +10,6 @@ services:
       - ctid
       - ctid-ng
       - rabbitmq
-      - remote_ctid_ng
       - websocketd
     environment:
-      TARGETS: "ari:5039 rabbitmq:5672 consul:8500 confd:9486 amid:9491 ctid:9495 auth:9497 ctid-ng:9500 remote_ctid_ng:9501 websocketd:9502"
+      TARGETS: "ari:5039 rabbitmq:5672 consul:8500 confd:9486 amid:9491 ctid:9495 auth:9497 ctid-ng:9500 websocketd:9502"

@@ -25,7 +25,6 @@ from .confd import ConfdClient
 from .constants import ASSET_ROOT, VALID_TOKEN
 from .ctid_ng import CtidNgClient
 from .stasis import StasisClient
-from .websocketd import WebsocketdClient
 from .wait_strategy import CtidNgEverythingOkWaitStrategy
 
 logger = logging.getLogger(__name__)
@@ -96,11 +95,6 @@ class IntegrationTest(AssetLaunchingTestCase):
         except (NoSuchService, NoSuchPort) as e:
             logger.debug(e)
             cls.stasis = WrongClient('stasis')
-        try:
-            cls.websocketd = WebsocketdClient('localhost', cls.service_port(9502, 'websocketd'))
-        except (NoSuchService, NoSuchPort) as e:
-            logger.debug(e)
-            cls.websocketd = WrongClient('websocketd')
 
     @classmethod
     def reset_bus_client(cls):

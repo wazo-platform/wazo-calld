@@ -1,4 +1,4 @@
-# Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
@@ -456,51 +456,6 @@ class CtidNgClient:
                                              token=token)
         assert_that(response.status_code, equal_to(200))
         return response.json()
-
-    def get_user_me_presence_result(self, token=None):
-        url = self.url('users', 'me', 'presences')
-        result = requests.get(url,
-                              headers={'X-Auth-Token': token},
-                              verify=False)
-        return result
-
-    def get_user_presence_result(self, user_uuid, xivo_uuid=None, token=None):
-        url = self.url('users', user_uuid, 'presences')
-        params = {}
-        if xivo_uuid:
-            params['xivo_uuid'] = xivo_uuid
-        result = requests.get(url,
-                              headers={'X-Auth-Token': token},
-                              params=params,
-                              verify=False)
-        return result
-
-    def put_user_presence_result(self, presence_msg, user_uuid, token=None):
-        url = self.url('users', user_uuid, 'presences')
-        result = requests.put(url,
-                              json=presence_msg.as_presence_body(),
-                              headers={'X-Auth-Token': token},
-                              verify=False)
-        return result
-
-    def put_user_me_presence_result(self, presence_msg, token=None):
-        url = self.url('users', 'me', 'presences')
-        result = requests.put(url,
-                              json=presence_msg.as_presence_body(),
-                              headers={'X-Auth-Token': token},
-                              verify=False)
-        return result
-
-    def get_line_presence_result(self, line_id, xivo_uuid=None, token=None):
-        url = self.url('lines', line_id, 'presences')
-        params = {}
-        if xivo_uuid:
-            params['xivo_uuid'] = xivo_uuid
-        result = requests.get(url,
-                              headers={'X-Auth-Token': token},
-                              params=params,
-                              verify=False)
-        return result
 
     def get_status_result(self, token=None):
         url = self.url('status')

@@ -40,7 +40,3 @@ Description: Wazo CTI server (new generation)
  Wazo is a system based on a powerful IPBX, to bring an easy to
  install solution for telephony and related services.
  .
- This is the CTI server for Wazo Asterisk features.
- It provides presence and connection information to the Wazo
- switchboard clients.
- .

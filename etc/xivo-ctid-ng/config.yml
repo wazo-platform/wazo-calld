@@ -103,7 +103,6 @@ enabled_plugins:
   calls: true
   chats: true
   mongooseim: true
-  presences: true
   relocates: true
   status: true
   switchboards: true

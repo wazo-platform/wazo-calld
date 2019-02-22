@@ -1,4 +1,4 @@
-# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from hamcrest import assert_that
@@ -8,7 +8,6 @@ from hamcrest import equal_to
 from .helpers.base import IntegrationTest
 from .helpers.chat import new_chat_message, new_user_chat_message
 from .helpers.constants import INVALID_ACL_TOKEN, VALID_TOKEN
-from .helpers.presence import new_user_presence_message, new_user_me_presence_message
 from .helpers.wait_strategy import CtidNgUpWaitStrategy
 
 
@@ -135,31 +134,6 @@ class TestAuthenticationCoverage(IntegrationTest):
 
     def test_auth_on_complete_user_transfer(self):
         result = self.ctid_ng.put_users_me_complete_transfer_result('my-transfer')
-
-        assert_that(result.status_code, equal_to(401))
-
-    def test_auth_on_user_presence_read(self):
-        result = self.ctid_ng.get_user_presence_result('some-user-uuid')
-
-        assert_that(result.status_code, equal_to(401))
-
-    def test_auth_on_user_presence_update(self):
-        result = self.ctid_ng.put_user_presence_result(new_user_presence_message(), 'some-user-uuid')
-
-        assert_that(result.status_code, equal_to(401))
-
-    def test_auth_on_user_me_presence_read(self):
-        result = self.ctid_ng.get_user_me_presence_result()
-
-        assert_that(result.status_code, equal_to(401))
-
-    def test_auth_on_user_me_presence_update(self):
-        result = self.ctid_ng.put_user_me_presence_result(new_user_me_presence_message())
-
-        assert_that(result.status_code, equal_to(401))
-
-    def test_auth_on_line_presence_read(self):
-        result = self.ctid_ng.get_line_presence_result(1)
 
         assert_that(result.status_code, equal_to(401))
 
