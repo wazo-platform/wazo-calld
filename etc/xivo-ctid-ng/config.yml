@@ -84,11 +84,6 @@ amid:
     port: 9491
     verify_certificate: /usr/share/xivo-certs/server.crt
 
-# xivo-ctid connection informations
-ctid:
-    host: localhost
-    port: 9495
-
 # consul connection informations
 consul:
   scheme: https

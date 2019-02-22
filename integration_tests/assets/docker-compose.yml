@@ -32,14 +32,6 @@ services:
     volumes:
       - ./ssl:/usr/local/share/ssl
 
-  ctid:
-    image: p0bailey/docker-flask
-    expose:
-      - 9495
-    volumes:
-      - ./xivo-ctid:/usr/local/share/xivo-ctid
-    command: python /usr/local/share/xivo-ctid/mock-xivo-ctid.py 9495
-
   confd:
     image: wazopbx/xivo-confd-mock
     ports:
