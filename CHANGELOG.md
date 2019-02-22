@@ -7,6 +7,19 @@
   * `POST /faxes`
   * `POST /users/me/faxes`
 
+* The following endpoints have been moved to wazo-chatd and deleted from xivo-ctid-ng:
+
+    * GET `/1.0/lines/{id}/presences`
+
+    * GET `/1.0/users/{uuid}/presences`
+    * PUT `/1.0/users/{uuid}/presences`
+
+    * GET `/1.0/users/me/presences`
+    * PUT `/1.0/users/me/presences`
+
+    * GET `/1.0/users/me/calls`
+    * DELETE `/1.0/users/me/calls/{id}`
+
 
 ## 19.03
 
