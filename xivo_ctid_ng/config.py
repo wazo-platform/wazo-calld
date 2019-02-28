@@ -107,6 +107,7 @@ _DEFAULT_CONFIG = {
         'calls': True,
         'chats': True,
         'conferences': True,
+        'fax': True,
         'mongooseim': True,
         'presences': True,
         'relocates': True,
