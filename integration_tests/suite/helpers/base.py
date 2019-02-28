@@ -164,6 +164,21 @@ class IntegrationTest(AssetLaunchingTestCase):
             cls.reset_clients()
             until.true(cls.amid.is_up, tries=5)
 
+    @classmethod
+    @contextmanager
+    def ari_stopped(cls):
+        cls.stop_service('ari')
+        try:
+            yield
+        finally:
+            cls.start_service('ari')
+
+            def ari_is_up():
+                return ARIClient('localhost', cls.service_port(5039, 'ari'))
+
+            until.return_(ari_is_up, timeout=5, message='ari did not restart')
+            cls.reset_clients()
+
 
 class RealAsteriskIntegrationTest(IntegrationTest):
     asset = 'real_asterisk'

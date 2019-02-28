@@ -54,16 +54,45 @@ class TestFax(RealAsteriskIntegrationTest):
             }))
         )
 
+    def test_send_fax_no_amid(self):
+        ctid_ng = self.make_ctid_ng()
+        with self.amid_stopped():
+            assert_that(
+                calling(ctid_ng.faxes.send).with_args(
+                    fax_content='',
+                    context='recipient',
+                    extension='recipient-fax',
+                ),
+                raises(CtidNGError).matching(has_properties({
+                    'status_code': 503,
+                    'error_id': 'xivo-amid-error',
+                }))
+            )
+
+    def test_send_fax_no_ari(self):
+        ctid_ng = self.make_ctid_ng()
+        with self.ari_stopped():
+            assert_that(
+                calling(ctid_ng.faxes.send).with_args(
+                    fax_content='',
+                    context='recipient',
+                    extension='recipient-fax',
+                ),
+                raises(CtidNGError).matching(has_properties({
+                    'status_code': 503,
+                    'error_id': 'xivo-amid-error',
+                }))
+            )
+
     def test_send_fax_tiff(self):
         ctid_ng = self.make_ctid_ng()
         fax_content = open(os.path.join(ASSET_ROOT, 'fax', 'fax.tiff'), 'rb').read()
 
         try:
             ctid_ng.faxes.send(fax_content,
-                             context='recipient',
-                             extension='recipient-fax',
-                             user_id='my-user-id',
-                             caller_id='fax wait')
+                               context='recipient',
+                               extension='recipient-fax',
+                               caller_id='fax wait')
         except Exception as e:
             raise AssertionError('Sending fax raised an exception: {}'.format(e))
 

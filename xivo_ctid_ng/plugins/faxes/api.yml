@@ -38,3 +38,5 @@ paths:
           description: Fax send request accepted
         '400':
           $ref: '#/responses/InvalidRequest'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
