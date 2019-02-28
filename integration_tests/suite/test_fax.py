@@ -24,6 +24,18 @@ class TestFax(RealAsteriskIntegrationTest):
         fax_channels = [channel for channel in channels if channel.json['dialplan']['context'] == 'txfax']
         return fax_channels
 
+    def test_send_fax_wrong_params(self):
+        ctid_ng = self.make_ctid_ng()
+        assert_that(
+            calling(ctid_ng.fax.send).with_args(
+                fax_content='',
+                context=None,
+                extension=None,
+            ),
+            raises(CtidNGError).matching(has_properties({
+                'status_code': 400,
+            })))
+
     def test_send_fax_tiff(self):
         ctid_ng = self.make_ctid_ng()
         fax_content = open(os.path.join(ASSET_ROOT, 'fax', 'fax.tiff'), 'rb').read()

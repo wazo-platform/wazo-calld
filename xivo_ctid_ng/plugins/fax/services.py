@@ -18,15 +18,6 @@ class FaxService:
             fax_file.write(content)
         os.chmod(fax_path, 0o660)
 
-        # send = self.amid.action('originate', {'Channel': 'Local/{exten}@{context}'.format(exten=extension, context),
-        #                                       'CallerID': caller_id,
-        #                                       'Variable': 'XIVO_USERID=%s' % fax_data.get('fax_user_id'),
-        #                                       'Variable': 'XIVO_FAX_PATH=%s' % fax_path,
-        #                                       'Context': 'txfax',
-        #                                       'Exten': 's',
-        #                                       'Async': 'true',
-        #                                       'Priority': '1'})
-
         originate_variables = {
             'XIVO_USERID': fax_infos['user_id'],
             'XIVO_FAX_PATH': fax_path,
