@@ -37,6 +37,7 @@ class ConferencesBusEventHandler:
         }
 
         participant = participant_schema.load(raw_participant).data
+        participant['user_uuid'] = event.get('ChanVariable', {}).get('XIVO_USERUUID')
 
         self._notifier.participant_joined(conference_id, participant)
 
@@ -55,6 +56,7 @@ class ConferencesBusEventHandler:
         }
 
         participant = participant_schema.load(raw_participant).data
+        participant['user_uuid'] = event.get('ChanVariable', {}).get('XIVO_USERUUID')
 
         self._notifier.participant_left(conference_id, participant)
 
