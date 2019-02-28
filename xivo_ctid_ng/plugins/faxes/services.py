@@ -27,7 +27,6 @@ class FaxesService:
         os.chmod(fax_path, 0o660)
 
         originate_variables = {
-            'XIVO_USERID': fax_infos['user_id'],
             'XIVO_FAX_PATH': fax_path,
         }
         recipient_endpoint = 'Local/{exten}@{context}'.format(exten=fax_infos['extension'], context=fax_infos['context'])

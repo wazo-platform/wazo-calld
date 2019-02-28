@@ -8,7 +8,6 @@ from xivo.mallow_helpers import Schema
 class FaxCreationRequestSchema(Schema):
     context = fields.String(required=True)
     extension = fields.String(required=True)
-    user_id = fields.String(missing=None)
     caller_id = fields.String(missing='Wazo Fax')
 
 
