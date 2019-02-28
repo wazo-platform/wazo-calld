@@ -36,6 +36,24 @@ class TestFax(RealAsteriskIntegrationTest):
                 'status_code': 400,
             })))
 
+    def test_send_fax_wrong_extension(self):
+        ctid_ng = self.make_ctid_ng()
+        assert_that(
+            calling(ctid_ng.fax.send).with_args(
+                fax_content='',
+                context='recipient',
+                extension='not-found',
+            ),
+            raises(CtidNGError).matching(has_properties({
+                'status_code': 400,
+                'error_id': 'invalid-extension',
+                'details': {
+                    'exten': 'not-found',
+                    'context': 'recipient',
+                },
+            }))
+        )
+
     def test_send_fax_tiff(self):
         ctid_ng = self.make_ctid_ng()
         fax_content = open(os.path.join(ASSET_ROOT, 'fax', 'fax.tiff'), 'rb').read()

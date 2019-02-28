@@ -5,6 +5,9 @@ import os
 
 from tempfile import mkstemp
 
+from xivo_ctid_ng.helpers import ami
+from xivo_ctid_ng.exceptions import InvalidExtension
+
 
 class FaxService:
 
@@ -13,6 +16,11 @@ class FaxService:
         self._ari = ari
 
     def send_fax(self, tenant_uuid, content, fax_infos):
+        context = fax_infos['context']
+        extension = fax_infos['extension']
+        if not ami.extension_exists(self._amid, context, extension):
+            raise InvalidExtension(context, extension)
+
         fax_file_descriptor, fax_path = mkstemp(prefix='wazo-fax-', suffix='.tif')
         with os.fdopen(fax_file_descriptor, 'wb') as fax_file:
             fax_file.write(content)
