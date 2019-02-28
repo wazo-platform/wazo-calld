@@ -1,0 +1,40 @@
+paths:
+  /fax:
+    post:
+      summary: Send a fax
+      description: '**Required ACL:** `ctid-ng.fax.create`'
+      parameters:
+        - name: fax_content
+          in: body
+          description: The fax file content, in TIFF format
+          schema:
+            type: string
+            format: binary
+          required: true
+        - name: context
+          in: query
+          description: Context of the recipient of the fax
+          schema:
+            type: string
+          required: true
+        - name: extension
+          in: query
+          description: Extension of the recipient of the fax
+          schema:
+            type: string
+          required: true
+        - name: caller_id
+          in: query
+          description: 'Caller ID that will be presented to the recipient of the fax. Example: "my-name <+15551112222>"'
+          schema:
+            type: string
+          default: 'Wazo Fax'
+      tags:
+      - faxes
+      consumes:
+      - image/tiff
+      responses:
+        '204':
+          description: Fax send request accepted
+        '400':
+          $ref: '#/responses/InvalidRequest'
