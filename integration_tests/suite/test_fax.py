@@ -27,7 +27,7 @@ class TestFax(RealAsteriskIntegrationTest):
     def test_send_fax_wrong_params(self):
         ctid_ng = self.make_ctid_ng()
         assert_that(
-            calling(ctid_ng.fax.send).with_args(
+            calling(ctid_ng.faxes.send).with_args(
                 fax_content='',
                 context=None,
                 extension=None,
@@ -39,7 +39,7 @@ class TestFax(RealAsteriskIntegrationTest):
     def test_send_fax_wrong_extension(self):
         ctid_ng = self.make_ctid_ng()
         assert_that(
-            calling(ctid_ng.fax.send).with_args(
+            calling(ctid_ng.faxes.send).with_args(
                 fax_content='',
                 context='recipient',
                 extension='not-found',
@@ -59,7 +59,7 @@ class TestFax(RealAsteriskIntegrationTest):
         fax_content = open(os.path.join(ASSET_ROOT, 'fax', 'fax.tiff'), 'rb').read()
 
         try:
-            ctid_ng.fax.send(fax_content,
+            ctid_ng.faxes.send(fax_content,
                              context='recipient',
                              extension='recipient-fax',
                              user_id='my-user-id',

@@ -4,7 +4,7 @@
 from xivo_amid_client import Client as AmidClient
 
 from .resources import FaxesResource
-from .services import FaxService
+from .services import FaxesService
 
 
 class Plugin:
@@ -19,6 +19,6 @@ class Plugin:
 
         token_changed_subscribe(amid_client.set_token)
 
-        fax_service = FaxService(amid_client, ari.client)
+        fax_service = FaxesService(amid_client, ari.client)
 
-        api.add_resource(FaxesResource, '/fax', resource_class_args=[fax_service])
+        api.add_resource(FaxesResource, '/faxes', resource_class_args=[fax_service])

@@ -1,8 +1,8 @@
 paths:
-  /fax:
+  /faxes:
     post:
       summary: Send a fax
-      description: '**Required ACL:** `ctid-ng.fax.create`'
+      description: '**Required ACL:** `ctid-ng.faxes.create`'
       parameters:
         - name: fax_content
           in: body

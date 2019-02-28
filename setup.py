@@ -28,7 +28,7 @@ setup(
             'calls = xivo_ctid_ng.plugins.calls.plugin:Plugin',
             'chats = xivo_ctid_ng.plugins.chats.plugin:Plugin',
             'conferences = xivo_ctid_ng.plugins.conferences.plugin:Plugin',
-            'fax = xivo_ctid_ng.plugins.fax.plugin:Plugin',
+            'faxes = xivo_ctid_ng.plugins.faxes.plugin:Plugin',
             'mongooseim = xivo_ctid_ng.plugins.mongooseim.plugin:Plugin',
             'presences = xivo_ctid_ng.plugins.presences.plugin:Plugin',
             'relocates = xivo_ctid_ng.plugins.relocates.plugin:Plugin',

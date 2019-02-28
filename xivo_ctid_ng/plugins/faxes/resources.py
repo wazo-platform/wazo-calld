@@ -15,7 +15,7 @@ class FaxesResource(AuthResource):
     def __init__(self, faxes_service):
         self._service = faxes_service
 
-    @required_acl('ctid-ng.fax.create')
+    @required_acl('ctid-ng.faxes.create')
     def post(self):
         tenant = Tenant.autodetect()
         fax_infos = fax_creation_request_schema.load(request.args).data

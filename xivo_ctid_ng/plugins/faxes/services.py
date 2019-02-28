@@ -9,7 +9,7 @@ from xivo_ctid_ng.helpers import ami
 from xivo_ctid_ng.exceptions import InvalidExtension
 
 
-class FaxService:
+class FaxesService:
 
     def __init__(self, amid, ari):
         self._amid = amid
