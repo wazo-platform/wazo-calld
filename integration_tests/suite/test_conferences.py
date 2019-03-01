@@ -1,6 +1,7 @@
 # Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+import uuid
 import os
 
 from ari.exceptions import ARINotFound
@@ -24,6 +25,7 @@ from xivo_ctid_ng_client.exceptions import CtidNGError
 from .helpers.base import RealAsteriskIntegrationTest
 from .helpers.confd import MockConference
 
+USER_UUID = str(uuid.uuid4())
 ENDPOINT_AUTOANSWER = 'Test/integration-caller/autoanswer'
 CONFERENCE1_EXTENSION = '4001'
 CONFERENCE1_ID = 4001
@@ -40,13 +42,16 @@ class TestConferences(RealAsteriskIntegrationTest):
 
 class TestConferenceParticipants(TestConferences):
 
-    def given_call_in_conference(self, conference_extension, caller_id_name=None):
+    def given_call_in_conference(self, conference_extension, caller_id_name=None, user_uuid=None):
         caller_id_name = caller_id_name or 'caller for {}'.format(conference_extension)
+        variables = {'CALLERID(name)': caller_id_name}
+        if user_uuid:
+            variables['XIVO_USERUUID'] = user_uuid
         channel = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             context='conferences',
             extension=CONFERENCE1_EXTENSION,
-            variables={'variables': {'CALLERID(name)': caller_id_name}},
+            variables={'variables': variables},
         )
 
         def channel_is_talking(channel):
@@ -142,6 +147,22 @@ class TestConferenceParticipants(TestConferences):
 
         until.true(participant_joined_event_received, 'participant1', timeout=5)
 
+    def test_user_participant_joins_sends_event(self):
+        conference_id = CONFERENCE1_ID
+        user_uuid = USER_UUID
+        self.confd.set_conferences(
+            MockConference(id=conference_id, name='conference'),
+        )
+        bus_events = self.bus.accumulator('conferences.users.{}.participants.joined'.format(user_uuid))
+
+        self.given_call_in_conference(CONFERENCE1_EXTENSION, user_uuid=user_uuid)
+
+        def user_participant_joined_event_received(expected_user_uuid):
+            user_uuids = [event['data']['user_uuid'] for event in bus_events.accumulate()]
+            return expected_user_uuid in user_uuids
+
+        until.true(user_participant_joined_event_received, user_uuid, timeout=5)
+
     def test_participant_leaves_sends_event(self):
         conference_id = CONFERENCE1_ID
         self.confd.set_conferences(
@@ -159,6 +180,24 @@ class TestConferenceParticipants(TestConferences):
             return expected_caller_id_name in caller_id_names
 
         until.true(participant_left_event_received, 'participant1', timeout=5)
+
+    def test_user_participant_leaves_sends_event(self):
+        conference_id = CONFERENCE1_ID
+        user_uuid = USER_UUID
+        self.confd.set_conferences(
+            MockConference(id=conference_id, name='conference'),
+        )
+        bus_events = self.bus.accumulator('conferences.users.{}.participants.left'.format(user_uuid))
+
+        channel_id = self.given_call_in_conference(CONFERENCE1_EXTENSION, user_uuid=user_uuid)
+
+        self.ari.channels.get(channelId=channel_id).hangup()
+
+        def user_participant_left_event_received(expected_user_uuid):
+            user_uuids = [event['data']['user_uuid'] for event in bus_events.accumulate()]
+            return expected_user_uuid in user_uuids
+
+        until.true(user_participant_left_event_received, user_uuid, timeout=5)
 
     def test_kick_participant_with_no_confd(self):
         ctid_ng = self.make_ctid_ng()

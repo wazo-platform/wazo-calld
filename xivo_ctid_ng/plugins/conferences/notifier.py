@@ -10,6 +10,8 @@ from xivo_bus.resources.conference.event import (
     ParticipantUnmutedConferenceEvent,
     RecordStartedConferenceEvent,
     RecordStoppedConferenceEvent,
+    UserParticipantJoinedConferenceEvent,
+    UserParticipantLeftConferenceEvent,
 )
 
 
@@ -21,10 +23,16 @@ class ConferencesNotifier:
     def participant_joined(self, conference_id, participant):
         event = ParticipantJoinedConferenceEvent(conference_id, participant)
         self._bus_producer.publish(event)
+        if participant['user_uuid']:
+            event = UserParticipantJoinedConferenceEvent(conference_id, participant)
+            self._bus_producer.publish(event)
 
     def participant_left(self, conference_id, participant):
         event = ParticipantLeftConferenceEvent(conference_id, participant)
         self._bus_producer.publish(event)
+        if participant['user_uuid']:
+            event = UserParticipantLeftConferenceEvent(conference_id, participant)
+            self._bus_producer.publish(event)
 
     def participant_muted(self, conference_id, participant):
         event = ParticipantMutedConferenceEvent(conference_id, participant)
