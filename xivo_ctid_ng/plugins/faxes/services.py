@@ -1,13 +1,20 @@
 # Copyright 2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+import logging
 import os
+import os.path
+import subprocess
 
 from tempfile import mkstemp
 
 from xivo_ctid_ng.helpers import ami
 from xivo_ctid_ng.helpers.confd import User
 from xivo_ctid_ng.exceptions import InvalidExtension
+
+from .exceptions import FaxFailure
+
+logger = logging.getLogger(__name__)
 
 
 class FaxesService:
@@ -23,13 +30,28 @@ class FaxesService:
         if not ami.extension_exists(self._amid, context, extension):
             raise InvalidExtension(context, extension)
 
-        fax_file_descriptor, fax_path = mkstemp(prefix='wazo-fax-', suffix='.tif')
-        with os.fdopen(fax_file_descriptor, 'wb') as fax_file:
-            fax_file.write(content)
-        os.chmod(fax_path, 0o660)
+        pdf_file_descriptor, pdf_path = mkstemp(prefix='wazo-fax-', suffix='.pdf')
+        with os.fdopen(pdf_file_descriptor, 'wb') as pdf_file:
+            pdf_file.write(content)
+            pdf_file.close()
+
+        tif_path = '{name}.tif'.format(name=pdf_path)
+        command = ['/usr/bin/wazo-pdf2fax', '-o', tif_path, pdf_path]
+        logger.debug('Running command: %s', command)
+        try:
+            subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        except subprocess.CalledProcessError as e:
+            logger.debug('wazo-pdf2fax output: %s', e.stdout)
+            logger.debug('wazo-pdf2fax stderr: %s', e.stderr)
+            logger.error(e)
+            raise FaxFailure(message='Conversion from PDF to TIFF format failed')
+
+        if not os.path.exists(tif_path):
+            logger.error('wazo-pdf2fax: no output file "%s"', tif_path)
+            raise FaxFailure(message='Conversion from PDF to TIFF format failed: output file not found')
 
         originate_variables = {
-            'XIVO_FAX_PATH': fax_path,
+            'XIVO_FAX_PATH': tif_path,
         }
         recipient_endpoint = 'Local/{exten}@{context}'.format(exten=fax_infos['extension'], context=fax_infos['context'])
         new_channel = self._ari.channels.originate(endpoint=recipient_endpoint,

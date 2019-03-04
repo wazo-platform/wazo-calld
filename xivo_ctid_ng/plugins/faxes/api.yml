@@ -6,7 +6,7 @@ paths:
       parameters:
         - name: fax_content
           in: body
-          description: The fax file content, in TIFF format
+          description: The fax file content, in PDF format
           schema:
             type: string
             format: binary
@@ -32,7 +32,7 @@ paths:
       tags:
       - faxes
       consumes:
-      - image/tiff
+      - application/pdf
       responses:
         '204':
           description: Fax send request accepted
@@ -47,7 +47,7 @@ paths:
       parameters:
         - name: fax_content
           in: body
-          description: The fax file content, in TIFF format
+          description: The fax file content, in PDF format
           schema:
             type: string
             format: binary
@@ -73,7 +73,7 @@ paths:
       tags:
       - faxes
       consumes:
-      - image/tiff
+      - application/pdf
       responses:
         '204':
           description: Fax send request accepted

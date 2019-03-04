@@ -93,9 +93,30 @@ class TestFax(RealAsteriskIntegrationTest):
                 }))
             )
 
-    def test_send_fax_tiff(self):
+    def test_send_fax_pdf_conversion_failed(self):
         ctid_ng = self.make_ctid_ng()
-        fax_content = open(os.path.join(ASSET_ROOT, 'fax', 'fax.tiff'), 'rb').read()
+
+        # fax-failure = 1024 zeros
+        with open(os.path.join(ASSET_ROOT, 'fax', 'fax-failure.pdf'), 'rb') as fax_file:
+            fax_content = fax_file.read()
+
+        assert_that(
+            calling(ctid_ng.faxes.send).with_args(
+                fax_content,
+                context='recipient',
+                extension='recipient-fax',
+                caller_id='fax wait'
+            ), raises(CtidNGError).matching(has_properties({
+                'status_code': 400,
+                'error_id': 'fax-failure',
+            }))
+        )
+
+    def test_send_fax_pdf(self):
+        ctid_ng = self.make_ctid_ng()
+
+        with open(os.path.join(ASSET_ROOT, 'fax', 'fax.pdf'), 'rb') as fax_file:
+            fax_content = fax_file.read()
 
         try:
             ctid_ng.faxes.send(fax_content,
@@ -116,7 +137,8 @@ class TestFax(RealAsteriskIntegrationTest):
         self.auth.set_token(MockUserToken(token, user_uuid=user_uuid, tenant_uuid='my-tenant'))
 
         ctid_ng = self.make_ctid_ng(token)
-        fax_content = open(os.path.join(ASSET_ROOT, 'fax', 'fax.tiff'), 'rb').read()
+        with open(os.path.join(ASSET_ROOT, 'fax', 'fax.pdf'), 'rb') as fax_file:
+            fax_content = fax_file.read()
 
         assert_that(
             calling(ctid_ng.faxes.send_from_user).with_args(
@@ -136,7 +158,8 @@ class TestFax(RealAsteriskIntegrationTest):
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[]))
 
         ctid_ng = self.make_ctid_ng(token)
-        fax_content = open(os.path.join(ASSET_ROOT, 'fax', 'fax.tiff'), 'rb').read()
+        with open(os.path.join(ASSET_ROOT, 'fax', 'fax.pdf'), 'rb') as fax_file:
+            fax_content = fax_file.read()
 
         assert_that(
             calling(ctid_ng.faxes.send_from_user).with_args(
@@ -149,7 +172,7 @@ class TestFax(RealAsteriskIntegrationTest):
             }))
         )
 
-    def test_send_fax_tiff_from_user(self):
+    def test_send_fax_pdf_from_user(self):
         user_uuid = 'some-user-id'
         context = 'user-context'
         token = 'my-user-token'
@@ -158,7 +181,8 @@ class TestFax(RealAsteriskIntegrationTest):
         self.confd.set_lines(MockLine(id='some-line-id', name='line-name', protocol='pjsip', context=context))
 
         ctid_ng = self.make_ctid_ng(token)
-        fax_content = open(os.path.join(ASSET_ROOT, 'fax', 'fax.tiff'), 'rb').read()
+        with open(os.path.join(ASSET_ROOT, 'fax', 'fax.pdf'), 'rb') as fax_file:
+            fax_content = fax_file.read()
 
         try:
             ctid_ng.faxes.send_from_user(fax_content,

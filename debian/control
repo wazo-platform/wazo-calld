@@ -16,6 +16,7 @@ Architecture: all
 Depends:
  ${python3:Depends},
  ${misc:Depends},
+ ghostscript,
  mongooseim,
  python3-asterisk-ari,
  python3-cheroot,
