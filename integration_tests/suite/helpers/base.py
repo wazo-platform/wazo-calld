@@ -117,8 +117,8 @@ class IntegrationTest(AssetLaunchingTestCase):
             cls.bus = WrongClient('bus')
 
     @classmethod
-    def make_ctid_ng(cls):
-        return RealCtidNgClient('localhost', cls.service_port(9500, 'ctid-ng'), verify_certificate=False, token=VALID_TOKEN)
+    def make_ctid_ng(cls, token=VALID_TOKEN):
+        return RealCtidNgClient('localhost', cls.service_port(9500, 'ctid-ng'), verify_certificate=False, token=token)
 
     @classmethod
     @contextmanager

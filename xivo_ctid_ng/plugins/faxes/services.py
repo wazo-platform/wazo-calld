@@ -6,14 +6,16 @@ import os
 from tempfile import mkstemp
 
 from xivo_ctid_ng.helpers import ami
+from xivo_ctid_ng.helpers.confd import User
 from xivo_ctid_ng.exceptions import InvalidExtension
 
 
 class FaxesService:
 
-    def __init__(self, amid, ari):
+    def __init__(self, amid, ari, confd):
         self._amid = amid
         self._ari = ari
+        self._confd = confd
 
     def send_fax(self, tenant_uuid, content, fax_infos):
         context = fax_infos['context']
@@ -39,3 +41,10 @@ class FaxesService:
         return {
             'call_id': new_channel.id,
         }
+
+    def send_fax_from_user(self, tenant_uuid, user_uuid, content, fax_infos):
+        context = User(user_uuid, self._confd).main_line().context()
+
+        fax_infos['context'] = context
+
+        return self.send_fax(tenant_uuid, content, fax_infos)
