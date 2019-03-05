@@ -14,20 +14,17 @@ paths:
         - name: context
           in: query
           description: Context of the recipient of the fax
-          schema:
-            type: string
+          type: string
           required: true
         - name: extension
           in: query
           description: Extension of the recipient of the fax
-          schema:
-            type: string
+          type: string
           required: true
         - name: caller_id
           in: query
           description: 'Caller ID that will be presented to the recipient of the fax. Example: "my-name <+15551112222>"'
-          schema:
-            type: string
+          type: string
           default: 'Wazo Fax'
       tags:
       - faxes
@@ -55,20 +52,17 @@ paths:
         - name: context
           in: query
           description: Context of the recipient of the fax
-          schema:
-            type: string
+          type: string
           required: true
         - name: extension
           in: query
           description: Extension of the recipient of the fax
-          schema:
-            type: string
+          type: string
           required: true
         - name: caller_id
           in: query
           description: 'Caller ID that will be presented to the recipient of the fax. Example: "my-name <+15551112222>"'
-          schema:
-            type: string
+          type: string
           default: 'Wazo Fax'
       tags:
       - faxes
