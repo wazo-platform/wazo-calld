@@ -60,9 +60,14 @@ class FaxesService:
                                                    priority='1',
                                                    callerId=fax_infos['caller_id'],
                                                    variables={'variables': originate_variables})
-        return {
+        fax = {
+            'id': new_channel.id,
             'call_id': new_channel.id,
+            'extension': fax_infos['extension'],
+            'context': fax_infos['context'],
+            'caller_id': fax_infos['caller_id'],
         }
+        return fax
 
     def send_fax_from_user(self, tenant_uuid, user_uuid, content, fax_infos):
         context = User(user_uuid, self._confd).main_line().context()

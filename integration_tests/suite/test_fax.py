@@ -6,8 +6,11 @@ import os
 from hamcrest import (
     assert_that,
     calling,
+    empty,
+    has_entries,
     has_length,
     has_properties,
+    is_not,
 )
 from xivo_test_helpers import until
 from xivo_test_helpers.hamcrest.raises import raises
@@ -120,13 +123,17 @@ class TestFax(RealAsteriskIntegrationTest):
         with open(os.path.join(ASSET_ROOT, 'fax', 'fax.pdf'), 'rb') as fax_file:
             fax_content = fax_file.read()
 
-        try:
-            ctid_ng.faxes.send(fax_content,
-                               context='recipient',
-                               extension='recipient-fax',
-                               caller_id='fax wait')
-        except Exception as e:
-            raise AssertionError('Sending fax raised an exception: {}'.format(e))
+        fax = ctid_ng.faxes.send(fax_content,
+                                 context='recipient',
+                                 extension='recipient-fax',
+                                 caller_id='fax wait')
+
+        assert_that(fax, has_entries({
+            'id': is_not(empty()),
+            'context': 'recipient',
+            'extension': 'recipient-fax',
+            'caller_id': 'fax wait',
+        }))
 
         def one_fax_channel():
             assert_that(self._fax_channels(), has_length(1))

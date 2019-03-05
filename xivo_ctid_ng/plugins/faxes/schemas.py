@@ -16,5 +16,14 @@ class UserFaxCreationRequestSchema(Schema):
     caller_id = fields.String(missing='Wazo Fax')
 
 
+class FaxSchema(Schema):
+    id = fields.String(dump_only=True)
+    call_id = fields.String(dump_only=True)
+    context = fields.String(required=True)
+    extension = fields.String(required=True)
+    caller_id = fields.String(missing='Wazo Fax')
+
+
 fax_creation_request_schema = FaxCreationRequestSchema()
 user_fax_creation_request_schema = UserFaxCreationRequestSchema()
+fax_schema = FaxSchema()
