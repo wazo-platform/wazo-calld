@@ -1,5 +1,13 @@
 # Changelog
 
+## 19.04
+
+* New API for faxes:
+
+  * `POST /faxes`
+  * `POST /users/me/faxes`
+
+
 ## 19.03
 
 * New API for conferences:

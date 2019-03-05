@@ -9,10 +9,11 @@ WORKDIR /usr/src/xivo-ctid-ng
 
 RUN true \
     && apt-get -qq update \
-    && apt-get -qq -y install libpq-dev libyaml-dev \
+    && apt-get -qq -y install libpq-dev libyaml-dev ghostscript \
     && pip install -r requirements.txt \
     && python setup.py install \
     && cp -av etc/xivo-ctid-ng /etc \
+    && install -m 755 -o root -g www-data bin/wazo-pdf2fax /usr/bin/wazo-pdf2fax \
     && mkdir -p /etc/xivo-ctid-ng/conf.d \
     && touch /var/log/xivo-ctid-ng.log \
     && chown www-data /var/log/xivo-ctid-ng.log \

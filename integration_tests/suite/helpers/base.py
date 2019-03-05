@@ -117,8 +117,8 @@ class IntegrationTest(AssetLaunchingTestCase):
             cls.bus = WrongClient('bus')
 
     @classmethod
-    def make_ctid_ng(cls):
-        return RealCtidNgClient('localhost', cls.service_port(9500, 'ctid-ng'), verify_certificate=False, token=VALID_TOKEN)
+    def make_ctid_ng(cls, token=VALID_TOKEN):
+        return RealCtidNgClient('localhost', cls.service_port(9500, 'ctid-ng'), verify_certificate=False, token=token)
 
     @classmethod
     @contextmanager
@@ -163,6 +163,21 @@ class IntegrationTest(AssetLaunchingTestCase):
             cls.start_service('amid')
             cls.reset_clients()
             until.true(cls.amid.is_up, tries=5)
+
+    @classmethod
+    @contextmanager
+    def ari_stopped(cls):
+        cls.stop_service('ari')
+        try:
+            yield
+        finally:
+            cls.start_service('ari')
+
+            def ari_is_up():
+                return ARIClient('localhost', cls.service_port(5039, 'ari'))
+
+            until.return_(ari_is_up, timeout=5, message='ari did not restart')
+            cls.reset_clients()
 
 
 class RealAsteriskIntegrationTest(IntegrationTest):

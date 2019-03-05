@@ -1,4 +1,4 @@
-# Copyright 2013-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2013-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import requests
@@ -22,14 +22,18 @@ class AuthClient:
 
 class MockUserToken:
 
-    def __init__(self, token, user_uuid, acls=None):
+    def __init__(self, token, user_uuid, acls=None, tenant_uuid=None):
         self._token = token
         self._auth_id = user_uuid
         self._acls = acls
+        self._tenant_uuid = tenant_uuid
 
     def to_dict(self):
         result = {'token': self._token,
-                  'auth_id': self._auth_id}
+                  'auth_id': self._auth_id,
+                  'metadata': {}}
         if self._acls:
             result['acls'] = self._acls
+        if self._tenant_uuid:
+            result['metadata']['tenant_uuid'] = self._tenant_uuid
         return result
