@@ -25,7 +25,7 @@ class FaxesService:
         self._confd = confd
         self._notifier = notifier
 
-    def send_fax(self, tenant_uuid, content, fax_infos):
+    def send_fax(self, tenant_uuid, content, fax_infos, user_uuid=None):
         context = fax_infos['context']
         extension = fax_infos['extension']
         if not ami.extension_exists(self._amid, context, extension):
@@ -52,9 +52,11 @@ class FaxesService:
             raise FaxFailure(message='Conversion from PDF to TIFF format failed: output file not found')
 
         originate_variables = {
-            'XIVO_FAX_PATH': tif_path,
-            'WAZO_FAX_DESTINATION_EXTENSION': fax_infos['extension'],
             'WAZO_FAX_DESTINATION_CONTEXT': fax_infos['context'],
+            'WAZO_FAX_DESTINATION_EXTENSION': fax_infos['extension'],
+            'WAZO_TENANT_UUID': tenant_uuid,
+            'XIVO_FAX_PATH': tif_path,
+            'XIVO_USERUUID': user_uuid or '',
         }
         recipient_endpoint = 'Local/{exten}@{context}'.format(exten=fax_infos['extension'], context=fax_infos['context'])
         new_channel = self._ari.channels.originate(endpoint=recipient_endpoint,
@@ -69,6 +71,8 @@ class FaxesService:
             'extension': fax_infos['extension'],
             'context': fax_infos['context'],
             'caller_id': fax_infos['caller_id'],
+            'user_uuid': user_uuid,
+            'tenant_uuid': tenant_uuid,
         }
         self._notifier.notify_fax_created(fax)
         return fax
@@ -78,4 +82,4 @@ class FaxesService:
 
         fax_infos['context'] = context
 
-        return self.send_fax(tenant_uuid, content, fax_infos)
+        return self.send_fax(tenant_uuid, content, fax_infos, user_uuid=user_uuid)

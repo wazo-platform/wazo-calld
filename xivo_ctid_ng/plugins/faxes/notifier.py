@@ -5,6 +5,9 @@ from xivo_bus.resources.faxes.event import (
     FaxOutboundCreated,
     FaxOutboundFailed,
     FaxOutboundSucceeded,
+    FaxOutboundUserCreated,
+    FaxOutboundUserFailed,
+    FaxOutboundUserSucceeded,
 )
 
 
@@ -16,11 +19,20 @@ class FaxesNotifier:
     def notify_fax_created(self, fax_infos):
         event = FaxOutboundCreated(fax_infos)
         self._bus_producer.publish(event)
+        if fax_infos['user_uuid']:
+            event = FaxOutboundUserCreated(fax_infos)
+            self._bus_producer.publish(event)
 
     def notify_fax_succeeded(self, fax_infos):
         event = FaxOutboundSucceeded(fax_infos)
         self._bus_producer.publish(event)
+        if fax_infos['user_uuid']:
+            event = FaxOutboundUserSucceeded(fax_infos)
+            self._bus_producer.publish(event)
 
     def notify_fax_failed(self, fax_infos):
         event = FaxOutboundFailed(fax_infos)
         self._bus_producer.publish(event)
+        if fax_infos['user_uuid']:
+            event = FaxOutboundUserFailed(fax_infos)
+            self._bus_producer.publish(event)
