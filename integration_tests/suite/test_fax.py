@@ -6,6 +6,7 @@ import os
 from hamcrest import (
     assert_that,
     calling,
+    contains,
     empty,
     has_entries,
     has_length,
@@ -139,6 +140,79 @@ class TestFax(RealAsteriskIntegrationTest):
             assert_that(self._fax_channels(), has_length(1))
 
         until.assert_(one_fax_channel, timeout=3)
+
+    def test_send_fax_events_success(self):
+        ctid_ng = self.make_ctid_ng()
+
+        with open(os.path.join(ASSET_ROOT, 'fax', 'fax.pdf'), 'rb') as fax_file:
+            fax_content = fax_file.read()
+
+        events = self.bus.accumulator('faxes.outbound.#')
+
+        result = ctid_ng.faxes.send(fax_content,
+                                    context='recipient',
+                                    extension='recipient-fax',
+                                    caller_id='fax success')
+        fax_id = result['id']
+
+        def bus_events_received():
+            assert_that(events.accumulate(), contains(
+                has_entries({
+                    'name': 'fax_outbound_created',
+                    'data': has_entries({
+                        'id': fax_id,
+                        'context': 'recipient',
+                        'extension': 'recipient-fax',
+                    }),
+                }),
+                has_entries({
+                    'name': 'fax_outbound_succeeded',
+                    'data': has_entries({
+                        'id': fax_id,
+                        'context': 'recipient',
+                        'extension': 'recipient-fax',
+                    }),
+                }),
+            ))
+
+        until.assert_(bus_events_received, timeout=3)
+
+    def test_send_fax_events_failure(self):
+        ctid_ng = self.make_ctid_ng()
+
+        with open(os.path.join(ASSET_ROOT, 'fax', 'fax.pdf'), 'rb') as fax_file:
+            fax_content = fax_file.read()
+
+        events = self.bus.accumulator('faxes.outbound.#')
+
+        result = ctid_ng.faxes.send(fax_content,
+                                    context='recipient',
+                                    extension='recipient-fax',
+                                    caller_id='fax fail')
+        fax_id = result['id']
+
+        def bus_events_received():
+            assert_that(events.accumulate(), contains(
+                has_entries({
+                    'name': 'fax_outbound_created',
+                    'data': has_entries({
+                        'id': fax_id,
+                        'context': 'recipient',
+                        'extension': 'recipient-fax',
+                    }),
+                }),
+                has_entries({
+                    'name': 'fax_outbound_failed',
+                    'data': has_entries({
+                        'id': fax_id,
+                        'context': 'recipient',
+                        'extension': 'recipient-fax',
+                        'error': 'error explanation',
+                    }),
+                }),
+            ))
+
+        until.assert_(bus_events_received, timeout=3)
 
     def test_send_fax_from_user_unknown(self):
         user_uuid = 'some-user-id'

@@ -19,10 +19,11 @@ logger = logging.getLogger(__name__)
 
 class FaxesService:
 
-    def __init__(self, amid, ari, confd):
+    def __init__(self, amid, ari, confd, notifier):
         self._amid = amid
         self._ari = ari
         self._confd = confd
+        self._notifier = notifier
 
     def send_fax(self, tenant_uuid, content, fax_infos):
         context = fax_infos['context']
@@ -52,6 +53,8 @@ class FaxesService:
 
         originate_variables = {
             'XIVO_FAX_PATH': tif_path,
+            'WAZO_FAX_DESTINATION_EXTENSION': fax_infos['extension'],
+            'WAZO_FAX_DESTINATION_CONTEXT': fax_infos['context'],
         }
         recipient_endpoint = 'Local/{exten}@{context}'.format(exten=fax_infos['extension'], context=fax_infos['context'])
         new_channel = self._ari.channels.originate(endpoint=recipient_endpoint,
@@ -67,6 +70,7 @@ class FaxesService:
             'context': fax_infos['context'],
             'caller_id': fax_infos['caller_id'],
         }
+        self._notifier.notify_fax_created(fax)
         return fax
 
     def send_fax_from_user(self, tenant_uuid, user_uuid, content, fax_infos):
