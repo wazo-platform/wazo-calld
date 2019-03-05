@@ -24,6 +24,8 @@ from .helpers.constants import ASSET_ROOT
 
 class TestFax(RealAsteriskIntegrationTest):
 
+    asset = 'real_asterisk_fax'
+
     def setUp(self):
         super().setUp()
         self.confd.reset()
