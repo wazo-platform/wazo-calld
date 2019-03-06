@@ -31,8 +31,10 @@ paths:
       consumes:
       - application/pdf
       responses:
-        '204':
+        '201':
           description: Fax send request accepted
+          schema:
+            $ref: '#/definitions/Fax'
         '400':
           $ref: '#/responses/InvalidRequest'
         '503':
@@ -64,9 +66,36 @@ paths:
       consumes:
       - application/pdf
       responses:
-        '204':
+        '201':
           description: Fax send request accepted
+          schema:
+            $ref: '#/definitions/Fax'
         '400':
           $ref: '#/responses/InvalidRequest'
         '503':
           $ref: '#/responses/AnotherServiceUnavailable'
+definitions:
+  Fax:
+    type: object
+    properties:
+      id:
+        type: string
+        description: The fax ID
+      call_id:
+        type: string
+        description: The ID of the call that produced this fax
+      extension:
+        type: string
+        description: The extension where the fax was sent
+      context:
+        type: string
+        description: The context where the fax was sent
+      caller_id:
+        type: string
+        description: The Caller ID that was presented to the fax recipient
+      user_uuid:
+        type: string
+        description: The UUID of the user that sent the fax. May be null if the fax was sent by another service.
+      tenant_uuid:
+        type: string
+        description: The tenant UUID where the fax was sent from
