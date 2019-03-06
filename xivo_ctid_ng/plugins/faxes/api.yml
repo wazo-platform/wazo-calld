@@ -49,11 +49,6 @@ paths:
             type: string
             format: binary
           required: true
-        - name: context
-          in: query
-          description: Context of the recipient of the fax
-          type: string
-          required: true
         - name: extension
           in: query
           description: Extension of the recipient of the fax
