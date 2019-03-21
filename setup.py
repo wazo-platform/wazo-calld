@@ -29,7 +29,6 @@ setup(
             'chats = xivo_ctid_ng.plugins.chats.plugin:Plugin',
             'conferences = xivo_ctid_ng.plugins.conferences.plugin:Plugin',
             'faxes = xivo_ctid_ng.plugins.faxes.plugin:Plugin',
-            'mongooseim = xivo_ctid_ng.plugins.mongooseim.plugin:Plugin',
             'relocates = xivo_ctid_ng.plugins.relocates.plugin:Plugin',
             'status = xivo_ctid_ng.plugins.status.plugin:Plugin',
             'switchboards = xivo_ctid_ng.plugins.switchboards.plugin:Plugin',
