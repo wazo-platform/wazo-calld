@@ -26,7 +26,6 @@ setup(
             'api = xivo_ctid_ng.plugins.api.plugin:Plugin',
             'applications = xivo_ctid_ng.plugins.applications.plugin:Plugin',
             'calls = xivo_ctid_ng.plugins.calls.plugin:Plugin',
-            'chats = xivo_ctid_ng.plugins.chats.plugin:Plugin',
             'conferences = xivo_ctid_ng.plugins.conferences.plugin:Plugin',
             'faxes = xivo_ctid_ng.plugins.faxes.plugin:Plugin',
             'relocates = xivo_ctid_ng.plugins.relocates.plugin:Plugin',

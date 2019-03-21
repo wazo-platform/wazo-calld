@@ -92,7 +92,6 @@ _DEFAULT_CONFIG = {
         'api': True,
         'applications': True,
         'calls': True,
-        'chats': True,
         'conferences': True,
         'faxes': True,
         'relocates': True,

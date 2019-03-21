@@ -6,7 +6,6 @@ from hamcrest import contains_string
 from hamcrest import equal_to
 
 from .helpers.base import IntegrationTest
-from .helpers.chat import new_chat_message, new_user_chat_message
 from .helpers.constants import INVALID_ACL_TOKEN, VALID_TOKEN
 from .helpers.wait_strategy import CtidNgUpWaitStrategy
 
@@ -84,16 +83,6 @@ class TestAuthenticationCoverage(IntegrationTest):
 
     def test_auth_on_user_hangup(self):
         result = self.ctid_ng.delete_user_me_call_result('my-call')
-
-        assert_that(result.status_code, equal_to(401))
-
-    def test_auth_on_new_chat(self):
-        result = self.ctid_ng.post_chat_result(new_chat_message())
-
-        assert_that(result.status_code, equal_to(401))
-
-    def test_auth_on_new_user_chat(self):
-        result = self.ctid_ng.post_user_chat_result(new_user_chat_message())
 
         assert_that(result.status_code, equal_to(401))
 

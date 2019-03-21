@@ -15,9 +15,7 @@ build-ari: docker-pull
 	docker build -t ari-real -f $(CHAN_TEST_DIR)/Dockerfile $(CHAN_TEST_DIR)
 
 docker-pull:
-	docker pull mongooseim/mongooseim:2.1.0
 	docker pull p0bailey/docker-flask
-	docker pull postgres:9.6
 	docker pull python:2.7.13-stretch
 	docker pull swaggerapi/swagger-validator
 	docker pull wazopbx/wait
