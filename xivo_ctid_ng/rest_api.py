@@ -32,7 +32,6 @@ logger = logging.getLogger(__name__)
 app = Flask('xivo_ctid_ng')
 adapter_app = Flask('xivo_ctid_ng_adapter')
 api = Api(app, prefix='/{}'.format(VERSION))
-adapter_api = Api(adapter_app, prefix='/{}'.format(VERSION))
 auth_verifier = AuthVerifier()
 
 
@@ -47,7 +46,6 @@ class CoreRestApi:
 
     def __init__(self, global_config):
         self.config = global_config['rest_api']
-        self.adapter_config = global_config['adapter_api']
         http_helpers.add_logger(app, logger)
         http_helpers.add_logger(adapter_app, logger)
         app.before_request(http_helpers.log_before_request)
@@ -69,7 +67,6 @@ class CoreRestApi:
 
     def run(self):
         wsgi_app_https = ReverseProxied(ProxyFix(wsgi.WSGIPathInfoDispatcher({'/': app})))
-        wsgi_app_http = ReverseProxied(ProxyFix(wsgi.WSGIPathInfoDispatcher({'/': adapter_app})))
         cherrypy.server.unsubscribe()
         cherrypy.config.update({'environment': 'production'})
 
@@ -85,20 +82,6 @@ class CoreRestApi:
 
         for route in http_helpers.list_routes(app):
             logger.debug(route)
-
-        if self.adapter_config['enabled']:
-            bind_addr = (self.adapter_config['listen'], self.adapter_config['port'])
-            server_adapter = wsgi.WSGIServer(bind_addr=bind_addr,
-                                             wsgi_app=wsgi_app_http)
-            ServerAdapter(cherrypy.engine, server_adapter).subscribe()
-            logger.debug('WSGIServer starting... uid: %s, listen: %s:%s',
-                         os.getuid(), bind_addr[0], bind_addr[1])
-
-            for route in http_helpers.list_routes(adapter_app):
-                logger.debug(route)
-
-        else:
-            logger.debug('Adapter server is disabled')
 
         try:
             cherrypy.engine.start()

@@ -97,7 +97,6 @@ enabled_plugins:
   applications: true
   calls: true
   chats: true
-  mongooseim: true
   relocates: true
   status: true
   switchboards: true

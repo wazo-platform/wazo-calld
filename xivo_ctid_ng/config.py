@@ -29,11 +29,6 @@ _DEFAULT_CONFIG = {
             'allow_headers': ['Content-Type'],
         },
     },
-    'adapter_api': {
-        'enabled': True,
-        'listen': '127.0.0.1',
-        'port': 9501,
-    },
     'amid': {
         'host': 'localhost',
         'port': 9491,
@@ -77,10 +72,6 @@ _DEFAULT_CONFIG = {
         'scheme': 'https',
         'verify': _CERT_FILE,
     },
-    'mongooseim': {
-        'host': 'localhost',
-        'port': 8088,
-    },
     'service_discovery': {
         'enabled': True,
         'advertise_address': 'auto',
@@ -96,10 +87,8 @@ _DEFAULT_CONFIG = {
         'api': True,
         'applications': True,
         'calls': True,
-        'chats': True,
         'conferences': True,
         'faxes': True,
-        'mongooseim': True,
         'relocates': True,
         'status': True,
         'switchboards': True,

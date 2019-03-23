@@ -1,5 +1,14 @@
 # Changelog
 
+## 19.05
+
+* The following endpoints have been moved to wazo-chatd and deleted from xivo-ctid-ng:
+
+    * POST `/1.0/chats
+    * POST `/1.0/users/me/chats`
+    * GET `/1.0/users/me/chats`
+
+
 ## 19.04
 
 * New API for faxes:

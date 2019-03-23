@@ -32,9 +32,6 @@ consul:
 ctid:
   host: ctid
 
-mongooseim:
-  host: mongooseim
-
 websocketd:
   wss: false
   host: websocketd

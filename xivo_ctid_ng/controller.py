@@ -16,7 +16,7 @@ from .ari_ import CoreARI
 from .bus import CoreBusConsumer
 from .bus import CoreBusPublisher
 from .collectd import CoreCollectd
-from .rest_api import api, adapter_api, CoreRestApi
+from .rest_api import api, CoreRestApi
 from .service_discovery import self_check
 
 logger = logging.getLogger(__name__)
@@ -47,7 +47,6 @@ class Controller:
             names=config['enabled_plugins'],
             dependencies={
                 'api': api,
-                'adapter_api': adapter_api,
                 'ari': self.ari,
                 'bus_publisher': self.bus_publisher,
                 'bus_consumer': self.bus_consumer,
