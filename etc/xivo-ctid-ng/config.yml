@@ -96,7 +96,6 @@ enabled_plugins:
   api: true
   applications: true
   calls: true
-  chats: true
   relocates: true
   status: true
   switchboards: true

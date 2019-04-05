@@ -417,46 +417,6 @@ class CtidNgClient:
         assert_that(response.status_code, equal_to(200))
         return response.json()
 
-    def post_chat_result(self, chat_msg, token=None):
-        url = self.url('chats')
-        result = requests.post(url,
-                               json=chat_msg.as_chat_body(),
-                               headers={'X-Auth-Token': token},
-                               verify=False)
-        return result
-
-    def post_chat(self, chat_msg, token=None):
-        response = self.post_chat_result(chat_msg, token=token)
-        assert_that(response.status_code, equal_to(204))
-
-    def post_user_chat_result(self, chat_msg, token=None):
-        url = self.url('users', 'me', 'chats')
-        result = requests.post(url,
-                               json=chat_msg.as_user_chat_body(),
-                               headers={'X-Auth-Token': token},
-                               verify=False)
-        return result
-
-    def post_user_chat(self, chat_msg, token=None):
-        response = self.post_user_chat_result(chat_msg, token=token)
-        assert_that(response.status_code, equal_to(204))
-
-    def get_user_chat_result(self, token=None, **kwargs):
-        url = self.url('users', 'me', 'chats')
-        result = requests.get(url,
-                              params=kwargs,
-                              headers={'X-Auth-Token': token},
-                              verify=False)
-        return result
-
-    def get_user_chat(self, participant_user_uuid=None, participant_server_uuid=None, limit=None, token=None):
-        response = self.get_user_chat_result(participant_user_uuid=participant_user_uuid,
-                                             participant_server_uuid=participant_server_uuid,
-                                             limit=limit,
-                                             token=token)
-        assert_that(response.status_code, equal_to(200))
-        return response.json()
-
     def get_status_result(self, token=None):
         url = self.url('status')
         result = requests.get(url,
