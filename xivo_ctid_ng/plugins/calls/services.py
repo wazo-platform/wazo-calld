@@ -1,15 +1,15 @@
-# Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
 
+from ari.exceptions import ARINotFound
 from xivo_ctid_ng.ari_ import DEFAULT_APPLICATION_NAME
 from xivo_ctid_ng.exceptions import InvalidExtension
 from xivo_ctid_ng.exceptions import UserPermissionDenied
 from xivo_ctid_ng.helpers import ami
 from xivo_ctid_ng.helpers.ari_ import Channel
 from xivo_ctid_ng.helpers.confd import User
-from ari.exceptions import ARINotFound
 
 from .call import Call
 from .exceptions import CallConnectError

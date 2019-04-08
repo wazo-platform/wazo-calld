@@ -1,4 +1,4 @@
-# Copyright 2016-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
@@ -87,7 +87,7 @@ class TransfersStasis:
               isinstance(exception, TransferException)):
             self.handle_error(exception)
         else:
-            raise
+            raise exception
 
     def handle_error(self, exception):
         logger.error('%s: %s', exception.message, exception.details)

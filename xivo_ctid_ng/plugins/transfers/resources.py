@@ -1,4 +1,4 @@
-# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from flask import request
@@ -22,6 +22,7 @@ class TransferRequestSchema(Schema):
                            missing=dict)
     timeout = fields.Integer(missing=None, min=1, allow_none=True)
 
+
 transfer_request_schema = TransferRequestSchema(strict=True)
 
 
@@ -30,6 +31,7 @@ class UserTransferRequestSchema(Schema):
     exten = fields.Str(validate=Length(min=1), required=True)
     flow = fields.Str(validate=OneOf(['attended', 'blind']), missing='attended')
     timeout = fields.Integer(missing=None, min=1, allow_none=True)
+
 
 user_transfer_request_schema = UserTransferRequestSchema(strict=True)
 

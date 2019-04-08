@@ -9,7 +9,6 @@ from requests import RequestException
 from xivo_ctid_ng.helpers.confd import Conference
 from xivo_ctid_ng.exceptions import (
     XiVOAmidError,
-    XiVOConfdUnreachable,
 )
 
 from .exceptions import (

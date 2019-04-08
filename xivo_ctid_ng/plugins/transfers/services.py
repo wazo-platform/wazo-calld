@@ -1,4 +1,4 @@
-# Copyright 2016-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -52,8 +52,8 @@ class TransfersService:
         if not self.transfer_lock.acquire(initiator_call):
             raise TransferAlreadyStarted(initiator_call)
 
-        if not (Channel(transferred_call, self.ari).is_in_stasis() and
-                Channel(initiator_call, self.ari).is_in_stasis()):
+        if not (Channel(transferred_call, self.ari).is_in_stasis()
+                and Channel(initiator_call, self.ari).is_in_stasis()):
             transfer_state = self.state_factory.make_from_class(TransferStateReadyNonStasis)
         else:
             transfer_state = self.state_factory.make_from_class(TransferStateReady)

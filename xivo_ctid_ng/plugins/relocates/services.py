@@ -1,4 +1,4 @@
-# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -82,9 +82,9 @@ class ExtensionDestination(Destination):
 
     def is_valid(self):
         return (
-            self._exten is not None and
-            self._context is not None and
-            ami.extension_exists(self._amid, self._context, self._exten)
+            self._exten is not None
+            and self._context is not None
+            and ami.extension_exists(self._amid, self._context, self._exten)
         )
 
     def ari_endpoint(self):
