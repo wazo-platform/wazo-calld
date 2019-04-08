@@ -61,7 +61,7 @@ class TestConferenceParticipants(TestConferences):
                 raise AssertionError('channel {} not found'.format(channel.id))
             assert_that(channel.json['state'], equal_to('Up'))
 
-        until.assert_(channel_is_talking, channel, timeout=5)
+        until.assert_(channel_is_talking, channel, timeout=10)
         return channel.id
 
     def test_list_participants_with_no_confd(self):
@@ -145,7 +145,7 @@ class TestConferenceParticipants(TestConferences):
                                for event in bus_events.accumulate()]
             return expected_caller_id_name in caller_id_names
 
-        until.true(participant_joined_event_received, 'participant1', timeout=5)
+        until.true(participant_joined_event_received, 'participant1', timeout=10)
 
     def test_user_participant_joins_sends_event(self):
         conference_id = CONFERENCE1_ID
@@ -161,7 +161,7 @@ class TestConferenceParticipants(TestConferences):
             user_uuids = [event['data']['user_uuid'] for event in bus_events.accumulate()]
             return expected_user_uuid in user_uuids
 
-        until.true(user_participant_joined_event_received, user_uuid, timeout=5)
+        until.true(user_participant_joined_event_received, user_uuid, timeout=10)
 
     def test_participant_leaves_sends_event(self):
         conference_id = CONFERENCE1_ID
@@ -179,7 +179,7 @@ class TestConferenceParticipants(TestConferences):
                                for event in bus_events.accumulate()]
             return expected_caller_id_name in caller_id_names
 
-        until.true(participant_left_event_received, 'participant1', timeout=5)
+        until.true(participant_left_event_received, 'participant1', timeout=10)
 
     def test_user_participant_leaves_sends_event(self):
         conference_id = CONFERENCE1_ID
@@ -197,7 +197,7 @@ class TestConferenceParticipants(TestConferences):
             user_uuids = [event['data']['user_uuid'] for event in bus_events.accumulate()]
             return expected_user_uuid in user_uuids
 
-        until.true(user_participant_left_event_received, user_uuid, timeout=5)
+        until.true(user_participant_left_event_received, user_uuid, timeout=10)
 
     def test_kick_participant_with_no_confd(self):
         ctid_ng = self.make_ctid_ng()
@@ -275,7 +275,7 @@ class TestConferenceParticipants(TestConferences):
                 'total': 0,
                 'items': empty()
             }))
-        until.assert_(no_more_participants, timeout=5, message='Participant was not kicked')
+        until.assert_(no_more_participants, timeout=10, message='Participant was not kicked')
 
     def test_mute_participant_with_no_confd(self):
         ctid_ng = self.make_ctid_ng()
@@ -377,7 +377,7 @@ class TestConferenceParticipants(TestConferences):
                 'total': 1,
                 'items': contains(has_entry('muted', True))
             }))
-        until.assert_(participant_is_muted, timeout=5, message='Participant was not muted')
+        until.assert_(participant_is_muted, timeout=10, message='Participant was not muted')
 
         ctid_ng.conferences.unmute_participant(conference_id, participant['id'])
 
@@ -387,7 +387,7 @@ class TestConferenceParticipants(TestConferences):
                 'total': 1,
                 'items': contains(has_entry('muted', False))
             }))
-        until.assert_(participant_is_not_muted, timeout=5, message='Participant is still muted')
+        until.assert_(participant_is_not_muted, timeout=10, message='Participant is still muted')
 
     def test_mute_unmute_participant_twice(self):
         ctid_ng = self.make_ctid_ng()
@@ -432,11 +432,11 @@ class TestConferenceParticipants(TestConferences):
                 })
             })))
 
-        until.assert_(participant_muted_event_received, muted=True, timeout=5, message='Mute event was not received')
+        until.assert_(participant_muted_event_received, muted=True, timeout=10, message='Mute event was not received')
 
         ctid_ng.conferences.unmute_participant(conference_id, participant['id'])
 
-        until.assert_(participant_muted_event_received, muted=True, timeout=5, message='Unmute event was not received')
+        until.assert_(participant_muted_event_received, muted=True, timeout=10, message='Unmute event was not received')
 
     def test_record_with_no_confd(self):
         ctid_ng = self.make_ctid_ng()
@@ -533,7 +533,7 @@ class TestConferenceParticipants(TestConferences):
             record_file_size_2 = file_size(record_file)
             assert_that(record_file_size_1, less_than(record_file_size_2))
 
-        until.assert_(record_file_is_growing, timeout=5, message='file did not grow')
+        until.assert_(record_file_is_growing, timeout=10, message='file did not grow')
 
         def record_file_is_closed():
             record_file = latest_record_file()
@@ -588,11 +588,11 @@ class TestConferenceParticipants(TestConferences):
                 })
             })))
 
-        until.assert_(record_event_received, record=True, timeout=5, message='Record start event was not received')
+        until.assert_(record_event_received, record=True, timeout=10, message='Record start event was not received')
 
         ctid_ng.conferences.stop_record(conference_id)
 
-        until.assert_(record_event_received, record=False, timeout=5, message='Record stop event was not received')
+        until.assert_(record_event_received, record=False, timeout=10, message='Record stop event was not received')
 
     def test_participant_talking_sends_event(self):
         ctid_ng = self.make_ctid_ng()
@@ -615,7 +615,7 @@ class TestConferenceParticipants(TestConferences):
                 })
             })))
 
-        until.assert_(talking_event_received, talking=True, timeout=5, message='Talking start event was not received')
+        until.assert_(talking_event_received, talking=True, timeout=10, message='Talking start event was not received')
 
         # send fake "stopped talking" AMI event
         self.bus.publish(
@@ -635,4 +635,4 @@ class TestConferenceParticipants(TestConferences):
             routing_key='ami.ConfbridgeTalking'
         )
 
-        until.assert_(talking_event_received, talking=False, timeout=5, message='Talking stop event was not received')
+        until.assert_(talking_event_received, talking=False, timeout=10, message='Talking stop event was not received')
