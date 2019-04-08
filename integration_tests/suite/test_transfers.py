@@ -1,4 +1,4 @@
-# Copyright 2016-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -87,6 +87,12 @@ class TestTransfers(RealAsteriskIntegrationTest):
     def answer_recipient_channel(self, local_recipient_channel_id):
         recipient_channel = self.ari.channels.get(channelId=local_recipient_channel_id)
         real_recipient_channel = self.dereference_local_channel(recipient_channel)
+
+        def _recipient_is_ringing(channel_id):
+            print(self.ari.channels.get(channelId=channel_id).json['state'])
+            assert_that(channel_id, self.c.is_ringing(), 'recipient is not ringing')
+
+        until.assert_(_recipient_is_ringing, real_recipient_channel.id, timeout=10)
         self.chan_test.answer_channel(real_recipient_channel.id)
 
     def latest_with_same_linkedid(self, channel_left, exclude=None):
@@ -1349,7 +1355,7 @@ class TestTransferFromNonStasis(TestTransfers):
             response = self.ctid_ng.get_transfer(transfer_id)
             return response['recipient_call']
 
-        recipient_channel_id = until.true(get_recipient_call, tries=5)
+        recipient_channel_id = until.true(get_recipient_call, timeout=10)
         self.answer_recipient_channel(recipient_channel_id)
 
         until.assert_(self.assert_transfer_is_answered,
@@ -1357,7 +1363,7 @@ class TestTransferFromNonStasis(TestTransfers):
                       transferred_channel_id,
                       initiator_channel_id,
                       self.events,
-                      tries=5)
+                      timeout=5)
 
     def test_given_state_ready_when_blind_transfer_then_state_blind_transferred(self):
         transferred_channel_id, initiator_channel_id = self.given_bridged_call_not_stasis()
