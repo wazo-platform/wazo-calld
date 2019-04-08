@@ -1379,7 +1379,7 @@ class TestTransferFromNonStasis(TestTransfers):
                       transferred_channel_id,
                       initiator_channel_id,
                       recipient_channel_id,
-                      tries=5)
+                      timeout=10)
 
 
 class TestTransferFailingARI(IntegrationTest):
