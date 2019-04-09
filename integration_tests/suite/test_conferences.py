@@ -4,14 +4,12 @@
 import uuid
 import os
 
-from ari.exceptions import ARINotFound
 from hamcrest import (
     assert_that,
     calling,
     contains,
     contains_inanyorder,
     empty,
-    equal_to,
     has_entries,
     has_entry,
     has_item,
@@ -24,6 +22,7 @@ from xivo_test_helpers.hamcrest.raises import raises
 from xivo_ctid_ng_client.exceptions import CtidNGError
 from .helpers.base import RealAsteriskIntegrationTest
 from .helpers.confd import MockConference
+from .helpers.hamcrest_ import HamcrestARIChannel
 
 USER_UUID = str(uuid.uuid4())
 ENDPOINT_AUTOANSWER = 'Test/integration-caller/autoanswer'
@@ -42,6 +41,10 @@ class TestConferences(RealAsteriskIntegrationTest):
 
 class TestConferenceParticipants(TestConferences):
 
+    def setUp(self):
+        super().setUp()
+        self.c = HamcrestARIChannel(self.ari)
+
     def given_call_in_conference(self, conference_extension, caller_id_name=None, user_uuid=None):
         caller_id_name = caller_id_name or 'caller for {}'.format(conference_extension)
         variables = {'CALLERID(name)': caller_id_name}
@@ -54,14 +57,10 @@ class TestConferenceParticipants(TestConferences):
             variables={'variables': variables},
         )
 
-        def channel_is_talking(channel):
-            try:
-                channel = self.ari.channels.get(channelId=channel.id)
-            except ARINotFound:
-                raise AssertionError('channel {} not found'.format(channel.id))
-            assert_that(channel.json['state'], equal_to('Up'))
+        def channel_is_in_conference(channel):
+            assert_that(channel.id, self.c.is_in_bridge(), 'Channel is not in conference')
 
-        until.assert_(channel_is_talking, channel, timeout=10)
+        until.assert_(channel_is_in_conference, channel, timeout=10)
         return channel.id
 
     def test_list_participants_with_no_confd(self):
