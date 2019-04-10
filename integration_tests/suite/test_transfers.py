@@ -85,14 +85,14 @@ class TestTransfers(RealAsteriskIntegrationTest):
         return final_channel
 
     def answer_recipient_channel(self, local_recipient_channel_id):
-        recipient_channel = self.ari.channels.get(channelId=local_recipient_channel_id)
-        real_recipient_channel = self.dereference_local_channel(recipient_channel)
+        local_recipient_channel = self.ari.channels.get(channelId=local_recipient_channel_id)
 
-        def _recipient_is_ringing(channel_id):
-            print(self.ari.channels.get(channelId=channel_id).json['state'])
-            assert_that(channel_id, self.c.is_ringing(), 'recipient is not ringing')
+        def _recipient_is_ringing(local_recipient_channel):
+            real_recipient_channel = self.dereference_local_channel(local_recipient_channel)
+            assert_that(real_recipient_channel.id, self.c.is_ringing(), 'recipient is not ringing')
+            return real_recipient_channel
 
-        until.assert_(_recipient_is_ringing, real_recipient_channel.id, timeout=10)
+        real_recipient_channel = until.true(_recipient_is_ringing, local_recipient_channel, timeout=30)
         self.chan_test.answer_channel(real_recipient_channel.id)
 
     def latest_with_same_linkedid(self, channel_left, exclude=None):
@@ -1355,7 +1355,7 @@ class TestTransferFromNonStasis(TestTransfers):
             response = self.ctid_ng.get_transfer(transfer_id)
             return response['recipient_call']
 
-        recipient_channel_id = until.true(get_recipient_call, timeout=10)
+        recipient_channel_id = until.true(get_recipient_call, timeout=30)
         self.answer_recipient_channel(recipient_channel_id)
 
         until.assert_(self.assert_transfer_is_answered,
