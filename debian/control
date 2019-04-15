@@ -32,7 +32,6 @@ Depends:
  xivo-auth-client-python3,
  xivo-bus (>> 15.19),
  xivo-confd-client-python3,
- xivo-ctid-client-python3,
  xivo-ctid-ng-client-python3,
  xivo-lib-python-python3
 Description: Wazo CTI server (new generation)
