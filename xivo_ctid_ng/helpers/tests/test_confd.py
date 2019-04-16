@@ -1,11 +1,14 @@
-# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import requests
 
-from hamcrest import assert_that
-from hamcrest import calling
-from hamcrest import raises
+from hamcrest import (
+    assert_that,
+    calling,
+    equal_to,
+    raises,
+)
 from mock import Mock
 from unittest import TestCase
 
@@ -24,3 +27,17 @@ class TestLine(TestCase):
 
         assert_that(calling(self.line._get).with_args(),
                     raises(XiVOConfdUnreachable))
+
+    def test_line_interface_autoanswer_sip(self):
+        self.confd_client.lines.get.return_value = {
+            'protocol': 'sip',
+            'name': 'abcdef',
+        }
+        assert_that(self.line.interface_autoanswer(), equal_to('pjsip/abcdef'))
+
+    def test_line_interface_autoanswer_sccp(self):
+        self.confd_client.lines.get.return_value = {
+            'protocol': 'sccp',
+            'name': 'abcdef',
+        }
+        assert_that(self.line.interface_autoanswer(), equal_to('sccp/abcdef/autoanswer'))

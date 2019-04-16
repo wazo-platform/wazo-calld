@@ -1,4 +1,4 @@
-# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -21,6 +21,17 @@ from .exceptions import (
 
 BRIDGE_QUEUE_ID = 'switchboard-{uuid}-queue'
 BRIDGE_HOLD_ID = 'switchboard-{uuid}-hold'
+AUTO_ANSWER_VARIABLES = {
+    # Aastra/Mitel need Alert-Info: info=alert-autoanswer
+    # Polycom need Alert-Info: xivo-autoanswer
+    # Snom need Alert-Info: <http://something>;info=alert-autoanswer;delay=0
+    # Which models need the other headers is unknown
+    'PJSIP_HEADER(add,Alert-Info)': '<http://wazo.community>;info=alert-autoanswer;delay=0;xivo-autoanswer',
+    'PJSIP_HEADER(add,Answer-After)': '0',
+    'PJSIP_HEADER(add,Answer-Mode)': 'Auto',
+    'PJSIP_HEADER(add,Call-Info)': ';answer-after=0',
+    'PJSIP_HEADER(add,P-Auto-answer)': 'normal',
+}
 
 logger = logging.getLogger(__name__)
 
@@ -81,7 +92,7 @@ class SwitchboardsService:
         except ARINotFound:
             raise NoSuchCall(queued_call_id)
 
-        endpoint = User(user_uuid, self._confd).main_line().interface()
+        endpoint = User(user_uuid, self._confd).main_line().interface_autoanswer()
         caller_id = assemble_caller_id(
             queued_channel.json['caller']['name'],
             queued_channel.json['caller']['number']
@@ -93,6 +104,7 @@ class SwitchboardsService:
             appArgs=['switchboard', 'switchboard_answer', switchboard_uuid, queued_call_id],
             callerId=caller_id,
             originator=queued_call_id,
+            variables={'variables': AUTO_ANSWER_VARIABLES},
         )
 
         return channel.id
@@ -170,7 +182,7 @@ class SwitchboardsService:
         except ARINotFound:
             raise NoSuchCall(held_call_id)
 
-        endpoint = User(user_uuid, self._confd).main_line().interface()
+        endpoint = User(user_uuid, self._confd).main_line().interface_autoanswer()
         caller_id = assemble_caller_id(
             held_channel.json['caller']['name'],
             held_channel.json['caller']['number'],
@@ -181,6 +193,7 @@ class SwitchboardsService:
             app=DEFAULT_APPLICATION_NAME,
             appArgs=['switchboard', 'switchboard_unhold', switchboard_uuid, held_call_id],
             callerId=caller_id,
+            variables={'variables': AUTO_ANSWER_VARIABLES},
         )
 
         return channel.id
