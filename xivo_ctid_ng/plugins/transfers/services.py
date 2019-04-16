@@ -12,7 +12,6 @@ from xivo_ctid_ng.helpers.ari_ import Channel
 from xivo_ctid_ng.helpers.confd import User
 from xivo_ctid_ng.helpers.exceptions import NotEnoughChannels
 from xivo_ctid_ng.helpers.exceptions import TooManyChannels
-from xivo_ctid_ng.plugins.calls.state_persistor import ReadOnlyStatePersistor as ReadOnlyCallStates
 
 from xivo_ctid_ng.helpers import ami
 from . import ari_helpers
@@ -32,7 +31,6 @@ class TransfersService:
         self.confd_client = confd_client
         self.state_persistor = state_persistor
         self.state_factory = state_factory
-        self.call_states = ReadOnlyCallStates(self.ari)
         self.transfer_lock = transfer_lock
 
     def list_from_user(self, user_uuid):
@@ -87,14 +85,10 @@ class TransfersService:
         return self.create(transferred_call, initiator_call, context, exten, flow, variables={}, timeout=timeout)
 
     def originate_recipient(self, initiator_call, context, exten, transfer_id, variables, timeout):
-        try:
-            app_instance = self.call_states.get(initiator_call).app_instance
-        except KeyError:
-            raise TransferCreationError('{call}: no app_instance found'.format(call=initiator_call))
         initiator_channel = self.ari.channels.get(channelId=initiator_call)
         caller_id = assemble_caller_id(initiator_channel.json['caller']['name'], initiator_channel.json['caller']['number']).encode('utf-8')
         recipient_endpoint = 'Local/{exten}@{context}'.format(exten=exten, context=context)
-        app_args = [app_instance, 'transfer_recipient_called', transfer_id]
+        app_args = ['transfer', 'transfer_recipient_called', transfer_id]
         originate_variables = dict(variables)
         originate_variables['XIVO_TRANSFER_ROLE'] = 'recipient'
         originate_variables['XIVO_TRANSFER_ID'] = transfer_id
