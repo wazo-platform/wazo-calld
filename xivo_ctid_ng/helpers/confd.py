@@ -90,6 +90,12 @@ class Line:
         protocol = line['protocol'].replace('sip', 'pjsip')
         return "{}/{}".format(protocol, line['name'])
 
+    def interface_autoanswer(self):
+        interface = self.interface()
+        if interface.startswith('sccp/'):
+            interface = '{}/autoanswer'.format(interface)
+        return interface
+
 
 class Conference:
 
