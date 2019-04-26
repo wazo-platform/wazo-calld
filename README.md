@@ -1,28 +1,24 @@
-XiVO CTI NG [![Build Status](https://jenkins.wazo.community/buildStatus/icon?job=xivo-ctid-ng)](https://jenkins.wazo.community/job/xivo-ctid-ng)
-===========
+# XiVO CTI NG [![Build Status](https://jenkins.wazo.community/buildStatus/icon?job=xivo-ctid-ng)](https://jenkins.wazo.community/job/xivo-ctid-ng)
 
 XiVO CTI is a [Computer telephony integration](http://en.wikipedia.org/Computer_telephony_integration) server
 that provides advanced telephony services such as automatic phone control and
 [Call center](http://en.wikipedia.org/wiki/Call_center) monitoring. CTI services are controlled by connecting to
 the server with the [XiVO CTI client](https://github.com/wazo-pbx/xivo-client-qt)
 
-Installing XiVO CTI NG
-----------------------
+## Installing XiVO CTI NG
 
 The server is already provided as a part of [Wazo](http://documentation.wazo.community).
 Please refer to [the documentation](http://documentation.wazo.community/en/stable/installation/installsystem.html) for
 further details on installing one.
 
-Running unit tests
-------------------
+## Running unit tests
 
 ```
 pip install tox
 tox --recreate -e py35
 ```
 
-Running integration tests
--------------------------
+## Running integration tests
 
 You need Docker installed on your machine.
 
@@ -33,8 +29,7 @@ You need Docker installed on your machine.
 4. ```make test-setup```
 5. ```make test```
 
-Environment variables
----------------------
+## Environment variables
 
 Running the integration tests is controlled by the following environment variables:
 
