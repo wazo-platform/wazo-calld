@@ -4,7 +4,7 @@ services:
     depends_on:
       - auth
       - confd
-      - ctid-ng
+      - calld
       - rabbitmq
     environment:
       TARGETS: "rabbitmq:5672 confd:9486 auth:9497"

@@ -1,4 +1,4 @@
-# Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
@@ -13,7 +13,7 @@ from .helpers.ari_ import MockChannel
 from .helpers.base import IntegrationTest
 from .helpers.constants import STASIS_APP_NAME
 from .helpers.constants import STASIS_APP_INSTANCE_NAME
-from .helpers.ctid_ng import new_call_id
+from .helpers.calld import new_call_id
 from .helpers.confd import MockLine
 from .helpers.confd import MockUser
 
@@ -73,7 +73,7 @@ class TestDialedFrom(IntegrationTest):
         self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='pjsip'))
         self.ari.set_originates(MockChannel(id=new_call_id))
 
-        self.ctid_ng.connect_user(call_id, 'user-uuid')
+        self.calld.connect_user(call_id, 'user-uuid')
 
         self.stasis.event_hangup(call_id)
 

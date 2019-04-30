@@ -7,8 +7,8 @@ services:
       - auth
       - confd
       - consul
-      - ctid-ng
+      - calld
       - rabbitmq
       - websocketd
     environment:
-      TARGETS: "ari:5039 rabbitmq:5672 consul:8500 confd:9486 amid:9491 auth:9497 ctid-ng:9500 websocketd:9502"
+      TARGETS: "ari:5039 rabbitmq:5672 consul:8500 confd:9486 amid:9491 auth:9497 calld:9500 websocketd:9502"

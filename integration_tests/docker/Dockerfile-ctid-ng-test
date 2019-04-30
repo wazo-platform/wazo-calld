@@ -1,8 +1,0 @@
-FROM wazopbx/xivo-ctid-ng
-
-ENV PYTHONDONTWRITEBYTECODE='true'
-
-ADD . /usr/src/xivo-ctid-ng
-WORKDIR /usr/src/xivo-ctid-ng
-
-RUN python setup.py develop

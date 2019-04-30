@@ -1,12 +1,12 @@
 CHAN_TEST_DIR ?= ../../chan-test
 
-.PHONY: test-setup build-ctid-ng build-ari docker-pull egg-info test
+.PHONY: test-setup build-calld build-ari docker-pull egg-info test
 
-test-setup: build-ctid-ng build-ari docker-pull
+test-setup: build-calld build-ari docker-pull
 
-build-ctid-ng: docker-pull egg-info
-	docker build -t wazopbx/xivo-ctid-ng ..
-	docker build --no-cache -t xivo-ctid-ng-test -f docker/Dockerfile-ctid-ng-test ..
+build-calld: docker-pull egg-info
+	docker build -t wazopbx/wazo-calld ..
+	docker build --no-cache -t wazo-calld-test -f docker/Dockerfile-calld-test ..
 	docker build -t xivo-websocketd-mock -f docker/Dockerfile-websocketd-mock .
 
 build-ari: docker-pull
@@ -25,8 +25,8 @@ docker-pull:
 	docker pull wazopbx/xivo-confd-mock
 
 clean:
-	docker rmi -f wazopbx/xivo-ctid-ng
-	docker rmi -f xivo-ctid-ng-test
+	docker rmi -f wazopbx/wazo-calld
+	docker rmi -f wazo-calld-test
 	docker rmi -f ari-mock
 	docker rmi -f ari-real
 

@@ -21,35 +21,35 @@ class NoWaitStrategy(WaitStrategy):
         pass
 
 
-class CtidNgUpWaitStrategy(WaitStrategy):
+class CalldUpWaitStrategy(WaitStrategy):
 
     def wait(self, integration_test):
-        until.true(integration_test.ctid_ng.is_up, tries=5)
+        until.true(integration_test.calld.is_up, tries=5)
 
 
-class CtidNgConnectionsOkWaitStrategy(WaitStrategy):
+class CalldConnectionsOkWaitStrategy(WaitStrategy):
 
     def wait(self, integration_test):
 
-        def ctid_ng_is_ready():
-            status = integration_test.ctid_ng.status()
+        def calld_is_ready():
+            status = integration_test.calld.status()
             assert_that(status, has_entries({
                 'ari': has_entry('status', 'ok'),
                 'bus_consumer': has_entry('status', 'ok')
             }))
 
-        until.assert_(ctid_ng_is_ready, tries=10)
+        until.assert_(calld_is_ready, tries=10)
 
 
-class CtidNgEverythingOkWaitStrategy(WaitStrategy):
+class CalldEverythingOkWaitStrategy(WaitStrategy):
 
     def wait(self, integration_test):
-        def ctid_ng_is_ready():
-            status = integration_test.ctid_ng.status()
+        def calld_is_ready():
+            status = integration_test.calld.status()
             assert_that(status, has_entries({
                 'ari': has_entry('status', 'ok'),
                 'bus_consumer': has_entry('status', 'ok'),
                 'service_token': has_entry('status', 'ok'),
             }))
 
-        until.assert_(ctid_ng_is_ready, tries=60)
+        until.assert_(calld_is_ready, tries=60)

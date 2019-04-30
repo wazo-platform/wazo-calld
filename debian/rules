@@ -1,7 +1,7 @@
 #!/usr/bin/make -f
 # -*- makefile -*-
 
-export PYBUILD_NAME=xivo-ctid-ng
+export PYBUILD_NAME=wazo-calld
 export PYBUILD_DISABLE=test
 
 %:

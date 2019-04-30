@@ -1,0 +1,14 @@
+[Unit]
+Description=wazo-calld server
+ConditionPathExists=!/var/lib/xivo/disabled
+After=network.target asterisk.service rabbitmq-server.service wazo-auth.service xivo-confd.service
+Before=monit.service
+
+[Service]
+Type=forking
+ExecStartPre=/usr/bin/install -d -o www-data -g www-data /var/run/wazo-calld
+ExecStart=/usr/bin/wazo-calld
+PIDFile=/var/run/wazo-calld/wazo-calld.pid
+
+[Install]
+WantedBy=multi-user.target

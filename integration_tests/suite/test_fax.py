@@ -15,7 +15,7 @@ from hamcrest import (
 )
 from xivo_test_helpers import until
 from xivo_test_helpers.hamcrest.raises import raises
-from xivo_ctid_ng_client.exceptions import CtidNGError
+from wazo_calld_client.exceptions import CalldError
 
 from .helpers.base import RealAsteriskIntegrationTest
 from .helpers.auth import MockUserToken
@@ -40,26 +40,26 @@ class TestFax(RealAsteriskIntegrationTest):
         return fax_channels
 
     def test_send_fax_wrong_params(self):
-        ctid_ng = self.make_ctid_ng()
+        calld = self.make_calld()
         assert_that(
-            calling(ctid_ng.faxes.send).with_args(
+            calling(calld.faxes.send).with_args(
                 fax_content='',
                 context=None,
                 extension=None,
             ),
-            raises(CtidNGError).matching(has_properties({
+            raises(CalldError).matching(has_properties({
                 'status_code': 400,
             })))
 
     def test_send_fax_wrong_extension(self):
-        ctid_ng = self.make_ctid_ng()
+        calld = self.make_calld()
         assert_that(
-            calling(ctid_ng.faxes.send).with_args(
+            calling(calld.faxes.send).with_args(
                 fax_content='',
                 context='recipient',
                 extension='not-found',
             ),
-            raises(CtidNGError).matching(has_properties({
+            raises(CalldError).matching(has_properties({
                 'status_code': 400,
                 'error_id': 'invalid-extension',
                 'details': {
@@ -70,61 +70,61 @@ class TestFax(RealAsteriskIntegrationTest):
         )
 
     def test_send_fax_no_amid(self):
-        ctid_ng = self.make_ctid_ng()
+        calld = self.make_calld()
         with self.amid_stopped():
             assert_that(
-                calling(ctid_ng.faxes.send).with_args(
+                calling(calld.faxes.send).with_args(
                     fax_content='',
                     context='recipient',
                     extension='recipient-fax',
                 ),
-                raises(CtidNGError).matching(has_properties({
+                raises(CalldError).matching(has_properties({
                     'status_code': 503,
                     'error_id': 'xivo-amid-error',
                 }))
             )
 
     def test_send_fax_no_ari(self):
-        ctid_ng = self.make_ctid_ng()
+        calld = self.make_calld()
         with self.ari_stopped():
             assert_that(
-                calling(ctid_ng.faxes.send).with_args(
+                calling(calld.faxes.send).with_args(
                     fax_content='',
                     context='recipient',
                     extension='recipient-fax',
                 ),
-                raises(CtidNGError).matching(has_properties({
+                raises(CalldError).matching(has_properties({
                     'status_code': 503,
                     'error_id': 'xivo-amid-error',
                 }))
             )
 
     def test_send_fax_pdf_conversion_failed(self):
-        ctid_ng = self.make_ctid_ng()
+        calld = self.make_calld()
 
         # fax-failure = 1024 zeros
         with open(os.path.join(ASSET_ROOT, 'fax', 'fax-failure.pdf'), 'rb') as fax_file:
             fax_content = fax_file.read()
 
         assert_that(
-            calling(ctid_ng.faxes.send).with_args(
+            calling(calld.faxes.send).with_args(
                 fax_content,
                 context='recipient',
                 extension='recipient-fax',
                 caller_id='fax wait'
-            ), raises(CtidNGError).matching(has_properties({
+            ), raises(CalldError).matching(has_properties({
                 'status_code': 400,
                 'error_id': 'fax-failure',
             }))
         )
 
     def test_send_fax_pdf(self):
-        ctid_ng = self.make_ctid_ng()
+        calld = self.make_calld()
 
         with open(os.path.join(ASSET_ROOT, 'fax', 'fax.pdf'), 'rb') as fax_file:
             fax_content = fax_file.read()
 
-        fax = ctid_ng.faxes.send(fax_content,
+        fax = calld.faxes.send(fax_content,
                                  context='recipient',
                                  extension='recipient-fax',
                                  caller_id='fax wait')
@@ -142,14 +142,14 @@ class TestFax(RealAsteriskIntegrationTest):
         until.assert_(one_fax_channel, timeout=3)
 
     def test_send_fax_events_success(self):
-        ctid_ng = self.make_ctid_ng()
+        calld = self.make_calld()
 
         with open(os.path.join(ASSET_ROOT, 'fax', 'fax.pdf'), 'rb') as fax_file:
             fax_content = fax_file.read()
 
         events = self.bus.accumulator('faxes.outbound.#')
 
-        result = ctid_ng.faxes.send(fax_content,
+        result = calld.faxes.send(fax_content,
                                     context='recipient',
                                     extension='recipient-fax',
                                     caller_id='fax success')
@@ -178,14 +178,14 @@ class TestFax(RealAsteriskIntegrationTest):
         until.assert_(bus_events_received, timeout=3)
 
     def test_send_fax_events_failure(self):
-        ctid_ng = self.make_ctid_ng()
+        calld = self.make_calld()
 
         with open(os.path.join(ASSET_ROOT, 'fax', 'fax.pdf'), 'rb') as fax_file:
             fax_content = fax_file.read()
 
         events = self.bus.accumulator('faxes.outbound.#')
 
-        result = ctid_ng.faxes.send(fax_content,
+        result = calld.faxes.send(fax_content,
                                     context='recipient',
                                     extension='recipient-fax',
                                     caller_id='fax fail')
@@ -219,16 +219,16 @@ class TestFax(RealAsteriskIntegrationTest):
         token = 'my-user-token'
         self.auth.set_token(MockUserToken(token, user_uuid=user_uuid, tenant_uuid='my-tenant'))
 
-        ctid_ng = self.make_ctid_ng(token)
+        calld = self.make_calld(token)
         with open(os.path.join(ASSET_ROOT, 'fax', 'fax.pdf'), 'rb') as fax_file:
             fax_content = fax_file.read()
 
         assert_that(
-            calling(ctid_ng.faxes.send_from_user).with_args(
+            calling(calld.faxes.send_from_user).with_args(
                 fax_content,
                 extension='recipient-fax',
                 caller_id='fax wait'
-            ), raises(CtidNGError).matching(has_properties({
+            ), raises(CalldError).matching(has_properties({
                 'status_code': 400,
                 'error_id': 'invalid-user',
             }))
@@ -240,16 +240,16 @@ class TestFax(RealAsteriskIntegrationTest):
         self.auth.set_token(MockUserToken(token, user_uuid=user_uuid, tenant_uuid='my-tenant'))
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[]))
 
-        ctid_ng = self.make_ctid_ng(token)
+        calld = self.make_calld(token)
         with open(os.path.join(ASSET_ROOT, 'fax', 'fax.pdf'), 'rb') as fax_file:
             fax_content = fax_file.read()
 
         assert_that(
-            calling(ctid_ng.faxes.send_from_user).with_args(
+            calling(calld.faxes.send_from_user).with_args(
                 fax_content,
                 extension='recipient-fax',
                 caller_id='fax wait'
-            ), raises(CtidNGError).matching(has_properties({
+            ), raises(CalldError).matching(has_properties({
                 'status_code': 400,
                 'error_id': 'user-missing-main-line',
             }))
@@ -263,12 +263,12 @@ class TestFax(RealAsteriskIntegrationTest):
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=['some-line-id']))
         self.confd.set_lines(MockLine(id='some-line-id', name='line-name', protocol='pjsip', context=context))
 
-        ctid_ng = self.make_ctid_ng(token)
+        calld = self.make_calld(token)
         with open(os.path.join(ASSET_ROOT, 'fax', 'fax.pdf'), 'rb') as fax_file:
             fax_content = fax_file.read()
 
         try:
-            ctid_ng.faxes.send_from_user(fax_content,
+            calld.faxes.send_from_user(fax_content,
                                          extension='recipient-fax',
                                          caller_id='fax wait')
         except Exception as e:
@@ -287,13 +287,13 @@ class TestFax(RealAsteriskIntegrationTest):
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=['some-line-id']))
         self.confd.set_lines(MockLine(id='some-line-id', name='line-name', protocol='pjsip', context=context))
 
-        ctid_ng = self.make_ctid_ng(token)
+        calld = self.make_calld(token)
         with open(os.path.join(ASSET_ROOT, 'fax', 'fax.pdf'), 'rb') as fax_file:
             fax_content = fax_file.read()
 
         events = self.bus.accumulator('faxes.outbound.users.some-user-id.#')
 
-        result = ctid_ng.faxes.send_from_user(fax_content,
+        result = calld.faxes.send_from_user(fax_content,
                                               extension='recipient-fax',
                                               caller_id='fax success')
         fax_id = result['id']

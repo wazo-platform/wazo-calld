@@ -3,11 +3,11 @@ services:
   sync:
     depends_on:
       - ari
-      - ctid-ng
+      - calld
       - rabbitmq
     environment:
       TARGETS: "ari:5039 rabbitmq:5672"
 
-  ctid-ng:
+  calld:
     volumes:
-      - ./etc/xivo-ctid-ng/conf.d/20-invalid-ssl-key.yml:/etc/xivo-ctid-ng/conf.d/20-invalid-ssl-key.yml
+      - ./etc/wazo-calld/conf.d/20-invalid-ssl-key.yml:/etc/wazo-calld/conf.d/20-invalid-ssl-key.yml

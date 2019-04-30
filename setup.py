@@ -8,7 +8,7 @@ from setuptools import find_packages
 
 
 setup(
-    name='xivo-ctid-ng',
+    name='wazo-calld',
     version='2.0',
     description='Wazo CTI Server Daemon',
     author='Wazo Authors',
@@ -16,23 +16,23 @@ setup(
     url='http://wazo.community',
     packages=find_packages(),
     package_data={
-        'xivo_ctid_ng.plugins': ['*/api.yml'],
+        'wazo_calld.plugins': ['*/api.yml'],
     },
     entry_points={
         'console_scripts': [
-            'xivo-ctid-ng=xivo_ctid_ng.bin.daemon:main',
+            'wazo-calld=wazo_calld.bin.daemon:main',
         ],
-        'xivo_ctid_ng.plugins': [
-            'api = xivo_ctid_ng.plugins.api.plugin:Plugin',
-            'applications = xivo_ctid_ng.plugins.applications.plugin:Plugin',
-            'calls = xivo_ctid_ng.plugins.calls.plugin:Plugin',
-            'conferences = xivo_ctid_ng.plugins.conferences.plugin:Plugin',
-            'faxes = xivo_ctid_ng.plugins.faxes.plugin:Plugin',
-            'relocates = xivo_ctid_ng.plugins.relocates.plugin:Plugin',
-            'status = xivo_ctid_ng.plugins.status.plugin:Plugin',
-            'switchboards = xivo_ctid_ng.plugins.switchboards.plugin:Plugin',
-            'transfers = xivo_ctid_ng.plugins.transfers.plugin:Plugin',
-            'voicemails = xivo_ctid_ng.plugins.voicemails.plugin:Plugin',
+        'wazo_calld.plugins': [
+            'api = wazo_calld.plugins.api.plugin:Plugin',
+            'applications = wazo_calld.plugins.applications.plugin:Plugin',
+            'calls = wazo_calld.plugins.calls.plugin:Plugin',
+            'conferences = wazo_calld.plugins.conferences.plugin:Plugin',
+            'faxes = wazo_calld.plugins.faxes.plugin:Plugin',
+            'relocates = wazo_calld.plugins.relocates.plugin:Plugin',
+            'status = wazo_calld.plugins.status.plugin:Plugin',
+            'switchboards = wazo_calld.plugins.switchboards.plugin:Plugin',
+            'transfers = wazo_calld.plugins.transfers.plugin:Plugin',
+            'voicemails = wazo_calld.plugins.voicemails.plugin:Plugin',
         ]
     }
 )

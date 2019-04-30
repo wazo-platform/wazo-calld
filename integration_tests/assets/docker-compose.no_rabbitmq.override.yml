@@ -4,6 +4,6 @@ services:
     depends_on:
       - ari
       - auth
-      - ctid-ng
+      - calld
     environment:
-      TARGETS: "ari:5039 auth:9497 ctid-ng:9500"
+      TARGETS: "ari:5039 auth:9497 calld:9500"

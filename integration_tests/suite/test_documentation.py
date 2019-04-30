@@ -1,4 +1,4 @@
-# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import requests
@@ -16,8 +16,8 @@ class TestDocumentation(IntegrationTest):
     wait_strategy = NoWaitStrategy()
 
     def test_documentation_errors(self):
-        ctid_ng_port = self.service_port(9500, 'ctid-ng')
-        api_url = 'https://localhost:{port}/1.0/api/api.yml'.format(port=ctid_ng_port)
+        calld_port = self.service_port(9500, 'calld')
+        api_url = 'https://localhost:{port}/1.0/api/api.yml'.format(port=calld_port)
         api = requests.get(api_url, verify=False)
         self.validate_api(api)
 

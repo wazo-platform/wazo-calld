@@ -1,7 +1,7 @@
 git+https://github.com/rsichny/swagger-py.git  # the digium release does not support python3
 https://github.com/wazo-pbx/ari-py/archive/0.4.0.zip
 git+https://github.com/wazo-pbx/xivo-test-helpers.git
-https://github.com/wazo-pbx/xivo-ctid-ng-client/archive/master.zip
+https://github.com/wazo-pbx/wazo-calld-client/archive/master.zip
 https://github.com/wazo-pbx/xivo-lib-rest-client/archive/master.zip
 docker-compose
 kombu
@@ -9,4 +9,4 @@ nose
 pyhamcrest
 psycopg2-binary
 requests
-stevedore  # from xivo-ctid-ng-client
+stevedore  # from wazo-calld-client

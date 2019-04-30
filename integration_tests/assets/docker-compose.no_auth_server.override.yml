@@ -3,7 +3,7 @@ services:
   sync:
     depends_on:
       - ari
-      - ctid-ng
+      - calld
       - rabbitmq
     environment:
-      TARGETS: "ari:5039 rabbitmq:5672 ctid-ng:9500"
+      TARGETS: "ari:5039 rabbitmq:5672 calld:9500"

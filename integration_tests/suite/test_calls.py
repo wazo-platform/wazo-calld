@@ -1,4 +1,4 @@
-# Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
@@ -29,7 +29,7 @@ from .helpers.base import RealAsteriskIntegrationTest
 from .helpers.confd import MockLine
 from .helpers.confd import MockUser
 from .helpers.constants import VALID_TOKEN
-from .helpers.wait_strategy import CtidNgUpWaitStrategy
+from .helpers.wait_strategy import CalldUpWaitStrategy
 
 SOME_LOCAL_CHANNEL_NAME = 'Local/channel'
 SOME_PRIORITY = 1
@@ -48,7 +48,7 @@ class TestListCalls(IntegrationTest):
         self.confd.reset()
 
     def test_given_no_calls_when_list_calls_then_empty_list(self):
-        calls = self.ctid_ng.list_calls()
+        calls = self.calld.list_calls()
 
         assert_that(calls, has_entry('items', contains()))
 
@@ -75,7 +75,7 @@ class TestListCalls(IntegrationTest):
         self.confd.set_users(MockUser(uuid='user1-uuid'),
                              MockUser(uuid='user2-uuid'))
 
-        calls = self.ctid_ng.list_calls()
+        calls = self.calld.list_calls()
 
         assert_that(calls, has_entry('items', contains_inanyorder(
             has_entries({'call_id': 'first-id',
@@ -105,7 +105,7 @@ class TestListCalls(IntegrationTest):
         self.ari.set_channels(MockChannel(id='first-id'),
                               MockChannel(id='second-id'))
 
-        calls = self.ctid_ng.list_calls()
+        calls = self.calld.list_calls()
 
         assert_that(calls, has_entry('items', contains_inanyorder(
             has_entries({'call_id': 'first-id',
@@ -119,7 +119,7 @@ class TestListCalls(IntegrationTest):
                               MockChannel(id='third-id'))
         self.ari.set_applications(MockApplication(name='my-app', channels=['first-id', 'third-id']))
 
-        calls = self.ctid_ng.list_calls(application='my-app')
+        calls = self.calld.list_calls(application='my-app')
 
         assert_that(calls, has_entry('items', contains_inanyorder(
             has_entries({'call_id': 'first-id'}),
@@ -129,7 +129,7 @@ class TestListCalls(IntegrationTest):
         self.ari.set_channels(MockChannel(id='first-id'),
                               MockChannel(id='second-id'))
 
-        calls = self.ctid_ng.list_calls(application='my-app', token=VALID_TOKEN)
+        calls = self.calld.list_calls(application='my-app', token=VALID_TOKEN)
 
         assert_that(calls, has_entry('items', empty()))
 
@@ -149,7 +149,7 @@ class TestListCalls(IntegrationTest):
                                                                              'app_instance': 'appX',
                                                                              'state': 'talking'})})
 
-        calls = self.ctid_ng.list_calls(application='my-app', application_instance='appX')
+        calls = self.calld.list_calls(application='my-app', application_instance='appX')
 
         assert_that(calls, has_entry('items', contains_inanyorder(
             has_entries({'call_id': 'first-id'}),
@@ -160,7 +160,7 @@ class TestListCalls(IntegrationTest):
                               MockChannel(id='second-id'))
         self.ari.set_applications(MockApplication(name='my-app', channels=['__AST_CHANNEL_ALL_TOPIC']))
 
-        calls = self.ctid_ng.list_calls(application='my-app')
+        calls = self.calld.list_calls(application='my-app')
 
         assert_that(calls,
                     has_entry('items', contains_inanyorder(
@@ -178,7 +178,7 @@ class TestListCalls(IntegrationTest):
                                                                               'state': 'talking'})})
         self.ari.set_applications(MockApplication(name='my-app', channels=['__AST_CHANNEL_ALL_TOPIC']))
 
-        calls = self.ctid_ng.list_calls(application='my-app', application_instance='appX', token=VALID_TOKEN)
+        calls = self.calld.list_calls(application='my-app', application_instance='appX', token=VALID_TOKEN)
 
         assert_that(calls, has_entry('items', contains(
             has_entries({'call_id': 'first-id'}))))
@@ -192,7 +192,7 @@ class TestListCalls(IntegrationTest):
         self.ari.set_channel_variable({'first-id': {'XIVO_USERUUID': 'user1-uuid'},
                                        'second-id': {'XIVO_USERUUID': 'user2-uuid'}})
 
-        calls = self.ctid_ng.list_calls()
+        calls = self.calld.list_calls()
 
         assert_that(calls, has_entry('items', contains_inanyorder(
             has_entries({'call_id': 'first-id',
@@ -214,7 +214,7 @@ class TestUserListCalls(IntegrationTest):
         token = 'my-token'
         user_uuid = 'user-uuid'
         self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
-        calls = self.ctid_ng.list_my_calls(token=token)
+        calls = self.calld.list_my_calls(token=token)
 
         assert_that(calls, has_entry('items', contains()))
 
@@ -232,7 +232,7 @@ class TestUserListCalls(IntegrationTest):
         self.confd.set_users(MockUser(uuid=user_uuid),
                              MockUser(uuid='user2-uuid'))
 
-        calls = self.ctid_ng.list_my_calls(token=token)
+        calls = self.calld.list_my_calls(token=token)
 
         assert_that(calls, has_entry('items', contains_inanyorder(
             has_entries({'call_id': 'my-call',
@@ -252,7 +252,7 @@ class TestUserListCalls(IntegrationTest):
                                        'second-id': {'XIVO_USERUUID': user_uuid},
                                        'third-id': {'XIVO_USERUUID': user_uuid}})
 
-        calls = self.ctid_ng.list_my_calls(application='my-app', token=token)
+        calls = self.calld.list_my_calls(application='my-app', token=token)
 
         assert_that(calls, has_entry('items', contains_inanyorder(
             has_entries({'call_id': 'first-id'}),
@@ -267,7 +267,7 @@ class TestUserListCalls(IntegrationTest):
         self.ari.set_channel_variable({'first-id': {'XIVO_USERUUID': user_uuid},
                                        'second-id': {'XIVO_USERUUID': user_uuid}})
 
-        calls = self.ctid_ng.list_my_calls(application='my-app', token=token)
+        calls = self.calld.list_my_calls(application='my-app', token=token)
 
         assert_that(calls, has_entry('items', empty()))
 
@@ -294,7 +294,7 @@ class TestUserListCalls(IntegrationTest):
                                                                              'app_instance': 'appX',
                                                                              'state': 'talking'})})
 
-        calls = self.ctid_ng.list_my_calls(application='my-app', application_instance='appX', token=token)
+        calls = self.calld.list_my_calls(application='my-app', application_instance='appX', token=token)
 
         assert_that(calls, has_entry('items', contains_inanyorder(
             has_entries({'call_id': 'first-id'}),
@@ -309,7 +309,7 @@ class TestUserListCalls(IntegrationTest):
         self.ari.set_channel_variable({'first-id': {'XIVO_USERUUID': user_uuid},
                                        'second-id': {'XIVO_USERUUID': user_uuid}})
 
-        calls = self.ctid_ng.list_my_calls(token=token)
+        calls = self.calld.list_my_calls(token=token)
 
         assert_that(calls, has_entry('items', contains_inanyorder(
             has_entries({'call_id': 'first-id'}))))
@@ -327,7 +327,7 @@ class TestGetCall(IntegrationTest):
     def test_given_no_calls_when_get_call_then_404(self):
         call_id = 'not-found'
 
-        result = self.ctid_ng.get_call_result(call_id, token=VALID_TOKEN)
+        result = self.calld.get_call_result(call_id, token=VALID_TOKEN)
 
         assert_that(result.status_code, equal_to(404))
 
@@ -340,7 +340,7 @@ class TestGetCall(IntegrationTest):
         self.confd.set_users(MockUser(uuid='user1-uuid'),
                              MockUser(uuid='user2-uuid'))
 
-        call = self.ctid_ng.get_call('first-id')
+        call = self.calld.get_call('first-id')
 
         assert_that(call, has_entries({
             'call_id': 'first-id',
@@ -368,7 +368,7 @@ class TestDeleteCall(IntegrationTest):
     def test_given_no_calls_when_delete_call_then_404(self):
         call_id = 'not-found'
 
-        result = self.ctid_ng.delete_call_result(call_id, token=VALID_TOKEN)
+        result = self.calld.delete_call_result(call_id, token=VALID_TOKEN)
 
         assert_that(result.status_code, equal_to(404))
 
@@ -376,7 +376,7 @@ class TestDeleteCall(IntegrationTest):
         call_id = 'call-id'
         self.ari.set_channels(MockChannel(id=call_id, state='Up'))
 
-        self.ctid_ng.hangup_call(call_id)
+        self.calld.hangup_call(call_id)
 
         assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
             'method': 'DELETE',
@@ -400,7 +400,7 @@ class TestUserDeleteCall(IntegrationTest):
         token = 'my-token'
         self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
 
-        result = self.ctid_ng.delete_user_me_call_result(call_id, token=token)
+        result = self.calld.delete_user_me_call_result(call_id, token=token)
 
         assert_that(result.status_code, equal_to(404))
 
@@ -413,7 +413,7 @@ class TestUserDeleteCall(IntegrationTest):
         self.ari.set_channels(MockChannel(id=call_id, state='Up'))
         self.ari.set_channel_variable({call_id: {'XIVO_USERUUID': 'some-other-uuid'}})
 
-        result = self.ctid_ng.delete_user_me_call_result(call_id, token=token)
+        result = self.calld.delete_user_me_call_result(call_id, token=token)
 
         assert_that(result.status_code, equal_to(403))
         assert_that(result.json(), has_entry('message', contains_string('user')))
@@ -427,7 +427,7 @@ class TestUserDeleteCall(IntegrationTest):
         self.ari.set_channels(MockChannel(id=call_id, state='Up'))
         self.ari.set_channel_variable({call_id: {'XIVO_USERUUID': user_uuid}})
 
-        self.ctid_ng.hangup_my_call(call_id, token)
+        self.calld.hangup_my_call(call_id, token)
 
         assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
             'method': 'DELETE',
@@ -443,7 +443,7 @@ class TestUserDeleteCall(IntegrationTest):
         self.ari.set_channels(MockChannel(id=call_id, state='Up', name=SOME_LOCAL_CHANNEL_NAME))
         self.ari.set_channel_variable({call_id: {'XIVO_USERUUID': user_uuid}})
 
-        result = self.ctid_ng.delete_user_me_call_result(call_id, token=token)
+        result = self.calld.delete_user_me_call_result(call_id, token=token)
 
         assert_that(result.status_code, equal_to(404))
 
@@ -466,7 +466,7 @@ class TestCreateCall(IntegrationTest):
         self.ari.set_originates(MockChannel(id='new-call-id', connected_line_number=''))
         self.amid.set_valid_exten('my-context', 'my-extension', priority)
 
-        result = self.ctid_ng.originate(source=user_uuid,
+        result = self.calld.originate(source=user_uuid,
                                         priority=priority,
                                         extension='my-extension',
                                         context='my-context')
@@ -489,7 +489,7 @@ class TestCreateCall(IntegrationTest):
         self.ari.set_originates(MockChannel('new-call-id'))
         self.amid.set_valid_exten('my-context', 'my-extension', priority)
 
-        self.ctid_ng.originate(source=user_uuid,
+        self.calld.originate(source=user_uuid,
                                priority=priority,
                                extension='my-extension',
                                context='my-context',
@@ -523,7 +523,7 @@ class TestCreateCall(IntegrationTest):
         self.ari.set_originates(MockChannel(id='new-call-id'))
         self.amid.set_valid_exten('my-context', 'my-extension', priority)
 
-        self.ctid_ng.originate(source=user_uuid,
+        self.calld.originate(source=user_uuid,
                                priority=priority,
                                extension='my-extension',
                                context='my-context')
@@ -552,7 +552,7 @@ class TestCreateCall(IntegrationTest):
         self.ari.set_originates(MockChannel(id='new-call-id'))
         self.amid.set_valid_exten('my-context', '#pound', priority)
 
-        self.ctid_ng.originate(source=user_uuid,
+        self.calld.originate(source=user_uuid,
                                priority=priority,
                                extension='#pound',
                                context='my-context')
@@ -574,7 +574,7 @@ class TestCreateCall(IntegrationTest):
         self.ari.set_originates(MockChannel(id='new-call-id'))
         self.amid.set_valid_exten('my-context', 'my-extension', priority)
 
-        result = self.ctid_ng.originate(source=user_uuid,
+        result = self.calld.originate(source=user_uuid,
                                         priority=priority,
                                         extension='my-extension',
                                         context='my-context')
@@ -589,7 +589,7 @@ class TestCreateCall(IntegrationTest):
         priority = 1
         self.amid.set_valid_exten('my-context', 'my-extension', priority)
         with self.confd_stopped():
-            result = self.ctid_ng.post_call_result(source='user-uuid',
+            result = self.calld.post_call_result(source='user-uuid',
                                                    priority=priority,
                                                    extension='my-extension',
                                                    context='my-context',
@@ -604,7 +604,7 @@ class TestCreateCall(IntegrationTest):
         self.confd.set_user_lines({'user-uuid': []})
         self.amid.set_valid_exten('my-context', 'my-extension', priority)
 
-        result = self.ctid_ng.post_call_result(source=user_uuid,
+        result = self.calld.post_call_result(source=user_uuid,
                                                priority=priority,
                                                extension='my-extension',
                                                context='my-context',
@@ -618,7 +618,7 @@ class TestCreateCall(IntegrationTest):
         priority = 1
         self.amid.set_valid_exten('my-context', 'my-extension', priority)
 
-        result = self.ctid_ng.post_call_result(source=user_uuid,
+        result = self.calld.post_call_result(source=user_uuid,
                                                priority=priority,
                                                extension='my-extension',
                                                context='my-context', token=VALID_TOKEN)
@@ -631,7 +631,7 @@ class TestCreateCall(IntegrationTest):
         body = {'destination': {'priority': '1',
                                 'extension': 'myexten',
                                 'context': 'mycontext'}}
-        result = self.ctid_ng.post_call_raw(body, token=VALID_TOKEN)
+        result = self.calld.post_call_raw(body, token=VALID_TOKEN)
 
         assert_that(result.status_code, equal_to(400))
         assert_that(result.json(), has_entry('details', has_item('source')))
@@ -644,7 +644,7 @@ class TestCreateCall(IntegrationTest):
         self.ari.set_originates(MockChannel(id='new-call-id'))
         self.amid.set_no_valid_exten()
 
-        result = self.ctid_ng.post_call_result(source=user_uuid,
+        result = self.calld.post_call_result(source=user_uuid,
                                                priority=priority,
                                                extension='not-found',
                                                context='my-context',
@@ -661,8 +661,8 @@ class TestCreateCall(IntegrationTest):
         self.ari.set_originates(MockChannel(id='new-call-id'))
         self.amid.set_valid_exten('my-context', 'my-extension', priority)
 
-        with self.ctid_ng.send_no_content_type():
-            result = self.ctid_ng.post_call_result(source=user_uuid,
+        with self.calld.send_no_content_type():
+            result = self.calld.post_call_result(source=user_uuid,
                                                    priority=priority,
                                                    extension='my-extension',
                                                    context='my-context',
@@ -679,7 +679,7 @@ class TestCreateCall(IntegrationTest):
         self.ari.set_originates(MockChannel(id='new-call-id'))
         self.amid.set_valid_exten('my-context', 'my-extension', priority)
 
-        result = self.ctid_ng.post_call_result(source=user_uuid,
+        result = self.calld.post_call_result(source=user_uuid,
                                                line_id=line_id_not_found,
                                                priority=priority,
                                                extension='my-extension',
@@ -699,7 +699,7 @@ class TestCreateCall(IntegrationTest):
         self.ari.set_originates(MockChannel(id='new-call-id'))
         self.amid.set_valid_exten('my-context', 'my-extension', priority)
 
-        result = self.ctid_ng.post_call_result(source=user_uuid,
+        result = self.calld.post_call_result(source=user_uuid,
                                                line_id=unassociated_line_id,
                                                priority=priority,
                                                extension='my-extension',
@@ -720,7 +720,7 @@ class TestCreateCall(IntegrationTest):
         self.ari.set_originates(MockChannel(id='new-call-id'))
         self.amid.set_valid_exten('my-context', 'my-extension', priority)
 
-        self.ctid_ng.originate(source=user_uuid,
+        self.calld.originate(source=user_uuid,
                                line_id=second_line_id,
                                priority=priority,
                                extension='my-extension',
@@ -741,7 +741,7 @@ class TestCreateCall(IntegrationTest):
         self.confd.set_users(MockUser(uuid='user-uuid', mobile='my-mobile'))
         self.ari.set_originates(MockChannel(id='new-call-id'))
 
-        result = self.ctid_ng.post_call_result(source=user_uuid,
+        result = self.calld.post_call_result(source=user_uuid,
                                                from_mobile=True,
                                                priority=priority,
                                                extension=extension,
@@ -761,7 +761,7 @@ class TestCreateCall(IntegrationTest):
         self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL, context='my-line-context'))
         self.ari.set_originates(MockChannel(id='new-call-id'))
 
-        result = self.ctid_ng.post_call_result(source=user_uuid,
+        result = self.calld.post_call_result(source=user_uuid,
                                                from_mobile=True,
                                                priority=priority,
                                                extension=extension,
@@ -780,7 +780,7 @@ class TestCreateCall(IntegrationTest):
         self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL, context='my-line-context'))
         self.ari.set_originates(MockChannel(id='new-call-id'))
 
-        result = self.ctid_ng.post_call_result(source=user_uuid,
+        result = self.calld.post_call_result(source=user_uuid,
                                                from_mobile=True,
                                                priority=priority,
                                                extension=extension,
@@ -800,7 +800,7 @@ class TestCreateCall(IntegrationTest):
         self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL, context='my-line-context'))
         self.ari.set_originates(MockChannel(id='new-call-id'))
 
-        result = self.ctid_ng.post_call_result(source=user_uuid,
+        result = self.calld.post_call_result(source=user_uuid,
                                                from_mobile=True,
                                                priority=priority,
                                                extension=extension,
@@ -829,13 +829,13 @@ class TestUserCreateCall(IntegrationTest):
         body = {'extension': 'my-extension'}
 
         with self.confd_stopped():
-            result = self.ctid_ng.post_user_me_call_result(body, token)
+            result = self.calld.post_user_me_call_result(body, token)
 
         assert_that(result.status_code, equal_to(503))
 
     def test_given_invalid_input_when_create_then_error_400(self):
         for invalid_body in self.invalid_call_requests():
-            response = self.ctid_ng.post_user_me_call_result(invalid_body, VALID_TOKEN)
+            response = self.calld.post_user_me_call_result(invalid_body, VALID_TOKEN)
 
             assert_that(response.status_code, equal_to(400))
             assert_that(response.json(), has_entries({'message': contains_string('invalid'),
@@ -875,7 +875,7 @@ class TestUserCreateCall(IntegrationTest):
         self.ari.set_originates(MockChannel(id='new-call-id', connected_line_number=''))
         self.amid.set_valid_exten('my-context', 'my-extension')
 
-        result = self.ctid_ng.originate_me(extension='my-extension', token=token)
+        result = self.calld.originate_me(extension='my-extension', token=token)
 
         assert_that(result, has_entries({
             'call_id': 'new-call-id',
@@ -896,7 +896,7 @@ class TestUserCreateCall(IntegrationTest):
         self.ari.set_originates(MockChannel('new-call-id'))
         self.amid.set_valid_exten('my-context', 'my-extension')
 
-        self.ctid_ng.originate_me(extension='my-extension',
+        self.calld.originate_me(extension='my-extension',
                                   variables={'MY_VARIABLE': 'my-value',
                                              'SECOND_VARIABLE': 'my-second-value',
                                              'CONNECTEDLINE(name)': 'my-connected-line',
@@ -929,7 +929,7 @@ class TestUserCreateCall(IntegrationTest):
         self.ari.set_originates(MockChannel(id='new-call-id'))
         self.amid.set_valid_exten('my-context', 'my-extension')
 
-        self.ctid_ng.originate_me(extension='my-extension', token=token)
+        self.calld.originate_me(extension='my-extension', token=token)
 
         assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
             'method': 'POST',
@@ -951,7 +951,7 @@ class TestUserCreateCall(IntegrationTest):
         self.ari.set_originates(MockChannel(id='new-call-id'))
         self.amid.set_valid_exten('my-context', 'my-extension')
 
-        result = self.ctid_ng.originate_me(extension='my-extension', token=token)
+        result = self.calld.originate_me(extension='my-extension', token=token)
 
         assert_that(result, has_entry('call_id', 'new-call-id'))
         assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
@@ -968,7 +968,7 @@ class TestUserCreateCall(IntegrationTest):
         self.amid.set_valid_exten('my-context', 'my-extension')
 
         body = {'extension': 'my-extension'}
-        result = self.ctid_ng.post_user_me_call_result(body, token)
+        result = self.calld.post_user_me_call_result(body, token)
 
         assert_that(result.status_code, equal_to(400))
         assert_that(result.json()['message'].lower(), contains_string('line'))
@@ -980,7 +980,7 @@ class TestUserCreateCall(IntegrationTest):
         self.amid.set_valid_exten('my-context', 'my-extension')
 
         body = {'extension': 'my-extension'}
-        result = self.ctid_ng.post_user_me_call_result(body, token=token)
+        result = self.calld.post_user_me_call_result(body, token=token)
 
         assert_that(result.status_code, equal_to(400))
         assert_that(result.json()['message'].lower(), contains_string('user'))
@@ -995,7 +995,7 @@ class TestUserCreateCall(IntegrationTest):
         self.amid.set_no_valid_exten()
 
         body = {'extension': 'not-found'}
-        result = self.ctid_ng.post_user_me_call_result(body, token=token)
+        result = self.calld.post_user_me_call_result(body, token=token)
 
         assert_that(result.status_code, equal_to(400))
         assert_that(result.json()['message'].lower(), contains_string('exten'))
@@ -1009,9 +1009,9 @@ class TestUserCreateCall(IntegrationTest):
         self.ari.set_originates(MockChannel(id='new-call-id'))
         self.amid.set_valid_exten('my-context', 'my-extension')
 
-        with self.ctid_ng.send_no_content_type():
+        with self.calld.send_no_content_type():
             body = {'extension': 'my-extension'}
-            result = self.ctid_ng.post_user_me_call_result(body, token=token)
+            result = self.calld.post_user_me_call_result(body, token=token)
 
         assert_that(result.status_code, equal_to(201), result.json())
 
@@ -1026,7 +1026,7 @@ class TestUserCreateCall(IntegrationTest):
         self.ari.set_originates(MockChannel(id='new-call-id'))
         self.amid.set_valid_exten('second-context', 'my-extension')
 
-        self.ctid_ng.originate_me('my-extension', line_id=second_line_id, token=token)
+        self.calld.originate_me('my-extension', line_id=second_line_id, token=token)
 
         assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
             'method': 'POST',
@@ -1040,26 +1040,26 @@ class TestUserCreateCall(IntegrationTest):
 class TestFailingARI(IntegrationTest):
 
     asset = 'failing_ari'
-    wait_strategy = CtidNgUpWaitStrategy()
+    wait_strategy = CalldUpWaitStrategy()
 
     def setUp(self):
         super().setUp()
         self.confd.reset()
 
     def test_given_no_ari_when_list_calls_then_503(self):
-        result = self.ctid_ng.get_calls_result(token=VALID_TOKEN)
+        result = self.calld.get_calls_result(token=VALID_TOKEN)
 
         assert_that(result.status_code, equal_to(503))
 
     def test_given_no_ari_when_get_call_then_503(self):
-        result = self.ctid_ng.get_call_result('first-id', token=VALID_TOKEN)
+        result = self.calld.get_call_result('first-id', token=VALID_TOKEN)
 
         assert_that(result.status_code, equal_to(503))
 
     def test_given_no_ari_when_originate_then_503(self):
         self.confd.set_users(MockUser(uuid='user-uuid', line_ids=['line-id']))
         self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL))
-        result = self.ctid_ng.post_call_result(source='user-uuid',
+        result = self.calld.post_call_result(source='user-uuid',
                                                priority=SOME_PRIORITY,
                                                extension='extension',
                                                context='context',
@@ -1068,7 +1068,7 @@ class TestFailingARI(IntegrationTest):
         assert_that(result.status_code, equal_to(503))
 
     def test_given_no_ari_when_delete_call_then_503(self):
-        result = self.ctid_ng.delete_call_result('call-id', token=VALID_TOKEN)
+        result = self.calld.delete_call_result('call-id', token=VALID_TOKEN)
 
         assert_that(result.status_code, equal_to(503))
 
@@ -1093,7 +1093,7 @@ class TestConnectUser(IntegrationTest):
         self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL))
         self.ari.set_originates(MockChannel(id='new-call-id'))
 
-        new_call = self.ctid_ng.connect_user('call-id', 'user-uuid')
+        new_call = self.calld.connect_user('call-id', 'user-uuid')
 
         assert_that(new_call, has_entries({
             'call_id': 'new-call-id'
@@ -1110,7 +1110,7 @@ class TestConnectUser(IntegrationTest):
 
     def test_given_no_confd_when_connect_user_then_503(self):
         with self.confd_stopped():
-            result = self.ctid_ng.put_call_user_result(call_id='call-id',
+            result = self.calld.put_call_user_result(call_id='call-id',
                                                        user_uuid='user-uuid',
                                                        token=VALID_TOKEN)
 
@@ -1119,7 +1119,7 @@ class TestConnectUser(IntegrationTest):
     def test_given_no_user_when_connect_user_then_400(self):
         self.ari.set_channels(MockChannel(id='call-id'))
 
-        result = self.ctid_ng.put_call_user_result('call-id', 'user-uuid', token=VALID_TOKEN)
+        result = self.calld.put_call_user_result('call-id', 'user-uuid', token=VALID_TOKEN)
 
         assert_that(result.status_code, equal_to(400))
         assert_that(result.json()['message'].lower(), contains_string('user'))
@@ -1128,7 +1128,7 @@ class TestConnectUser(IntegrationTest):
         self.ari.set_channels(MockChannel(id='call-id'))
         self.confd.set_users(MockUser(uuid='user-uuid'))
 
-        result = self.ctid_ng.put_call_user_result('call-id', 'user-uuid', token=VALID_TOKEN)
+        result = self.calld.put_call_user_result('call-id', 'user-uuid', token=VALID_TOKEN)
 
         assert_that(result.status_code, equal_to(400))
         assert_that(result.json()['message'].lower(), contains_string('user'))
@@ -1137,7 +1137,7 @@ class TestConnectUser(IntegrationTest):
         self.confd.set_users(MockUser(uuid='user-uuid', line_ids=['line-id']))
         self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL))
 
-        result = self.ctid_ng.put_call_user_result('call-id', 'user-uuid', token=VALID_TOKEN)
+        result = self.calld.put_call_user_result('call-id', 'user-uuid', token=VALID_TOKEN)
 
         assert_that(result.status_code, equal_to(404))
         assert_that(result.json()['message'].lower(), contains_string('call'))
@@ -1150,7 +1150,7 @@ class TestCallerID(RealAsteriskIntegrationTest):
     def test_when_create_call_and_answer1_then_connected_line_is_correct(self):
         self.confd.set_users(MockUser(uuid='user-uuid', line_ids=['line-id']))
         self.confd.set_lines(MockLine(id='line-id', name='originator', protocol='test'))
-        originator_call = self.ctid_ng.originate('user-uuid',
+        originator_call = self.calld.originate('user-uuid',
                                                  priority='1',
                                                  extension='ring-connected-line',
                                                  context='local')
@@ -1186,7 +1186,7 @@ class TestUserCreateCallFromMobile(RealAsteriskIntegrationTest):
         self.confd.set_users(MockUser(uuid='user-uuid', mobile=mobile_extension, line_ids=['line-id']))
         self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL, context=mobile_context))
 
-        result = self.ctid_ng.originate_me('recipient', from_mobile=True, token=token)
+        result = self.calld.originate_me('recipient', from_mobile=True, token=token)
 
         result_channel = self.ari.channels.get(channelId=result['call_id'])
         assert_that(result_channel.json['name'], not_(starts_with('Local')))
@@ -1199,7 +1199,7 @@ class TestUserCreateCallFromMobile(RealAsteriskIntegrationTest):
         self.confd.set_users(MockUser(uuid='user-uuid', mobile=mobile_extension, line_ids=['line-id']))
         self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL, context=mobile_context))
 
-        result = self.ctid_ng.post_user_me_call_result({
+        result = self.calld.post_user_me_call_result({
             'extension': 'recipient',
             'from_mobile': True
         }, token=token)
@@ -1215,7 +1215,7 @@ class TestUserCreateCallFromMobile(RealAsteriskIntegrationTest):
         self.confd.set_users(MockUser(uuid='user-uuid', mobile=mobile_extension, line_ids=['line-id']))
         self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL, context=mobile_context))
 
-        result = self.ctid_ng.originate_me('recipient', from_mobile=True, token=token)
+        result = self.calld.originate_me('recipient', from_mobile=True, token=token)
 
         result_channel = self.ari.channels.get(channelId=result['call_id'])
         assert_that(result_channel.json['name'], starts_with('Test/integration-mobile'))

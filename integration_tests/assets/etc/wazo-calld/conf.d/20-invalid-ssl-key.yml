@@ -1,0 +1,2 @@
+rest_api:
+  private_key: /usr/local/share/ssl/calld/invalid.key

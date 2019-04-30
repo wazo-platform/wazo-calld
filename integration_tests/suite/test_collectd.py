@@ -1,4 +1,4 @@
-# Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import os
@@ -14,14 +14,14 @@ from .helpers.base import IntegrationTest
 from .helpers.constants import BUS_EXCHANGE_COLLECTD
 from .helpers.constants import STASIS_APP_NAME
 from .helpers.constants import STASIS_APP_INSTANCE_NAME
-from .helpers.ctid_ng import new_call_id
-from .helpers.wait_strategy import CtidNgEverythingOkWaitStrategy
+from .helpers.calld import new_call_id
+from .helpers.wait_strategy import CalldEverythingOkWaitStrategy
 
 
 class TestCollectd(IntegrationTest):
 
     asset = 'basic_rest'
-    wait_strategy = CtidNgEverythingOkWaitStrategy()
+    wait_strategy = CalldEverythingOkWaitStrategy()
 
     def setUp(self):
         super().setUp()
@@ -150,7 +150,7 @@ class TestCollectd(IntegrationTest):
         until.assert_(assert_function, tries=3)
 
 
-class TestCollectdCtidNgRestart(IntegrationTest):
+class TestCollectdCalldRestart(IntegrationTest):
 
     asset = 'basic_rest'
 
@@ -159,24 +159,24 @@ class TestCollectdCtidNgRestart(IntegrationTest):
         self.ari.reset()
         self.confd.reset()
 
-    def test_given_ctid_ng_restarts_during_call_when_stasis_channel_destroyed_then_stat_call_end(self):
+    def test_given_calld_restarts_during_call_when_stasis_channel_destroyed_then_stat_call_end(self):
         call_id = new_call_id()
         self.ari.set_channels(MockChannel(id=call_id))
         events = self.bus.accumulator(routing_key='collectd.calls', exchange=BUS_EXCHANGE_COLLECTD)
         self.stasis.event_stasis_start(channel_id=call_id)
 
-        self.restart_service('ctid-ng')
+        self.restart_service('calld')
         self.reset_clients()
-        CtidNgEverythingOkWaitStrategy().wait(self)  # wait for ctid-ng to reconnect to rabbitmq
+        CalldEverythingOkWaitStrategy().wait(self)  # wait for calld to reconnect to rabbitmq
         self.stasis.event_channel_destroyed(channel_id=call_id)
 
-        def assert_ctid_ng_sent_end_call_stat():
+        def assert_calld_sent_end_call_stat():
             expected_message = 'PUTVAL [^/]+/calls-{app}.{app_instance}/counter-end .* N:1'
             expected_message = expected_message.format(app=STASIS_APP_NAME,
                                                        app_instance=STASIS_APP_INSTANCE_NAME)
             assert_that(events.accumulate(), has_item(matches_regexp(expected_message)))
 
-        until.assert_(assert_ctid_ng_sent_end_call_stat, tries=5)
+        until.assert_(assert_calld_sent_end_call_stat, tries=5)
 
 
 class TestCollectdRabbitMQRestart(IntegrationTest):
@@ -195,15 +195,15 @@ class TestCollectdRabbitMQRestart(IntegrationTest):
 
         self.restart_service('rabbitmq')
         self.reset_bus_client()
-        CtidNgEverythingOkWaitStrategy().wait(self)  # wait for ctid-ng to reconnect to rabbitmq
+        CalldEverythingOkWaitStrategy().wait(self)  # wait for calld to reconnect to rabbitmq
 
         events = self.bus.accumulator(routing_key='collectd.calls', exchange=BUS_EXCHANGE_COLLECTD)
         self.stasis.event_channel_destroyed(channel_id=call_id)
 
-        def assert_ctid_ng_sent_end_call_stat():
+        def assert_calld_sent_end_call_stat():
             expected_message = 'PUTVAL [^/]+/calls-{app}.{app_instance}/counter-end .* N:1'
             expected_message = expected_message.format(app=STASIS_APP_NAME,
                                                        app_instance=STASIS_APP_INSTANCE_NAME)
             assert_that(events.accumulate(), has_item(matches_regexp(expected_message)))
 
-        until.assert_(assert_ctid_ng_sent_end_call_stat, tries=5)
+        until.assert_(assert_calld_sent_end_call_stat, tries=5)

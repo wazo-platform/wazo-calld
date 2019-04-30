@@ -2,7 +2,7 @@
 
 ## 19.05
 
-* The following endpoints have been moved to wazo-chatd and deleted from xivo-ctid-ng:
+* The following endpoints have been moved to wazo-chatd and deleted from wazo-calld:
 
     * POST `/1.0/chats
     * POST `/1.0/users/me/chats`
@@ -16,7 +16,7 @@
   * `POST /faxes`
   * `POST /users/me/faxes`
 
-* The following endpoints have been moved to wazo-chatd and deleted from xivo-ctid-ng:
+* The following endpoints have been moved to wazo-chatd and deleted from wazo-calld:
 
     * GET `/1.0/lines/{id}/presences`
 

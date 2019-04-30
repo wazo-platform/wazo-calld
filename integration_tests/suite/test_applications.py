@@ -1,4 +1,4 @@
-# Copyright 2018 The Wazo Authors  (see AUTHORS file)
+# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from hamcrest import (
@@ -15,7 +15,7 @@ from xivo_test_helpers import until
 from xivo_test_helpers.hamcrest.uuid_ import uuid_
 from .helpers.base import RealAsteriskIntegrationTest
 from .helpers.confd import MockApplication
-from .helpers.wait_strategy import CtidNgEverythingOkWaitStrategy, NoWaitStrategy
+from .helpers.wait_strategy import CalldEverythingOkWaitStrategy, NoWaitStrategy
 
 ENDPOINT_AUTOANSWER = 'Test/integration-caller/autoanswer'
 
@@ -47,8 +47,8 @@ class BaseApplicationTestCase(RealAsteriskIntegrationTest):
         self.confd.set_applications(node_app, no_node_app)
 
         # TODO: add a way to load new apps without restarting
-        self._restart_ctid_ng()
-        CtidNgEverythingOkWaitStrategy().wait(self)
+        self._restart_calld()
+        CalldEverythingOkWaitStrategy().wait(self)
 
     def call_app(self, app_uuid, variables=None):
         kwargs = {
@@ -106,7 +106,7 @@ class TestStasisTriggers(BaseApplicationTestCase):
 
         until.assert_(event_received, tries=3)
 
-        response = self.ctid_ng.get_application_calls(app_uuid)
+        response = self.calld.get_application_calls(app_uuid)
         assert_that(response.json()['items'], has_items(has_entries(id=channel.id)))
 
     def test_entering_stasis_with_a_node(self):
@@ -159,17 +159,17 @@ class TestStasisTriggers(BaseApplicationTestCase):
 
         until.assert_(event_received, tries=3)
 
-        response = self.ctid_ng.get_application_calls(app_uuid)
+        response = self.calld.get_application_calls(app_uuid)
         assert_that(response.json()['items'], has_items(has_entries(id=channel.id)))
 
-        response = self.ctid_ng.get_application_node(app_uuid, app_uuid)
+        response = self.calld.get_application_node(app_uuid, app_uuid)
         assert_that(response.json()['calls'], has_items(has_entries(id=channel.id)))
 
     def test_event_destination_node_created(self):
-        with self._ctid_ng_stopped():
+        with self._calld_stopped():
             self.reset_ari()
             event_accumulator = self.bus.accumulator('applications.{uuid}.#'.format(uuid=self.node_app_uuid))
-        CtidNgEverythingOkWaitStrategy().wait(self)
+        CalldEverythingOkWaitStrategy().wait(self)
 
         def event_received():
             events = event_accumulator.accumulate()
@@ -194,7 +194,7 @@ class TestStasisTriggers(BaseApplicationTestCase):
     def test_when_asterisk_restart_then_reconnect(self):
         event_accumulator = self.bus.accumulator('applications.{uuid}.#'.format(uuid=self.node_app_uuid))
         self.restart_service('ari')
-        CtidNgEverythingOkWaitStrategy().wait(self)
+        CalldEverythingOkWaitStrategy().wait(self)
 
         def event_received():
             events = event_accumulator.accumulate()
@@ -206,25 +206,25 @@ class TestStasisTriggers(BaseApplicationTestCase):
 class TestApplication(BaseApplicationTestCase):
 
     def test_get(self):
-        response = self.ctid_ng.get_application(self.unknown_uuid)
+        response = self.calld.get_application(self.unknown_uuid)
         assert_that(
             response,
             has_properties(status_code=404),
         )
 
-        response = self.ctid_ng.get_application(self.node_app_uuid)
+        response = self.calld.get_application(self.node_app_uuid)
         assert_that(
             response.json(),
             has_entries(destination_node_uuid=self.node_app_uuid),
         )
 
-        response = self.ctid_ng.get_application(self.no_node_app_uuid)
+        response = self.calld.get_application(self.no_node_app_uuid)
         assert_that(
             response.json(),
             has_entries(destination_node_uuid=None),
         )
 
-        response = self.ctid_ng.get_application(self.node_app_uuid)
+        response = self.calld.get_application(self.node_app_uuid)
         assert_that(
             response.json(),
             has_entries(destination_node_uuid=self.node_app_uuid),
@@ -235,13 +235,13 @@ class TestApplication(BaseApplicationTestCase):
         routing_key = 'applications.{uuid}.calls.#'.format(uuid=self.node_app_uuid)
         event_accumulator = self.bus.accumulator(routing_key)
 
-        response = self.ctid_ng.delete_application_call(self.unknown_uuid, channel.id)
+        response = self.calld.delete_application_call(self.unknown_uuid, channel.id)
         assert_that(response, has_properties(status_code=404))
 
-        response = self.ctid_ng.delete_application_call(self.no_node_app_uuid, channel.id)
+        response = self.calld.delete_application_call(self.no_node_app_uuid, channel.id)
         assert_that(response, has_properties(status_code=404))
 
-        response = self.ctid_ng.delete_application_call(self.node_app_uuid, channel.id)
+        response = self.calld.delete_application_call(self.node_app_uuid, channel.id)
         assert_that(response, has_properties(status_code=204))
 
         def event_received():
@@ -272,24 +272,24 @@ class TestApplication(BaseApplicationTestCase):
 
         until.assert_(event_received, tries=3)
 
-        response = self.ctid_ng.delete_application_call(self.node_app_uuid, channel.id)
+        response = self.calld.delete_application_call(self.node_app_uuid, channel.id)
         assert_that(response, has_properties(status_code=404))
 
     def test_get_calls(self):
-        response = self.ctid_ng.get_application_calls(self.unknown_uuid)
+        response = self.calld.get_application_calls(self.unknown_uuid)
         assert_that(
             response,
             has_properties(status_code=404),
         )
 
-        response = self.ctid_ng.get_application_calls(self.no_node_app_uuid)
+        response = self.calld.get_application_calls(self.no_node_app_uuid)
         assert_that(
             response.json(),
             has_entries(items=empty()),
         )
 
         channel = self.call_app(self.no_node_app_uuid, variables={'X_WAZO_FOO': 'bar'})
-        response = self.ctid_ng.get_application_calls(self.no_node_app_uuid)
+        response = self.calld.get_application_calls(self.no_node_app_uuid)
         assert_that(
             response.json(),
             has_entries(
@@ -312,19 +312,19 @@ class TestApplication(BaseApplicationTestCase):
     def test_post_call(self):
         context, exten = 'local', 'recipient_autoanswer'
 
-        response = self.ctid_ng.application_new_call(self.unknown_uuid, context, exten)
+        response = self.calld.application_new_call(self.unknown_uuid, context, exten)
         assert_that(
             response,
             has_properties(status_code=404),
         )
 
-        response = self.ctid_ng.application_new_call(self.no_node_app_uuid, context, 'not-found')
+        response = self.calld.application_new_call(self.no_node_app_uuid, context, 'not-found')
         assert_that(
             response,
             has_properties(status_code=400),
         )
 
-        response = self.ctid_ng.application_new_call(self.no_node_app_uuid, 'not-found', exten)
+        response = self.calld.application_new_call(self.no_node_app_uuid, 'not-found', exten)
         assert_that(
             response,
             has_properties(status_code=400),
@@ -334,7 +334,7 @@ class TestApplication(BaseApplicationTestCase):
         event_accumulator = self.bus.accumulator(routing_key)
 
         variables = {'X_WAZO_FOO': 'BAR'}
-        call = self.ctid_ng.application_new_call(
+        call = self.calld.application_new_call(
             self.no_node_app_uuid,
             context,
             exten,
@@ -374,7 +374,7 @@ class TestApplication(BaseApplicationTestCase):
 
         until.assert_(event_received, tries=3)
 
-        response = self.ctid_ng.get_application_calls(self.no_node_app_uuid)
+        response = self.calld.get_application_calls(self.no_node_app_uuid)
         assert_that(
             response.json(),
             has_entries(
@@ -398,7 +398,7 @@ class TestApplication(BaseApplicationTestCase):
         ]
 
         for args, status_code in errors:
-            response = self.ctid_ng.application_new_node_call(*args)
+            response = self.calld.application_new_node_call(*args)
             assert_that(
                 response,
                 has_properties(status_code=status_code),
@@ -408,7 +408,7 @@ class TestApplication(BaseApplicationTestCase):
         routing_key = 'applications.{uuid}.#'.format(uuid=self.node_app_uuid)
         event_accumulator = self.bus.accumulator(routing_key)
 
-        call = self.ctid_ng.application_new_node_call(
+        call = self.calld.application_new_node_call(
             application_uuid=self.node_app_uuid,
             node_uuid=self.node_app_uuid,
             context=context,
@@ -469,14 +469,14 @@ class TestApplication(BaseApplicationTestCase):
 
         until.assert_(event_received, tries=3)
 
-        response = self.ctid_ng.get_application_calls(self.node_app_uuid)
+        response = self.calld.get_application_calls(self.node_app_uuid)
         assert_that(
             response.json(),
             has_entries(
                 items=has_items(has_entries(id=call['id'])),
             )
         )
-        response = self.ctid_ng.get_application_node(self.node_app_uuid, self.node_app_uuid)
+        response = self.calld.get_application_node(self.node_app_uuid, self.node_app_uuid)
         assert_that(
             response.json(),
             has_entries(
@@ -485,19 +485,19 @@ class TestApplication(BaseApplicationTestCase):
         )
 
     def test_get_node(self):
-        response = self.ctid_ng.get_application_node(self.unknown_uuid, self.unknown_uuid)
+        response = self.calld.get_application_node(self.unknown_uuid, self.unknown_uuid)
         assert_that(
             response,
             has_properties(status_code=404),
         )
 
-        response = self.ctid_ng.get_application_node(self.no_node_app_uuid, self.unknown_uuid)
+        response = self.calld.get_application_node(self.no_node_app_uuid, self.unknown_uuid)
         assert_that(
             response,
             has_properties(status_code=404),
         )
 
-        response = self.ctid_ng.get_application_node(self.node_app_uuid, self.node_app_uuid)
+        response = self.calld.get_application_node(self.node_app_uuid, self.node_app_uuid)
         assert_that(
             response.json(),
             has_entries(
@@ -507,19 +507,19 @@ class TestApplication(BaseApplicationTestCase):
         )
 
     def test_get_nodes(self):
-        response = self.ctid_ng.get_application_nodes(self.unknown_uuid)
+        response = self.calld.get_application_nodes(self.unknown_uuid)
         assert_that(
             response,
             has_properties(status_code=404),
         )
 
-        response = self.ctid_ng.get_application_nodes(self.no_node_app_uuid)
+        response = self.calld.get_application_nodes(self.no_node_app_uuid)
         assert_that(
             response.json(),
             has_entries(items=empty()),
         )
 
-        response = self.ctid_ng.get_application_nodes(self.node_app_uuid)
+        response = self.calld.get_application_nodes(self.node_app_uuid)
         assert_that(
             response.json(),
             has_entries(items=contains(
@@ -531,7 +531,7 @@ class TestApplication(BaseApplicationTestCase):
         channel = self.call_app(self.node_app_uuid)
 
         def call_entered_node():
-            response = self.ctid_ng.get_application_nodes(self.node_app_uuid)
+            response = self.calld.get_application_nodes(self.node_app_uuid)
             assert_that(
                 response.json(),
                 has_entries(items=contains(
@@ -552,16 +552,16 @@ class TestApplicationMute(BaseApplicationTestCase):
         channel = self.call_app(self.no_node_app_uuid)
         other_channel = self.call_app(self.node_app_uuid)
 
-        response = self.ctid_ng.application_call_mute_start(self.unknown_uuid, channel.id)
+        response = self.calld.application_call_mute_start(self.unknown_uuid, channel.id)
         assert_that(response, has_properties(status_code=404))
 
-        response = self.ctid_ng.application_call_mute_start(app_uuid, other_channel.id)
+        response = self.calld.application_call_mute_start(app_uuid, other_channel.id)
         assert_that(response, has_properties(status_code=404))
 
         routing_key = 'applications.{uuid}.#'.format(uuid=app_uuid)
         event_accumulator = self.bus.accumulator(routing_key)
 
-        response = self.ctid_ng.application_call_mute_start(app_uuid, channel.id)
+        response = self.calld.application_call_mute_start(app_uuid, channel.id)
         assert_that(response, has_properties(status_code=204))
 
         def event_received():
@@ -585,7 +585,7 @@ class TestApplicationMute(BaseApplicationTestCase):
         until.assert_(event_received, tries=3)
 
         assert_that(
-            self.ctid_ng.get_application_calls(app_uuid).json()['items'],
+            self.calld.get_application_calls(app_uuid).json()['items'],
             contains(
                 has_entries(
                     id=channel.id,
@@ -599,16 +599,16 @@ class TestApplicationMute(BaseApplicationTestCase):
         channel = self.call_app(self.no_node_app_uuid)
         other_channel = self.call_app(self.node_app_uuid)
 
-        response = self.ctid_ng.application_call_mute_stop(self.unknown_uuid, channel.id)
+        response = self.calld.application_call_mute_stop(self.unknown_uuid, channel.id)
         assert_that(response, has_properties(status_code=404))
 
-        response = self.ctid_ng.application_call_mute_stop(app_uuid, other_channel.id)
+        response = self.calld.application_call_mute_stop(app_uuid, other_channel.id)
         assert_that(response, has_properties(status_code=404))
 
         routing_key = 'applications.{uuid}.#'.format(uuid=app_uuid)
         event_accumulator = self.bus.accumulator(routing_key)
 
-        response = self.ctid_ng.application_call_mute_stop(app_uuid, channel.id)
+        response = self.calld.application_call_mute_stop(app_uuid, channel.id)
         assert_that(response, has_properties(status_code=204))
 
         def event_received():
@@ -632,7 +632,7 @@ class TestApplicationMute(BaseApplicationTestCase):
         until.assert_(event_received, tries=3)
 
         assert_that(
-            self.ctid_ng.get_application_calls(app_uuid).json()['items'],
+            self.calld.get_application_calls(app_uuid).json()['items'],
             contains(
                 has_entries(
                     id=channel.id,
@@ -652,13 +652,13 @@ class TestApplicationHold(BaseApplicationTestCase):
         routing_key = 'applications.{uuid}.#'.format(uuid=app_uuid)
         event_accumulator = self.bus.accumulator(routing_key)
 
-        response = self.ctid_ng.application_call_hold_start(self.unknown_uuid, channel.id)
+        response = self.calld.application_call_hold_start(self.unknown_uuid, channel.id)
         assert_that(response, has_properties(status_code=404))
 
-        response = self.ctid_ng.application_call_hold_start(app_uuid, other_channel.id)
+        response = self.calld.application_call_hold_start(app_uuid, other_channel.id)
         assert_that(response, has_properties(status_code=404))
 
-        response = self.ctid_ng.application_call_hold_start(app_uuid, channel.id)
+        response = self.calld.application_call_hold_start(app_uuid, channel.id)
         assert_that(response, has_properties(status_code=204))
 
         def event_received():
@@ -681,7 +681,7 @@ class TestApplicationHold(BaseApplicationTestCase):
 
         until.assert_(event_received, tries=3)
 
-        response = self.ctid_ng.get_application_calls(app_uuid)
+        response = self.calld.get_application_calls(app_uuid)
         assert_that(
             response.json()['items'],
             contains(
@@ -697,16 +697,16 @@ class TestApplicationHold(BaseApplicationTestCase):
         channel = self.call_app(self.no_node_app_uuid)
         other_channel = self.call_app(self.node_app_uuid)
 
-        response = self.ctid_ng.application_call_hold_stop(self.unknown_uuid, channel.id)
+        response = self.calld.application_call_hold_stop(self.unknown_uuid, channel.id)
         assert_that(response, has_properties(status_code=404))
 
-        response = self.ctid_ng.application_call_hold_stop(app_uuid, other_channel.id)
+        response = self.calld.application_call_hold_stop(app_uuid, other_channel.id)
         assert_that(response, has_properties(status_code=404))
 
-        self.ctid_ng.application_call_hold_start(app_uuid, channel.id)
+        self.calld.application_call_hold_start(app_uuid, channel.id)
 
         def call_held():
-            response = self.ctid_ng.get_application_calls(app_uuid)
+            response = self.calld.get_application_calls(app_uuid)
             for body in response.json()['items']:
                 if body['id'] != channel.id:
                     continue
@@ -718,7 +718,7 @@ class TestApplicationHold(BaseApplicationTestCase):
         routing_key = 'applications.{uuid}.#'.format(uuid=app_uuid)
         event_accumulator = self.bus.accumulator(routing_key)
 
-        response = self.ctid_ng.application_call_hold_stop(app_uuid, channel.id)
+        response = self.calld.application_call_hold_stop(app_uuid, channel.id)
         assert_that(response, has_properties(status_code=204))
 
         def event_received():
@@ -741,7 +741,7 @@ class TestApplicationHold(BaseApplicationTestCase):
 
         until.assert_(event_received, tries=3)
 
-        response = self.ctid_ng.get_application_calls(app_uuid)
+        response = self.calld.get_application_calls(app_uuid)
         assert_that(
             response.json()['items'],
             contains(
@@ -759,11 +759,11 @@ class TestApplicationSnoop(BaseApplicationTestCase):
         super().setUp()
         self.app_uuid = self.no_node_app_uuid
         self.caller_channel = self.call_app(self.no_node_app_uuid)
-        node = self.ctid_ng.application_new_node(
+        node = self.calld.application_new_node(
             self.app_uuid,
             calls=[self.caller_channel.id],
         ).json()
-        self.answering_channel = self.ctid_ng.application_new_node_call(
+        self.answering_channel = self.calld.application_new_node_call(
             self.app_uuid,
             node['uuid'],
             'local',
@@ -771,7 +771,7 @@ class TestApplicationSnoop(BaseApplicationTestCase):
         )
 
     def test_snoop_created_event(self):
-        supervisor_channel = self.ctid_ng.application_new_call(
+        supervisor_channel = self.calld.application_new_call(
             self.app_uuid,
             'local',
             'recipient_autoanswer',
@@ -781,7 +781,7 @@ class TestApplicationSnoop(BaseApplicationTestCase):
         event_accumulator = self.bus.accumulator(routing_key)
 
         whisper_mode = 'both'
-        snoop = self.ctid_ng.application_call_snoop(
+        snoop = self.calld.application_call_snoop(
             self.app_uuid,
             self.caller_channel.id,
             supervisor_channel['id'],
@@ -811,13 +811,13 @@ class TestApplicationSnoop(BaseApplicationTestCase):
         until.assert_(event_received, tries=3)
 
     def test_snoop_deleted_event(self):
-        supervisor_channel = self.ctid_ng.application_new_call(
+        supervisor_channel = self.calld.application_new_call(
             self.app_uuid,
             'local',
             'recipient_autoanswer',
         ).json()
 
-        snoop = self.ctid_ng.application_call_snoop(
+        snoop = self.calld.application_call_snoop(
             self.app_uuid,
             self.caller_channel.id,
             supervisor_channel['id'],
@@ -827,7 +827,7 @@ class TestApplicationSnoop(BaseApplicationTestCase):
         routing_key = 'applications.{uuid}.snoops.#'.format(uuid=self.app_uuid)
         event_accumulator = self.bus.accumulator(routing_key)
 
-        self.ctid_ng.application_delete_snoop(self.app_uuid, snoop['uuid'])
+        self.calld.application_delete_snoop(self.app_uuid, snoop['uuid'])
 
         def event_received():
             events = event_accumulator.accumulate()
@@ -847,13 +847,13 @@ class TestApplicationSnoop(BaseApplicationTestCase):
         until.assert_(event_received, tries=3)
 
     def test_snoop_updated_event(self):
-        supervisor_channel = self.ctid_ng.application_new_call(
+        supervisor_channel = self.calld.application_new_call(
             self.app_uuid,
             'local',
             'recipient_autoanswer',
         ).json()
 
-        snoop = self.ctid_ng.application_call_snoop(
+        snoop = self.calld.application_call_snoop(
             self.app_uuid,
             self.caller_channel.id,
             supervisor_channel['id'],
@@ -864,7 +864,7 @@ class TestApplicationSnoop(BaseApplicationTestCase):
         event_accumulator = self.bus.accumulator(routing_key)
 
         whisper_mode = 'in'
-        self.ctid_ng.application_edit_snoop(
+        self.calld.application_edit_snoop(
             self.app_uuid,
             snoop['uuid'],
             whisper_mode,
@@ -893,35 +893,35 @@ class TestApplicationSnoop(BaseApplicationTestCase):
         until.assert_(event_received, tries=3)
 
     def test_delete(self):
-        supervisor_1_channel = self.ctid_ng.application_new_call(
+        supervisor_1_channel = self.calld.application_new_call(
             self.app_uuid,
             'local',
             'recipient_autoanswer',
         ).json()
-        supervisor_2_channel = self.ctid_ng.application_new_call(
+        supervisor_2_channel = self.calld.application_new_call(
             self.app_uuid,
             'local',
             'recipient_autoanswer',
         ).json()
 
-        snoop_1 = self.ctid_ng.application_call_snoop(
+        snoop_1 = self.calld.application_call_snoop(
             self.app_uuid,
             self.caller_channel.id,
             supervisor_1_channel['id'],
             'both',
         ).json()
 
-        snoop_2 = self.ctid_ng.application_call_snoop(
+        snoop_2 = self.calld.application_call_snoop(
             self.app_uuid,
             self.caller_channel.id,
             supervisor_2_channel['id'],
             'both',
         ).json()
 
-        result = self.ctid_ng.application_delete_snoop(self.app_uuid, snoop_2['uuid'])
+        result = self.calld.application_delete_snoop(self.app_uuid, snoop_2['uuid'])
         assert_that(result, has_properties(status_code=204))
         assert_that(
-            self.ctid_ng.application_list_snoops(self.app_uuid).json(),
+            self.calld.application_list_snoops(self.app_uuid).json(),
             has_entries(
                 items=contains_inanyorder(
                     snoop_1,
@@ -929,48 +929,48 @@ class TestApplicationSnoop(BaseApplicationTestCase):
             )
         )
 
-        result = self.ctid_ng.application_delete_snoop(self.app_uuid, snoop_2['uuid'])
+        result = self.calld.application_delete_snoop(self.app_uuid, snoop_2['uuid'])
         assert_that(result, has_properties(status_code=404))
 
-        result = self.ctid_ng.application_delete_snoop(self.unknown_uuid, snoop_2['uuid'])
+        result = self.calld.application_delete_snoop(self.unknown_uuid, snoop_2['uuid'])
         assert_that(result, has_properties(status_code=404))
 
     def test_list(self):
-        result = self.ctid_ng.application_list_snoops(self.app_uuid)
+        result = self.calld.application_list_snoops(self.app_uuid)
         assert_that(
             result.json(),
             has_entries(items=empty())
         )
 
-        result = self.ctid_ng.application_list_snoops(self.unknown_uuid)
+        result = self.calld.application_list_snoops(self.unknown_uuid)
         assert_that(result, has_properties(status_code=404))
 
-        supervisor_1_channel = self.ctid_ng.application_new_call(
+        supervisor_1_channel = self.calld.application_new_call(
             self.app_uuid,
             'local',
             'recipient_autoanswer',
         ).json()
-        supervisor_2_channel = self.ctid_ng.application_new_call(
+        supervisor_2_channel = self.calld.application_new_call(
             self.app_uuid,
             'local',
             'recipient_autoanswer',
         ).json()
 
-        snoop_1 = self.ctid_ng.application_call_snoop(
+        snoop_1 = self.calld.application_call_snoop(
             self.app_uuid,
             self.caller_channel.id,
             supervisor_1_channel['id'],
             'both',
         ).json()
 
-        snoop_2 = self.ctid_ng.application_call_snoop(
+        snoop_2 = self.calld.application_call_snoop(
             self.app_uuid,
             self.caller_channel.id,
             supervisor_2_channel['id'],
             'both',
         ).json()
 
-        result = self.ctid_ng.application_list_snoops(self.app_uuid)
+        result = self.calld.application_list_snoops(self.app_uuid)
         assert_that(
             result.json(),
             has_entries(
@@ -982,36 +982,36 @@ class TestApplicationSnoop(BaseApplicationTestCase):
         )
 
     def test_get(self):
-        supervisor_channel = self.ctid_ng.application_new_call(
+        supervisor_channel = self.calld.application_new_call(
             self.app_uuid,
             'local',
             'recipient_autoanswer',
         ).json()
-        snoop = self.ctid_ng.application_call_snoop(
+        snoop = self.calld.application_call_snoop(
             self.app_uuid,
             self.caller_channel.id,
             supervisor_channel['id'],
             'both',
         ).json()
 
-        result = self.ctid_ng.application_get_snoop(self.app_uuid, snoop['uuid'])
+        result = self.calld.application_get_snoop(self.app_uuid, snoop['uuid'])
         assert_that(result.json(), equal_to(snoop))
 
-        result = self.ctid_ng.application_get_snoop(self.unknown_uuid, snoop['uuid'])
+        result = self.calld.application_get_snoop(self.unknown_uuid, snoop['uuid'])
         assert_that(result, has_properties(status_code=404))
 
-        result = self.ctid_ng.application_get_snoop(self.app_uuid, self.unknown_uuid)
+        result = self.calld.application_get_snoop(self.app_uuid, self.unknown_uuid)
         assert_that(result, has_properties(status_code=404))
 
     def test_post_snoop(self):
         unrelated_channel = self.call_app(self.node_app_uuid)
-        supervisor_channel = self.ctid_ng.application_new_call(
+        supervisor_channel = self.calld.application_new_call(
             self.app_uuid,
             'local',
             'recipient_autoanswer',
         ).json()
 
-        result = self.ctid_ng.application_call_snoop(
+        result = self.calld.application_call_snoop(
             self.unknown_uuid,
             self.caller_channel.id,
             supervisor_channel['id'],
@@ -1019,7 +1019,7 @@ class TestApplicationSnoop(BaseApplicationTestCase):
         )
         assert_that(result, has_properties(status_code=404))
 
-        result = self.ctid_ng.application_call_snoop(
+        result = self.calld.application_call_snoop(
             self.app_uuid,
             unrelated_channel.id,
             supervisor_channel['id'],
@@ -1027,7 +1027,7 @@ class TestApplicationSnoop(BaseApplicationTestCase):
         )
         assert_that(result, has_properties(status_code=404))
 
-        result = self.ctid_ng.application_call_snoop(
+        result = self.calld.application_call_snoop(
             self.app_uuid,
             self.caller_channel.id,
             unrelated_channel.id,
@@ -1045,7 +1045,7 @@ class TestApplicationSnoop(BaseApplicationTestCase):
             {},
         ]
         for whisper_mode in invalid_whisper_mode:
-            result = self.ctid_ng.application_call_snoop(
+            result = self.calld.application_call_snoop(
                 self.app_uuid,
                 self.caller_channel.id,
                 supervisor_channel['id'],
@@ -1053,7 +1053,7 @@ class TestApplicationSnoop(BaseApplicationTestCase):
             )
             assert_that(result, has_properties(status_code=400), whisper_mode)
 
-        result = self.ctid_ng.application_call_snoop(
+        result = self.calld.application_call_snoop(
             self.app_uuid,
             self.caller_channel.id,
             supervisor_channel['id'],
@@ -1070,7 +1070,7 @@ class TestApplicationSnoop(BaseApplicationTestCase):
             )
         )
 
-        calls = self.ctid_ng.get_application_calls(self.app_uuid).json()
+        calls = self.calld.get_application_calls(self.app_uuid).json()
         snoop_uuid = result.json()['uuid']
         assert_that(
             calls['items'],
@@ -1097,27 +1097,27 @@ class TestApplicationSnoop(BaseApplicationTestCase):
         )
 
     def test_put(self):
-        supervisor_channel = self.ctid_ng.application_new_call(
+        supervisor_channel = self.calld.application_new_call(
             self.app_uuid,
             'local',
             'recipient_autoanswer',
         ).json()
 
-        snoop = self.ctid_ng.application_call_snoop(
+        snoop = self.calld.application_call_snoop(
             self.app_uuid,
             self.caller_channel.id,
             supervisor_channel['id'],
             'both',
         ).json()
 
-        result = self.ctid_ng.application_edit_snoop(
+        result = self.calld.application_edit_snoop(
             self.unknown_uuid,
             snoop['uuid'],
             'in',
         )
         assert_that(result, has_properties(status_code=404))
 
-        result = self.ctid_ng.application_edit_snoop(
+        result = self.calld.application_edit_snoop(
             self.app_uuid,
             self.unknown_uuid,
             'in',
@@ -1134,7 +1134,7 @@ class TestApplicationSnoop(BaseApplicationTestCase):
             {},
         ]
         for whisper_mode in invalid_whisper_mode:
-            result = self.ctid_ng.application_edit_snoop(
+            result = self.calld.application_edit_snoop(
                 self.app_uuid,
                 snoop['uuid'],
                 whisper_mode,
@@ -1157,7 +1157,7 @@ class TestApplicationMoh(BaseApplicationTestCase):
         ]
 
         for param in params:
-            result = self.ctid_ng.application_call_moh_start(*params)
+            result = self.calld.application_call_moh_start(*params)
             assert_that(result, has_properties(status_code=404), param)
 
     def test_put_moh_stop_fail(self):
@@ -1165,7 +1165,7 @@ class TestApplicationMoh(BaseApplicationTestCase):
         app_uuid = self.no_node_app_uuid
         channel = self.call_app(self.no_node_app_uuid)
         unrelated_channel = self.call_app(self.node_app_uuid)
-        self.ctid_ng.application_call_moh_start(app_uuid, channel.id, moh_uuid)
+        self.calld.application_call_moh_start(app_uuid, channel.id, moh_uuid)
 
         params = [
             (self.unknown_uuid, channel.id),
@@ -1173,7 +1173,7 @@ class TestApplicationMoh(BaseApplicationTestCase):
         ]
 
         for param in params:
-            result = self.ctid_ng.application_call_moh_stop(*params)
+            result = self.calld.application_call_moh_stop(*params)
             assert_that(result, has_properties(status_code=404), param)
 
     def test_put_moh_start_success(self):
@@ -1184,7 +1184,7 @@ class TestApplicationMoh(BaseApplicationTestCase):
         routing_key = 'applications.{uuid}.#'.format(uuid=app_uuid)
         event_accumulator = self.bus.accumulator(routing_key)
 
-        response = self.ctid_ng.application_call_moh_start(app_uuid, channel.id, moh_uuid)
+        response = self.calld.application_call_moh_start(app_uuid, channel.id, moh_uuid)
         assert_that(response, has_properties(status_code=204))
 
         def music_on_hold_started_event_received():
@@ -1207,7 +1207,7 @@ class TestApplicationMoh(BaseApplicationTestCase):
 
         until.assert_(music_on_hold_started_event_received, tries=3)
 
-        response = self.ctid_ng.get_application_calls(app_uuid)
+        response = self.calld.get_application_calls(app_uuid)
         assert_that(
             response.json()['items'],
             contains(
@@ -1226,8 +1226,8 @@ class TestApplicationMoh(BaseApplicationTestCase):
         routing_key = 'applications.{uuid}.#'.format(uuid=app_uuid)
         event_accumulator = self.bus.accumulator(routing_key)
 
-        self.ctid_ng.application_call_moh_start(app_uuid, channel.id, moh_uuid)
-        response = self.ctid_ng.application_call_moh_stop(app_uuid, channel.id)
+        self.calld.application_call_moh_start(app_uuid, channel.id, moh_uuid)
+        response = self.calld.application_call_moh_stop(app_uuid, channel.id)
         assert_that(response, has_properties(status_code=204))
 
         def call_updated_event_received():
@@ -1260,7 +1260,7 @@ class TestApplicationMoh(BaseApplicationTestCase):
 
         until.assert_(call_updated_event_received, tries=3)
 
-        response = self.ctid_ng.get_application_calls(app_uuid)
+        response = self.calld.get_application_calls(app_uuid)
         assert_that(
             response.json()['items'],
             contains(
@@ -1278,20 +1278,20 @@ class TestApplicationPlayback(BaseApplicationTestCase):
         body = {'uri': 'sound:tt-weasels'}
         channel = self.call_app(self.node_app_uuid)
 
-        response = self.ctid_ng.application_call_playback(self.unknown_uuid, channel.id, body)
+        response = self.calld.application_call_playback(self.unknown_uuid, channel.id, body)
         assert_that(response, has_properties(status_code=404))
 
-        response = self.ctid_ng.application_call_playback(self.node_app_uuid, self.unknown_uuid, body)
+        response = self.calld.application_call_playback(self.node_app_uuid, self.unknown_uuid, body)
         assert_that(response, has_properties(status_code=404))
 
-        response = self.ctid_ng.application_call_playback(self.no_node_app_uuid, channel.id, body)
+        response = self.calld.application_call_playback(self.no_node_app_uuid, channel.id, body)
         assert_that(response, has_properties(status_code=404))
 
         invalid_body = {'uri': 'unknown:foo'}
-        response = self.ctid_ng.application_call_playback(self.node_app_uuid, channel.id, invalid_body)
+        response = self.calld.application_call_playback(self.node_app_uuid, channel.id, invalid_body)
         assert_that(response, has_properties(status_code=400))
 
-        response = self.ctid_ng.application_call_playback(self.node_app_uuid, channel.id, body)
+        response = self.calld.application_call_playback(self.node_app_uuid, channel.id, body)
         assert_that(response, has_properties(status_code=200))
         assert_that(
             response.json(),
@@ -1308,7 +1308,7 @@ class TestApplicationPlayback(BaseApplicationTestCase):
 
         routing_key = 'applications.{}.#'.format(app_uuid)
         event_accumulator = self.bus.accumulator(routing_key)
-        response = self.ctid_ng.application_call_playback(app_uuid, channel.id, body)
+        response = self.calld.application_call_playback(app_uuid, channel.id, body)
         playback = response.json()
 
         def event_received():
@@ -1335,15 +1335,15 @@ class TestApplicationPlayback(BaseApplicationTestCase):
     def test_delete(self):
         body = {'uri': 'sound:tt-weasels'}
         channel = self.call_app(self.node_app_uuid)
-        playback = self.ctid_ng.application_call_playback(self.node_app_uuid, channel.id, body).json()
+        playback = self.calld.application_call_playback(self.node_app_uuid, channel.id, body).json()
 
-        response = self.ctid_ng.application_stop_playback(self.unknown_uuid, playback['uuid'])
+        response = self.calld.application_stop_playback(self.unknown_uuid, playback['uuid'])
         assert_that(response, has_properties(status_code=404))
 
-        response = self.ctid_ng.application_stop_playback(self.node_app_uuid, self.unknown_uuid)
+        response = self.calld.application_stop_playback(self.node_app_uuid, self.unknown_uuid)
         assert_that(response, has_properties(status_code=404))
 
-        response = self.ctid_ng.application_stop_playback(self.node_app_uuid, playback['uuid'])
+        response = self.calld.application_stop_playback(self.node_app_uuid, playback['uuid'])
         assert_that(response, has_properties(status_code=204))
 
     def test_playback_deleted_event(self):
@@ -1351,7 +1351,7 @@ class TestApplicationPlayback(BaseApplicationTestCase):
         body = {'uri': 'sound:tt-weasels'}
         channel = self.call_app(app_uuid)
 
-        response = self.ctid_ng.application_call_playback(app_uuid, channel.id, body)
+        response = self.calld.application_call_playback(app_uuid, channel.id, body)
 
         routing_key = 'applications.{}.#'.format(app_uuid)
         event_accumulator = self.bus.accumulator(routing_key)
@@ -1383,13 +1383,13 @@ class TestApplicationPlayback(BaseApplicationTestCase):
         body = {'uri': 'sound:tt-weasels'}
         channel = self.call_app(app_uuid)
 
-        response = self.ctid_ng.application_call_playback(app_uuid, channel.id, body)
+        response = self.calld.application_call_playback(app_uuid, channel.id, body)
 
         routing_key = 'applications.{}.#'.format(app_uuid)
         event_accumulator = self.bus.accumulator(routing_key)
         playback = response.json()
 
-        self.ctid_ng.application_stop_playback(app_uuid, playback['uuid'])
+        self.calld.application_stop_playback(app_uuid, playback['uuid'])
 
         def event_received():
             events = event_accumulator.accumulate()
@@ -1418,11 +1418,11 @@ class TestApplicationNode(BaseApplicationTestCase):
     def test_post_unknown_app(self):
         channel = self.call_app(self.no_node_app_uuid)
 
-        response = self.ctid_ng.application_new_node(self.unknown_uuid, calls=[channel.id])
+        response = self.calld.application_new_node(self.unknown_uuid, calls=[channel.id])
         assert_that(response, has_properties(status_code=404))
 
     def test_post_no_calls(self):
-        response = self.ctid_ng.application_new_node(self.no_node_app_uuid, calls=[])
+        response = self.calld.application_new_node(self.no_node_app_uuid, calls=[])
         assert_that(response, has_properties(status_code=400))
 
     def test_post_not_bridged(self):
@@ -1430,7 +1430,7 @@ class TestApplicationNode(BaseApplicationTestCase):
         routing_key = 'applications.{uuid}.#'.format(uuid=self.no_node_app_uuid)
         event_accumulator = self.bus.accumulator(routing_key)
 
-        response = self.ctid_ng.application_new_node(self.no_node_app_uuid, calls=[channel.id])
+        response = self.calld.application_new_node(self.no_node_app_uuid, calls=[channel.id])
         assert_that(
             response.json(),
             has_entries(
@@ -1488,9 +1488,9 @@ class TestApplicationNode(BaseApplicationTestCase):
 
     def test_post_bridged(self):
         channel = self.call_app(self.no_node_app_uuid)
-        self.ctid_ng.application_new_node(self.no_node_app_uuid, calls=[channel.id])
+        self.calld.application_new_node(self.no_node_app_uuid, calls=[channel.id])
 
-        response = self.ctid_ng.application_new_node(self.no_node_app_uuid, calls=[channel.id])
+        response = self.calld.application_new_node(self.no_node_app_uuid, calls=[channel.id])
         assert_that(response, has_properties(status_code=400))
 
     def test_post_bridged_default_bridge(self):
@@ -1499,7 +1499,7 @@ class TestApplicationNode(BaseApplicationTestCase):
         routing_key = 'applications.{uuid}.#'.format(uuid=self.node_app_uuid)
         event_accumulator = self.bus.accumulator(routing_key)
 
-        response = self.ctid_ng.application_new_node(self.node_app_uuid, calls=[channel.id])
+        response = self.calld.application_new_node(self.node_app_uuid, calls=[channel.id])
         assert_that(
             response.json(),
             has_entries(
@@ -1558,14 +1558,14 @@ class TestApplicationNode(BaseApplicationTestCase):
         channel_id = channel.id
         channel.hangup()
 
-        response = self.ctid_ng.application_new_node(self.node_app_uuid, calls=[channel_id])
+        response = self.calld.application_new_node(self.node_app_uuid, calls=[channel_id])
         assert_that(response, has_properties(status_code=400))
 
     def test_delete_unknown_app(self):
         channel = self.call_app(self.no_node_app_uuid)
         routing_key = 'applications.{uuid}.#'.format(uuid=self.no_node_app_uuid)
         event_accumulator = self.bus.accumulator(routing_key)
-        node = self.ctid_ng.application_new_node(self.no_node_app_uuid, calls=[channel.id]).json()
+        node = self.calld.application_new_node(self.no_node_app_uuid, calls=[channel.id]).json()
 
         def event_received():
             events = event_accumulator.accumulate()
@@ -1573,18 +1573,18 @@ class TestApplicationNode(BaseApplicationTestCase):
 
         until.assert_(event_received, tries=3)
 
-        response = self.ctid_ng.delete_application_node(self.unknown_uuid, node['uuid'])
+        response = self.calld.delete_application_node(self.unknown_uuid, node['uuid'])
         assert_that(response, has_properties(status_code=404))
 
     def test_delete_destination_node(self):
-        response = self.ctid_ng.delete_application_node(self.node_app_uuid, self.node_app_uuid)
+        response = self.calld.delete_application_node(self.node_app_uuid, self.node_app_uuid)
         assert_that(response, has_properties(status_code=400))
 
     def test_delete(self):
         channel = self.call_app(self.no_node_app_uuid)
         routing_key = 'applications.{uuid}.#'.format(uuid=self.no_node_app_uuid)
         event_accumulator = self.bus.accumulator(routing_key)
-        node = self.ctid_ng.application_new_node(self.no_node_app_uuid, calls=[channel.id]).json()
+        node = self.calld.application_new_node(self.no_node_app_uuid, calls=[channel.id]).json()
 
         def event_received():
             events = event_accumulator.accumulate()
@@ -1593,7 +1593,7 @@ class TestApplicationNode(BaseApplicationTestCase):
         until.assert_(event_received, tries=3)
         event_accumulator.reset()
 
-        response = self.ctid_ng.delete_application_node(self.no_node_app_uuid, node['uuid'])
+        response = self.calld.delete_application_node(self.no_node_app_uuid, node['uuid'])
         assert_that(response, has_properties(status_code=204))
 
         def event_received():
@@ -1655,28 +1655,28 @@ class TestApplicationNodeCall(BaseApplicationTestCase):
         routing_key = 'applications.{uuid}.#'.format(uuid=self.node_app_uuid)
         event_accumulator = self.bus.accumulator(routing_key)
 
-        response = self.ctid_ng.delete_application_node_call(
+        response = self.calld.delete_application_node_call(
             self.unknown_uuid,
             self.node_app_uuid,
             channel.id,
         )
         assert_that(response, has_properties(status_code=404))
 
-        response = self.ctid_ng.delete_application_node_call(
+        response = self.calld.delete_application_node_call(
             self.node_app_uuid,
             self.unknown_uuid,
             channel.id,
         )
         assert_that(response, has_properties(status_code=404))
 
-        response = self.ctid_ng.delete_application_node_call(
+        response = self.calld.delete_application_node_call(
             self.no_node_app_uuid,
             self.node_app_uuid,
             channel.id,
         )
         assert_that(response, has_properties(status_code=404))
 
-        response = self.ctid_ng.delete_application_node_call(
+        response = self.calld.delete_application_node_call(
             self.node_app_uuid,
             self.node_app_uuid,
             channel.id,
@@ -1715,7 +1715,7 @@ class TestApplicationNodeCall(BaseApplicationTestCase):
 
         until.assert_(event_received, tries=3)
 
-        response = self.ctid_ng.delete_application_node_call(
+        response = self.calld.delete_application_node_call(
             self.node_app_uuid,
             self.node_app_uuid,
             channel.id,
@@ -1724,7 +1724,7 @@ class TestApplicationNodeCall(BaseApplicationTestCase):
 
         channel.hangup()
 
-        response = self.ctid_ng.delete_application_node_call(
+        response = self.calld.delete_application_node_call(
             self.node_app_uuid,
             self.node_app_uuid,
             channel.id,
@@ -1735,31 +1735,31 @@ class TestApplicationNodeCall(BaseApplicationTestCase):
         channel_1 = self.call_app(self.no_node_app_uuid)
         channel_2 = self.call_app(self.no_node_app_uuid)
         channel_3 = self.call_app(self.no_node_app_uuid)
-        node_1 = self.ctid_ng.application_new_node(self.no_node_app_uuid, calls=[channel_1.id]).json()
-        self.ctid_ng.application_new_node(self.no_node_app_uuid, calls=[channel_2.id]).json()
+        node_1 = self.calld.application_new_node(self.no_node_app_uuid, calls=[channel_1.id]).json()
+        self.calld.application_new_node(self.no_node_app_uuid, calls=[channel_2.id]).json()
 
-        response = self.ctid_ng.application_node_add_call(
+        response = self.calld.application_node_add_call(
             self.unknown_uuid,
             node_1['uuid'],
             channel_3.id,
         )
         assert_that(response, has_properties(status_code=404))
 
-        response = self.ctid_ng.application_node_add_call(
+        response = self.calld.application_node_add_call(
             self.no_node_app_uuid,
             self.unknown_uuid,
             channel_3.id,
         )
         assert_that(response, has_properties(status_code=404))
 
-        response = self.ctid_ng.application_node_add_call(
+        response = self.calld.application_node_add_call(
             self.node_app_uuid,
             node_1['uuid'],
             channel_3.id,
         )
         assert_that(response, has_properties(status_code=404))
 
-        response = self.ctid_ng.application_node_add_call(
+        response = self.calld.application_node_add_call(
             self.no_node_app_uuid,
             node_1['uuid'],
             channel_2.id,
@@ -1769,7 +1769,7 @@ class TestApplicationNodeCall(BaseApplicationTestCase):
         routing_key = 'applications.{uuid}.#'.format(uuid=self.no_node_app_uuid)
         event_accumulator = self.bus.accumulator(routing_key)
 
-        response = self.ctid_ng.application_node_add_call(
+        response = self.calld.application_node_add_call(
             self.no_node_app_uuid,
             node_1['uuid'],
             channel_3.id,
@@ -1810,7 +1810,7 @@ class TestApplicationNodeCall(BaseApplicationTestCase):
 
         channel_3.hangup()
 
-        response = self.ctid_ng.application_node_add_call(
+        response = self.calld.application_node_add_call(
             self.no_node_app_uuid,
             node_1['uuid'],
             channel_3.id,

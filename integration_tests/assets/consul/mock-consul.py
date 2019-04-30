@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import sys
@@ -18,11 +18,11 @@ def default_auth(xivo_uuid):
             'Tags': [xivo_uuid, 'wazo-auth']}
 
 
-def default_ctid_ng(xivo_uuid):
-    return {'Service': 'xivo-ctid-ng',
-            'Address': 'remote_ctid_ng',
+def default_calld(xivo_uuid):
+    return {'Service': 'wazo-calld',
+            'Address': 'remote_calld',
             'Port': 9501,
-            'Tags': [xivo_uuid, 'xivo-ctid-ng']}
+            'Tags': [xivo_uuid, 'wazo-calld']}
 
 
 services = {
@@ -32,9 +32,9 @@ services = {
         '04b0087e-1661-4a42-8181-4b61e198204d': default_auth('04b0087e-1661-4a42-8181-4b61e198204d'),
         '5720ee16-61cc-412e-93c9-ae06fa0be845': default_auth('5720ee16-61cc-412e-93c9-ae06fa0be845'),
     },
-    'xivo-ctid-ng': {
-        '04b0087e-1661-4a42-8181-4b61e198204d': default_ctid_ng('04b0087e-1661-4a42-8181-4b61e198204d'),
-        '5720ee16-61cc-412e-93c9-ae06fa0be845': default_ctid_ng('5720ee16-61cc-412e-93c9-ae06fa0be845'),
+    'wazo-calld': {
+        '04b0087e-1661-4a42-8181-4b61e198204d': default_calld('04b0087e-1661-4a42-8181-4b61e198204d'),
+        '5720ee16-61cc-412e-93c9-ae06fa0be845': default_calld('5720ee16-61cc-412e-93c9-ae06fa0be845'),
     },
 }
 

@@ -1,0 +1,2 @@
+etc/nginx/locations/https-enabled
+etc/wazo-calld/conf.d

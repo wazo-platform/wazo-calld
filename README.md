@@ -1,11 +1,8 @@
-# XiVO CTI NG [![Build Status](https://jenkins.wazo.community/buildStatus/icon?job=xivo-ctid-ng)](https://jenkins.wazo.community/job/xivo-ctid-ng)
+# wazo-calld [![Build Status](https://jenkins.wazo.community/buildStatus/icon?job=wazo-calld)](https://jenkins.wazo.community/job/wazo-calld)
 
-XiVO CTI is a [Computer telephony integration](http://en.wikipedia.org/Computer_telephony_integration) server
-that provides advanced telephony services such as automatic phone control and
-[Call center](http://en.wikipedia.org/wiki/Call_center) monitoring. CTI services are controlled by connecting to
-the server with the [XiVO CTI client](https://github.com/wazo-pbx/xivo-client-qt)
+wazo-calld provides REST API to create, control calls and hangup calls, and sends events when something happens to a call.
 
-## Installing XiVO CTI NG
+## Installing wazo-calld
 
 The server is already provided as a part of [Wazo](http://documentation.wazo.community).
 Please refer to [the documentation](http://documentation.wazo.community/en/stable/installation/installsystem.html) for

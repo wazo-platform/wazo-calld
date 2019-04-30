@@ -1,0 +1,32 @@
+paths:
+  /status:
+    get:
+      summary: Print infos about internal status of wazo-calld
+      description: '**Required ACL:** `calld.status.read`'
+      tags:
+        - status
+      responses:
+        '200':
+          description: The internal infos of wazo-calld
+          schema:
+            $ref: '#/definitions/StatusSummary'
+definitions:
+  StatusSummary:
+    type: object
+    properties:
+      ari:
+        $ref: '#/definitions/ComponentWithStatus'
+      bus_consumer:
+        $ref: '#/definitions/ComponentWithStatus'
+      service_token:
+        $ref: '#/definitions/ComponentWithStatus'
+  ComponentWithStatus:
+    type: object
+    properties:
+      status:
+        $ref: '#/definitions/StatusValue'
+  StatusValue:
+    type: string
+    enum:
+      - fail
+      - ok

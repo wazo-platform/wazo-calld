@@ -1,3 +1,9 @@
+wazo-calld (19.07) wazo-dev-stretch; urgency=medium
+
+  * Rename xivo-ctid-ng to wazo-calld
+
+ -- Wazo Maintainers <dev@wazo.community>  Fri, 26 Apr 2019 14:00:53 -0400
+
 xivo-ctid-ng (15.18~1) squeeze-xivo-skaro-dev; urgency=low
 
   * Initial package

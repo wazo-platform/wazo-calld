@@ -10,7 +10,7 @@ from ari.exceptions import ARINotFound
 from ari.exceptions import ARINotInStasis
 from contextlib import contextmanager
 from requests.packages import urllib3
-from xivo_ctid_ng_client import Client as RealCtidNgClient
+from wazo_calld_client import Client as RealCalldClient
 from xivo_test_helpers import until
 from xivo_test_helpers.asset_launching_test_case import AssetLaunchingTestCase
 from xivo_test_helpers.asset_launching_test_case import NoSuchService
@@ -23,9 +23,9 @@ from .bus import BusClient
 from .chan_test import ChanTest
 from .confd import ConfdClient
 from .constants import ASSET_ROOT, VALID_TOKEN
-from .ctid_ng import CtidNgClient
+from .calld import CalldClient
 from .stasis import StasisClient
-from .wait_strategy import CtidNgEverythingOkWaitStrategy
+from .wait_strategy import CalldEverythingOkWaitStrategy
 
 logger = logging.getLogger(__name__)
 
@@ -46,8 +46,8 @@ class WrongClient:
 class IntegrationTest(AssetLaunchingTestCase):
 
     assets_root = ASSET_ROOT
-    service = 'ctid-ng'
-    wait_strategy = CtidNgEverythingOkWaitStrategy()
+    service = 'calld'
+    wait_strategy = CalldEverythingOkWaitStrategy()
 
     @classmethod
     def setUpClass(cls):
@@ -86,10 +86,10 @@ class IntegrationTest(AssetLaunchingTestCase):
             logger.debug(e)
             cls.confd = WrongClient('confd')
         try:
-            cls.ctid_ng = CtidNgClient('localhost', cls.service_port(9500, 'ctid-ng'))
+            cls.calld = CalldClient('localhost', cls.service_port(9500, 'calld'))
         except (NoSuchService, NoSuchPort) as e:
             logger.debug(e)
-            cls.ctid_ng = WrongClient('ctid_ng')
+            cls.calld = WrongClient('calld')
         try:
             cls.stasis = StasisClient('localhost', cls.service_port(5039, 'ari'))
         except (NoSuchService, NoSuchPort) as e:
@@ -111,30 +111,30 @@ class IntegrationTest(AssetLaunchingTestCase):
             cls.bus = WrongClient('bus')
 
     @classmethod
-    def make_ctid_ng(cls, token=VALID_TOKEN):
-        return RealCtidNgClient('localhost', cls.service_port(9500, 'ctid-ng'), verify_certificate=False, token=token)
+    def make_calld(cls, token=VALID_TOKEN):
+        return RealCalldClient('localhost', cls.service_port(9500, 'calld'), verify_certificate=False, token=token)
 
     @classmethod
     @contextmanager
-    def _ctid_ng_stopped(cls):
-        cls._stop_ctid_ng()
+    def _calld_stopped(cls):
+        cls._stop_calld()
         yield
-        cls._start_ctid_ng()
+        cls._start_calld()
 
     @classmethod
-    def _restart_ctid_ng(cls):
-        cls._stop_ctid_ng()
-        cls._start_ctid_ng()
+    def _restart_calld(cls):
+        cls._stop_calld()
+        cls._start_calld()
 
     @classmethod
-    def _stop_ctid_ng(cls):
-        cls.stop_service('ctid-ng')
+    def _stop_calld(cls):
+        cls.stop_service('calld')
 
     @classmethod
-    def _start_ctid_ng(cls):
-        cls.start_service('ctid-ng')
+    def _start_calld(cls):
+        cls.start_service('calld')
         cls.reset_clients()
-        until.true(cls.ctid_ng.is_up, tries=5)
+        until.true(cls.calld.is_up, tries=5)
 
     @classmethod
     @contextmanager

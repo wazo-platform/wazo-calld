@@ -1,0 +1,302 @@
+paths:
+  /calls:
+    get:
+      summary: List calls
+      description: '**Required ACL:** `calld.calls.read`'
+      parameters:
+      - name: application
+        description: Filter calls by Stasis application, e.g. switchboard.
+        in: query
+        type: string
+      - name: application_instance
+        description: Filter calls by Stasis application instance, e.g. switchboard-sales,green.
+          Args must be separated by commas (,). `application_instance` is ignored if `application`
+          is not set.
+        in: query
+        type: string
+      tags:
+      - calls
+      responses:
+        '200':
+          description: List currently active calls
+          schema:
+            type: object
+            properties:
+              items:
+                type: array
+                items:
+                  $ref: '#/definitions/Call'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+    post:
+      summary: Make a new call
+      description: '**Required ACL:** `calld.calls.create`
+
+
+        Create a new call from a phone to an extension.
+
+        '
+      parameters:
+      - name: body
+        in: body
+        description: Call parameters
+        required: true
+        schema:
+          $ref: '#/definitions/CallRequest'
+      tags:
+      - calls
+      responses:
+        '201':
+          description: The new call ID
+          schema:
+            $ref: '#/definitions/Call'
+        '400':
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/Error'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+  /calls/{call_id}:
+    get:
+      summary: Show a call
+      description: '**Required ACL:** `calld.calls.{call_id}.read`'
+      parameters:
+      - $ref: '#/parameters/CallID'
+      tags:
+      - calls
+      responses:
+        '200':
+          description: Call
+          schema:
+            $ref: '#/definitions/Call'
+        '404':
+          description: No such call
+          schema:
+            $ref: '#/definitions/Error'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+    delete:
+      summary: Hangup a call
+      description: '**Required ACL:** `calld.calls.{call_id}.delete`'
+      parameters:
+      - $ref: '#/parameters/CallID'
+      tags:
+      - calls
+      responses:
+        '204':
+          description: Call has been hung up
+        '404':
+          description: No such call
+          schema:
+            $ref: '#/definitions/Error'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+  /calls/{call_id}/user/{user_uuid}:
+    put:
+      summary: Connect a call to a user
+      description: '**Required ACL:** `calld.calls.{call_id}.user.{user_uuid}.update`'
+      parameters:
+      - $ref: '#/parameters/CallID'
+      - name: user_uuid
+        in: path
+        description: UUID of the user
+        required: true
+        type: string
+      tags:
+      - calls
+      responses:
+        '200':
+          description: The new call of the user (ringing side)
+          schema:
+            $ref: '#/definitions/Call'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+  /users/me/calls:
+    get:
+      summary: List calls of a user
+      description: '**Required ACL:** `calld.users.me.calls.read`'
+      parameters:
+      - name: application
+        description: Filter calls by Stasis application, e.g. switchboard.
+        in: query
+        type: string
+      - name: application_instance
+        description: Filter calls by Stasis application instance, e.g. switchboard-sales,green.
+          Args must be separated by commas (,).
+        in: query
+        type: string
+      tags:
+      - calls
+      - users
+      responses:
+        '200':
+          description: List currently active calls of a user
+          schema:
+            type: object
+            properties:
+              items:
+                type: array
+                items:
+                  $ref: '#/definitions/Call'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+    post:
+      summary: Make a new call from a user
+      description: '**Required ACL:** `calld.users.me.calls.create`
+
+
+        The user originator of the call is determined from the authentication token.
+
+        '
+      parameters:
+      - name: body
+        in: body
+        description: Parameters of the call
+        required: true
+        schema:
+          $ref: '#/definitions/UserCallRequest'
+      tags:
+      - calls
+      - users
+      responses:
+        '201':
+          description: The new call ID
+          schema:
+            $ref: '#/definitions/Call'
+        '400':
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/Error'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+  /users/me/calls/{call_id}:
+    delete:
+      summary: Hangup a call from a user
+      description: '**Required ACL:** `calld.users.me.calls.{call_id}.delete`
+
+
+        Only calls owned by the authenticated user may be hung up.'
+      parameters:
+      - $ref: '#/parameters/CallID'
+      tags:
+      - calls
+      - users
+      responses:
+        '204':
+          description: Call has been hung up
+        '403':
+          description: The authenticated user tried to hangup a call owned by someone
+            else
+          schema:
+            $ref: '#/definitions/Error'
+        '404':
+          description: No such call
+          schema:
+            $ref: '#/definitions/Error'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+definitions:
+  CallRequest:
+    type: object
+    properties:
+      destination:
+        $ref: '#/definitions/CallRequestDestination'
+      source:
+        $ref: '#/definitions/CallRequestSource'
+      variables:
+        description: Channel variables to set
+        type: object
+    required:
+      - destination
+      - source
+  CallRequestDestination:
+    description: Destination parameters
+    type: object
+    properties:
+      extension:
+        type: string
+      context:
+        type: string
+      priority:
+        type: integer
+    required:
+      - extension
+      - context
+      - priority
+  CallRequestSource:
+    description: Caller parameters
+    type: object
+    properties:
+      user:
+        type: string
+        description: UUID of the user making the call
+      line_id:
+        type: integer
+        description: ID of the line of the user used to make the call. Default is the main line of the user.
+      from_mobile:
+        type: boolean
+        description: "Start the call from the user's mobile phone. Default is False"
+    required:
+      - user
+  Call:
+    type: object
+    properties:
+      call_id:
+        type: string
+      user_uuid:
+        type: string
+      status:
+        type: string
+      talking_to:
+        $ref: '#/definitions/TalkingTo'
+      bridges:
+        type: array
+        items:
+          type: string
+      creation_time:
+        type: string
+        format: date-time
+      caller_id_name:
+        type: string
+      caller_id_number:
+        type: string
+      peer_caller_id_name:
+        type: string
+      peer_caller_id_number:
+        type: string
+      on_hold:
+        type: boolean
+      is_caller:
+        type: boolean
+        description: This value is only correct when the destination of the call is a user or outgoing call. In other cases, it is always False.
+      dialed_extension:
+        type: string
+  UserCallRequest:
+    type: object
+    properties:
+      extension:
+        description: Extension to call
+        type: string
+      variables:
+        description: Channel variables to set
+        type: object
+      line_id:
+        type: integer
+        description: ID of the line of the user used to make the call. Default is the main line of the user.
+      from_mobile:
+        type: boolean
+        description: "Start the call from the user's mobile phone. Default is False. Limitation: this feature may return a wrong call_id if the outgoing call used to dial the mobile number has more than one associated trunk."
+    required:
+      - extension
+  TalkingTo:
+    type: object
+    properties:
+      '{channel_id}':
+        type: string
+parameters:
+  CallID:
+    name: call_id
+    in: path
+    description: ID of the call
+    required: true
+    type: string

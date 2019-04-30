@@ -1,0 +1,156 @@
+paths:
+  /conferences/{conference_id}/participants:
+    get:
+      summary: List participants of a conference
+      description: '**Required ACL:** `calld.conferences.{conference_id}.participants.read`'
+      parameters:
+        - $ref: '#/parameters/ConferenceID'
+      tags:
+        - conferences
+      responses:
+        '200':
+          description: The list of participant is returned
+          schema:
+            $ref: '#/definitions/ParticipantList'
+        '404':
+          $ref: '#/responses/NoSuchConference'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+  /conferences/{conference_id}/participants/{participant_id}:
+    delete:
+      summary: Kick participant from a conference
+      description: '**Required ACL:** `calld.conferences.{conference_id}.participants.{participant_id}.delete`'
+      parameters:
+        - $ref: '#/parameters/ConferenceID'
+        - $ref: '#/parameters/ParticipantID'
+      tags:
+        - conferences
+      responses:
+        '204':
+          description: The participant was kicked from the conference
+        '404':
+          $ref: '#/responses/NoSuchConference'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+  /conferences/{conference_id}/participants/{participant_id}/mute:
+    put:
+      summary: Mute a participant in a conference
+      description: '**Required ACL:** `calld.conferences.{conference_id}.participants.{participant_id}.mute.update`'
+      parameters:
+        - $ref: '#/parameters/ConferenceID'
+        - $ref: '#/parameters/ParticipantID'
+      tags:
+        - conferences
+      responses:
+        '204':
+          description: The participant was muted
+        '404':
+          $ref: '#/responses/NoSuchConference'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+  /conferences/{conference_id}/participants/{participant_id}/unmute:
+    put:
+      summary: Unmute a participant in a conference
+      description: '**Required ACL:** `calld.conferences.{conference_id}.participants.{participant_id}.unmute.update`'
+      parameters:
+        - $ref: '#/parameters/ConferenceID'
+        - $ref: '#/parameters/ParticipantID'
+      tags:
+        - conferences
+      responses:
+        '204':
+          description: The participant was unmuted
+        '404':
+          $ref: '#/responses/NoSuchConference'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+  /conferences/{conference_id}/record:
+    post:
+      summary: Record a conference
+      description: '**Required ACL:** `calld.conferences.{conference_id}.record.create`'
+      parameters:
+        - $ref: '#/parameters/ConferenceID'
+      tags:
+        - conferences
+      responses:
+        '204':
+          description: The conference recording started
+        '400':
+          description: The conference is already being recorded or there are no participants
+          schema:
+            $ref: '#/definitions/Error'
+        '404':
+          $ref: '#/responses/NoSuchConference'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+    delete:
+      summary: Stop recording a conference
+      description: '**Required ACL:** `calld.conferences.{conference_id}.record.delete`'
+      parameters:
+        - $ref: '#/parameters/ConferenceID'
+      tags:
+        - conferences
+      responses:
+        '204':
+          description: The conference recording stopped
+        '400':
+          description: The conference is already not being recorded
+          schema:
+            $ref: '#/definitions/Error'
+        '404':
+          $ref: '#/responses/NoSuchConference'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+responses:
+  NoSuchConference:
+    description: The specified conference does not exist
+    schema:
+      $ref: '#/definitions/Error'
+parameters:
+  ConferenceID:
+    name: conference_id
+    in: path
+    description: Unique identifier of the conference
+    required: true
+    type: string
+  ParticipantID:
+    name: participant_id
+    in: path
+    description: Unique identifier of the participant
+    required: true
+    type: string
+definitions:
+  ParticipantList:
+    type: object
+    properties:
+      items:
+        type: array
+        items:
+          $ref: '#/definitions/Participant'
+  Participant:
+    type: object
+    properties:
+      id:
+        description: The participant's ID
+        type: string
+      caller_id_name:
+        description: The participant's name
+        type: string
+      caller_id_num:
+        description: The participant's number
+        type: string
+      muted:
+        description: Is the participant muted?
+        type: boolean
+      join_time:
+        description: Elapsed seconds since the participant joined the conference
+        type: integer
+      admin:
+        description: Is the participant an admin of the conference?
+        type: boolean
+      language:
+        description: The participant's language
+        type: string
+      call_id:
+        description: The ID of the participant's call
+        type: string
