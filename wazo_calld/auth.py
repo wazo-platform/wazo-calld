@@ -27,14 +27,3 @@ def get_token_user_uuid_from_request(auth_client, token=None):
     if not user_uuid:
         raise TokenWithUserUUIDRequiredError()
     return user_uuid
-
-def required_acl(acl_pattern, extract_token_id=None):
-    if acl_pattern.startswith('ctid-ng.'):
-    def wrapper(func):
-        func.acl = _ACLCheck(acl_pattern, extract_token_id)
-        return func
-    return wrapper
-
-
-class AuthVerifier(auth_verifier.AuthVerifier):
-
