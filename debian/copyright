@@ -1,4 +1,4 @@
-﻿Format: http://dep.debian.net/deps/dep5
+Format: http://dep.debian.net/deps/dep5
 Upstream-Name: wazo-calld
 Source: https://github.com/wazo-pbx/wazo-calld.git
 
