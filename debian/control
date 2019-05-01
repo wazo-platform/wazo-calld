@@ -34,6 +34,9 @@ Depends:
  xivo-confd-client-python3,
  wazo-calld-client-python3,
  xivo-lib-python-python3
+Provides: xivo-ctid-ng
+Replaces: xivo-ctid-ng
+Conflicts: xivo-ctid-ng
 Description: Wazo call server
  Wazo is a system based on a powerful IPBX, to bring an easy to
  install solution for telephony and related services.
