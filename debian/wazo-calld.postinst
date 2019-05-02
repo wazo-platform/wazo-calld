@@ -17,14 +17,13 @@ case "$1" in
 		if [[ -z "${previous_version}" ]]; then
 			ln -sf /etc/nginx/locations/https-available/$DAEMONNAME \
 			       /etc/nginx/locations/https-enabled/$DAEMONNAME
-			rm -f /etc/nginx/locations/https-enabled/xivo-ctid-ng
-
-			if [ -f /var/log/xivo-ctid-ng.log ] ; then
-				rename 's/xivo-ctid-ng/wazo-calld/g' /var/log/xivo-ctid-ng.log*
-			fi
-			rm -rf /var/run/xivo-ctid-ng
 		fi
 
+		rm -f /etc/nginx/locations/https-enabled/xivo-ctid-ng
+		if [ -f /var/log/xivo-ctid-ng.log ] ; then
+			rename 's/xivo-ctid-ng/wazo-calld/g' /var/log/xivo-ctid-ng.log*
+		fi
+		rm -rf /var/run/xivo-ctid-ng
 	;;
 
 	abort-upgrade|abort-remove|abort-deconfigure)
