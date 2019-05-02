@@ -25,6 +25,7 @@ case "$1" in
 		fi
 		rm -rf /var/run/xivo-ctid-ng
 		find /etc/xivo-ctid-ng/conf.d/ -mindepth 1 -exec mv {} /etc/wazo-calld/conf.d/ \;
+		rmdir --ignore-fail-on-non-empty -p /etc/xivo-ctid-ng/conf.d
 	;;
 
 	abort-upgrade|abort-remove|abort-deconfigure)
