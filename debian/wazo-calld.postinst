@@ -2,8 +2,8 @@
 
 set -e
 
-LOG_FILENAME='/var/log/xivo-ctid-ng.log'
-DAEMONNAME='xivo-ctid-ng'
+LOG_FILENAME='/var/log/wazo-calld.log'
+DAEMONNAME='wazo-calld'
 
 case "$1" in
 	configure)
