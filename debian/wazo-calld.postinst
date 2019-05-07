@@ -19,6 +19,7 @@ case "$1" in
 			       /etc/nginx/locations/https-enabled/$DAEMONNAME
 		fi
 
+		# move files from xivo-ctid-ng
 		rm -f /etc/nginx/locations/https-enabled/xivo-ctid-ng
 		if [ -f /var/log/xivo-ctid-ng.log ] ; then
 			rename 's/xivo-ctid-ng/wazo-calld/g' /var/log/xivo-ctid-ng.log*
