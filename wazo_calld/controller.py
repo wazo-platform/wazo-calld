@@ -16,7 +16,7 @@ from .ari_ import CoreARI
 from .bus import CoreBusConsumer
 from .bus import CoreBusPublisher
 from .collectd import CoreCollectd
-from .http_server import api, CoreRestApi
+from .http_server import api, HTTPServer
 from .service_discovery import self_check
 
 logger = logging.getLogger(__name__)
@@ -31,7 +31,7 @@ class Controller:
         self.bus_publisher = CoreBusPublisher(config)
         self.bus_consumer = CoreBusConsumer(config)
         self.collectd = CoreCollectd(config)
-        self.rest_api = CoreRestApi(config)
+        self.http_server = HTTPServer(config)
         self.status_aggregator = StatusAggregator()
         self.token_renewer = TokenRenewer(auth_client)
         self.token_status = TokenStatus()
@@ -75,7 +75,7 @@ class Controller:
         try:
             with self.token_renewer:
                 with ServiceCatalogRegistration(*self._service_registration_params):
-                    self.rest_api.run()
+                    self.http_server.run()
         finally:
             logger.info('wazo-calld stopping...')
             self.ari.stop()
@@ -91,9 +91,9 @@ class Controller:
             logger.debug('joining bus producer thread')
             bus_producer_thread.join()
             logger.debug('joining rest api threads')
-            self.rest_api.join()
+            self.http_server.join()
             logger.debug('done joining')
 
     def stop(self, reason):
         logger.warning('Stopping wazo-calld: %s', reason)
-        self.rest_api.stop()
+        self.http_server.stop()
