@@ -1,5 +1,4 @@
-# -*- coding: UTF-8 -*-
-# Copyright (C) 2015-2016 Avencall
+# Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 

@@ -20,7 +20,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'wazo-calld=wazo_calld.bin.daemon:main',
+            'wazo-calld=wazo_calld.main:main',
         ],
         'wazo_calld.plugins': [
             'api = wazo_calld.plugins.api.plugin:Plugin',
