@@ -10,9 +10,10 @@ from flask import Flask, request
 from flask_restful import Api
 from flask_cors import CORS
 from werkzeug.contrib.fixers import ProxyFix
-from xivo.auth_verifier import AuthVerifier
 from xivo import http_helpers
 from xivo.http_helpers import ReverseProxied
+
+from .http import auth_verifier
 
 VERSION = 1.0
 
@@ -20,7 +21,6 @@ logger = logging.getLogger(__name__)
 app = Flask('wazo_calld')
 adapter_app = Flask('wazo_calld_adapter')
 api = Api(app, prefix='/{}'.format(VERSION))
-auth_verifier = AuthVerifier()
 
 
 def log_request_params(response):
