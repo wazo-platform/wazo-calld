@@ -1,12 +1,9 @@
 # Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-import cherrypy
 import logging
 import os
 
-from cherrypy.process.wspbus import states
-from cherrypy.process.servers import ServerAdapter
 from cheroot import wsgi
 from datetime import timedelta
 from flask import Flask, request
@@ -58,32 +55,29 @@ class HTTPServer:
 
     def run(self):
         wsgi_app_https = ReverseProxied(ProxyFix(wsgi.WSGIPathInfoDispatcher({'/': app})))
-        cherrypy.server.unsubscribe()
-        cherrypy.config.update({'environment': 'production'})
 
         bind_addr = (self.config['listen'], self.config['port'])
-
-        server_https = wsgi.WSGIServer(bind_addr=bind_addr,
-                                       wsgi_app=wsgi_app_https)
-        server_https.ssl_adapter = http_helpers.ssl_adapter(self.config['certificate'],
-                                                            self.config['private_key'])
-        ServerAdapter(cherrypy.engine, server_https).subscribe()
-        logger.debug('WSGIServer starting... uid: %s, listen: %s:%s',
-                     os.getuid(), bind_addr[0], bind_addr[1])
+        self.server = wsgi.WSGIServer(bind_addr=bind_addr, wsgi_app=wsgi_app_https)
+        self.server.ssl_adapter = http_helpers.ssl_adapter(
+            self.config['certificate'],
+            self.config['private_key'],
+        )
+        logger.debug(
+            'WSGIServer starting... uid: %s, listen: %s:%s',
+            os.getuid(),
+            bind_addr[0],
+            bind_addr[1],
+        )
 
         for route in http_helpers.list_routes(app):
             logger.debug(route)
 
         try:
-            cherrypy.engine.start()
-            cherrypy.engine.wait(states.EXITING)
+            self.server.start()
         except KeyboardInterrupt:
             logger.warning('Stopping wazo-calld: KeyboardInterrupt')
-            cherrypy.engine.exit()
+            self.server.stop()
 
     def stop(self):
-        cherrypy.engine.exit()
-
-    def join(self):
-        if cherrypy.engine.state == states.EXITING:
-            cherrypy.engine.block()
+        if self.server:
+            self.server.stop()

@@ -90,8 +90,6 @@ class Controller:
             collectd_thread.join()
             logger.debug('joining bus producer thread')
             bus_producer_thread.join()
-            logger.debug('joining rest api threads')
-            self.http_server.join()
             logger.debug('done joining')
 
     def stop(self, reason):
