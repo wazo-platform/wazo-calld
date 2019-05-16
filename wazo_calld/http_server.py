@@ -5,26 +5,17 @@ import cherrypy
 import logging
 import os
 
-from ari.exceptions import ARIException
-from ari.exceptions import ARIHTTPError
 from cherrypy.process.wspbus import states
 from cherrypy.process.servers import ServerAdapter
 from cheroot import wsgi
 from datetime import timedelta
 from flask import Flask, request
 from flask_restful import Api
-from flask_restful import Resource
 from flask_cors import CORS
-from functools import wraps
 from werkzeug.contrib.fixers import ProxyFix
 from xivo.auth_verifier import AuthVerifier
 from xivo import http_helpers
-from xivo import mallow_helpers
-from xivo import rest_api_helpers
 from xivo.http_helpers import ReverseProxied
-
-from .exceptions import AsteriskARIUnreachable
-from .exceptions import AsteriskARIError
 
 VERSION = 1.0
 
@@ -96,26 +87,3 @@ class CoreRestApi:
     def join(self):
         if cherrypy.engine.state == states.EXITING:
             cherrypy.engine.block()
-
-
-def handle_ari_exception(func):
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        try:
-            return func(*args, **kwargs)
-        except ARIHTTPError as e:
-            raise AsteriskARIError({'base_url': e.client.base_url}, e.original_error)
-        except ARIException as e:
-            raise AsteriskARIUnreachable({'base_url': e.client.base_url}, e.original_error)
-    return wrapper
-
-
-class ErrorCatchingResource(Resource):
-    method_decorators = ([mallow_helpers.handle_validation_exception,
-                          handle_ari_exception,
-                          rest_api_helpers.handle_api_exception] +
-                         Resource.method_decorators)
-
-
-class AuthResource(ErrorCatchingResource):
-    method_decorators = [auth_verifier.verify_token] + ErrorCatchingResource.method_decorators

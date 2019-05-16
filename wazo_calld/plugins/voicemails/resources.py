@@ -1,4 +1,4 @@
-# Copyright 2016-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import re
@@ -10,7 +10,7 @@ from marshmallow import Schema, fields
 from wazo_calld.auth import get_token_user_uuid_from_request
 from wazo_calld.auth import required_acl
 from wazo_calld.auth import extract_token_id_from_query_or_header
-from wazo_calld.rest_api import AuthResource
+from wazo_calld.http import AuthResource
 from .exceptions import InvalidVoicemailID
 from .exceptions import InvalidVoicemailFolderID
 from .exceptions import InvalidVoicemailMessageID
