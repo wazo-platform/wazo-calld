@@ -16,7 +16,7 @@ from .ari_ import CoreARI
 from .bus import CoreBusConsumer
 from .bus import CoreBusPublisher
 from .collectd import CoreCollectd
-from .rest_api import api, CoreRestApi
+from .http_server import api, CoreRestApi
 from .service_discovery import self_check
 
 logger = logging.getLogger(__name__)
