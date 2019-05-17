@@ -27,6 +27,7 @@ Depends:
  python3-marshmallow,
  python3-stevedore,
  python3-wsaccel,
+ rename,
  xivo-amid-client-python3,
  xivo-auth-client-python3,
  xivo-bus (>> 15.19),
