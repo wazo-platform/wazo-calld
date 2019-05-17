@@ -187,7 +187,7 @@ definitions:
       destination: line
       location:
         line_id: 14
-        contact: pjsip/zhmz7zfa/sip:5f3ff5ga@127.0.0.1:45190;transport=ws
+        contact: 5f3ff5ga
       completions:
         - "answer"
     required:
