@@ -27,6 +27,13 @@ class TestInterfaceDestination(TestCase):
 
         assert_that(destination.ari_endpoint(), equal_to(interface))
 
+    def test_ari_endpoint_sccp_with_contact(self):
+        interface = 'sccp/foobar'
+        details = {'interface': interface, 'line_id': 42, 'contact': 'invalid'}
+        destination = InterfaceDestination(self.ari, details, s.initiator_call)
+
+        assert_that(destination.ari_endpoint(), equal_to(interface))
+
     def test_ari_endpoint_sip_no_contact(self):
         interface = 'pjsip/foobar'
         details = {'interface': interface, 'line_id': 42}
