@@ -5,12 +5,12 @@ import logging
 
 from threading import Thread
 from functools import partial
+from wazo_auth_client import Client as AuthClient
 from xivo import plugin_helpers
 from xivo.config_helper import get_xivo_uuid
 from xivo.consul_helpers import ServiceCatalogRegistration
 from xivo.status import StatusAggregator, TokenStatus
 from xivo.token_renewer import TokenRenewer
-from xivo_auth_client import Client as AuthClient
 
 from .ari_ import CoreARI
 from .bus import CoreBusConsumer

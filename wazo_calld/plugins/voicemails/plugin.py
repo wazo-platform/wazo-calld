@@ -1,9 +1,9 @@
-# Copyright 2016 Proformatique Inc.
+# Copyright 2016-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
 
-from xivo_auth_client import Client as AuthClient
+from wazo_auth_client import Client as AuthClient
 from xivo_confd_client import Client as ConfdClient
 
 from .bus_consume import VoicemailsBusEventHandler

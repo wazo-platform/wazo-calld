@@ -1,8 +1,8 @@
-# Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+from wazo_auth_client import Client as AuthClient
 from xivo_amid_client import Client as AmidClient
-from xivo_auth_client import Client as AuthClient
 from xivo_confd_client import Client as ConfdClient
 
 from wazo_calld.ari_ import DEFAULT_APPLICATION_NAME
