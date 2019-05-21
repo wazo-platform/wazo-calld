@@ -1,6 +1,6 @@
 [Unit]
 Description=wazo-calld server
-ConditionPathExists=!/var/lib/xivo/disabled
+ConditionPathExists=!/var/lib/wazo/disabled
 After=network.target asterisk.service rabbitmq-server.service wazo-auth.service xivo-confd.service
 Before=monit.service
 
