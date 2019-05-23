@@ -1340,8 +1340,8 @@ class TestTransferFromNonStasis(TestTransfers):
         transferred_channel_id, initiator_channel_id = self.given_bridged_call_not_stasis()
 
         response = self.calld.create_transfer(transferred_channel_id,
-                                                initiator_channel_id,
-                                                **RECIPIENT)
+                                              initiator_channel_id,
+                                              **RECIPIENT)
 
         assert_that(response, all_of(has_entries({'id': instance_of(str),
                                                   'transferred_call': transferred_channel_id,
@@ -1369,8 +1369,8 @@ class TestTransferFromNonStasis(TestTransfers):
         transferred_channel_id, initiator_channel_id = self.given_bridged_call_not_stasis()
 
         response = self.calld.create_blind_transfer(transferred_channel_id,
-                                                      initiator_channel_id,
-                                                      **RECIPIENT)
+                                                    initiator_channel_id,
+                                                    **RECIPIENT)
 
         transfer_id = response['id']
         recipient_channel_id = response['recipient_call']
