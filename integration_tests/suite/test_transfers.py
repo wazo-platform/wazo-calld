@@ -98,7 +98,9 @@ class TestTransfers(RealAsteriskIntegrationTest):
     def latest_with_same_linkedid(self, channel_left, exclude=None):
         exclude = exclude or []
         linkedid = channel_left.getChannelVar(variable='CHANNEL(linkedid)')['value']
-        ordered_candidates = reversed(sorted(self.ari.channels.list(), key=attrgetter('id')))
+
+        ordered_candidates = reversed(sorted(self.ari.channels.list(),
+                                             key=lambda channel: channel.json['creationtime']))
         for channel_right_candidate in ordered_candidates:
             try:
                 if (channel_right_candidate.getChannelVar(variable='CHANNEL(linkedid)')['value'] == linkedid and
