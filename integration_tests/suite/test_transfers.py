@@ -154,7 +154,7 @@ class TestTransfers(RealAsteriskIntegrationTest):
                                              variables={'variables': {'XIVO_USERUUID': caller_uuid,
                                                                       '__CALLEE_XIVO_USERUUID': callee_uuid}})
 
-        def callee_is_ringing(caller):
+        def get_callee(caller):
             try:
                 return self.latest_with_same_linkedid(caller)
             except Exception:
@@ -169,7 +169,7 @@ class TestTransfers(RealAsteriskIntegrationTest):
             except StopIteration:
                 return False
 
-        callee = until.true(callee_is_ringing, caller, tries=5)
+        callee = until.true(get_callee, caller, tries=5)
         until.true(channels_are_talking, caller, callee, tries=2)
         return caller.id, callee.id
 
