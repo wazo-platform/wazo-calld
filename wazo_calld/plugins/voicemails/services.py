@@ -46,7 +46,7 @@ class VoicemailsService:
             'dest_folder': dest_folder.path.decode('utf-8'),
             'message_id': message_info['id'],
         }
-        self._ari.xivo.moveVoicemailMessage(body=body)
+        self._ari.wazo.moveVoicemailMessage(body=body)
 
     def delete_message(self, voicemail_id, message_id):
         vm_conf = confd.get_voicemail(voicemail_id, self._confd_client)
@@ -57,7 +57,7 @@ class VoicemailsService:
             'folder': message_info['folder'].path.decode('utf-8'),
             'message_id': message_id,
         }
-        self._ari.xivo.deleteVoicemailMessage(body=body)
+        self._ari.wazo.deleteVoicemailMessage(body=body)
 
     def get_user_voicemail_id(self, user_uuid):
         user_voicemail_conf = confd.get_user_voicemail(user_uuid, self._confd_client)
