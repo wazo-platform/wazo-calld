@@ -62,7 +62,7 @@ class Destination:
 
 class InterfaceDestination(Destination):
 
-    pjsip_contact_re = re.compile(r'''pjsip/[a-z0-9]+/sip:[a-z0-9]+@.*''', re.IGNORECASE)
+    pjsip_contact_re = re.compile(r'pjsip/[a-z0-9]+/sip:[a-z0-9]+@.*', re.IGNORECASE)
 
     def __init__(self, ari, details, initiator_call):
         self.ari = ari
