@@ -1,12 +1,16 @@
 # Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+import re
 import logging
 import threading
 
 from wazo_calld.exceptions import UserPermissionDenied
 from wazo_calld.helpers import ami
-from wazo_calld.helpers.ari_ import Channel
+from wazo_calld.helpers.ari_ import (
+    ARINotFound,
+    Channel,
+)
 from wazo_calld.helpers.confd import User
 from wazo_calld.helpers.exceptions import (
     NotEnoughChannels,
@@ -28,12 +32,13 @@ logger = logging.getLogger(__name__)
 
 class DestinationFactory:
 
-    def __init__(self, amid):
+    def __init__(self, amid, ari):
         self.amid = amid
+        self.ari = ari
 
-    def from_type(self, type_, details):
+    def from_type(self, type_, details, initiator_call):
         if type_ == 'interface':
-            return InterfaceDestination(details)
+            return InterfaceDestination(self.ari, details, initiator_call)
         elif type_ == 'extension':
             return ExtensionDestination(self.amid, details)
         raise NotImplementedError(type_)
@@ -56,11 +61,17 @@ class Destination:
 
 
 class InterfaceDestination(Destination):
-    def __init__(self, details):
+
+    pjsip_contact_re = re.compile(r'pjsip/[a-z0-9]+/sip:[a-z0-9]+@.*', re.IGNORECASE)
+
+    def __init__(self, ari, details, initiator_call):
+        self.ari = ari
+        self.initiator_call = initiator_call
+
         interface = details['interface']
 
         if interface.startswith('pjsip/'):
-            self._interface = details.get('contact') or interface
+            self._interface = self._get_pjsip_interface(details)
         else:
             self._interface = interface
 
@@ -71,6 +82,34 @@ class InterfaceDestination(Destination):
 
     def ari_endpoint(self):
         return self._interface
+
+    def _get_pjsip_interface(self, details):
+        contact = details.get('contact')
+        interface = details['interface']
+        if not contact:
+            return interface
+
+        matches = self.pjsip_contact_re.match(contact)
+        if matches:
+            return contact
+
+        _, peer_name = interface.split('/', 1)
+        asterisk_dialplan_function = 'PJSIP_DIAL_CONTACTS({})'.format(peer_name)
+        try:
+            response = self.ari.channels.getChannelVar(
+                channelId=self.initiator_call,
+                variable=asterisk_dialplan_function,
+            )
+        except ARINotFound as e:
+            msg = 'Cannot find result for {} {}'.format(asterisk_dialplan_function, e)
+            raise RelocateCreationError(msg, details)
+
+        uri_start = 'PJSIP/{}/sip:{}'.format(peer_name, contact)
+        for contact_uri in response['value'].split('&'):
+            if contact_uri.startswith(uri_start):
+                return contact_uri
+
+        raise RelocateCreationError('Failed to find a matching contact', details)
 
 
 class ExtensionDestination(Destination):
@@ -98,7 +137,7 @@ class RelocatesService:
         self.confd_client = confd_client
         self.notifier = notifier
         self.state_factory = state_factory
-        self.destination_factory = DestinationFactory(amid)
+        self.destination_factory = DestinationFactory(amid, ari)
         self.relocates = relocates
         self.duplicate_relocate_lock = threading.Lock()
 
@@ -127,7 +166,11 @@ class RelocatesService:
             raise RelocateCreationError('initiator call not found', details)
 
         try:
-            destination = self.destination_factory.from_type(destination, location)
+            destination = self.destination_factory.from_type(
+                destination,
+                location,
+                initiator_channel,
+            )
         except InvalidDestination:
             details = {'destination': destination, 'location': location}
             raise RelocateCreationError('invalid destination', details)
