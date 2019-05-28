@@ -16,6 +16,24 @@ paths:
           $ref: '#/responses/NoSuchConference'
         '503':
           $ref: '#/responses/AnotherServiceUnavailable'
+  /users/me/conferences/{conference_id}/participants:
+    get:
+      summary: List participants of a conference as a user
+      description: '**Required ACL:** `calld.users.me.conferences.{conference_id}.participants.read`'
+      parameters:
+        - $ref: '#/parameters/ConferenceID'
+      tags:
+        - conferences
+        - users
+      responses:
+        '200':
+          description: The list of participant is returned
+          schema:
+            $ref: '#/definitions/ParticipantList'
+        '404':
+          $ref: '#/responses/NoSuchConference'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
   /conferences/{conference_id}/participants/{participant_id}:
     delete:
       summary: Kick participant from a conference
@@ -153,4 +171,7 @@ definitions:
         type: string
       call_id:
         description: The ID of the participant's call
+        type: string
+      user_uuid:
+        description: The UUID of the participant's user. `null` when there is no user.
         type: string

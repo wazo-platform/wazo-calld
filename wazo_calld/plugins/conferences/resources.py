@@ -3,6 +3,7 @@
 
 from xivo.tenant_flask_helpers import Tenant
 
+from wazo_calld.auth import get_token_user_uuid_from_request
 from wazo_calld.auth import required_acl
 from wazo_calld.http import AuthResource
 
@@ -18,6 +19,24 @@ class ParticipantsResource(AuthResource):
     def get(self, conference_id):
         tenant = Tenant.autodetect()
         participants = self._service.list_participants(tenant.uuid, conference_id)
+        items = {
+            'items': participant_schema.dump(participants, many=True).data,
+            'total': len(participants),
+        }
+        return items, 200
+
+
+class ParticipantsUserResource(AuthResource):
+
+    def __init__(self, auth_client, conferences_service):
+        self._auth_client = auth_client
+        self._service = conferences_service
+
+    @required_acl('calld.users.me.conferences.{conference_id}.participants.read')
+    def get(self, conference_id):
+        tenant = Tenant.autodetect()
+        user_uuid = get_token_user_uuid_from_request(self._auth_client)
+        participants = self._service.user_list_participants(tenant.uuid, user_uuid, conference_id)
         items = {
             'items': participant_schema.dump(participants, many=True).data,
             'total': len(participants),

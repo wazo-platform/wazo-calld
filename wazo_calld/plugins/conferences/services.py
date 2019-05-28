@@ -7,6 +7,7 @@ from ari.exceptions import ARINotFound
 from marshmallow import ValidationError
 from requests import RequestException
 from wazo_calld.helpers.confd import Conference
+from wazo_calld.helpers.ari_ import Channel
 from wazo_calld.exceptions import (
     XiVOAmidError,
 )
@@ -19,6 +20,7 @@ from .exceptions import (
     ConferenceError,
     ConferenceHasNoParticipants,
     ConferenceParticipantError,
+    UserNotParticipant,
 )
 from .schemas import participant_schema
 
@@ -67,6 +69,7 @@ class ConferencesService:
                 'admin': participant_list_item['Admin'] == 'Yes',
                 'language': participant_list_item['Language'],
                 'call_id': participant_list_item['Uniqueid'],
+                'user_uuid': Channel(participant_list_item['Uniqueid'], self._ari).user(),
             }
             try:
                 participant = participant_schema.load(raw_participant).data
@@ -78,6 +81,13 @@ class ConferencesService:
             result.append(participant)
 
         return result
+
+    def user_list_participants(self, tenant_uuid, user_uuid, conference_id):
+        participants = self.list_participants(tenant_uuid, conference_id)
+        user_is_participant = any(participant['user_uuid'] == user_uuid for participant in participants)
+        if not user_is_participant:
+            raise UserNotParticipant(tenant_uuid, user_uuid, conference_id)
+        return participants
 
     def kick_participant(self, tenant_uuid, conference_id, participant_id):
         if not Conference(tenant_uuid, conference_id, self._confd).exists():

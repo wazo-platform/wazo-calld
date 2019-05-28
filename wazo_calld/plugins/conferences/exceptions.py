@@ -104,3 +104,18 @@ class ConferenceParticipantError(APIException):
                 'participant_id': participant_id,
             }
         )
+
+
+class UserNotParticipant(APIException):
+    def __init__(self, tenant_uuid, user_uuid, conference_id):
+        super().__init__(
+            status_code=403,
+            message='User "{}" is not a participant of the conference "{}"'.format(user_uuid, conference_id),
+            error_id='user-not-participant',
+            resource='conference-participant',
+            details={
+                'conference_id': conference_id,
+                'tenant_uuid': tenant_uuid,
+                'user_uuid': user_uuid,
+            }
+        )

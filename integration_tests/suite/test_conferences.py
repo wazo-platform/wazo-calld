@@ -20,6 +20,7 @@ from hamcrest import (
 from xivo_test_helpers import until
 from xivo_test_helpers.hamcrest.raises import raises
 from wazo_calld_client.exceptions import CalldError
+from .helpers.auth import MockUserToken
 from .helpers.base import RealAsteriskIntegrationTest
 from .helpers.confd import MockConference
 from .helpers.hamcrest_ import HamcrestARIChannel
@@ -109,6 +110,44 @@ class TestConferenceParticipants(TestConferences):
         assert_that(participants, has_entries({
             'total': 0,
             'items': empty(),
+        }))
+
+    def test_user_list_participants_when_user_is_not_participant(self):
+        token = 'my-token'
+        user_uuid = 'user-uuid'
+        conference_id = CONFERENCE1_ID
+        self.confd.set_conferences(
+            MockConference(id=conference_id, name='conference'),
+        )
+        self.auth.set_token(MockUserToken(token, tenant_uuid='my-tenant', user_uuid=user_uuid))
+        calld = self.make_calld(token=token)
+
+        assert_that(calling(calld.conferences.user_list_participants).with_args(conference_id),
+                    raises(CalldError).matching(has_properties({
+                        'status_code': 403,
+                        'error_id': 'user-not-participant',
+                    })))
+
+    def test_user_list_participants_when_user_is_participant(self):
+        token = 'my-token'
+        user_uuid = 'user-uuid'
+        conference_id = CONFERENCE1_ID
+        self.confd.set_conferences(
+            MockConference(id=conference_id, name='conference'),
+        )
+        self.auth.set_token(MockUserToken(token, tenant_uuid='my-tenant', user_uuid=user_uuid))
+        self.given_call_in_conference(CONFERENCE1_EXTENSION, caller_id_name='participant1', user_uuid=user_uuid)
+        self.given_call_in_conference(CONFERENCE1_EXTENSION, caller_id_name='participant2')
+        calld = self.make_calld(token=token)
+
+        participants = calld.conferences.user_list_participants(conference_id)
+
+        assert_that(participants, has_entries({
+            'total': 2,
+            'items': contains_inanyorder(
+                has_entry('caller_id_name', 'participant1'),
+                has_entry('caller_id_name', 'participant2'),
+            )
         }))
 
     def test_list_participants_with_two_participants(self):
