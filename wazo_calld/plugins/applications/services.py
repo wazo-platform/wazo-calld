@@ -70,6 +70,12 @@ class ApplicationService:
         call = formatter.from_channel(channel, variables=variables)
         self._notifier.call_entered(application['uuid'], call)
 
+    def channel_user_entered(self, application, channel):
+        variables = self.get_channel_variables(channel)
+        formatter = CallFormatter(application, self._ari)
+        call = formatter.from_channel(channel, variables=variables)
+        self._notifier.call_entered(application['uuid'], call)
+
     def create_destination_node(self, application):
         try:
             bridge = self._ari.bridges.get(bridgeId=application['uuid'])

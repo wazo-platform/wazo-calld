@@ -159,7 +159,8 @@ class Channel:
             result = self._ari.channels.getChannelVar(channelId=self.id, variable='XIVO_BASE_EXTEN')['value']
             return result
         except ARINotFound:
-            return None
+            channel = self._ari.channels.get(channelId=self.id)
+            return channel.json['dialplan']['exten']
 
     def on_hold(self):
         try:
