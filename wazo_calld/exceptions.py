@@ -1,4 +1,4 @@
-# Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -75,15 +75,15 @@ class TokenWithUserUUIDRequiredError(APIException):
 
 class XiVOConfdUnreachable(APIException):
 
-    def __init__(self, xivo_confd_client, error):
+    def __init__(self, confd_client, error):
         super().__init__(
             status_code=503,
             message='xivo-confd server unreachable',
             error_id='xivo-confd-unreachable',
             details={
-                'xivo_confd_config': {'host': xivo_confd_client.host,
-                                      'port': xivo_confd_client.port,
-                                      'timeout': xivo_confd_client.timeout},
+                'xivo_confd_config': {'host': confd_client.host,
+                                      'port': confd_client.port,
+                                      'timeout': confd_client.timeout},
                 'original_error': str(error),
             }
         )

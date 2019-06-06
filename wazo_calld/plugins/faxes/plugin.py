@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from wazo_auth_client import Client as AuthClient
+from wazo_confd_client import Client as ConfdClient
 from xivo_amid_client import Client as AmidClient
-from xivo_confd_client import Client as ConfdClient
 
 from .bus_consume import FaxesBusEventHandler
 from .notifier import FaxesNotifier

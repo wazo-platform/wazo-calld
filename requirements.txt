@@ -1,9 +1,9 @@
 git+https://github.com/rsichny/swagger-py.git  # the digium release does not support python3
 https://github.com/wazo-pbx/ari-py/archive/0.4.0.zip
 git+https://github.com/wazo-pbx/wazo-auth-client.git
+git+https://github.com/wazo-pbx/wazo-confd-client.git
 git+https://github.com/wazo-pbx/xivo-amid-client.git
 git+https://github.com/wazo-pbx/xivo-bus.git
-git+https://github.com/wazo-pbx/xivo-confd-client.git
 git+https://github.com/wazo-pbx/xivo-lib-python.git
 git+https://github.com/wazo-pbx/xivo-lib-rest-client.git
 cheroot==6.5.2
