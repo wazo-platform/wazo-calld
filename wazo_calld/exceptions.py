@@ -78,10 +78,10 @@ class XiVOConfdUnreachable(APIException):
     def __init__(self, confd_client, error):
         super().__init__(
             status_code=503,
-            message='xivo-confd server unreachable',
-            error_id='xivo-confd-unreachable',
+            message='wazo-confd server unreachable',
+            error_id='wazo-confd-unreachable',
             details={
-                'xivo_confd_config': {'host': confd_client.host,
+                'wazo_confd_config': {'host': confd_client.host,
                                       'port': confd_client.port,
                                       'timeout': confd_client.timeout},
                 'original_error': str(error),

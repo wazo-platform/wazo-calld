@@ -71,7 +71,7 @@ class TestConferenceParticipants(TestConferences):
             assert_that(calling(calld.conferences.list_participants).with_args(wrong_id),
                         raises(CalldError).matching(has_properties({
                             'status_code': 503,
-                            'error_id': 'xivo-confd-unreachable',
+                            'error_id': 'wazo-confd-unreachable',
                         })))
 
     def test_list_participants_with_no_amid(self):
@@ -208,7 +208,7 @@ class TestConferenceParticipants(TestConferences):
                         .with_args(conference_id, participant_id),
                         raises(CalldError).matching(has_properties({
                             'status_code': 503,
-                            'error_id': 'xivo-confd-unreachable',
+                            'error_id': 'wazo-confd-unreachable',
                         })))
 
     def test_kick_participant_with_no_amid(self):
@@ -286,13 +286,13 @@ class TestConferenceParticipants(TestConferences):
                         .with_args(conference_id, participant_id),
                         raises(CalldError).matching(has_properties({
                             'status_code': 503,
-                            'error_id': 'xivo-confd-unreachable',
+                            'error_id': 'wazo-confd-unreachable',
                         })))
             assert_that(calling(calld.conferences.unmute_participant)
                         .with_args(conference_id, participant_id),
                         raises(CalldError).matching(has_properties({
                             'status_code': 503,
-                            'error_id': 'xivo-confd-unreachable',
+                            'error_id': 'wazo-confd-unreachable',
                         })))
 
     def test_mute_participant_with_no_amid(self):
@@ -446,13 +446,13 @@ class TestConferenceParticipants(TestConferences):
                         .with_args(conference_id),
                         raises(CalldError).matching(has_properties({
                             'status_code': 503,
-                            'error_id': 'xivo-confd-unreachable',
+                            'error_id': 'wazo-confd-unreachable',
                         })))
             assert_that(calling(calld.conferences.stop_record)
                         .with_args(conference_id),
                         raises(CalldError).matching(has_properties({
                             'status_code': 503,
-                            'error_id': 'xivo-confd-unreachable',
+                            'error_id': 'wazo-confd-unreachable',
                         })))
 
     def test_record_with_no_amid(self):
