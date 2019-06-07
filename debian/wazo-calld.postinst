@@ -13,6 +13,8 @@ case "$1" in
 		rm -f /etc/nginx/locations/https-enabled/xivo-ctid-ng
 		if [ -f /var/log/xivo-ctid-ng.log ] ; then
 			rename 's/xivo-ctid-ng/wazo-calld/g' /var/log/xivo-ctid-ng.log*
+			# Fix a previous version where the wazo-calld.log was created before renaming
+			rm -f /var/log/xivo-ctid-ng.log
 		fi
 		rm -rf /var/run/xivo-ctid-ng
 		if [ -d /etc/xivo-ctid-ng/conf.d ] ; then
