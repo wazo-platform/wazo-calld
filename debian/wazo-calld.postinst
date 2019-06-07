@@ -9,16 +9,6 @@ case "$1" in
 	configure)
 		previous_version="$2"
 
-		if [ ! -e "$LOG_FILENAME" ]; then
-			touch "$LOG_FILENAME"
-		fi
-		chown www-data: "$LOG_FILENAME"
-
-		if [[ -z "${previous_version}" ]]; then
-			ln -sf /etc/nginx/locations/https-available/$DAEMONNAME \
-			       /etc/nginx/locations/https-enabled/$DAEMONNAME
-		fi
-
 		# move files from xivo-ctid-ng
 		rm -f /etc/nginx/locations/https-enabled/xivo-ctid-ng
 		if [ -f /var/log/xivo-ctid-ng.log ] ; then
@@ -28,6 +18,17 @@ case "$1" in
 		if [ -d /etc/xivo-ctid-ng/conf.d ] ; then
 			find /etc/xivo-ctid-ng/conf.d/ -mindepth 1 -exec mv {} /etc/wazo-calld/conf.d/ \;
 			rmdir --ignore-fail-on-non-empty -p /etc/xivo-ctid-ng/conf.d
+		fi
+		# End of move files from xivo-ctid-ng
+
+		if [ ! -e "$LOG_FILENAME" ]; then
+			touch "$LOG_FILENAME"
+		fi
+		chown www-data: "$LOG_FILENAME"
+
+		if [[ -z "${previous_version}" ]]; then
+			ln -sf /etc/nginx/locations/https-available/$DAEMONNAME \
+			       /etc/nginx/locations/https-enabled/$DAEMONNAME
 		fi
 	;;
 
