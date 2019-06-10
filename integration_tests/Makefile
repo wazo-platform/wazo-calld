@@ -17,7 +17,6 @@ build-ari: docker-pull
 docker-pull:
 	docker pull p0bailey/docker-flask
 	docker pull python:2.7.13-stretch
-	docker pull swaggerapi/swagger-validator
 	docker pull wazopbx/wait
 	docker pull wazopbx/asterisk
 	docker pull wazopbx/xivo-amid
