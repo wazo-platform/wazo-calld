@@ -33,7 +33,7 @@ services:
       - ./ssl:/usr/local/share/ssl
 
   confd:
-    image: wazopbx/xivo-confd-mock
+    image: wazopbx/wazo-confd-mock
     ports:
       - 9486
     volumes:
