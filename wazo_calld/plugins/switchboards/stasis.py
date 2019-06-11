@@ -1,4 +1,4 @@
-# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -20,8 +20,12 @@ class SwitchboardsStasis:
         self._service = switchboard_service
 
     def subscribe(self):
-        self._ari.on_application_registered(DEFAULT_APPLICATION_NAME, self.notify_all_switchboard_queued)
-        self._ari.on_application_registered(DEFAULT_APPLICATION_NAME, self.notify_all_switchboard_held)
+        self._ari.on_application_registered(
+            DEFAULT_APPLICATION_NAME, self.notify_all_switchboard_queued
+        )
+        self._ari.on_application_registered(
+            DEFAULT_APPLICATION_NAME, self.notify_all_switchboard_held
+        )
         self._ari.on_channel_event('StasisStart', self.stasis_start)
         self._ari.on_channel_event('ChannelLeftBridge', self.unqueue)
         self._ari.on_channel_event('ChannelLeftBridge', self.unhold)
@@ -76,8 +80,12 @@ class SwitchboardsStasis:
 
         operator_channel.answer()
         try:
-            operator_original_caller_id = operator_channel.getChannelVar(variable='XIVO_ORIGINAL_CALLER_ID')['value'].encode('utf-8')
-            operator_channel.setChannelVar(variable='CALLERID(all)', value=operator_original_caller_id)
+            operator_original_caller_id = operator_channel.getChannelVar(
+                variable='XIVO_ORIGINAL_CALLER_ID'
+            )['value'].encode('utf-8')
+            operator_channel.setChannelVar(
+                variable='CALLERID(all)', value=operator_original_caller_id
+            )
         except ARINotFound:
             pass
 
@@ -85,7 +93,9 @@ class SwitchboardsStasis:
         bridge.addChannel(channel=queued_channel_id)
         bridge.addChannel(channel=operator_channel.id)
 
-        self._notifier.queued_call_answered(switchboard_uuid, operator_channel.id, queued_channel_id)
+        self._notifier.queued_call_answered(
+            switchboard_uuid, operator_channel.id, queued_channel_id
+        )
 
     def _stasis_start_answer_held(self, event_objects, event):
         try:
@@ -107,8 +117,12 @@ class SwitchboardsStasis:
 
         operator_channel.answer()
         try:
-            operator_original_caller_id = operator_channel.getChannelVar(variable='XIVO_ORIGINAL_CALLER_ID')['value'].encode('utf-8')
-            operator_channel.setChannelVar(variable='CALLERID(all)', value=operator_original_caller_id)
+            operator_original_caller_id = operator_channel.getChannelVar(
+                variable='XIVO_ORIGINAL_CALLER_ID'
+            )['value'].encode('utf-8')
+            operator_channel.setChannelVar(
+                variable='CALLERID(all)', value=operator_original_caller_id
+            )
         except ARINotFound:
             pass
 
