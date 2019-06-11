@@ -155,11 +155,12 @@ class MockSwitchboard:
 
 class MockConference:
 
-    def __init__(self, id, name=None, extension=None, context=None):
+    def __init__(self, id, name=None, extension=None, context=None, tenant_uuid=None):
         self._id = id
         self._name = name
         self._extension = extension
         self._context = context
+        self._tenant_uuid = tenant_uuid
 
     def id(self):
         return self._id
@@ -177,4 +178,5 @@ class MockConference:
             'id': self._id,
             'name': self._name,
             'extensions': extensions,
+            'tenant_uuid': self._tenant_uuid,
         }

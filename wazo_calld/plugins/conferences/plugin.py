@@ -37,7 +37,7 @@ class Plugin:
 
         conferences_service = ConferencesService(amid_client, ari.client, confd_client)
         notifier = ConferencesNotifier(bus_publisher)
-        bus_event_handler = ConferencesBusEventHandler(notifier)
+        bus_event_handler = ConferencesBusEventHandler(confd_client, notifier, conferences_service)
         bus_event_handler.subscribe(bus_consumer)
 
         api.add_resource(ParticipantsResource, '/conferences/<int:conference_id>/participants', resource_class_args=[conferences_service])

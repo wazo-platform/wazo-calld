@@ -3,6 +3,8 @@
 
 import logging
 
+from wazo_calld.helpers.confd import Conference
+
 from .schemas import participant_schema
 
 logger = logging.getLogger(__name__)
@@ -10,8 +12,10 @@ logger = logging.getLogger(__name__)
 
 class ConferencesBusEventHandler:
 
-    def __init__(self, notifier):
+    def __init__(self, confd, notifier, service):
+        self._confd = confd
         self._notifier = notifier
+        self._service = service
 
     def subscribe(self, bus_consumer):
         bus_consumer.on_ami_event('ConfbridgeJoin', self._notify_participant_joined)
@@ -38,8 +42,12 @@ class ConferencesBusEventHandler:
 
         participant = participant_schema.load(raw_participant).data
         participant['user_uuid'] = event.get('ChanVariable', {}).get('XIVO_USERUUID')
+        conference = Conference.from_id(conference_id, self._confd)
 
-        self._notifier.participant_joined(conference_id, participant)
+        participants_already_present = self._service.list_participants(conference.tenant_uuid,
+                                                                       conference_id)
+
+        self._notifier.participant_joined(conference.tenant_uuid, conference_id, participant, participants_already_present)
 
     def _notify_participant_left(self, event):
         conference_id = int(event['Conference'])
@@ -58,7 +66,12 @@ class ConferencesBusEventHandler:
         participant = participant_schema.load(raw_participant).data
         participant['user_uuid'] = event.get('ChanVariable', {}).get('XIVO_USERUUID')
 
-        self._notifier.participant_left(conference_id, participant)
+        conference = Conference.from_id(conference_id, self._confd)
+
+        participants_already_present = self._service.list_participants(conference.tenant_uuid,
+                                                                       conference_id)
+
+        self._notifier.participant_left(conference.tenant_uuid, conference_id, participant, participants_already_present)
 
     def _notify_participant_muted(self, event):
         conference_id = int(event['Conference'])
