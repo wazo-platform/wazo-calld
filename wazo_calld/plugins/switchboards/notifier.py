@@ -87,7 +87,7 @@ class SwitchboardsNotifier:
         event.routing_key = 'switchboards.{uuid}.calls.held.updated'.format(uuid=switchboard_uuid)
         self._bus.publish(event)
 
-    def held_call_answered(self, switchboard_uuid, operator_call_id, held_call_id):
+    def held_call_answered(self, tenant_uuid, switchboard_uuid, operator_call_id, held_call_id):
         logger.debug(
             'Held call %s in switchboard %s answered by %s',
             held_call_id,

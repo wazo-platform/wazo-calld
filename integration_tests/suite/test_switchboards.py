@@ -878,14 +878,14 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
         token = 'my-token'
         user_uuid = 'my-user-uuid'
         line_id = 'my-line-id'
-        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT))
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
         self.confd.set_lines(MockLine(id=line_id, name='switchboard-operator/autoanswer', protocol='test'))
         switchboard_uuid = UUID_NOT_FOUND
         new_channel = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app=STASIS_APP,
-            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, switchboard_uuid],
+            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, switchboard_uuid, VALID_TENANT],
         )
 
         result = self.calld.put_switchboard_held_call_answer_result(switchboard_uuid, new_channel.id, token)
@@ -897,7 +897,7 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
         token = 'my-token'
         user_uuid = 'my-user-uuid'
         line_id = 'my-line-id'
-        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT))
         switchboard_uuid = 'my-switchboard-uuid'
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
@@ -911,7 +911,7 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
     def test_given_token_with_no_user_when_answer_then_400(self):
         token = 'my-token'
         user_uuid = 'my-user-uuid'
-        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT))
         switchboard_uuid = 'my-switchboard-uuid'
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         routing_key = 'switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid)
@@ -919,7 +919,7 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
         new_channel = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app=STASIS_APP,
-            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, switchboard_uuid],
+            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, switchboard_uuid, VALID_TENANT],
         )
         until.true(queued_bus_events.accumulate, tries=3)
         routing_key = 'switchboards.{uuid}.calls.held.updated'.format(uuid=switchboard_uuid)
@@ -936,7 +936,7 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
     def test_given_operator_has_no_line_when_answer_then_400(self):
         token = 'my-token'
         user_uuid = 'my-user-uuid'
-        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT))
         switchboard_uuid = 'my-switchboard-uuid'
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         self.confd.set_users(MockUser(uuid=user_uuid))
@@ -945,7 +945,7 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
         new_channel = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app=STASIS_APP,
-            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, switchboard_uuid],
+            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, switchboard_uuid, VALID_TENANT],
         )
         until.true(queued_bus_events.accumulate, tries=3)
         routing_key = 'switchboards.{uuid}.calls.held.updated'.format(uuid=switchboard_uuid)
@@ -963,7 +963,7 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
         token = 'my-token'
         user_uuid = 'my-user-uuid'
         line_id = 'my-line-id'
-        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT))
         switchboard_uuid = 'my-switchboard-uuid'
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
@@ -973,7 +973,7 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
         new_channel = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app=STASIS_APP,
-            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, switchboard_uuid],
+            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, switchboard_uuid, VALID_TENANT],
         )
         until.true(queued_bus_events.accumulate, tries=3)
         routing_key = 'switchboards.{uuid}.calls.held.updated'.format(uuid=switchboard_uuid)
@@ -991,7 +991,7 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
         token = 'my-token'
         user_uuid = 'my-user-uuid'
         line_id = 'my-line-id'
-        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT))
         switchboard_uuid = 'my-switchboard-uuid'
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
@@ -1001,7 +1001,7 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
         new_channel = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app=STASIS_APP,
-            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, switchboard_uuid],
+            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, switchboard_uuid, VALID_TENANT],
         )
         until.true(queued_bus_events.accumulate, tries=3)
         held_bus_events = self.bus.accumulator('switchboards.{uuid}.calls.held.updated'.format(uuid=switchboard_uuid))
@@ -1031,7 +1031,7 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
         line_id = 'my-line-id'
         held_caller_id = '"câller" <1234>'.encode('utf-8')
         operator_caller_id = '"ôperator" <9876>'.encode('utf-8')
-        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT))
         switchboard_uuid = 'my-switchboard-uuid'
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
@@ -1041,7 +1041,7 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
         new_channel = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app=STASIS_APP,
-            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, switchboard_uuid],
+            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, switchboard_uuid, VALID_TENANT],
             callerId=held_caller_id,
         )
         until.true(queued_bus_events.accumulate, tries=3)
@@ -1079,7 +1079,7 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
         token = 'my-token'
         user_uuid = 'my-user-uuid'
         line_id = 'my-line-id'
-        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT))
         switchboard_uuid = 'my-switchboard-uuid'
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
@@ -1089,7 +1089,7 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
         new_channel = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app=STASIS_APP,
-            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, switchboard_uuid],
+            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, switchboard_uuid, VALID_TENANT],
         )
         until.true(queued_bus_events.accumulate, tries=3)
         routing_key = 'switchboards.{uuid}.calls.held.updated'.format(uuid=switchboard_uuid)

@@ -101,7 +101,8 @@ class SwitchboardsStasis:
     def _stasis_start_answer_held(self, event_objects, event):
         try:
             switchboard_uuid = event['args'][2]
-            held_channel_id = event['args'][3]
+            tenant_uuid = event['args'][3]
+            held_channel_id = event['args'][4]
         except IndexError:
             logger.warning('Ignoring invalid StasisStart event %s', event)
             return
@@ -131,7 +132,9 @@ class SwitchboardsStasis:
         bridge.addChannel(channel=held_channel_id)
         bridge.addChannel(channel=operator_channel.id)
 
-        self._notifier.held_call_answered(switchboard_uuid, operator_channel.id, held_channel_id)
+        self._notifier.held_call_answered(
+            tenant_uuid, switchboard_uuid, operator_channel.id, held_channel_id
+        )
 
     def unqueue(self, channel, event):
         switchboard_uuid = channel.json['channelvars']['WAZO_SWITCHBOARD_QUEUE']
