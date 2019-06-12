@@ -37,8 +37,8 @@ class SwitchboardsStasis:
 
     def notify_all_switchboard_held(self):
         for switchboard in self._confd.switchboards.list(recurse=True)['items']:
-            held_calls = self._service.held_calls(switchboard['uuid'])
-            self._notifier.held_calls(switchboard['uuid'], held_calls)
+            held_calls = self._service.held_calls(switchboard['tenant_uuid'], switchboard['uuid'])
+            self._notifier.held_calls(switchboard['tenant_uuid'], switchboard['uuid'], held_calls)
 
     def stasis_start(self, event_objects, event):
         if len(event['args']) < 2:
@@ -146,10 +146,11 @@ class SwitchboardsStasis:
 
     def unhold(self, channel, event):
         switchboard_uuid = channel.json['channelvars']['WAZO_SWITCHBOARD_HOLD']
+        tenant_uuid = channel.json['channelvars']['WAZO_TENANT_UUID']
 
         try:
-            held_calls = self._service.held_calls(switchboard_uuid)
+            held_calls = self._service.held_calls(tenant_uuid, switchboard_uuid)
         except NoSuchSwitchboard:
             return
 
-        self._notifier.held_calls(switchboard_uuid, held_calls)
+        self._notifier.held_calls(tenant_uuid, switchboard_uuid, held_calls)

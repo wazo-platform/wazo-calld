@@ -67,7 +67,7 @@ class SwitchboardsNotifier:
         event.routing_key = routing_key
         self._bus.publish(event)
 
-    def held_calls(self, switchboard_uuid, calls):
+    def held_calls(self, tenant_uuid, switchboard_uuid, calls):
         body = {
             'switchboard_uuid': switchboard_uuid,
             'items': held_call_schema.dump(calls, many=True).data

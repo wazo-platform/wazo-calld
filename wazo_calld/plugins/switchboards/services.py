@@ -111,8 +111,8 @@ class SwitchboardsService:
 
         return channel.id
 
-    def hold_call(self, switchboard_uuid, call_id):
-        if not Switchboard(switchboard_uuid, self._confd).exists():
+    def hold_call(self, tenant_uuid, switchboard_uuid, call_id):
+        if not Switchboard(tenant_uuid, switchboard_uuid, self._confd).exists():
             raise NoSuchSwitchboard(switchboard_uuid)
 
         try:
@@ -134,9 +134,10 @@ class SwitchboardsService:
 
         hold_bridge.addChannel(channel=channel_to_hold.id)
         channel_to_hold.setChannelVar(variable='WAZO_SWITCHBOARD_HOLD', value=switchboard_uuid)
+        channel_to_hold.setChannelVar(variable='WAZO_TENANT_UUID', value=tenant_uuid)
 
-        held_calls = self.held_calls(switchboard_uuid)
-        self._notifier.held_calls(switchboard_uuid, held_calls)
+        held_calls = self.held_calls(tenant_uuid, switchboard_uuid)
+        self._notifier.held_calls(tenant_uuid, switchboard_uuid, held_calls)
 
         for previous_bridge in previous_bridges:
             try:
@@ -152,8 +153,8 @@ class SwitchboardsService:
                     except ARINotFound:
                         pass
 
-    def held_calls(self, switchboard_uuid):
-        if not Switchboard(switchboard_uuid, self._confd).exists():
+    def held_calls(self, tenant_uuid, switchboard_uuid):
+        if not Switchboard(tenant_uuid, switchboard_uuid, self._confd).exists():
             raise NoSuchSwitchboard(switchboard_uuid)
 
         bridge_id = BRIDGE_HOLD_ID.format(uuid=switchboard_uuid)

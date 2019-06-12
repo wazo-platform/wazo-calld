@@ -68,7 +68,8 @@ class SwitchboardCallHeldResource(AuthResource):
 
     @required_acl('calld.switchboards.{switchboard_uuid}.calls.held.{call_id}.update')
     def put(self, switchboard_uuid, call_id):
-        self._service.hold_call(switchboard_uuid, call_id)
+        tenant = Tenant.autodetect()
+        self._service.hold_call(tenant.uuid, switchboard_uuid, call_id)
         return '', 204
 
 
@@ -79,7 +80,8 @@ class SwitchboardCallsHeldResource(AuthResource):
 
     @required_acl('calld.switchboards.{switchboard_uuid}.calls.held.read')
     def get(self, switchboard_uuid):
-        calls = self._service.held_calls(switchboard_uuid)
+        tenant = Tenant.autodetect()
+        calls = self._service.held_calls(tenant.uuid, switchboard_uuid)
 
         return {'items': held_call_schema.dump(calls, many=True).data}
 
