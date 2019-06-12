@@ -31,12 +31,12 @@ class SwitchboardsStasis:
         self._ari.on_channel_event('ChannelLeftBridge', self.unhold)
 
     def notify_all_switchboard_queued(self):
-        for switchboard in self._confd.switchboards.list()['items']:
+        for switchboard in self._confd.switchboards.list(recurse=True)['items']:
             queued_calls = self._service.queued_calls(switchboard['uuid'])
             self._notifier.queued_calls(switchboard['uuid'], queued_calls)
 
     def notify_all_switchboard_held(self):
-        for switchboard in self._confd.switchboards.list()['items']:
+        for switchboard in self._confd.switchboards.list(recurse=True)['items']:
             held_calls = self._service.held_calls(switchboard['uuid'])
             self._notifier.held_calls(switchboard['uuid'], held_calls)
 
