@@ -39,7 +39,7 @@ class SwitchboardsNotifier:
         event.routing_key = 'switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid)
         self._bus.publish(event)
 
-    def queued_call_answered(self, switchboard_uuid, operator_call_id, queued_call_id):
+    def queued_call_answered(self, tenant_uuid, switchboard_uuid, operator_call_id, queued_call_id):
         logger.debug(
             'Queued call %s in switchboard %s answered by %s',
             queued_call_id,

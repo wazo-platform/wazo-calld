@@ -64,7 +64,8 @@ class SwitchboardsStasis:
     def _stasis_start_answer(self, event_objects, event):
         try:
             switchboard_uuid = event['args'][2]
-            queued_channel_id = event['args'][3]
+            tenant_uuid = event['args'][3]
+            queued_channel_id = event['args'][4]
         except IndexError:
             logger.warning('Ignoring invalid StasisStart event %s', event)
             return
@@ -95,7 +96,7 @@ class SwitchboardsStasis:
         bridge.addChannel(channel=operator_channel.id)
 
         self._notifier.queued_call_answered(
-            switchboard_uuid, operator_channel.id, queued_channel_id
+            tenant_uuid, switchboard_uuid, operator_channel.id, queued_channel_id
         )
 
     def _stasis_start_answer_held(self, event_objects, event):

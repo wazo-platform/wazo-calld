@@ -103,7 +103,7 @@ class SwitchboardsService:
         channel = self._ari.channels.originate(
             endpoint=endpoint,
             app=DEFAULT_APPLICATION_NAME,
-            appArgs=['switchboard', 'switchboard_answer', switchboard_uuid, queued_call_id],
+            appArgs=['switchboard', 'switchboard_answer', switchboard_uuid, tenant_uuid, queued_call_id],
             callerId=caller_id,
             originator=queued_call_id,
             variables={'variables': AUTO_ANSWER_VARIABLES},
