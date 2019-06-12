@@ -85,8 +85,8 @@ class SwitchboardsService:
         calls = self.queued_calls(tenant_uuid, switchboard_uuid)
         self._notifier.queued_calls(tenant_uuid, switchboard_uuid, calls)
 
-    def answer_queued_call(self, switchboard_uuid, queued_call_id, user_uuid):
-        if not Switchboard(switchboard_uuid, self._confd).exists():
+    def answer_queued_call(self, tenant_uuid, switchboard_uuid, queued_call_id, user_uuid):
+        if not Switchboard(tenant_uuid, switchboard_uuid, self._confd).exists():
             raise NoSuchSwitchboard(switchboard_uuid)
 
         try:
@@ -94,7 +94,7 @@ class SwitchboardsService:
         except ARINotFound:
             raise NoSuchCall(queued_call_id)
 
-        endpoint = User(user_uuid, self._confd).main_line().interface_autoanswer()
+        endpoint = User(user_uuid, self._confd, tenant_uuid=tenant_uuid).main_line().interface_autoanswer()
         caller_id = assemble_caller_id(
             queued_channel.json['caller']['name'],
             queued_channel.json['caller']['number']

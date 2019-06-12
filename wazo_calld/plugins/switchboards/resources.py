@@ -51,9 +51,12 @@ class SwitchboardCallQueuedAnswerResource(AuthResource):
 
     @required_acl('calld.switchboards.{switchboard_uuid}.calls.queued.{call_id}.answer.update')
     def put(self, switchboard_uuid, call_id):
+        tenant = Tenant.autodetect()
         user_uuid = get_token_user_uuid_from_request(self._auth_client)
 
-        call_id = self._service.answer_queued_call(switchboard_uuid, call_id, user_uuid)
+        call_id = self._service.answer_queued_call(
+            tenant.uuid, switchboard_uuid, call_id, user_uuid
+        )
 
         return {'call_id': call_id}, 200
 

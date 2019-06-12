@@ -19,13 +19,15 @@ def not_found(error):
 
 class User:
 
-    def __init__(self, user_uuid, confd_client):
+    # TODO set tenant_uuid mandatory when calls plugin will be multi-tenant
+    def __init__(self, user_uuid, confd_client, tenant_uuid=None):
         self.uuid = user_uuid
+        self.tenant_uuid = tenant_uuid
         self._confd = confd_client
 
     def main_line(self):
         try:
-            lines = self._confd.users.get(self.uuid)['lines']
+            lines = self._confd.users.get(self.uuid, tenant_uuid=self.tenant_uuid)['lines']
         except HTTPError as e:
             if not_found(e):
                 raise InvalidUserUUID(self.uuid)
@@ -37,11 +39,11 @@ class User:
             main_line_id = lines[0]['id']
         except IndexError:
             raise UserMissingMainLine(self.uuid)
-        return Line(main_line_id, self._confd)
+        return Line(main_line_id, self._confd, tenant_uuid=self.tenant_uuid)
 
     def line(self, line_id):
         try:
-            lines = self._confd.users.get(self.uuid)['lines']
+            lines = self._confd.users.get(self.uuid, tenant_uuid=self.tenant_uuid)['lines']
         except HTTPError as e:
             if not_found(e):
                 raise InvalidUserUUID(self.uuid)
@@ -53,11 +55,11 @@ class User:
         if line_id not in valid_line_ids:
             raise InvalidUserLine(self.uuid, line_id)
 
-        return Line(line_id, self._confd)
+        return Line(line_id, self._confd, tenant_uuid=self.tenant_uuid)
 
     def mobile_phone_number(self):
         try:
-            return self._confd.users.get(self.uuid)['mobile_phone_number']
+            return self._confd.users.get(self.uuid, tenant_uuid=self.tenant_uuid)['mobile_phone_number']
         except HTTPError as e:
             if not_found(e):
                 raise InvalidUserUUID(self.uuid)
@@ -68,14 +70,16 @@ class User:
 
 class Line:
 
-    def __init__(self, line_id, confd_client):
+    # TODO set tenant_uuid mandatory when calls plugin will be multi-tenant
+    def __init__(self, line_id, confd_client, tenant_uuid=None):
         self.id = line_id
         self._confd = confd_client
+        self.tenant_uuid = tenant_uuid
 
     def _get(self):
         try:
-            return self._confd.lines.get(self.id)
-        except HTTPError as e:
+            return self._confd.lines.get(self.id, tenant_uuid=self.tenant_uuid)
+        except HTTPError:
             raise
         except RequestException as e:
             raise XiVOConfdUnreachable(self._confd, e)
