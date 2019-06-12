@@ -32,8 +32,8 @@ class SwitchboardsStasis:
 
     def notify_all_switchboard_queued(self):
         for switchboard in self._confd.switchboards.list(recurse=True)['items']:
-            queued_calls = self._service.queued_calls(switchboard['uuid'])
-            self._notifier.queued_calls(switchboard['uuid'], queued_calls)
+            queued_calls = self._service.queued_calls(switchboard['tenant_uuid'], switchboard['uuid'])
+            self._notifier.queued_calls(switchboard['tenant_uuid'], switchboard['uuid'], queued_calls)
 
     def notify_all_switchboard_held(self):
         for switchboard in self._confd.switchboards.list(recurse=True)['items']:
@@ -54,11 +54,12 @@ class SwitchboardsStasis:
     def _stasis_start_queue(self, event_objects, event):
         try:
             switchboard_uuid = event['args'][2]
+            tenant_uuid = event['args'][3]
         except IndexError:
             logger.warning('Ignoring invalid StasisStart event %s', event)
             return
         channel = event_objects['channel']
-        self._service.new_queued_call(switchboard_uuid, channel.id)
+        self._service.new_queued_call(tenant_uuid, switchboard_uuid, channel.id)
 
     def _stasis_start_answer(self, event_objects, event):
         try:
@@ -134,13 +135,14 @@ class SwitchboardsStasis:
 
     def unqueue(self, channel, event):
         switchboard_uuid = channel.json['channelvars']['WAZO_SWITCHBOARD_QUEUE']
+        tenant_uuid = channel.json['channelvars']['WAZO_TENANT_UUID']
 
         try:
-            queued_calls = self._service.queued_calls(switchboard_uuid)
+            queued_calls = self._service.queued_calls(tenant_uuid, switchboard_uuid)
         except NoSuchSwitchboard:
             return
 
-        self._notifier.queued_calls(switchboard_uuid, queued_calls)
+        self._notifier.queued_calls(tenant_uuid, switchboard_uuid, queued_calls)
 
     def unhold(self, channel, event):
         switchboard_uuid = channel.json['channelvars']['WAZO_SWITCHBOARD_HOLD']

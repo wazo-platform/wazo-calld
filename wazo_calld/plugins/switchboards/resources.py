@@ -1,10 +1,14 @@
 # Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+from xivo.tenant_flask_helpers import Tenant
+
 from marshmallow import Schema, fields
 
-from wazo_calld.auth import get_token_user_uuid_from_request
-from wazo_calld.auth import required_acl
+from wazo_calld.auth import (
+    get_token_user_uuid_from_request,
+    required_acl,
+)
 from wazo_calld.http import AuthResource
 
 
@@ -33,7 +37,8 @@ class SwitchboardCallsQueuedResource(AuthResource):
 
     @required_acl('calld.switchboards.{switchboard_uuid}.calls.queued.read')
     def get(self, switchboard_uuid):
-        calls = self._service.queued_calls(switchboard_uuid)
+        tenant = Tenant.autodetect()
+        calls = self._service.queued_calls(tenant.uuid, switchboard_uuid)
 
         return {'items': queued_call_schema.dump(calls, many=True).data}
 

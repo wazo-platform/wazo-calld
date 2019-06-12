@@ -43,8 +43,8 @@ class SwitchboardsService:
         self._confd = confd
         self._notifier = notifier
 
-    def queued_calls(self, switchboard_uuid):
-        if not Switchboard(switchboard_uuid, self._confd).exists():
+    def queued_calls(self, tenant_uuid, switchboard_uuid):
+        if not Switchboard(tenant_uuid, switchboard_uuid, self._confd).exists():
             raise NoSuchSwitchboard(switchboard_uuid)
 
         bridge_id = BRIDGE_QUEUE_ID.format(uuid=switchboard_uuid)
@@ -66,7 +66,7 @@ class SwitchboardsService:
             result.append(call)
         return result
 
-    def new_queued_call(self, switchboard_uuid, channel_id):
+    def new_queued_call(self, tenant_uuid, switchboard_uuid, channel_id):
         bridge_id = BRIDGE_QUEUE_ID.format(uuid=switchboard_uuid)
         try:
             bridge = self._ari.bridges.get(bridgeId=bridge_id)
@@ -78,10 +78,12 @@ class SwitchboardsService:
 
         channel = self._ari.channels.get(channelId=channel_id)
         channel.setChannelVar(variable='WAZO_SWITCHBOARD_QUEUE', value=switchboard_uuid)
+        channel.setChannelVar(variable='WAZO_TENANT_UUID', value=tenant_uuid)
         channel.answer()
         bridge.addChannel(channel=channel_id)
 
-        self._notifier.queued_calls(switchboard_uuid, self.queued_calls(switchboard_uuid))
+        calls = self.queued_calls(tenant_uuid, switchboard_uuid)
+        self._notifier.queued_calls(tenant_uuid, switchboard_uuid, calls)
 
     def answer_queued_call(self, switchboard_uuid, queued_call_id, user_uuid):
         if not Switchboard(switchboard_uuid, self._confd).exists():

@@ -515,15 +515,18 @@ class CalldClient:
                               verify=False)
         return result
 
-    def switchboard_queued_calls(self, switchboard_uuid, token=VALID_TOKEN):
-        response = self.get_switchboard_queued_calls_result(switchboard_uuid, token)
+    def switchboard_queued_calls(self, switchboard_uuid, token=VALID_TOKEN, tenant_uuid=None):
+        response = self.get_switchboard_queued_calls_result(switchboard_uuid, token, tenant_uuid)
 
         assert_that(response.status_code, equal_to(200))
         return response.json()
 
-    def get_switchboard_queued_calls_result(self, switchboard_uuid, token=None):
+    def get_switchboard_queued_calls_result(self, switchboard_uuid, token=None, tenant_uuid=None):
         url = self.url('switchboards', switchboard_uuid, 'calls', 'queued')
-        return requests.get(url, headers={'X-Auth-Token': token}, verify=False)
+        headers = {'X-Auth-Token': token}
+        if tenant_uuid:
+            headers['Wazo-Tenant'] = tenant_uuid
+        return requests.get(url, headers=headers, verify=False)
 
     def switchboard_answer_queued_call(self, switchboard_uuid, call_id, token):
         response = self.put_switchboard_queued_call_answer_result(switchboard_uuid, call_id, token)

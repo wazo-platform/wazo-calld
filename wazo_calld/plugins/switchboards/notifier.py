@@ -1,4 +1,4 @@
-# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -19,7 +19,7 @@ class SwitchboardsNotifier:
     def __init__(self, bus):
         self._bus = bus
 
-    def queued_calls(self, switchboard_uuid, calls):
+    def queued_calls(self, tenant_uuid, switchboard_uuid, calls):
         body = {
             'switchboard_uuid': switchboard_uuid,
             'items': queued_call_schema.dump(calls, many=True).data

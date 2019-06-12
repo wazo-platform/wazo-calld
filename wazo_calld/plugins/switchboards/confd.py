@@ -1,4 +1,4 @@
-# Copyright 2017 The Wazo Authors  (see AUTHORS file)
+# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from requests import HTTPError
@@ -9,13 +9,14 @@ from wazo_calld.helpers.confd import not_found
 
 
 class Switchboard:
-    def __init__(self, uuid, confd_client):
+    def __init__(self, tenant_uuid, uuid, confd_client):
+        self.tenant_uuid = tenant_uuid
         self.uuid = uuid
         self._confd = confd_client
 
     def exists(self):
         try:
-            self._confd.switchboards.get(self.uuid)
+            self._confd.switchboards.get(self.uuid, tenant_uuid=self.tenant_uuid)
         except HTTPError as e:
             if not_found(e):
                 return False

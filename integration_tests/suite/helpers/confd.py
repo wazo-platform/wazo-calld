@@ -139,8 +139,9 @@ class MockLine:
 
 class MockSwitchboard:
 
-    def __init__(self, uuid, name=None):
+    def __init__(self, uuid, tenant_uuid=None, name=None):
         self._uuid = uuid
+        self._tenant_uuid = tenant_uuid
         self._name = name
 
     def uuid(self):
@@ -149,6 +150,7 @@ class MockSwitchboard:
     def to_dict(self):
         return {
             'uuid': self._uuid,
+            'tenant_uuid': self._tenant_uuid,
             'name': self._name
         }
 
