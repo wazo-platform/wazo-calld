@@ -97,6 +97,16 @@ class ApplicationCallMohStopList(_BaseResource):
         return '', 204
 
 
+class ApplicationCallAnswerItem(_BaseResource):
+
+    @required_acl('calld.applications.{application_uuid}.calls.{call_id}.answer.update')
+    def put(self, application_uuid, call_id):
+        application = self._service.get_application(application_uuid)
+        self._service.get_call_id(application, call_id)
+        self._service.call_answer(call_id)
+        return '', 204
+
+
 class ApplicationCallMuteStartList(_BaseResource):
 
     @required_acl('calld.applications.{application_uuid}.calls.{call_id}.mute.start.update')

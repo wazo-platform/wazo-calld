@@ -370,6 +370,12 @@ class ApplicationService:
         except ARINotFound:
             raise NoSuchCall(call_id)
 
+    def call_answer(self, call_id):
+        try:
+            self._ari.channels.answer(channelId=call_id)
+        except ARINotFound:
+            raise NoSuchCall(call_id)
+
     def create_playback(self, application_uuid, call_id, media_uri, language=None):
         kwargs = {
             'channelId': call_id,

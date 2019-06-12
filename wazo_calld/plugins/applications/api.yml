@@ -120,6 +120,25 @@ paths:
         '503':
           $ref: '#/responses/AnotherServiceUnavailable'
 
+  /applications/{application_uuid}/calls/{call_id}/answer:
+    put:
+      summary: Answer a call that has been not answer by the application
+      description: '**Required ACL:** `calld.applications.{application_uuid}.calls.{call_id}.answer.update'
+      parameters:
+      - $ref: '#/parameters/ApplicationUUID'
+      - $ref: '#/parameters/ApplicationCallID'
+      tags:
+      - applications
+      responses:
+        '204':
+          description: The call has been answer
+        '404':
+          description: No such application or call
+          schema:
+            $ref: '#/definitions/Error'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+
   /applications/{application_uuid}/calls/{call_id}/moh/{moh_uuid}/start:
     put:
       summary: Starts playing a music on hold

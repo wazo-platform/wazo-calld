@@ -91,6 +91,11 @@ class DTMFReceived(_BaseEvent):
         }
 
 
+class CallAnswered(_BaseCallListEvent):
+    name = 'application_call_answered'
+    routing_key = 'applications.{}.calls.answered'
+
+
 class CallEntered(_BaseCallListEvent):
     name = 'application_call_entered'
     routing_key = 'applications.{}.calls.created'

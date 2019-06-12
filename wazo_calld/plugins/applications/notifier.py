@@ -10,6 +10,7 @@ from .schema import (
     application_snoop_schema,
 )
 from .events import (
+    CallAnswered,
     CallDeleted,
     CallEntered,
     CallInitiated,
@@ -33,6 +34,12 @@ class ApplicationNotifier:
 
     def __init__(self, bus):
         self._bus = bus
+
+    def call_answered(self, application_uuid, call):
+        logger.debug('Application (%s): Call (%s) answered', application_uuid, call.id_)
+        call = application_call_schema.dump(call).data
+        event = CallAnswered(application_uuid, call)
+        self._bus.publish(event)
 
     def call_deleted(self, application_uuid, call):
         logger.debug('Application (%s): Call (%s) deleted', application_uuid, call.id_)
