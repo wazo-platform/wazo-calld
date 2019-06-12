@@ -37,7 +37,8 @@ class SwitchboardsNotifier:
             ),
         )
         event.routing_key = 'switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid)
-        self._bus.publish(event)
+        headers = {'tenant_uuid': tenant_uuid}
+        self._bus.publish(event, headers=headers)
 
     def queued_call_answered(self, tenant_uuid, switchboard_uuid, operator_call_id, queued_call_id):
         logger.debug(
@@ -65,7 +66,8 @@ class SwitchboardsNotifier:
             required_acl=required_acl,
         )
         event.routing_key = routing_key
-        self._bus.publish(event)
+        headers = {'tenant_uuid': tenant_uuid}
+        self._bus.publish(event, headers=headers)
 
     def held_calls(self, tenant_uuid, switchboard_uuid, calls):
         body = {
@@ -85,7 +87,8 @@ class SwitchboardsNotifier:
             ),
         )
         event.routing_key = 'switchboards.{uuid}.calls.held.updated'.format(uuid=switchboard_uuid)
-        self._bus.publish(event)
+        headers = {'tenant_uuid': tenant_uuid}
+        self._bus.publish(event, headers=headers)
 
     def held_call_answered(self, tenant_uuid, switchboard_uuid, operator_call_id, held_call_id):
         logger.debug(
@@ -113,4 +116,5 @@ class SwitchboardsNotifier:
             required_acl=required_acl,
         )
         event.routing_key = routing_key
-        self._bus.publish(event)
+        headers = {'tenant_uuid': tenant_uuid}
+        self._bus.publish(event, headers=headers)
