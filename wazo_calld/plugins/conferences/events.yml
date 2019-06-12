@@ -1,0 +1,122 @@
+asyncapi: '2.0.0-rc1'
+id: 'urn:wazo:wazo-calld'
+info:
+  title: wazo-calld events
+  version: '1.0.0'
+channels:
+  calld.conferences.{conference_id}.participants.joined:
+    publish:
+      message:
+        $ref: '#/components/messages/conference_participant_joined'
+  calld.conferences.users.{user_uuid}.participants.joined:
+    publish:
+      message:
+        $ref: '#/components/messages/conference_user_participant_joined'
+  calld.conferences.{conference_id}.participants.left:
+    publish:
+      message:
+        $ref: '#/components/messages/conference_participant_left'
+  calld.conferences.users.{user_uuid}.participants.left:
+    publish:
+      message:
+        $ref: '#/components/messages/conference_user_participant_left'
+  calld.conferences.{conference_id}.participants.mute:
+    publish:
+      message:
+        oneOf:
+          - $ref: '#/components/messages/conference_participant_muted'
+          - $ref: '#/components/messages/conference_participant_unmuted'
+  calld.conferences.{conference_id}.record:
+    publish:
+      message:
+        oneOf:
+          - $ref: '#/components/messages/conference_record_started'
+          - $ref: '#/components/messages/conference_record_stopped'
+  calld.conferences.{conference_id}.participants.talk:
+    publish:
+      message:
+        oneOf:
+          - $ref: '#/components/messages/conference_participant_talk_started'
+          - $ref: '#/components/messages/conference_participant_talk_stopped'
+components:
+  messages:
+    conference_participant_joined:
+      description: A new participant joined a conference
+      payload:
+        $ref: '#/components/schemas/conference-participant'
+    conference_user_participant_joined:
+      description: A new participant joined a conference. This event is accessible to users.
+      payload:
+        $ref: '#/components/schemas/conference-participant'
+    conference_participant_left:
+      description: A participant left a conference
+      payload:
+        $ref: '#/components/schemas/conference-participant'
+    conference_user_participant_left:
+      description: A participant left a conference. This event is accessible to users.
+      payload:
+        $ref: '#/components/schemas/conference-participant'
+    conference_participant_muted:
+      description: A conference participant was muted
+      payload:
+        $ref: '#/components/schemas/conference-participant'
+    conference_participant_unmuted:
+      description: A conference participant was muted
+      payload:
+        $ref: '#/components/schemas/conference-participant'
+    conference_record_started:
+      description: The recording of a conference has started
+      payload:
+        $ref: '#/components/schemas/conference-record'
+    conference_record_stopped:
+      description: The recording of a conference has stopped
+      payload:
+        $ref: '#/components/schemas/conference-record'
+    conference_participant_talk_started:
+      description: A conference participant started talking
+      payload:
+        $ref: '#/components/schemas/conference-participant'
+    conference_participant_talk_stopped:
+      description: A conference participant stopped talking
+      payload:
+        $ref: '#/components/schemas/conference-participant'
+  schemas:
+    conference-participant:
+      type: object
+      properties:
+        conference_id:
+          type: integer
+          description: The conference ID
+        id:
+          type: string
+          description: The participant ID
+        caller_id_name:
+          type: string
+          description: The participant Caller ID name
+        caller_id_number:
+          type: string
+          description: The participant Caller ID number
+        muted:
+          type: boolean
+          description: Is the partcipant muted in this conference?
+        join_time:
+          type: integer
+          description: When the participant joined the conference
+        admin:
+          type: boolean
+          description: Is the partcipant an administrator of this conference?
+        language:
+          type: string
+          description: The participant language
+        call_id:
+          type: string
+          description: The participant call ID
+        user_uuid:
+          type: string
+          description: The participant user UUID
+    conference-record:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The conference ID
