@@ -57,3 +57,9 @@ parameters:
     in: query
     description: The token's ID
     type: string
+  TenantUUID:
+    name: Wazo-Tenant
+    type: string
+    in: header
+    description: "The tenant's UUID, defining the ownership of a given resource."
+    required: false

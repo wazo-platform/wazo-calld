@@ -1,5 +1,16 @@
 # Changelog
 
+## 19.09
+
+* The following endpoints now have Wazo-Tenant header to support multi-tenant
+
+  * `GET /1.0/switchboards/{switchboard_uuid}/calls/held`
+  * `PUT /1.0/switchboards/{switchboard_uuid}/calls/held/{call_id}/answer`
+  * `PUT /1.0/switchboards/{switchboard_uuid}/calls/held/{call_id}`
+  * `GET /1.0/switchboards/{switchboard_uuid}/calls/queued`
+  * `PUT /1.0/switchboards/{switchboard_uuid}/calls/queued/{call_id}/answer`
+
+
 ## 19.05
 
 * The following endpoints have been moved to wazo-chatd and deleted from wazo-calld:
