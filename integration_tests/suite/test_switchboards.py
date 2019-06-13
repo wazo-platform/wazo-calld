@@ -111,7 +111,7 @@ class TestSwitchboardCallsQueued(TestSwitchboards):
         new_channel = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app=STASIS_APP,
-            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, switchboard_uuid, VALID_TENANT],
+            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, VALID_TENANT, switchboard_uuid],
         )
         until.true(self.channel_is_in_stasis, new_channel.id, tries=2)
         new_channel.hangup()
@@ -126,12 +126,12 @@ class TestSwitchboardCallsQueued(TestSwitchboards):
         new_channel_1 = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app=STASIS_APP,
-            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, switchboard_uuid, VALID_TENANT],
+            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, VALID_TENANT, switchboard_uuid],
         )
         new_channel_2 = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app=STASIS_APP,
-            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, switchboard_uuid, VALID_TENANT],
+            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, VALID_TENANT, switchboard_uuid],
         )
 
         def assert_function():
@@ -158,12 +158,12 @@ class TestSwitchboardCallsQueued(TestSwitchboards):
         new_channel_1 = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app=STASIS_APP,
-            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, switchboard_uuid, VALID_TENANT],
+            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, VALID_TENANT, switchboard_uuid],
         )
         new_channel_2 = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app=STASIS_APP,
-            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, switchboard_uuid, VALID_TENANT],
+            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, VALID_TENANT, switchboard_uuid],
         )
 
         until.assert_(calls_are_queued, new_channel_1.id, new_channel_2.id, tries=3)
@@ -180,7 +180,7 @@ class TestSwitchboardCallsQueued(TestSwitchboards):
         new_channel = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app=STASIS_APP,
-            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, switchboard_uuid, VALID_TENANT],
+            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, VALID_TENANT, switchboard_uuid],
         )
 
         def event_received():
@@ -207,7 +207,7 @@ class TestSwitchboardCallsQueued(TestSwitchboards):
         new_channel = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app=STASIS_APP,
-            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, switchboard_uuid, VALID_TENANT],
+            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, VALID_TENANT, switchboard_uuid],
         )
 
         until.true(bus_events.accumulate, tries=3)
@@ -245,7 +245,7 @@ class TestSwitchboardCallsQueued(TestSwitchboards):
         new_channel = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app=STASIS_APP,
-            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, switchboard_uuid, VALID_TENANT],
+            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, VALID_TENANT, switchboard_uuid],
         )
 
         until.true(bus_events.accumulate, tries=3)
@@ -306,7 +306,7 @@ class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
         new_channel = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app=STASIS_APP,
-            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, switchboard_uuid, VALID_TENANT],
+            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, VALID_TENANT, switchboard_uuid],
         )
         queued_call_id = new_channel.id
 
@@ -340,7 +340,7 @@ class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
         new_channel = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app=STASIS_APP,
-            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, switchboard_uuid, VALID_TENANT],
+            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, VALID_TENANT, switchboard_uuid],
         )
         queued_call_id = new_channel.id
         until.true(bus_events.accumulate, tries=3)
@@ -362,7 +362,7 @@ class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
         new_channel = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app=STASIS_APP,
-            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, switchboard_uuid, VALID_TENANT],
+            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, VALID_TENANT, switchboard_uuid],
         )
         queued_call_id = new_channel.id
         until.true(bus_events.accumulate, tries=3)
@@ -386,7 +386,7 @@ class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
         new_channel = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app=STASIS_APP,
-            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, switchboard_uuid, VALID_TENANT],
+            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, VALID_TENANT, switchboard_uuid],
         )
         queued_call_id = new_channel.id
         until.true(bus_events.accumulate, tries=3)
@@ -412,7 +412,7 @@ class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
         new_channel = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app=STASIS_APP,
-            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, switchboard_uuid, VALID_TENANT],
+            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, VALID_TENANT, switchboard_uuid],
         )
         queued_call_id = new_channel.id
         until.true(queued_bus_events.accumulate, tries=3)
@@ -447,7 +447,7 @@ class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
         new_channel = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app=STASIS_APP,
-            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, switchboard_uuid, VALID_TENANT],
+            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, VALID_TENANT, switchboard_uuid],
             callerId=queued_caller_id,
         )
         until.true(queued_bus_events.accumulate, tries=3)
@@ -487,7 +487,7 @@ class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
         new_channel = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app=STASIS_APP,
-            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, switchboard_uuid, VALID_TENANT],
+            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, VALID_TENANT, switchboard_uuid],
         )
         queued_call_id = new_channel.id
         until.true(bus_events.accumulate, tries=3)
@@ -521,7 +521,7 @@ class TestSwitchboardHoldCall(TestSwitchboards):
         new_channel = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app=STASIS_APP,
-            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, switchboard_uuid, VALID_TENANT],
+            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, VALID_TENANT, switchboard_uuid],
         )
         queued_call_id = new_channel.id
         until.true(queued_bus_events.accumulate, tries=3)
@@ -565,7 +565,7 @@ class TestSwitchboardHoldCall(TestSwitchboards):
         new_channel = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app=STASIS_APP,
-            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, switchboard_uuid, VALID_TENANT],
+            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, VALID_TENANT, switchboard_uuid],
         )
         queued_call_id = new_channel.id
         until.true(queued_bus_events.accumulate, tries=3)
@@ -595,7 +595,7 @@ class TestSwitchboardHoldCall(TestSwitchboards):
         new_channel = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app=STASIS_APP,
-            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, switchboard_uuid, VALID_TENANT],
+            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, VALID_TENANT, switchboard_uuid],
         )
         queued_call_id = new_channel.id
         until.true(queued_bus_events.accumulate, tries=3)
@@ -638,7 +638,7 @@ class TestSwitchboardHoldCall(TestSwitchboards):
         new_channel = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app=STASIS_APP,
-            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, switchboard_uuid, VALID_TENANT],
+            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, VALID_TENANT, switchboard_uuid],
         )
         queued_call_id = new_channel.id
         until.true(queued_bus_events.accumulate, tries=3)
@@ -706,7 +706,7 @@ class TestSwitchboardCallsHeld(TestSwitchboards):
         new_channel = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app=STASIS_APP,
-            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, switchboard_uuid, VALID_TENANT],
+            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, VALID_TENANT, switchboard_uuid],
         )
         until.true(queued_bus_events.accumulate, tries=3)
         self.calld.switchboard_hold_call(switchboard_uuid, new_channel.id)
@@ -724,12 +724,12 @@ class TestSwitchboardCallsHeld(TestSwitchboards):
         new_channel_1 = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app=STASIS_APP,
-            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, switchboard_uuid, VALID_TENANT],
+            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, VALID_TENANT, switchboard_uuid],
         )
         new_channel_2 = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app=STASIS_APP,
-            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, switchboard_uuid, VALID_TENANT],
+            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, VALID_TENANT, switchboard_uuid],
         )
         until.true(queued_bus_events.accumulate, tries=3)
         self.calld.switchboard_hold_call(switchboard_uuid, new_channel_1.id)
@@ -761,12 +761,12 @@ class TestSwitchboardCallsHeld(TestSwitchboards):
         new_channel_1 = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app=STASIS_APP,
-            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, switchboard_uuid, VALID_TENANT],
+            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, VALID_TENANT, switchboard_uuid],
         )
         new_channel_2 = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app=STASIS_APP,
-            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, switchboard_uuid, VALID_TENANT],
+            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, VALID_TENANT, switchboard_uuid],
         )
         until.true(queued_bus_events.accumulate, tries=3)
         self.calld.switchboard_hold_call(switchboard_uuid, new_channel_1.id)
@@ -786,7 +786,7 @@ class TestSwitchboardCallsHeld(TestSwitchboards):
         new_channel = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app=STASIS_APP,
-            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, switchboard_uuid, VALID_TENANT],
+            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, VALID_TENANT, switchboard_uuid],
         )
 
         until.true(queued_bus_events.accumulate, tries=3)
@@ -828,7 +828,7 @@ class TestSwitchboardCallsHeld(TestSwitchboards):
         new_channel = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app=STASIS_APP,
-            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, switchboard_uuid, VALID_TENANT],
+            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, VALID_TENANT, switchboard_uuid],
         )
 
         until.true(queued_bus_events.accumulate, tries=3)
@@ -885,7 +885,7 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
         new_channel = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app=STASIS_APP,
-            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, switchboard_uuid, VALID_TENANT],
+            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, VALID_TENANT, switchboard_uuid],
         )
 
         result = self.calld.put_switchboard_held_call_answer_result(switchboard_uuid, new_channel.id, token)
@@ -919,7 +919,7 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
         new_channel = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app=STASIS_APP,
-            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, switchboard_uuid, VALID_TENANT],
+            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, VALID_TENANT, switchboard_uuid],
         )
         until.true(queued_bus_events.accumulate, tries=3)
         routing_key = 'switchboards.{uuid}.calls.held.updated'.format(uuid=switchboard_uuid)
@@ -945,7 +945,7 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
         new_channel = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app=STASIS_APP,
-            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, switchboard_uuid, VALID_TENANT],
+            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, VALID_TENANT, switchboard_uuid],
         )
         until.true(queued_bus_events.accumulate, tries=3)
         routing_key = 'switchboards.{uuid}.calls.held.updated'.format(uuid=switchboard_uuid)
@@ -973,7 +973,7 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
         new_channel = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app=STASIS_APP,
-            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, switchboard_uuid, VALID_TENANT],
+            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, VALID_TENANT, switchboard_uuid],
         )
         until.true(queued_bus_events.accumulate, tries=3)
         routing_key = 'switchboards.{uuid}.calls.held.updated'.format(uuid=switchboard_uuid)
@@ -1001,7 +1001,7 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
         new_channel = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app=STASIS_APP,
-            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, switchboard_uuid, VALID_TENANT],
+            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, VALID_TENANT, switchboard_uuid],
         )
         until.true(queued_bus_events.accumulate, tries=3)
         held_bus_events = self.bus.accumulator('switchboards.{uuid}.calls.held.updated'.format(uuid=switchboard_uuid))
@@ -1041,7 +1041,7 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
         new_channel = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app=STASIS_APP,
-            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, switchboard_uuid, VALID_TENANT],
+            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, VALID_TENANT, switchboard_uuid],
             callerId=held_caller_id,
         )
         until.true(queued_bus_events.accumulate, tries=3)
@@ -1089,7 +1089,7 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
         new_channel = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app=STASIS_APP,
-            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, switchboard_uuid, VALID_TENANT],
+            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, VALID_TENANT, switchboard_uuid],
         )
         until.true(queued_bus_events.accumulate, tries=3)
         routing_key = 'switchboards.{uuid}.calls.held.updated'.format(uuid=switchboard_uuid)

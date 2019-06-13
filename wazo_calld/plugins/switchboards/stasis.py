@@ -53,8 +53,8 @@ class SwitchboardsStasis:
 
     def _stasis_start_queue(self, event_objects, event):
         try:
-            switchboard_uuid = event['args'][2]
-            tenant_uuid = event['args'][3]
+            tenant_uuid = event['args'][2]
+            switchboard_uuid = event['args'][3]
         except IndexError:
             logger.warning('Ignoring invalid StasisStart event %s', event)
             return
@@ -63,8 +63,8 @@ class SwitchboardsStasis:
 
     def _stasis_start_answer(self, event_objects, event):
         try:
-            switchboard_uuid = event['args'][2]
-            tenant_uuid = event['args'][3]
+            tenant_uuid = event['args'][2]
+            switchboard_uuid = event['args'][3]
             queued_channel_id = event['args'][4]
         except IndexError:
             logger.warning('Ignoring invalid StasisStart event %s', event)
@@ -101,8 +101,8 @@ class SwitchboardsStasis:
 
     def _stasis_start_answer_held(self, event_objects, event):
         try:
-            switchboard_uuid = event['args'][2]
-            tenant_uuid = event['args'][3]
+            tenant_uuid = event['args'][2]
+            switchboard_uuid = event['args'][3]
             held_channel_id = event['args'][4]
         except IndexError:
             logger.warning('Ignoring invalid StasisStart event %s', event)
