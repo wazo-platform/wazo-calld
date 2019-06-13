@@ -98,13 +98,13 @@ components:
           description: The participant Caller ID number
         muted:
           type: boolean
-          description: Is the partcipant muted in this conference?
+          description: Is the participant muted in this conference?
         join_time:
           type: integer
           description: When the participant joined the conference
         admin:
           type: boolean
-          description: Is the partcipant an administrator of this conference?
+          description: Is the participant an administrator of this conference?
         language:
           type: string
           description: The participant language
