@@ -1,4 +1,4 @@
-# Copyright 2016-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -275,6 +275,7 @@ class TransferStateStarting(TransferState):
                                                                               timeout)
         except TransferCreationError as e:
             logger.error('%s %s', e.message, e.details)
+        self._notifier.updated(self.transfer)
 
         return TransferStateRingback.from_state(self)
 
