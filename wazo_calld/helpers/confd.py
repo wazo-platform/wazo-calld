@@ -116,13 +116,15 @@ class Conference:
 
     @classmethod
     def from_id(cls, conference_id, confd_client):
-        conferences = confd_client.conferences.list(recurse=True)['items']
-        for conference in conferences:
-            if conference['id'] == conference_id:
-                return cls(conference['tenant_uuid'],
-                           conference['id'],
-                           confd_client)
-        raise NoSuchConferenceID(conference_id)
+        try:
+            conference = confd_client.conferences.get(conference_id)
+        except HTTPError as e:
+            if e.response and e.response.status_code == 404:
+                raise NoSuchConferenceID(conference_id)
+            raise
+        return cls(conference['tenant_uuid'],
+                   conference['id'],
+                   confd_client)
 
 
 def get_user_voicemail(user_uuid, confd_client):
