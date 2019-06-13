@@ -8,6 +8,7 @@ from ari.exceptions import ARINotFound
 from xivo.caller_id import assemble_caller_id
 from wazo_calld.ari_ import DEFAULT_APPLICATION_NAME
 from wazo_calld.helpers.confd import User
+from wazo_calld.helpers.exceptions import InvalidUserUUID
 
 from .call import (
     HeldCall,
@@ -17,6 +18,7 @@ from .confd import Switchboard
 from .exceptions import (
     NoSuchCall,
     NoSuchSwitchboard,
+    NoSuchConfdUser,
 )
 
 BRIDGE_QUEUE_ID = 'switchboard-{uuid}-queue'
@@ -94,7 +96,12 @@ class SwitchboardsService:
         except ARINotFound:
             raise NoSuchCall(queued_call_id)
 
-        endpoint = User(user_uuid, self._confd, tenant_uuid=tenant_uuid).main_line().interface_autoanswer()
+        try:
+            user = User(user_uuid, self._confd, tenant_uuid=tenant_uuid)
+            endpoint = user.main_line().interface_autoanswer()
+        except InvalidUserUUID as e:
+            raise NoSuchConfdUser(e.details['user_uuid'])
+
         caller_id = assemble_caller_id(
             queued_channel.json['caller']['name'],
             queued_channel.json['caller']['number']
@@ -185,7 +192,12 @@ class SwitchboardsService:
         except ARINotFound:
             raise NoSuchCall(held_call_id)
 
-        endpoint = User(user_uuid, self._confd, tenant_uuid=tenant_uuid).main_line().interface_autoanswer()
+        try:
+            user = User(user_uuid, self._confd, tenant_uuid=tenant_uuid)
+            endpoint = user.main_line().interface_autoanswer()
+        except InvalidUserUUID as e:
+            raise NoSuchConfdUser(e.details['user_uuid'])
+
         caller_id = assemble_caller_id(
             held_channel.json['caller']['name'],
             held_channel.json['caller']['number'],
