@@ -13,6 +13,7 @@ from hamcrest import (
     has_entries,
     has_entry,
     has_item,
+    has_items,
     has_properties,
     is_,
     less_than,
@@ -20,6 +21,7 @@ from hamcrest import (
 from xivo_test_helpers import until
 from xivo_test_helpers.hamcrest.raises import raises
 from wazo_calld_client.exceptions import CalldError
+from .helpers.auth import MockUserToken
 from .helpers.base import RealAsteriskIntegrationTest
 from .helpers.confd import MockConference
 from .helpers.hamcrest_ import HamcrestARIChannel
@@ -28,6 +30,7 @@ USER_UUID = str(uuid.uuid4())
 ENDPOINT_AUTOANSWER = 'Test/integration-caller/autoanswer'
 CONFERENCE1_EXTENSION = '4001'
 CONFERENCE1_ID = 4001
+CONFERENCE1_TENANT_UUID = '404afda0-36ba-43de-9571-a06c81b9c43e'
 
 
 class TestConferences(RealAsteriskIntegrationTest):
@@ -111,6 +114,44 @@ class TestConferenceParticipants(TestConferences):
             'items': empty(),
         }))
 
+    def test_user_list_participants_when_user_is_not_participant(self):
+        token = 'my-token'
+        user_uuid = 'user-uuid'
+        conference_id = CONFERENCE1_ID
+        self.confd.set_conferences(
+            MockConference(id=conference_id, name='conference'),
+        )
+        self.auth.set_token(MockUserToken(token, tenant_uuid='my-tenant', user_uuid=user_uuid))
+        calld = self.make_calld(token=token)
+
+        assert_that(calling(calld.conferences.user_list_participants).with_args(conference_id),
+                    raises(CalldError).matching(has_properties({
+                        'status_code': 403,
+                        'error_id': 'user-not-participant',
+                    })))
+
+    def test_user_list_participants_when_user_is_participant(self):
+        token = 'my-token'
+        user_uuid = 'user-uuid'
+        conference_id = CONFERENCE1_ID
+        self.confd.set_conferences(
+            MockConference(id=conference_id, name='conference'),
+        )
+        self.auth.set_token(MockUserToken(token, tenant_uuid='my-tenant', user_uuid=user_uuid))
+        self.given_call_in_conference(CONFERENCE1_EXTENSION, caller_id_name='participant1', user_uuid=user_uuid)
+        self.given_call_in_conference(CONFERENCE1_EXTENSION, caller_id_name='participant2')
+        calld = self.make_calld(token=token)
+
+        participants = calld.conferences.user_list_participants(conference_id)
+
+        assert_that(participants, has_entries({
+            'total': 2,
+            'items': contains_inanyorder(
+                has_entry('caller_id_name', 'participant1'),
+                has_entry('caller_id_name', 'participant2'),
+            )
+        }))
+
     def test_list_participants_with_two_participants(self):
         calld = self.make_calld()
         conference_id = CONFERENCE1_ID
@@ -148,19 +189,22 @@ class TestConferenceParticipants(TestConferences):
 
     def test_user_participant_joins_sends_event(self):
         conference_id = CONFERENCE1_ID
+        tenant_uuid = CONFERENCE1_TENANT_UUID
         user_uuid = USER_UUID
+        other_user_uuid = 'another-uuid'
         self.confd.set_conferences(
-            MockConference(id=conference_id, name='conference'),
+            MockConference(id=conference_id, name='conference', tenant_uuid=tenant_uuid),
         )
         bus_events = self.bus.accumulator('conferences.users.{}.participants.joined'.format(user_uuid))
 
         self.given_call_in_conference(CONFERENCE1_EXTENSION, user_uuid=user_uuid)
+        self.given_call_in_conference(CONFERENCE1_EXTENSION, user_uuid=other_user_uuid)
 
-        def user_participant_joined_event_received(expected_user_uuid):
+        def user_participant_joined_event_received(*expected_user_uuids):
             user_uuids = [event['data']['user_uuid'] for event in bus_events.accumulate()]
-            return expected_user_uuid in user_uuids
+            assert_that(user_uuids, has_items(*expected_user_uuids))
 
-        until.true(user_participant_joined_event_received, user_uuid, timeout=10)
+        until.assert_(user_participant_joined_event_received, user_uuid, other_user_uuid, timeout=10)
 
     def test_participant_leaves_sends_event(self):
         conference_id = CONFERENCE1_ID
@@ -182,21 +226,28 @@ class TestConferenceParticipants(TestConferences):
 
     def test_user_participant_leaves_sends_event(self):
         conference_id = CONFERENCE1_ID
+        tenant_uuid = CONFERENCE1_TENANT_UUID
         user_uuid = USER_UUID
+        other_user_uuid = 'another-uuid'
         self.confd.set_conferences(
-            MockConference(id=conference_id, name='conference'),
+            MockConference(id=conference_id, name='conference', tenant_uuid=tenant_uuid),
         )
         bus_events = self.bus.accumulator('conferences.users.{}.participants.left'.format(user_uuid))
 
         channel_id = self.given_call_in_conference(CONFERENCE1_EXTENSION, user_uuid=user_uuid)
-
-        self.ari.channels.get(channelId=channel_id).hangup()
+        other_channel_id = self.given_call_in_conference(CONFERENCE1_EXTENSION, user_uuid=other_user_uuid)
 
         def user_participant_left_event_received(expected_user_uuid):
             user_uuids = [event['data']['user_uuid'] for event in bus_events.accumulate()]
-            return expected_user_uuid in user_uuids
+            assert_that(user_uuids, has_item(expected_user_uuid))
 
-        until.true(user_participant_left_event_received, user_uuid, timeout=10)
+        self.ari.channels.get(channelId=other_channel_id).hangup()
+
+        until.assert_(user_participant_left_event_received, other_user_uuid, timeout=10)
+
+        self.ari.channels.get(channelId=channel_id).hangup()
+
+        until.assert_(user_participant_left_event_received, user_uuid, timeout=10)
 
     def test_kick_participant_with_no_confd(self):
         calld = self.make_calld()

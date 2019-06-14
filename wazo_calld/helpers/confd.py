@@ -6,11 +6,14 @@ from requests import RequestException
 
 from wazo_calld.exceptions import XiVOConfdUnreachable
 
-from .exceptions import InvalidUserUUID
-from .exceptions import InvalidUserLine
-from .exceptions import NoSuchUserVoicemail
-from .exceptions import NoSuchVoicemail
-from .exceptions import UserMissingMainLine
+from .exceptions import (
+    InvalidUserUUID,
+    InvalidUserLine,
+    NoSuchConferenceID,
+    NoSuchUserVoicemail,
+    NoSuchVoicemail,
+    UserMissingMainLine,
+)
 
 
 def not_found(error):
@@ -110,6 +113,18 @@ class Conference:
         except RequestException as e:
             raise XiVOConfdUnreachable(self._confd, e)
         return self.conference_id in (conference['id'] for conference in conferences)
+
+    @classmethod
+    def from_id(cls, conference_id, confd_client):
+        try:
+            conference = confd_client.conferences.get(conference_id)
+        except HTTPError as e:
+            if e.response and e.response.status_code == 404:
+                raise NoSuchConferenceID(conference_id)
+            raise
+        return cls(conference['tenant_uuid'],
+                   conference['id'],
+                   confd_client)
 
 
 def get_user_voicemail(user_uuid, confd_client):

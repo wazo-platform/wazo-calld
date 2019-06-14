@@ -19,6 +19,7 @@ class ParticipantSchema(Schema):
     admin = fields.Boolean()
     language = fields.String()
     call_id = fields.String()
+    user_uuid = fields.String(allow_none=True)
 
 
 participant_schema = ParticipantSchema()
