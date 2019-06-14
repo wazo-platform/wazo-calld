@@ -8,6 +8,7 @@ from ari.exceptions import ARINotFound
 from xivo.caller_id import assemble_caller_id
 from wazo_calld.ari_ import DEFAULT_APPLICATION_NAME
 from wazo_calld.helpers.confd import User
+from wazo_calld.helpers.exceptions import InvalidUserUUID
 
 from .call import (
     HeldCall,
@@ -17,6 +18,7 @@ from .confd import Switchboard
 from .exceptions import (
     NoSuchCall,
     NoSuchSwitchboard,
+    NoSuchConfdUser,
 )
 
 BRIDGE_QUEUE_ID = 'switchboard-{uuid}-queue'
@@ -43,8 +45,8 @@ class SwitchboardsService:
         self._confd = confd
         self._notifier = notifier
 
-    def queued_calls(self, switchboard_uuid):
-        if not Switchboard(switchboard_uuid, self._confd).exists():
+    def queued_calls(self, tenant_uuid, switchboard_uuid):
+        if not Switchboard(tenant_uuid, switchboard_uuid, self._confd).exists():
             raise NoSuchSwitchboard(switchboard_uuid)
 
         bridge_id = BRIDGE_QUEUE_ID.format(uuid=switchboard_uuid)
@@ -66,7 +68,7 @@ class SwitchboardsService:
             result.append(call)
         return result
 
-    def new_queued_call(self, switchboard_uuid, channel_id):
+    def new_queued_call(self, tenant_uuid, switchboard_uuid, channel_id):
         bridge_id = BRIDGE_QUEUE_ID.format(uuid=switchboard_uuid)
         try:
             bridge = self._ari.bridges.get(bridgeId=bridge_id)
@@ -78,13 +80,15 @@ class SwitchboardsService:
 
         channel = self._ari.channels.get(channelId=channel_id)
         channel.setChannelVar(variable='WAZO_SWITCHBOARD_QUEUE', value=switchboard_uuid)
+        channel.setChannelVar(variable='WAZO_TENANT_UUID', value=tenant_uuid)
         channel.answer()
         bridge.addChannel(channel=channel_id)
 
-        self._notifier.queued_calls(switchboard_uuid, self.queued_calls(switchboard_uuid))
+        calls = self.queued_calls(tenant_uuid, switchboard_uuid)
+        self._notifier.queued_calls(tenant_uuid, switchboard_uuid, calls)
 
-    def answer_queued_call(self, switchboard_uuid, queued_call_id, user_uuid):
-        if not Switchboard(switchboard_uuid, self._confd).exists():
+    def answer_queued_call(self, tenant_uuid, switchboard_uuid, queued_call_id, user_uuid):
+        if not Switchboard(tenant_uuid, switchboard_uuid, self._confd).exists():
             raise NoSuchSwitchboard(switchboard_uuid)
 
         try:
@@ -92,7 +96,12 @@ class SwitchboardsService:
         except ARINotFound:
             raise NoSuchCall(queued_call_id)
 
-        endpoint = User(user_uuid, self._confd).main_line().interface_autoanswer()
+        try:
+            user = User(user_uuid, self._confd, tenant_uuid=tenant_uuid)
+            endpoint = user.main_line().interface_autoanswer()
+        except InvalidUserUUID as e:
+            raise NoSuchConfdUser(e.details['user_uuid'])
+
         caller_id = assemble_caller_id(
             queued_channel.json['caller']['name'],
             queued_channel.json['caller']['number']
@@ -101,7 +110,7 @@ class SwitchboardsService:
         channel = self._ari.channels.originate(
             endpoint=endpoint,
             app=DEFAULT_APPLICATION_NAME,
-            appArgs=['switchboard', 'switchboard_answer', switchboard_uuid, queued_call_id],
+            appArgs=['switchboard', 'switchboard_answer', tenant_uuid, switchboard_uuid, queued_call_id],
             callerId=caller_id,
             originator=queued_call_id,
             variables={'variables': AUTO_ANSWER_VARIABLES},
@@ -109,8 +118,8 @@ class SwitchboardsService:
 
         return channel.id
 
-    def hold_call(self, switchboard_uuid, call_id):
-        if not Switchboard(switchboard_uuid, self._confd).exists():
+    def hold_call(self, tenant_uuid, switchboard_uuid, call_id):
+        if not Switchboard(tenant_uuid, switchboard_uuid, self._confd).exists():
             raise NoSuchSwitchboard(switchboard_uuid)
 
         try:
@@ -132,9 +141,10 @@ class SwitchboardsService:
 
         hold_bridge.addChannel(channel=channel_to_hold.id)
         channel_to_hold.setChannelVar(variable='WAZO_SWITCHBOARD_HOLD', value=switchboard_uuid)
+        channel_to_hold.setChannelVar(variable='WAZO_TENANT_UUID', value=tenant_uuid)
 
-        held_calls = self.held_calls(switchboard_uuid)
-        self._notifier.held_calls(switchboard_uuid, held_calls)
+        held_calls = self.held_calls(tenant_uuid, switchboard_uuid)
+        self._notifier.held_calls(tenant_uuid, switchboard_uuid, held_calls)
 
         for previous_bridge in previous_bridges:
             try:
@@ -150,8 +160,8 @@ class SwitchboardsService:
                     except ARINotFound:
                         pass
 
-    def held_calls(self, switchboard_uuid):
-        if not Switchboard(switchboard_uuid, self._confd).exists():
+    def held_calls(self, tenant_uuid, switchboard_uuid):
+        if not Switchboard(tenant_uuid, switchboard_uuid, self._confd).exists():
             raise NoSuchSwitchboard(switchboard_uuid)
 
         bridge_id = BRIDGE_HOLD_ID.format(uuid=switchboard_uuid)
@@ -173,8 +183,8 @@ class SwitchboardsService:
             result.append(call)
         return result
 
-    def answer_held_call(self, switchboard_uuid, held_call_id, user_uuid):
-        if not Switchboard(switchboard_uuid, self._confd).exists():
+    def answer_held_call(self, tenant_uuid, switchboard_uuid, held_call_id, user_uuid):
+        if not Switchboard(tenant_uuid, switchboard_uuid, self._confd).exists():
             raise NoSuchSwitchboard(switchboard_uuid)
 
         try:
@@ -182,7 +192,12 @@ class SwitchboardsService:
         except ARINotFound:
             raise NoSuchCall(held_call_id)
 
-        endpoint = User(user_uuid, self._confd).main_line().interface_autoanswer()
+        try:
+            user = User(user_uuid, self._confd, tenant_uuid=tenant_uuid)
+            endpoint = user.main_line().interface_autoanswer()
+        except InvalidUserUUID as e:
+            raise NoSuchConfdUser(e.details['user_uuid'])
+
         caller_id = assemble_caller_id(
             held_channel.json['caller']['name'],
             held_channel.json['caller']['number'],
@@ -191,7 +206,7 @@ class SwitchboardsService:
         channel = self._ari.channels.originate(
             endpoint=endpoint,
             app=DEFAULT_APPLICATION_NAME,
-            appArgs=['switchboard', 'switchboard_unhold', switchboard_uuid, held_call_id],
+            appArgs=['switchboard', 'switchboard_unhold', tenant_uuid, switchboard_uuid, held_call_id],
             callerId=caller_id,
             variables={'variables': AUTO_ANSWER_VARIABLES},
         )

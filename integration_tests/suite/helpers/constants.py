@@ -7,6 +7,7 @@ import os
 ASSET_ROOT = os.path.join(os.path.dirname(__file__), '..', '..', 'assets')
 INVALID_ACL_TOKEN = 'invalid-acl-token'
 VALID_TOKEN = 'valid-token'
+VALID_TENANT = 'ffffffff-ffff-ffff-ffff-ffffffffffff'
 BUS_EXCHANGE_XIVO = Exchange('xivo', type='topic')
 BUS_EXCHANGE_COLLECTD = Exchange('collectd', type='topic', durable=False)
 BUS_URL = 'amqp://guest:guest@localhost:5672//'

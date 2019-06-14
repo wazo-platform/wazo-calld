@@ -8,6 +8,7 @@ paths:
       tags:
         - switchboards
       parameters:
+        - $ref: '#/parameters/TenantUUID'
         - $ref: '#/parameters/SwitchboardUUID'
       responses:
         '200':
@@ -27,6 +28,7 @@ paths:
       tags:
         - switchboards
       parameters:
+        - $ref: '#/parameters/TenantUUID'
         - $ref: '#/parameters/SwitchboardUUID'
         - $ref: '#/parameters/CallID'
       responses:
@@ -49,6 +51,7 @@ paths:
       tags:
         - switchboards
       parameters:
+        - $ref: '#/parameters/TenantUUID'
         - $ref: '#/parameters/SwitchboardUUID'
       responses:
         '200':
@@ -69,6 +72,7 @@ paths:
       tags:
         - switchboards
       parameters:
+        - $ref: '#/parameters/TenantUUID'
         - $ref: '#/parameters/SwitchboardUUID'
         - $ref: '#/parameters/CallID'
       responses:
@@ -89,6 +93,7 @@ paths:
       tags:
         - switchboards
       parameters:
+        - $ref: '#/parameters/TenantUUID'
         - $ref: '#/parameters/SwitchboardUUID'
         - $ref: '#/parameters/CallID'
       responses:

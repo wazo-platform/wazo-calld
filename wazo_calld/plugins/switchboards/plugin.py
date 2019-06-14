@@ -1,7 +1,6 @@
 # Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from wazo_auth_client import Client as AuthClient
 from wazo_confd_client import Client as ConfdClient
 
 from wazo_calld.ari_ import DEFAULT_APPLICATION_NAME
@@ -27,10 +26,8 @@ class Plugin:
         config = dependencies['config']
         token_changed_subscribe = dependencies['token_changed_subscribe']
 
-        auth_client = AuthClient(**config['auth'])
         confd_client = ConfdClient(**config['confd'])
 
-        token_changed_subscribe(auth_client.set_token)
         token_changed_subscribe(confd_client.set_token)
 
         switchboards_notifier = SwitchboardsNotifier(bus_publisher)
@@ -48,7 +45,7 @@ class Plugin:
         api.add_resource(
             SwitchboardCallQueuedAnswerResource,
             '/switchboards/<switchboard_uuid>/calls/queued/<call_id>/answer',
-            resource_class_args=[auth_client, switchboards_service],
+            resource_class_args=[switchboards_service],
         )
         api.add_resource(
             SwitchboardCallsHeldResource,
@@ -63,5 +60,5 @@ class Plugin:
         api.add_resource(
             SwitchboardCallHeldAnswerResource,
             '/switchboards/<switchboard_uuid>/calls/held/<call_id>/answer',
-            resource_class_args=[auth_client, switchboards_service],
+            resource_class_args=[switchboards_service],
         )
