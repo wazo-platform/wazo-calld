@@ -21,8 +21,8 @@ from hamcrest import has_item
 from hamcrest import has_key
 from hamcrest import instance_of
 from hamcrest import not_
+from hamcrest import not_none
 from hamcrest import raises
-from operator import attrgetter
 from xivo_test_helpers import until
 
 from .helpers.base import IntegrationTest
@@ -1340,6 +1340,7 @@ class TestTransferFromNonStasis(TestTransfers):
 
     def test_given_state_ready_from_not_stasis_when_transfer_start_and_answer_then_state_answered(self):
         transferred_channel_id, initiator_channel_id = self.given_bridged_call_not_stasis()
+        events = self.bus.accumulator('calls.transfer.*')
 
         response = self.calld.create_transfer(transferred_channel_id,
                                               initiator_channel_id,
@@ -1353,11 +1354,19 @@ class TestTransferFromNonStasis(TestTransfers):
 
         transfer_id = response['id']
 
-        def get_recipient_call():
-            response = self.calld.get_transfer(transfer_id)
-            return response['recipient_call']
+        def transfer_was_updated(events):
+            events = events.accumulate()
+            assert_that(events, has_item(has_entries({
+                'name': 'transfer_updated',
+                'data': has_entries({
+                    'recipient_call': not_none(),
+                }),
+            })))
 
-        recipient_channel_id = until.true(get_recipient_call, timeout=30)
+        until.assert_(transfer_was_updated, events, timeout=30)
+
+        recipient_channel_id = self.calld.get_transfer(transfer_id)['recipient_call']
+
         self.answer_recipient_channel(recipient_channel_id)
 
         until.assert_(self.assert_transfer_is_answered,

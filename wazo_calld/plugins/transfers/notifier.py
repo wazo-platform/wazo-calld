@@ -1,4 +1,4 @@
-# Copyright 2016 by Avencall
+# Copyright 2016-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -8,7 +8,8 @@ from xivo_bus.resources.calls.transfer import (AbandonTransferEvent,
                                                CancelTransferEvent,
                                                CompleteTransferEvent,
                                                CreateTransferEvent,
-                                               EndTransferEvent)
+                                               EndTransferEvent,
+                                               UpdateTransferEvent,)
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +21,10 @@ class TransferNotifier:
 
     def created(self, transfer):
         event = CreateTransferEvent(transfer.initiator_uuid, transfer.to_dict())
+        self._bus_producer.publish(event)
+
+    def updated(self, transfer):
+        event = UpdateTransferEvent(transfer.initiator_uuid, transfer.to_dict())
         self._bus_producer.publish(event)
 
     def answered(self, transfer):
