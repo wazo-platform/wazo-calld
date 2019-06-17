@@ -114,13 +114,13 @@ class Channel:
     def user(self, default=None):
         if self.is_local():
             try:
-                uuid = self._ari.channels.getChannelVar(channelId=self.id, variable='WAZO_DEREFERENCED_USERUUID')['value']
+                uuid = self._get_var('WAZO_DEREFERENCED_USERUUID')
             except ARINotFound:
                 return default
             return uuid
 
         try:
-            uuid = self._ari.channels.getChannelVar(channelId=self.id, variable='XIVO_USERUUID')['value']
+            uuid = self._get_var('XIVO_USERUUID')
             return uuid
         except ARINotFound:
             return default
@@ -142,28 +142,30 @@ class Channel:
 
     def is_caller(self):
         try:
-            direction = self._ari.channels.getChannelVar(channelId=self.id, variable='WAZO_CHANNEL_DIRECTION')['value']
+            direction = self._get_var('WAZO_CHANNEL_DIRECTION')
             return direction == 'to-wazo'
         except ARINotFound:
             return False
 
     def is_in_stasis(self):
         try:
-            self._ari.channels.setChannelVar(channelId=self.id, variable='WAZO_TEST_STASIS')
+            self._get_var('WAZO_TEST_STASIS')
             return True
         except ARINotInStasis:
             return False
 
     def dialed_extension(self):
         try:
-            result = self._ari.channels.getChannelVar(channelId=self.id, variable='XIVO_BASE_EXTEN')['value']
-            return result
+            return self._get_var('XIVO_BASE_EXTEN')
         except ARINotFound:
             return None
 
     def on_hold(self):
         try:
-            on_hold = self._ari.channels.getChannelVar(channelId=self.id, variable='XIVO_ON_HOLD')['value']
+            on_hold = self._get_var('XIVO_ON_HOLD')
             return on_hold == '1'
         except ARINotFound:
             return False
+
+    def _get_var(self, var):
+        return self._ari.channels.getChannelVar(channelId=self.id, variable=var)['value']
