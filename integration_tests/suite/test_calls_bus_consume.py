@@ -45,7 +45,13 @@ class TestBusConsume(IntegrationTest):
     def test_when_channel_created_then_bus_event(self):
         call_id = new_call_id()
         self.ari.set_channels(MockChannel(id=call_id, connected_line_number=''))
-        self.ari.set_channel_variable({call_id: {'XIVO_BASE_EXTEN': '*10'}})
+        self.ari.set_channel_variable({
+            call_id: {
+                'XIVO_BASE_EXTEN': '*10',
+                'CHANNEL(channeltype)': 'PJSIP',
+                'CHANNEL(pjsip,call-id)': 'a-sip-call-id',
+            },
+        })
         events = self.bus.accumulator(routing_key='calls.call.created')
 
         self.bus.send_ami_newchannel_event(call_id)
@@ -58,6 +64,7 @@ class TestBusConsume(IntegrationTest):
                     'call_id': call_id,
                     'dialed_extension': '*10',
                     'peer_caller_id_number': '*10',
+                    'sip_call_id': 'a-sip-call-id',
                 })
             })))
 

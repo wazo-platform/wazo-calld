@@ -10,6 +10,9 @@
   * `GET /1.0/switchboards/{switchboard_uuid}/calls/queued`
   * `PUT /1.0/switchboards/{switchboard_uuid}/calls/queued/{call_id}/answer`
 
+* The `sip_call_id` field has been added to the calls response and events
+
+
 ## 19.05
 
 * The following endpoints have been moved to wazo-chatd and deleted from wazo-calld:

@@ -68,9 +68,12 @@ class TestListCalls(IntegrationTest):
                                           creation_time='second-time',
                                           state='Ringing'))
         self.ari.set_channel_variable({'first-id': {'XIVO_USERUUID': 'user1-uuid',
-                                                    'WAZO_CHANNEL_DIRECTION': 'to-wazo'},
+                                                    'WAZO_CHANNEL_DIRECTION': 'to-wazo',
+                                                    'CHANNEL(channeltype)': 'other'},
                                        'second-id': {'XIVO_USERUUID': 'user2-uuid',
-                                                     'WAZO_CHANNEL_DIRECTION': 'from-wazo'}})
+                                                     'WAZO_CHANNEL_DIRECTION': 'from-wazo',
+                                                     'CHANNEL(channeltype)': 'PJSIP',
+                                                     'CHANNEL(pjsip,call-id)': 'a-sip-call-id'}})
         self.ari.set_bridges(MockBridge(id='bridge-id', channels=['first-id', 'second-id']))
         self.confd.set_users(MockUser(uuid='user1-uuid'),
                              MockUser(uuid='user2-uuid'))
@@ -88,6 +91,7 @@ class TestListCalls(IntegrationTest):
                          'caller_id_name': 'Weber',
                          'peer_caller_id_number': '4185557777',
                          'peer_caller_id_name': 'Denis',
+                         'sip_call_id': None,
                          'is_caller': True}),
             has_entries({'call_id': 'second-id',
                          'user_uuid': 'user2-uuid',
@@ -99,6 +103,7 @@ class TestListCalls(IntegrationTest):
                          'caller_id_name': 'Denis',
                          'peer_caller_id_number': '4185556666',
                          'peer_caller_id_name': 'Weber',
+                         'sip_call_id': 'a-sip-call-id',
                          'is_caller': False}))))
 
     def test_given_some_calls_and_no_user_id_when_list_calls_then_list_calls_with_no_user_uuid(self):
@@ -335,8 +340,12 @@ class TestGetCall(IntegrationTest):
         self.ari.set_channels(MockChannel(id='first-id', state='Up', creation_time='first-time', caller_id_name='Weber', caller_id_number='4185559999'),
                               MockChannel(id='second-id'))
         self.ari.set_bridges(MockBridge(id='bridge-id', channels=['first-id', 'second-id']))
-        self.ari.set_channel_variable({'first-id': {'XIVO_USERUUID': 'user1-uuid'},
-                                       'second-id': {'XIVO_USERUUID': 'user2-uuid'}})
+        self.ari.set_channel_variable({
+            'first-id': {'XIVO_USERUUID': 'user1-uuid',
+                         'CHANNEL(channeltype)': 'PJSIP',
+                         'CHANNEL(pjsip,call-id)': 'a-sip-call-id'},
+            'second-id': {'XIVO_USERUUID': 'user2-uuid'},
+        })
         self.confd.set_users(MockUser(uuid='user1-uuid'),
                              MockUser(uuid='user2-uuid'))
 
@@ -353,6 +362,7 @@ class TestGetCall(IntegrationTest):
             'creation_time': 'first-time',
             'caller_id_name': 'Weber',
             'caller_id_number': '4185559999',
+            'sip_call_id': 'a-sip-call-id',
         }))
 
 
@@ -465,16 +475,19 @@ class TestCreateCall(IntegrationTest):
         self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL))
         self.ari.set_originates(MockChannel(id='new-call-id', connected_line_number=''))
         self.amid.set_valid_exten('my-context', 'my-extension', priority)
+        self.ari.set_channel_variable({'new-call-id': {'CHANNEL(channeltype)': 'PJSIP',
+                                                       'CHANNEL(pjsip,call-id)': 'a-sip-call-id'}})
 
         result = self.calld.originate(source=user_uuid,
-                                        priority=priority,
-                                        extension='my-extension',
-                                        context='my-context')
+                                      priority=priority,
+                                      extension='my-extension',
+                                      context='my-context')
 
         assert_that(result, has_entries({
             'call_id': 'new-call-id',
             'dialed_extension': 'my-extension',
             'peer_caller_id_number': 'my-extension',
+            'sip_call_id': 'a-sip-call-id',
         }))
         assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
             'method': 'POST',

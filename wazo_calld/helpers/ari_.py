@@ -154,6 +154,12 @@ class Channel:
         except ARINotInStasis:
             return False
 
+    def is_sip(self):
+        try:
+            return self._get_var('CHANNEL(channeltype)') == 'PJSIP'
+        except ARINotFound:
+            return False
+
     def dialed_extension(self):
         try:
             return self._get_var('XIVO_BASE_EXTEN')
@@ -166,6 +172,15 @@ class Channel:
             return on_hold == '1'
         except ARINotFound:
             return False
+
+    def sip_call_id(self):
+        if not self.is_sip():
+            return
+
+        try:
+            return self._get_var('CHANNEL(pjsip,call-id)')
+        except ARINotFound:
+            return
 
     def _get_var(self, var):
         return self._ari.channels.getChannelVar(channelId=self.id, variable=var)['value']
