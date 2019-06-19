@@ -149,7 +149,7 @@ class Channel:
 
     def is_in_stasis(self):
         try:
-            self._get_var('WAZO_TEST_STASIS')
+            self._ari.channels.setChannelVar(channelId=self.id, variable='WAZO_TEST_STASIS')
             return True
         except ARINotInStasis:
             return False
