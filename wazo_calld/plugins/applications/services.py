@@ -1,4 +1,4 @@
-# Copyright 2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -62,13 +62,6 @@ class ApplicationService:
         formatter = CallFormatter(application, self._ari)
         call = formatter.from_channel(channel)
         self._notifier.call_updated(application['uuid'], call)
-
-    def channel_answer(self, application, channel):
-        channel.answer()
-        variables = self.get_channel_variables(channel)
-        formatter = CallFormatter(application, self._ari)
-        call = formatter.from_channel(channel, variables=variables)
-        self._notifier.call_entered(application['uuid'], call)
 
     def create_destination_node(self, application):
         try:
@@ -185,8 +178,12 @@ class ApplicationService:
             raise NoSuchNode(node_uuid)
         return node_uuid
 
-    def join_destination_node(self, channel_id, application):
-        self.join_node(application['uuid'], application['uuid'], [channel_id])
+    def join_destination_node(self, channel, application):
+        answer = application['destination_options'].get('answer')
+        if answer:
+            channel.answer()
+
+        self.join_node(application['uuid'], application['uuid'], [channel.id])
         moh = application['destination_options'].get('music_on_hold')
         if moh:
             self._ari.bridges.startMoh(bridgeId=application['uuid'], mohClass=moh)

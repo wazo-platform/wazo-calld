@@ -1,4 +1,4 @@
-# Copyright 2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -187,12 +187,16 @@ class ApplicationStasis:
     def _stasis_start_incoming(self, application_uuid, event_objects, event):
         channel = event_objects['channel']
         logger.debug('new incoming call %s', channel.id)
+
         application = self._service.get_application(application_uuid)
-        self._service.channel_answer(application, channel)
+        variables = self._service.get_channel_variables(channel)
+        formatter = CallFormatter(application, self._ari)
+        call = formatter.from_channel(channel, variables=variables)
+        self._notifier.call_entered(application['uuid'], call)
 
         confd_application = self._service.get_confd_application(application_uuid)
         if confd_application['destination'] == 'node':
-            self._service.join_destination_node(channel.id, confd_application)
+            self._service.join_destination_node(channel, confd_application)
 
     def _stasis_start_originate(self, application_uuid, node_uuid, event_objects, event):
         channel = event_objects['channel']

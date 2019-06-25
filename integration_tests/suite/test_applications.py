@@ -36,6 +36,7 @@ class BaseApplicationTestCase(RealAsteriskIntegrationTest):
             name='name',
             destination='node',
             type_='holding',
+            answer=False,
         )
 
         self.no_node_app_uuid = 'b00857f4-cb62-4773-adf7-ca870fa65c8d'
