@@ -1414,6 +1414,24 @@ class TestApplicationPlayback(BaseApplicationTestCase):
         until.assert_(event_received, tries=3)
 
 
+class TestApplicationAnswer(BaseApplicationTestCase):
+
+    def test_answer_call(self):
+        channel = self.call_app(self.node_app_uuid)
+
+        response = self.calld.application_call_answer(self.unknown_uuid, channel.id)
+        assert_that(response, has_properties(status_code=404))
+
+        response = self.calld.application_call_answer(self.node_app_uuid, self.unknown_uuid)
+        assert_that(response, has_properties(status_code=404))
+
+        response = self.calld.application_call_answer(self.no_node_app_uuid, channel.id)
+        assert_that(response, has_properties(status_code=404))
+
+        response = self.calld.application_call_answer(self.node_app_uuid, channel.id)
+        assert_that(response, has_properties(status_code=204))
+
+
 class TestApplicationNode(BaseApplicationTestCase):
 
     def test_post_unknown_app(self):
