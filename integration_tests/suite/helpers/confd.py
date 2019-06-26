@@ -73,7 +73,7 @@ class ConfdClient:
 
 class MockApplication:
 
-    def __init__(self, uuid, name, destination=None, type_=None, moh=None):
+    def __init__(self, uuid, name, destination=None, type_=None, moh=None, answer=None):
         self._uuid = uuid
         self._name = name
         self._destination = destination
@@ -82,6 +82,8 @@ class MockApplication:
             self._destination_options['type'] = type_
         if moh:
             self._destination_options['music_on_hold'] = moh
+        if answer:
+            self._destination_options['answer'] = answer
 
     def uuid(self):
         return self._uuid
