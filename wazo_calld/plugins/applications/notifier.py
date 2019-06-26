@@ -1,4 +1,4 @@
-# Copyright 2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -10,6 +10,7 @@ from .schema import (
     application_snoop_schema,
 )
 from .events import (
+    CallAnswered,
     CallDeleted,
     CallEntered,
     CallInitiated,
@@ -56,6 +57,12 @@ class ApplicationNotifier:
         logger.debug('Application (%s): Call (%s) updated', application_uuid, call.id_)
         call = application_call_schema.dump(call).data
         event = CallUpdated(application_uuid, call)
+        self._bus.publish(event)
+
+    def call_answered(self, application_uuid, call):
+        logger.debug('Application (%s): Call (%s) answered', application_uuid, call.id_)
+        call = application_call_schema.dump(call).data
+        event = CallAnswered(application_uuid, call)
         self._bus.publish(event)
 
     def destination_node_created(self, application_uuid, node):

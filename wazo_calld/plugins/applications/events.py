@@ -1,4 +1,4 @@
-# Copyright 2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 
@@ -109,6 +109,11 @@ class CallDeleted(_BaseCallItemEvent):
 class CallUpdated(_BaseCallItemEvent):
     name = 'application_call_updated'
     routing_key = 'applications.{}.calls.{}.updated'
+
+
+class CallAnswered(_BaseCallItemEvent):
+    name = 'application_call_answered'
+    routing_key = 'applications.{}.calls.{}.answered'
 
 
 class DestinationNodeCreated(_BaseNodeListEvent):

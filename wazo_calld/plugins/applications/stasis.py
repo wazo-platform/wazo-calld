@@ -145,6 +145,19 @@ class ApplicationStasis:
         call = formatter.from_channel(channel)
         self._notifier.call_updated(application_uuid, call)
 
+    def channel_state_change(self, channel, event):
+        application_uuid = AppNameHelper.to_uuid(event.get('application'))
+        if not application_uuid:
+            return
+
+        application = self._service.get_application(application_uuid)
+
+        formatter = CallFormatter(application, self._ari)
+        call = formatter.from_channel(channel)
+
+        if channel.json['state'] == 'Up':
+            self._notifier.call_answered(application_uuid, call)
+
     def playback_finished(self, playback, event):
         application_uuid = AppNameHelper.to_uuid(event.get('application'))
         if not application_uuid:
@@ -169,6 +182,7 @@ class ApplicationStasis:
         self._ari.on_channel_event('StasisEnd', self.stasis_end)
         self._ari.on_channel_event('ChannelEnteredBridge', self.channel_entered_bridge)
         self._ari.on_channel_event('ChannelLeftBridge', self.channel_left_bridge)
+        self._ari.on_channel_event('ChannelStateChange', self.channel_state_change)
         self._ari.on_bridge_event('BridgeDestroyed', self.bridge_destroyed)
 
         for application in applications:
