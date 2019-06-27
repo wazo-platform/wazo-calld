@@ -1,4 +1,4 @@
-# Copyright 2015-2016 by Avencall
+# Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import requests
@@ -116,7 +116,14 @@ class MockChannel:
                 'name': self._connected_line_name,
                 'number': self._connected_line_number
             },
-            'name': self._name
+            'name': self._name,
+            'dialplan': {
+                'context': None,
+                'exten': None,
+                'priority': None,
+                'app_name': None,
+                'app_data': None,
+            },
         }
 
 

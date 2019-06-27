@@ -1,4 +1,4 @@
-# Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
@@ -162,9 +162,13 @@ class Channel:
 
     def dialed_extension(self):
         try:
-            return self._get_var('XIVO_BASE_EXTEN')
-        except ARINotFound:
             channel = self._ari.channels.get(channelId=self.id)
+        except ARINotFound:
+            return
+
+        try:
+            return channel.getChannelVar(variable='XIVO_BASE_EXTEN')['value']
+        except ARINotFound:
             return channel.json['dialplan']['exten']
 
     def on_hold(self):
