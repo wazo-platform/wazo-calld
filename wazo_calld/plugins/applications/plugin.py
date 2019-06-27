@@ -21,6 +21,7 @@ from .resources import (
     ApplicationItem,
     ApplicationNodeCallItem,
     ApplicationNodeCallList,
+    ApplicationNodeCallUserList,
     ApplicationNodeItem,
     ApplicationNodeList,
     ApplicationPlaybackItem,
@@ -129,6 +130,11 @@ class Plugin:
         api.add_resource(
             ApplicationNodeCallList,
             '/applications/<uuid:application_uuid>/nodes/<uuid:node_uuid>/calls',
+            resource_class_args=[service],
+        )
+        api.add_resource(
+            ApplicationNodeCallUserList,
+            '/applications/<uuid:application_uuid>/nodes/<uuid:node_uuid>/calls/user',
             resource_class_args=[service],
         )
         api.add_resource(

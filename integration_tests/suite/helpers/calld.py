@@ -124,6 +124,18 @@ class CalldClient:
         body = dict(context=context, exten=exten, **kwargs)
         return requests.post(url, json=body, headers={'X-Auth-Token': token}, verify=False)
 
+    def application_new_node_call_user(
+            self,
+            application_uuid,
+            node_uuid,
+            user_uuid,
+            token=VALID_TOKEN,
+            **kwargs
+    ):
+        url = self.url('applications', application_uuid, 'nodes', node_uuid, 'calls', 'user')
+        body = dict(user_uuid=user_uuid, **kwargs)
+        return requests.post(url, json=body, headers={'X-Auth-Token': token}, verify=False)
+
     def application_node_add_call(self, application_uuid, node_uuid, call_id, token=VALID_TOKEN):
         url = self.url('applications', application_uuid, 'nodes', node_uuid, 'calls', call_id)
         return requests.put(url, headers={'X-Auth-Token': token}, verify=False)

@@ -48,7 +48,7 @@ paths:
         description: node parameters
         required: true
         schema:
-          $ref: '#/definitions/ApplicationCallRequest'
+          $ref: '#/definitions/ApplicationCallRequestToExten'
       tags:
       - applications
       responses:
@@ -410,7 +410,7 @@ paths:
         description: Call parameters
         required: true
         schema:
-          $ref: '#/definitions/ApplicationCallRequest'
+          $ref: '#/definitions/ApplicationCallRequestToExten'
       tags:
       - applications
       responses:
@@ -420,6 +420,41 @@ paths:
             $ref: '#/definitions/ApplicationCall'
         '400':
           description: Invalid request
+          schema:
+            $ref: '#/definitions/Error'
+        '404':
+          description: No such application or node
+          schema:
+            $ref: '#/definitions/Error'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+
+  /applications/{application_uuid}/nodes/{node_uuid}/calls/user:
+    post:
+      summary: Initiate a call to a user and insert it in the node
+      description: '**Required ACL:** `calld.applications.{application_uuid}.nodes.{node_uuid}.calls.create`'
+      parameters:
+      - $ref: '#/parameters/ApplicationUUID'
+      - $ref: '#/parameters/ApplicationNodeUUID'
+      - name: body
+        in: body
+        description: Parameters for the new call
+        required: true
+        schema:
+          $ref: '#/definitions/ApplicationCallRequestToUser'
+      tags:
+      - applications
+      responses:
+        '201':
+          description: The new call ID
+          schema:
+            $ref: '#/definitions/ApplicationCall'
+        '400':
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/Error'
+        '404':
+          description: No such application or node
           schema:
             $ref: '#/definitions/Error'
         '503':
@@ -603,7 +638,7 @@ definitions:
         type: object
       snoops:
         type: object
-  ApplicationCallRequest:
+  ApplicationCallRequestToExten:
     type: object
     properties:
       exten:
@@ -623,6 +658,23 @@ definitions:
     required:
       - exten
       - context
+  ApplicationCallRequestToUser:
+    type: object
+    properties:
+      autoanswer:
+        type: boolean
+        default: false
+      variables:
+        type: object
+        description: channel variables that should be assigned on this new channel
+      displayed_caller_id_name:
+        type: string
+      displayed_caller_id_number:
+        type: string
+      user_uuid:
+        type: string
+    required:
+      - user_uuid
   ApplicationNodes:
     type: object
     properties:

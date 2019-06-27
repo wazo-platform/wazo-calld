@@ -7,6 +7,7 @@ import time
 from requests import HTTPError
 from ari.exceptions import ARINotFound
 from wazo_calld.helpers import ami
+from wazo_calld.helpers.exceptions import InvalidUserUUID
 from wazo_calld.exceptions import InvalidExtension
 from .models import (
     CallFormatter,
@@ -307,6 +308,33 @@ class ApplicationService:
         variables = self.get_channel_variables(channel)
         formatter = CallFormatter(application, self._ari)
         return formatter.from_channel(channel, variables=variables, node_uuid=node_uuid)
+
+    def originate_user(
+            self,
+            application,
+            node_uuid,
+            user_uuid,
+            autoanswer,
+            displayed_caller_id_name,
+            displayed_caller_id_number,
+            variables=None,
+    ):
+        context = 'usersharedlines'
+        exten = user_uuid
+
+        try:
+            return self.originate(
+                application,
+                node_uuid,
+                exten,
+                context,
+                autoanswer,
+                displayed_caller_id_name,
+                displayed_caller_id_number,
+                variables,
+            )
+        except InvalidExtension:
+            raise InvalidUserUUID(user_uuid)
 
     def originate_answered(self, application, channel):
         channel.answer()
