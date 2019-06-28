@@ -157,6 +157,8 @@ class ApplicationStasis:
 
         if channel.json['state'] == 'Up':
             self._notifier.call_answered(application_uuid, call)
+        if channel.json['state'] == 'Ring':
+            self._notifier.call_ringing(application_uuid, call)
 
     def playback_finished(self, playback, event):
         application_uuid = AppNameHelper.to_uuid(event.get('application'))

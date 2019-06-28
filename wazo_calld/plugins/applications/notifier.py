@@ -14,6 +14,7 @@ from .events import (
     CallDeleted,
     CallEntered,
     CallInitiated,
+    CallRinging,
     CallUpdated,
     DestinationNodeCreated,
     DTMFReceived,
@@ -63,6 +64,12 @@ class ApplicationNotifier:
         logger.debug('Application (%s): Call (%s) answered', application_uuid, call.id_)
         call = application_call_schema.dump(call).data
         event = CallAnswered(application_uuid, call)
+        self._bus.publish(event)
+
+    def call_ringing(self, application_uuid, call):
+        logger.debug('Application (%s): Call (%s) ringing', application_uuid, call.id_)
+        call = application_call_schema.dump(call).data
+        event = CallRinging(application_uuid, call)
         self._bus.publish(event)
 
     def destination_node_created(self, application_uuid, node):

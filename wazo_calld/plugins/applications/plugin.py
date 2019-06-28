@@ -17,6 +17,7 @@ from .resources import (
     ApplicationCallMuteStartList,
     ApplicationCallMuteStopList,
     ApplicationCallPlaybackList,
+    ApplicationCallRing,
     ApplicationCallSnoopList,
     ApplicationItem,
     ApplicationNodeCallItem,
@@ -114,6 +115,11 @@ class Plugin:
         api.add_resource(
             ApplicationCallAnswer,
             '/applications/<uuid:application_uuid>/calls/<call_id>/answer',
+            resource_class_args=[service],
+        )
+        api.add_resource(
+            ApplicationCallRing,
+            '/applications/<uuid:application_uuid>/calls/<call_id>/ring',
             resource_class_args=[service],
         )
         api.add_resource(

@@ -127,6 +127,16 @@ class ApplicationCallAnswer(_BaseResource):
         return '', 204
 
 
+class ApplicationCallRing(_BaseResource):
+
+    @required_acl('calld.applications.{application_uuid}.calls.{call_id}.ring.update')
+    def put(self, application_uuid, call_id):
+        application = self._service.get_application(application_uuid)
+        self._service.get_call_id(application, call_id)
+        self._service.call_ring(application, call_id)
+        return '', 204
+
+
 class ApplicationCallPlaybackList(_BaseResource):
 
     @required_acl('calld.applications.{application_uuid}.calls.{call_id}.playbacks.create')

@@ -116,6 +116,11 @@ class CallAnswered(_BaseCallItemEvent):
     routing_key = 'applications.{}.calls.{}.answered'
 
 
+class CallRinging(_BaseCallItemEvent):
+    name = 'application_call_ringing'
+    routing_key = 'applications.{}.calls.{}.ringing'
+
+
 class DestinationNodeCreated(_BaseNodeListEvent):
     name = 'application_destination_node_created'
     routing_key = 'applications.{}.nodes.created'

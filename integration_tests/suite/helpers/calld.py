@@ -59,6 +59,10 @@ class CalldClient:
         url = self.url('applications', application_uuid, 'calls', call_id, 'answer')
         return requests.put(url, headers={'X-Auth-Token': token}, verify=False)
 
+    def application_call_ring(self, application_uuid, call_id, token=VALID_TOKEN):
+        url = self.url('applications', application_uuid, 'calls', call_id, 'ring')
+        return requests.put(url, headers={'X-Auth-Token': token}, verify=False)
+
     def application_call_playback(self, application_uuid, call_id, body, token=VALID_TOKEN):
         url = self.url('applications', application_uuid, 'calls', call_id, 'playbacks')
         return requests.post(url, json=body, headers={'X-Auth-Token': token}, verify=False)

@@ -1432,6 +1432,24 @@ class TestApplicationAnswer(BaseApplicationTestCase):
         assert_that(response, has_properties(status_code=204))
 
 
+class TestApplicationRing(BaseApplicationTestCase):
+
+    def test_ring_call(self):
+        channel = self.call_app(self.node_app_uuid)
+
+        response = self.calld.application_call_ring(self.unknown_uuid, channel.id)
+        assert_that(response, has_properties(status_code=404))
+
+        response = self.calld.application_call_ring(self.node_app_uuid, self.unknown_uuid)
+        assert_that(response, has_properties(status_code=404))
+
+        response = self.calld.application_call_ring(self.no_node_app_uuid, channel.id)
+        assert_that(response, has_properties(status_code=404))
+
+        response = self.calld.application_call_ring(self.node_app_uuid, channel.id)
+        assert_that(response, has_properties(status_code=204))
+
+
 class TestApplicationNode(BaseApplicationTestCase):
 
     def test_post_unknown_app(self):

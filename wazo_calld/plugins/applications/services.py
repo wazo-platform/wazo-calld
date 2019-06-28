@@ -71,6 +71,14 @@ class ApplicationService:
 
         channel.answer()
 
+    def call_ring(self, application, call_id):
+        try:
+            channel = self._ari.channels.get(channelId=call_id)
+        except ARINotFound:
+            raise NoSuchCall(call_id)
+
+        channel.ring()
+
     def create_destination_node(self, application):
         try:
             bridge = self._ari.bridges.get(bridgeId=application['uuid'])
