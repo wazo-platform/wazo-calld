@@ -88,21 +88,19 @@ class ApplicationStasis:
         logger.debug('Stasis applications initialized')
 
     def stasis_start(self, event_objects, event):
-        args = event.get('args', [])
         application_uuid = AppNameHelper.to_uuid(event.get('application'))
-        if application_uuid and len(args) < 1:
-            args = ['user']
-        if not application_uuid or len(args) < 1:
+        if not application_uuid:
             return
 
-        command = args[0]
+        if not event['args']:
+            return self._stasis_start_user(application_uuid, event_objects, event)
+
+        command, *command_args = event['args']
         if command == 'incoming':
             self._stasis_start_incoming(application_uuid, event_objects, event)
         elif command == 'originate':
-            node_uuid = args[1] if len(args) > 1 else None
+            node_uuid = command_args[0] if command_args else None
             self._stasis_start_originate(application_uuid, node_uuid, event_objects, event)
-        elif command == 'user':
-            self._stasis_start_user(application_uuid, event_objects, event)
 
     def stasis_end(self, channel, event):
         application_uuid = AppNameHelper.to_uuid(event.get('application'))
