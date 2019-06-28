@@ -88,7 +88,7 @@ class TestStasisTriggers(BaseApplicationTestCase):
             events = event_accumulator.accumulate()
             assert_that(
                 events,
-                contains(
+                has_items(
                     has_entries(
                         name='application_call_entered',
                         data=has_entries(
@@ -119,7 +119,7 @@ class TestStasisTriggers(BaseApplicationTestCase):
             events = event_accumulator.accumulate()
             assert_that(
                 events,
-                contains(
+                has_items(
                     has_entries(
                         name='application_call_entered',
                         data=has_entries(
@@ -176,7 +176,7 @@ class TestStasisTriggers(BaseApplicationTestCase):
             events = event_accumulator.accumulate()
             assert_that(
                 events,
-                contains(
+                has_items(
                     has_entries(
                         name='application_destination_node_created',
                         data=has_entries(
@@ -249,7 +249,7 @@ class TestApplication(BaseApplicationTestCase):
             events = event_accumulator.accumulate()
             assert_that(
                 events,
-                contains(
+                has_items(
                     has_entries(
                         name='application_call_updated',
                         data=has_entries(
@@ -354,7 +354,7 @@ class TestApplication(BaseApplicationTestCase):
             events = event_accumulator.accumulate()
             assert_that(
                 events,
-                contains(
+                has_items(
                     has_entries(
                         name='application_call_initiated',
                         data=has_entries(
@@ -430,7 +430,7 @@ class TestApplication(BaseApplicationTestCase):
             events = event_accumulator.accumulate()
             assert_that(
                 events,
-                contains(
+                has_items(
                     has_entries(
                         name='application_call_initiated',
                         data=has_entries(
@@ -569,7 +569,7 @@ class TestApplicationMute(BaseApplicationTestCase):
             events = event_accumulator.accumulate()
             assert_that(
                 events,
-                contains(
+                has_items(
                     has_entries(
                         name='application_call_updated',
                         data=has_entries(
@@ -616,7 +616,7 @@ class TestApplicationMute(BaseApplicationTestCase):
             events = event_accumulator.accumulate()
             assert_that(
                 events,
-                contains(
+                has_items(
                     has_entries(
                         name='application_call_updated',
                         data=has_entries(
@@ -666,7 +666,7 @@ class TestApplicationHold(BaseApplicationTestCase):
             events = event_accumulator.accumulate()
             assert_that(
                 events,
-                contains(
+                has_items(
                     has_entries(
                         name='application_call_updated',
                         data=has_entries(
@@ -726,7 +726,7 @@ class TestApplicationHold(BaseApplicationTestCase):
             events = event_accumulator.accumulate()
             assert_that(
                 events,
-                contains(
+                has_items(
                     has_entries(
                         name='application_call_updated',
                         data=has_entries(
@@ -793,7 +793,7 @@ class TestApplicationSnoop(BaseApplicationTestCase):
             events = event_accumulator.accumulate()
             assert_that(
                 events,
-                contains(
+                has_items(
                     has_entries(
                         name='application_snoop_created',
                         data=has_entries(
@@ -875,7 +875,7 @@ class TestApplicationSnoop(BaseApplicationTestCase):
             events = event_accumulator.accumulate()
             assert_that(
                 events,
-                contains(
+                has_items(
                     has_entries(
                         name='application_snoop_updated',
                         data=has_entries(
@@ -1192,7 +1192,7 @@ class TestApplicationMoh(BaseApplicationTestCase):
             events = event_accumulator.accumulate()
             assert_that(
                 events,
-                contains(
+                has_items(
                     has_entries(
                         name='application_call_updated',
                         data=has_entries(
@@ -1235,7 +1235,7 @@ class TestApplicationMoh(BaseApplicationTestCase):
             events = event_accumulator.accumulate()
             assert_that(
                 events,
-                contains(
+                has_items(
                     has_entries(
                         name='application_call_updated',
                         data=has_entries(
@@ -1316,7 +1316,7 @@ class TestApplicationPlayback(BaseApplicationTestCase):
             events = event_accumulator.accumulate()
             assert_that(
                 events,
-                contains(
+                has_items(
                     has_entries(
                         name='application_playback_created',
                         data=has_entries(
@@ -1362,7 +1362,7 @@ class TestApplicationPlayback(BaseApplicationTestCase):
             events = event_accumulator.accumulate()
             assert_that(
                 events,
-                contains(
+                has_items(
                     has_entries(
                         name='application_playback_deleted',
                         data=has_entries(
@@ -1396,7 +1396,7 @@ class TestApplicationPlayback(BaseApplicationTestCase):
             events = event_accumulator.accumulate()
             assert_that(
                 events,
-                contains(
+                has_items(
                     has_entries(
                         name='application_playback_deleted',
                         data=has_entries(
@@ -1464,7 +1464,7 @@ class TestApplicationNode(BaseApplicationTestCase):
             events = event_accumulator.accumulate()
             assert_that(
                 events,
-                contains(
+                has_items(
                     has_entries(
                         name='application_node_created',
                         data=has_entries(
@@ -1533,7 +1533,7 @@ class TestApplicationNode(BaseApplicationTestCase):
             events = event_accumulator.accumulate()
             assert_that(
                 events,
-                contains(
+                has_items(
                     has_entries(
                         name='application_node_created',
                         data=has_entries(
@@ -1619,7 +1619,7 @@ class TestApplicationNode(BaseApplicationTestCase):
             events = event_accumulator.accumulate()
             assert_that(
                 events,
-                contains(
+                has_items(
                     has_entries(
                         name='application_node_updated',
                         data=has_entries(
@@ -1706,7 +1706,7 @@ class TestApplicationNodeCall(BaseApplicationTestCase):
             events = event_accumulator.accumulate()
             assert_that(
                 events,
-                contains(
+                has_items(
                     has_entries(
                         name='application_node_updated',
                         data=has_entries(
@@ -1799,7 +1799,7 @@ class TestApplicationNodeCall(BaseApplicationTestCase):
             events = event_accumulator.accumulate()
             assert_that(
                 events,
-                contains(
+                has_items(
                     has_entries(
                         name='application_node_updated',
                         data=has_entries(
@@ -1850,7 +1850,7 @@ class TestDTMFEvents(BaseApplicationTestCase):
             events = event_accumulator.accumulate()
             assert_that(
                 events,
-                contains(
+                has_items(
                     has_entries(
                         name='application_call_dtmf_received',
                         data=has_entries(
