@@ -1,4 +1,4 @@
-# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
@@ -99,3 +99,21 @@ class BusClient(bus_helper.BusClient):
                 },
             }
         }, 'ami.Hangup')
+
+    def send_moh_created_event(self, moh_uuid):
+        self.send_event({
+            'data': {
+                'uuid': moh_uuid,
+                'name': 'default',
+            },
+            'name': 'moh_created',
+        }, 'config.moh.created')
+
+    def send_moh_deleted_event(self, moh_uuid):
+        self.send_event({
+            'data': {
+                'uuid': moh_uuid,
+                'name': 'default',
+            },
+            'name': 'moh_deleted',
+        }, 'config.moh.deleted')

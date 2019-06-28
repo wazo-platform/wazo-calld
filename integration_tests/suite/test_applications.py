@@ -1426,6 +1426,43 @@ class TestApplicationMoh(BaseApplicationTestCase):
             )
         )
 
+    def test_confd_moh_created_event_update_cache(self):
+        moh_uuid = '00000000-0000-0000-0000-000000000001'
+        self.confd.set_moh()
+        app_uuid = self.no_node_app_uuid
+        channel = self.call_app(self.no_node_app_uuid)
+        self._hitting_moh_cache(app_uuid, channel.id)
+        self.bus.send_moh_created_event(moh_uuid)
+
+        routing_key = 'applications.{uuid}.#'.format(uuid=app_uuid)
+        event_accumulator = self.bus.accumulator(routing_key)
+
+        response = self.calld.application_call_moh_start(app_uuid, channel.id, moh_uuid)
+        assert_that(response, has_properties(status_code=204))
+
+        def music_on_hold_started_event_received():
+            events = event_accumulator.accumulate()
+            assert_that(events, contains(has_entries(name='application_call_updated')))
+
+        until.assert_(music_on_hold_started_event_received, tries=3)
+
+        calls = self.calld.get_application_calls(app_uuid).json()['items']
+        assert_that(calls, contains(has_entries(id=channel.id, moh_uuid=moh_uuid)))
+
+    def test_confd_moh_deleted_event_update_cache(self):
+        moh_uuid = '60f123e6-147b-487c-b08a-36395d43346e'  # From the confd mock
+        app_uuid = self.no_node_app_uuid
+        channel = self.call_app(self.no_node_app_uuid)
+        self._hitting_moh_cache(app_uuid, channel.id)
+        self.bus.send_moh_deleted_event(moh_uuid)
+
+        response = self.calld.application_call_moh_start(app_uuid, channel.id, moh_uuid)
+        assert_that(response, has_properties(status_code=400))
+
+    def _hitting_moh_cache(self, app_uuid, channel_id):
+        random = '00000000-0000-0000-0000-000000000000'
+        self.calld.application_call_moh_start(app_uuid, channel_id, random)
+
 
 class TestApplicationPlayback(BaseApplicationTestCase):
 
