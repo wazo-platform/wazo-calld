@@ -40,7 +40,7 @@ class ApplicationStasis:
         self._core_ari = ari
         self._service = service
         self._notifier = notifier
-        self._destination_created = False
+        self._destinations_created = False
 
     def channel_dtmf_received(self, channel, event):
         application_uuid = AppNameHelper.to_uuid(event.get('application'))
@@ -200,7 +200,7 @@ class ApplicationStasis:
         for application in applications:
             if application['destination'] == 'node':
                 self._service.create_destination_node(application)
-        self._destination_created = True
+        self._destinations_created = True
 
     def _stasis_start_incoming(self, application_uuid, event_objects, event):
         channel = event_objects['channel']
@@ -237,11 +237,11 @@ class ApplicationStasis:
         self._core_ari.reload()
 
     def _on_websocket_start(self):
-        if self._destination_created:
+        if self._destinations_created:
             return
 
         applications = self._confd_apps.list()
         self._create_destinations(applications)
 
     def _on_websocket_stop(self):
-        self._destination_created = False
+        self._destinations_created = False
