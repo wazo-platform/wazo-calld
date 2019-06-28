@@ -142,10 +142,18 @@ class Channel:
 
     def is_caller(self):
         try:
+            user_outgoing_call = self._get_var('WAZO_USER_OUTGOING_CALL')
+            return user_outgoing_call == 'true'
+        except ARINotFound:
+            pass
+
+        try:
             direction = self._get_var('WAZO_CHANNEL_DIRECTION')
             return direction == 'to-wazo'
         except ARINotFound:
-            return False
+            pass
+
+        return False
 
     def is_in_stasis(self):
         try:

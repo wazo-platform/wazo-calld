@@ -73,10 +73,11 @@ class ApplicationService:
         channel.answer()
 
     def start_user_outgoing_call(self, application, channel):
+        self.set_channel_var_sync(channel, 'WAZO_USER_OUTGOING_CALL', 'true')
         variables = self.get_channel_variables(channel)
         formatter = CallFormatter(application, self._ari)
         call = formatter.from_channel(channel, variables=variables)
-        self._notifier.call_entered(application['uuid'], call)
+        self._notifier.user_outgoing_call_created(application['uuid'], call)
 
     def create_destination_node(self, application):
         try:
