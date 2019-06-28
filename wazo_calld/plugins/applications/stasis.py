@@ -32,10 +32,11 @@ class AppNameHelper:
 
 class ApplicationStasis:
 
-    def __init__(self, ari, confd, service, notifier, confd_apps):
+    def __init__(self, ari, confd, service, notifier, confd_apps, moh):
         self._ari = ari.client
         self._confd = confd
         self._confd_apps = confd_apps
+        self._moh = moh
         self._core_ari = ari
         self._service = service
         self._notifier = notifier
@@ -128,7 +129,7 @@ class ApplicationStasis:
 
         application = self._service.get_application(application_uuid)
 
-        moh = self._service.find_moh(event['moh_class'])
+        moh = self._moh.find_by_name(event['moh_class'])
         if moh:
             self._service.set_channel_var_sync(channel, 'WAZO_MOH_UUID', str(moh['uuid']))
 

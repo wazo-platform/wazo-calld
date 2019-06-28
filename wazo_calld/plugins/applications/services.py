@@ -21,7 +21,6 @@ from .exceptions import (
     NoSuchApplication,
     NoSuchCall,
     NoSuchMedia,
-    NoSuchMoh,
     NoSuchNode,
     NoSuchPlayback,
 )
@@ -32,13 +31,12 @@ logger = logging.getLogger(__name__)
 
 class ApplicationService:
 
-    def __init__(self, ari, confd, amid, notifier, confd_apps):
+    def __init__(self, ari, confd, amid, notifier, confd_apps, moh):
         self._ari = ari
-        self._confd = confd
         self._amid = amid
         self._notifier = notifier
         self._confd_apps = confd_apps
-        self._moh_cache = None
+        self._moh = moh
         self._snoop_helper = SnoopHelper(self._ari)
 
     def call_mute(self, application, call_id):
@@ -381,7 +379,7 @@ class ApplicationService:
             raise NoSuchCall(call_id)
 
     def start_call_moh(self, call_id, moh_uuid):
-        moh = self._get_moh(moh_uuid)
+        moh = self._moh.get(moh_uuid)
         try:
             self._ari.channels.startMoh(channelId=call_id, mohClass=moh['name'])
         except ARINotFound:
@@ -419,14 +417,6 @@ class ApplicationService:
         except ARINotFound:
             raise NoSuchPlayback(playback_id)
 
-    def find_moh(self, moh_class):
-        if self._moh_cache is None:
-            self._fetch_moh()
-
-        for moh in self._moh_cache:
-            if moh['name'] == moh_class:
-                return moh
-
     def set_channel_var_sync(self, channel, var, value):
         # TODO remove this when Asterisk gets fixed to set var synchronously
         def get_value():
@@ -446,21 +436,6 @@ class ApplicationService:
             time.sleep(0.01)
 
         raise Exception('failed to set channel variable {}={}'.format(var, value))
-
-    def _get_moh(self, moh_uuid):
-        if self._moh_cache is None:
-            self._fetch_moh()
-
-        moh_uuid = str(moh_uuid)
-        for moh in self._moh_cache:
-            if moh['uuid'] == moh_uuid:
-                return moh
-
-        raise NoSuchMoh(moh_uuid)
-
-    def _fetch_moh(self):
-        self._moh_cache = self._confd.moh.list(recurse=True)['items']
-        logger.info('MOH cache initialized: %s', self._moh_cache)
 
     @staticmethod
     def _extract_variables(lines):

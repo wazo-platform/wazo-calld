@@ -3,9 +3,11 @@
 
 import logging
 
-from .exceptions import NoSuchApplication
+from .exceptions import NoSuchApplication, NoSuchMoh
 
-NOT_INITIALIZED_MSG = 'Received an event when application cache is not initialized'
+UNINITIALIZED_FMT = 'Received an event when {} cache is not initialized'
+UNINITIALIZED_APP = UNINITIALIZED_FMT.format('application')
+UNINITIALIZED_MOH = UNINITIALIZED_FMT.format('moh')
 
 logger = logging.getLogger(__name__)
 
@@ -39,14 +41,61 @@ class ConfdApplicationsCache:
 
     def _application_updated(self, event):
         if self._cache is None:
-            logger.debug(NOT_INITIALIZED_MSG)
+            logger.debug(UNINITIALIZED_APP)
             return
 
         self._applications[event['uuid']] = event
 
     def _application_deleted(self, event):
         if self._cache is None:
-            logger.debug(NOT_INITIALIZED_MSG)
+            logger.debug(UNINITIALIZED_APP)
             return
 
         self._applications.pop(event['uuid'], None)
+
+
+class MohCache:
+
+    def __init__(self, confd):
+        self._confd = confd
+        self._cache = None
+
+    @property
+    def _moh(self):
+        if self._cache is None:
+            result = self._confd.moh.list(recurse=True)['items']
+            self._cache = {moh['uuid']: moh for moh in result}
+            logger.info('MOH cache initialized: %s', self._cache)
+        return self._cache
+
+    def list(self):
+        return list(self._moh.values())
+
+    def get(self, moh_uuid):
+        moh = self._moh.get(str(moh_uuid))
+        if not moh:
+            raise NoSuchMoh(moh_uuid)
+        return moh
+
+    def find_by_name(self, moh_name):
+        for moh in self._moh.values():
+            if moh['name'] == moh_name:
+                return moh
+
+    def subscribe(self, bus_consumer):
+        bus_consumer.on_event('moh_created', self._moh_created)
+        bus_consumer.on_event('moh_deleted', self._moh_deleted)
+
+    def _moh_created(self, event):
+        if self._cache is None:
+            logger.debug(UNINITIALIZED_MOH)
+            return
+
+        self._moh[event['uuid']] = event
+
+    def _moh_deleted(self, event):
+        if self._cache is None:
+            logger.debug(UNINITIALIZED_MOH)
+            return
+
+        self._moh.pop(event['uuid'], None)

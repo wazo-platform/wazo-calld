@@ -21,6 +21,8 @@ ROUTING_KEY_MAPPING = {
     'application_created': 'config.applications.created',
     'application_deleted': 'config.applications.deleted',
     'application_edited': 'config.applications.edited',
+    'moh_created': 'config.moh.created',
+    'moh_deleted': 'config.moh.deleted',
 }
 
 
