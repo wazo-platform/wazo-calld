@@ -44,7 +44,7 @@ class TestApplicationStasisStartHandler(TestCase):
             'args': [],
         }
 
-        with patch.object(self.app, '_stasis_start_user') as fn:
+        with patch.object(self.app, '_stasis_start_user_outgoing') as fn:
             self.app.stasis_start(s.event_object, event)
 
             fn.assert_called_once_with(uuid, s.event_object, event)

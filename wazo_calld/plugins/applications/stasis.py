@@ -93,7 +93,7 @@ class ApplicationStasis:
             return
 
         if not event['args']:
-            return self._stasis_start_user(application_uuid, event_objects, event)
+            return self._stasis_start_user_outgoing(application_uuid, event_objects, event)
 
         command, *command_args = event['args']
         if command == 'incoming':
@@ -214,7 +214,7 @@ class ApplicationStasis:
         if confd_application['destination'] == 'node':
             self._service.join_destination_node(channel, confd_application)
 
-    def _stasis_start_user(self, application_uuid, event_objects, event):
+    def _stasis_start_user_outgoing(self, application_uuid, event_objects, event):
         channel = event_objects['channel']
         logger.debug('new incoming call user %s', channel.id)
         application = self._service.get_application(application_uuid)
