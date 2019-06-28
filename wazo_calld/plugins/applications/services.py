@@ -453,7 +453,7 @@ class ApplicationService:
                 return
 
             logger.debug('waiting for a setvar to complete')
-            time.sleep(0.001)
+            time.sleep(0.01)
 
         raise Exception('failed to set channel variable {}={}'.format(var, value))
 
