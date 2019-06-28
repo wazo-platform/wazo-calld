@@ -442,8 +442,10 @@ class ApplicationService:
         def get_value():
             try:
                 return channel.getChannelVar(variable=var)['value']
-            except ARINotFound:
-                return None
+            except ARINotFound as e:
+                if e.original_error.response.reason == 'Variable Not Found':
+                    return None
+                raise
 
         channel.setChannelVar(variable=var, value=value)
         for _ in range(20):
