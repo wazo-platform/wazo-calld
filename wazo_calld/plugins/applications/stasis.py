@@ -32,9 +32,10 @@ class AppNameHelper:
 
 class ApplicationStasis:
 
-    def __init__(self, ari, confd, service, notifier):
+    def __init__(self, ari, confd, service, notifier, confd_apps):
         self._ari = ari.client
         self._confd = confd
+        self._confd_apps = confd_apps
         self._core_ari = ari
         self._service = service
         self._notifier = notifier
@@ -82,7 +83,7 @@ class ApplicationStasis:
 
     def initialize(self, token):
         self._confd.wait_until_ready()
-        applications = self._service.list_confd_applications()
+        applications = self._confd_apps.list()
         self._subscribe(applications)
         self._register_applications(applications)
         logger.debug('Stasis applications initialized')
@@ -210,7 +211,7 @@ class ApplicationStasis:
         call = formatter.from_channel(channel, variables=variables)
         self._notifier.call_entered(application['uuid'], call)
 
-        confd_application = self._service.get_confd_application(application_uuid)
+        confd_application = self._confd_apps.get(application_uuid)
         if confd_application['destination'] == 'node':
             self._service.join_destination_node(channel, confd_application)
 
@@ -238,7 +239,7 @@ class ApplicationStasis:
         if self._destination_created:
             return
 
-        applications = self._service.list_confd_applications()
+        applications = self._confd_apps.list()
         self._create_destinations(applications)
 
     def _on_websocket_stop(self):

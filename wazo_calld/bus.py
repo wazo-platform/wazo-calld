@@ -17,6 +17,12 @@ from xivo_bus import PublishingQueue
 
 logger = logging.getLogger(__name__)
 
+ROUTING_KEY_MAPPING = {
+    'application_created': 'config.applications.created',
+    'application_deleted': 'config.applications.deleted',
+    'application_edited': 'config.applications.edited',
+}
+
 
 class CoreBusPublisher:
 
@@ -88,13 +94,23 @@ class CoreBusConsumer(ConsumerMixin):
         self._queue.bindings.add(binding(self._exchange, routing_key='ami.{}'.format(event_type)))
         self._events_pubsub.subscribe(event_type, callback)
 
+    def on_event(self, event_name, callback):
+        logger.debug('Added callback on event "%s"', event_name)
+        self._queue.bindings.add(
+            kombu.binding(self._exchange, routing_key=ROUTING_KEY_MAPPING[event_name])
+        )
+        self._events_pubsub.subscribe(event_name, callback)
+
     def _on_bus_message(self, body, message):
         try:
             event = body['data']
-            event_type = event['Event']
+            event_type = event['Event'] if self._is_ami_event(event) else body['name']
         except KeyError:
             logger.error('Invalid event message received: %s', event)
         else:
             self._events_pubsub.publish(event_type, event)
         finally:
             message.ack()
+
+    def _is_ami_event(self, event):
+        return 'Event' in event

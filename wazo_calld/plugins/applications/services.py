@@ -32,12 +32,12 @@ logger = logging.getLogger(__name__)
 
 class ApplicationService:
 
-    def __init__(self, ari, confd, amid, notifier):
+    def __init__(self, ari, confd, amid, notifier, confd_apps):
         self._ari = ari
         self._confd = confd
         self._amid = amid
         self._notifier = notifier
-        self._apps_cache = None
+        self._confd_apps = confd_apps
         self._moh_cache = None
         self._snoop_helper = SnoopHelper(self._ari)
 
@@ -123,24 +123,12 @@ class ApplicationService:
         except ARINotFound:
             raise NoSuchApplication(application_uuid)
 
-        confd_app = self.get_confd_application(application_uuid)
+        confd_app = self._confd_apps.get(application_uuid)
         node_uuid = application_uuid if confd_app['destination'] == 'node' else None
 
         application['destination_node_uuid'] = node_uuid
         application['uuid'] = application_uuid
         return application
-
-    def get_confd_application(self, application_uuid):
-        application = self._apps_cache.get(str(application_uuid))
-        if not application:
-            raise NoSuchApplication(application_uuid)
-        return application
-
-    def list_confd_applications(self):
-        if self._apps_cache is None:
-            apps = self._confd.applications.list(recurse=True)['items']
-            self._apps_cache = {app['uuid']: app for app in apps}
-        return list(self._apps_cache.values())
 
     def get_call_id(self, application, call_id, status_code=404):
         if call_id not in application['channel_ids']:
