@@ -72,7 +72,7 @@ class ApplicationService:
 
         channel.answer()
 
-    def channel_user_entered(self, application, channel):
+    def start_user_outgoing_call(self, application, channel):
         variables = self.get_channel_variables(channel)
         formatter = CallFormatter(application, self._ari)
         call = formatter.from_channel(channel, variables=variables)

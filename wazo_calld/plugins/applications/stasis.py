@@ -218,7 +218,7 @@ class ApplicationStasis:
         channel = event_objects['channel']
         logger.debug('new incoming call user %s', channel.id)
         application = self._service.get_application(application_uuid)
-        self._service.channel_user_entered(application, channel)
+        self._service.start_user_outgoing_call(application, channel)
 
     def _stasis_start_originate(self, application_uuid, node_uuid, event_objects, event):
         channel = event_objects['channel']
