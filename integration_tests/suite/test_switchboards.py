@@ -16,6 +16,7 @@ from hamcrest import (
     has_item,
     has_items,
     is_not,
+    starts_with,
 )
 from operator import attrgetter
 from xivo_test_helpers import until
@@ -399,12 +400,16 @@ class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
     def test_given_one_queued_call_and_one_operator_when_answer_then_bus_event(self):
         token = 'my-token'
         user_uuid = 'my-user-uuid'
-        line_id = 'my-line-id'
+        first_line_id = 1
+        second_line_id = 2
         self.auth.set_token(MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT))
         switchboard_uuid = 'my-switchboard-uuid'
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
-        self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
-        self.confd.set_lines(MockLine(id=line_id, name='switchboard-operator/autoanswer', protocol='test'))
+        self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[first_line_id, second_line_id]))
+        self.confd.set_lines(
+            MockLine(id=first_line_id, name='switchboard-first-line/autoanswer', protocol='test'),
+            MockLine(id=second_line_id, name='switchboard-second-line/autoanswer', protocol='test')
+        )
         routing_key = 'switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid)
         queued_bus_events = self.bus.accumulator(routing_key)
         routing_key = 'switchboards.{uuid}.calls.queued.*.answer.updated'.format(uuid=switchboard_uuid)
@@ -430,6 +435,65 @@ class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
             })))
 
         until.assert_(answered_event_received, tries=3)
+
+        # Verify main line is used
+        channels = self.ari.channels.list()
+        assert_that(len(channels), equal_to(2))
+        channel_answer = [c for c in channels if c.id != queued_call_id][0]
+        assert_that(
+            channel_answer.json.get('name'),
+            starts_with('Test/switchboard-first-line')
+        )
+
+    def test_given_one_queued_call_and_one_operator_when_answer_with_second_line_then_bus_event(self):
+        token = 'my-token'
+        user_uuid = 'my-user-uuid'
+        first_line_id = 1
+        second_line_id = 2
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT))
+        switchboard_uuid = 'my-switchboard-uuid'
+        self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
+        self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[first_line_id, second_line_id]))
+        self.confd.set_lines(
+            MockLine(id=first_line_id, name='switchboard-first-line/autoanswer', protocol='test'),
+            MockLine(id=second_line_id, name='switchboard-second-line/autoanswer', protocol='test')
+        )
+        routing_key = 'switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid)
+        queued_bus_events = self.bus.accumulator(routing_key)
+        routing_key = 'switchboards.{uuid}.calls.queued.*.answer.updated'.format(uuid=switchboard_uuid)
+        answered_bus_events = self.bus.accumulator(routing_key)
+        new_channel = self.ari.channels.originate(
+            endpoint=ENDPOINT_AUTOANSWER,
+            app=STASIS_APP,
+            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, VALID_TENANT, switchboard_uuid],
+        )
+        queued_call_id = new_channel.id
+        until.true(queued_bus_events.accumulate, tries=3)
+
+        result = self.calld.switchboard_answer_queued_call(switchboard_uuid,
+                                                           queued_call_id,
+                                                           token, second_line_id)
+
+        def answered_event_received():
+            assert_that(answered_bus_events.accumulate(), has_item(has_entries({
+                'name': 'switchboard_queued_call_answered',
+                'data': has_entries({
+                    'switchboard_uuid': switchboard_uuid,
+                    'operator_call_id': result['call_id'],
+                    'queued_call_id': queued_call_id
+                })
+            })))
+
+        until.assert_(answered_event_received, tries=3)
+
+        # Verify second line is used
+        channels = self.ari.channels.list()
+        assert_that(len(channels), equal_to(2))
+        channel_answer = [c for c in channels if c.id != queued_call_id][0]
+        assert_that(
+            channel_answer.json.get('name'),
+            starts_with('Test/switchboard-second-line')
+        )
 
     def test_given_one_queued_call_and_one_operator_when_answer_then_caller_id_is_correct_before_and_after_phone_answer(self):
         token = 'my-token'
@@ -990,12 +1054,16 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
     def test_given_one_held_call_and_one_operator_when_answer_then_bus_event(self):
         token = 'my-token'
         user_uuid = 'my-user-uuid'
-        line_id = 'my-line-id'
+        first_line_id = 1
+        second_line_id = 2
         self.auth.set_token(MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT))
         switchboard_uuid = 'my-switchboard-uuid'
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
-        self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
-        self.confd.set_lines(MockLine(id=line_id, name='switchboard-operator/autoanswer', protocol='test'))
+        self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[first_line_id, second_line_id]))
+        self.confd.set_lines(
+            MockLine(id=first_line_id, name='switchboard-first-line/autoanswer', protocol='test'),
+            MockLine(id=second_line_id, name='switchboard-second-line/autoanswer', protocol='test')
+        )
         routing_key = 'switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid)
         queued_bus_events = self.bus.accumulator(routing_key)
         new_channel = self.ari.channels.originate(
@@ -1024,6 +1092,68 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
             })))
 
         until.assert_(answered_event_received, tries=3)
+
+        # Verify main line is used
+        channels = self.ari.channels.list()
+        assert_that(len(channels), equal_to(2))
+        channel_answer = [c for c in channels if c.id != held_call_id][0]
+        assert_that(
+            channel_answer.json.get('name'),
+            starts_with('Test/switchboard-first-line')
+        )
+
+    def test_given_one_held_call_and_one_operator_when_answer_with_second_line_then_bus_event(self):
+        token = 'my-token'
+        user_uuid = 'my-user-uuid'
+        first_line_id = 1
+        second_line_id = 2
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT))
+        switchboard_uuid = 'my-switchboard-uuid'
+        self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
+        self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[first_line_id, second_line_id]))
+        self.confd.set_lines(
+            MockLine(id=first_line_id, name='switchboard-first-line/autoanswer', protocol='test'),
+            MockLine(id=second_line_id, name='switchboard-second-line/autoanswer', protocol='test')
+        )
+        routing_key = 'switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid)
+        queued_bus_events = self.bus.accumulator(routing_key)
+        new_channel = self.ari.channels.originate(
+            endpoint=ENDPOINT_AUTOANSWER,
+            app=STASIS_APP,
+            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, VALID_TENANT, switchboard_uuid],
+        )
+        until.true(queued_bus_events.accumulate, tries=3)
+        held_bus_events = self.bus.accumulator('switchboards.{uuid}.calls.held.updated'.format(uuid=switchboard_uuid))
+        self.calld.switchboard_hold_call(switchboard_uuid, new_channel.id)
+        until.true(held_bus_events.accumulate, tries=3)
+        held_call_id = new_channel.id
+        routing_key = 'switchboards.{uuid}.calls.held.*.answer.updated'.format(uuid=switchboard_uuid)
+        answered_bus_events = self.bus.accumulator(routing_key)
+
+        result = self.calld.switchboard_answer_held_call(switchboard_uuid,
+                                                         held_call_id, token,
+                                                         second_line_id)
+
+        def answered_event_received():
+            assert_that(answered_bus_events.accumulate(), has_item(has_entries({
+                'name': 'switchboard_held_call_answered',
+                'data': has_entries({
+                    'switchboard_uuid': switchboard_uuid,
+                    'operator_call_id': result['call_id'],
+                    'held_call_id': held_call_id,
+                })
+            })))
+
+        until.assert_(answered_event_received, tries=3)
+
+        # Verify second line is used
+        channels = self.ari.channels.list()
+        assert_that(len(channels), equal_to(2))
+        channel_answer = [c for c in channels if c.id != held_call_id][0]
+        assert_that(
+            channel_answer.json.get('name'),
+            starts_with('Test/switchboard-second-line')
+        )
 
     def test_given_one_held_call_and_one_operator_when_answer_then_caller_id_is_correct_before_and_after_phone_answer(self):
         token = 'my-token'

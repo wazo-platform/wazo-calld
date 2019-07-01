@@ -31,6 +31,7 @@ paths:
         - $ref: '#/parameters/TenantUUID'
         - $ref: '#/parameters/SwitchboardUUID'
         - $ref: '#/parameters/CallID'
+        - $ref: '#/parameters/LineID'
       responses:
         '200':
           description: Answerer was correctly originated
@@ -96,6 +97,7 @@ paths:
         - $ref: '#/parameters/TenantUUID'
         - $ref: '#/parameters/SwitchboardUUID'
         - $ref: '#/parameters/CallID'
+        - $ref: '#/parameters/LineID'
       responses:
         '200':
           description: Answerer was correctly originated
@@ -152,6 +154,13 @@ definitions:
     properties:
       call_id:
         type: string
+  LineID:
+    description: Answer parameters
+    type: object
+    properties:
+      line_id:
+        type: integer
+        description: ID of the line of the user used to make the call. Default is the main line of the user.
 
 responses:
   NoSuchSwitchboard:
