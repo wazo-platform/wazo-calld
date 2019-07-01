@@ -123,10 +123,7 @@ paths:
   /voicemails/{voicemail_id}/greetings/{greeting}:
     get:
       summary: Get a custom greeting
-      description: '**Required ACL:** `calld.voicemails.{voicemail_id}.greetings.{greeting}.read`
-
-
-        **Not implemented**'
+      description: '**Required ACL:** `calld.voicemails.{voicemail_id}.greetings.{greeting}.read`'
       parameters:
       - $ref: '#/parameters/VoicemailID'
       - $ref: '#/parameters/VoicemailGreeting'
@@ -145,10 +142,7 @@ paths:
           $ref: '#/responses/AnotherServiceUnavailable'
     head:
       summary: Check if a custom greeting exist
-      description: '**Required ACL:** `calld.voicemails.{voicemail_id}.greetings.{greeting}.read`
-
-
-        **Not implemented**'
+      description: '**Required ACL:** `calld.voicemails.{voicemail_id}.greetings.{greeting}.read`'
       parameters:
       - $ref: '#/parameters/VoicemailID'
       - $ref: '#/parameters/VoicemailGreeting'
@@ -165,10 +159,7 @@ paths:
           $ref: '#/responses/AnotherServiceUnavailable'
     put:
       summary: Update a custom greeting
-      description: '**Required ACL:** `calld.voicemails.{voicemail_id}.greetings.{greeting}.update`
-
-
-        **Not implemented**'
+      description: '**Required ACL:** `calld.voicemails.{voicemail_id}.greetings.{greeting}.update`'
       parameters:
       - $ref: '#/parameters/VoicemailID'
       - $ref: '#/parameters/VoicemailGreeting'
@@ -187,10 +178,7 @@ paths:
           $ref: '#/responses/AnotherServiceUnavailable'
     delete:
       summary: Delete a custom greeting
-      description: '**Required ACL:** `calld.voicemails.{voicemail_id}.greetings.{greeting}.delete`
-
-
-        **Not implemented**'
+      description: '**Required ACL:** `calld.voicemails.{voicemail_id}.greetings.{greeting}.delete`'
       parameters:
       - $ref: '#/parameters/VoicemailID'
       - $ref: '#/parameters/VoicemailGreeting'
@@ -208,10 +196,7 @@ paths:
   /voicemails/{voicemail_id}/greetings/{greeting}/copy:
     post:
       summary: Copy a custom greeting
-      description: '**Required ACL:** `calld.voicemails.{voicemail_id}.greetings.{greeting}.copy.create`
-
-
-        **Not implemented**'
+      description: '**Required ACL:** `calld.voicemails.{voicemail_id}.greetings.{greeting}.copy.create`'
       parameters:
       - $ref: '#/parameters/VoicemailID'
       - $ref: '#/parameters/VoicemailGreeting'
@@ -354,10 +339,7 @@ paths:
   /users/me/voicemails/greetings/{greeting}:
     get:
       summary: Get a custom greeting
-      description: '**Required ACL:** `calld.users.me.voicemails.greetings.{greeting}.read`
-
-
-        **Not implemented**'
+      description: '**Required ACL:** `calld.users.me.voicemails.greetings.{greeting}.read`'
       parameters:
       - $ref: '#/parameters/VoicemailGreeting'
       produces:
@@ -376,10 +358,7 @@ paths:
           $ref: '#/responses/AnotherServiceUnavailable'
     head:
       summary: Check if a custom greeting exist
-      description: '**Required ACL:** `calld.users.me.voicemails.greetings.{greeting}.read`
-
-
-        **Not implemented**'
+      description: '**Required ACL:** `calld.users.me.voicemails.greetings.{greeting}.read`'
       parameters:
       - $ref: '#/parameters/VoicemailGreeting'
       tags:
@@ -396,10 +375,7 @@ paths:
           $ref: '#/responses/AnotherServiceUnavailable'
     put:
       summary: Update a custom greeting
-      description: '**Required ACL:** `calld.users.me.voicemails.greetings.{greeting}.update`
-
-
-        **Not implemented**'
+      description: '**Required ACL:** `calld.users.me.voicemails.greetings.{greeting}.update`'
       parameters:
       - $ref: '#/parameters/VoicemailGreeting'
       consumes:
@@ -418,10 +394,7 @@ paths:
           $ref: '#/responses/AnotherServiceUnavailable'
     delete:
       summary: Delete a custom greeting
-      description: '**Required ACL:** `calld.users.me.voicemails.greetings.{greeting}.delete`
-
-
-        **Not implemented**'
+      description: '**Required ACL:** `calld.users.me.voicemails.greetings.{greeting}.delete`'
       parameters:
       - $ref: '#/parameters/VoicemailGreeting'
       tags:
@@ -439,10 +412,7 @@ paths:
   /users/me/voicemails/greetings/{greeting}/copy:
     post:
       summary: Copy a custom greeting
-      description: '**Required ACL:** `calld.users.me.voicemails.greetings.{greeting}.copy.create`
-
-
-        **Not implemented**'
+      description: '**Required ACL:** `calld.users.me.voicemails.greetings.{greeting}.copy.create`'
       parameters:
       - $ref: '#/parameters/VoicemailGreeting'
       - name: body
@@ -587,4 +557,4 @@ parameters:
     enum:
     - unavailable
     - busy
-    - temp
+    - name

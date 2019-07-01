@@ -1,4 +1,4 @@
-# Copyright 2016-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from wazo_calld.helpers import confd
@@ -62,3 +62,15 @@ class VoicemailsService:
     def get_user_voicemail_id(self, user_uuid):
         user_voicemail_conf = confd.get_user_voicemail(user_uuid, self._confd_client)
         return user_voicemail_conf['voicemail_id']
+
+    def get_greeting(self, voicemail_id, greeting):
+        pass
+
+    def update_greeting(self, voicemail_id, greeting, data):
+        pass
+
+    def delete_greeting(self, voicemail_id, greeting):
+        pass
+
+    def copy_greeting(self, voicemail_id, greeting, dest_greeting):
+        pass
