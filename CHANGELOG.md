@@ -1,5 +1,12 @@
 # Changelog
 
+## 19.10
+
+* New API for answering a call inside an application:
+
+  * PUT `/1.0/applications/{uuid}/calls/{call_id}/answer`
+
+
 ## 19.09
 
 * The following endpoints now have Wazo-Tenant header to support multi-tenant
@@ -17,7 +24,7 @@
 
 * The following endpoints have been moved to wazo-chatd and deleted from wazo-calld:
 
-  * POST `/1.0/chats
+  * POST `/1.0/chats`
   * POST `/1.0/users/me/chats`
   * GET `/1.0/users/me/chats`
 

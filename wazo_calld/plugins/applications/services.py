@@ -63,6 +63,14 @@ class ApplicationService:
         call = formatter.from_channel(channel)
         self._notifier.call_updated(application['uuid'], call)
 
+    def call_answer(self, application, call_id):
+        try:
+            channel = self._ari.channels.get(channelId=call_id)
+        except ARINotFound:
+            raise NoSuchCall(call_id)
+
+        channel.answer()
+
     def create_destination_node(self, application):
         try:
             bridge = self._ari.bridges.get(bridgeId=application['uuid'])

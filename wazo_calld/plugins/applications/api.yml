@@ -185,7 +185,7 @@ paths:
   /applications/{application_uuid}/calls/{call_id}/mute/stop:
     put:
       summary: Unmute a call
-      description: '**Required ACL:** `calld.applications.{application_uuid}.calls.{call_id}.mute.stop.update'
+      description: '**Required ACL:** `calld.applications.{application_uuid}.calls.{call_id}.mute.stop.update`'
       parameters:
       - $ref: '#/parameters/ApplicationUUID'
       - $ref: '#/parameters/ApplicationCallID'
@@ -200,6 +200,26 @@ paths:
             $ref: '#/definitions/Error'
         '503':
           $ref: '#/responses/AnotherServiceUnavailable'
+
+  /applications/{application_uuid}/calls/{call_id}/answer:
+    put:
+      summary: Answer a call
+      description: '**Required ACL:** `calld.applications.{application_uuid}.calls.{call_id}.answer.update`'
+      parameters:
+      - $ref: '#/parameters/ApplicationUUID'
+      - $ref: '#/parameters/ApplicationCallID'
+      tags:
+      - applications
+      responses:
+        '204':
+          description: The call is now answered
+        '404':
+          description: No such application or call
+          schema:
+            $ref: '#/definitions/Error'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+
 
   /applications/{application_uuid}/calls/{call_id}/playbacks:
     post:
