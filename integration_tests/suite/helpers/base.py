@@ -16,6 +16,8 @@ from xivo_test_helpers.asset_launching_test_case import AssetLaunchingTestCase
 from xivo_test_helpers.asset_launching_test_case import NoSuchService
 from xivo_test_helpers.asset_launching_test_case import NoSuchPort
 
+from wazo_calld_client.client import CalldClient
+
 from .amid import AmidClient
 from .ari_ import ARIClient
 from .auth import AuthClient
@@ -23,7 +25,7 @@ from .bus import BusClient
 from .chan_test import ChanTest
 from .confd import ConfdClient
 from .constants import ASSET_ROOT, VALID_TOKEN
-from .calld import CalldClient
+from .calld import CalldClient as LegacyCalldClient
 from .stasis import StasisClient
 from .wait_strategy import CalldEverythingOkWaitStrategy
 
@@ -86,10 +88,17 @@ class IntegrationTest(AssetLaunchingTestCase):
             logger.debug(e)
             cls.confd = WrongClient('confd')
         try:
-            cls.calld = CalldClient('localhost', cls.service_port(9500, 'calld'))
+            cls.calld = LegacyCalldClient('localhost', cls.service_port(9500, 'calld'))
         except (NoSuchService, NoSuchPort) as e:
             logger.debug(e)
             cls.calld = WrongClient('calld')
+        try:
+            cls.calld_client = CalldClient('localhost', cls.service_port(9500, 'calld'),
+                                           verify_certificate=False)
+            cls.calld_client.set_token(VALID_TOKEN)
+        except (NoSuchService, NoSuchPort) as e:
+            logger.debug(e)
+            cls.calld_client = WrongClient('calld-client')
         try:
             cls.stasis = StasisClient('localhost', cls.service_port(5039, 'ari'))
         except (NoSuchService, NoSuchPort) as e:
