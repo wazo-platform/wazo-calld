@@ -286,6 +286,28 @@ class TestApplication(BaseApplicationTestCase):
             has_entries(destination_node_uuid=self.node_app_uuid),
         )
 
+    def test_confd_application_created_event_update_cache(self):
+        app_uuid = '00000000-0000-0000-0000-000000000001'
+        self.bus.send_application_created_event(app_uuid)
+
+        response = self.calld.get_application(app_uuid)
+
+        assert_that(response.json(), has_entries(destination_node_uuid=None))
+
+    def test_confd_application_edited_event_update_cache(self):
+        self.bus.send_application_edited_event(self.no_node_app_uuid, destination='node')
+
+        response = self.calld.get_application(self.no_node_app_uuid)
+
+        assert_that(response.json(), has_entries(destination_node_uuid=uuid_()))
+
+    def test_confd_application_deleted_event_update_cache(self):
+        self.bus.send_application_deleted_event(self.no_node_app_uuid)
+
+        response = self.calld.get_application(self.no_node_app_uuid)
+
+        assert_that(response, has_properties(status_code=404))
+
     def test_delete_call(self):
         channel = self.call_app(self.node_app_uuid)
         routing_key = 'applications.{uuid}.calls.#'.format(uuid=self.node_app_uuid)
