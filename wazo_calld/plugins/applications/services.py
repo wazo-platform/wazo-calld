@@ -78,6 +78,31 @@ class ApplicationService:
         call = formatter.from_channel(channel, variables=variables)
         self._notifier.user_outgoing_call_created(application['uuid'], call)
 
+    def update_destination_node(self, old_app, new_app):
+        if not old_app or not new_app:
+            return
+
+        if old_app['destination'] is None and new_app['destination'] == 'node':
+            self.create_destination_node(new_app)
+        elif old_app['destination'] == 'node' and new_app['destination'] is None:
+            self.delete_destination_node(new_app)
+
+    def delete_destination_node(self, application):
+        try:
+            bridge = self._ari.bridges.get(bridgeId=application['uuid'])
+        except ARINotFound:
+            return
+
+        for call_id in bridge.json['channels']:
+            try:
+                self.delete_call(application['uuid'], call_id)
+            except NoSuchCall:
+                continue
+        try:
+            self._ari.bridges.destroy(bridgeId=application['uuid'])
+        except ARINotFound:
+            pass
+
     def create_destination_node(self, application):
         try:
             bridge = self._ari.bridges.get(bridgeId=application['uuid'])

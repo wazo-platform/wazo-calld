@@ -89,6 +89,13 @@ class ApplicationStasis:
         self._register_applications(applications)
         logger.debug('Stasis applications initialized')
 
+    def reinitialize(self, _):
+        applications = self._confd_apps.list()
+        self._core_ari.clear_applications()
+        self._subscribe(applications)
+        self._register_applications(applications)
+        logger.debug('Stasis applications reinitialized')
+
     def stasis_start(self, event_objects, event):
         application_uuid = AppNameHelper.to_uuid(event.get('application'))
         if not application_uuid:

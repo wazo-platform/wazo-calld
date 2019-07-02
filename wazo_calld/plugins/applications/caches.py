@@ -17,6 +17,7 @@ class ConfdApplicationsCache:
     def __init__(self, confd):
         self._confd = confd
         self._cache = None
+        self._triggers = {'created': [], 'updated': [], 'deleted': []}
 
     @property
     def _applications(self):
@@ -35,16 +36,37 @@ class ConfdApplicationsCache:
         return application
 
     def subscribe(self, bus_consumer):
-        bus_consumer.on_event('application_created', self._application_updated)
+        bus_consumer.on_event('application_created', self._application_created)
         bus_consumer.on_event('application_deleted', self._application_deleted)
         bus_consumer.on_event('application_edited', self._application_updated)
+
+    def created_subscribe(self, callback):
+        self._triggers['created'].append(callback)
+
+    def updated_subscribe(self, callback):
+        self._triggers['updated'].append(callback)
+
+    def deleted_subscribe(self, callback):
+        self._triggers['deleted'].append(callback)
+
+    def _application_created(self, event):
+        if self._cache is None:
+            logger.debug(UNINITIALIZED_APP)
+            return
+
+        self._applications[event['uuid']] = event
+        for trigger in self._triggers['created']:
+            trigger(event)
 
     def _application_updated(self, event):
         if self._cache is None:
             logger.debug(UNINITIALIZED_APP)
             return
 
+        old = self._applications.get(event['uuid'])
         self._applications[event['uuid']] = event
+        for trigger in self._triggers['updated']:
+            trigger(old, event)
 
     def _application_deleted(self, event):
         if self._cache is None:
@@ -52,6 +74,8 @@ class ConfdApplicationsCache:
             return
 
         self._applications.pop(event['uuid'], None)
+        for trigger in self._triggers['deleted']:
+            trigger(event)
 
 
 class MohCache:

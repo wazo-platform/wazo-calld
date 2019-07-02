@@ -258,6 +258,48 @@ class TestStasisTriggers(BaseApplicationTestCase):
 
         until.assert_(event_received, tries=3)
 
+    def test_confd_application_created_event_then_stasis_reconnect(self):
+        app_uuid = '00000000-0000-0000-0000-000000000001'
+        event_accumulator = self.bus.accumulator('applications.#')
+
+        self.bus.send_application_created_event(app_uuid, destination='node')
+
+        def event_received():
+            events = event_accumulator.accumulate()
+            assert_that(events, has_items(has_entries(name='application_destination_node_created')))
+        until.assert_(event_received, tries=3)
+
+    def test_confd_application_edited_event_then_destination_node_created(self):
+        event_accumulator = self.bus.accumulator('applications.#')
+
+        self.bus.send_application_edited_event(self.no_node_app_uuid, destination='node')
+
+        def event_received():
+            events = event_accumulator.accumulate()
+            assert_that(events, has_items(has_entries(name='application_destination_node_created')))
+        until.assert_(event_received, tries=3)
+
+    def test_confd_application_edited_event_then_destination_node_deleted(self):
+        event_accumulator = self.bus.accumulator('applications.#')
+
+        self.bus.send_application_edited_event(self.node_app_uuid, destination=None)
+
+        def event_received():
+            events = event_accumulator.accumulate()
+            assert_that(events, has_items(has_entries(name='application_node_deleted')))
+        until.assert_(event_received, tries=3)
+
+    def test_confd_application_deleted_event_then_stasis_reconnect(self):
+        self.ari.bridges.destroy(bridgeId=self.node_app_uuid)
+        event_accumulator = self.bus.accumulator('applications.#')
+
+        self.bus.send_application_deleted_event(self.no_node_app_uuid)
+
+        def event_received():
+            events = event_accumulator.accumulate()
+            assert_that(events, has_items(has_entries(name='application_destination_node_created')))
+        until.assert_(event_received, tries=3)
+
 
 class TestApplication(BaseApplicationTestCase):
 
