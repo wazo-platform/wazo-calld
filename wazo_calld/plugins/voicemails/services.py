@@ -1,6 +1,8 @@
 # Copyright 2016-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+import base64
+
 from wazo_calld.helpers import confd
 from .storage import VoicemailFolderType
 
@@ -64,13 +66,33 @@ class VoicemailsService:
         return user_voicemail_conf['voicemail_id']
 
     def get_greeting(self, voicemail_id, greeting):
-        pass
+        vm_conf = confd.get_voicemail(voicemail_id, self._confd_client)
+        return base64.b64decode(self._ari.wazo.getVoicemailGreeting(
+            context=vm_conf['context'],
+            voicemail=vm_conf['name'],
+            greeting=greeting,
+        ))
 
     def update_greeting(self, voicemail_id, greeting, data):
-        pass
+        vm_conf = confd.get_voicemail(voicemail_id, self._confd_client)
+        body = {
+            'greeting_base64': base64.b64encode(data)
+        }
+        self._ari.wazo.saveVoicemailGreeting(
+            context=vm_conf['context'],
+            voicemail=vm_conf['name'],
+            greeting=greeting,
+            body=body
+        )
 
     def delete_greeting(self, voicemail_id, greeting):
-        pass
+        vm_conf = confd.get_voicemail(voicemail_id, self._confd_client)
+        self._ari.wazo.removeVoicemailGreeting(
+            context=vm_conf['context'],
+            voicemail=vm_conf['name'],
+            greeting=greeting,
+        )
 
     def copy_greeting(self, voicemail_id, greeting, dest_greeting):
-        pass
+        data = self.get_greeting(voicemail_id, greeting)
+        self.update_greeting(voicemail_id, dest_greeting, data)
