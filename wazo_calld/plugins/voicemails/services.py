@@ -3,7 +3,10 @@
 
 import base64
 
+from ari.exceptions import ARIHTTPError
 from wazo_calld.helpers import confd
+
+from .exceptions import NoSuchVoicemailGreeting
 from .storage import VoicemailFolderType
 
 
@@ -67,11 +70,16 @@ class VoicemailsService:
 
     def get_greeting(self, voicemail_id, greeting):
         vm_conf = confd.get_voicemail(voicemail_id, self._confd_client)
-        return base64.b64decode(self._ari.wazo.getVoicemailGreeting(
-            context=vm_conf['context'],
-            voicemail=vm_conf['name'],
-            greeting=greeting,
-        ))
+        try:
+            return base64.b64decode(self._ari.wazo.getVoicemailGreeting(
+                context=vm_conf['context'],
+                voicemail=vm_conf['name'],
+                greeting=greeting,
+            ))
+        except ARIHTTPError as e:
+            if e.original_error.response.status_code == 404:
+                raise NoSuchVoicemailGreeting(greeting)
+            raise
 
     def update_greeting(self, voicemail_id, greeting, data):
         vm_conf = confd.get_voicemail(voicemail_id, self._confd_client)

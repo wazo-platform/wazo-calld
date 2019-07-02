@@ -88,3 +88,16 @@ class InvalidVoicemailGreeting(APIException):
                 'greeting': greeting,
             }
         )
+
+
+class NoSuchVoicemailGreeting(APIException):
+
+    def __init__(self, greeting):
+        super().__init__(
+            status_code=404,
+            message='No such voicemail greeting',
+            error_id='no-such-voicemail-greeting',
+            details={
+                'greeting': greeting,
+            }
+        )
