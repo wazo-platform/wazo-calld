@@ -272,8 +272,10 @@ class _BaseVoicemailGreetingResource(AuthResource):
         self._voicemails_service = voicemails_service
 
     def _get(self, voicemail_id, greeting):
-        greeting = self._voicemails_service.get_greeting(voicemail_id, greeting)
-        return greeting, 200
+        data = self._voicemails_service.get_greeting(voicemail_id, greeting)
+        headers = {'Content-Disposition':
+                   'attachment;filename=vm-greeting-{}.wav'.format(greeting)}
+        return Response(response=data, status=200, headers=headers, content_type='audio/wav')
 
     def _put(self, voicemail_id, greeting):
         # FIXME(sileht):
