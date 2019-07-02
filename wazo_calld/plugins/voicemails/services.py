@@ -75,7 +75,7 @@ class VoicemailsService:
                 context=vm_conf['context'],
                 voicemail=vm_conf['name'],
                 greeting=greeting,
-            ))
+            )['greeting_base64'].encode())
         except ARIHTTPError as e:
             if e.original_error.response.status_code == 404:
                 raise NoSuchVoicemailGreeting(greeting)
@@ -84,7 +84,7 @@ class VoicemailsService:
     def update_greeting(self, voicemail_id, greeting, data):
         vm_conf = confd.get_voicemail(voicemail_id, self._confd_client)
         body = {
-            'greeting_base64': base64.b64encode(data)
+            'greeting_base64': base64.b64encode(data).decode()
         }
         self._ari.wazo.saveVoicemailGreeting(
             context=vm_conf['context'],
