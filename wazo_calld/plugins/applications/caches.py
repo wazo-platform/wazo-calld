@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
+import threading
 
 from .exceptions import NoSuchApplication, NoSuchMoh
 
@@ -17,13 +18,15 @@ class ConfdApplicationsCache:
     def __init__(self, confd):
         self._confd = confd
         self._cache = None
+        self._cache_lock = threading.Lock()
         self._triggers = {'created': [], 'updated': [], 'deleted': []}
 
     @property
     def _applications(self):
-        if self._cache is None:
-            result = self._confd.applications.list(recurse=True)['items']
-            self._cache = {app['uuid']: app for app in result}
+        with self._cache_lock:
+            if self._cache is None:
+                result = self._confd.applications.list(recurse=True)['items']
+                self._cache = {app['uuid']: app for app in result}
         return self._cache
 
     def list(self):
@@ -50,8 +53,7 @@ class ConfdApplicationsCache:
         self._triggers['deleted'].append(callback)
 
     def _application_created(self, event):
-        if self._cache is None:
-            logger.debug(UNINITIALIZED_APP)
+        if not self._is_initialized():
             return
 
         self._applications[event['uuid']] = event
@@ -59,8 +61,7 @@ class ConfdApplicationsCache:
             trigger(event)
 
     def _application_updated(self, event):
-        if self._cache is None:
-            logger.debug(UNINITIALIZED_APP)
+        if not self._is_initialized():
             return
 
         old = self._applications.get(event['uuid'])
@@ -69,13 +70,19 @@ class ConfdApplicationsCache:
             trigger(old, event)
 
     def _application_deleted(self, event):
-        if self._cache is None:
-            logger.debug(UNINITIALIZED_APP)
+        if not self._is_initialized():
             return
 
         self._applications.pop(event['uuid'], None)
         for trigger in self._triggers['deleted']:
             trigger(event)
+
+    def _is_initialized(self):
+        with self._cache_lock:
+            if self._cache is None:
+                logger.debug(UNINITIALIZED_APP)
+                return False
+            return True
 
 
 class MohCache:
@@ -83,13 +90,15 @@ class MohCache:
     def __init__(self, confd):
         self._confd = confd
         self._cache = None
+        self._cache_lock = threading.Lock()
 
     @property
     def _moh(self):
-        if self._cache is None:
-            result = self._confd.moh.list(recurse=True)['items']
-            self._cache = {moh['uuid']: moh for moh in result}
-            logger.info('MOH cache initialized: %s', self._cache)
+        with self._cache_lock:
+            if self._cache is None:
+                result = self._confd.moh.list(recurse=True)['items']
+                self._cache = {moh['uuid']: moh for moh in result}
+                logger.info('MOH cache initialized: %s', self._cache)
         return self._cache
 
     def list(self):
@@ -111,15 +120,20 @@ class MohCache:
         bus_consumer.on_event('moh_deleted', self._moh_deleted)
 
     def _moh_created(self, event):
-        if self._cache is None:
-            logger.debug(UNINITIALIZED_MOH)
+        if not self._is_initialized():
             return
 
         self._moh[event['uuid']] = event
 
     def _moh_deleted(self, event):
-        if self._cache is None:
-            logger.debug(UNINITIALIZED_MOH)
+        if not self._is_initialized():
             return
 
         self._moh.pop(event['uuid'], None)
+
+    def _is_initialized(self):
+        with self._cache_lock:
+            if self._cache is None:
+                logger.debug(UNINITIALIZED_MOH)
+                return False
+            return True
