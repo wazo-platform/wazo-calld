@@ -9,6 +9,8 @@ from .caches import ConfdApplicationsCache, MohCache
 from .notifier import ApplicationNotifier
 from .resources import (
     ApplicationCallAnswer,
+    ApplicationCallContactingStart,
+    ApplicationCallContactingStop,
     ApplicationCallHoldStartList,
     ApplicationCallHoldStopList,
     ApplicationCallItem,
@@ -139,6 +141,16 @@ class Plugin:
         api.add_resource(
             ApplicationCallAnswer,
             '/applications/<uuid:application_uuid>/calls/<call_id>/answer',
+            resource_class_args=[service],
+        )
+        api.add_resource(
+            ApplicationCallContactingStart,
+            '/applications/<uuid:application_uuid>/calls/<call_id>/contacting/start',
+            resource_class_args=[service],
+        )
+        api.add_resource(
+            ApplicationCallContactingStop,
+            '/applications/<uuid:application_uuid>/calls/<call_id>/contacting/stop',
             resource_class_args=[service],
         )
         api.add_resource(

@@ -1,4 +1,4 @@
-# Copyright 2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from uuid import uuid4
@@ -78,6 +78,9 @@ class CallFormatter:
                 if channel.id in bridge.json['channels']:
                     call.node_uuid = bridge.id
                     break
+
+            if call.status == 'Ring' and channel_helper.is_contacting():
+                call.status = 'Contacting'
 
         if variables is not None:
             call.variables = variables

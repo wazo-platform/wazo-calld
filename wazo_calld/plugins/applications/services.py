@@ -103,6 +103,22 @@ class ApplicationService:
         except ARINotFound:
             pass
 
+    def call_contacting_start(self, application, call_id):
+        try:
+            channel = self._ari.channels.get(channelId=call_id)
+            channel.ring()
+            self.set_channel_var_sync(channel, 'WAZO_CALL_CONTACTING', '1')
+        except ARINotFound:
+            raise NoSuchCall(call_id)
+
+    def call_contacting_stop(self, application, call_id):
+        try:
+            channel = self._ari.channels.get(channelId=call_id)
+            channel.ringStop()
+            self.set_channel_var_sync(channel, 'WAZO_CALL_CONTACTING', '')
+        except ARINotFound:
+            raise NoSuchCall(call_id)
+
     def create_destination_node(self, application):
         try:
             bridge = self._ari.bridges.get(bridgeId=application['uuid'])

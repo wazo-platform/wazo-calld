@@ -186,6 +186,13 @@ class Channel:
         except ARINotFound:
             return False
 
+    def is_contacting(self):
+        try:
+            contacting = self._get_var('WAZO_CALL_CONTACTING')
+            return contacting == '1'
+        except ARINotFound:
+            return False
+
     def sip_call_id(self):
         if not self.is_sip():
             return

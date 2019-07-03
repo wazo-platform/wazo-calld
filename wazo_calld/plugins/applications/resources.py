@@ -128,6 +128,26 @@ class ApplicationCallAnswer(_BaseResource):
         return '', 204
 
 
+class ApplicationCallContactingStart(_BaseResource):
+
+    @required_acl('calld.applications.{application_uuid}.calls.{call_id}.contacting.start.update')
+    def put(self, application_uuid, call_id):
+        application = self._service.get_application(application_uuid)
+        self._service.get_call_id(application, call_id)
+        self._service.call_contacting_start(application, call_id)
+        return '', 204
+
+
+class ApplicationCallContactingStop(_BaseResource):
+
+    @required_acl('calld.applications.{application_uuid}.calls.{call_id}.contacting.stop.update')
+    def put(self, application_uuid, call_id):
+        application = self._service.get_application(application_uuid)
+        self._service.get_call_id(application, call_id)
+        self._service.call_contacting_stop(application, call_id)
+        return '', 204
+
+
 class ApplicationCallPlaybackList(_BaseResource):
 
     @required_acl('calld.applications.{application_uuid}.calls.{call_id}.playbacks.create')
