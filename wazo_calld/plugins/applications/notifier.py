@@ -25,6 +25,7 @@ from .events import (
     SnoopCreated,
     SnoopDeleted,
     SnoopUpdated,
+    UserOutgoingCallCreated,
 )
 
 logger = logging.getLogger(__name__)
@@ -122,4 +123,13 @@ class ApplicationNotifier:
         logger.debug('Application (%s): Snoop (%s) updated', application_uuid, snoop.uuid)
         snoop = application_snoop_schema.dump(snoop).data
         event = SnoopUpdated(application_uuid, snoop)
+        self._bus.publish(event)
+
+    def user_outgoing_call_created(self, application_uuid, call):
+        logger.debug(
+            'Application (%s): User outgoing call (%s) created',
+            application_uuid, call.id_,
+        )
+        call = application_call_schema.dump(call).data
+        event = UserOutgoingCallCreated(application_uuid, call)
         self._bus.publish(event)

@@ -1,4 +1,4 @@
-# Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
@@ -142,10 +142,18 @@ class Channel:
 
     def is_caller(self):
         try:
+            user_outgoing_call = self._get_var('WAZO_USER_OUTGOING_CALL')
+            return user_outgoing_call == 'true'
+        except ARINotFound:
+            pass
+
+        try:
             direction = self._get_var('WAZO_CHANNEL_DIRECTION')
             return direction == 'to-wazo'
         except ARINotFound:
-            return False
+            pass
+
+        return False
 
     def is_in_stasis(self):
         try:
@@ -162,9 +170,14 @@ class Channel:
 
     def dialed_extension(self):
         try:
-            return self._get_var('XIVO_BASE_EXTEN')
+            channel = self._ari.channels.get(channelId=self.id)
         except ARINotFound:
-            return None
+            return
+
+        try:
+            return channel.getChannelVar(variable='XIVO_BASE_EXTEN')['value']
+        except ARINotFound:
+            return channel.json['dialplan']['exten']
 
     def on_hold(self):
         try:

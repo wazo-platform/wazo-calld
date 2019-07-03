@@ -72,6 +72,13 @@ class ApplicationService:
 
         channel.answer()
 
+    def start_user_outgoing_call(self, application, channel):
+        self.set_channel_var_sync(channel, 'WAZO_USER_OUTGOING_CALL', 'true')
+        variables = self.get_channel_variables(channel)
+        formatter = CallFormatter(application, self._ari)
+        call = formatter.from_channel(channel, variables=variables)
+        self._notifier.user_outgoing_call_created(application['uuid'], call)
+
     def create_destination_node(self, application):
         try:
             bridge = self._ari.bridges.get(bridgeId=application['uuid'])
@@ -436,8 +443,10 @@ class ApplicationService:
         def get_value():
             try:
                 return channel.getChannelVar(variable=var)['value']
-            except ARINotFound:
-                return None
+            except ARINotFound as e:
+                if e.original_error.response.reason == 'Variable Not Found':
+                    return None
+                raise
 
         channel.setChannelVar(variable=var, value=value)
         for _ in range(20):
@@ -445,7 +454,7 @@ class ApplicationService:
                 return
 
             logger.debug('waiting for a setvar to complete')
-            time.sleep(0.001)
+            time.sleep(0.01)
 
         raise Exception('failed to set channel variable {}={}'.format(var, value))
 

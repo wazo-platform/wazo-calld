@@ -88,16 +88,18 @@ class ApplicationStasis:
         logger.debug('Stasis applications initialized')
 
     def stasis_start(self, event_objects, event):
-        args = event.get('args', [])
         application_uuid = AppNameHelper.to_uuid(event.get('application'))
-        if not application_uuid or len(args) < 1:
+        if not application_uuid:
             return
 
-        command = args[0]
+        if not event['args']:
+            return self._stasis_start_user_outgoing(application_uuid, event_objects, event)
+
+        command, *command_args = event['args']
         if command == 'incoming':
             self._stasis_start_incoming(application_uuid, event_objects, event)
         elif command == 'originate':
-            node_uuid = args[1] if len(args) > 1 else None
+            node_uuid = command_args[0] if command_args else None
             self._stasis_start_originate(application_uuid, node_uuid, event_objects, event)
 
     def stasis_end(self, channel, event):
@@ -211,6 +213,12 @@ class ApplicationStasis:
         confd_application = self._service.get_confd_application(application_uuid)
         if confd_application['destination'] == 'node':
             self._service.join_destination_node(channel, confd_application)
+
+    def _stasis_start_user_outgoing(self, application_uuid, event_objects, event):
+        channel = event_objects['channel']
+        logger.debug('new user outgoing call %s', channel.id)
+        application = self._service.get_application(application_uuid)
+        self._service.start_user_outgoing_call(application, channel)
 
     def _stasis_start_originate(self, application_uuid, node_uuid, event_objects, event):
         channel = event_objects['channel']

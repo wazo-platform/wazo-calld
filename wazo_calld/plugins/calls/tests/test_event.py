@@ -1,4 +1,4 @@
-# Copyright 2016 by Avencall
+# Copyright 2016-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from ari.exceptions import ARINotFound
@@ -71,10 +71,6 @@ class TestStartCallEvent(TestCase):
                                                       event={},
                                                       state_persistor=Mock()),
                     raises(InvalidStartCallEvent))
-        assert_that(calling(StartCallEvent).with_args(channel=Mock(),
-                                                      event={'args': []},
-                                                      state_persistor=Mock()),
-                    raises(InvalidStartCallEvent))
 
     def test_get_stasis_start_app_valid(self):
         event = {
@@ -88,6 +84,17 @@ class TestStartCallEvent(TestCase):
 
         assert_that(result.app, equal_to('myapp'))
         assert_that(result.app_instance, equal_to('red'))
+
+    def test_get_stasis_start_app_valid_no_argument(self):
+        event = {
+            'application': 'myapp',
+            'args': [],
+        }
+
+        result = StartCallEvent(channel=Mock(), event=event, state_persistor=Mock())
+
+        assert_that(result.app, equal_to('myapp'))
+        assert_that(result.app_instance, equal_to(None))
 
 
 class TestConnectCallEvent(TestCase):

@@ -92,8 +92,47 @@ class BaseApplicationTestCase(RealAsteriskIntegrationTest):
 
         return until.true(call_entered_application, event_accumulator, timeout=10, message='Failed to start call')
 
+    def call_from_user(self, app_uuid, exten):
+        app_uuid = self.no_node_app_uuid
+        context = 'stasis-wazo-app-{}'.format(app_uuid)
+        response = self.chan_test.call(context, exten)
+        return response.json()['uniqueid']
+
 
 class TestStasisTriggers(BaseApplicationTestCase):
+
+    def test_entering_stasis_user_outgoing_call(self):
+        app_uuid = self.no_node_app_uuid
+        event_accumulator = self.bus.accumulator('applications.{uuid}.#'.format(uuid=app_uuid))
+        exten = '1001'
+        channel_id = self.call_from_user(app_uuid, exten)
+
+        def event_received():
+            events = event_accumulator.accumulate()
+            assert_that(
+                events,
+                contains(
+                    has_entries(
+                        name='application_user_outgoing_call_created',
+                        data=has_entries(
+                            application_uuid=app_uuid,
+                            call=has_entries(
+                                dialed_extension=exten,
+                                id=channel_id,
+                                is_caller=True,
+                                status='Ring',
+                                on_hold=False,
+                                node_uuid=None,
+                            )
+                        )
+                    )
+                )
+            )
+
+        until.assert_(event_received, tries=3)
+
+        response = self.calld.get_application_calls(app_uuid)
+        assert_that(response.json()['items'], has_items(has_entries(id=channel_id)))
 
     def test_entering_stasis_without_a_node(self):
         app_uuid = self.no_node_app_uuid
