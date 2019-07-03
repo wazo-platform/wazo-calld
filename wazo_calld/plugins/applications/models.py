@@ -19,6 +19,8 @@ class ApplicationCall:
         self.id_ = id_
         self.moh_uuid = None
         self.muted = False
+        self.user_uuid = None
+        self.tenant_uuid = None
 
 
 class ApplicationNode:
@@ -55,6 +57,16 @@ class CallFormatter:
                 call.moh_uuid = channel.getChannelVar(variable='WAZO_MOH_UUID').get('value') or None
             except ARINotFound:
                 call.moh_uuid = None
+
+            try:
+                call.user_uuid = channel.getChannelVar(variable='XIVO_USERUUID').get('value')
+            except ARINotFound:
+                call.user_uuid = None
+
+            try:
+                call.tenant_uuid = channel.getChannelVar(variable='WAZO_TENANT_UUID').get('value')
+            except ARINotFound:
+                call.tenant_uuid = None
 
             try:
                 call.muted = channel.getChannelVar(variable='WAZO_CALL_MUTED').get('value') == '1'
