@@ -1,4 +1,4 @@
-# Copyright 2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from marshmallow import (
@@ -34,6 +34,14 @@ class ApplicationCallPlaySchema(BaseSchema):
 class ApplicationCallRequestSchema(BaseSchema):
     exten = fields.String(validate=Length(min=1), required=True)
     context = fields.String(required=True)
+    autoanswer = fields.Boolean(required=False, missing=False)
+    variables = fields.Dict(validate=validate_string_dict, missing={})
+    displayed_caller_id_name = fields.String(missing='', validate=Length(max=256))
+    displayed_caller_id_number = fields.String(missing='', validate=Length(max=256))
+
+
+class ApplicationCallUserRequestSchema(BaseSchema):
+    user_uuid = fields.String(required=True)
     autoanswer = fields.Boolean(required=False, missing=False)
     variables = fields.Dict(validate=validate_string_dict, missing={})
     displayed_caller_id_name = fields.String(missing='', validate=Length(max=256))
@@ -94,6 +102,7 @@ class ApplicationSchema(Schema):
 
 
 application_call_request_schema = ApplicationCallRequestSchema()
+application_call_user_request_schema = ApplicationCallUserRequestSchema()
 application_call_schema = ApplicationCallSchema()
 application_node_schema = ApplicationNodeSchema()
 application_playback_schema = ApplicationCallPlaySchema()

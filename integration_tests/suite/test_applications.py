@@ -501,6 +501,101 @@ class TestApplication(BaseApplicationTestCase):
             )
         )
 
+    def test_post_node_call_user(self):
+        user_uuid = 'joiner-uuid'
+
+        errors = [
+            ((self.unknown_uuid, self.node_app_uuid, user_uuid), 404),
+            ((self.no_node_app_uuid, self.unknown_uuid, user_uuid), 404),
+            ((self.node_app_uuid, self.node_app_uuid, 'not-found'), 400),
+        ]
+
+        for args, status_code in errors:
+            response = self.calld.application_new_node_call_user(*args)
+            assert_that(
+                response,
+                has_properties(status_code=status_code),
+                'failed with {}'.format(args)
+            )
+
+        routing_key = 'applications.{uuid}.#'.format(uuid=self.node_app_uuid)
+        event_accumulator = self.bus.accumulator(routing_key)
+
+        call = self.calld.application_new_node_call_user(
+            application_uuid=self.node_app_uuid,
+            node_uuid=self.node_app_uuid,
+            user_uuid=user_uuid,
+            displayed_caller_id_name='Foo Bar',
+            displayed_caller_id_number='1234',
+            variables={'X_WAZO_FOO': 'BAR'}
+        ).json()
+
+        assert_that(call, has_entries(variables={'FOO': 'BAR'}))
+
+        channel = self.ari.channels.get(channelId=call['id']).json
+        assert_that(
+            channel, has_entries(connected=has_entries(name='Foo Bar', number='1234'))
+        )
+
+        def event_received():
+            events = event_accumulator.accumulate()
+            assert_that(
+                events,
+                has_items(
+                    has_entries(
+                        name='application_call_initiated',
+                        data=has_entries(
+                            application_uuid=self.node_app_uuid,
+                            call=has_entries(
+                                id=call['id'],
+                                is_caller=False,
+                                status='Up',
+                                on_hold=False,
+                                node_uuid=None,
+                                variables={'FOO': 'BAR'},
+                            )
+                        )
+                    ),
+                    has_entries(
+                        name='application_node_updated',
+                        data=has_entries(
+                            application_uuid=self.node_app_uuid,
+                            node=has_entries(
+                                uuid=self.node_app_uuid,
+                                calls=contains(has_entries(id=call['id']))
+                            )
+                        )
+                    ),
+                    has_entries(
+                        name='application_call_updated',
+                        data=has_entries(
+                            application_uuid=self.node_app_uuid,
+                            call=has_entries(
+                                id=call['id'],
+                                node_uuid=self.node_app_uuid,
+                            )
+                        )
+                    )
+                )
+            )
+
+        until.assert_(event_received, tries=3)
+
+        response = self.calld.get_application_calls(self.node_app_uuid)
+        assert_that(
+            response.json(),
+            has_entries(
+                items=has_items(has_entries(id=call['id'])),
+            )
+        )
+        response = self.calld.get_application_node(self.node_app_uuid, self.node_app_uuid)
+        assert_that(
+            response.json(),
+            has_entries(
+                calls=has_items(has_entries(id=call['id'])),
+            )
+        )
+
     def test_get_node(self):
         response = self.calld.get_application_node(self.unknown_uuid, self.unknown_uuid)
         assert_that(

@@ -8,6 +8,7 @@ from wazo_calld.http import AuthResource
 
 from .schema import (
     application_call_request_schema,
+    application_call_user_request_schema,
     application_call_schema,
     application_node_schema,
     application_playback_schema,
@@ -216,6 +217,19 @@ class ApplicationNodeCallList(_BaseResource):
         self._service.get_node(application, node_uuid, verify_application=False)
         request_body = application_call_request_schema.load(request.get_json()).data
         call = self._service.originate(application, node_uuid, **request_body)
+        return application_call_schema.dump(call).data, 201
+
+
+class ApplicationNodeCallUserList(_BaseResource):
+
+    @required_acl('calld.applications.{application_uuid}.nodes.{node_uuid}.calls.user.create')
+    def post(self, application_uuid, node_uuid):
+        application = self._service.get_application(application_uuid)
+        # TODO: Check if node is in application
+        #       But Asterisk doesn't allow to create empty node in an application ...
+        self._service.get_node(application, node_uuid, verify_application=False)
+        request_body = application_call_user_request_schema.load(request.get_json()).data
+        call = self._service.originate_user(application, node_uuid, **request_body)
         return application_call_schema.dump(call).data, 201
 
 

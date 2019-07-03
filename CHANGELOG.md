@@ -2,10 +2,13 @@
 
 ## 19.10
 
+* New API for calling users into applications:
+
+  * POST `/1.0/applications/{uuid}/nodes/{node_uuid}/calls/users`
+
 * New API for answering a call inside an application:
 
   * PUT `/1.0/applications/{uuid}/calls/{call_id}/answer`
-
 
 ## 19.09
 
@@ -18,7 +21,6 @@
   * `PUT /1.0/switchboards/{switchboard_uuid}/calls/queued/{call_id}/answer`
 
 * The `sip_call_id` field has been added to the calls response and events
-
 
 ## 19.05
 
