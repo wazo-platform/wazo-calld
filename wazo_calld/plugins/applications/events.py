@@ -163,4 +163,4 @@ class SnoopUpdated(_BaseSnoopItemEvent):
 
 class UserOutgoingCallCreated(_BaseCallItemEvent):
     name = 'application_user_outgoing_call_created'
-    routing_key = 'applications.{}.useroutgoingcall.{}.created'
+    routing_key = 'applications.{}.user_outgoing_call.{}.created'
