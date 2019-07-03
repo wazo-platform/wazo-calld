@@ -35,7 +35,6 @@ class TestApplicationStasisStartHandler(TestCase):
             calling(self.app.stasis_start).with_args(s.event_object, event),
             not_(raises(Exception)),
         )
-        self.app.stasis_start(s.event_object, event)
 
     def test_stasis_start_user_outgoing_call(self):
         uuid = 'e3f9b7ef-3fa7-4240-88f1-e6f5c0945b9b'
