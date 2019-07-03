@@ -34,6 +34,7 @@ class ApplicationService:
         self._ari = ari
         self._amid = amid
         self._notifier = notifier
+        self._confd = confd
         self._confd_apps = confd_apps
         self._moh = moh
         self._snoop_helper = SnoopHelper(self._ari)
