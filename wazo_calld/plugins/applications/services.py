@@ -8,7 +8,6 @@ from requests import HTTPError
 from ari.exceptions import ARINotFound
 from wazo_calld.helpers import ami
 from wazo_calld.helpers import confd
-from wazo_calld.helpers.exceptions import InvalidUserUUID
 from wazo_calld.exceptions import InvalidExtension
 from .models import (
     CallFormatter,
