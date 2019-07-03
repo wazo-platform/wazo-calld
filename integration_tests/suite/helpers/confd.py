@@ -104,6 +104,22 @@ class MockApplication:
         }
 
 
+class MockMoh:
+
+    def __init__(self, uuid, name='default'):
+        self._uuid = uuid
+        self._name = name
+
+    def uuid(self):
+        return self._uuid
+
+    def to_dict(self):
+        return {
+            'uuid': self._uuid,
+            'name': self._name,
+        }
+
+
 class MockUser:
 
     def __init__(self, uuid, line_ids=None, mobile=None):

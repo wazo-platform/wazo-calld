@@ -14,7 +14,7 @@ from hamcrest import (
 from xivo_test_helpers import until
 from xivo_test_helpers.hamcrest.uuid_ import uuid_
 from .helpers.base import RealAsteriskIntegrationTest
-from .helpers.confd import MockApplication, MockUser
+from .helpers.confd import MockApplication, MockUser, MockMoh
 from .helpers.wait_strategy import CalldEverythingOkWaitStrategy, NoWaitStrategy
 
 ENDPOINT_AUTOANSWER = 'Test/integration-caller/autoanswer'
@@ -46,6 +46,10 @@ class BaseApplicationTestCase(RealAsteriskIntegrationTest):
             destination=None,
         )
         self.confd.set_applications(node_app, no_node_app)
+
+        self.moh_uuid = '60f123e6-147b-487c-b08a-36395d43346e'
+        moh = MockMoh(self.moh_uuid)
+        self.confd.set_moh(moh)
 
         # TODO: add a way to load new apps without restarting
         self._restart_calld()
@@ -1364,14 +1368,13 @@ class TestApplicationSnoop(BaseApplicationTestCase):
 class TestApplicationMoh(BaseApplicationTestCase):
 
     def test_put_moh_start_fail(self):
-        moh_uuid = '60f123e6-147b-487c-b08a-36395d43346e'  # From the confd mock
         app_uuid = self.no_node_app_uuid
         channel = self.call_app(self.no_node_app_uuid)
         unrelated_channel = self.call_app(self.node_app_uuid)
 
         params = [
-            (self.unknown_uuid, channel.id, moh_uuid),
-            (app_uuid, unrelated_channel.id, moh_uuid),
+            (self.unknown_uuid, channel.id, self.moh_uuid),
+            (app_uuid, unrelated_channel.id, self.moh_uuid),
             (app_uuid, channel.id, self.unknown_uuid),
         ]
 
@@ -1380,11 +1383,10 @@ class TestApplicationMoh(BaseApplicationTestCase):
             assert_that(result, has_properties(status_code=404), param)
 
     def test_put_moh_stop_fail(self):
-        moh_uuid = '60f123e6-147b-487c-b08a-36395d43346e'  # From the confd mock
         app_uuid = self.no_node_app_uuid
         channel = self.call_app(self.no_node_app_uuid)
         unrelated_channel = self.call_app(self.node_app_uuid)
-        self.calld.application_call_moh_start(app_uuid, channel.id, moh_uuid)
+        self.calld.application_call_moh_start(app_uuid, channel.id, self.moh_uuid)
 
         params = [
             (self.unknown_uuid, channel.id),
@@ -1396,14 +1398,13 @@ class TestApplicationMoh(BaseApplicationTestCase):
             assert_that(result, has_properties(status_code=404), param)
 
     def test_put_moh_start_success(self):
-        moh_uuid = '60f123e6-147b-487c-b08a-36395d43346e'  # From the confd mock
         app_uuid = self.no_node_app_uuid
         channel = self.call_app(self.no_node_app_uuid)
 
         routing_key = 'applications.{uuid}.#'.format(uuid=app_uuid)
         event_accumulator = self.bus.accumulator(routing_key)
 
-        response = self.calld.application_call_moh_start(app_uuid, channel.id, moh_uuid)
+        response = self.calld.application_call_moh_start(app_uuid, channel.id, self.moh_uuid)
         assert_that(response, has_properties(status_code=204))
 
         def music_on_hold_started_event_received():
@@ -1417,7 +1418,7 @@ class TestApplicationMoh(BaseApplicationTestCase):
                             application_uuid=app_uuid,
                             call=has_entries(
                                 id=channel.id,
-                                moh_uuid=moh_uuid,
+                                moh_uuid=self.moh_uuid,
                             )
                         )
                     )
@@ -1432,20 +1433,19 @@ class TestApplicationMoh(BaseApplicationTestCase):
             contains(
                 has_entries(
                     id=channel.id,
-                    moh_uuid=moh_uuid,
+                    moh_uuid=self.moh_uuid,
                 )
             )
         )
 
     def test_put_moh_stop_success(self):
-        moh_uuid = '60f123e6-147b-487c-b08a-36395d43346e'  # From the confd mock
         app_uuid = self.no_node_app_uuid
         channel = self.call_app(self.no_node_app_uuid)
 
         routing_key = 'applications.{uuid}.#'.format(uuid=app_uuid)
         event_accumulator = self.bus.accumulator(routing_key)
 
-        self.calld.application_call_moh_start(app_uuid, channel.id, moh_uuid)
+        self.calld.application_call_moh_start(app_uuid, channel.id, self.moh_uuid)
         response = self.calld.application_call_moh_stop(app_uuid, channel.id)
         assert_that(response, has_properties(status_code=204))
 
@@ -1460,7 +1460,7 @@ class TestApplicationMoh(BaseApplicationTestCase):
                             application_uuid=app_uuid,
                             call=has_entries(
                                 id=channel.id,
-                                moh_uuid=moh_uuid,
+                                moh_uuid=self.moh_uuid,
                             )
                         )
                     ),
@@ -1514,13 +1514,12 @@ class TestApplicationMoh(BaseApplicationTestCase):
         assert_that(calls, contains(has_entries(id=channel.id, moh_uuid=moh_uuid)))
 
     def test_confd_moh_deleted_event_update_cache(self):
-        moh_uuid = '60f123e6-147b-487c-b08a-36395d43346e'  # From the confd mock
         app_uuid = self.no_node_app_uuid
         channel = self.call_app(self.no_node_app_uuid)
         self._hitting_moh_cache(app_uuid, channel.id)
-        self.bus.send_moh_deleted_event(moh_uuid)
+        self.bus.send_moh_deleted_event(self.moh_uuid)
 
-        response = self.calld.application_call_moh_start(app_uuid, channel.id, moh_uuid)
+        response = self.calld.application_call_moh_start(app_uuid, channel.id, self.moh_uuid)
         assert_that(response, has_properties(status_code=400))
 
     def _hitting_moh_cache(self, app_uuid, channel_id):
