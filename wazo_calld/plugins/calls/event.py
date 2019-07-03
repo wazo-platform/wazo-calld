@@ -1,4 +1,4 @@
-# Copyright 2016-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import iso8601
@@ -40,9 +40,8 @@ class StartCallEvent(CallEvent):
     def _get_app(self):
         if 'args' not in self._event:
             raise InvalidStartCallEvent()
-        if len(self._event['args']) < 1:
-            raise InvalidStartCallEvent()
-        return self._event['application'], self._event['args'][0]
+        first_arg = self._event['args'][0] if self._event['args'] else None
+        return self._event['application'], first_arg
 
 
 class ConnectCallEvent(StartCallEvent):
