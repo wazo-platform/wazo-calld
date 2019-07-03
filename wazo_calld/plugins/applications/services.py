@@ -7,6 +7,7 @@ import time
 from requests import HTTPError
 from ari.exceptions import ARINotFound
 from wazo_calld.helpers import ami
+from wazo_calld.helpers import confd
 from wazo_calld.helpers.exceptions import InvalidUserUUID
 from wazo_calld.exceptions import InvalidExtension
 from .models import (
@@ -326,22 +327,22 @@ class ApplicationService:
             displayed_caller_id_number,
             variables=None,
     ):
+        # check if user exists and has a line
+        confd.User(user_uuid, self._confd).main_line()
+
         context = 'usersharedlines'
         exten = user_uuid
 
-        try:
-            return self.originate(
-                application,
-                node_uuid,
-                exten,
-                context,
-                autoanswer,
-                displayed_caller_id_name,
-                displayed_caller_id_number,
-                variables,
-            )
-        except InvalidExtension:
-            raise InvalidUserUUID(user_uuid)
+        return self.originate(
+            application,
+            node_uuid,
+            exten,
+            context,
+            autoanswer,
+            displayed_caller_id_name,
+            displayed_caller_id_number,
+            variables,
+        )
 
     def originate_answered(self, application, channel):
         channel.answer()

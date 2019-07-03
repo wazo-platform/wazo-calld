@@ -14,7 +14,7 @@ from hamcrest import (
 from xivo_test_helpers import until
 from xivo_test_helpers.hamcrest.uuid_ import uuid_
 from .helpers.base import RealAsteriskIntegrationTest
-from .helpers.confd import MockApplication
+from .helpers.confd import MockApplication, MockUser
 from .helpers.wait_strategy import CalldEverythingOkWaitStrategy, NoWaitStrategy
 
 ENDPOINT_AUTOANSWER = 'Test/integration-caller/autoanswer'
@@ -542,11 +542,15 @@ class TestApplication(BaseApplicationTestCase):
 
     def test_post_node_call_user(self):
         user_uuid = 'joiner-uuid'
+        user_uuid_with_no_lines = '3d696b59-bc6a-4f89-a5b4-ce06f09a64cb'
+        self.confd.set_users(MockUser(uuid=user_uuid, line_ids=['some-line-id']),
+                             MockUser(uuid=user_uuid_with_no_lines, line_ids=[]))
 
         errors = [
             ((self.unknown_uuid, self.node_app_uuid, user_uuid), 404),
             ((self.no_node_app_uuid, self.unknown_uuid, user_uuid), 404),
-            ((self.node_app_uuid, self.node_app_uuid, 'not-found'), 400),
+            ((self.node_app_uuid, self.node_app_uuid, self.unknown_uuid), 400),
+            ((self.node_app_uuid, self.node_app_uuid, user_uuid_with_no_lines), 400),
         ]
 
         for args, status_code in errors:
