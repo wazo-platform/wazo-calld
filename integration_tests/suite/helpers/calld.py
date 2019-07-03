@@ -59,12 +59,12 @@ class CalldClient:
         url = self.url('applications', application_uuid, 'calls', call_id, 'answer')
         return requests.put(url, headers={'X-Auth-Token': token}, verify=False)
 
-    def application_contacting_start(self, application_uuid, call_id, token=VALID_TOKEN):
-        url = self.url('applications', application_uuid, 'calls', call_id, 'contacting', 'start')
+    def application_progress_start(self, application_uuid, call_id, token=VALID_TOKEN):
+        url = self.url('applications', application_uuid, 'calls', call_id, 'progress', 'start')
         return requests.put(url, headers={'X-Auth-Token': token}, verify=False)
 
-    def application_contacting_stop(self, application_uuid, call_id, token=VALID_TOKEN):
-        url = self.url('applications', application_uuid, 'calls', call_id, 'contacting', 'stop')
+    def application_progress_stop(self, application_uuid, call_id, token=VALID_TOKEN):
+        url = self.url('applications', application_uuid, 'calls', call_id, 'progress', 'stop')
         return requests.put(url, headers={'X-Auth-Token': token}, verify=False)
 
     def application_call_playback(self, application_uuid, call_id, body, token=VALID_TOKEN):

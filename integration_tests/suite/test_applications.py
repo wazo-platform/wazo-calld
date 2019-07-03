@@ -1719,24 +1719,24 @@ class TestApplicationAnswer(BaseApplicationTestCase):
         )
 
 
-class TestApplicationContacting(BaseApplicationTestCase):
+class TestApplicationProgress(BaseApplicationTestCase):
 
-    def test_contacting_start(self):
+    def test_progress_start(self):
         channel = self.call_app_incoming(self.node_app_uuid)
 
-        response = self.calld.application_contacting_start(self.unknown_uuid, channel.id)
+        response = self.calld.application_progress_start(self.unknown_uuid, channel.id)
         assert_that(response, has_properties(status_code=404))
 
-        response = self.calld.application_contacting_start(self.node_app_uuid, self.unknown_uuid)
+        response = self.calld.application_progress_start(self.node_app_uuid, self.unknown_uuid)
         assert_that(response, has_properties(status_code=404))
 
-        response = self.calld.application_contacting_start(self.no_node_app_uuid, channel.id)
+        response = self.calld.application_progress_start(self.no_node_app_uuid, channel.id)
         assert_that(response, has_properties(status_code=404))
 
         routing_key = 'applications.{uuid}.#'.format(uuid=self.node_app_uuid)
         event_accumulator = self.bus.accumulator(routing_key)
 
-        response = self.calld.application_contacting_start(self.node_app_uuid, channel.id)
+        response = self.calld.application_progress_start(self.node_app_uuid, channel.id)
         assert_that(response, has_properties(status_code=204))
 
         def event_received():
@@ -1745,12 +1745,12 @@ class TestApplicationContacting(BaseApplicationTestCase):
                 events,
                 has_items(
                     has_entries(
-                        name='application_contacting_started',
+                        name='application_progress_started',
                         data=has_entries(
                             application_uuid=self.node_app_uuid,
                             call=has_entries(
                                 id=channel.id,
-                                status='Contacting',
+                                status='Progress',
                             )
                         )
                     )
@@ -1764,27 +1764,27 @@ class TestApplicationContacting(BaseApplicationTestCase):
             contains(
                 has_entries(
                     id=channel.id,
-                    status='Contacting',
+                    status='Progress',
                 )
             )
         )
 
-    def test_contacting_stop(self):
+    def test_progress_stop(self):
         channel = self.call_app_incoming(self.node_app_uuid)
 
-        response = self.calld.application_contacting_stop(self.unknown_uuid, channel.id)
+        response = self.calld.application_progress_stop(self.unknown_uuid, channel.id)
         assert_that(response, has_properties(status_code=404))
 
-        response = self.calld.application_contacting_stop(self.node_app_uuid, self.unknown_uuid)
+        response = self.calld.application_progress_stop(self.node_app_uuid, self.unknown_uuid)
         assert_that(response, has_properties(status_code=404))
 
-        response = self.calld.application_contacting_stop(self.no_node_app_uuid, channel.id)
+        response = self.calld.application_progress_stop(self.no_node_app_uuid, channel.id)
         assert_that(response, has_properties(status_code=404))
 
         routing_key = 'applications.{uuid}.#'.format(uuid=self.node_app_uuid)
         event_accumulator = self.bus.accumulator(routing_key)
 
-        response = self.calld.application_contacting_stop(self.node_app_uuid, channel.id)
+        response = self.calld.application_progress_stop(self.node_app_uuid, channel.id)
         assert_that(response, has_properties(status_code=204))
 
         def event_received():
@@ -1793,7 +1793,7 @@ class TestApplicationContacting(BaseApplicationTestCase):
                 events,
                 has_items(
                     has_entries(
-                        name='application_contacting_stopped',
+                        name='application_progress_stopped',
                         data=has_entries(
                             application_uuid=self.node_app_uuid,
                             call=has_entries(

@@ -170,7 +170,7 @@ class ApplicationStasis:
             self._notifier.call_answered(application_uuid, call)
 
     def channel_variable_set(self, channel, event):
-        if event['variable'] == 'WAZO_CALL_CONTACTING':
+        if event['variable'] == 'WAZO_CALL_PROGRESS':
             application_uuid = AppNameHelper.to_uuid(event.get('application'))
             if not application_uuid:
                 return
@@ -181,9 +181,9 @@ class ApplicationStasis:
             call = formatter.from_channel(channel)
 
             if event['value'] == '1':
-                self._notifier.call_contacting_started(application_uuid, call)
+                self._notifier.call_progress_started(application_uuid, call)
             else:
-                self._notifier.call_contacting_stopped(application_uuid, call)
+                self._notifier.call_progress_stopped(application_uuid, call)
 
     def playback_finished(self, playback, event):
         application_uuid = AppNameHelper.to_uuid(event.get('application'))

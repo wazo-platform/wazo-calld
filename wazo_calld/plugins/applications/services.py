@@ -103,19 +103,19 @@ class ApplicationService:
         except ARINotFound:
             pass
 
-    def call_contacting_start(self, application, call_id):
+    def call_progress_start(self, application, call_id):
         try:
             channel = self._ari.channels.get(channelId=call_id)
             channel.ring()
-            self.set_channel_var_sync(channel, 'WAZO_CALL_CONTACTING', '1')
+            self.set_channel_var_sync(channel, 'WAZO_CALL_PROGRESS', '1')
         except ARINotFound:
             raise NoSuchCall(call_id)
 
-    def call_contacting_stop(self, application, call_id):
+    def call_progress_stop(self, application, call_id):
         try:
             channel = self._ari.channels.get(channelId=call_id)
             channel.ringStop()
-            self.set_channel_var_sync(channel, 'WAZO_CALL_CONTACTING', '')
+            self.set_channel_var_sync(channel, 'WAZO_CALL_PROGRESS', '')
         except ARINotFound:
             raise NoSuchCall(call_id)
 

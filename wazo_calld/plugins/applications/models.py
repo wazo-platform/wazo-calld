@@ -79,8 +79,8 @@ class CallFormatter:
                     call.node_uuid = bridge.id
                     break
 
-            if call.status == 'Ring' and channel_helper.is_contacting():
-                call.status = 'Contacting'
+            if call.status == 'Ring' and channel_helper.is_progress():
+                call.status = 'Progress'
 
         if variables is not None:
             call.variables = variables

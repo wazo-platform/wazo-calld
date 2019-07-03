@@ -186,10 +186,10 @@ class Channel:
         except ARINotFound:
             return False
 
-    def is_contacting(self):
+    def is_progress(self):
         try:
-            contacting = self._get_var('WAZO_CALL_CONTACTING')
-            return contacting == '1'
+            progress = self._get_var('WAZO_CALL_PROGRESS')
+            return progress == '1'
         except ARINotFound:
             return False
 

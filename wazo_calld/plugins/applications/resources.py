@@ -128,23 +128,23 @@ class ApplicationCallAnswer(_BaseResource):
         return '', 204
 
 
-class ApplicationCallContactingStart(_BaseResource):
+class ApplicationCallProgressStart(_BaseResource):
 
-    @required_acl('calld.applications.{application_uuid}.calls.{call_id}.contacting.start.update')
+    @required_acl('calld.applications.{application_uuid}.calls.{call_id}.progress.start.update')
     def put(self, application_uuid, call_id):
         application = self._service.get_application(application_uuid)
         self._service.get_call_id(application, call_id)
-        self._service.call_contacting_start(application, call_id)
+        self._service.call_progress_start(application, call_id)
         return '', 204
 
 
-class ApplicationCallContactingStop(_BaseResource):
+class ApplicationCallProgressStop(_BaseResource):
 
-    @required_acl('calld.applications.{application_uuid}.calls.{call_id}.contacting.stop.update')
+    @required_acl('calld.applications.{application_uuid}.calls.{call_id}.progress.stop.update')
     def put(self, application_uuid, call_id):
         application = self._service.get_application(application_uuid)
         self._service.get_call_id(application, call_id)
-        self._service.call_contacting_stop(application, call_id)
+        self._service.call_progress_stop(application, call_id)
         return '', 204
 
 

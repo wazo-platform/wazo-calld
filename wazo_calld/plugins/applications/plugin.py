@@ -9,8 +9,6 @@ from .caches import ConfdApplicationsCache, MohCache
 from .notifier import ApplicationNotifier
 from .resources import (
     ApplicationCallAnswer,
-    ApplicationCallContactingStart,
-    ApplicationCallContactingStop,
     ApplicationCallHoldStartList,
     ApplicationCallHoldStopList,
     ApplicationCallItem,
@@ -20,6 +18,8 @@ from .resources import (
     ApplicationCallMuteStartList,
     ApplicationCallMuteStopList,
     ApplicationCallPlaybackList,
+    ApplicationCallProgressStart,
+    ApplicationCallProgressStop,
     ApplicationCallSnoopList,
     ApplicationItem,
     ApplicationNodeCallItem,
@@ -144,13 +144,13 @@ class Plugin:
             resource_class_args=[service],
         )
         api.add_resource(
-            ApplicationCallContactingStart,
-            '/applications/<uuid:application_uuid>/calls/<call_id>/contacting/start',
+            ApplicationCallProgressStart,
+            '/applications/<uuid:application_uuid>/calls/<call_id>/progress/start',
             resource_class_args=[service],
         )
         api.add_resource(
-            ApplicationCallContactingStop,
-            '/applications/<uuid:application_uuid>/calls/<call_id>/contacting/stop',
+            ApplicationCallProgressStop,
+            '/applications/<uuid:application_uuid>/calls/<call_id>/progress/stop',
             resource_class_args=[service],
         )
         api.add_resource(

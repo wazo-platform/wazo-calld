@@ -11,11 +11,11 @@ from .schema import (
 )
 from .events import (
     CallAnswered,
-    CallContactingStarted,
-    CallContactingStopped,
     CallDeleted,
     CallEntered,
     CallInitiated,
+    CallProgressStarted,
+    CallProgressStopped,
     CallUpdated,
     DestinationNodeCreated,
     DTMFReceived,
@@ -68,16 +68,16 @@ class ApplicationNotifier:
         event = CallAnswered(application_uuid, call)
         self._bus.publish(event)
 
-    def call_contacting_started(self, application_uuid, call):
-        logger.debug('Application (%s): Call (%s) contacting started', application_uuid, call.id_)
+    def call_progress_started(self, application_uuid, call):
+        logger.debug('Application (%s): Call (%s) progress started', application_uuid, call.id_)
         call = application_call_schema.dump(call).data
-        event = CallContactingStarted(application_uuid, call)
+        event = CallProgressStarted(application_uuid, call)
         self._bus.publish(event)
 
-    def call_contacting_stopped(self, application_uuid, call):
-        logger.debug('Application (%s): Call (%s) contacting stopped', application_uuid, call.id_)
+    def call_progress_stopped(self, application_uuid, call):
+        logger.debug('Application (%s): Call (%s) progress stopped', application_uuid, call.id_)
         call = application_call_schema.dump(call).data
-        event = CallContactingStopped(application_uuid, call)
+        event = CallProgressStopped(application_uuid, call)
         self._bus.publish(event)
 
     def destination_node_created(self, application_uuid, node):
