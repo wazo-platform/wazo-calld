@@ -665,6 +665,16 @@ definitions:
         type: string
       status:
         type: string
+        description: >
+          * Down: the call is not connected to anything yet
+
+          * Ring: the call just came in the application
+
+          * Contacting: the call is playing a connecting ringing tone
+
+          * Up: the call is answered and media can be sent/received
+
+          * Ringing: the call is ringing the phone
       caller_id_name:
         type: string
       caller_id_number:
