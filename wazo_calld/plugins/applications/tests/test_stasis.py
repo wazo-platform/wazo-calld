@@ -25,8 +25,17 @@ class TestApplicationStasisStartHandler(TestCase):
         self.confd = Mock()
         self.service = Mock()
         self.notifier = Mock()
+        self.confd_apps_cache = Mock()
+        self.moh_cache = Mock()
 
-        self.app = ApplicationStasis(self.ari, self.confd, self.service, self.notifier)
+        self.app = ApplicationStasis(
+            self.ari,
+            self.confd,
+            self.service,
+            self.notifier,
+            self.confd_apps_cache,
+            self.moh_cache,
+        )
 
     def test_stasis_start_no_a_wazo_app(self):
         event = {'application': 'foobar'}
