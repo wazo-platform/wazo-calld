@@ -1,4 +1,4 @@
-# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
@@ -99,3 +99,69 @@ class BusClient(bus_helper.BusClient):
                 },
             }
         }, 'ami.Hangup')
+
+    def send_moh_created_event(self, moh_uuid):
+        self.send_event({
+            'data': {
+                'uuid': moh_uuid,
+                'name': 'default',
+            },
+            'name': 'moh_created',
+        }, 'config.moh.created')
+
+    def send_moh_deleted_event(self, moh_uuid):
+        self.send_event({
+            'data': {
+                'uuid': moh_uuid,
+                'name': 'default',
+            },
+            'name': 'moh_deleted',
+        }, 'config.moh.deleted')
+
+    def send_application_created_event(self, application_uuid, destination=None):
+        payload = {
+            'data': {
+                'uuid': application_uuid,
+                'name': 'test-app-name',
+                'destination': destination,
+                'destination_options': {},
+            },
+            'name': 'application_created',
+        }
+        if destination:
+            payload['data']['destination_options'] = {
+                'type': 'holding',
+                'music_on_hold': None,
+                'answer': False,
+            }
+        self.send_event(payload, 'config.applications.created')
+
+    def send_application_edited_event(self, application_uuid, destination=None):
+        payload = {
+            'data': {
+                'uuid': application_uuid,
+                'name': 'test-app-name',
+                'destination': destination,
+                'destination_options': {},
+            },
+            'name': 'application_edited',
+        }
+        if destination:
+            payload['data']['destination_options'] = {
+                'type': 'holding',
+                'music_on_hold': None,
+                'answer': False,
+            }
+        self.send_event(payload, 'config.applications.edited')
+
+    def send_application_deleted_event(self, application_uuid):
+        payload = {
+            'data': {
+                'uuid': application_uuid,
+                'name': 'test-app-name',
+                'destination': None,
+                'destination_options': {},
+            },
+            'name': 'application_deleted',
+        }
+        self.send_event(payload, 'config.applications.deleted')

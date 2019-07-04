@@ -8,7 +8,6 @@ from requests import HTTPError
 from ari.exceptions import ARINotFound
 from wazo_calld.helpers import ami
 from wazo_calld.helpers import confd
-from wazo_calld.helpers.exceptions import InvalidUserUUID
 from wazo_calld.exceptions import InvalidExtension
 from .models import (
     CallFormatter,
@@ -21,7 +20,6 @@ from .exceptions import (
     NoSuchApplication,
     NoSuchCall,
     NoSuchMedia,
-    NoSuchMoh,
     NoSuchNode,
     NoSuchPlayback,
 )
@@ -32,13 +30,13 @@ logger = logging.getLogger(__name__)
 
 class ApplicationService:
 
-    def __init__(self, ari, confd, amid, notifier):
+    def __init__(self, ari, confd, amid, notifier, confd_apps, moh):
         self._ari = ari
-        self._confd = confd
         self._amid = amid
         self._notifier = notifier
-        self._apps_cache = None
-        self._moh_cache = None
+        self._confd = confd
+        self._confd_apps = confd_apps
+        self._moh = moh
         self._snoop_helper = SnoopHelper(self._ari)
 
     def call_mute(self, application, call_id):
@@ -79,6 +77,31 @@ class ApplicationService:
         formatter = CallFormatter(application, self._ari)
         call = formatter.from_channel(channel, variables=variables)
         self._notifier.user_outgoing_call_created(application['uuid'], call)
+
+    def update_destination_node(self, old_app, new_app):
+        if not old_app or not new_app:
+            return
+
+        if old_app['destination'] is None and new_app['destination'] == 'node':
+            self.create_destination_node(new_app)
+        elif old_app['destination'] == 'node' and new_app['destination'] is None:
+            self.delete_destination_node(new_app)
+
+    def delete_destination_node(self, application):
+        try:
+            bridge = self._ari.bridges.get(bridgeId=application['uuid'])
+        except ARINotFound:
+            return
+
+        for call_id in bridge.json['channels']:
+            try:
+                self.delete_call(application['uuid'], call_id)
+            except NoSuchCall:
+                continue
+        try:
+            self._ari.bridges.destroy(bridgeId=application['uuid'])
+        except ARINotFound:
+            pass
 
     def create_destination_node(self, application):
         try:
@@ -123,24 +146,12 @@ class ApplicationService:
         except ARINotFound:
             raise NoSuchApplication(application_uuid)
 
-        confd_app = self.get_confd_application(application_uuid)
+        confd_app = self._confd_apps.get(application_uuid)
         node_uuid = application_uuid if confd_app['destination'] == 'node' else None
 
         application['destination_node_uuid'] = node_uuid
         application['uuid'] = application_uuid
         return application
-
-    def get_confd_application(self, application_uuid):
-        application = self._apps_cache.get(str(application_uuid))
-        if not application:
-            raise NoSuchApplication(application_uuid)
-        return application
-
-    def list_confd_applications(self):
-        if self._apps_cache is None:
-            apps = self._confd.applications.list(recurse=True)['items']
-            self._apps_cache = {app['uuid']: app for app in apps}
-        return list(self._apps_cache.values())
 
     def get_call_id(self, application, call_id, status_code=404):
         if call_id not in application['channel_ids']:
@@ -393,7 +404,7 @@ class ApplicationService:
             raise NoSuchCall(call_id)
 
     def start_call_moh(self, call_id, moh_uuid):
-        moh = self._get_moh(moh_uuid)
+        moh = self._moh.get(moh_uuid)
         try:
             self._ari.channels.startMoh(channelId=call_id, mohClass=moh['name'])
         except ARINotFound:
@@ -431,14 +442,6 @@ class ApplicationService:
         except ARINotFound:
             raise NoSuchPlayback(playback_id)
 
-    def find_moh(self, moh_class):
-        if self._moh_cache is None:
-            self._fetch_moh()
-
-        for moh in self._moh_cache:
-            if moh['name'] == moh_class:
-                return moh
-
     def set_channel_var_sync(self, channel, var, value):
         # TODO remove this when Asterisk gets fixed to set var synchronously
         def get_value():
@@ -458,21 +461,6 @@ class ApplicationService:
             time.sleep(0.01)
 
         raise Exception('failed to set channel variable {}={}'.format(var, value))
-
-    def _get_moh(self, moh_uuid):
-        if self._moh_cache is None:
-            self._fetch_moh()
-
-        moh_uuid = str(moh_uuid)
-        for moh in self._moh_cache:
-            if moh['uuid'] == moh_uuid:
-                return moh
-
-        raise NoSuchMoh(moh_uuid)
-
-    def _fetch_moh(self):
-        self._moh_cache = self._confd.moh.list(recurse=True)['items']
-        logger.info('MOH cache initialized: %s', self._moh_cache)
 
     @staticmethod
     def _extract_variables(lines):

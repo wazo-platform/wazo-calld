@@ -32,13 +32,15 @@ class AppNameHelper:
 
 class ApplicationStasis:
 
-    def __init__(self, ari, confd, service, notifier):
+    def __init__(self, ari, confd, service, notifier, confd_apps, moh):
         self._ari = ari.client
         self._confd = confd
+        self._confd_apps = confd_apps
+        self._moh = moh
         self._core_ari = ari
         self._service = service
         self._notifier = notifier
-        self._destination_created = False
+        self._destinations_created = False
 
     def channel_dtmf_received(self, channel, event):
         application_uuid = AppNameHelper.to_uuid(event.get('application'))
@@ -82,10 +84,17 @@ class ApplicationStasis:
 
     def initialize(self, token):
         self._confd.wait_until_ready()
-        applications = self._service.list_confd_applications()
+        applications = self._confd_apps.list()
         self._subscribe(applications)
         self._register_applications(applications)
         logger.debug('Stasis applications initialized')
+
+    def reinitialize(self, _):
+        applications = self._confd_apps.list()
+        self._core_ari.clear_applications()
+        self._subscribe(applications)
+        self._register_applications(applications)
+        logger.debug('Stasis applications reinitialized')
 
     def stasis_start(self, event_objects, event):
         application_uuid = AppNameHelper.to_uuid(event.get('application'))
@@ -127,7 +136,7 @@ class ApplicationStasis:
 
         application = self._service.get_application(application_uuid)
 
-        moh = self._service.find_moh(event['moh_class'])
+        moh = self._moh.find_by_name(event['moh_class'])
         if moh:
             self._service.set_channel_var_sync(channel, 'WAZO_MOH_UUID', str(moh['uuid']))
 
@@ -198,7 +207,7 @@ class ApplicationStasis:
         for application in applications:
             if application['destination'] == 'node':
                 self._service.create_destination_node(application)
-        self._destination_created = True
+        self._destinations_created = True
 
     def _stasis_start_incoming(self, application_uuid, event_objects, event):
         channel = event_objects['channel']
@@ -210,7 +219,7 @@ class ApplicationStasis:
         call = formatter.from_channel(channel, variables=variables)
         self._notifier.call_entered(application['uuid'], call)
 
-        confd_application = self._service.get_confd_application(application_uuid)
+        confd_application = self._confd_apps.get(application_uuid)
         if confd_application['destination'] == 'node':
             self._service.join_destination_node(channel, confd_application)
 
@@ -235,11 +244,11 @@ class ApplicationStasis:
         self._core_ari.reload()
 
     def _on_websocket_start(self):
-        if self._destination_created:
+        if self._destinations_created:
             return
 
-        applications = self._service.list_confd_applications()
+        applications = self._confd_apps.list()
         self._create_destinations(applications)
 
     def _on_websocket_stop(self):
-        self._destination_created = False
+        self._destinations_created = False

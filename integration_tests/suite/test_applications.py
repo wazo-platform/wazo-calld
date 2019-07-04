@@ -14,7 +14,7 @@ from hamcrest import (
 from xivo_test_helpers import until
 from xivo_test_helpers.hamcrest.uuid_ import uuid_
 from .helpers.base import RealAsteriskIntegrationTest
-from .helpers.confd import MockApplication, MockUser
+from .helpers.confd import MockApplication, MockUser, MockMoh
 from .helpers.wait_strategy import CalldEverythingOkWaitStrategy, NoWaitStrategy
 
 ENDPOINT_AUTOANSWER = 'Test/integration-caller/autoanswer'
@@ -46,6 +46,10 @@ class BaseApplicationTestCase(RealAsteriskIntegrationTest):
             destination=None,
         )
         self.confd.set_applications(node_app, no_node_app)
+
+        self.moh_uuid = '60f123e6-147b-487c-b08a-36395d43346e'
+        moh = MockMoh(self.moh_uuid)
+        self.confd.set_moh(moh)
 
         # TODO: add a way to load new apps without restarting
         self._restart_calld()
@@ -258,6 +262,48 @@ class TestStasisTriggers(BaseApplicationTestCase):
 
         until.assert_(event_received, tries=3)
 
+    def test_confd_application_created_event_then_stasis_reconnect(self):
+        app_uuid = '00000000-0000-0000-0000-000000000001'
+        event_accumulator = self.bus.accumulator('applications.#')
+
+        self.bus.send_application_created_event(app_uuid, destination='node')
+
+        def event_received():
+            events = event_accumulator.accumulate()
+            assert_that(events, has_items(has_entries(name='application_destination_node_created')))
+        until.assert_(event_received, tries=3)
+
+    def test_confd_application_edited_event_then_destination_node_created(self):
+        event_accumulator = self.bus.accumulator('applications.#')
+
+        self.bus.send_application_edited_event(self.no_node_app_uuid, destination='node')
+
+        def event_received():
+            events = event_accumulator.accumulate()
+            assert_that(events, has_items(has_entries(name='application_destination_node_created')))
+        until.assert_(event_received, tries=3)
+
+    def test_confd_application_edited_event_then_destination_node_deleted(self):
+        event_accumulator = self.bus.accumulator('applications.#')
+
+        self.bus.send_application_edited_event(self.node_app_uuid, destination=None)
+
+        def event_received():
+            events = event_accumulator.accumulate()
+            assert_that(events, has_items(has_entries(name='application_node_deleted')))
+        until.assert_(event_received, tries=3)
+
+    def test_confd_application_deleted_event_then_stasis_reconnect(self):
+        self.ari.bridges.destroy(bridgeId=self.node_app_uuid)
+        event_accumulator = self.bus.accumulator('applications.#')
+
+        self.bus.send_application_deleted_event(self.no_node_app_uuid)
+
+        def event_received():
+            events = event_accumulator.accumulate()
+            assert_that(events, has_items(has_entries(name='application_destination_node_created')))
+        until.assert_(event_received, tries=3)
+
 
 class TestApplication(BaseApplicationTestCase):
 
@@ -285,6 +331,28 @@ class TestApplication(BaseApplicationTestCase):
             response.json(),
             has_entries(destination_node_uuid=self.node_app_uuid),
         )
+
+    def test_confd_application_created_event_update_cache(self):
+        app_uuid = '00000000-0000-0000-0000-000000000001'
+        self.bus.send_application_created_event(app_uuid)
+
+        response = self.calld.get_application(app_uuid)
+
+        assert_that(response.json(), has_entries(destination_node_uuid=None))
+
+    def test_confd_application_edited_event_update_cache(self):
+        self.bus.send_application_edited_event(self.no_node_app_uuid, destination='node')
+
+        response = self.calld.get_application(self.no_node_app_uuid)
+
+        assert_that(response.json(), has_entries(destination_node_uuid=uuid_()))
+
+    def test_confd_application_deleted_event_update_cache(self):
+        self.bus.send_application_deleted_event(self.no_node_app_uuid)
+
+        response = self.calld.get_application(self.no_node_app_uuid)
+
+        assert_that(response, has_properties(status_code=404))
 
     def test_delete_call(self):
         channel = self.call_app(self.node_app_uuid)
@@ -1300,14 +1368,13 @@ class TestApplicationSnoop(BaseApplicationTestCase):
 class TestApplicationMoh(BaseApplicationTestCase):
 
     def test_put_moh_start_fail(self):
-        moh_uuid = '60f123e6-147b-487c-b08a-36395d43346e'  # From the confd mock
         app_uuid = self.no_node_app_uuid
         channel = self.call_app(self.no_node_app_uuid)
         unrelated_channel = self.call_app(self.node_app_uuid)
 
         params = [
-            (self.unknown_uuid, channel.id, moh_uuid),
-            (app_uuid, unrelated_channel.id, moh_uuid),
+            (self.unknown_uuid, channel.id, self.moh_uuid),
+            (app_uuid, unrelated_channel.id, self.moh_uuid),
             (app_uuid, channel.id, self.unknown_uuid),
         ]
 
@@ -1316,11 +1383,10 @@ class TestApplicationMoh(BaseApplicationTestCase):
             assert_that(result, has_properties(status_code=404), param)
 
     def test_put_moh_stop_fail(self):
-        moh_uuid = '60f123e6-147b-487c-b08a-36395d43346e'  # From the confd mock
         app_uuid = self.no_node_app_uuid
         channel = self.call_app(self.no_node_app_uuid)
         unrelated_channel = self.call_app(self.node_app_uuid)
-        self.calld.application_call_moh_start(app_uuid, channel.id, moh_uuid)
+        self.calld.application_call_moh_start(app_uuid, channel.id, self.moh_uuid)
 
         params = [
             (self.unknown_uuid, channel.id),
@@ -1332,14 +1398,13 @@ class TestApplicationMoh(BaseApplicationTestCase):
             assert_that(result, has_properties(status_code=404), param)
 
     def test_put_moh_start_success(self):
-        moh_uuid = '60f123e6-147b-487c-b08a-36395d43346e'  # From the confd mock
         app_uuid = self.no_node_app_uuid
         channel = self.call_app(self.no_node_app_uuid)
 
         routing_key = 'applications.{uuid}.#'.format(uuid=app_uuid)
         event_accumulator = self.bus.accumulator(routing_key)
 
-        response = self.calld.application_call_moh_start(app_uuid, channel.id, moh_uuid)
+        response = self.calld.application_call_moh_start(app_uuid, channel.id, self.moh_uuid)
         assert_that(response, has_properties(status_code=204))
 
         def music_on_hold_started_event_received():
@@ -1353,7 +1418,7 @@ class TestApplicationMoh(BaseApplicationTestCase):
                             application_uuid=app_uuid,
                             call=has_entries(
                                 id=channel.id,
-                                moh_uuid=moh_uuid,
+                                moh_uuid=self.moh_uuid,
                             )
                         )
                     )
@@ -1368,20 +1433,19 @@ class TestApplicationMoh(BaseApplicationTestCase):
             contains(
                 has_entries(
                     id=channel.id,
-                    moh_uuid=moh_uuid,
+                    moh_uuid=self.moh_uuid,
                 )
             )
         )
 
     def test_put_moh_stop_success(self):
-        moh_uuid = '60f123e6-147b-487c-b08a-36395d43346e'  # From the confd mock
         app_uuid = self.no_node_app_uuid
         channel = self.call_app(self.no_node_app_uuid)
 
         routing_key = 'applications.{uuid}.#'.format(uuid=app_uuid)
         event_accumulator = self.bus.accumulator(routing_key)
 
-        self.calld.application_call_moh_start(app_uuid, channel.id, moh_uuid)
+        self.calld.application_call_moh_start(app_uuid, channel.id, self.moh_uuid)
         response = self.calld.application_call_moh_stop(app_uuid, channel.id)
         assert_that(response, has_properties(status_code=204))
 
@@ -1396,7 +1460,7 @@ class TestApplicationMoh(BaseApplicationTestCase):
                             application_uuid=app_uuid,
                             call=has_entries(
                                 id=channel.id,
-                                moh_uuid=moh_uuid,
+                                moh_uuid=self.moh_uuid,
                             )
                         )
                     ),
@@ -1425,6 +1489,42 @@ class TestApplicationMoh(BaseApplicationTestCase):
                 )
             )
         )
+
+    def test_confd_moh_created_event_update_cache(self):
+        moh_uuid = '00000000-0000-0000-0000-000000000001'
+        self.confd.set_moh()
+        app_uuid = self.no_node_app_uuid
+        channel = self.call_app(self.no_node_app_uuid)
+        self._hitting_moh_cache(app_uuid, channel.id)
+        self.bus.send_moh_created_event(moh_uuid)
+
+        routing_key = 'applications.{uuid}.#'.format(uuid=app_uuid)
+        event_accumulator = self.bus.accumulator(routing_key)
+
+        response = self.calld.application_call_moh_start(app_uuid, channel.id, moh_uuid)
+        assert_that(response, has_properties(status_code=204))
+
+        def music_on_hold_started_event_received():
+            events = event_accumulator.accumulate()
+            assert_that(events, contains(has_entries(name='application_call_updated')))
+
+        until.assert_(music_on_hold_started_event_received, tries=3)
+
+        calls = self.calld.get_application_calls(app_uuid).json()['items']
+        assert_that(calls, contains(has_entries(id=channel.id, moh_uuid=moh_uuid)))
+
+    def test_confd_moh_deleted_event_update_cache(self):
+        app_uuid = self.no_node_app_uuid
+        channel = self.call_app(self.no_node_app_uuid)
+        self._hitting_moh_cache(app_uuid, channel.id)
+        self.bus.send_moh_deleted_event(self.moh_uuid)
+
+        response = self.calld.application_call_moh_start(app_uuid, channel.id, self.moh_uuid)
+        assert_that(response, has_properties(status_code=400))
+
+    def _hitting_moh_cache(self, app_uuid, channel_id):
+        random = '00000000-0000-0000-0000-000000000000'
+        self.calld.application_call_moh_start(app_uuid, channel_id, random)
 
 
 class TestApplicationPlayback(BaseApplicationTestCase):

@@ -5,6 +5,7 @@ from wazo_auth_client import Client as AuthClient
 from wazo_confd_client import Client as ConfdClient
 from xivo_amid_client import Client as AmidClient
 
+from .caches import ConfdApplicationsCache, MohCache
 from .notifier import ApplicationNotifier
 from .resources import (
     ApplicationCallAnswer,
@@ -38,6 +39,7 @@ class Plugin:
         api = dependencies['api']
         ari = dependencies['ari']
         config = dependencies['config']
+        bus_consumer = dependencies['bus_consumer']
         bus_publisher = dependencies['bus_publisher']
         config = dependencies['config']
         token_changed_subscribe = dependencies['token_changed_subscribe']
@@ -51,11 +53,33 @@ class Plugin:
         token_changed_subscribe(auth_client.set_token)
         token_changed_subscribe(confd_client.set_token)
 
-        notifier = ApplicationNotifier(bus_publisher)
-        service = ApplicationService(ari.client, confd_client, amid_client, notifier)
+        confd_apps_cache = ConfdApplicationsCache(confd_client)
+        confd_apps_cache.subscribe(bus_consumer)
+        moh_cache = MohCache(confd_client)
+        moh_cache.subscribe(bus_consumer)
 
-        stasis = ApplicationStasis(ari, confd_client, service, notifier)
+        notifier = ApplicationNotifier(bus_publisher)
+        service = ApplicationService(
+            ari.client,
+            confd_client,
+            amid_client,
+            notifier,
+            confd_apps_cache,
+            moh_cache,
+        )
+
+        stasis = ApplicationStasis(
+            ari,
+            confd_client,
+            service,
+            notifier,
+            confd_apps_cache,
+            moh_cache,
+        )
         next_token_changed_subscribe(stasis.initialize)
+        confd_apps_cache.created_subscribe(stasis.reinitialize)
+        confd_apps_cache.updated_subscribe(service.update_destination_node)
+        confd_apps_cache.deleted_subscribe(stasis.reinitialize)
 
         api.add_resource(
             ApplicationItem,

@@ -1,4 +1,4 @@
-# Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import errno
@@ -50,7 +50,7 @@ class CoreARI:
         for _ in range(connection_tries):
             try:
                 return ari.connect(**ari_config)
-            except requests.ConnectionError as e:
+            except requests.ConnectionError:
                 logger.info('No ARI server found, retrying in %s seconds...', connection_delay)
                 time.sleep(connection_delay)
                 continue
@@ -107,6 +107,9 @@ class CoreARI:
     def register_application(self, app):
         if app not in self._apps:
             self._apps.append(app)
+
+    def clear_applications(self):
+        self._apps = []
 
     def is_running(self):
         return self._is_running

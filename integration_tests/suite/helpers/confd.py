@@ -66,6 +66,13 @@ class ConfdClient:
 
         requests.post(url, json=body, verify=False)
 
+    def set_moh(self, *mock_mohs):
+        url = self.url('_set_response')
+        body = {'response': 'moh',
+                'content': {moh.uuid(): moh.to_dict() for moh in mock_mohs}}
+
+        requests.post(url, json=body, verify=False)
+
     def reset(self):
         url = self.url('_reset')
         requests.post(url, verify=False)
@@ -94,6 +101,22 @@ class MockApplication:
             'name': self._name,
             'destination': self._destination,
             'destination_options': self._destination_options,
+        }
+
+
+class MockMoh:
+
+    def __init__(self, uuid, name='default'):
+        self._uuid = uuid
+        self._name = name
+
+    def uuid(self):
+        return self._uuid
+
+    def to_dict(self):
+        return {
+            'uuid': self._uuid,
+            'name': self._name,
         }
 
 
