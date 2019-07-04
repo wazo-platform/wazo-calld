@@ -89,6 +89,7 @@ _DEFAULT_CONFIG = {
         'calls': True,
         'conferences': True,
         'faxes': True,
+        'mobile': True,
         'relocates': True,
         'status': True,
         'switchboards': True,

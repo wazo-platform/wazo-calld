@@ -33,6 +33,7 @@ setup(
             'switchboards = wazo_calld.plugins.switchboards.plugin:Plugin',
             'transfers = wazo_calld.plugins.transfers.plugin:Plugin',
             'voicemails = wazo_calld.plugins.voicemails.plugin:Plugin',
+            'mobile = wazo_calld.plugins.mobile.plugin:Plugin',
         ]
     }
 )

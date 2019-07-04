@@ -96,6 +96,7 @@ enabled_plugins:
   api: true
   applications: true
   calls: true
+  mobile: true
   relocates: true
   status: true
   switchboards: true
