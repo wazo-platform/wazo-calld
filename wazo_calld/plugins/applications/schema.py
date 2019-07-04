@@ -62,6 +62,8 @@ class ApplicationCallSchema(BaseSchema):
     moh_uuid = fields.String()
     muted = fields.Boolean()
     snoops = fields.Dict(dump_only=True)
+    user_uuid = fields.String()
+    tenant_uuid = fields.String()
 
 
 class ApplicationNodeCallSchema(BaseSchema):
