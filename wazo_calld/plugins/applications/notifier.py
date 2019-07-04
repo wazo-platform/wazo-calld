@@ -14,6 +14,8 @@ from .events import (
     CallDeleted,
     CallEntered,
     CallInitiated,
+    CallProgressStarted,
+    CallProgressStopped,
     CallUpdated,
     DestinationNodeCreated,
     DTMFReceived,
@@ -64,6 +66,18 @@ class ApplicationNotifier:
         logger.debug('Application (%s): Call (%s) answered', application_uuid, call.id_)
         call = application_call_schema.dump(call).data
         event = CallAnswered(application_uuid, call)
+        self._bus.publish(event)
+
+    def call_progress_started(self, application_uuid, call):
+        logger.debug('Application (%s): Call (%s) progress started', application_uuid, call.id_)
+        call = application_call_schema.dump(call).data
+        event = CallProgressStarted(application_uuid, call)
+        self._bus.publish(event)
+
+    def call_progress_stopped(self, application_uuid, call):
+        logger.debug('Application (%s): Call (%s) progress stopped', application_uuid, call.id_)
+        call = application_call_schema.dump(call).data
+        event = CallProgressStopped(application_uuid, call)
         self._bus.publish(event)
 
     def destination_node_created(self, application_uuid, node):

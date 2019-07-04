@@ -220,6 +220,54 @@ paths:
         '503':
           $ref: '#/responses/AnotherServiceUnavailable'
 
+  /applications/{application_uuid}/calls/{call_id}/progress/start:
+    put:
+      summary: Play the progress ringing tone
+      description: |
+        **Required ACL:** `calld.applications.{application_uuid}.calls.{call_id}.progress.start.update`
+
+        The progress ringing tone is the sound heard by a caller while the other party is ringing.
+      parameters:
+      - $ref: '#/parameters/ApplicationUUID'
+      - $ref: '#/parameters/ApplicationCallID'
+      tags:
+      - applications
+      responses:
+        '204':
+          description: The call is now playing the progress ringing tone
+        '404':
+          description: No such application or call
+          schema:
+            $ref: '#/definitions/Error'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+
+  /applications/{application_uuid}/calls/{call_id}/progress/stop:
+    put:
+      summary: Stop playing the progress ringing tone.
+      description: |
+        **Required ACL:** `calld.applications.{application_uuid}.calls.{call_id}.progress.stop.update`
+
+        The progress ringing tone is the sound heard by a caller while the other party is ringing.
+
+        Limitation: this only works when the ringing tone is played by Wazo
+        through audio media (e.g. when using `/progress` after `/answer`). If
+        the phone is emitting the ringing tone directly to the user, then it
+        cannot be stopped, and the response code will still be 204.
+      parameters:
+      - $ref: '#/parameters/ApplicationUUID'
+      - $ref: '#/parameters/ApplicationCallID'
+      tags:
+      - applications
+      responses:
+        '204':
+          description: The call has stopped playing the progress ringing tone
+        '404':
+          description: No such application or call
+          schema:
+            $ref: '#/definitions/Error'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
 
   /applications/{application_uuid}/calls/{call_id}/playbacks:
     post:
@@ -620,6 +668,12 @@ definitions:
         type: string
       status:
         type: string
+        description: |
+          * Down: the call is not connected to anything yet
+          * Ring: the call just came in the application
+          * Progress: the call is playing a progress ringing tone
+          * Up: the call is answered and media can be sent/received
+          * Ringing: the call is ringing the phone
       caller_id_name:
         type: string
       caller_id_number:

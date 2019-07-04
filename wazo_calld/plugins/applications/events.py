@@ -116,6 +116,16 @@ class CallAnswered(_BaseCallItemEvent):
     routing_key = 'applications.{}.calls.{}.answered'
 
 
+class CallProgressStarted(_BaseCallItemEvent):
+    name = 'application_progress_started'
+    routing_key = 'applications.{}.calls.{}.progress.started'
+
+
+class CallProgressStopped(_BaseCallItemEvent):
+    name = 'application_progress_stopped'
+    routing_key = 'applications.{}.calls.{}.progress.stopped'
+
+
 class DestinationNodeCreated(_BaseNodeListEvent):
     name = 'application_destination_node_created'
     routing_key = 'applications.{}.nodes.created'

@@ -1719,6 +1719,105 @@ class TestApplicationAnswer(BaseApplicationTestCase):
         )
 
 
+class TestApplicationProgress(BaseApplicationTestCase):
+
+    def test_progress_start(self):
+        channel = self.call_app_incoming(self.node_app_uuid)
+
+        response = self.calld.application_progress_start(self.unknown_uuid, channel.id)
+        assert_that(response, has_properties(status_code=404))
+
+        response = self.calld.application_progress_start(self.node_app_uuid, self.unknown_uuid)
+        assert_that(response, has_properties(status_code=404))
+
+        response = self.calld.application_progress_start(self.no_node_app_uuid, channel.id)
+        assert_that(response, has_properties(status_code=404))
+
+        routing_key = 'applications.{uuid}.#'.format(uuid=self.node_app_uuid)
+        event_accumulator = self.bus.accumulator(routing_key)
+
+        response = self.calld.application_progress_start(self.node_app_uuid, channel.id)
+        assert_that(response, has_properties(status_code=204))
+
+        def event_received():
+            events = event_accumulator.accumulate()
+            assert_that(
+                events,
+                has_items(
+                    has_entries(
+                        name='application_progress_started',
+                        data=has_entries(
+                            application_uuid=self.node_app_uuid,
+                            call=has_entries(
+                                id=channel.id,
+                                status='Progress',
+                            )
+                        )
+                    )
+                )
+            )
+
+        until.assert_(event_received, timeout=3)
+
+        assert_that(
+            self.calld.get_application_calls(self.node_app_uuid).json()['items'],
+            contains(
+                has_entries(
+                    id=channel.id,
+                    status='Progress',
+                )
+            )
+        )
+
+    def test_progress_stop(self):
+        channel = self.call_app_incoming(self.node_app_uuid)
+
+        response = self.calld.application_progress_stop(self.unknown_uuid, channel.id)
+        assert_that(response, has_properties(status_code=404))
+
+        response = self.calld.application_progress_stop(self.node_app_uuid, self.unknown_uuid)
+        assert_that(response, has_properties(status_code=404))
+
+        response = self.calld.application_progress_stop(self.no_node_app_uuid, channel.id)
+        assert_that(response, has_properties(status_code=404))
+
+        routing_key = 'applications.{uuid}.#'.format(uuid=self.node_app_uuid)
+        event_accumulator = self.bus.accumulator(routing_key)
+
+        response = self.calld.application_progress_stop(self.node_app_uuid, channel.id)
+        assert_that(response, has_properties(status_code=204))
+
+        def event_received():
+            events = event_accumulator.accumulate()
+            assert_that(
+                events,
+                has_items(
+                    has_entries(
+                        name='application_progress_stopped',
+                        data=has_entries(
+                            application_uuid=self.node_app_uuid,
+                            call=has_entries(
+                                id=channel.id,
+                                status='Ring',
+                            )
+                        )
+                    )
+                )
+            )
+
+        until.assert_(event_received, timeout=3)
+
+        assert_that(
+            self.calld.get_application_calls(self.node_app_uuid).json()['items'],
+            contains(
+                has_entries(
+                    id=channel.id,
+                    status='Ring',
+                )
+            )
+        )
+
+
 class TestApplicationNode(BaseApplicationTestCase):
 
     def test_post_unknown_app(self):

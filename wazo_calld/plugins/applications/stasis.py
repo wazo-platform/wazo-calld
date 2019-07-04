@@ -169,6 +169,22 @@ class ApplicationStasis:
         if channel.json['state'] == 'Up':
             self._notifier.call_answered(application_uuid, call)
 
+    def channel_variable_set(self, channel, event):
+        if event['variable'] == 'WAZO_CALL_PROGRESS':
+            application_uuid = AppNameHelper.to_uuid(event.get('application'))
+            if not application_uuid:
+                return
+
+            application = self._service.get_application(application_uuid)
+
+            formatter = CallFormatter(application, self._ari)
+            call = formatter.from_channel(channel)
+
+            if event['value'] == '1':
+                self._notifier.call_progress_started(application_uuid, call)
+            else:
+                self._notifier.call_progress_stopped(application_uuid, call)
+
     def playback_finished(self, playback, event):
         application_uuid = AppNameHelper.to_uuid(event.get('application'))
         if not application_uuid:
@@ -189,6 +205,7 @@ class ApplicationStasis:
         self._ari.on_channel_event('ChannelDtmfReceived', self.channel_dtmf_received)
         self._ari.on_channel_event('ChannelMohStart', self.channel_moh_started)
         self._ari.on_channel_event('ChannelMohStop', self.channel_moh_stopped)
+        self._ari.on_channel_event('ChannelVarset', self.channel_variable_set)
         self._ari.on_channel_event('StasisStart', self.stasis_start)
         self._ari.on_channel_event('StasisEnd', self.stasis_end)
         self._ari.on_channel_event('ChannelEnteredBridge', self.channel_entered_bridge)

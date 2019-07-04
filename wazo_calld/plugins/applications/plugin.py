@@ -18,6 +18,8 @@ from .resources import (
     ApplicationCallMuteStartList,
     ApplicationCallMuteStopList,
     ApplicationCallPlaybackList,
+    ApplicationCallProgressStart,
+    ApplicationCallProgressStop,
     ApplicationCallSnoopList,
     ApplicationItem,
     ApplicationNodeCallItem,
@@ -139,6 +141,16 @@ class Plugin:
         api.add_resource(
             ApplicationCallAnswer,
             '/applications/<uuid:application_uuid>/calls/<call_id>/answer',
+            resource_class_args=[service],
+        )
+        api.add_resource(
+            ApplicationCallProgressStart,
+            '/applications/<uuid:application_uuid>/calls/<call_id>/progress/start',
+            resource_class_args=[service],
+        )
+        api.add_resource(
+            ApplicationCallProgressStop,
+            '/applications/<uuid:application_uuid>/calls/<call_id>/progress/stop',
             resource_class_args=[service],
         )
         api.add_resource(

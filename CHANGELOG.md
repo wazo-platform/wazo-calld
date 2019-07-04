@@ -9,6 +9,8 @@
 * New API for answering a call inside an application:
 
   * PUT `/1.0/applications/{uuid}/calls/{call_id}/answer`
+  * PUT `/1.0/applications/{uuid}/calls/{call_id}/progress/start`
+  * PUT `/1.0/applications/{uuid}/calls/{call_id}/progress/stop`
 
 ## 19.09
 
