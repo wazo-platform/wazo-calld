@@ -108,7 +108,7 @@ class CoreBusConsumer(ConsumerMixin):
             event = body['data']
             event_type = event['Event'] if self._is_ami_event(event) else body['name']
         except KeyError:
-            logger.error('Invalid event message received: %s', event)
+            logger.error('Invalid event message received: %s', body)
         else:
             self._events_pubsub.publish(event_type, event)
         finally:
