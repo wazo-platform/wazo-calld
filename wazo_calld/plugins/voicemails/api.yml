@@ -140,23 +140,6 @@ paths:
           $ref: '#/responses/NotFoundError'
         '503':
           $ref: '#/responses/AnotherServiceUnavailable'
-    head:
-      summary: Check if a custom greeting exist
-      description: '**Required ACL:** `calld.voicemails.{voicemail_id}.greetings.{greeting}.read`'
-      parameters:
-      - $ref: '#/parameters/VoicemailID'
-      - $ref: '#/parameters/VoicemailGreeting'
-      tags:
-      - voicemails
-      responses:
-        '200':
-          description: The greeting's recording
-        '400':
-          $ref: '#/responses/InvalidRequest'
-        '404':
-          $ref: '#/responses/NotFoundError'
-        '503':
-          $ref: '#/responses/AnotherServiceUnavailable'
     put:
       summary: Update a custom greeting
       description: '**Required ACL:** `calld.voicemails.{voicemail_id}.greetings.{greeting}.update`'
@@ -344,23 +327,6 @@ paths:
       - $ref: '#/parameters/VoicemailGreeting'
       produces:
       - audio/wav
-      tags:
-      - users
-      - voicemails
-      responses:
-        '200':
-          description: The greeting's recording
-        '400':
-          $ref: '#/responses/InvalidRequest'
-        '404':
-          $ref: '#/responses/NotFoundError'
-        '503':
-          $ref: '#/responses/AnotherServiceUnavailable'
-    head:
-      summary: Check if a custom greeting exist
-      description: '**Required ACL:** `calld.users.me.voicemails.greetings.{greeting}.read`'
-      parameters:
-      - $ref: '#/parameters/VoicemailGreeting'
       tags:
       - users
       - voicemails
