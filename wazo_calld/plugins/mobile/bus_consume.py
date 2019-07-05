@@ -19,18 +19,20 @@ class PushNotificationBusEventHandler(object):
         bus_consumer.on_ami_event('UserEvent', self._user_event)
 
     def _user_event(self, event):
-        if event['UserEvent'] == 'Pushmobile':
-            user_uuid = event['WAZO_DST_UUID']
+        if event['UserEvent'] != 'Pushmobile':
+            return
 
-            body = {
-                'peer_caller_id_number': event["CallerIDNum"],
-                'peer_caller_id_name': event["CallerIDName"],
-            }
+        user_uuid = event['WAZO_DST_UUID']
 
-            bus_event = ArbitraryEvent(
-                name='call_push_notification',
-                body=body,
-                required_acl='events.calls.{}'.format(user_uuid)
-            )
-            bus_event.routing_key = 'calls.call.push_notification'
-            self.bus_publisher.publish(bus_event, headers={'user_uuid:{uuid}'.format(uuid=user_uuid): True})
+        body = {
+            'peer_caller_id_number': event["CallerIDNum"],
+            'peer_caller_id_name': event["CallerIDName"],
+        }
+
+        bus_event = ArbitraryEvent(
+            name='call_push_notification',
+            body=body,
+            required_acl='events.calls.{}'.format(user_uuid)
+        )
+        bus_event.routing_key = 'calls.call.push_notification'
+        self.bus_publisher.publish(bus_event, headers={'user_uuid:{uuid}'.format(uuid=user_uuid): True})
