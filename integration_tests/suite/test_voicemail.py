@@ -7,15 +7,16 @@ import uuid
 from hamcrest import (
     assert_that,
     calling,
+    contains,
     contains_string,
     equal_to,
-    has_property,
+    has_entry,
+    has_entries,
     has_properties,
 )
 
-import requests
-
 from xivo_test_helpers.hamcrest.raises import raises
+from wazo_calld_client.exceptions import CalldError
 
 from .helpers.auth import MockUserToken
 from .helpers.base import RealAsteriskIntegrationTest
@@ -25,6 +26,7 @@ from .helpers.confd import (
 )
 from .helpers.constants import ASSET_ROOT, VALID_TENANT
 from .helpers.hamcrest_ import HamcrestARIChannel
+
 
 VALID_GREETINGS = ('busy', 'unavailable', 'name')
 WAVE_FILE = os.path.join(ASSET_ROOT, 'bugs_29.wav')
@@ -59,11 +61,11 @@ class TestVoicemails(RealAsteriskIntegrationTest):
             calling(self.calld_client.voicemails.get_voicemail_greeting).with_args(
                 "not-exists", "busy"
             ),
-            raises(requests.HTTPError).matching(has_property(
-                'response', has_properties(
-                    status_code=404,
-                    text=contains_string("Invalid voicemail ID")
-                )
+            raises(CalldError).matching(has_properties(
+                # FIXME(sileht): All voicemail endpoints return 400 instead of
+                # 404 here
+                status_code=400,
+                message=contains_string("Invalid voicemail ID")
             ))
         )
 
@@ -72,11 +74,10 @@ class TestVoicemails(RealAsteriskIntegrationTest):
             calling(self.calld_client.voicemails.get_voicemail_greeting).with_args(
                 self._voicemail_id, "not-exists"
             ),
-            raises(requests.HTTPError).matching(has_property(
-                'response', has_properties(
-                    status_code=404,
-                    text=contains_string("Invalid voicemail greeting")
-                )
+            raises(CalldError).matching(has_properties(
+                status_code=404,
+                message=contains_string("No such voicemail greeting"),
+                details=has_entry("greeting", "not-exists"),
             ))
         )
 
@@ -85,11 +86,19 @@ class TestVoicemails(RealAsteriskIntegrationTest):
             calling(self.calld_client.voicemails.copy_voicemail_greeting).with_args(
                 self._voicemail_id, "busy", "not-exists"
             ),
-            raises(requests.HTTPError).matching(has_property(
-                'response', has_properties(
-                    status_code=400,
-                    text=contains_string("Not a valid choice")
-                )
+            raises(CalldError).matching(has_properties(
+                status_code=400,
+                message=contains_string("Sent data is invalid"),
+                details=has_entry("dest_greeting", contains(
+                    has_entries(
+                        constraint=has_entry("choices", equal_to(
+                            ["unavailable", "busy", "name"]
+                        )),
+                        message="Not a valid choice."
+
+
+                    )
+                ))
             ))
         )
 
@@ -98,11 +107,10 @@ class TestVoicemails(RealAsteriskIntegrationTest):
             calling(self.calld_client.voicemails.get_voicemail_greeting_from_user).with_args(
                 "not-exists"
             ),
-            raises(requests.HTTPError).matching(has_property(
-                'response', has_properties(
-                    status_code=404,
-                    text=contains_string("Invalid voicemail greeting")
-                )
+            raises(CalldError).matching(has_properties(
+                status_code=404,
+                message=contains_string("No such voicemail greeting"),
+                details=has_entry("greeting", "not-exists"),
             ))
         )
 
@@ -111,11 +119,10 @@ class TestVoicemails(RealAsteriskIntegrationTest):
             calling(self.calld_client.voicemails.get_voicemail_greeting).with_args(
                 self._voicemail_id, "busy"
             ),
-            raises(requests.HTTPError).matching(has_property(
-                'response', has_properties(
-                    status_code=404,
-                    text=contains_string("No such voicemail greeting")
-                )
+            raises(CalldError).matching(has_properties(
+                status_code=404,
+                message=contains_string("No such voicemail greeting"),
+                details=has_entry("greeting", "busy"),
             ))
         )
 
@@ -124,11 +131,10 @@ class TestVoicemails(RealAsteriskIntegrationTest):
             calling(self.calld_client.voicemails.get_voicemail_greeting_from_user).with_args(
                 "busy"
             ),
-            raises(requests.HTTPError).matching(has_property(
-                'response', has_properties(
-                    status_code=404,
-                    text=contains_string("No such voicemail greeting")
-                )
+            raises(CalldError).matching(has_properties(
+                status_code=404,
+                message=contains_string("No such voicemail greeting"),
+                details=has_entry("greeting", "busy"),
             ))
         )
 
@@ -169,11 +175,10 @@ class TestVoicemails(RealAsteriskIntegrationTest):
                 calling(self.calld_client.voicemails.get_voicemail_greeting).with_args(
                     self._voicemail_id, greeting
                 ),
-                raises(requests.HTTPError).matching(has_property(
-                    'response', has_properties(
-                        status_code=404,
-                        text=contains_string("No such voicemail greeting")
-                    )
+                raises(CalldError).matching(has_properties(
+                    status_code=404,
+                    message=contains_string("No such voicemail greeting"),
+                    details=has_entry("greeting", greeting),
                 ))
             )
 
@@ -204,10 +209,9 @@ class TestVoicemails(RealAsteriskIntegrationTest):
                 calling(self.calld_client.voicemails.get_voicemail_greeting_from_user).with_args(
                     greeting
                 ),
-                raises(requests.HTTPError).matching(has_property(
-                    'response', has_properties(
-                        status_code=404,
-                        text=contains_string("No such voicemail greeting")
-                    )
+                raises(CalldError).matching(has_properties(
+                    status_code=404,
+                    message=contains_string("No such voicemail greeting"),
+                    details=has_entry("greeting", greeting),
                 ))
             )
