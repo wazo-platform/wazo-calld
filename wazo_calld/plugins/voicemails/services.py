@@ -66,7 +66,7 @@ class VoicemailsService:
 
     def get_user_voicemail_id(self, user_uuid):
         user_voicemail_conf = confd.get_user_voicemail(user_uuid, self._confd_client)
-        return user_voicemail_conf['voicemail_id']
+        return user_voicemail_conf['id']
 
     def get_greeting(self, voicemail_id, greeting):
         vm_conf = confd.get_voicemail(voicemail_id, self._confd_client)

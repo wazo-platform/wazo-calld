@@ -78,16 +78,6 @@ class ConfdClient:
         body = {'response': 'voicemails',
                 'content': {voicemail.id(): voicemail.to_dict() for voicemail in mock_voicemails}}
         requests.post(url, json=body, verify=False)
-        body = {
-            'response': 'user_voicemails',
-            'content': dict([
-                (user_uuid, {'user_id': user_uuid,
-                             'voicemail_id': voicemail.id()})
-                for voicemail in mock_voicemails
-                for user_uuid in voicemail.user_uuids
-            ])
-        }
-        requests.post(url, json=body, verify=False)
 
     def reset(self):
         url = self.url('_reset')
