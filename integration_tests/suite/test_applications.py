@@ -9,6 +9,7 @@ from hamcrest import (
     equal_to,
     has_entries,
     has_items,
+    has_length,
     has_properties,
 )
 from xivo_test_helpers import until
@@ -259,6 +260,27 @@ class TestStasisTriggers(BaseApplicationTestCase):
         def event_received():
             events = event_accumulator.accumulate()
             assert_that(events, has_items(has_entries(name='application_destination_node_created')))
+
+        until.assert_(event_received, tries=3)
+
+    def test_confd_application_event_then_ari_client_is_reset(self):
+        app_uuid = '00000000-0000-0000-0000-000000000001'
+        event_accumulator = self.bus.accumulator('applications.#')
+        self.bus.send_application_created_event(app_uuid, destination='node')
+
+        def event_received():
+            events = event_accumulator.accumulate()
+            assert_that(events, contains(has_entries(name='application_destination_node_created')))
+        until.assert_(event_received, tries=3)
+
+        routing_key = 'applications.{uuid}.calls.created'.format(uuid=self.no_node_app_uuid)
+        event_accumulator = self.bus.accumulator(routing_key)
+
+        self.call_app(self.no_node_app_uuid)
+
+        def event_received():
+            events = event_accumulator.accumulate()
+            assert_that(events, has_length(1))
 
         until.assert_(event_received, tries=3)
 

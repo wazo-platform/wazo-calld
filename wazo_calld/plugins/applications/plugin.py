@@ -79,9 +79,9 @@ class Plugin:
             moh_cache,
         )
         next_token_changed_subscribe(stasis.initialize)
-        confd_apps_cache.created_subscribe(stasis.reinitialize)
+        confd_apps_cache.created_subscribe(stasis.add_ari_application)
         confd_apps_cache.updated_subscribe(service.update_destination_node)
-        confd_apps_cache.deleted_subscribe(stasis.reinitialize)
+        confd_apps_cache.deleted_subscribe(stasis.remove_ari_application)
 
         api.add_resource(
             ApplicationItem,

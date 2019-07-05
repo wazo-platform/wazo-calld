@@ -42,9 +42,11 @@ class CoreARI:
         self._is_running = False
         self._should_delay_reconnect = True
         self._should_stop = False
-        self.client = self._new_ari_client(config['connection'],
-                                           config['startup_connection_tries'],
-                                           config['startup_connection_delay'])
+        self.client = self._new_ari_client(
+            config['connection'],
+            config['startup_connection_tries'],
+            config['startup_connection_delay'],
+        )
 
     def _new_ari_client(self, ari_config, connection_tries, connection_delay):
         for _ in range(connection_tries):
@@ -108,8 +110,8 @@ class CoreARI:
         if app not in self._apps:
             self._apps.append(app)
 
-    def clear_applications(self):
-        self._apps = []
+    def deregister_application(self, app):
+        self._apps.pop(app, None)
 
     def is_running(self):
         return self._is_running

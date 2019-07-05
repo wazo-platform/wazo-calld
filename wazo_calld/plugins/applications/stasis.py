@@ -89,12 +89,25 @@ class ApplicationStasis:
         self._register_applications(applications)
         logger.debug('Stasis applications initialized')
 
-    def reinitialize(self, _):
-        applications = self._confd_apps.list()
-        self._core_ari.clear_applications()
-        self._subscribe(applications)
-        self._register_applications(applications)
-        logger.debug('Stasis applications reinitialized')
+    def add_ari_application(self, application):
+        app_name = AppNameHelper.to_name(application['uuid'])
+        self._ari.on_application_deregistered(app_name, self._on_websocket_stop)
+        self._ari.on_application_registered(app_name, self._on_websocket_start)
+        self._core_ari.register_application(app_name)
+        self._core_ari.reload()
+        logger.debug('Stasis application added')
+
+    def remove_ari_application(self, application):
+        app_name = AppNameHelper.to_name(application['uuid'])
+        self.client._ari.on_application_deregistered(app_name, self._on_websocket_stop)
+
+        # Should be implemented in ari-py
+        self.client._app_registered_callbacks.pop(app_name, None)
+        self.client._app_deregistered_callbacks.pop(app_name, None)
+
+        self._core_ari.deregister_application(app_name)
+        self._core_ari.reload()
+        logger.debug('Stasis application added')
 
     def stasis_start(self, event_objects, event):
         application_uuid = AppNameHelper.to_uuid(event.get('application'))
