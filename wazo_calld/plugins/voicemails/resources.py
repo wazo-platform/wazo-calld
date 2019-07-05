@@ -14,7 +14,7 @@ from wazo_calld.http import AuthResource
 from .exceptions import (
     InvalidVoicemailID,
     InvalidVoicemailFolderID,
-    InvalidVoicemailGreeting,
+    NoSuchVoicemailGreeting,
     InvalidVoicemailMessageID,
 )
 
@@ -367,4 +367,4 @@ class UserVoicemailGreetingCopyResource(_BaseVoicemailGreetingResource):
 def _validate_greeting(greeting):
     if greeting in VALID_GREETINGS:
         return greeting
-    raise InvalidVoicemailGreeting(greeting)
+    raise NoSuchVoicemailGreeting(greeting)

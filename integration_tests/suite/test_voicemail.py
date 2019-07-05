@@ -61,7 +61,7 @@ class TestVoicemails(RealAsteriskIntegrationTest):
             ),
             raises(requests.HTTPError).matching(has_property(
                 'response', has_properties(
-                    status_code=400,
+                    status_code=404,
                     text=contains_string("Invalid voicemail ID")
                 )
             ))
@@ -74,7 +74,7 @@ class TestVoicemails(RealAsteriskIntegrationTest):
             ),
             raises(requests.HTTPError).matching(has_property(
                 'response', has_properties(
-                    status_code=400,
+                    status_code=404,
                     text=contains_string("Invalid voicemail greeting")
                 )
             ))
@@ -87,7 +87,7 @@ class TestVoicemails(RealAsteriskIntegrationTest):
             ),
             raises(requests.HTTPError).matching(has_property(
                 'response', has_properties(
-                    status_code=400,
+                    status_code=404,
                     text=contains_string("Invalid voicemail greeting")
                 )
             ))
