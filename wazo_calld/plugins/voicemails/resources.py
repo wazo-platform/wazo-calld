@@ -7,6 +7,8 @@ from flask import request
 from flask import Response
 from marshmallow import Schema, fields
 
+from xivo.mallow.validate import OneOf
+
 from wazo_calld.auth import get_token_user_uuid_from_request
 from wazo_calld.auth import required_acl
 from wazo_calld.auth import extract_token_id_from_query_or_header
@@ -55,7 +57,7 @@ class VoicemailMessageUpdateSchema(Schema):
 
 
 class VoicemailGreetingCopy(Schema):
-    dest_greeting = fields.String()
+    dest_greeting = fields.String(validate=OneOf(VALID_GREETINGS))
 
 
 voicemail_schema = VoicemailSchema(strict=True)

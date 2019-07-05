@@ -80,6 +80,19 @@ class TestVoicemails(RealAsteriskIntegrationTest):
             ))
         )
 
+    def test_voicemail_copy_greeting_invalid_dest_greeting(self):
+        assert_that(
+            calling(self.calld_client.voicemails.copy_voicemail_greeting).with_args(
+                self._voicemail_id, "busy", "not-exists"
+            ),
+            raises(requests.HTTPError).matching(has_property(
+                'response', has_properties(
+                    status_code=400,
+                    text=contains_string("Not a valid choice")
+                )
+            ))
+        )
+
     def test_voicemail_get_greeting_invalid_greeting_from_user(self):
         assert_that(
             calling(self.calld_client.voicemails.get_voicemail_greeting_from_user).with_args(
