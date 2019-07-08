@@ -56,7 +56,7 @@ class VoicemailMessageUpdateSchema(Schema):
     folder_id = fields.Integer(required=True)
 
 
-class VoicemailGreetingCopy(Schema):
+class VoicemailGreetingCopySchema(Schema):
     dest_greeting = fields.String(validate=OneOf(VALID_GREETINGS))
 
 
@@ -64,7 +64,7 @@ voicemail_schema = VoicemailSchema(strict=True)
 voicemail_folder_schema = VoicemailFolderSchema(strict=True)
 voicemail_message_schema = VoicemailMessageSchema(strict=True)
 voicemail_message_update_schema = VoicemailMessageUpdateSchema(strict=True)
-voicemail_greeting_copy_schema = VoicemailGreetingCopy(strict=True)
+voicemail_greeting_copy_schema = VoicemailGreetingCopySchema(strict=True)
 
 
 class _BaseVoicemailResource(AuthResource):
