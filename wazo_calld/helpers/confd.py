@@ -133,7 +133,7 @@ class Conference:
 
 def get_user_voicemail(user_uuid, confd_client):
     try:
-        return confd_client.voicemails.list(user_uuid=user_uuid)['items'][0]
+        return confd_client.users.get(user_uuid)['voicemail']
     except IndexError:
         raise NoSuchUserVoicemail(user_uuid)
     except HTTPError as e:

@@ -47,7 +47,8 @@ class TestVoicemails(RealAsteriskIntegrationTest):
         self._user_token = str(uuid.uuid4())
         self._user_uuid = str(uuid.uuid4())
 
-        self.confd.set_users(MockUser(uuid=self._user_uuid))
+        self.confd.set_users(MockUser(uuid=self._user_uuid,
+                                      voicemail={'id': self._voicemail_id}))
         self.confd.set_voicemails(
             MockVoicemail(self._voicemail_id, "8000", "voicemail-name",
                           "default", user_uuids=[self._user_uuid])
