@@ -29,9 +29,13 @@ from .helpers.hamcrest_ import HamcrestARIChannel
 
 
 VALID_GREETINGS = ('busy', 'unavailable', 'name')
-WAVE_FILE = os.path.join(ASSET_ROOT, 'bugs_29.wav')
-with open(WAVE_FILE, 'rb') as f:
-    WAVE_DATA = f.read()
+wave_file = os.path.join(ASSET_ROOT, 'bugs_29.wav')
+with open(wave_file, 'rb') as f:
+    WAVE_DATA_1 = f.read()
+
+wave_file = os.path.join(ASSET_ROOT, 'bugs_07.wav')
+with open(wave_file, 'rb') as f:
+    WAVE_DATA_2 = f.read()
 
 
 class TestVoicemails(RealAsteriskIntegrationTest):
@@ -115,6 +119,30 @@ class TestVoicemails(RealAsteriskIntegrationTest):
             ))
         )
 
+    def test_voicemail_put_unset_greeting(self):
+        assert_that(
+            calling(self.calld_client.voicemails.update_voicemail_greeting).with_args(
+                self._voicemail_id, "busy", WAVE_DATA_1
+            ),
+            raises(CalldError).matching(has_properties(
+                status_code=404,
+                message=contains_string("No such voicemail greeting"),
+                details=has_entry("greeting", "busy"),
+            ))
+        )
+
+    def test_voicemail_put_unset_greeting_from_user(self):
+        assert_that(
+            calling(self.calld_client.voicemails.update_voicemail_greeting_from_user).with_args(
+                "busy", WAVE_DATA_1
+            ),
+            raises(CalldError).matching(has_properties(
+                status_code=404,
+                message=contains_string("No such voicemail greeting"),
+                details=has_entry("greeting", "busy"),
+            ))
+        )
+
     def test_voicemail_get_unset_greeting(self):
         assert_that(
             calling(self.calld_client.voicemails.get_voicemail_greeting).with_args(
@@ -150,8 +178,8 @@ class TestVoicemails(RealAsteriskIntegrationTest):
         )
 
     def test_voicemail_workflow(self):
-        self.calld_client.voicemails.update_voicemail_greeting(
-            self._voicemail_id, "busy", WAVE_DATA
+        self.calld_client.voicemails.create_voicemail_greeting(
+            self._voicemail_id, "busy", WAVE_DATA_1
         )
         self.calld_client.voicemails.copy_voicemail_greeting(
             self._voicemail_id, "busy", "unavailable"
@@ -160,11 +188,30 @@ class TestVoicemails(RealAsteriskIntegrationTest):
             self._voicemail_id, "busy", "name"
         )
 
+        assert_that(
+            calling(self.calld_client.voicemails.create_voicemail_greeting).with_args(
+                self._voicemail_id, "busy", WAVE_DATA_2
+            ),
+            raises(CalldError).matching(has_properties(
+                status_code=409,
+                message=contains_string("Voicemail greeting already exists"),
+                details=has_entry("greeting", "busy"),
+            ))
+        )
+
         for greeting in VALID_GREETINGS:
             data = self.calld_client.voicemails.get_voicemail_greeting(
                 self._voicemail_id, greeting
             )
-            assert_that(data, equal_to(WAVE_DATA))
+            assert_that(data, equal_to(WAVE_DATA_1))
+
+        self.calld_client.voicemails.update_voicemail_greeting(
+            self._voicemail_id, "busy", WAVE_DATA_2
+        )
+        data = self.calld_client.voicemails.get_voicemail_greeting(
+            self._voicemail_id, "busy"
+        )
+        assert_that(data, equal_to(WAVE_DATA_2))
 
         for greeting in VALID_GREETINGS:
             self.calld_client.voicemails.delete_voicemail_greeting(
@@ -184,8 +231,8 @@ class TestVoicemails(RealAsteriskIntegrationTest):
             )
 
     def test_voicemail_workflow_from_user(self):
-        self.calld_client.voicemails.update_voicemail_greeting_from_user(
-            "busy", WAVE_DATA
+        self.calld_client.voicemails.create_voicemail_greeting_from_user(
+            "busy", WAVE_DATA_1
         )
         self.calld_client.voicemails.copy_voicemail_greeting_from_user(
             "busy", "unavailable"
@@ -194,11 +241,30 @@ class TestVoicemails(RealAsteriskIntegrationTest):
             "busy", "name"
         )
 
+        assert_that(
+            calling(self.calld_client.voicemails.create_voicemail_greeting_from_user).with_args(
+                "busy", WAVE_DATA_2
+            ),
+            raises(CalldError).matching(has_properties(
+                status_code=409,
+                message=contains_string("Voicemail greeting already exists"),
+                details=has_entry("greeting", "busy"),
+            ))
+        )
+
         for greeting in VALID_GREETINGS:
             data = self.calld_client.voicemails.get_voicemail_greeting_from_user(
                 greeting
             )
-            assert_that(data, equal_to(WAVE_DATA))
+            assert_that(data, equal_to(WAVE_DATA_1))
+
+        self.calld_client.voicemails.update_voicemail_greeting_from_user(
+            "busy", WAVE_DATA_2
+        )
+        data = self.calld_client.voicemails.get_voicemail_greeting_from_user(
+            "busy"
+        )
+        assert_that(data, equal_to(WAVE_DATA_2))
 
         for greeting in VALID_GREETINGS:
             self.calld_client.voicemails.delete_voicemail_greeting_from_user(

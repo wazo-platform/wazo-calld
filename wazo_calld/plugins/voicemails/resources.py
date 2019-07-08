@@ -273,6 +273,13 @@ class _BaseVoicemailGreetingResource(AuthResource):
     def __init__(self, voicemails_service):
         self._voicemails_service = voicemails_service
 
+    def _post(self, voicemail_id, greeting):
+        # FIXME(sileht):
+        # data = voicemail_greeting_update_schema.load(request.get_json(force=True)).data
+        self._voicemails_service.create_greeting(voicemail_id, greeting,
+                                                 request.data)
+        return '', 204
+
     def _get(self, voicemail_id, greeting):
         data = self._voicemails_service.get_greeting(voicemail_id, greeting)
         headers = {'Content-Disposition':
@@ -300,6 +307,12 @@ class _BaseVoicemailGreetingResource(AuthResource):
 
 class VoicemailGreetingResource(_BaseVoicemailGreetingResource):
 
+    @required_acl('calld.voicemails.{voicemail_id}.greetings.{greeting}.create')
+    def post(self, voicemail_id, greeting):
+        voicemail_id = _validate_voicemail_id(voicemail_id)
+        greeting = _validate_greeting(greeting)
+        return self._post(voicemail_id, greeting)
+
     @required_acl('calld.voicemails.{voicemail_id}.greetings.{greeting}.read')
     def get(self, voicemail_id, greeting):
         voicemail_id = _validate_voicemail_id(voicemail_id)
@@ -324,6 +337,12 @@ class UserVoicemailGreetingResource(_BaseVoicemailGreetingResource):
     def __init__(self, auth_client, voicemails_service):
         super().__init__(voicemails_service)
         self._auth_client = auth_client
+
+    @required_acl('calld.users.me.voicemails.greetings.{greeting}.create')
+    def post(self, greeting):
+        voicemail_id = _get_voicemail_id_from_request(self._auth_client, self._voicemails_service)
+        greeting = _validate_greeting(greeting)
+        return self._post(voicemail_id, greeting)
 
     @required_acl('calld.users.me.voicemails.greetings.{greeting}.read')
     def get(self, greeting):

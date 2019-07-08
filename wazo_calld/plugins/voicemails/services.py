@@ -6,7 +6,10 @@ import base64
 from ari.exceptions import ARIHTTPError
 from wazo_calld.helpers import confd
 
-from .exceptions import NoSuchVoicemailGreeting
+from .exceptions import (
+    NoSuchVoicemailGreeting,
+    VoicemailGreetingAlreadyExists,
+)
 from .storage import VoicemailFolderType
 
 
@@ -81,17 +84,40 @@ class VoicemailsService:
                 raise NoSuchVoicemailGreeting(greeting)
             raise
 
+    def create_greeting(self, voicemail_id, greeting, data):
+        vm_conf = confd.get_voicemail(voicemail_id, self._confd_client)
+        body = {
+            'greeting_base64': base64.b64encode(data).decode()
+        }
+        try:
+            self._ari.wazo.createVoicemailGreeting(
+                context=vm_conf['context'],
+                voicemail=vm_conf['name'],
+                greeting=greeting,
+                body=body
+            )
+        except ARIHTTPError as e:
+            # FIXME(sileht): Should be 409 or 400
+            if e.original_error.response.status_code == 404:
+                raise VoicemailGreetingAlreadyExists(greeting)
+            raise
+
     def update_greeting(self, voicemail_id, greeting, data):
         vm_conf = confd.get_voicemail(voicemail_id, self._confd_client)
         body = {
             'greeting_base64': base64.b64encode(data).decode()
         }
-        self._ari.wazo.saveVoicemailGreeting(
-            context=vm_conf['context'],
-            voicemail=vm_conf['name'],
-            greeting=greeting,
-            body=body
-        )
+        try:
+            self._ari.wazo.changeVoicemailGreeting(
+                context=vm_conf['context'],
+                voicemail=vm_conf['name'],
+                greeting=greeting,
+                body=body
+            )
+        except ARIHTTPError as e:
+            if e.original_error.response.status_code == 404:
+                raise NoSuchVoicemailGreeting(greeting)
+            raise
 
     def delete_greeting(self, voicemail_id, greeting):
         vm_conf = confd.get_voicemail(voicemail_id, self._confd_client)
@@ -103,4 +129,7 @@ class VoicemailsService:
 
     def copy_greeting(self, voicemail_id, greeting, dest_greeting):
         data = self.get_greeting(voicemail_id, greeting)
-        self.update_greeting(voicemail_id, dest_greeting, data)
+        try:
+            self.update_greeting(voicemail_id, dest_greeting, data)
+        except NoSuchVoicemailGreeting:
+            self.create_greeting(voicemail_id, dest_greeting, data)

@@ -101,3 +101,15 @@ class NoSuchVoicemailGreeting(APIException):
                 'greeting': greeting,
             }
         )
+
+
+class VoicemailGreetingAlreadyExists(APIException):
+    def __init__(self, greeting):
+        super().__init__(
+            status_code=409,
+            message='Voicemail greeting already exists',
+            error_id='voicemail-greeting-already-exists',
+            details={
+                'greeting': greeting,
+            }
+        )
