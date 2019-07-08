@@ -177,6 +177,68 @@ class TestVoicemails(RealAsteriskIntegrationTest):
             "busy"
         )
 
+    def test_voicemail_create_invalid_body(self):
+        assert_that(
+            calling(self.calld_client.voicemails.create_voicemail_greeting).with_args(
+                self._voicemail_id, "busy", ""
+            ),
+            raises(CalldError).matching(has_properties(
+                status_code=400,
+                message=contains_string("Invalid voicemail greeting"),
+                details=has_entry("greeting", "busy"),
+            ))
+        )
+
+    def test_voicemail_create_invalid_body_from_user(self):
+        assert_that(
+            calling(self.calld_client.voicemails.create_voicemail_greeting_from_user).with_args(
+                "busy", ""
+            ),
+            raises(CalldError).matching(has_properties(
+                status_code=400,
+                message=contains_string("Invalid voicemail greeting"),
+                details=has_entry("greeting", "busy"),
+            ))
+        )
+
+    def test_voicemail_put_invalid_body(self):
+        self.calld_client.voicemails.create_voicemail_greeting(
+            self._voicemail_id, "busy", WAVE_DATA_1
+        )
+        assert_that(
+            calling(self.calld_client.voicemails.update_voicemail_greeting).with_args(
+                self._voicemail_id, "busy", ""
+            ),
+            raises(CalldError).matching(has_properties(
+                status_code=400,
+                message=contains_string("Invalid voicemail greeting"),
+                details=has_entry("greeting", "busy"),
+            ))
+        )
+
+        self.calld_client.voicemails.delete_voicemail_greeting(
+            self._voicemail_id, "busy"
+        )
+
+    def test_voicemail_put_invalid_body_from_user(self):
+        self.calld_client.voicemails.create_voicemail_greeting_from_user(
+            "busy", WAVE_DATA_1
+        )
+        assert_that(
+            calling(self.calld_client.voicemails.update_voicemail_greeting_from_user).with_args(
+                "busy", ""
+            ),
+            raises(CalldError).matching(has_properties(
+                status_code=400,
+                message=contains_string("Invalid voicemail greeting"),
+                details=has_entry("greeting", "busy"),
+            ))
+        )
+
+        self.calld_client.voicemails.delete_voicemail_greeting_from_user(
+            "busy"
+        )
+
     def test_voicemail_workflow(self):
         self.calld_client.voicemails.create_voicemail_greeting(
             self._voicemail_id, "busy", WAVE_DATA_1

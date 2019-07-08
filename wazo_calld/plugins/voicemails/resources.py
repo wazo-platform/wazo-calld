@@ -274,8 +274,6 @@ class _BaseVoicemailGreetingResource(AuthResource):
         self._voicemails_service = voicemails_service
 
     def _post(self, voicemail_id, greeting):
-        # FIXME(sileht):
-        # data = voicemail_greeting_update_schema.load(request.get_json(force=True)).data
         self._voicemails_service.create_greeting(voicemail_id, greeting,
                                                  request.data)
         return '', 204
@@ -287,8 +285,6 @@ class _BaseVoicemailGreetingResource(AuthResource):
         return Response(response=data, status=200, headers=headers, content_type='audio/wav')
 
     def _put(self, voicemail_id, greeting):
-        # FIXME(sileht):
-        # data = voicemail_greeting_update_schema.load(request.get_json(force=True)).data
         self._voicemails_service.update_greeting(voicemail_id, greeting,
                                                  request.data)
         return '', 204

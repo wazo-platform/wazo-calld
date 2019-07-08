@@ -4,10 +4,12 @@
 import base64
 
 from ari.exceptions import ARIHTTPError
+import requests
 from wazo_calld.helpers import confd
 
 from .exceptions import (
     NoSuchVoicemailGreeting,
+    InvalidVoicemailGreeting,
     VoicemailGreetingAlreadyExists,
 )
 from .storage import VoicemailFolderType
@@ -96,6 +98,10 @@ class VoicemailsService:
                 greeting=greeting,
                 body=body
             )
+        except requests.HTTPError as e:
+            # FIXME(sileht): Why ari-py does not raise ARIHTTPError for 400 ?
+            if e.response.status_code == 400:
+                raise InvalidVoicemailGreeting(greeting)
         except ARIHTTPError as e:
             # FIXME(sileht): Should be 409 or 400
             if e.original_error.response.status_code == 404:
@@ -114,6 +120,10 @@ class VoicemailsService:
                 greeting=greeting,
                 body=body
             )
+        except requests.HTTPError as e:
+            # FIXME(sileht): Why ari-py does not raise ARIHTTPError for 400 ?
+            if e.response.status_code == 400:
+                raise InvalidVoicemailGreeting(greeting)
         except ARIHTTPError as e:
             if e.original_error.response.status_code == 404:
                 raise NoSuchVoicemailGreeting(greeting)
