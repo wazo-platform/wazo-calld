@@ -59,7 +59,7 @@ class SwitchboardCallQueuedAnswerResource(AuthResource):
         tenant = Tenant.autodetect()
         user_uuid = token.user_uuid
 
-        line_id = answer_call_schema.load(request.args).data.get("line_id")
+        line_id = answer_call_schema.load(request.args).data.get('line_id')
 
         call_id = self._service.answer_queued_call(
             tenant.uuid, switchboard_uuid, call_id, user_uuid, line_id
@@ -103,7 +103,7 @@ class SwitchboardCallHeldAnswerResource(AuthResource):
         tenant = Tenant.autodetect()
         user_uuid = token.user_uuid
 
-        line_id = answer_call_schema.load(request.args).data.get("line_id")
+        line_id = answer_call_schema.load(request.args).data.get('line_id')
 
         call_id = self._service.answer_held_call(tenant.uuid, switchboard_uuid,
                                                  call_id, user_uuid, line_id)
