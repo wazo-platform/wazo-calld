@@ -116,6 +116,11 @@ parameters:
     description: Unique identifier of the switchboard
     required: true
     type: string
+  LineID:
+    name: line_id
+    in: query
+    description: ID of the line of the user used to make the call. Default is the main line of the user.
+    type: integer
 definitions:
   SwitchboardQueuedCalls:
     type: object
@@ -154,14 +159,6 @@ definitions:
     properties:
       call_id:
         type: string
-  LineID:
-    description: Answer parameters
-    type: object
-    properties:
-      line_id:
-        type: integer
-        description: ID of the line of the user used to make the call. Default is the main line of the user.
-
 responses:
   NoSuchSwitchboard:
     description: The specified switchboard does not exist
