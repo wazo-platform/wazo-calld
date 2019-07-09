@@ -111,7 +111,8 @@ class CoreARI:
             self._apps.append(app)
 
     def deregister_application(self, app):
-        self._apps.pop(app, None)
+        if app in self._apps:
+            self._apps.remove(app)
 
     def is_running(self):
         return self._is_running

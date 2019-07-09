@@ -99,11 +99,11 @@ class ApplicationStasis:
 
     def remove_ari_application(self, application):
         app_name = AppNameHelper.to_name(application['uuid'])
-        self.client._ari.on_application_deregistered(app_name, self._on_websocket_stop)
+        self._ari.on_application_deregistered(app_name, self._on_websocket_stop)
 
         # Should be implemented in ari-py
-        self.client._app_registered_callbacks.pop(app_name, None)
-        self.client._app_deregistered_callbacks.pop(app_name, None)
+        self._ari._app_registered_callbacks.pop(app_name, None)
+        self._ari._app_deregistered_callbacks.pop(app_name, None)
 
         self._core_ari.deregister_application(app_name)
         self._core_ari.reload()
