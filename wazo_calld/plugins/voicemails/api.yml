@@ -125,6 +125,7 @@ paths:
       summary: Create a custom greeting
       description: '**Required ACL:** `calld.voicemails.{voicemail_id}.greetings.{greeting}.create`'
       parameters:
+      - $ref: '#/parameters/VoicemailID'
       - $ref: '#/parameters/VoicemailGreeting'
       consumes:
       - audio/wav
