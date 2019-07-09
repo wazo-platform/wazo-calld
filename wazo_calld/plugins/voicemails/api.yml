@@ -121,6 +121,25 @@ paths:
         '503':
           $ref: '#/responses/AnotherServiceUnavailable'
   /voicemails/{voicemail_id}/greetings/{greeting}:
+    post:
+      summary: Create a custom greeting
+      description: '**Required ACL:** `calld.voicemails.{voicemail_id}.greetings.{greeting}.create`'
+      parameters:
+      - $ref: '#/parameters/VoicemailGreeting'
+      consumes:
+      - audio/wav
+      tags:
+      - users
+      - voicemails
+      responses:
+        '204':
+          description: The greeting was created successfully
+        '400':
+          $ref: '#/responses/InvalidRequest'
+        '404':
+          $ref: '#/responses/NotFoundError'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
     get:
       summary: Get a custom greeting
       description: '**Required ACL:** `calld.voicemails.{voicemail_id}.greetings.{greeting}.read`'
