@@ -7,13 +7,20 @@ from flask import request
 from flask import Response
 from marshmallow import Schema, fields
 
+from xivo.mallow.validate import OneOf
+
 from wazo_calld.auth import get_token_user_uuid_from_request
 from wazo_calld.auth import required_acl
 from wazo_calld.auth import extract_token_id_from_query_or_header
 from wazo_calld.http import AuthResource
-from .exceptions import InvalidVoicemailID
-from .exceptions import InvalidVoicemailFolderID
-from .exceptions import InvalidVoicemailMessageID
+from .exceptions import (
+    InvalidVoicemailID,
+    InvalidVoicemailFolderID,
+    NoSuchVoicemailGreeting,
+    InvalidVoicemailMessageID,
+)
+
+VALID_GREETINGS = ["unavailable", "busy", "name"]
 
 
 class VoicemailMessageBaseSchema(Schema):
@@ -49,10 +56,15 @@ class VoicemailMessageUpdateSchema(Schema):
     folder_id = fields.Integer(required=True)
 
 
+class VoicemailGreetingCopySchema(Schema):
+    dest_greeting = fields.String(validate=OneOf(VALID_GREETINGS))
+
+
 voicemail_schema = VoicemailSchema(strict=True)
 voicemail_folder_schema = VoicemailFolderSchema(strict=True)
 voicemail_message_schema = VoicemailMessageSchema(strict=True)
 voicemail_message_update_schema = VoicemailMessageUpdateSchema(strict=True)
+voicemail_greeting_copy_schema = VoicemailGreetingCopySchema(strict=True)
 
 
 class _BaseVoicemailResource(AuthResource):
@@ -254,3 +266,122 @@ def _validate_message_id(message_id):
 def _get_voicemail_id_from_request(auth_client, voicemails_service):
     user_uuid = get_token_user_uuid_from_request(auth_client)
     return voicemails_service.get_user_voicemail_id(user_uuid)
+
+
+class _BaseVoicemailGreetingResource(AuthResource):
+
+    def __init__(self, voicemails_service):
+        self._voicemails_service = voicemails_service
+
+    def _post(self, voicemail_id, greeting):
+        self._voicemails_service.create_greeting(voicemail_id, greeting,
+                                                 request.data)
+        return '', 204
+
+    def _get(self, voicemail_id, greeting):
+        data = self._voicemails_service.get_greeting(voicemail_id, greeting)
+        headers = {'Content-Disposition':
+                   'attachment;filename=vm-greeting-{}.wav'.format(greeting)}
+        return Response(response=data, status=200, headers=headers, content_type='audio/wav')
+
+    def _put(self, voicemail_id, greeting):
+        self._voicemails_service.update_greeting(voicemail_id, greeting,
+                                                 request.data)
+        return '', 204
+
+    def _delete(self, voicemail_id, greeting):
+        self._voicemails_service.delete_greeting(voicemail_id, greeting)
+        return '', 204
+
+    def _copy(self, voicemail_id, greeting):
+        dest_greeting = voicemail_greeting_copy_schema.load(
+            request.get_json(force=True)
+        ).data["dest_greeting"]
+        self._voicemails_service.copy_greeting(voicemail_id, greeting, dest_greeting)
+        return '', 204
+
+
+class VoicemailGreetingResource(_BaseVoicemailGreetingResource):
+
+    @required_acl('calld.voicemails.{voicemail_id}.greetings.{greeting}.create')
+    def post(self, voicemail_id, greeting):
+        voicemail_id = _validate_voicemail_id(voicemail_id)
+        greeting = _validate_greeting(greeting)
+        return self._post(voicemail_id, greeting)
+
+    @required_acl('calld.voicemails.{voicemail_id}.greetings.{greeting}.read')
+    def get(self, voicemail_id, greeting):
+        voicemail_id = _validate_voicemail_id(voicemail_id)
+        greeting = _validate_greeting(greeting)
+        return self._get(voicemail_id, greeting)
+
+    @required_acl('calld.voicemails.{voicemail_id}.greetings.{greeting}.update')
+    def put(self, voicemail_id, greeting):
+        voicemail_id = _validate_voicemail_id(voicemail_id)
+        greeting = _validate_greeting(greeting)
+        return self._put(voicemail_id, greeting)
+
+    @required_acl('calld.voicemails.{voicemail_id}.greetings.{greeting}.delete')
+    def delete(self, voicemail_id, greeting):
+        voicemail_id = _validate_voicemail_id(voicemail_id)
+        greeting = _validate_greeting(greeting)
+        return self._delete(voicemail_id, greeting)
+
+
+class UserVoicemailGreetingResource(_BaseVoicemailGreetingResource):
+
+    def __init__(self, auth_client, voicemails_service):
+        super().__init__(voicemails_service)
+        self._auth_client = auth_client
+
+    @required_acl('calld.users.me.voicemails.greetings.{greeting}.create')
+    def post(self, greeting):
+        voicemail_id = _get_voicemail_id_from_request(self._auth_client, self._voicemails_service)
+        greeting = _validate_greeting(greeting)
+        return self._post(voicemail_id, greeting)
+
+    @required_acl('calld.users.me.voicemails.greetings.{greeting}.read')
+    def get(self, greeting):
+        voicemail_id = _get_voicemail_id_from_request(self._auth_client, self._voicemails_service)
+        greeting = _validate_greeting(greeting)
+        return self._get(voicemail_id, greeting)
+
+    @required_acl('calld.users.me.voicemails.greetings.{greeting}.update')
+    def put(self, greeting):
+        voicemail_id = _get_voicemail_id_from_request(self._auth_client, self._voicemails_service)
+        greeting = _validate_greeting(greeting)
+        return self._put(voicemail_id, greeting)
+
+    @required_acl('calld.users.me.voicemails.greetings.{greeting}.delete')
+    def delete(self, greeting):
+        voicemail_id = _get_voicemail_id_from_request(self._auth_client, self._voicemails_service)
+        greeting = _validate_greeting(greeting)
+        return self._delete(voicemail_id, greeting)
+
+
+class VoicemailGreetingCopyResource(_BaseVoicemailGreetingResource):
+
+    @required_acl('calld.voicemails.{voicemail_id}.greetings.{greeting}.copy.create')
+    def post(self, voicemail_id, greeting):
+        voicemail_id = _validate_voicemail_id(voicemail_id)
+        greeting = _validate_greeting(greeting)
+        return self._copy(voicemail_id, greeting)
+
+
+class UserVoicemailGreetingCopyResource(_BaseVoicemailGreetingResource):
+
+    def __init__(self, auth_client, voicemails_service):
+        super().__init__(voicemails_service)
+        self._auth_client = auth_client
+
+    @required_acl('calld.users.me.voicemails.greetings.{greeting}.copy.create')
+    def post(self, greeting):
+        voicemail_id = _get_voicemail_id_from_request(self._auth_client, self._voicemails_service)
+        greeting = _validate_greeting(greeting)
+        return self._copy(voicemail_id, greeting)
+
+
+def _validate_greeting(greeting):
+    if greeting in VALID_GREETINGS:
+        return greeting
+    raise NoSuchVoicemailGreeting(greeting)

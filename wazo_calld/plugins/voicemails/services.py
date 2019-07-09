@@ -1,7 +1,17 @@
-# Copyright 2016-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+import base64
+
+from ari.exceptions import ARIHTTPError
+import requests
 from wazo_calld.helpers import confd
+
+from .exceptions import (
+    NoSuchVoicemailGreeting,
+    InvalidVoicemailGreeting,
+    VoicemailGreetingAlreadyExists,
+)
 from .storage import VoicemailFolderType
 
 
@@ -61,4 +71,74 @@ class VoicemailsService:
 
     def get_user_voicemail_id(self, user_uuid):
         user_voicemail_conf = confd.get_user_voicemail(user_uuid, self._confd_client)
-        return user_voicemail_conf['voicemail_id']
+        return user_voicemail_conf['id']
+
+    def get_greeting(self, voicemail_id, greeting):
+        vm_conf = confd.get_voicemail(voicemail_id, self._confd_client)
+        try:
+            return base64.b64decode(self._ari.wazo.getVoicemailGreeting(
+                context=vm_conf['context'],
+                voicemail=vm_conf['name'],
+                greeting=greeting,
+            )['greeting_base64'].encode())
+        except ARIHTTPError as e:
+            if e.original_error.response.status_code == 404:
+                raise NoSuchVoicemailGreeting(greeting)
+            raise
+
+    def create_greeting(self, voicemail_id, greeting, data):
+        vm_conf = confd.get_voicemail(voicemail_id, self._confd_client)
+        body = {
+            'greeting_base64': base64.b64encode(data).decode()
+        }
+        try:
+            self._ari.wazo.createVoicemailGreeting(
+                context=vm_conf['context'],
+                voicemail=vm_conf['name'],
+                greeting=greeting,
+                body=body
+            )
+        except requests.HTTPError as e:
+            # FIXME(sileht): Why ari-py does not raise ARIHTTPError for 400 ?
+            if e.response.status_code == 400:
+                raise InvalidVoicemailGreeting(greeting)
+        except ARIHTTPError as e:
+            if e.original_error.response.status_code == 409:
+                raise VoicemailGreetingAlreadyExists(greeting)
+            raise
+
+    def update_greeting(self, voicemail_id, greeting, data):
+        vm_conf = confd.get_voicemail(voicemail_id, self._confd_client)
+        body = {
+            'greeting_base64': base64.b64encode(data).decode()
+        }
+        try:
+            self._ari.wazo.changeVoicemailGreeting(
+                context=vm_conf['context'],
+                voicemail=vm_conf['name'],
+                greeting=greeting,
+                body=body
+            )
+        except requests.HTTPError as e:
+            # FIXME(sileht): Why ari-py does not raise ARIHTTPError for 400 ?
+            if e.response.status_code == 400:
+                raise InvalidVoicemailGreeting(greeting)
+        except ARIHTTPError as e:
+            if e.original_error.response.status_code == 404:
+                raise NoSuchVoicemailGreeting(greeting)
+            raise
+
+    def delete_greeting(self, voicemail_id, greeting):
+        vm_conf = confd.get_voicemail(voicemail_id, self._confd_client)
+        self._ari.wazo.removeVoicemailGreeting(
+            context=vm_conf['context'],
+            voicemail=vm_conf['name'],
+            greeting=greeting,
+        )
+
+    def copy_greeting(self, voicemail_id, greeting, dest_greeting):
+        data = self.get_greeting(voicemail_id, greeting)
+        try:
+            self.update_greeting(voicemail_id, dest_greeting, data)
+        except NoSuchVoicemailGreeting:
+            self.create_greeting(voicemail_id, dest_greeting, data)

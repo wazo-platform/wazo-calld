@@ -1,4 +1,4 @@
-# Copyright 2016-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from wazo_calld.exceptions import APIException
@@ -74,4 +74,42 @@ class VoicemailMessageStorageError(APIException):
             status_code=500,
             message='Invalid voicemail message format',
             error_id='invalid-voicemail-message-format',
+        )
+
+
+class InvalidVoicemailGreeting(APIException):
+
+    def __init__(self, greeting):
+        super().__init__(
+            status_code=400,
+            message='Invalid voicemail greeting',
+            error_id='invalid-voicemail-greeting',
+            details={
+                'greeting': greeting,
+            }
+        )
+
+
+class NoSuchVoicemailGreeting(APIException):
+
+    def __init__(self, greeting):
+        super().__init__(
+            status_code=404,
+            message='No such voicemail greeting',
+            error_id='no-such-voicemail-greeting',
+            details={
+                'greeting': greeting,
+            }
+        )
+
+
+class VoicemailGreetingAlreadyExists(APIException):
+    def __init__(self, greeting):
+        super().__init__(
+            status_code=409,
+            message='Voicemail greeting already exists',
+            error_id='voicemail-greeting-already-exists',
+            details={
+                'greeting': greeting,
+            }
         )

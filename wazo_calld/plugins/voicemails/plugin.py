@@ -7,17 +7,25 @@ from wazo_auth_client import Client as AuthClient
 from wazo_confd_client import Client as ConfdClient
 
 from .bus_consume import VoicemailsBusEventHandler
-from .resources import UserVoicemailFolderResource
-from .resources import UserVoicemailMessageResource
-from .resources import UserVoicemailRecordingResource
-from .resources import UserVoicemailResource
-from .resources import VoicemailFolderResource
-from .resources import VoicemailMessageResource
-from .resources import VoicemailRecordingResource
-from .resources import VoicemailResource
+from .resources import (
+    UserVoicemailFolderResource,
+    UserVoicemailGreetingCopyResource,
+    UserVoicemailGreetingResource,
+    UserVoicemailMessageResource,
+    UserVoicemailRecordingResource,
+    UserVoicemailResource,
+    VoicemailFolderResource,
+    VoicemailGreetingCopyResource,
+    VoicemailGreetingResource,
+    VoicemailMessageResource,
+    VoicemailRecordingResource,
+    VoicemailResource,
+)
 from .services import VoicemailsService
-from .storage import new_cache
-from .storage import new_filesystem_storage
+from .storage import (
+    new_cache,
+    new_filesystem_storage,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -57,17 +65,30 @@ class Plugin:
         api.add_resource(VoicemailFolderResource,
                          '/voicemails/<voicemail_id>/folders/<folder_id>',
                          resource_class_args=[voicemails_service])
+        api.add_resource(VoicemailGreetingResource,
+                         '/voicemails/<voicemail_id>/greetings/<greeting>',
+                         resource_class_args=[voicemails_service])
+        api.add_resource(VoicemailGreetingCopyResource,
+                         '/voicemails/<voicemail_id>/greetings/<greeting>/copy',
+                         resource_class_args=[voicemails_service])
         api.add_resource(VoicemailMessageResource,
                          '/voicemails/<voicemail_id>/messages/<message_id>',
                          resource_class_args=[voicemails_service])
         api.add_resource(VoicemailRecordingResource,
                          '/voicemails/<voicemail_id>/messages/<message_id>/recording',
                          resource_class_args=[voicemails_service])
+
         api.add_resource(UserVoicemailResource,
                          '/users/me/voicemails',
                          resource_class_args=[auth_client, voicemails_service])
         api.add_resource(UserVoicemailFolderResource,
                          '/users/me/voicemails/folders/<folder_id>',
+                         resource_class_args=[auth_client, voicemails_service])
+        api.add_resource(UserVoicemailGreetingResource,
+                         '/users/me/voicemails/greetings/<greeting>',
+                         resource_class_args=[auth_client, voicemails_service])
+        api.add_resource(UserVoicemailGreetingCopyResource,
+                         '/users/me/voicemails/greetings/<greeting>/copy',
                          resource_class_args=[auth_client, voicemails_service])
         api.add_resource(UserVoicemailMessageResource,
                          '/users/me/voicemails/messages/<message_id>',

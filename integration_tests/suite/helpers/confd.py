@@ -73,6 +73,12 @@ class ConfdClient:
 
         requests.post(url, json=body, verify=False)
 
+    def set_voicemails(self, *mock_voicemails):
+        url = self.url('_set_response')
+        body = {'response': 'voicemails',
+                'content': {voicemail.id(): voicemail.to_dict() for voicemail in mock_voicemails}}
+        requests.post(url, json=body, verify=False)
+
     def reset(self):
         url = self.url('_reset')
         requests.post(url, verify=False)
@@ -122,10 +128,11 @@ class MockMoh:
 
 class MockUser:
 
-    def __init__(self, uuid, line_ids=None, mobile=None):
+    def __init__(self, uuid, line_ids=None, mobile=None, voicemail=None):
         self._uuid = uuid
         self._line_ids = line_ids or []
         self._mobile = mobile
+        self._voicemail = voicemail
 
     def uuid(self):
         return self._uuid
@@ -135,6 +142,7 @@ class MockUser:
             'uuid': self._uuid,
             'lines': [{'id': line_id} for line_id in self._line_ids],
             'mobile_phone_number': self._mobile,
+            'voicemail': self._voicemail,
         }
 
 
@@ -206,4 +214,29 @@ class MockConference:
             'name': self._name,
             'extensions': extensions,
             'tenant_uuid': self._tenant_uuid,
+        }
+
+
+class MockVoicemail:
+    def __init__(self, id, number, name, context, user_uuids=None, tenant_uuid=None):
+        self._id = id
+        self._number = number
+        self._name = name
+        self._context = context
+        self._tenant_uuid = tenant_uuid
+        self.user_uuids = user_uuids or []
+
+    def id(self):
+        return self._id
+
+    def to_dict(self):
+        return {
+            'id': self._id,
+            'number': self._number,
+            'name': self._name,
+            'context': self._context,
+            'tenant_uuid': self._tenant_uuid,
+            'users': [
+                {"uuid": user} for user in self.user_uuids
+            ]
         }
