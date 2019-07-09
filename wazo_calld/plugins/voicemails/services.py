@@ -103,8 +103,7 @@ class VoicemailsService:
             if e.response.status_code == 400:
                 raise InvalidVoicemailGreeting(greeting)
         except ARIHTTPError as e:
-            # FIXME(sileht): Should be 409 or 400
-            if e.original_error.response.status_code == 404:
+            if e.original_error.response.status_code == 409:
                 raise VoicemailGreetingAlreadyExists(greeting)
             raise
 
