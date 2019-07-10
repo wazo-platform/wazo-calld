@@ -87,7 +87,8 @@ class SwitchboardsService:
         calls = self.queued_calls(tenant_uuid, switchboard_uuid)
         self._notifier.queued_calls(tenant_uuid, switchboard_uuid, calls)
 
-    def answer_queued_call(self, tenant_uuid, switchboard_uuid, queued_call_id, user_uuid):
+    def answer_queued_call(self, tenant_uuid, switchboard_uuid, queued_call_id,
+                           user_uuid, line_id=None):
         if not Switchboard(tenant_uuid, switchboard_uuid, self._confd).exists():
             raise NoSuchSwitchboard(switchboard_uuid)
 
@@ -98,7 +99,11 @@ class SwitchboardsService:
 
         try:
             user = User(user_uuid, self._confd, tenant_uuid=tenant_uuid)
-            endpoint = user.main_line().interface_autoanswer()
+            if line_id:
+                line = user.line(line_id)
+            else:
+                line = user.main_line()
+            endpoint = line.interface_autoanswer()
         except InvalidUserUUID as e:
             raise NoSuchConfdUser(e.details['user_uuid'])
 
@@ -183,7 +188,8 @@ class SwitchboardsService:
             result.append(call)
         return result
 
-    def answer_held_call(self, tenant_uuid, switchboard_uuid, held_call_id, user_uuid):
+    def answer_held_call(self, tenant_uuid, switchboard_uuid, held_call_id,
+                         user_uuid, line_id=None):
         if not Switchboard(tenant_uuid, switchboard_uuid, self._confd).exists():
             raise NoSuchSwitchboard(switchboard_uuid)
 
@@ -194,7 +200,11 @@ class SwitchboardsService:
 
         try:
             user = User(user_uuid, self._confd, tenant_uuid=tenant_uuid)
-            endpoint = user.main_line().interface_autoanswer()
+            if line_id:
+                line = user.line(line_id)
+            else:
+                line = user.main_line()
+            endpoint = line.interface_autoanswer()
         except InvalidUserUUID as e:
             raise NoSuchConfdUser(e.details['user_uuid'])
 

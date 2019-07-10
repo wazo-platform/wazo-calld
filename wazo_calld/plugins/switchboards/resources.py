@@ -3,6 +3,8 @@
 
 from xivo.tenant_flask_helpers import Tenant, token
 
+from flask import request
+
 from marshmallow import Schema, fields
 
 from wazo_calld.auth import required_acl
@@ -25,6 +27,13 @@ class HeldCallSchema(Schema):
 
 
 held_call_schema = HeldCallSchema()
+
+
+class AnswerCallSchema(Schema):
+    line_id = fields.Integer(missing=None)
+
+
+answer_call_schema = AnswerCallSchema()
 
 
 class SwitchboardCallsQueuedResource(AuthResource):
@@ -50,8 +59,10 @@ class SwitchboardCallQueuedAnswerResource(AuthResource):
         tenant = Tenant.autodetect()
         user_uuid = token.user_uuid
 
+        line_id = answer_call_schema.load(request.args).data.get('line_id')
+
         call_id = self._service.answer_queued_call(
-            tenant.uuid, switchboard_uuid, call_id, user_uuid
+            tenant.uuid, switchboard_uuid, call_id, user_uuid, line_id
         )
 
         return {'call_id': call_id}, 200
@@ -92,6 +103,9 @@ class SwitchboardCallHeldAnswerResource(AuthResource):
         tenant = Tenant.autodetect()
         user_uuid = token.user_uuid
 
-        call_id = self._service.answer_held_call(tenant.uuid, switchboard_uuid, call_id, user_uuid)
+        line_id = answer_call_schema.load(request.args).data.get('line_id')
+
+        call_id = self._service.answer_held_call(tenant.uuid, switchboard_uuid,
+                                                 call_id, user_uuid, line_id)
 
         return {'call_id': call_id}, 200

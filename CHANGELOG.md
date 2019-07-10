@@ -2,6 +2,11 @@
 
 ## 19.10
 
+* The following endpoints have a new query parameter `line_id` to select a line
+
+  * `PUT /1.0/switchboards/{switchboard_uuid}/calls/queue/{call_id}/answer`
+  * `PUT /1.0/switchboards/{switchboard_uuid}/calls/held/{call_id}/answer`
+
 * New API for calling users into applications:
 
   * POST `/1.0/applications/{uuid}/nodes/{node_uuid}/calls/users`
