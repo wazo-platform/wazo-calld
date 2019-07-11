@@ -53,9 +53,19 @@ class Controller:
                 'collectd': self.collectd,
                 'config': config,
                 'status_aggregator': self.status_aggregator,
-                'token_changed_subscribe': self.token_renewer.subscribe_to_token_change,
-                'next_token_changed_subscribe': self.token_renewer.subscribe_to_next_token_change,
+                'token_changed_subscribe': self._token_changed_subscribe,
+                'next_token_changed_subscribe': self._next_token_changed_subscribe,
             }
+        )
+
+    def _token_changed_subscribe(self, callback):
+        self.token_renewer.subscribe_to_token_change(
+            lambda token: callback(token["token"])
+        )
+
+    def _next_token_changed_subscribe(self, callback):
+        self.token_renewer.subscribe_to_next_token_change(
+            lambda token: callback(token["token"])
         )
 
     def run(self):
