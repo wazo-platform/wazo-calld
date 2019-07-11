@@ -78,7 +78,7 @@ class VoicemailsService:
         try:
             return base64.b64decode(self._ari.wazo.getVoicemailGreeting(
                 context=vm_conf['context'],
-                voicemail=vm_conf['name'],
+                voicemail=vm_conf['number'],
                 greeting=greeting,
             )['greeting_base64'].encode())
         except ARIHTTPError as e:
@@ -94,7 +94,7 @@ class VoicemailsService:
         try:
             self._ari.wazo.createVoicemailGreeting(
                 context=vm_conf['context'],
-                voicemail=vm_conf['name'],
+                voicemail=vm_conf['number'],
                 greeting=greeting,
                 body=body
             )
@@ -115,7 +115,7 @@ class VoicemailsService:
         try:
             self._ari.wazo.changeVoicemailGreeting(
                 context=vm_conf['context'],
-                voicemail=vm_conf['name'],
+                voicemail=vm_conf['number'],
                 greeting=greeting,
                 body=body
             )
@@ -132,7 +132,7 @@ class VoicemailsService:
         vm_conf = confd.get_voicemail(voicemail_id, self._confd_client)
         self._ari.wazo.removeVoicemailGreeting(
             context=vm_conf['context'],
-            voicemail=vm_conf['name'],
+            voicemail=vm_conf['number'],
             greeting=greeting,
         )
 
