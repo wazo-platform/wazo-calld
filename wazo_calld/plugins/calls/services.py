@@ -244,5 +244,6 @@ class CallsService:
         call.dialed_extension = event_variables.get('XIVO_BASE_EXTEN') or None
         call.bridges = []
         call.talking_to = {}
+        call.sip_call_id = event_variables.get('WAZO_SIP_CALL_ID') or None
 
         return call
