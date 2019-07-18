@@ -183,10 +183,12 @@ class _Snoop:
         snoop_channel.setChannelVar(
             variable=self._whisper_mode_chan_var,
             value=whisper_mode,
+            bypassStasis=True,
         )
         snoop_channel.setChannelVar(
             variable=self._snooped_call_id_chan_var,
-            value=self.snooped_call_id
+            value=self.snooped_call_id,
+            bypassStasis=True,
         )
         self.whisper_mode = whisper_mode
 
