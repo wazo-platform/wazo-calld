@@ -652,7 +652,7 @@ class TestConferenceParticipants(TestConferences):
         )
         bus_events = self.bus.accumulator('conferences.{}.participants.talk'.format(conference_id))
 
-        channel_id = self.given_call_in_conference(CONFERENCE1_EXTENSION, caller_id_name='participant1')
+        self.given_call_in_conference(CONFERENCE1_EXTENSION, caller_id_name='participant1')
         participants = calld.conferences.list_participants(conference_id)
         participant = participants['items'][0]
 

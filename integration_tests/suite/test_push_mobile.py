@@ -4,7 +4,6 @@
 from hamcrest import (
     assert_that,
     contains,
-    equal_to,
     has_entries,
 )
 

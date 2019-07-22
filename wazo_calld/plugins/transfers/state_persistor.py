@@ -4,9 +4,9 @@
 import logging
 
 from wazo_calld.helpers.ari_ import (GlobalVariableAdapter,
-                                       GlobalVariableJsonAdapter,
-                                       GlobalVariableNameDecorator,
-                                       GlobalVariableConstantNameAdapter)
+                                     GlobalVariableJsonAdapter,
+                                     GlobalVariableNameDecorator,
+                                     GlobalVariableConstantNameAdapter)
 from .transfer import Transfer
 
 logger = logging.getLogger(__name__)

@@ -77,7 +77,7 @@ class TransfersService:
             transferred_call = Channel(initiator_call, self.ari).only_connected_channel().id
         except TooManyChannels as e:
             raise TooManyTransferredCandidates(e.channels)
-        except NotEnoughChannels as e:
+        except NotEnoughChannels:
             raise TransferCreationError('transferred channel not found')
 
         context = User(user_uuid, self.confd_client).main_line().context()

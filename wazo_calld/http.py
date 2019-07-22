@@ -38,8 +38,7 @@ def handle_ari_exception(func):
 class ErrorCatchingResource(Resource):
     method_decorators = ([mallow_helpers.handle_validation_exception,
                           handle_ari_exception,
-                          rest_api_helpers.handle_api_exception] +
-                         Resource.method_decorators)
+                          rest_api_helpers.handle_api_exception] + Resource.method_decorators)
 
 
 class AuthResource(ErrorCatchingResource):

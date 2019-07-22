@@ -1,0 +1,20 @@
+- job:
+    name: calld-tox-integration
+    description: Run calld integration tests
+    parent: wazo-tox-integration
+    required-projects:
+      wazo-pbx/chan-test
+    timeout: 10800
+
+- project:
+    templates:
+      - wazo-tox-linters
+      - wazo-tox-py35
+    check:
+      jobs:
+        - calld-tox-integration:
+            nodeset: debian9-vm
+    gate:
+      jobs:
+        - calld-tox-integration:
+            nodeset: debian9-vm

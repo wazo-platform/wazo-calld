@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from wazo_calld.helpers.ari_ import (GlobalVariableAdapter,
-                                       GlobalVariableJsonAdapter,
-                                       GlobalVariableNameDecorator)
+                                     GlobalVariableJsonAdapter,
+                                     GlobalVariableNameDecorator)
 
 
 class ChannelCacheEntry:

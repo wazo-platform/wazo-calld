@@ -1,8 +1,6 @@
 # Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-import os
-
 from hamcrest import assert_that
 from hamcrest import has_item
 from hamcrest import matches_regexp

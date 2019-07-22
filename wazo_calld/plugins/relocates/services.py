@@ -157,7 +157,7 @@ class RelocatesService:
             relocated_channel = Channel(initiator_call, self.ari).only_connected_channel()
         except TooManyChannels as e:
             raise TooManyChannelCandidates(e.channels)
-        except NotEnoughChannels as e:
+        except NotEnoughChannels:
             raise RelocateCreationError('relocated channel not found')
 
         initiator_channel = Channel(initiator_call, self.ari)

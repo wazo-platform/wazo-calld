@@ -74,9 +74,9 @@ class TestSwitchboards(RealAsteriskIntegrationTest):
     def channels_are_bridged(self, caller, callee):
         try:
             next(bridge for bridge in self.ari.bridges.list()
-                 if (caller.id in bridge.json['channels'] and
-                     callee.id in bridge.json['channels'] and
-                     bridge.json['bridge_type'] == 'mixing'))
+                 if (caller.id in bridge.json['channels']
+                     and callee.id in bridge.json['channels']
+                     and bridge.json['bridge_type'] == 'mixing'))
             return True
         except StopIteration:
             return False
