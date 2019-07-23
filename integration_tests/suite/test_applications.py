@@ -1215,6 +1215,9 @@ class TestApplicationSnoop(BaseApplicationTestCase):
             'both',
         ).json()
 
+        # Test snoop being created (snoop bridge with no channels) does not cause errors
+        self.ari.bridges.create(name='wazo-app-snoop-{}'.format(self.app_uuid))
+
         result = self.calld.application_list_snoops(self.app_uuid)
         assert_that(
             result.json(),

@@ -13,6 +13,12 @@ from .exceptions import (
 )
 
 
+class InvalidSnoopBridge(Exception):
+    def __init__(self, bridge_id):
+        self.bridge_id = bridge_id
+        super().__init__('Invalid snoop bridge id "{bridge_id}"'.format(bridge_id=bridge_id))
+
+
 class ApplicationCall:
 
     def __init__(self, id_):
@@ -177,10 +183,12 @@ class _Snoop:
         snoop_channel.setChannelVar(
             variable=self._whisper_mode_chan_var,
             value=whisper_mode,
+            bypassStasis=True,
         )
         snoop_channel.setChannelVar(
             variable=self._snooped_call_id_chan_var,
-            value=self.snooped_call_id
+            value=self.snooped_call_id,
+            bypassStasis=True,
         )
         self.whisper_mode = whisper_mode
 
@@ -214,7 +222,7 @@ class _Snoop:
                 continue
 
         if not snoop_channel:
-            return None
+            raise InvalidSnoopBridge(bridge.id)
 
         snooped_call_id = cls.get_snooped_call_id(snoop_channel)
         whisper_mode = cls.get_whisper_mode(snoop_channel)
@@ -270,21 +278,29 @@ class SnoopHelper:
 
     def get(self, application, snoop_uuid):
         uuid = str(snoop_uuid)
-        for snoop_bridge in self._find_snoop_bridges(application):
+        for snoop_bridge in self._snoop_bridges(application):
             if snoop_bridge.id != uuid:
                 continue
 
-            snoop = _Snoop.from_bridge(self._ari, application, snoop_bridge)
-            if snoop:
-                return snoop
+            try:
+                return _Snoop.from_bridge(self._ari, application, snoop_bridge)
+            except InvalidSnoopBridge:
+                pass
 
         raise NoSuchSnoop(snoop_uuid)
 
     def list_(self, application):
-        bridges = self._find_snoop_bridges(application)
-        return [_Snoop.from_bridge(self._ari, application, bridge) for bridge in bridges]
+        result = []
+        for snoop_bridge in self._snoop_bridges(application):
+            try:
+                snoop = _Snoop.from_bridge(self._ari, application, snoop_bridge)
+            except InvalidSnoopBridge:
+                pass
+            else:
+                result.append(snoop)
+        return result
 
-    def _find_snoop_bridges(self, application):
+    def _snoop_bridges(self, application):
         bridge_name = _Snoop.bridge_name_tpl.format(application['uuid'])
         for bridge in self._ari.bridges.list():
             if bridge.json['name'] == bridge_name:
