@@ -1,4 +1,4 @@
-# Copyright 2016-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -30,6 +30,7 @@ class CallsBusEventHandler:
         self.dial_echo_manager = dial_echo_manager
 
     def subscribe(self, bus_consumer):
+        bus_consumer.on_ami_event('Newchannel', self._add_sip_call_id)
         bus_consumer.on_ami_event('Newchannel', self._relay_channel_created)
         bus_consumer.on_ami_event('Newchannel', self._collectd_channel_created)
         bus_consumer.on_ami_event('Newstate', self._relay_channel_updated)
@@ -39,6 +40,23 @@ class CallsBusEventHandler:
         bus_consumer.on_ami_event('Hangup', self._relay_channel_hung_up)
         bus_consumer.on_ami_event('Hangup', self._collectd_channel_ended)
         bus_consumer.on_ami_event('UserEvent', self._set_dial_echo_result)
+
+    def _add_sip_call_id(self, event):
+        channel_id = event['Uniqueid']
+        channel = Channel(channel_id, self.ari)
+        sip_call_id = channel.sip_call_id()
+        if not sip_call_id:
+            return
+
+        try:
+            self.ari.channels.setChannelVar(
+                channelId=channel_id,
+                variable='WAZO_SIP_CALL_ID',
+                value=sip_call_id,
+                bypassStasis=True,
+            )
+        except ARINotFound:
+            logger.debug('channel %s not found', channel_id)
 
     def _relay_channel_created(self, event):
         channel_id = event['Uniqueid']

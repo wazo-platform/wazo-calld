@@ -37,6 +37,27 @@ class TestBusConsume(IntegrationTest):
                 'data': has_entries({
                     'call_id': call_id,
                     'dialed_extension': '*10',
+                    'sip_call_id': None,
+                })
+            })))
+
+        until.assert_(assert_function, tries=5)
+
+    def test_when_channel_ended_with_sip_call_id_then_bus_event(self):
+        call_id = new_call_id()
+        sip_call_id = 'foobar'
+        events = self.bus.accumulator(routing_key='calls.call.ended')
+
+        self.bus.send_ami_hangup_event(call_id, base_exten='*10', sip_call_id=sip_call_id)
+
+        def assert_function():
+            assert_that(events.accumulate(), has_item(has_entries({
+                'name': 'call_ended',
+                'origin_uuid': XIVO_UUID,
+                'data': has_entries({
+                    'call_id': call_id,
+                    'dialed_extension': '*10',
+                    'sip_call_id': sip_call_id,
                 })
             })))
 
