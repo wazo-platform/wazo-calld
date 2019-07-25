@@ -7,7 +7,7 @@ git+https://github.com/wazo-pbx/xivo-bus.git
 git+https://github.com/wazo-pbx/xivo-lib-python.git
 git+https://github.com/wazo-pbx/xivo-lib-rest-client.git
 cheroot==6.5.4
-flask==1.1
+flask==1.0.2
 flask-restful==0.3.7
 flask-cors==3.0.7
 iso8601==0.1.11
@@ -15,5 +15,5 @@ kombu==4.2.1
 marshmallow==3.0.0b14
 python-consul==0.7.1
 pyyaml==3.13  # from xivo-lib-python
-requests==0.4.13
+requests==2.21.0
 stevedore==1.29.0
