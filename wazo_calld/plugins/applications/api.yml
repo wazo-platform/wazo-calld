@@ -480,7 +480,7 @@ paths:
   /applications/{application_uuid}/nodes/{node_uuid}/calls/user:
     post:
       summary: Initiate a call to a user and insert it in the node
-      description: '**Required ACL:** `calld.applications.{application_uuid}.nodes.{node_uuid}.calls.create`'
+      description: '**Required ACL:** `calld.applications.{application_uuid}.nodes.{node_uuid}.calls.user.create`'
       parameters:
       - $ref: '#/parameters/ApplicationUUID'
       - $ref: '#/parameters/ApplicationNodeUUID'
