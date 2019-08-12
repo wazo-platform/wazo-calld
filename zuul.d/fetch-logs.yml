@@ -1,0 +1,12 @@
+---
+- hosts: all
+  tasks:
+    - name: Upload logs
+      become: yes
+      synchronize:
+        src: '/var/log'
+        dest: '{{ zuul.executor.log_root }}'
+        mode: pull
+        copy_links: true
+        verify_host: true
+        rsync_opts: []
