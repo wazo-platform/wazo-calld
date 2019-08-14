@@ -32,3 +32,15 @@ class TestStasisStart(TestCase):
 
         self.service.dial_all_contacts.assert_not_called()
         self.service.join_bridge.assert_not_called()
+
+    def test_not_enough_arguments_does_nothing(self):
+        assert_that(
+            calling(self.stasis.stasis_start).with_args(Mock(), {
+                'application': DialMobileStasis._app_name,
+                'args': ['dial'],
+            }),
+            not_(raises(Exception)),
+        )
+
+        self.service.dial_all_contacts.assert_not_called()
+        self.service.join_bridge.assert_not_called()

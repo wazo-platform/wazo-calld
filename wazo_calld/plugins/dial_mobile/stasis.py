@@ -19,15 +19,20 @@ class DialMobileStasis:
         if event['application'] != self._app_name:
             return
 
-        action = event['args'][0]
+        args = event['args']
+        if len(args) < 2:
+            logger.info('%s called without enough arguments %s', self._app_name, args)
+            return
+
+        action = args[0]
         channel_id = event['channel']['id']
         logger.debug('action: %s channel_id: %s', action, channel_id)
 
         if action == 'dial':
-            aor = event['args'][1]
+            aor = args[1]
             self._service.dial_all_contacts(channel_id, aor)
         elif action == 'join':
-            future_bridge_uuid = event['args'][1]
+            future_bridge_uuid = args[1]
             self._service.join_bridge(channel_id, future_bridge_uuid)
 
     def add_ari_application(self):
