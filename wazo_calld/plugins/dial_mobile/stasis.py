@@ -19,10 +19,9 @@ class DialMobileStasis:
         if event['application'] != self._app_name:
             return
 
-        logger.info('%s', event)
         action = event['args'][0]
         channel_id = event['channel']['id']
-        logger.info('action: %s channel_id: %s', action, channel_id)
+        logger.debug('action: %s channel_id: %s', action, channel_id)
 
         if action == 'dial':
             aor = event['args'][1]
@@ -31,13 +30,9 @@ class DialMobileStasis:
             future_bridge_uuid = event['args'][1]
             self._service.join_bridge(channel_id, future_bridge_uuid)
 
-    def stasis_end(self, event_object, event):
-        logger.info('%s', event)
-
     def add_ari_application(self):
         self._core_ari.register_application(self._app_name)
         self._core_ari.reload()
 
     def subscribe(self):
         self._ari.on_channel_event('StasisStart', self.stasis_start)
-        self._ari.on_channel_event('StasisEnd', self.stasis_end)
