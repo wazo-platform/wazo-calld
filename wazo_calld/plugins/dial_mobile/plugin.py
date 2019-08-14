@@ -36,6 +36,7 @@ class _ContactPoller:
         )
         self._called_contacts = set()
         self.is_running = False
+        self._dialed_channels = set()
 
     def start(self):
         self._thread.start()
@@ -44,13 +45,17 @@ class _ContactPoller:
         if not self._thread.is_alive():
             return
 
-        logger.critical('stopping poller')
         self.should_stop.set()
         self._thread.join()
-        logger.critical('poller stopped')
 
     def _run(self, channel_id, aor):
-        logger.info('poller started')
+        try:
+            return self._run_no_exception(channel_id, aor)
+        except Exception:
+            logger.exception('Unhandled exception in %s thread', self._thread.name)
+
+    def _run_no_exception(self, channel_id, aor):
+        logger.debug('%s thread starting', self._thread.name)
         start_time = time.time()
         channel = self._ari.channels.get(channelId=channel_id)
         caller_id = '"{name}" <{number}>'.format(**channel.json['caller'])
@@ -59,34 +64,58 @@ class _ContactPoller:
             contacts = self._get_contacts(channel_id, aor)
             for contact in contacts:
                 if self.should_stop.is_set():
-                    logger.info('should stop is set')
                     break
 
                 if contact in self._called_contacts:
                     continue
 
                 self._called_contacts.add(contact)
-                logger.info('new contact %s', contact)
+                logger.debug('new contact %s', contact)
                 self._send_contact_to_current_call(contact, self.future_bridge_uuid, caller_id)
+
+            if not self._channel_is_up(channel_id):
+                logger.debug('calling channel is gone stoping %s thread', self._thread.name)
+                self.should_stop.set()
+                break
 
             # Avoid leaking threads if the calls have been answered elsewhere
             if time.time() - start_time > 30:
                 self.should_stop.set()
+                break
 
             if self.should_stop.is_set():
                 break
 
             time.sleep(0.25)
 
+        self._remove_ringing_channels()
+
+    def _channel_is_up(self, channel_id):
+        try:
+            self._ari.channels.get(channelId=channel_id)
+        except ARINotFound:
+            return False
+        else:
+            return True
+
     def _send_contact_to_current_call(self, contact, future_bridge_uuid, caller_id):
-        logger.info('Sending %s to the future bridge %s', contact, future_bridge_uuid)
-        result = self._ari.channels.originate(
+        logger.debug('sending %s to the future bridge %s', contact, future_bridge_uuid)
+        channel = self._ari.channels.originate(
             endpoint=contact,
             app='dial_mobile',
             appArgs=['join', future_bridge_uuid],
             callerId=caller_id,
         )
-        logger.info('%s', result)
+        self._dialed_channels.add(channel)
+
+    def _remove_ringing_channels(self):
+        for channel in self._dialed_channels:
+            channel_info = channel.get()
+            if channel_info.json['state'] == 'Ringing':
+                try:
+                    self._ari.channels.hangup(channelId=channel.id)
+                except ARINotFound:
+                    pass  # Has already been hungup
 
     def _get_contacts(self, channel_id, aor):
         asterisk_dialplan_function = 'PJSIP_DIAL_CONTACTS({})'.format(aor)
@@ -122,21 +151,17 @@ class DialMobileService:
         logger.info('%s is joining bridge %s', channel_id, future_bridge_uuid)
         self._contact_pollers[future_bridge_uuid].stop()
         outgoing_channel_id = self._outgoing_calls[future_bridge_uuid]
-        logger.critical('answering %s', channel_id)
-        try:
-            self._ari.channels.answer(channelId=channel_id)
-        except ARINotFound as e:
-            logger.critical('%s', e)
-            logger.critical('%s', e.__dict__)
-            logger.critical('%s', e.original_error.response.text)
-
-        logger.critical('answering %s', outgoing_channel_id)
         try:
             self._ari.channels.answer(channelId=outgoing_channel_id)
-        except ARINotFound as e:
-            logger.critical('%s', e)
-            logger.critical('%s', e.__dict__)
-            logger.critical('%s', e.original_error.response.text)
+        except ARINotFound:
+            logger.info('the caller (%s) left the call before being bridged')
+            return
+
+        try:
+            self._ari.channels.answer(channelId=channel_id)
+        except ARINotFound:
+            logger.info('the answered (%s) left the call before being bridged')
+            return
 
         bridge = self._ari.bridges.createWithId(
             type='mixing',
