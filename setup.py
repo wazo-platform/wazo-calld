@@ -27,6 +27,7 @@ setup(
             'applications = wazo_calld.plugins.applications.plugin:Plugin',
             'calls = wazo_calld.plugins.calls.plugin:Plugin',
             'conferences = wazo_calld.plugins.conferences.plugin:Plugin',
+            'dial_mobile = wazo_calld.plugins.dial_mobile.plugin:Plugin',
             'faxes = wazo_calld.plugins.faxes.plugin:Plugin',
             'relocates = wazo_calld.plugins.relocates.plugin:Plugin',
             'status = wazo_calld.plugins.status.plugin:Plugin',
