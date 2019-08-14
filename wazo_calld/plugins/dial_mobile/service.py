@@ -122,11 +122,10 @@ class DialMobileService:
         logger.info('dial_all_contacts(%s, %s)', channel_id, aor)
         future_bridge_uuid = str(uuid.uuid4())
 
-        logger.info('%s is waiting for a channel to join the bridge %s', future_bridge_uuid)
+        logger.debug('%s is waiting for a channel to join the bridge %s', future_bridge_uuid)
         poller = _ContactPoller(self._ari, future_bridge_uuid, channel_id, aor)
         self._contact_pollers[future_bridge_uuid] = poller
         self._outgoing_calls[future_bridge_uuid] = channel_id
-        logger.info('starting poller')
         poller.start()
 
     def join_bridge(self, channel_id, future_bridge_uuid):
