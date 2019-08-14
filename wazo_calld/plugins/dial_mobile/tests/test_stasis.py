@@ -3,7 +3,10 @@
 
 from unittest import TestCase
 
-from mock import Mock
+from mock import (
+    Mock,
+    sentinel as s,
+)
 from hamcrest import (
     assert_that,
     calling,
@@ -44,3 +47,29 @@ class TestStasisStart(TestCase):
 
         self.service.dial_all_contacts.assert_not_called()
         self.service.join_bridge.assert_not_called()
+
+    def test_calling_dial(self):
+        self.stasis.stasis_start(
+            Mock(),
+            {
+                'application': DialMobileStasis._app_name,
+                'args': ['dial', s.aor],
+                'channel': {'id': s.channel_id},
+            },
+        )
+
+        self.service.dial_all_contacts.assert_called_once_with(s.channel_id, s.aor)
+        self.service.join_bridge.assert_not_called()
+
+    def test_calling_join(self):
+        self.stasis.stasis_start(
+            Mock(),
+            {
+                'application': DialMobileStasis._app_name,
+                'args': ['join', s.bridge_uuid],
+                'channel': {'id': s.channel_id},
+            },
+        )
+
+        self.service.dial_all_contacts.assert_not_called()
+        self.service.join_bridge.called_once_with(s.channel_id, s.bridge_uuid)
