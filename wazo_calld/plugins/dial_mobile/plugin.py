@@ -56,7 +56,6 @@ class _ContactPoller:
 
     def _run_no_exception(self, channel_id, aor):
         logger.debug('%s thread starting', self._thread.name)
-        start_time = time.time()
         channel = self._ari.channels.get(channelId=channel_id)
         caller_id = '"{name}" <{number}>'.format(**channel.json['caller'])
 
@@ -75,11 +74,6 @@ class _ContactPoller:
 
             if not self._channel_is_up(channel_id):
                 logger.debug('calling channel is gone stoping %s thread', self._thread.name)
-                self.should_stop.set()
-                break
-
-            # Avoid leaking threads if the calls have been answered elsewhere
-            if time.time() - start_time > 30:
                 self.should_stop.set()
                 break
 
