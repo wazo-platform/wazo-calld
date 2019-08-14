@@ -8,6 +8,8 @@ import threading
 
 from ari.exceptions import ARINotFound
 
+from .stasis import DialMobileStasis
+
 logger = logging.getLogger(__name__)
 
 
@@ -163,40 +165,3 @@ class DialMobileService:
         )
         bridge.addChannel(channel=channel_id)
         bridge.addChannel(channel=outgoing_channel_id)
-
-
-class DialMobileStasis:
-
-    _app_name = 'dial_mobile'
-
-    def __init__(self, ari, service):
-        self._core_ari = ari
-        self._ari = ari.client
-        self._service = service
-
-    def stasis_start(self, event_object, event):
-        if event['application'] != self._app_name:
-            return
-
-        logger.info('%s', event)
-        action = event['args'][0]
-        channel_id = event['channel']['id']
-        logger.info('action: %s channel_id: %s', action, channel_id)
-
-        if action == 'dial':
-            aor = event['args'][1]
-            self._service.dial_all_contacts(channel_id, aor)
-        elif action == 'join':
-            future_bridge_uuid = event['args'][1]
-            self._service.join_bridge(channel_id, future_bridge_uuid)
-
-    def stasis_end(self, event_object, event):
-        logger.info('%s', event)
-
-    def add_ari_application(self):
-        self._core_ari.register_application(self._app_name)
-        self._core_ari.reload()
-
-    def subscribe(self):
-        self._ari.on_channel_event('StasisStart', self.stasis_start)
-        self._ari.on_channel_event('StasisEnd', self.stasis_end)
