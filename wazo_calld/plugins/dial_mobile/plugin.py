@@ -52,6 +52,9 @@ class _ContactPoller:
     def _run(self, channel_id, aor):
         logger.info('poller started')
         start_time = time.time()
+        channel = self._ari.channels.get(channelId=channel_id)
+        caller_id = '"{name}" <{number}>'.format(**channel.json['caller'])
+
         while True:
             contacts = self._get_contacts(channel_id, aor)
             for contact in contacts:
@@ -64,7 +67,7 @@ class _ContactPoller:
 
                 self._called_contacts.add(contact)
                 logger.info('new contact %s', contact)
-                self._send_contact_to_current_call(contact, self.future_bridge_uuid)
+                self._send_contact_to_current_call(contact, self.future_bridge_uuid, caller_id)
 
             # Avoid leaking threads if the calls have been answered elsewhere
             if time.time() - start_time > 30:
@@ -75,12 +78,13 @@ class _ContactPoller:
 
             time.sleep(0.25)
 
-    def _send_contact_to_current_call(self, contact, future_bridge_uuid):
+    def _send_contact_to_current_call(self, contact, future_bridge_uuid, caller_id):
         logger.info('Sending %s to the future bridge %s', contact, future_bridge_uuid)
         result = self._ari.channels.originate(
             endpoint=contact,
             app='dial_mobile',
             appArgs=['join', future_bridge_uuid],
+            callerId=caller_id,
         )
         logger.info('%s', result)
 
