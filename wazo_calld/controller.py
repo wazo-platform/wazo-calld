@@ -22,6 +22,22 @@ from .service_discovery import self_check
 logger = logging.getLogger(__name__)
 
 
+class ServiceStoppingNotifier:
+
+    def __init__(self):
+        self._stop_callbacks = set()
+
+    def register_callback(self, callback):
+        self._stop_callbacks.add(callback)
+
+    def notify(self):
+        for callback in self._stop_callbacks:
+            try:
+                callback()
+            except Exception as e:
+                logger.info('an error occured during the stop callback %s %s', callback, e)
+
+
 class Controller:
 
     def __init__(self, config):
@@ -42,6 +58,8 @@ class Controller:
                                              config['bus'],
                                              partial(self_check,
                                                      config['rest_api']['port'])]
+
+        self._service_stopping_notifier = ServiceStoppingNotifier()
         plugin_helpers.load(
             namespace='wazo_calld.plugins',
             names=config['enabled_plugins'],
@@ -53,6 +71,7 @@ class Controller:
                 'collectd': self.collectd,
                 'config': config,
                 'status_aggregator': self.status_aggregator,
+                'service_stopping_notifier': self._service_stopping_notifier,
                 'token_changed_subscribe': self.token_renewer.subscribe_to_token_change,
                 'next_token_changed_subscribe': self.token_renewer.subscribe_to_next_token_change,
             }
@@ -78,6 +97,7 @@ class Controller:
                     self.http_server.run()
         finally:
             logger.info('wazo-calld stopping...')
+            self._service_stopping_notifier.notify()
             self.ari.stop()
             self.bus_consumer.should_stop = True
             self.collectd.stop()

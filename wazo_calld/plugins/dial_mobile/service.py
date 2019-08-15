@@ -150,3 +150,7 @@ class DialMobileService:
         )
         bridge.addChannel(channel=channel_id)
         bridge.addChannel(channel=outgoing_channel_id)
+
+    def on_calld_stopping(self):
+        for dialer in self._contact_dialers.values():
+            dialer.stop()
