@@ -53,11 +53,6 @@ class _ContactPoller:
                 if self.should_stop.is_set():
                     break
 
-                if contact in self._called_contacts:
-                    continue
-
-                self._called_contacts.add(contact)
-                logger.debug('new contact %s', contact)
                 self._send_contact_to_current_call(contact, self.future_bridge_uuid, caller_id)
 
             if not self._channel_is_up(channel_id):
@@ -81,6 +76,9 @@ class _ContactPoller:
             return True
 
     def _send_contact_to_current_call(self, contact, future_bridge_uuid, caller_id):
+        if contact in self._called_contacts:
+            return
+
         logger.debug('sending %s to the future bridge %s', contact, future_bridge_uuid)
         channel = self._ari.channels.originate(
             endpoint=contact,
@@ -88,16 +86,18 @@ class _ContactPoller:
             appArgs=['join', future_bridge_uuid],
             callerId=caller_id,
         )
+
+        self._called_contacts.add(contact)
         self._dialed_channels.add(channel)
 
     def _remove_ringing_channels(self):
         for channel in self._dialed_channels:
-            channel_info = channel.get()
-            if channel_info.json['state'] == 'Ringing':
-                try:
+            try:
+                channel_info = channel.get()
+                if channel_info.json['state'] == 'Ringing':
                     self._ari.channels.hangup(channelId=channel.id)
-                except ARINotFound:
-                    pass  # Has already been hungup
+            except ARINotFound:
+                continue  # The channel has already been hung up
 
     def _get_contacts(self, channel_id, aor):
         asterisk_dialplan_function = 'PJSIP_DIAL_CONTACTS({})'.format(aor)
