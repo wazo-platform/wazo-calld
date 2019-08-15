@@ -17,10 +17,10 @@ from hamcrest import (
 
 from ari.exceptions import ARINotFound
 
-from ..service import _ContactPoller as ContactPoller
+from ..service import _PollingContactDialer as PollingContactDialer
 
 
-class PollerTestCase(TestCase):
+class DialerTestCase(TestCase):
 
     def setUp(self):
         self.ari = Mock()
@@ -28,10 +28,15 @@ class PollerTestCase(TestCase):
         self.aor = 'foobar'
         self.channel_id = '1234567890.42'
 
-        self.poller = ContactPoller(self.ari, self.future_bridge_uuid, self.channel_id, self.aor)
+        self.poller = PollingContactDialer(
+            self.ari,
+            self.future_bridge_uuid,
+            self.channel_id,
+            self.aor,
+        )
 
 
-class TestSendContactToCurrentCall(PollerTestCase):
+class TestSendContactToCurrentCall(DialerTestCase):
 
     def test_sending_the_same_contact_twice(self):
         self.poller._send_contact_to_current_call(s.contact, self.future_bridge_uuid, s.caller_id)
@@ -60,7 +65,7 @@ class TestSendContactToCurrentCall(PollerTestCase):
         )
 
 
-class TestChannelIsUp(PollerTestCase):
+class TestChannelIsUp(DialerTestCase):
 
     def test_no_channel(self):
         self.ari.channels.get.side_effect = ARINotFound(s.ari_client, s.original_error)
@@ -77,7 +82,7 @@ class TestChannelIsUp(PollerTestCase):
         assert_that(result, equal_to(True))
 
 
-class TestGetContacts(PollerTestCase):
+class TestGetContacts(DialerTestCase):
 
     def test_no_result(self):
         self.ari.channels.getChannelVar.return_value = {'value': ''}
@@ -108,7 +113,7 @@ class TestGetContacts(PollerTestCase):
         assert_that(result, contains('contact1', 'contact2', 'contact3'))
 
 
-class TestRemoveRingingChannels(PollerTestCase):
+class TestRemoveRingingChannels(DialerTestCase):
 
     def test_that_hungup_channels_do_not_interupt(self):
         channel_1 = Mock()

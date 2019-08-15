@@ -11,14 +11,14 @@ from ari.exceptions import ARINotFound
 logger = logging.getLogger(__name__)
 
 
-class _ContactPoller:
+class _PollingContactDialer:
 
     def __init__(self, ari, future_bridge_uuid, channel_id, aor):
         self._ari = ari
         self.future_bridge_uuid = future_bridge_uuid
         self.should_stop = threading.Event()
         self._thread = threading.Thread(
-            name='ContactPoller',
+            name='PollingContactDialer',
             target=self._run_no_exception,
             args=(channel_id, aor),
         )
@@ -115,7 +115,7 @@ class DialMobileService:
 
     def __init__(self, ari):
         self._ari = ari.client
-        self._contact_pollers = {}
+        self._contact_dialers = {}
         self._outgoing_calls = {}
 
     def dial_all_contacts(self, channel_id, aor):
@@ -123,14 +123,14 @@ class DialMobileService:
         future_bridge_uuid = str(uuid.uuid4())
 
         logger.debug('%s is waiting for a channel to join the bridge %s', future_bridge_uuid)
-        poller = _ContactPoller(self._ari, future_bridge_uuid, channel_id, aor)
-        self._contact_pollers[future_bridge_uuid] = poller
+        dialer = _PollingContactDialer(self._ari, future_bridge_uuid, channel_id, aor)
+        self._contact_dialers[future_bridge_uuid] = dialer
         self._outgoing_calls[future_bridge_uuid] = channel_id
-        poller.start()
+        dialer.start()
 
     def join_bridge(self, channel_id, future_bridge_uuid):
         logger.info('%s is joining bridge %s', channel_id, future_bridge_uuid)
-        self._contact_pollers[future_bridge_uuid].stop()
+        self._contact_dialers[future_bridge_uuid].stop()
         outgoing_channel_id = self._outgoing_calls[future_bridge_uuid]
         try:
             self._ari.channels.answer(channelId=outgoing_channel_id)
