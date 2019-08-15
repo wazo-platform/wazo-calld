@@ -9,10 +9,10 @@ class Plugin:
 
     def load(self, dependencies):
         ari = dependencies['ari']
-        service_stopping_notifier = dependencies['service_stopping_notifier']
+        pubsub = dependencies['pubsub']
 
         service = DialMobileService(ari)
-        service_stopping_notifier.register_callback(service.on_calld_stopping)
+        pubsub.subscribe('stopping', lambda _: service.on_calld_stopping())
 
         stasis = DialMobileStasis(ari, service)
         stasis.subscribe()

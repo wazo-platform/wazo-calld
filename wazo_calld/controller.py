@@ -7,6 +7,7 @@ from threading import Thread
 from functools import partial
 from wazo_auth_client import Client as AuthClient
 from xivo import plugin_helpers
+from xivo import pubsub
 from xivo.config_helper import get_xivo_uuid
 from xivo.consul_helpers import ServiceCatalogRegistration
 from xivo.status import StatusAggregator, TokenStatus
@@ -20,22 +21,6 @@ from .http_server import api, HTTPServer
 from .service_discovery import self_check
 
 logger = logging.getLogger(__name__)
-
-
-class ServiceStoppingNotifier:
-
-    def __init__(self):
-        self._stop_callbacks = set()
-
-    def register_callback(self, callback):
-        self._stop_callbacks.add(callback)
-
-    def notify(self):
-        for callback in self._stop_callbacks:
-            try:
-                callback()
-            except Exception as e:
-                logger.info('an error occured during the stop callback %s %s', callback, e)
 
 
 class Controller:
@@ -59,7 +44,7 @@ class Controller:
                                              partial(self_check,
                                                      config['rest_api']['port'])]
 
-        self._service_stopping_notifier = ServiceStoppingNotifier()
+        self._pubsub = pubsub.Pubsub()
         plugin_helpers.load(
             namespace='wazo_calld.plugins',
             names=config['enabled_plugins'],
@@ -71,7 +56,7 @@ class Controller:
                 'collectd': self.collectd,
                 'config': config,
                 'status_aggregator': self.status_aggregator,
-                'service_stopping_notifier': self._service_stopping_notifier,
+                'pubsub': self._pubsub,
                 'token_changed_subscribe': self.token_renewer.subscribe_to_token_change,
                 'next_token_changed_subscribe': self.token_renewer.subscribe_to_next_token_change,
             }
@@ -97,7 +82,7 @@ class Controller:
                     self.http_server.run()
         finally:
             logger.info('wazo-calld stopping...')
-            self._service_stopping_notifier.notify()
+            self._pubsub.publish('stopping', None)
             self.ari.stop()
             self.bus_consumer.should_stop = True
             self.collectd.stop()
