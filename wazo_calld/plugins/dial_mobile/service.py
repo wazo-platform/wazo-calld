@@ -19,7 +19,7 @@ class _ContactPoller:
         self.should_stop = threading.Event()
         self._thread = threading.Thread(
             name='ContactPoller',
-            target=self._run,
+            target=self._run_no_exception,
             args=(channel_id, aor),
         )
         self._called_contacts = set()
@@ -36,13 +36,13 @@ class _ContactPoller:
         self.should_stop.set()
         self._thread.join()
 
-    def _run(self, channel_id, aor):
+    def _run_no_exception(self, *args, **kwargs):
         try:
-            return self._run_no_exception(channel_id, aor)
+            return self._run(*args, **kwargs)
         except Exception:
             logger.exception('Unhandled exception in %s thread', self._thread.name)
 
-    def _run_no_exception(self, channel_id, aor):
+    def _run(self, channel_id, aor):
         logger.debug('%s thread starting', self._thread.name)
         channel = self._ari.channels.get(channelId=channel_id)
         caller_id = '"{name}" <{number}>'.format(**channel.json['caller'])
