@@ -96,6 +96,7 @@ enabled_plugins:
   api: true
   applications: true
   calls: true
+  dial_mobile: true
   mobile: true
   relocates: true
   status: true

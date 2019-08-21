@@ -88,6 +88,7 @@ _DEFAULT_CONFIG = {
         'applications': True,
         'calls': True,
         'conferences': True,
+        'dial_mobile': True,
         'faxes': True,
         'mobile': True,
         'relocates': True,
