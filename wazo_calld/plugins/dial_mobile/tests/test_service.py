@@ -115,7 +115,7 @@ class TestGetContacts(DialerTestCase):
 
 class TestRemoveRingingChannels(DialerTestCase):
 
-    def test_that_hungup_channels_do_not_interupt(self):
+    def test_that_hungup_channels_do_not_interrupt(self):
         channel_1 = Mock()
         channel_1.get.side_effect = ARINotFound(s.ari_client, s.original_error)
 
@@ -129,7 +129,7 @@ class TestRemoveRingingChannels(DialerTestCase):
 
         self.ari.channels.hangup.assert_called_once_with(channelId=s.channel_2_id)
 
-    def test_that_channels_hanging_up_during_the_execution_do_not_interupt(self):
+    def test_that_channels_hanging_up_during_the_execution_do_not_interrupt(self):
         channel_1 = Mock()
         channel_1.id = s.channel_1_id
         channel_1.get.return_value = Mock(json={'state': 'Ringing'})

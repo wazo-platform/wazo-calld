@@ -56,7 +56,7 @@ class _PollingContactDialer:
                 self._send_contact_to_current_call(contact, self.future_bridge_uuid, caller_id)
 
             if not self._channel_is_up(channel_id):
-                logger.debug('calling channel is gone stoping %s thread', self._thread.name)
+                logger.debug('calling channel is gone: stopping %s thread', self._thread.name)
                 self.should_stop.set()
                 break
 
