@@ -8,7 +8,12 @@ import logging
 
 from ari.exceptions import ARINotFound
 
+
 logger = logging.getLogger(__name__)
+
+
+class _NoSuchChannel(Exception):
+    pass
 
 
 class _PollingContactDialer:
@@ -25,6 +30,7 @@ class _PollingContactDialer:
         self._called_contacts = set()
         self.is_running = False
         self._dialed_channels = set()
+        self._caller_channel_id = channel_id
 
     def start(self):
         self._thread.start()
@@ -110,6 +116,21 @@ class _PollingContactDialer:
         except ARINotFound:
             return []
 
+    def _on_channel_gone(self, channel_id):
+        for channel in self._dialed_channels:
+            if channel.id != channel_id:
+                continue
+
+            self.stop()
+            try:
+                self._ari.channels.hangup(channelId=self._caller_channel_id)
+            except ARINotFound:
+                pass  # Already gone
+            finally:
+                return
+
+        raise _NoSuchChannel(channel_id)
+
 
 class DialMobileService:
 
@@ -130,7 +151,11 @@ class DialMobileService:
 
     def join_bridge(self, channel_id, future_bridge_uuid):
         logger.info('%s is joining bridge %s', channel_id, future_bridge_uuid)
-        self._contact_dialers[future_bridge_uuid].stop()
+        dialer = self._contact_dialers.pop(future_bridge_uuid, None)
+        if not dialer:
+            return
+
+        dialer.stop()
         outgoing_channel_id = self._outgoing_calls[future_bridge_uuid]
         try:
             self._ari.channels.answer(channelId=outgoing_channel_id)
@@ -150,6 +175,20 @@ class DialMobileService:
         )
         bridge.addChannel(channel=channel_id)
         bridge.addChannel(channel=outgoing_channel_id)
+
+    def notify_channel_gone(self, channel_id):
+        to_remove = None
+
+        for key, dialer in self._contact_dialers.items():
+            try:
+                dialer._on_channel_gone(channel_id)
+            except _NoSuchChannel:
+                continue
+            else:
+                to_remove = key
+
+        if to_remove:
+            del self._contact_dialers[key]
 
     def on_calld_stopping(self):
         for dialer in self._contact_dialers.values():
