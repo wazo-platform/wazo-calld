@@ -25,12 +25,12 @@ class UserRelocatesResource(AuthResource):
         relocates = self._relocates_service.list_from_user(user_uuid)
 
         return {
-            'items': relocate_schema.dump(relocates, many=True).data
+            'items': relocate_schema.dump(relocates, many=True)
         }, 200
 
     @required_acl('calld.users.me.relocates.create')
     def post(self):
-        request_body = user_relocate_request_schema.load(request.get_json(force=True)).data
+        request_body = user_relocate_request_schema.load(request.get_json(force=True))
         user_uuid = get_token_user_uuid_from_request(self._auth_client)
         relocate = self._relocates_service.create_from_user(request_body['initiator_call'],
                                                             request_body['destination'],
@@ -38,7 +38,7 @@ class UserRelocatesResource(AuthResource):
                                                             request_body['completions'],
                                                             request_body['timeout'],
                                                             user_uuid)
-        result = relocate_schema.dump(relocate).data
+        result = relocate_schema.dump(relocate)
         return result, 201
 
 
@@ -53,7 +53,7 @@ class UserRelocateResource(AuthResource):
         user_uuid = get_token_user_uuid_from_request(self._auth_client)
         relocate = self._relocates_service.get_from_user(relocate_uuid, user_uuid)
 
-        result = relocate_schema.dump(relocate).data
+        result = relocate_schema.dump(relocate)
         return result, 200
 
 

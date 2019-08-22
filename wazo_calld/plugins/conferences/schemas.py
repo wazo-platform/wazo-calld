@@ -1,15 +1,18 @@
 # Copyright 2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from marshmallow import Schema
+from marshmallow import (
+    EXCLUDE,
+    Schema,
+)
 from xivo.mallow import fields
 
 
 class ParticipantSchema(Schema):
 
     class Meta:
-        strict = True
         ordered = True
+        unknown = EXCLUDE
 
     id = fields.String()
     caller_id_name = fields.String()

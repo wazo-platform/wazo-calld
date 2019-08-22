@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from marshmallow import (
+    EXCLUDE,
     fields,
     Schema,
     ValidationError,
@@ -15,14 +16,19 @@ VALID_COMPLETIONS = [
 
 
 class LineLocationSchema(Schema):
+    class Meta:
+        unknown = EXCLUDE
+
     line_id = fields.Integer(validate=Range(min=1), required=True)
     contact = fields.String()
 
 
 class LocationField(fields.Field):
+    class Meta:
+        unknown = EXCLUDE
 
     locations = {
-        'line': fields.Nested(LineLocationSchema),
+        'line': fields.Nested(LineLocationSchema, unknown=EXCLUDE),
         'mobile': None,
     }
 
@@ -45,6 +51,9 @@ class LocationField(fields.Field):
 
 
 class UserRelocateRequestSchema(Schema):
+    class Meta:
+        unknown = EXCLUDE
+
     initiator_call = fields.Str(validate=Length(min=1), required=True)
     destination = fields.Str(validate=OneOf(LocationField.locations))
     location = LocationField(missing=dict)
@@ -52,10 +61,13 @@ class UserRelocateRequestSchema(Schema):
     timeout = fields.Integer(validate=Range(min=1), missing=30)
 
 
-user_relocate_request_schema = UserRelocateRequestSchema(strict=True)
+user_relocate_request_schema = UserRelocateRequestSchema()
 
 
 class RelocateSchema(Schema):
+    class Meta:
+        unknown = EXCLUDE
+
     uuid = fields.Str(validate=Length(equal=36), required=True)
     relocated_call = fields.Str(validate=Length(min=1), required=True, attribute='relocated_channel')
     initiator_call = fields.Str(validate=Length(min=1), required=True, attribute='initiator_channel')
@@ -63,9 +75,6 @@ class RelocateSchema(Schema):
     completions = fields.List(fields.Str(validate=OneOf(VALID_COMPLETIONS)), missing=['answer'])
     initiator = fields.Str(validate=Length(equal=36), required=True)
     timeout = fields.Integer(validate=Range(min=1), missing=30)
-
-    class Meta:
-        strict = True
 
 
 relocate_schema = RelocateSchema()

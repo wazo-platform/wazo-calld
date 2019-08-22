@@ -16,8 +16,8 @@ from .schema import UserCallRequestSchema
 logger = logging.getLogger(__name__)
 
 
-call_request_schema = CallRequestSchema(strict=True)
-user_call_request_schema = UserCallRequestSchema(strict=True)
+call_request_schema = CallRequestSchema()
+user_call_request_schema = UserCallRequestSchema()
 
 
 class CallsResource(AuthResource):
@@ -33,16 +33,16 @@ class CallsResource(AuthResource):
         calls = self.calls_service.list_calls(application_filter, application_instance_filter)
 
         return {
-            'items': call_schema.dump(calls, many=True).data,
+            'items': call_schema.dump(calls, many=True),
         }, 200
 
     @required_acl('calld.calls.create')
     def post(self):
-        request_body = call_request_schema.load(request.get_json(force=True)).data
+        request_body = call_request_schema.load(request.get_json(force=True))
 
         call = self.calls_service.originate(request_body)
 
-        return call_schema.dump(call).data, 201
+        return call_schema.dump(call), 201
 
 
 class MyCallsResource(AuthResource):
@@ -60,18 +60,18 @@ class MyCallsResource(AuthResource):
         calls = self.calls_service.list_calls_user(user_uuid, application_filter, application_instance_filter)
 
         return {
-            'items': call_schema.dump(calls, many=True).data,
+            'items': call_schema.dump(calls, many=True),
         }, 200
 
     @required_acl('calld.users.me.calls.create')
     def post(self):
-        request_body = user_call_request_schema.load(request.get_json(force=True)).data
+        request_body = user_call_request_schema.load(request.get_json(force=True))
 
         user_uuid = get_token_user_uuid_from_request(self.auth_client)
 
         call = self.calls_service.originate_user(request_body, user_uuid)
 
-        return call_schema.dump(call).data, 201
+        return call_schema.dump(call), 201
 
 
 class CallResource(AuthResource):
@@ -83,7 +83,7 @@ class CallResource(AuthResource):
     def get(self, call_id):
         call = self.calls_service.get(call_id)
 
-        return call_schema.dump(call).data
+        return call_schema.dump(call)
 
     @required_acl('calld.calls.{call_id}.delete')
     def delete(self, call_id):
@@ -116,4 +116,4 @@ class ConnectCallToUserResource(AuthResource):
         new_call_id = self.calls_service.connect_user(call_id, user_uuid)
         new_call = self.calls_service.get(new_call_id)
 
-        return call_schema.dump(new_call).data
+        return call_schema.dump(new_call)

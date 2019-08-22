@@ -29,7 +29,7 @@ class FaxesBusEventHandler:
             'user_uuid': event['XIVO_USERUUID'] or None,
             'tenant_uuid': event['WAZO_TENANT_UUID'] or None,
         }
-        fax = fax_schema.dump(fax_infos).data
+        fax = fax_schema.dump(fax_infos)
         if event['STATUS'] == 'SUCCESS':
             self._notifier.notify_fax_succeeded(fax)
         elif event['STATUS'] == 'FAILED':

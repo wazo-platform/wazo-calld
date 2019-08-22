@@ -23,9 +23,9 @@ class FaxesResource(AuthResource):
     @required_acl('calld.faxes.create')
     def post(self):
         tenant = Tenant.autodetect()
-        fax_infos = fax_creation_request_schema.load(request.args).data
+        fax_infos = fax_creation_request_schema.load(request.args)
         fax = self._service.send_fax(tenant.uuid, content=request.data, fax_infos=fax_infos)
-        return fax_schema.dump(fax).data, 201
+        return fax_schema.dump(fax), 201
 
 
 class UserFaxesResource(AuthResource):
@@ -38,6 +38,6 @@ class UserFaxesResource(AuthResource):
     def post(self):
         tenant = Tenant.autodetect()
         user_uuid = get_token_user_uuid_from_request(self._auth_client)
-        fax_infos = user_fax_creation_request_schema.load(request.args).data
+        fax_infos = user_fax_creation_request_schema.load(request.args)
         fax = self._service.send_fax_from_user(tenant.uuid, user_uuid, content=request.data, fax_infos=fax_infos)
-        return fax_schema.dump(fax).data, 201
+        return fax_schema.dump(fax), 201

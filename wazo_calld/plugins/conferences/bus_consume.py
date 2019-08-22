@@ -40,7 +40,7 @@ class ConferencesBusEventHandler:
             'call_id': event['Uniqueid'],
         }
 
-        participant = participant_schema.load(raw_participant).data
+        participant = participant_schema.load(raw_participant)
         participant['user_uuid'] = event.get('ChanVariable', {}).get('XIVO_USERUUID')
         conference = Conference.from_id(conference_id, self._confd)
 
@@ -63,7 +63,7 @@ class ConferencesBusEventHandler:
             'call_id': event['Uniqueid'],
         }
 
-        participant = participant_schema.load(raw_participant).data
+        participant = participant_schema.load(raw_participant)
         participant['user_uuid'] = event.get('ChanVariable', {}).get('XIVO_USERUUID')
 
         conference = Conference.from_id(conference_id, self._confd)
@@ -87,7 +87,7 @@ class ConferencesBusEventHandler:
             'call_id': event['Uniqueid'],
         }
 
-        participant = participant_schema.load(raw_participant).data
+        participant = participant_schema.load(raw_participant)
 
         self._notifier.participant_muted(conference_id, participant)
 
@@ -105,7 +105,7 @@ class ConferencesBusEventHandler:
             'call_id': event['Uniqueid'],
         }
 
-        participant = participant_schema.load(raw_participant).data
+        participant = participant_schema.load(raw_participant)
 
         self._notifier.participant_unmuted(conference_id, participant)
 
@@ -137,7 +137,7 @@ class ConferencesBusEventHandler:
             'call_id': event['Uniqueid'],
         }
 
-        participant = participant_schema.load(raw_participant).data
+        participant = participant_schema.load(raw_participant)
 
         if talking:
             self._notifier.participant_talk_started(conference_id, participant)

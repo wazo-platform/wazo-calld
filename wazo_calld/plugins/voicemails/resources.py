@@ -60,11 +60,11 @@ class VoicemailGreetingCopySchema(Schema):
     dest_greeting = fields.String(validate=OneOf(VALID_GREETINGS))
 
 
-voicemail_schema = VoicemailSchema(strict=True)
-voicemail_folder_schema = VoicemailFolderSchema(strict=True)
-voicemail_message_schema = VoicemailMessageSchema(strict=True)
-voicemail_message_update_schema = VoicemailMessageUpdateSchema(strict=True)
-voicemail_greeting_copy_schema = VoicemailGreetingCopySchema(strict=True)
+voicemail_schema = VoicemailSchema()
+voicemail_folder_schema = VoicemailFolderSchema()
+voicemail_message_schema = VoicemailMessageSchema()
+voicemail_message_update_schema = VoicemailMessageUpdateSchema()
+voicemail_greeting_copy_schema = VoicemailGreetingCopySchema()
 
 
 class _BaseVoicemailResource(AuthResource):
@@ -74,7 +74,7 @@ class _BaseVoicemailResource(AuthResource):
 
     def _get(self, voicemail_id):
         voicemail = self._voicemails_service.get_voicemail(voicemail_id)
-        return voicemail_schema.dump(voicemail).data
+        return voicemail_schema.dump(voicemail)
 
 
 class VoicemailResource(_BaseVoicemailResource):
@@ -104,7 +104,7 @@ class _BaseVoicemailFolderResource(AuthResource):
 
     def _get(self, voicemail_id, folder_id):
         folder = self._voicemails_service.get_folder(voicemail_id, folder_id)
-        return voicemail_folder_schema.dump(folder).data
+        return voicemail_folder_schema.dump(folder)
 
 
 class VoicemailFolderResource(_BaseVoicemailFolderResource):
@@ -136,10 +136,10 @@ class _BaseVoicemailMessageResource(AuthResource):
 
     def _get(self, voicemail_id, message_id):
         message = self._voicemails_service.get_message(voicemail_id, message_id)
-        return voicemail_message_schema.dump(message).data
+        return voicemail_message_schema.dump(message)
 
     def _put(self, voicemail_id, message_id):
-        data = voicemail_message_update_schema.load(request.get_json(force=True)).data
+        data = voicemail_message_update_schema.load(request.get_json(force=True))
         self._voicemails_service.move_message(voicemail_id, message_id, data['folder_id'])
         return '', 204
 
@@ -296,7 +296,7 @@ class _BaseVoicemailGreetingResource(AuthResource):
     def _copy(self, voicemail_id, greeting):
         dest_greeting = voicemail_greeting_copy_schema.load(
             request.get_json(force=True)
-        ).data["dest_greeting"]
+        )["dest_greeting"]
         self._voicemails_service.copy_greeting(voicemail_id, greeting, dest_greeting)
         return '', 204
 

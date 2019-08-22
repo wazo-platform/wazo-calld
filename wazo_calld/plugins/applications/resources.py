@@ -29,7 +29,7 @@ class ApplicationItem(_BaseResource):
     @required_acl('calld.applications.{application_uuid}.read')
     def get(self, application_uuid):
         application = self._service.get_application(application_uuid)
-        return application_schema.dump(application).data
+        return application_schema.dump(application)
 
 
 class ApplicationCallItem(_BaseResource):
@@ -46,16 +46,16 @@ class ApplicationCallList(_BaseResource):
 
     @required_acl('calld.applications.{application_uuid}.calls.create')
     def post(self, application_uuid):
-        request_body = application_call_request_schema.load(request.get_json()).data
+        request_body = application_call_request_schema.load(request.get_json())
         application = self._service.get_application(application_uuid)
         call = self._service.originate(application, None, **request_body)
-        return application_call_schema.dump(call).data, 201
+        return application_call_schema.dump(call), 201
 
     @required_acl('calld.applications.{application_uuid}.calls.read')
     def get(self, application_uuid):
         application = self._service.get_application(application_uuid)
         calls = self._service.list_calls(application)
-        return {'items': application_call_schema.dump(calls, many=True).data}
+        return {'items': application_call_schema.dump(calls, many=True)}
 
 
 class ApplicationCallHoldStartList(_BaseResource):
@@ -154,19 +154,19 @@ class ApplicationCallPlaybackList(_BaseResource):
     def post(self, application_uuid, call_id):
         application = self._service.get_application(application_uuid)
         self._service.get_call_id(application, call_id)
-        form = application_playback_schema.load(request.get_json()).data
+        form = application_playback_schema.load(request.get_json())
         playback = self._service.create_playback(application_uuid, call_id, **form)
-        return application_playback_schema.dump(playback).data
+        return application_playback_schema.dump(playback)
 
 
 class ApplicationCallSnoopList(_BaseResource):
 
     @required_acl('calld.applications.{application_uuid}.calls.{call_id}.snoops.create')
     def post(self, application_uuid, call_id):
-        form = application_snoop_schema.load(request.get_json()).data
+        form = application_snoop_schema.load(request.get_json())
         application = self._service.get_application(application_uuid)
         snoop = self._service.snoop_create(application, call_id, **form)
-        return application_snoop_schema.dump(snoop).data, 201
+        return application_snoop_schema.dump(snoop), 201
 
 
 class ApplicationPlaybackItem(_BaseResource):
@@ -185,7 +185,7 @@ class ApplicationSnoopList(_BaseResource):
     def get(self, application_uuid):
         application = self._service.get_application(application_uuid)
         snoops = self._service.snoop_list(application)
-        return {'items': application_snoop_schema.dump(snoops, many=True).data}
+        return {'items': application_snoop_schema.dump(snoops, many=True)}
 
 
 class ApplicationSnoopItem(_BaseResource):
@@ -194,11 +194,11 @@ class ApplicationSnoopItem(_BaseResource):
     def get(self, application_uuid, snoop_uuid):
         application = self._service.get_application(application_uuid)
         snoop = self._service.snoop_get(application, snoop_uuid)
-        return application_snoop_schema.dump(snoop).data
+        return application_snoop_schema.dump(snoop)
 
     @required_acl('calld.applications.{application_uuid}.snoops.{snoop_uuid}.update')
     def put(self, application_uuid, snoop_uuid):
-        form = application_snoop_put_schema.load(request.get_json()).data
+        form = application_snoop_put_schema.load(request.get_json())
         application = self._service.get_application(application_uuid)
         self._service.snoop_edit(application, snoop_uuid, form['whisper_mode'])
         return '', 204
@@ -235,9 +235,9 @@ class ApplicationNodeCallList(_BaseResource):
         # TODO: Check if node is in application
         #       But Asterisk doesn't allow to create empty node in an application ...
         self._service.get_node(application, node_uuid, verify_application=False)
-        request_body = application_call_request_schema.load(request.get_json()).data
+        request_body = application_call_request_schema.load(request.get_json())
         call = self._service.originate(application, node_uuid, **request_body)
-        return application_call_schema.dump(call).data, 201
+        return application_call_schema.dump(call), 201
 
 
 class ApplicationNodeCallUserList(_BaseResource):
@@ -248,9 +248,9 @@ class ApplicationNodeCallUserList(_BaseResource):
         # TODO: Check if node is in application
         #       But Asterisk doesn't allow to create empty node in an application ...
         self._service.get_node(application, node_uuid, verify_application=False)
-        request_body = application_call_user_request_schema.load(request.get_json()).data
+        request_body = application_call_user_request_schema.load(request.get_json())
         call = self._service.originate_user(application, node_uuid, **request_body)
-        return application_call_schema.dump(call).data, 201
+        return application_call_schema.dump(call), 201
 
 
 class ApplicationNodeItem(_BaseResource):
@@ -259,7 +259,7 @@ class ApplicationNodeItem(_BaseResource):
     def get(self, application_uuid, node_uuid):
         application = self._service.get_application(application_uuid)
         node = self._service.get_node(application, node_uuid)
-        return application_node_schema.dump(node).data
+        return application_node_schema.dump(node)
 
     @required_acl('calld.applications.{application_uuid}.nodes.{node_uuid}.delete')
     def delete(self, application_uuid, node_uuid):
@@ -275,12 +275,12 @@ class ApplicationNodeList(_BaseResource):
     def get(self, application_uuid):
         self._service.get_application(application_uuid)
         nodes = self._service.list_nodes(application_uuid)
-        return {'items': application_node_schema.dump(nodes, many=True).data}
+        return {'items': application_node_schema.dump(nodes, many=True)}
 
     @required_acl('calld.applications.{application_uuid}.nodes.create')
     def post(self, application_uuid):
         self._service.get_application(application_uuid)
-        form = application_node_schema.load(request.get_json()).data
+        form = application_node_schema.load(request.get_json())
         call_ids = [call['id_'] for call in form.get('calls', [])]
         node = self._service.create_node_with_calls(application_uuid, call_ids)
-        return application_node_schema.dump(node).data, 201
+        return application_node_schema.dump(node), 201
