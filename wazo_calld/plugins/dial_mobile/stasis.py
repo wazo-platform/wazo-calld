@@ -39,5 +39,9 @@ class DialMobileStasis:
         self._core_ari.register_application(self._app_name)
         self._core_ari.reload()
 
+    def channel_destroyed(self, channel, event):
+        self._service.notify_channel_gone(event['channel']['id'])
+
     def subscribe(self):
         self._ari.on_channel_event('StasisStart', self.stasis_start)
+        self._ari.on_channel_event('ChannelDestroyed', self.channel_destroyed)
