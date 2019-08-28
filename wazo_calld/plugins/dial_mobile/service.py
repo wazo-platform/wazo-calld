@@ -91,6 +91,7 @@ class _PollingContactDialer:
             app='dial_mobile',
             appArgs=['join', future_bridge_uuid],
             callerId=caller_id,
+            originator=self._caller_channel_id,
         )
 
         self._called_contacts.add(contact)

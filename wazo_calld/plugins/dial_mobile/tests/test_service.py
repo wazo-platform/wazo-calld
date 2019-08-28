@@ -62,6 +62,7 @@ class TestSendContactToCurrentCall(DialerTestCase):
             app='dial_mobile',
             appArgs=['join', self.future_bridge_uuid],
             callerId=s.caller_id,
+            originator=self.channel_id,
         )
 
 
