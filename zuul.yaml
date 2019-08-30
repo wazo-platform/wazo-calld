@@ -3,7 +3,7 @@
     description: Run calld integration tests
     parent: wazo-tox-integration
     required-projects:
-      wazo-pbx/chan-test
+      wazo-platform/chan-test
     timeout: 10800
     post-run: zuul.d/fetch-logs.yml
 
