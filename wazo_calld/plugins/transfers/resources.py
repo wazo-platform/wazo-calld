@@ -23,7 +23,7 @@ class TransferRequestSchema(Schema):
     timeout = fields.Integer(missing=None, min=1, allow_none=True)
 
 
-transfer_request_schema = TransferRequestSchema(strict=True)
+transfer_request_schema = TransferRequestSchema()
 
 
 class UserTransferRequestSchema(Schema):
@@ -33,7 +33,7 @@ class UserTransferRequestSchema(Schema):
     timeout = fields.Integer(missing=None, min=1, allow_none=True)
 
 
-user_transfer_request_schema = UserTransferRequestSchema(strict=True)
+user_transfer_request_schema = UserTransferRequestSchema()
 
 
 class TransfersResource(AuthResource):
@@ -43,7 +43,7 @@ class TransfersResource(AuthResource):
 
     @required_acl('calld.transfers.create')
     def post(self):
-        request_body = transfer_request_schema.load(request.get_json(force=True)).data
+        request_body = transfer_request_schema.load(request.get_json(force=True))
         transfer = self._transfers_service.create(request_body['transferred_call'],
                                                   request_body['initiator_call'],
                                                   request_body['context'],
@@ -71,7 +71,7 @@ class UserTransfersResource(AuthResource):
 
     @required_acl('calld.users.me.transfers.create')
     def post(self):
-        request_body = user_transfer_request_schema.load(request.get_json(force=True)).data
+        request_body = user_transfer_request_schema.load(request.get_json(force=True))
         user_uuid = get_token_user_uuid_from_request(self._auth_client)
         transfer = self._transfers_service.create_from_user(request_body['initiator_call'],
                                                             request_body['exten'],

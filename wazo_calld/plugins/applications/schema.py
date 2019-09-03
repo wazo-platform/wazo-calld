@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from marshmallow import (
+    EXCLUDE,
     Schema,
     fields,
     pre_dump,
@@ -18,7 +19,7 @@ from wazo_calld.helpers.mallow import StrictDict
 
 class BaseSchema(Schema):
     class Meta:
-        strict = True
+        unknown = EXCLUDE
 
     @pre_load
     def ensure_dict(self, data):

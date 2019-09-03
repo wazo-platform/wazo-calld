@@ -26,25 +26,25 @@ class RelocatesNotifier:
         relocate.events.subscribe('ended', self.ended)
 
     def initiated(self, relocate):
-        relocate_dict = relocate_schema.dump(relocate).data
+        relocate_dict = relocate_schema.dump(relocate)
         event = RelocateInitiatedEvent(relocate.initiator, relocate_dict)
         headers = {'user_uuid:{}'.format(relocate.initiator): True}
         self._bus_producer.publish(event, headers=headers)
 
     def answered(self, relocate):
-        relocate_dict = relocate_schema.dump(relocate).data
+        relocate_dict = relocate_schema.dump(relocate)
         event = RelocateAnsweredEvent(relocate.initiator, relocate_dict)
         headers = {'user_uuid:{}'.format(relocate.initiator): True}
         self._bus_producer.publish(event, headers=headers)
 
     def completed(self, relocate):
-        relocate_dict = relocate_schema.dump(relocate).data
+        relocate_dict = relocate_schema.dump(relocate)
         event = RelocateCompletedEvent(relocate.initiator, relocate_dict)
         headers = {'user_uuid:{}'.format(relocate.initiator): True}
         self._bus_producer.publish(event, headers=headers)
 
     def ended(self, relocate):
-        relocate_dict = relocate_schema.dump(relocate).data
+        relocate_dict = relocate_schema.dump(relocate)
         event = RelocateEndedEvent(relocate.initiator, relocate_dict)
         headers = {'user_uuid:{}'.format(relocate.initiator): True}
         self._bus_producer.publish(event, headers=headers)

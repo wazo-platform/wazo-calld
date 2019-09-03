@@ -1,4 +1,4 @@
-FROM python:3.5-stretch
+FROM python:3.7-buster
 
 ENV DEBIAN_FRONTEND noninteractive
 

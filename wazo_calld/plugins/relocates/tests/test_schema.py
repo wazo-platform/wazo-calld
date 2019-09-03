@@ -30,7 +30,7 @@ class Testclassname(TestCase):
         relocate = dict(VALID_RELOCATE)
         relocate['destination'] = 'mobile'
 
-        assert_that(user_relocate_request_schema.load(relocate).data,
+        assert_that(user_relocate_request_schema.load(relocate),
                     has_entry('location', {}))
 
     def test_given_line_destination_when_load_then_validation_may_fail(self):

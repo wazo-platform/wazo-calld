@@ -17,7 +17,7 @@ class Testclassname(TestCase):
         call = Call('some-id')
         call.dialed_extension = 'dialed_extension'
 
-        result = CallSchema().dump(call).data
+        result = CallSchema().dump(call)
 
         assert_that(result, has_entry('peer_caller_id_number', 'dialed_extension'))
 
@@ -26,6 +26,6 @@ class Testclassname(TestCase):
         call.peer_caller_id_number = 'caller_id_number'
         call.dialed_extension = 'dialed_extension'
 
-        result = CallSchema().dump(call).data
+        result = CallSchema().dump(call)
 
         assert_that(result, has_entry('peer_caller_id_number', 'caller_id_number'))

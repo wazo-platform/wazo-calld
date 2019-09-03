@@ -44,11 +44,11 @@ class VoicemailsBusEventHandler:
 
     def _create_bus_msgs_from_diff(self, user_uuid, voicemail_id, diff):
         for message_info in diff.created_messages:
-            message_data = voicemail_message_schema.dump(message_info).data
+            message_data = voicemail_message_schema.dump(message_info)
             yield CreateUserVoicemailMessageEvent(user_uuid, voicemail_id, message_info['id'], message_data)
         for message_info in diff.updated_messages:
-            message_data = voicemail_message_schema.dump(message_info).data
+            message_data = voicemail_message_schema.dump(message_info)
             yield UpdateUserVoicemailMessageEvent(user_uuid, voicemail_id, message_info['id'], message_data)
         for message_info in diff.deleted_messages:
-            message_data = voicemail_message_schema.dump(message_info).data
+            message_data = voicemail_message_schema.dump(message_info)
             yield DeleteUserVoicemailMessageEvent(user_uuid, voicemail_id, message_info['id'], message_data)

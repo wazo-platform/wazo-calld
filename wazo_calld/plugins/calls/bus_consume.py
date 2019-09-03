@@ -69,7 +69,7 @@ class CallsBusEventHandler:
         call = self.services.make_call_from_channel(self.ari, channel)
         bus_event = ArbitraryEvent(
             name='call_created',
-            body=call_schema.dump(call).data,
+            body=call_schema.dump(call),
             required_acl='events.calls.{}'.format(call.user_uuid)
         )
         bus_event.routing_key = 'calls.call.created'
@@ -91,7 +91,7 @@ class CallsBusEventHandler:
         call = self.services.make_call_from_channel(self.ari, channel)
         bus_event = ArbitraryEvent(
             name='call_updated',
-            body=call_schema.dump(call).data,
+            body=call_schema.dump(call),
             required_acl='events.calls.{}'.format(call.user_uuid)
         )
         bus_event.routing_key = 'calls.call.updated'
@@ -103,7 +103,7 @@ class CallsBusEventHandler:
         call = self.services.make_call_from_ami_event(event)
         bus_event = ArbitraryEvent(
             name='call_ended',
-            body=call_schema.dump(call).data,
+            body=call_schema.dump(call),
             required_acl='events.calls.{}'.format(call.user_uuid)
         )
         bus_event.routing_key = 'calls.call.ended'

@@ -1,19 +1,19 @@
 git+https://github.com/rsichny/swagger-py.git  # the digium release does not support python3
 https://github.com/wazo-pbx/ari-py/archive/0.4.0.zip
-git+https://github.com/wazo-pbx/wazo-auth-client.git
-git+https://github.com/wazo-pbx/wazo-confd-client.git
-git+https://github.com/wazo-pbx/xivo-amid-client.git
-git+https://github.com/wazo-pbx/xivo-bus.git
-git+https://github.com/wazo-pbx/xivo-lib-python.git
-git+https://github.com/wazo-pbx/xivo-lib-rest-client.git
-cheroot==6.5.2
+https://github.com/wazo-pbx/wazo-auth-client/archive/buster.zip
+https://github.com/wazo-pbx/wazo-confd-client/archive/buster.zip
+https://github.com/wazo-pbx/xivo-amid-client/archive/buster.zip
+https://github.com/wazo-pbx/xivo-bus/archive/buster.zip
+https://github.com/wazo-pbx/xivo-lib-python/archive/buster.zip
+https://github.com/wazo-pbx/xivo-lib-rest-client/archive/buster.zip
+cheroot==6.5.4
 flask==1.0.2
-flask-restful==0.3.5
-flask-cors==3.0.2
+flask-restful==0.3.7
+flask-cors==3.0.7
 iso8601==0.1.11
-kombu==3.0.35
-marshmallow==2.16.3
-python-consul==0.7.0
-pyyaml==3.12  # from xivo-lib-python
+kombu==4.2.1
+marshmallow==3.0.0b14
+python-consul==0.7.1
+pyyaml==3.13  # from xivo-lib-python
 requests==2.21.0
-stevedore==1.17.1
+stevedore==1.29.0

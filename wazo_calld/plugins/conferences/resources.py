@@ -20,7 +20,7 @@ class ParticipantsResource(AuthResource):
         tenant = Tenant.autodetect()
         participants = self._service.list_participants(tenant.uuid, conference_id)
         items = {
-            'items': participant_schema.dump(participants, many=True).data,
+            'items': participant_schema.dump(participants, many=True),
             'total': len(participants),
         }
         return items, 200
@@ -38,7 +38,7 @@ class ParticipantsUserResource(AuthResource):
         user_uuid = get_token_user_uuid_from_request(self._auth_client)
         participants = self._service.user_list_participants(tenant.uuid, user_uuid, conference_id)
         items = {
-            'items': participant_schema.dump(participants, many=True).data,
+            'items': participant_schema.dump(participants, many=True),
             'total': len(participants),
         }
         return items, 200

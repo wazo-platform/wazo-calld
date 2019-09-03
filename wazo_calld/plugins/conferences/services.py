@@ -72,7 +72,7 @@ class ConferencesService:
                 'user_uuid': Channel(participant_list_item['Uniqueid'], self._ari).user(),
             }
             try:
-                participant = participant_schema.load(raw_participant).data
+                participant = participant_schema.load(raw_participant)
             except ValidationError as e:
                 raise ConferenceParticipantError(tenant_uuid,
                                                  conference_id,

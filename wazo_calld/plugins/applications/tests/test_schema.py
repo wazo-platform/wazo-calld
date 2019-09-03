@@ -25,7 +25,7 @@ class TestApplicationSnoopSchema(TestCase):
             'whisper_mode': None,
         }
 
-        result = self.schema.load(raw_data).data
+        result = self.schema.load(raw_data)
 
         assert_that(result, has_entries(whisper_mode='none'))
 
@@ -37,5 +37,5 @@ class TestApplicationSnoopSchema(TestCase):
             whisper_mode='none',
         )
 
-        result = self.schema.dump(snoop).data
+        result = self.schema.dump(snoop)
         assert_that(result, has_entries(whisper_mode=None))

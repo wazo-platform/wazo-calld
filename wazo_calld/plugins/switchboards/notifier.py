@@ -22,7 +22,7 @@ class SwitchboardsNotifier:
     def queued_calls(self, tenant_uuid, switchboard_uuid, calls):
         body = {
             'switchboard_uuid': switchboard_uuid,
-            'items': queued_call_schema.dump(calls, many=True).data
+            'items': queued_call_schema.dump(calls, many=True)
         }
         logger.debug(
             'Notifying updated queued calls for switchboard %s: %s calls',
@@ -72,7 +72,7 @@ class SwitchboardsNotifier:
     def held_calls(self, tenant_uuid, switchboard_uuid, calls):
         body = {
             'switchboard_uuid': switchboard_uuid,
-            'items': held_call_schema.dump(calls, many=True).data
+            'items': held_call_schema.dump(calls, many=True)
         }
         logger.debug(
             'Notifying updated held calls for switchboard %s: %s calls',
