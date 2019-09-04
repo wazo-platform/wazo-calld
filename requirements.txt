@@ -1,11 +1,11 @@
 git+https://github.com/rsichny/swagger-py.git  # the digium release does not support python3
 https://github.com/wazo-pbx/ari-py/archive/0.4.0.zip
-https://github.com/wazo-pbx/wazo-auth-client/archive/buster.zip
-https://github.com/wazo-pbx/wazo-confd-client/archive/buster.zip
-https://github.com/wazo-pbx/xivo-amid-client/archive/buster.zip
-https://github.com/wazo-pbx/xivo-bus/archive/buster.zip
-https://github.com/wazo-pbx/xivo-lib-python/archive/buster.zip
-https://github.com/wazo-pbx/xivo-lib-rest-client/archive/buster.zip
+https://github.com/wazo-pbx/wazo-auth-client/archive/master.zip
+https://github.com/wazo-pbx/wazo-confd-client/archive/master.zip
+https://github.com/wazo-pbx/xivo-amid-client/archive/master.zip
+https://github.com/wazo-pbx/xivo-bus/archive/master.zip
+https://github.com/wazo-pbx/xivo-lib-python/archive/master.zip
+https://github.com/wazo-pbx/xivo-lib-rest-client/archive/master.zip
 cheroot==6.5.4
 flask==1.0.2
 flask-restful==0.3.7
