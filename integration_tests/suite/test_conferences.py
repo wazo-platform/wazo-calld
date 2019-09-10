@@ -88,7 +88,7 @@ class TestConferenceParticipants(TestConferences):
             assert_that(calling(calld.conferences.list_participants).with_args(conference_id),
                         raises(CalldError).matching(has_properties({
                             'status_code': 503,
-                            'error_id': 'xivo-amid-error',
+                            'error_id': 'wazo-amid-error',
                         })))
 
     def test_list_participants_with_no_conferences(self):
@@ -277,7 +277,7 @@ class TestConferenceParticipants(TestConferences):
                         .with_args(conference_id, participant['id']),
                         raises(CalldError).matching(has_properties({
                             'status_code': 503,
-                            'error_id': 'xivo-amid-error',
+                            'error_id': 'wazo-amid-error',
                         })))
 
     def test_kick_participant_with_no_conferences(self):
@@ -361,13 +361,13 @@ class TestConferenceParticipants(TestConferences):
                         .with_args(conference_id, participant['id']),
                         raises(CalldError).matching(has_properties({
                             'status_code': 503,
-                            'error_id': 'xivo-amid-error',
+                            'error_id': 'wazo-amid-error',
                         })))
             assert_that(calling(calld.conferences.unmute_participant)
                         .with_args(conference_id, participant['id']),
                         raises(CalldError).matching(has_properties({
                             'status_code': 503,
-                            'error_id': 'xivo-amid-error',
+                            'error_id': 'wazo-amid-error',
                         })))
 
     def test_mute_participant_with_no_conferences(self):
@@ -519,13 +519,13 @@ class TestConferenceParticipants(TestConferences):
                         .with_args(conference_id),
                         raises(CalldError).matching(has_properties({
                             'status_code': 503,
-                            'error_id': 'xivo-amid-error',
+                            'error_id': 'wazo-amid-error',
                         })))
             assert_that(calling(calld.conferences.stop_record)
                         .with_args(conference_id),
                         raises(CalldError).matching(has_properties({
                             'status_code': 503,
-                            'error_id': 'xivo-amid-error',
+                            'error_id': 'wazo-amid-error',
                         })))
 
     def test_record_with_no_conferences(self):

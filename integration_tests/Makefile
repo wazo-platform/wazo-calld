@@ -19,7 +19,7 @@ docker-pull:
 	docker pull python:2.7.16-buster
 	docker pull wazopbx/wait
 	docker pull wazopbx/asterisk
-	docker pull wazopbx/xivo-amid
+	docker pull wazopbx/wazo-amid
 	docker pull wazopbx/wazo-auth-mock
 	docker pull wazopbx/wazo-confd-mock
 

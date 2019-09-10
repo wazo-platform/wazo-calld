@@ -80,7 +80,7 @@ class TestFax(RealAsteriskIntegrationTest):
                 ),
                 raises(CalldError).matching(has_properties({
                     'status_code': 503,
-                    'error_id': 'xivo-amid-error',
+                    'error_id': 'wazo-amid-error',
                 }))
             )
 
@@ -95,7 +95,7 @@ class TestFax(RealAsteriskIntegrationTest):
                 ),
                 raises(CalldError).matching(has_properties({
                     'status_code': 503,
-                    'error_id': 'xivo-amid-error',
+                    'error_id': 'wazo-amid-error',
                 }))
             )
 
