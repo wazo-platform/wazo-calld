@@ -1,4 +1,4 @@
-# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
@@ -6,7 +6,7 @@ import logging
 
 from ari.exceptions import ARINotFound, ARINotInStasis
 
-from wazo_calld.exceptions import XiVOAmidError
+from wazo_calld.exceptions import WazoAmidError
 from wazo_calld.helpers import ami
 
 logger = logging.getLogger(__name__)
@@ -19,7 +19,7 @@ def hold_transferred_call(ari, amid, transferred_call):
     moh_class = 'default'
     try:
         moh_class_exists = ami.moh_class_exists(amid, moh_class)
-    except XiVOAmidError:
+    except WazoAmidError:
         logger.error('xivo-amid could not tell if MOH "%s" exists. Assuming it does not.', moh_class)
         moh_class_exists = False
 

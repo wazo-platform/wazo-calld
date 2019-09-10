@@ -5,13 +5,13 @@ rest_api:
 
 ami:
   host: ari
-  username: xivo_amid
+  username: wazo_amid
   password: opensesame
 
 ajam:
   host: ari
   verify_certificate: /usr/local/share/ssl/ari/server.crt
-  username: xivo_amid
+  username: wazo_amid
   password: opensesame
 
 auth:

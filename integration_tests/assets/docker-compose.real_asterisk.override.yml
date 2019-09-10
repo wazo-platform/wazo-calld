@@ -12,13 +12,13 @@ services:
       TARGETS: "ari:5039 ari:5040 rabbitmq:5672 confd:9486 amid:9491 auth:9497 calld:9500"
 
   amid:
-    image: wazopbx/xivo-amid
+    image: wazopbx/wazo-amid
     expose:
       - "9491"
     volumes:
       - "./ssl:/usr/local/share/ssl"
-      - "./etc/xivo-amid:/etc/xivo-amid"
-    command: "xivo-amid -fd"
+      - "./etc/wazo-amid:/etc/wazo-amid"
+    command: "wazo-amid -fd"
 
   ari:
     image: ari-real

@@ -11,13 +11,13 @@ logger = logging.getLogger(__name__)
 APIException = rest_api_helpers.APIException
 
 
-class XiVOAmidError(APIException):
+class WazoAmidError(APIException):
 
     def __init__(self, xivo_amid_client, error):
         super().__init__(
             status_code=503,
-            message='xivo-amid request error',
-            error_id='xivo-amid-error',
+            message='wazo-amid request error',
+            error_id='wazo-amid-error',
             details={
                 'xivo_amid_config': {'host': xivo_amid_client.host,
                                      'port': xivo_amid_client.port,

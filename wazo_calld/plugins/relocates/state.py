@@ -1,4 +1,4 @@
-# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -10,7 +10,7 @@ from ari.exceptions import (
     ARINotFound,
 )
 from wazo_calld.ari_ import DEFAULT_APPLICATION_NAME
-from wazo_calld.exceptions import XiVOAmidError
+from wazo_calld.exceptions import WazoAmidError
 from wazo_calld.helpers import ami
 from wazo_calld.helpers.ari_ import Channel
 
@@ -61,7 +61,7 @@ class RelocateCompleter:
                          relocate.relocated_channel,
                          context='convert_to_stasis',
                          exten='relocate')
-        except XiVOAmidError as e:
+        except WazoAmidError as e:
             logger.exception('xivo-amid error: %s', e.__dict__)
 
 

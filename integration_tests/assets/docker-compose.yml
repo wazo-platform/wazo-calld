@@ -10,9 +10,9 @@ services:
     ports:
       - 9491
     volumes:
-      - ./xivo-amid:/usr/local/share/xivo-amid
+      - ./wazo-amid:/usr/local/share/wazo-amid
       - ./ssl:/usr/local/share/ssl
-    command: python /usr/local/share/xivo-amid/mock-xivo-amid.py 9491
+    command: python /usr/local/share/wazo-amid/mock-wazo-amid.py 9491
 
   ari:
     image: ari-mock

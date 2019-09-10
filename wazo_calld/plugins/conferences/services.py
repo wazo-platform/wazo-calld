@@ -9,7 +9,7 @@ from requests import RequestException
 from wazo_calld.helpers.confd import Conference
 from wazo_calld.helpers.ari_ import Channel
 from wazo_calld.exceptions import (
-    XiVOAmidError,
+    WazoAmidError,
 )
 
 from .exceptions import (
@@ -41,7 +41,7 @@ class ConferencesService:
         try:
             participant_list = self._amid.action('ConfBridgeList', {'conference': conference_id})
         except RequestException as e:
-            raise XiVOAmidError(self._amid, e)
+            raise WazoAmidError(self._amid, e)
 
         participant_list_result = participant_list.pop(0)
         if (participant_list_result['Response'] == 'Error' and
@@ -106,7 +106,7 @@ class ConferencesService:
             response_items = self._amid.action('ConfbridgeKick', {'conference': conference_id,
                                                                   'channel': channel.json['name']})
         except RequestException as e:
-            raise XiVOAmidError(self._amid, e)
+            raise WazoAmidError(self._amid, e)
 
         response = response_items[0]
         if response['Response'] != 'Success':
@@ -130,7 +130,7 @@ class ConferencesService:
             response_items = self._amid.action('ConfbridgeMute', {'conference': conference_id,
                                                                   'channel': channel.json['name']})
         except RequestException as e:
-            raise XiVOAmidError(self._amid, e)
+            raise WazoAmidError(self._amid, e)
 
         response = response_items[0]
         if response['Response'] != 'Success':
@@ -154,7 +154,7 @@ class ConferencesService:
             response_items = self._amid.action('ConfbridgeUnmute', {'conference': conference_id,
                                                                     'channel': channel.json['name']})
         except RequestException as e:
-            raise XiVOAmidError(self._amid, e)
+            raise WazoAmidError(self._amid, e)
 
         response = response_items[0]
         if response['Response'] != 'Success':
@@ -175,7 +175,7 @@ class ConferencesService:
         try:
             response_items = self._amid.action('ConfbridgeStartRecord', body)
         except RequestException as e:
-            raise XiVOAmidError(self._amid, e)
+            raise WazoAmidError(self._amid, e)
 
         response = response_items[0]
         if response['Response'] != 'Success':
@@ -191,7 +191,7 @@ class ConferencesService:
         try:
             response_items = self._amid.action('ConfbridgeStopRecord', {'conference': conference_id})
         except RequestException as e:
-            raise XiVOAmidError(self._amid, e)
+            raise WazoAmidError(self._amid, e)
 
         response = response_items[0]
         if response['Response'] != 'Success':

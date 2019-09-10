@@ -1445,7 +1445,7 @@ class TestNoAmid(TestTransfers):
         response = self.calld.post_transfer_result(body, token=VALID_TOKEN)
 
         assert_that(response.status_code, equal_to(503))
-        assert_that(response.json(), has_entry('message', contains_string('xivo-amid')))
+        assert_that(response.json(), has_entry('message', contains_string('wazo-amid')))
 
 
 class TestInitialisation(TestTransfers):
