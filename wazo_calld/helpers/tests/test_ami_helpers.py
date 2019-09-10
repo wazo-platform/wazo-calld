@@ -1,4 +1,4 @@
-# Copyright 2016-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import requests
@@ -10,7 +10,7 @@ from hamcrest import raises
 from mock import Mock
 from unittest import TestCase
 
-from wazo_calld.exceptions import XiVOAmidError
+from wazo_calld.exceptions import WazoAmidError
 from ..ami import extension_exists
 from ..ami import moh_class_exists
 
@@ -28,7 +28,7 @@ class TestExtensionExists(TestCase):
 
         assert_that((calling(extension_exists)
                      .with_args(self.amid, SOME_EXTEN, SOME_CONTEXT)),
-                    raises(XiVOAmidError))
+                    raises(WazoAmidError))
 
     def test_given_invalid_context_when_extension_exists_then_return_false(self):
         self.amid.action.return_value = [

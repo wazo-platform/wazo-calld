@@ -1,4 +1,4 @@
-# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from hamcrest import assert_that
@@ -8,7 +8,7 @@ from mock import patch
 from mock import sentinel
 from unittest import TestCase
 
-from wazo_calld.exceptions import XiVOAmidError
+from wazo_calld.exceptions import WazoAmidError
 
 from ..ari_helpers import hold_transferred_call
 
@@ -19,7 +19,7 @@ class TestARIHelpers(TestCase):
     def test_given_amid_unreachable_when_hold_transferred_call_then_silence(self, ami_helpers):
         ari = Mock()
         amid = Mock()
-        ami_helpers.moh_class_exists.side_effect = XiVOAmidError(Mock(), Mock())
+        ami_helpers.moh_class_exists.side_effect = WazoAmidError(Mock(), Mock())
         transferred_call = sentinel.transferred
 
         hold_transferred_call(ari, amid, transferred_call)

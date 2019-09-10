@@ -78,7 +78,7 @@ ari:
   # How many seconds between each try to connect to ARI at startup
   startup_connection_delay: 1
 
-# xivo-amid connection informations
+# wazo-amid connection informations
 amid:
     host: localhost
     port: 9491

@@ -10,7 +10,7 @@ from ari.exceptions import ARINotFound
 from ari.exceptions import ARINotInStasis
 
 from wazo_calld.ari_ import DEFAULT_APPLICATION_NAME
-from wazo_calld.exceptions import XiVOAmidError
+from wazo_calld.exceptions import WazoAmidError
 from wazo_calld.helpers.ari_ import Channel
 
 from . import ari_helpers
@@ -83,7 +83,7 @@ class TransfersStasis:
         if isinstance(exception, InvalidEvent):
             event = exception.event
             logger.error('invalid stasis event received: %s', event)
-        elif (isinstance(exception, XiVOAmidError) or
+        elif (isinstance(exception, WazoAmidError) or
               isinstance(exception, TransferException)):
             self.handle_error(exception)
         else:
