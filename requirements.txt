@@ -1,4 +1,4 @@
-https://github.com/rsichny/swagger-py/archive/master.git  # the digium release does not support python3
+https://github.com/rsichny/swagger-py/archive/master.zip  # the digium release does not support python3
 https://github.com/wazo-platform/ari-py/archive/0.4.0.zip
 https://github.com/wazo-platform/wazo-auth-client/archive/master.zip
 https://github.com/wazo-platform/wazo-confd-client/archive/master.zip
