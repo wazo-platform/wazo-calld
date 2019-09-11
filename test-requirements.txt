@@ -1,4 +1,4 @@
-https://github.com/wazo-pbx/xivo-test-helpers/archive/master.zip
+https://github.com/wazo-platform/xivo-test-helpers/archive/master.zip
 mock
 nose
 pyhamcrest
