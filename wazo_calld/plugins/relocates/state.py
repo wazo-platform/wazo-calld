@@ -62,7 +62,7 @@ class RelocateCompleter:
                          context='convert_to_stasis',
                          exten='relocate')
         except WazoAmidError as e:
-            logger.exception('xivo-amid error: %s', e.__dict__)
+            logger.exception('wazo-amid error: %s', e.__dict__)
 
 
 class StateFactory:

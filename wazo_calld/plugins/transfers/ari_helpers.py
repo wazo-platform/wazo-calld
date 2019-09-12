@@ -20,7 +20,7 @@ def hold_transferred_call(ari, amid, transferred_call):
     try:
         moh_class_exists = ami.moh_class_exists(amid, moh_class)
     except WazoAmidError:
-        logger.error('xivo-amid could not tell if MOH "%s" exists. Assuming it does not.', moh_class)
+        logger.error('wazo-amid could not tell if MOH "%s" exists. Assuming it does not.', moh_class)
         moh_class_exists = False
 
     if moh_class_exists:
