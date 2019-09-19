@@ -73,7 +73,7 @@ class TokenWithUserUUIDRequiredError(APIException):
         )
 
 
-class XiVOConfdUnreachable(APIException):
+class WazoConfdUnreachable(APIException):
 
     def __init__(self, confd_client, error):
         super().__init__(
