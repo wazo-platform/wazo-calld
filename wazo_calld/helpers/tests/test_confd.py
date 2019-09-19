@@ -12,7 +12,7 @@ from hamcrest import (
 from mock import Mock
 from unittest import TestCase
 
-from wazo_calld.exceptions import XiVOConfdUnreachable
+from wazo_calld.exceptions import WazoConfdUnreachable
 from ..confd import Line
 
 
@@ -26,7 +26,7 @@ class TestLine(TestCase):
         self.confd_client.lines.get.side_effect = requests.RequestException
 
         assert_that(calling(self.line._get).with_args(),
-                    raises(XiVOConfdUnreachable))
+                    raises(WazoConfdUnreachable))
 
     def test_line_interface_autoanswer_sip(self):
         self.confd_client.lines.get.return_value = {

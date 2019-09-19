@@ -4,7 +4,7 @@
 from requests import HTTPError
 from requests import RequestException
 
-from wazo_calld.exceptions import XiVOConfdUnreachable
+from wazo_calld.exceptions import WazoConfdUnreachable
 from wazo_calld.helpers.confd import not_found
 
 
@@ -22,6 +22,6 @@ class Switchboard:
                 return False
             raise
         except RequestException as e:
-            raise XiVOConfdUnreachable(self._confd, e)
+            raise WazoConfdUnreachable(self._confd, e)
         else:
             return True

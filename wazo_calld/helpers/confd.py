@@ -4,7 +4,7 @@
 from requests import HTTPError
 from requests import RequestException
 
-from wazo_calld.exceptions import XiVOConfdUnreachable
+from wazo_calld.exceptions import WazoConfdUnreachable
 
 from .exceptions import (
     InvalidUserUUID,
@@ -36,7 +36,7 @@ class User:
                 raise InvalidUserUUID(self.uuid)
             raise
         except RequestException as e:
-            raise XiVOConfdUnreachable(self._confd, e)
+            raise WazoConfdUnreachable(self._confd, e)
 
         try:
             main_line_id = lines[0]['id']
@@ -52,7 +52,7 @@ class User:
                 raise InvalidUserUUID(self.uuid)
             raise
         except RequestException as e:
-            raise XiVOConfdUnreachable(self._confd, e)
+            raise WazoConfdUnreachable(self._confd, e)
 
         valid_line_ids = [line['id'] for line in lines]
         if line_id not in valid_line_ids:
@@ -68,7 +68,7 @@ class User:
                 raise InvalidUserUUID(self.uuid)
             raise
         except RequestException as e:
-            raise XiVOConfdUnreachable(self._confd, e)
+            raise WazoConfdUnreachable(self._confd, e)
 
 
 class Line:
@@ -85,7 +85,7 @@ class Line:
         except HTTPError:
             raise
         except RequestException as e:
-            raise XiVOConfdUnreachable(self._confd, e)
+            raise WazoConfdUnreachable(self._confd, e)
 
     def context(self):
         line = self._get()
@@ -115,7 +115,7 @@ class Conference:
         try:
             conferences = self._confd.conferences.list(tenant_uuid=self.tenant_uuid, recurse=True)['items']
         except RequestException as e:
-            raise XiVOConfdUnreachable(self._confd, e)
+            raise WazoConfdUnreachable(self._confd, e)
         return self.conference_id in (conference['id'] for conference in conferences)
 
     @classmethod
@@ -141,7 +141,7 @@ def get_user_voicemail(user_uuid, confd_client):
             raise NoSuchUserVoicemail(user_uuid)
         raise
     except RequestException as e:
-        raise XiVOConfdUnreachable(confd_client, e)
+        raise WazoConfdUnreachable(confd_client, e)
 
 
 def get_voicemail(voicemail_id, confd_client):
@@ -152,4 +152,4 @@ def get_voicemail(voicemail_id, confd_client):
             raise NoSuchVoicemail(voicemail_id)
         raise
     except RequestException as e:
-        raise XiVOConfdUnreachable(confd_client, e)
+        raise WazoConfdUnreachable(confd_client, e)
