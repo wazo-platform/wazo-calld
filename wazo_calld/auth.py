@@ -1,4 +1,4 @@
-# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -23,7 +23,7 @@ def get_token_user_uuid_from_request(auth_client, token=None):
     except HTTPError as e:
         logger.warning('HTTP error from wazo-auth while getting token: %s', e)
         raise TokenWithUserUUIDRequiredError()
-    user_uuid = token_infos['xivo_user_uuid']
+    user_uuid = token_infos['metadata']['pbx_user_uuid']
     if not user_uuid:
         raise TokenWithUserUUIDRequiredError()
     return user_uuid
