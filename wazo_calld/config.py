@@ -17,7 +17,7 @@ _DEFAULT_CONFIG = {
     'log_level': 'info',
     'log_filename': '/var/log/wazo-calld.log',
     'foreground': False,
-    'pid_filename': '/var/run/wazo-calld/wazo-calld.pid',
+    'pid_filename': '/run/wazo-calld/wazo-calld.pid',
     'user': 'www-data',
     'rest_api': {
         'listen': '0.0.0.0',

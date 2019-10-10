@@ -13,7 +13,7 @@ debug: false
 logfile: /var/log/wazo-calld.log
 
 # PID file.
-pidfile: /var/run/wazo-calld.pid
+pidfile: /run/wazo-calld.pid
 
 
 # REST API server
