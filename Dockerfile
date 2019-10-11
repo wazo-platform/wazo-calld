@@ -17,7 +17,7 @@ RUN true \
     && mkdir -p /etc/wazo-calld/conf.d \
     && touch /var/log/wazo-calld.log \
     && chown www-data /var/log/wazo-calld.log \
-    && install -d -o www-data -g www-data /var/run/wazo-calld/ \
+    && install -d -o www-data -g www-data /run/wazo-calld/ \
     && apt-get clean \
     && rm -fr /usr/src/wazo-calld /var/lib/apt/lists/* \
     && true
