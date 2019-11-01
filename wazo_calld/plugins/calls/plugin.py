@@ -3,7 +3,7 @@
 
 from wazo_auth_client import Client as AuthClient
 from wazo_confd_client import Client as ConfdClient
-from xivo_amid_client import Client as AmidClient
+from wazo_amid_client import Client as AmidClient
 
 from wazo_calld.ari_ import DEFAULT_APPLICATION_NAME
 
