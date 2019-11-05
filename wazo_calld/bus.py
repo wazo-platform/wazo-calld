@@ -21,8 +21,16 @@ ROUTING_KEY_MAPPING = {
     'application_created': 'config.applications.created',
     'application_deleted': 'config.applications.deleted',
     'application_edited': 'config.applications.edited',
+    'line_deleted': 'config.lines.*.deleted',
+    'line_edited': 'config.lines.*.edited',
     'moh_created': 'config.moh.created',
     'moh_deleted': 'config.moh.deleted',
+    'switchboard_deleted': 'config.switchboards.*.deleted',
+    'switchboard_edited': 'config.switchboards.*.edited',
+    'user_deleted': 'config.users.*.deleted',
+    'user_edited': 'config.users.*.edited',
+    'user_line_associated': 'config.users.*.lines.*.updated',
+    'user_line_dissociated': 'config.users.*.lines.*.deleted',
 }
 
 

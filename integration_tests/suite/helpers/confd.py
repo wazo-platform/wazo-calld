@@ -83,6 +83,10 @@ class ConfdClient:
         url = self.url('_reset')
         requests.post(url, verify=False)
 
+    def requests(self):
+        url = self.url('_requests')
+        return requests.get(url, verify=False).json()
+
 
 class MockApplication:
 
