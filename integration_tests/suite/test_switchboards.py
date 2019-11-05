@@ -23,8 +23,12 @@ from hamcrest import (
 from operator import attrgetter
 from xivo_test_helpers import until
 
+from .helpers.ari_ import MockChannel
 from .helpers.auth import MockUserToken
-from .helpers.base import RealAsteriskIntegrationTest
+from .helpers.base import (
+    IntegrationTest,
+    RealAsteriskIntegrationTest,
+)
 from .helpers.constants import VALID_TOKEN, VALID_TENANT
 from .helpers.confd import (
     MockSwitchboard,
@@ -575,6 +579,55 @@ class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
             assert_that(operator_channel_id, self.c.is_hungup())
 
         until.assert_(operator_is_hungup, tries=3)
+
+
+class TestSwitchboardConfdCache(IntegrationTest):
+
+    asset = 'basic_rest'
+
+    def setUp(self):
+        super().setUp()
+        self.ari.reset()
+        self.confd.reset()
+
+    def test_answer_confd_is_cached(self):
+        token = random_uuid(prefix='my-token-')
+        user_uuid = random_uuid(prefix='my-user-uuid-')
+        line_id = random_uuid(prefix='my-line-id-')
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT))
+        switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
+        self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
+        self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
+        self.confd.set_lines(MockLine(id=line_id, name='switchboard-operator/autoanswer', protocol='test'))
+        queued_call = MockChannel(
+            id=random_uuid(prefix='first-call-'),
+            caller_id_name='Weber',
+            caller_id_number='4185556666',
+            connected_line_name='Denis',
+            connected_line_number='4185557777',
+            creation_time='first-time',
+            state='Up'
+        )
+        self.ari.set_channels(queued_call)
+        self.ari.set_originates(
+            MockChannel(id=random_uuid(prefix='originate-')),
+            MockChannel(id=random_uuid(prefix='originate-')),
+        )
+
+        # Answer one call: cache wazo-confd answers
+        self.calld.switchboard_answer_queued_call(switchboard_uuid, queued_call.id_(), token)
+
+        # Empty wazo-confd logs
+        self.confd.reset()
+        self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
+        self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
+        self.confd.set_lines(MockLine(id=line_id, name='switchboard-operator/autoanswer', protocol='test'))
+
+        # Answer another call
+        self.calld.switchboard_answer_queued_call(switchboard_uuid, queued_call.id_(), token)
+
+        # Assert wazo-confd was not called
+        assert_that(self.confd.requests(), has_entry('requests', empty()))
 
 
 class TestSwitchboardHoldCall(TestSwitchboards):
