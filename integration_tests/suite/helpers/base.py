@@ -35,6 +35,7 @@ urllib3.disable_warnings()
 if os.environ.get('TEST_LOGS') != 'verbose':
     logging.getLogger('swaggerpy.client').setLevel(logging.WARNING)
     logging.getLogger('amqp').setLevel(logging.INFO)
+    logging.getLogger('docker.utils.config').setLevel(logging.INFO)
 
 
 class WrongClient:
