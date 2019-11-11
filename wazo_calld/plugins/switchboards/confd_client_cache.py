@@ -24,7 +24,7 @@ class ConfdClientGetUUIDCacheDecorator:
 
     def _on_entry_changed(self, event_body):
         uuid = event_body['uuid']
-        self._invalidate_cache_entry(uuid)
+        self.invalidate_cache_entry(uuid)
 
     def invalidate_cache_entry(self, uuid):
         with self._lock:
@@ -62,8 +62,8 @@ class ConfdClientUserLineGetCacheDecorator(ConfdClientGetUUIDCacheDecorator):
 
     def _on_user_changed(self, event_body):
         uuid = event_body['uuid']
-        self._invalidate_cache_entry(uuid)
+        self.invalidate_cache_entry(uuid)
 
     def _on_user_line_changed(self, event_body):
         uuid = event_body['user']['uuid']
-        self._invalidate_cache_entry(uuid)
+        self.invalidate_cache_entry(uuid)

@@ -7,6 +7,7 @@ import uuid
 
 from ari.exceptions import ARINotInStasis
 from hamcrest import (
+    all_of,
     assert_that,
     contains,
     contains_string,
@@ -628,6 +629,37 @@ class TestSwitchboardConfdCache(IntegrationTest):
 
         # Assert wazo-confd was not called
         assert_that(self.confd.requests(), has_entry('requests', empty()))
+
+        # Change user config
+        self.bus.send_event(
+            event={
+                'name': 'user_edited',
+                'data': {'uuid': user_uuid},
+            },
+            routing_key='config.user.edited',
+        )
+        # Change switchboard config
+        self.bus.send_event(
+            event={
+                'name': 'switchboard_edited',
+                'data': {'uuid': switchboard_uuid},
+            },
+            routing_key='config.switchboards.{}.edited'.format(switchboard_uuid),
+        )
+
+        def confd_cache_refresh_triggered():
+            self.ari.set_originates(MockChannel(id=random_uuid(prefix='originate-')))
+
+            # Answer another call
+            self.calld.switchboard_answer_queued_call(switchboard_uuid, queued_call.id_(), token)
+
+            # Assert wazo-confd was called
+            assert_that(self.confd.requests(), has_entry('requests', all_of(
+                has_item(has_entry('path', contains_string('users'))),
+                has_item(has_entry('path', contains_string('switchboards'))),
+            )))
+
+        until.assert_(confd_cache_refresh_triggered, timeout=5, message='switchboard confd cache was not refreshed')
 
 
 class TestSwitchboardHoldCall(TestSwitchboards):
