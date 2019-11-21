@@ -8,8 +8,9 @@ from wazo_calld.exceptions import WazoConfdError
 
 class EndpointsService:
 
-    def __init__(self, confd_client):
+    def __init__(self, confd_client, ari):
         self._confd = confd_client
+        self._ari = ari
 
     def list_trunks(self, tenant_uuid):
         try:
@@ -20,11 +21,26 @@ class EndpointsService:
         total = filtered = result['total']
 
         results = []
+        endpoints = [endpoint.json for endpoint in self._ari.endpoints.list()]
         for confd_trunk in result['items']:
             trunk = self._build_static_fields(confd_trunk)
+            trunk = self._build_dynamic_fields(trunk, endpoints)
             results.append(trunk)
 
         return results, total, filtered
+
+    def _build_dynamic_fields(self, trunk, endpoints):
+        if trunk.get('technology') != 'sip':
+            return trunk
+
+        name = trunk['name']
+        for endpoint in endpoints:
+            if endpoint['resource'] != name:
+                continue
+            trunk['registered'] = endpoint['state'] == 'online'
+            trunk['current_call_count'] = len(endpoint['channel_ids'])
+
+        return trunk
 
     def _build_static_fields(self, confd_trunk):
         trunk = {

@@ -27,7 +27,9 @@ from ..services import EndpointsService
 class BaseEndpointsService(TestCase):
     def setUp(self):
         self.confd = Mock()
-        self.service = EndpointsService(self.confd)
+        self.ari = Mock()
+        self.service = EndpointsService(self.confd, self.ari)
+        self.ari.endpoints.list.return_value = []
 
 
 class TestListTrunks(BaseEndpointsService):
@@ -74,7 +76,7 @@ class TestListTrunks(BaseEndpointsService):
 
         assert_that(filtered, equal_to(s.total))
 
-    def test_sip_endpoints(self):
+    def test_sip_endpoints_registered(self):
         self.confd.trunks.list.return_value = {
             'total': s.total,
             'items': [
@@ -86,6 +88,61 @@ class TestListTrunks(BaseEndpointsService):
                 }
             ]
         }
+        self.ari.endpoints.list.return_value = [
+            Mock(json={'resource': s.name, 'state': 'online', 'channel_ids': [1, 2]}),
+        ]
+
+        items, total, filtered = self.service.list_trunks(s.tenant_uuid)
+
+        assert_that(items, contains(has_entries(
+            id=s.id,
+            type='trunk',
+            technology='sip',
+            name=s.name,
+            registered=True,
+            current_call_count=2,
+        )))
+
+    def test_sip_endpoints_not_registered(self):
+        self.confd.trunks.list.return_value = {
+            'total': s.total,
+            'items': [
+                {
+                    'id': s.id,
+                    'endpoint_sip': {'name': s.name},
+                    'endpoint_iax': None,
+                    'endpoint_custom': None,
+                }
+            ]
+        }
+        self.ari.endpoints.list.return_value = [
+            Mock(json={'resource': s.name, 'state': 'offline', 'channel_ids': []}),
+        ]
+
+        items, total, filtered = self.service.list_trunks(s.tenant_uuid)
+
+        assert_that(items, contains(has_entries(
+            id=s.id,
+            type='trunk',
+            technology='sip',
+            name=s.name,
+            registered=False,
+            current_call_count=0,
+        )))
+
+    def test_sip_endpoints_before_asterisk_reload(self):
+        self.confd.trunks.list.return_value = {
+            'total': s.total,
+            'items': [
+                {
+                    'id': s.id,
+                    'endpoint_sip': {'name': s.name},
+                    'endpoint_iax': None,
+                    'endpoint_custom': None,
+                }
+            ]
+        }
+        self.ari.endpoints.list.return_value = []
 
         items, total, filtered = self.service.list_trunks(s.tenant_uuid)
 

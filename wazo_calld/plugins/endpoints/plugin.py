@@ -11,13 +11,14 @@ class Plugin:
 
     def load(self, dependencies):
         api = dependencies['api']
+        ari = dependencies['ari']
         config = dependencies['config']
         token_changed_subscribe = dependencies['token_changed_subscribe']
 
         confd_client = ConfdClient(**config['confd'])
         token_changed_subscribe(confd_client.set_token)
 
-        endpoints_service = EndpointsService(confd_client)
+        endpoints_service = EndpointsService(confd_client, ari.client)
 
         api.add_resource(
             TrunkEndpoints,
