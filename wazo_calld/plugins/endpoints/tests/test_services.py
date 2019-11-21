@@ -165,6 +165,14 @@ class TestListTrunks(BaseEndpointsService):
                 }
             ]
         }
+        self.ari.endpoints.list.return_value = [
+            Mock(json={
+                'technology': 'IAX2',
+                'resource': s.name,
+                'state': 'unknown',
+                'channel_ids': [1],
+            }),
+        ]
 
         items, total, filtered = self.service.list_trunks(s.tenant_uuid)
 
@@ -173,8 +181,8 @@ class TestListTrunks(BaseEndpointsService):
             type='trunk',
             technology='iax',
             name=s.name,
+            current_call_count=1,
         )))
-        self.ari.endpoints.list.assert_not_called()
 
     def test_custom_endpoints(self):
         self.confd.trunks.list.return_value = {

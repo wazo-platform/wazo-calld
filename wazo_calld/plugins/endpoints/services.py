@@ -47,14 +47,19 @@ class EndpointsService:
         return results, total, filtered
 
     def _build_dynamic_fields(self, trunk, status_fetcher):
-        if trunk.get('technology') != 'sip':
+        techno = trunk.get('technology')
+        if techno not in ('sip', 'iax'):
             return trunk
 
         endpoint = status_fetcher.get(trunk['name'])
         if not endpoint:
             return trunk
 
-        trunk['registered'] = endpoint['state'] == 'online'
+        if endpoint['state'] == 'online':
+            trunk['registered'] = True
+        elif endpoint['state'] == 'offline':
+            trunk['registered'] = False
+
         trunk['current_call_count'] = len(endpoint['channel_ids'])
 
         return trunk
