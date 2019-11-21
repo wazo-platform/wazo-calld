@@ -13,7 +13,7 @@ from hamcrest import (
     has_entries,
     has_properties,
 )
-from mock import (
+from unittest.mock import (
     Mock,
     sentinel as s,
 )
@@ -174,8 +174,9 @@ class TestListTrunks(BaseEndpointsService):
             technology='iax',
             name=s.name,
         )))
+        self.ari.endpoints.list.assert_not_called()
 
-    def test_iax_custom(self):
+    def test_custom_endpoints(self):
         self.confd.trunks.list.return_value = {
             'total': s.total,
             'items': [
@@ -196,3 +197,4 @@ class TestListTrunks(BaseEndpointsService):
             technology='custom',
             name=s.interface,
         )))
+        self.ari.endpoints.list.assert_not_called()

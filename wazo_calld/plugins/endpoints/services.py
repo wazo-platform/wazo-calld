@@ -6,6 +6,23 @@ from requests import HTTPError
 from wazo_calld.exceptions import WazoConfdError
 
 
+class StatusFetcher:
+    def __init__(self, ari):
+        self._ari = ari
+        self._endpoints = None
+
+    def get(self, name):
+        if self._endpoints is None:
+            self._initialize()
+
+        for endpoint in self._endpoints:
+            if endpoint['resource'] == name:
+                return endpoint
+
+    def _initialize(self):
+        self._endpoints = [endpoint.json for endpoint in self._ari.endpoints.list()]
+
+
 class EndpointsService:
 
     def __init__(self, confd_client, ari):
@@ -20,25 +37,25 @@ class EndpointsService:
 
         total = filtered = result['total']
 
+        status_fetcher = StatusFetcher(self._ari)
         results = []
-        endpoints = [endpoint.json for endpoint in self._ari.endpoints.list()]
         for confd_trunk in result['items']:
             trunk = self._build_static_fields(confd_trunk)
-            trunk = self._build_dynamic_fields(trunk, endpoints)
+            trunk = self._build_dynamic_fields(trunk, status_fetcher)
             results.append(trunk)
 
         return results, total, filtered
 
-    def _build_dynamic_fields(self, trunk, endpoints):
+    def _build_dynamic_fields(self, trunk, status_fetcher):
         if trunk.get('technology') != 'sip':
             return trunk
 
-        name = trunk['name']
-        for endpoint in endpoints:
-            if endpoint['resource'] != name:
-                continue
-            trunk['registered'] = endpoint['state'] == 'online'
-            trunk['current_call_count'] = len(endpoint['channel_ids'])
+        endpoint = status_fetcher.get(trunk['name'])
+        if not endpoint:
+            return trunk
+
+        trunk['registered'] = endpoint['state'] == 'online'
+        trunk['current_call_count'] = len(endpoint['channel_ids'])
 
         return trunk
 
