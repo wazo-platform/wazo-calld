@@ -7,6 +7,12 @@ paths:
 
         List endpoints that are configured on the engine and return information
         about there status.
+
+        Only the status of SIP endpoints can be fetched at the moment.
+
+        Unsupported endpoint technologies will be listed but the dynamic fields will be null.
+
+        This include the `registered` and `current_call_count`
       tags:
         - endpoints
       parameters:
@@ -24,7 +30,7 @@ definitions:
     properties:
       technology:
         type: string
-        description: The technology of that endpoint only (SIP, IAX, etc)
+        description: The technology of that endpoint only (SIP, IAX, or custom)
       name:
         type: string
         description: The name of that given endpoint in Asterisk
@@ -36,7 +42,7 @@ definitions:
         description: The ID of the matching confd trunk
       registered:
         type: boolean
-        description: Wether or not this trunk is registered
+        description: Wether or not this trunk is registered.
       current_call_count:
         type: integer
         description: The number of ongoing calls on that trunk

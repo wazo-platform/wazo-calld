@@ -21,21 +21,25 @@ class EndpointsService:
 
         results = []
         for confd_trunk in result['items']:
-            trunk = {
-                'id': confd_trunk['id'],
-                'type': 'trunk',
-            }
-
-            if confd_trunk.get('endpoint_sip'):
-                trunk['technology'] = 'sip'
-                trunk['name'] = confd_trunk['endpoint_sip']['name']
-            elif confd_trunk.get('endpoint_iax'):
-                trunk['technology'] = 'iax'
-                trunk['name'] = confd_trunk['endpoint_iax']['name']
-            elif confd_trunk.get('endpoint_custom'):
-                trunk['technology'] = 'custom'
-                trunk['name'] = confd_trunk['endpoint_custom']['interface']
-
+            trunk = self._build_static_fields(confd_trunk)
             results.append(trunk)
 
         return results, total, filtered
+
+    def _build_static_fields(self, confd_trunk):
+        trunk = {
+            'id': confd_trunk['id'],
+            'type': 'trunk',
+        }
+
+        if confd_trunk.get('endpoint_sip'):
+            trunk['technology'] = 'sip'
+            trunk['name'] = confd_trunk['endpoint_sip']['name']
+        elif confd_trunk.get('endpoint_iax'):
+            trunk['technology'] = 'iax'
+            trunk['name'] = confd_trunk['endpoint_iax']['name']
+        elif confd_trunk.get('endpoint_custom'):
+            trunk['technology'] = 'custom'
+            trunk['name'] = confd_trunk['endpoint_custom']['interface']
+
+        return trunk
