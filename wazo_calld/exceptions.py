@@ -73,6 +73,22 @@ class TokenWithUserUUIDRequiredError(APIException):
         )
 
 
+class WazoConfdError(APIException):
+
+    def __init__(self, confd_client, error):
+        super().__init__(
+            status_code=503,
+            message='wazo-confd error',
+            error_id='wazo-confd-error',
+            details={
+                'wazo_confd_config': {'host': confd_client.host,
+                                      'port': confd_client.port,
+                                      'timeout': confd_client.timeout},
+                'original_error': str(error),
+            }
+        )
+
+
 class WazoConfdUnreachable(APIException):
 
     def __init__(self, confd_client, error):
