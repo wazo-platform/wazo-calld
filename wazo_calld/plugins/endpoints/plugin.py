@@ -3,6 +3,7 @@
 
 from wazo_confd_client import Client as ConfdClient
 
+from .bus import EventHandler
 from .resources import TrunkEndpoints
 from .services import EndpointsService
 
@@ -14,11 +15,15 @@ class Plugin:
         ari = dependencies['ari']
         config = dependencies['config']
         token_changed_subscribe = dependencies['token_changed_subscribe']
+        bus_consumer = dependencies['bus_consumer']
 
         confd_client = ConfdClient(**config['confd'])
         token_changed_subscribe(confd_client.set_token)
 
         endpoints_service = EndpointsService(confd_client, ari.client)
+
+        event_handler = EventHandler(endpoints_service)
+        event_handler.subscribe(bus_consumer)
 
         api.add_resource(
             TrunkEndpoints,

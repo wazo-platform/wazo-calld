@@ -17,6 +17,12 @@ class Endpoint:
         self.registered = registered
         self.current_call_count = current_call_count
 
+    def __repr__(self):
+        return '{}({})'.format(
+            self.__class__.__name__,
+            ', '.join(map(str, [self.techno, self.name, self.registered, self.current_call_count])),
+        )
+
     @classmethod
     def from_ari_endpoint_list(cls, endpoint):
         name = endpoint['resource']
@@ -34,11 +40,6 @@ class Endpoint:
 
 class StatusCache:
 
-    _confd_to_asterisk_techno_map = {
-        'sip': 'PJSIP',
-        'iax': 'IAX2',
-    }
-
     def __init__(self, ari):
         self._ari = ari
         self._endpoints = {}
@@ -55,8 +56,7 @@ class StatusCache:
         if self._endpoints is None:
             raise CalldUninitializedError()
 
-        ast_techno = self._confd_to_asterisk_techno_map.get(techno)
-        return self._endpoints.get(ast_techno, {}).get(name)
+        return self._endpoints.get(techno, {}).get(name)
 
     def _initialize(self):
         logger.debug('initializing endpoint status...')
@@ -71,6 +71,11 @@ class StatusCache:
 
 
 class EndpointsService:
+
+    _confd_to_asterisk_techno_map = {
+        'sip': 'PJSIP',
+        'iax': 'IAX2',
+    }
 
     def __init__(self, confd_client, ari):
         self._confd = confd_client
@@ -93,12 +98,28 @@ class EndpointsService:
 
         return results, total, filtered
 
+    def update_endpoint(self, techno, name, registered=None):
+        endpoint = self.status_cache.get(techno, name)
+        if not endpoint:
+            logger.info('updating an endpoint that is not tracked %s %s', techno, name)
+            return
+
+        updated = False
+
+        if endpoint.registered != registered:
+            endpoint.registered = registered
+            updated = True
+
+        if updated:
+            logger.debug('%s has been updated', endpoint)
+
     def _build_dynamic_fields(self, trunk):
         techno = trunk.get('technology')
         if techno not in ('sip', 'iax'):
             return trunk
 
-        endpoint = self.status_cache.get(techno, trunk['name'])
+        ast_techno = self._confd_to_asterisk_techno_map.get(techno)
+        endpoint = self.status_cache.get(ast_techno, trunk['name'])
         if not endpoint:
             return trunk
 

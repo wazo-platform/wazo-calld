@@ -200,6 +200,32 @@ class TestListTrunks(BaseEndpointsService):
         )))
 
 
+class TestUpdateEndpoint(BaseEndpointsService):
+    def test_updating_the_registered(self):
+        ast_endpoint = Endpoint('PJSIP', s.name, False, 0)
+        self.service.status_cache.add_endpoint(ast_endpoint)
+
+        self.service.update_endpoint('PJSIP', s.name, registered=True)
+
+        endpoint = self.service.status_cache.get('PJSIP', s.name)
+        assert_that(endpoint, has_properties(
+            techno='PJSIP',
+            name=s.name,
+            registered=True,
+            current_call_count=0,
+        ))
+
+        self.service.update_endpoint('PJSIP', s.name, registered=False)
+
+        endpoint = self.service.status_cache.get('PJSIP', s.name)
+        assert_that(endpoint, has_properties(
+            techno='PJSIP',
+            name=s.name,
+            registered=False,
+            current_call_count=0,
+        ))
+
+
 class TestEndpoint(TestCase):
     def test_from_ari_endpoint_list_not_sip_registered(self):
         raw = {
