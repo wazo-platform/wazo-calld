@@ -21,13 +21,14 @@ from xivo_test_helpers.hamcrest.raises import raises
 
 from wazo_calld.exceptions import WazoConfdError
 
-from ..services import EndpointsService
+from ..services import EndpointsService, Endpoint
 
 
 class BaseEndpointsService(TestCase):
     def setUp(self):
         self.confd = Mock()
         self.ari = Mock()
+        self.ari.endpoints.list.return_value = []
         self.service = EndpointsService(self.confd, self.ari)
         self.ari.endpoints.list.return_value = []
 
@@ -77,6 +78,8 @@ class TestListTrunks(BaseEndpointsService):
         assert_that(filtered, equal_to(s.total))
 
     def test_sip_endpoints_registered(self):
+        ast_endpoint = Endpoint('PJSIP', s.name, True, 2)
+        self.service.status_cache.add_endpoint(ast_endpoint)
         self.confd.trunks.list.return_value = {
             'total': s.total,
             'items': [
@@ -88,9 +91,6 @@ class TestListTrunks(BaseEndpointsService):
                 }
             ]
         }
-        self.ari.endpoints.list.return_value = [
-            Mock(json={'resource': s.name, 'state': 'online', 'channel_ids': [1, 2]}),
-        ]
 
         items, total, filtered = self.service.list_trunks(s.tenant_uuid)
 
@@ -104,6 +104,8 @@ class TestListTrunks(BaseEndpointsService):
         )))
 
     def test_sip_endpoints_not_registered(self):
+        ast_endpoint = Endpoint('PJSIP', s.name, False, 0)
+        self.service.status_cache.add_endpoint(ast_endpoint)
         self.confd.trunks.list.return_value = {
             'total': s.total,
             'items': [
@@ -115,9 +117,6 @@ class TestListTrunks(BaseEndpointsService):
                 }
             ]
         }
-        self.ari.endpoints.list.return_value = [
-            Mock(json={'resource': s.name, 'state': 'offline', 'channel_ids': []}),
-        ]
 
         items, total, filtered = self.service.list_trunks(s.tenant_uuid)
 
@@ -154,6 +153,8 @@ class TestListTrunks(BaseEndpointsService):
         )))
 
     def test_iax_endpoints(self):
+        ast_endpoint = Endpoint('IAX2', s.name, None, 1)
+        self.service.status_cache.add_endpoint(ast_endpoint)
         self.confd.trunks.list.return_value = {
             'total': s.total,
             'items': [
@@ -165,14 +166,6 @@ class TestListTrunks(BaseEndpointsService):
                 }
             ]
         }
-        self.ari.endpoints.list.return_value = [
-            Mock(json={
-                'technology': 'IAX2',
-                'resource': s.name,
-                'state': 'unknown',
-                'channel_ids': [1],
-            }),
-        ]
 
         items, total, filtered = self.service.list_trunks(s.tenant_uuid)
 
@@ -205,4 +198,56 @@ class TestListTrunks(BaseEndpointsService):
             technology='custom',
             name=s.interface,
         )))
-        self.ari.endpoints.list.assert_not_called()
+
+
+class TestEndpoint(TestCase):
+    def test_from_ari_endpoint_list_not_sip_registered(self):
+        raw = {
+            "technology": 'PJSIP',
+            "resource": s.name,
+            "state": "offline",
+            "channel_ids": []
+        }
+
+        result = Endpoint.from_ari_endpoint_list(raw)
+
+        assert_that(result, has_properties(
+            techno='PJSIP',
+            name=s.name,
+            registered=False,
+            current_call_count=0,
+        ))
+
+    def test_from_ari_endpoint_list_sip_registered(self):
+        raw = {
+            "technology": 'PJSIP',
+            "resource": s.name,
+            "state": "online",
+            "channel_ids": [123455.43]
+        }
+
+        result = Endpoint.from_ari_endpoint_list(raw)
+
+        assert_that(result, has_properties(
+            techno='PJSIP',
+            name=s.name,
+            registered=True,
+            current_call_count=1,
+        ))
+
+    def test_from_ari_endpoint_list_iax2_with_calls(self):
+        raw = {
+            "technology": 'IAX2',
+            "resource": s.name,
+            "state": "unknown",
+            "channel_ids": [123455.43, 124453.32]
+        }
+
+        result = Endpoint.from_ari_endpoint_list(raw)
+
+        assert_that(result, has_properties(
+            techno='IAX2',
+            name=s.name,
+            registered=None,
+            current_call_count=2,
+        ))
