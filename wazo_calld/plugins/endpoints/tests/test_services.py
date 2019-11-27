@@ -12,6 +12,7 @@ from hamcrest import (
     equal_to,
     has_entries,
     has_properties,
+    not_,
 )
 from unittest.mock import (
     Mock,
@@ -21,7 +22,7 @@ from xivo_test_helpers.hamcrest.raises import raises
 
 from wazo_calld.exceptions import WazoConfdError
 
-from ..services import EndpointsService, Endpoint
+from ..services import EndpointsService, Endpoint, NotifyingStatusCache
 
 
 class BaseEndpointsService(TestCase):
@@ -78,7 +79,8 @@ class TestListTrunks(BaseEndpointsService):
         assert_that(filtered, equal_to(s.total))
 
     def test_sip_endpoints_registered(self):
-        ast_endpoint = Endpoint('PJSIP', s.name, True, 2)
+        call_ids = ['1234567.8', '456687.8']
+        ast_endpoint = Endpoint('PJSIP', s.name, True, call_ids)
         self.service.status_cache.add_endpoint(ast_endpoint)
         self.confd.trunks.list.return_value = {
             'total': s.total,
@@ -104,7 +106,7 @@ class TestListTrunks(BaseEndpointsService):
         )))
 
     def test_sip_endpoints_not_registered(self):
-        ast_endpoint = Endpoint('PJSIP', s.name, False, 0)
+        ast_endpoint = Endpoint('PJSIP', s.name, False, [])
         self.service.status_cache.add_endpoint(ast_endpoint)
         self.confd.trunks.list.return_value = {
             'total': s.total,
@@ -153,7 +155,8 @@ class TestListTrunks(BaseEndpointsService):
         )))
 
     def test_iax_endpoints(self):
-        ast_endpoint = Endpoint('IAX2', s.name, None, 1)
+        call_ids = ['1234556.7']
+        ast_endpoint = Endpoint('IAX2', s.name, None, call_ids)
         self.service.status_cache.add_endpoint(ast_endpoint)
         self.confd.trunks.list.return_value = {
             'total': s.total,
@@ -202,7 +205,7 @@ class TestListTrunks(BaseEndpointsService):
 
 class TestUpdateEndpoint(BaseEndpointsService):
     def test_updating_the_registered(self):
-        ast_endpoint = Endpoint('PJSIP', s.name, False, 0)
+        ast_endpoint = Endpoint('PJSIP', s.name, False, [])
         self.service.status_cache.add_endpoint(ast_endpoint)
 
         self.service.update_endpoint('PJSIP', s.name, registered=True)
@@ -277,3 +280,82 @@ class TestEndpoint(TestCase):
             registered=None,
             current_call_count=2,
         ))
+
+    def test_add_call(self):
+        endpoint = Endpoint(s.techno, s.name, True, [])
+
+        endpoint.add_call(s.unique_id_1)
+        assert_that(endpoint.current_call_count, equal_to(1))
+
+        endpoint.add_call(s.unique_id_1)
+        assert_that(endpoint.current_call_count, equal_to(1))
+
+        endpoint.add_call(s.unique_id_2)
+        assert_that(endpoint.current_call_count, equal_to(2))
+
+    def test_remove_call(self):
+        endpoint = Endpoint(s.techno, s.name, True, [s.unique_id_1, s.unique_id_2])
+
+        endpoint.remove_call(s.unique_id_1)
+        assert_that(endpoint.current_call_count, equal_to(1))
+
+        endpoint.remove_call(s.unique_id_1)
+        assert_that(endpoint.current_call_count, equal_to(1))
+
+        endpoint.remove_call(s.unique_id_2)
+        assert_that(endpoint.current_call_count, equal_to(0))
+
+    def test_eq(self):
+        assert_that(
+            Endpoint(s.techno, s.name, True, []),
+            equal_to(Endpoint(s.techno, s.name, True, [])),
+        )
+
+        assert_that(
+            Endpoint(s.techno, s.name, True, []),
+            not_(equal_to(Endpoint(s.techno, s.name, False, []))),
+        )
+
+        # The interface for the state of an endpoint is currently the number of calls
+        assert_that(
+            Endpoint(s.techno, s.name, True, [s.unique_id_1]),
+            equal_to(Endpoint(s.techno, s.name, True, [s.unique_id_2])),
+        )
+
+
+class TestNotifyingStatusCache(TestCase):
+
+    def setUp(self):
+        self.ari = Mock()
+        self.notify = Mock()
+        self.endpoint = Endpoint(s.techno, s.name, s.registered, [s.unique_id_1, s.unique_id_2])
+        self.cache = NotifyingStatusCache(
+            self.notify,
+            self.ari,
+            endpoints={s.techno: {s.name: self.endpoint}},
+        )
+
+    def test_no_change(self):
+        with self.cache.update(s.techno, s.name) as e:
+            e.add_call(s.unique_id_1)  # Already there
+            e.registered = s.registered  # Already registered
+            e.remove_call(s.unique_id_3)  # Not there
+
+        self.notify.assert_not_called()
+
+    def test_register_change(self):
+        with self.cache.update(s.techno, s.name) as e:
+            e.registered = True
+
+        self.notify.assert_called_once_with(e)
+
+    def test_call_count_change(self):
+        with self.cache.update(s.techno, s.name) as e:
+            e.remove_call(s.unique_id_2)
+
+        self.notify.assert_called_once_with(e)
+
+    def test_not_found_does_not_raise(self):
+        with self.cache.update(s.not_found, s.name) as e:
+            assert_that(e, equal_to(None))
+            e.add_call(s.unique_id_1)

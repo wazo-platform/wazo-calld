@@ -42,3 +42,69 @@ class TestOnPeerStatus(TestCase):
         self.endpoints_service.update_endpoint.assert_called_once_with(
             'PJSIP', 'ycetqvtr', registered=False,
         )
+
+    def test_on_hangup(self):
+        event = {
+            'AccountCode': '',
+            'CallerIDName': 'Alice',
+            'CallerIDNum': '1001',
+            'Cause': '16',
+            'Cause-txt': 'Normal Clearing',
+            'ChanVariable': {
+                'WAZO_DEREFERENCED_USERUUID': '',
+                'WAZO_SIP_CALL_ID': '779ffe58-7bf0-456f-8475-6195b88b6655',
+                'XIVO_BASE_EXTEN': '2000',
+                'XIVO_USERUUID': '',
+            },
+            'Channel': 'PJSIP/dev_370-00000002',
+            'ChannelState': '6',
+            'ChannelStateDesc': 'Up',
+            'ConnectedLineName': '<unknown>',
+            'ConnectedLineNum': '<unknown>',
+            'Context': 'wazo-application',
+            'Event': 'Hangup',
+            'Exten': 's',
+            'Language': 'en_US',
+            'Linkedid': '1574445784.4',
+            'Priority': '3',
+            'Privilege': 'call,all',
+            'Uniqueid': '1574445784.4',
+        }
+
+        self.handler.on_hangup(event)
+
+        self.endpoints_service.remove_call.assert_called_once_with(
+            'PJSIP', 'dev_370', '1574445784.4',
+        )
+
+    def test_on_new_channel(self):
+        event = {
+            'AccountCode': '',
+            'CallerIDName': 'Alice',
+            'CallerIDNum': '1001',
+            'ChanVariable': {
+                'WAZO_DEREFERENCED_USERUUID': '',
+                'WAZO_SIP_CALL_ID': '',
+                'XIVO_BASE_EXTEN': '',
+                'XIVO_USERUUID': '',
+            },
+            'Channel': 'PJSIP/dev_370-00000002',
+            'ChannelState': '4',
+            'ChannelStateDesc': 'Ring',
+            'ConnectedLineName': '<unknown>',
+            'ConnectedLineNum': '<unknown>',
+            'Context': 'from-extern',
+            'Event': 'Newchannel',
+            'Exten': '2000',
+            'Language': 'en',
+            'Linkedid': '1574445784.4',
+            'Priority': '1',
+            'Privilege': 'call,all',
+            'Uniqueid': '1574445784.4',
+        }
+
+        self.handler.on_new_channel(event)
+
+        self.endpoints_service.add_call.assert_called_once_with(
+            'PJSIP', 'dev_370', '1574445784.4',
+        )

@@ -2,6 +2,8 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
+import copy
+from contextlib import contextmanager
 
 from requests import HTTPError
 
@@ -11,16 +13,34 @@ logger = logging.getLogger(__name__)
 
 
 class Endpoint:
-    def __init__(self, techno, name, registered, current_call_count):
+    def __init__(self, techno, name, registered, channel_ids):
         self.techno = techno
         self.name = name
         self.registered = registered
-        self.current_call_count = current_call_count
+        self._channel_ids = set(channel_ids)
+
+    def add_call(self, channel_id):
+        self._channel_ids.add(channel_id)
+
+    def remove_call(self, channel_id):
+        self._channel_ids.discard(channel_id)
+
+    @property
+    def current_call_count(self):
+        return len(self._channel_ids)
+
+    def __eq__(self, other):
+        return (
+            self.techno == other.techno
+            and self.name == other.name
+            and self.registered == other.registered
+            and self.current_call_count == other.current_call_count
+        )
 
     def __repr__(self):
         return '{}({})'.format(
             self.__class__.__name__,
-            ', '.join(map(str, [self.techno, self.name, self.registered, self.current_call_count])),
+            ', '.join(map(str, [self.techno, self.name, self.registered, list(self._channel_ids)])),
         )
 
     @classmethod
@@ -33,18 +53,18 @@ class Endpoint:
             registered = False
         else:
             registered = None
-        current_call_count = len(endpoint['channel_ids'])
 
-        return cls(techno, name, registered, current_call_count)
+        return cls(techno, name, registered, endpoint['channel_ids'])
 
 
 class StatusCache:
 
-    def __init__(self, ari):
+    def __init__(self, ari, endpoints=None):
         self._ari = ari
-        self._endpoints = {}
+        self._endpoints = endpoints or {}
 
-        self._initialize()
+        if not self._endpoints:
+            self._initialize()
 
     def add_endpoint(self, endpoint):
         if endpoint.techno not in self._endpoints:
@@ -70,6 +90,27 @@ class StatusCache:
             ]))
 
 
+class NotifyingStatusCache(StatusCache):
+    def __init__(self, notify_fn, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._notify_fn = notify_fn
+
+    @contextmanager
+    def update(self, techno, name):
+        endpoint = self.get(techno, name)
+        before = copy.deepcopy(endpoint)
+        try:
+            yield endpoint
+        except Exception:
+            if not endpoint:
+                logger.info('updating an endpoint that is not tracked %s %s', techno, name)
+            else:
+                raise
+        else:
+            if endpoint != before:
+                self._notify_fn(endpoint)
+
+
 class EndpointsService:
 
     _confd_to_asterisk_techno_map = {
@@ -80,7 +121,7 @@ class EndpointsService:
     def __init__(self, confd_client, ari):
         self._confd = confd_client
         self._ari = ari
-        self.status_cache = StatusCache(self._ari)
+        self.status_cache = NotifyingStatusCache(self.notify_endpoint_updated, self._ari)
 
     def list_trunks(self, tenant_uuid):
         try:
@@ -99,19 +140,19 @@ class EndpointsService:
         return results, total, filtered
 
     def update_endpoint(self, techno, name, registered=None):
-        endpoint = self.status_cache.get(techno, name)
-        if not endpoint:
-            logger.info('updating an endpoint that is not tracked %s %s', techno, name)
-            return
-
-        updated = False
-
-        if endpoint.registered != registered:
+        with self.status_cache.update(techno, name) as endpoint:
             endpoint.registered = registered
-            updated = True
 
-        if updated:
-            logger.debug('%s has been updated', endpoint)
+    def add_call(self, techno, name, unique_id):
+        with self.status_cache.update(techno, name) as endpoint:
+            endpoint.add_call(unique_id)
+
+    def remove_call(self, techno, name, unique_id):
+        with self.status_cache.update(techno, name) as endpoint:
+            endpoint.remove_call(unique_id)
+
+    def notify_endpoint_updated(self, endpoint):
+        logger.critical('%s has been updated', endpoint)
 
     def _build_dynamic_fields(self, trunk):
         techno = trunk.get('technology')
