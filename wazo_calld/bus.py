@@ -18,7 +18,7 @@ from xivo_bus import PublishingQueue
 logger = logging.getLogger(__name__)
 
 ROUTING_KEY_MAPPING = {
-    'trunk_created': 'config.trunk.created',
+    'trunk_endpoint_associated': 'config.trunks.endpoints.updated',
     'trunk_updated': 'config.trunk.updated',
     'trunk_deleted': 'config.trunk.deleted',
     'application_created': 'config.applications.created',

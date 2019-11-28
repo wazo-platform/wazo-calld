@@ -15,7 +15,7 @@ class EventHandler:
         consumer.on_ami_event('Newchannel', self.on_new_channel)
         consumer.on_ami_event('PeerStatus', self.on_peer_status)
         consumer.on_ami_event('Registry', self.on_registry)
-        consumer.on_event('trunk_created', self.on_trunk_created)
+        consumer.on_event('trunk_endpoint_associated', self.on_trunk_endpoint_associated)
         consumer.on_event('trunk_updated', self.on_trunk_updated)
         consumer.on_event('trunk_deleted', self.on_trunk_deleted)
 
@@ -51,8 +51,8 @@ class EventHandler:
 
         self._endpoints_service.update_trunk_endpoint(techno, username, registered=registered)
 
-    def on_trunk_created(self, event):
-        self._endpoints_service.add_trunk(event['id'])
+    def on_trunk_endpoint_associated(self, event):
+        self._endpoints_service.add_trunk(event['trunk_id'])
 
     def on_trunk_updated(self, event):
         self._endpoints_service.update_trunk(event['id'])

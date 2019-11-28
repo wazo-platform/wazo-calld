@@ -122,10 +122,29 @@ class CachingConfdClient:
 
     def __init__(self, confd_client):
         self._confd = confd_client
-        # TODO(pcm): update the trunks based on confd events
         self._trunks = {}
         self._initialized = False
         self._initialization_lock = threading.Lock()
+
+    def add_trunk(self, trunk_id):
+        trunk = self._confd.trunks.get(trunk_id)
+        self._update_trunk_cache([trunk])
+
+    def delete_trunk(self, trunk_id):
+        to_remove = []
+
+        for techno, items in self._trunks.items():
+            for index, items in items.items():
+                for identifier, trunk in items.items():
+                    if trunk['id'] == trunk_id:
+                        to_remove.append((techno, index, identifier))
+
+        for techno, index, identifier in to_remove:
+            del self._trunks[techno][index][identifier]
+
+    def update_trunk(self, trunk_id):
+        self.delete_trunk(trunk_id)
+        self.add_trunk(trunk_id)
 
     def get_trunk(self, techno, name):
         if not self._initialized:
@@ -194,13 +213,13 @@ class EndpointsService:
         self._publisher = publisher
 
     def add_trunk(self, trunk_id):
-        pass
+        self._confd_cache.add_trunk(trunk_id)
 
     def update_trunk(self, trunk_id):
-        pass
+        self._confd_cache.update_trunk(trunk_id)
 
     def delete_trunk(self, trunk_id):
-        pass
+        self._confd_cache.delete_trunk(trunk_id)
 
     def list_trunks(self, tenant_uuid):
         try:

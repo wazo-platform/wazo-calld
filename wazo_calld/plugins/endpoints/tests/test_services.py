@@ -16,14 +16,13 @@ from hamcrest import (
 )
 from unittest.mock import (
     Mock,
-    patch,
     sentinel as s,
 )
 from xivo_test_helpers.hamcrest.raises import raises
 
 from wazo_calld.exceptions import WazoConfdError
 
-from ..services import EndpointsService, Endpoint, NotifyingStatusCache
+from ..services import CachingConfdClient, EndpointsService, Endpoint, NotifyingStatusCache
 
 
 class BaseEndpointsService(TestCase):
@@ -34,6 +33,73 @@ class BaseEndpointsService(TestCase):
         self.publisher = Mock()
         self.service = EndpointsService(self.confd, self.ari, self.publisher)
         self.ari.endpoints.list.return_value = []
+        self.confd_cache = Mock()
+        self.service._confd_cache = self.confd_cache
+
+
+class TestTrunkConfdTrunkEvents(BaseEndpointsService):
+    def test_add_trunk(self):
+        self.service.add_trunk(s.trunk_id)
+
+        self.confd_cache.add_trunk.assert_called_once_with(s.trunk_id)
+
+    def test_delete_trunk(self):
+        self.service.delete_trunk(s.trunk_id)
+
+        self.confd_cache.delete_trunk.assert_called_once_with(s.trunk_id)
+
+    def test_update_trunk(self):
+        self.service.update_trunk(s.trunk_id)
+
+        self.confd_cache.update_trunk.assert_called_once_with(s.trunk_id)
+
+
+class TestCachingConfdClient(TestCase):
+    def setUp(self):
+        self.confd = Mock()
+        self.client = CachingConfdClient(self.confd)
+
+    def test_add_trunk(self):
+        self._set_cache([])
+        self.confd.trunks.get.return_value = {
+            'id': s.trunk_id,
+            'endpoint_sip': {
+                'name': s.name,
+                'username': s.username,
+            },
+            'tenant_uuid': s.tenant_uuid,
+        }
+
+        self.client.add_trunk(s.trunk_id)
+
+        expected = {'id': s.trunk_id, 'name': s.name, 'tenant_uuid': s.tenant_uuid}
+
+        result = self.client.get_trunk('sip', s.name)
+        assert_that(result, equal_to(expected))
+
+        result = self.client.get_trunk_by_username('sip', s.username)
+        assert_that(result, equal_to(expected))
+
+    def test_delete_trunk(self):
+        self._set_cache([
+            {
+                'id': s.trunk_id,
+                'endpoint_sip': {'name': s.name, 'username': s.username},
+                'tenant_uuid': s.tenant_uuid,
+            },
+        ])
+
+        self.client.delete_trunk(s.trunk_id)
+
+        result = self.client.get_trunk('sip', s.name)
+        assert_that(result, equal_to(None))
+
+        result = self.client.get_trunk_by_username('sip', s.username)
+        assert_that(result, equal_to(None))
+
+    def _set_cache(self, trunks):
+        self.client._update_trunk_cache(trunks)
+        self.client._initialized = True
 
 
 class TestListTrunks(BaseEndpointsService):
@@ -203,33 +269,6 @@ class TestListTrunks(BaseEndpointsService):
             technology='custom',
             name=s.interface,
         )))
-
-
-class TestUpdateLineEndpoint(BaseEndpointsService):
-    def test_updating_the_registered(self):
-        ast_endpoint = Endpoint('PJSIP', s.name, False, [])
-        self.service.status_cache.add_endpoint(ast_endpoint)
-
-        self.confd.trunks.list.return_value = {'items': []}
-        self.service.update_line_endpoint('PJSIP', s.name, registered=True)
-
-        endpoint = self.service.status_cache.get('PJSIP', s.name)
-        assert_that(endpoint, has_properties(
-            techno='PJSIP',
-            name=s.name,
-            registered=True,
-            current_call_count=0,
-        ))
-
-        self.service.update_line_endpoint('PJSIP', s.name, registered=False)
-
-        endpoint = self.service.status_cache.get('PJSIP', s.name)
-        assert_that(endpoint, has_properties(
-            techno='PJSIP',
-            name=s.name,
-            registered=False,
-            current_call_count=0,
-        ))
 
 
 class TestEndpoint(TestCase):

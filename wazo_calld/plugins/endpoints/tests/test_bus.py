@@ -141,10 +141,10 @@ class TestOnPeerStatus(TestCase):
             'PJSIP', 'dev_370', '1574445784.4',
         )
 
-    def test_on_trunk_created(self):
-        event = {'id': 42}
+    def test_on_trunk_endpoint_associated(self):
+        event = {'trunk_id': 42, 'endpoint_id': 10}
 
-        self.handler.on_trunk_created(event)
+        self.handler.on_trunk_endpoint_associated(event)
 
         self.endpoints_service.add_trunk.assert_called_once_with(42)
 
