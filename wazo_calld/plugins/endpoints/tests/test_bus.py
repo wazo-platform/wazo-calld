@@ -1,19 +1,32 @@
 # Copyright 2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+from contextlib import contextmanager
 from unittest import TestCase
 from unittest.mock import Mock
+from hamcrest import assert_that, has_properties
 
 from ..bus import EventHandler
-from ..services import EndpointsService
+from ..services import Endpoint, ConfdCache
 
 
 class TestOnPeerStatus(TestCase):
     def setUp(self):
-        self.endpoints_service = Mock(EndpointsService)
-        self.handler = EventHandler(self.endpoints_service)
+        endpoint = self.updated_endpoint = Mock(Endpoint)
+
+        class StatusCacheMock:
+            @contextmanager
+            def update(self, techno, name):
+                endpoint.techno = techno
+                endpoint.name = name
+                yield endpoint
+
+        self.endpoint_status_cache = StatusCacheMock()
+        self.confd_cache = Mock(ConfdCache)
+        self.handler = EventHandler(self.endpoint_status_cache, self.confd_cache)
 
     def test_on_trunk_registering(self):
+        self.confd_cache.get_trunk_by_username.return_value = {'name': 'foobar'}
         event = {
             'ChannelType': 'PJSIP',
             'Domain': 'sip:wazo-dev-gateway.lan.wazo.io',
@@ -25,11 +38,13 @@ class TestOnPeerStatus(TestCase):
 
         self.handler.on_registry(event)
 
-        self.endpoints_service.update_trunk_endpoint.assert_called_once_with(
-            'PJSIP', 'dev_370', registered=True,
+        assert_that(
+            self.updated_endpoint,
+            has_properties(techno='PJSIP', name='foobar', registered=True),
         )
 
     def test_on_trunk_deregistering(self):
+        self.confd_cache.get_trunk_by_username.return_value = {'name': 'foobar'}
         event = {
             'ChannelType': 'PJSIP',
             'Domain': 'sip:wazo-dev-gateway.lan.wazo.io',
@@ -41,8 +56,9 @@ class TestOnPeerStatus(TestCase):
 
         self.handler.on_registry(event)
 
-        self.endpoints_service.update_trunk_endpoint.assert_called_once_with(
-            'PJSIP', 'dev_370', registered=False,
+        assert_that(
+            self.updated_endpoint,
+            has_properties(techno='PJSIP', name='foobar', registered=False),
         )
 
     def test_on_peer_status_pjsip_registering(self):
@@ -56,8 +72,9 @@ class TestOnPeerStatus(TestCase):
 
         self.handler.on_peer_status(event)
 
-        self.endpoints_service.update_line_endpoint.assert_called_once_with(
-            'PJSIP', 'ycetqvtr', registered=True,
+        assert_that(
+            self.updated_endpoint,
+            has_properties(techno='PJSIP', name='ycetqvtr', registered=True),
         )
 
     def test_on_peer_status_pjsip_deregistering(self):
@@ -71,8 +88,9 @@ class TestOnPeerStatus(TestCase):
 
         self.handler.on_peer_status(event)
 
-        self.endpoints_service.update_line_endpoint.assert_called_once_with(
-            'PJSIP', 'ycetqvtr', registered=False,
+        assert_that(
+            self.updated_endpoint,
+            has_properties(techno='PJSIP', name='ycetqvtr', registered=False),
         )
 
     def test_on_hangup(self):
@@ -105,9 +123,8 @@ class TestOnPeerStatus(TestCase):
 
         self.handler.on_hangup(event)
 
-        self.endpoints_service.remove_call.assert_called_once_with(
-            'PJSIP', 'dev_370', '1574445784.4',
-        )
+        self.updated_endpoint.remove_call.assert_called_once_with('1574445784.4')
+        assert_that(self.updated_endpoint, has_properties(techno='PJSIP', name='dev_370'))
 
     def test_on_new_channel(self):
         event = {
@@ -137,27 +154,26 @@ class TestOnPeerStatus(TestCase):
 
         self.handler.on_new_channel(event)
 
-        self.endpoints_service.add_call.assert_called_once_with(
-            'PJSIP', 'dev_370', '1574445784.4',
-        )
+        self.updated_endpoint.add_call.assert_called_once_with('1574445784.4')
+        assert_that(self.updated_endpoint, has_properties(techno='PJSIP', name='dev_370'))
 
     def test_on_trunk_endpoint_associated(self):
         event = {'trunk_id': 42, 'endpoint_id': 10}
 
         self.handler.on_trunk_endpoint_associated(event)
 
-        self.endpoints_service.add_trunk.assert_called_once_with(42)
+        self.confd_cache.add_trunk.assert_called_once_with(42)
 
     def test_on_trunk_deleted(self):
         event = {'id': 42}
 
         self.handler.on_trunk_deleted(event)
 
-        self.endpoints_service.delete_trunk.assert_called_once_with(42)
+        self.confd_cache.delete_trunk.assert_called_once_with(42)
 
     def test_on_trunk_updated(self):
         event = {'id': 42}
 
         self.handler.on_trunk_updated(event)
 
-        self.endpoints_service.update_trunk.assert_called_once_with(42)
+        self.confd_cache.update_trunk.assert_called_once_with(42)

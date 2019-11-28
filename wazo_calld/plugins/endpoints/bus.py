@@ -7,8 +7,9 @@ logger = logging.getLogger(__name__)
 
 
 class EventHandler:
-    def __init__(self, endpoints_service):
-        self._endpoints_service = endpoints_service
+    def __init__(self, endpoint_status_cache, confd_cache):
+        self._endpoint_status_cache = endpoint_status_cache
+        self._confd_cache = confd_cache
 
     def subscribe(self, consumer):
         consumer.on_ami_event('Hangup', self.on_hangup)
@@ -23,42 +24,43 @@ class EventHandler:
         techno, name = self._techno_name_from_channel(event['Channel'])
         unique_id = event['Uniqueid']
 
-        self._endpoints_service.remove_call(techno, name, unique_id)
+        with self._endpoint_status_cache.update(techno, name) as endpoint:
+            endpoint.remove_call(unique_id)
 
     def on_new_channel(self, event):
         techno, name = self._techno_name_from_channel(event['Channel'])
         unique_id = event['Uniqueid']
 
-        self._endpoints_service.add_call(techno, name, unique_id)
+        with self._endpoint_status_cache.update(techno, name) as endpoint:
+            endpoint.add_call(unique_id)
 
     def on_peer_status(self, event):
         techno, name = event['Peer'].split('/', 1)
         status = event['PeerStatus']
 
-        kwargs = {}
-        if techno == 'PJSIP' and status == 'Reachable':
-            kwargs['registered'] = True
-        elif techno == 'PJSIP' and status == 'Unreachable':
-            kwargs['registered'] = False
-
-        self._endpoints_service.update_line_endpoint(techno, name, **kwargs)
+        with self._endpoint_status_cache.update(techno, name) as endpoint:
+            if techno == 'PJSIP' and status == 'Reachable':
+                endpoint.registered = True
+            elif techno == 'PJSIP' and status == 'Unreachable':
+                endpoint.registered = False
 
     def on_registry(self, event):
         techno = event['ChannelType']
         begin, _ = event['Username'].split('@', 1)
         _, username = begin.split(':', 1)
-        registered = event['Status'] == 'Registered'
 
-        self._endpoints_service.update_trunk_endpoint(techno, username, registered=registered)
+        trunk = self._confd_cache.get_trunk_by_username(techno, username)
+        with self._endpoint_status_cache.update(techno, trunk['name']) as endpoint:
+            endpoint.registered = event['Status'] == 'Registered'
 
     def on_trunk_endpoint_associated(self, event):
-        self._endpoints_service.add_trunk(event['trunk_id'])
+        self._confd_cache.add_trunk(event['trunk_id'])
 
     def on_trunk_updated(self, event):
-        self._endpoints_service.update_trunk(event['id'])
+        self._confd_cache.update_trunk(event['id'])
 
     def on_trunk_deleted(self, event):
-        self._endpoints_service.delete_trunk(event['id'])
+        self._confd_cache.delete_trunk(event['id'])
 
     def _techno_name_from_channel(self, channel):
         techno, end = channel.split('/', 1)

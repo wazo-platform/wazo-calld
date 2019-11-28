@@ -5,7 +5,8 @@ from wazo_confd_client import Client as ConfdClient
 
 from .bus import EventHandler
 from .resources import TrunkEndpoints
-from .services import EndpointsService
+from .services import ConfdCache, EndpointsService, NotifyingStatusCache
+from .notifier import EndpointStatusNotifier
 
 
 class Plugin:
@@ -21,9 +22,13 @@ class Plugin:
         confd_client = ConfdClient(**config['confd'])
         token_changed_subscribe(confd_client.set_token)
 
-        endpoints_service = EndpointsService(confd_client, ari.client, bus_publisher)
+        confd_cache = ConfdCache(confd_client)
+        notifier = EndpointStatusNotifier(bus_publisher, confd_cache)
 
-        event_handler = EventHandler(endpoints_service)
+        status_cache = NotifyingStatusCache(notifier.endpoint_updated, ari.client)
+        endpoints_service = EndpointsService(confd_client, ari.client, status_cache)
+
+        event_handler = EventHandler(status_cache, confd_cache)
         event_handler.subscribe(bus_consumer)
 
         api.add_resource(

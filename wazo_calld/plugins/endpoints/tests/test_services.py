@@ -22,7 +22,7 @@ from xivo_test_helpers.hamcrest.raises import raises
 
 from wazo_calld.exceptions import WazoConfdError
 
-from ..services import CachingConfdClient, EndpointsService, Endpoint, NotifyingStatusCache
+from ..services import ConfdCache, EndpointsService, Endpoint, NotifyingStatusCache
 
 
 class BaseEndpointsService(TestCase):
@@ -30,34 +30,17 @@ class BaseEndpointsService(TestCase):
         self.confd = Mock()
         self.ari = Mock()
         self.ari.endpoints.list.return_value = []
-        self.publisher = Mock()
-        self.service = EndpointsService(self.confd, self.ari, self.publisher)
+        self.status_cache = NotifyingStatusCache(Mock(), self.ari)
+        self.service = EndpointsService(self.confd, self.ari, self.status_cache)
         self.ari.endpoints.list.return_value = []
         self.confd_cache = Mock()
         self.service._confd_cache = self.confd_cache
 
 
-class TestTrunkConfdTrunkEvents(BaseEndpointsService):
-    def test_add_trunk(self):
-        self.service.add_trunk(s.trunk_id)
-
-        self.confd_cache.add_trunk.assert_called_once_with(s.trunk_id)
-
-    def test_delete_trunk(self):
-        self.service.delete_trunk(s.trunk_id)
-
-        self.confd_cache.delete_trunk.assert_called_once_with(s.trunk_id)
-
-    def test_update_trunk(self):
-        self.service.update_trunk(s.trunk_id)
-
-        self.confd_cache.update_trunk.assert_called_once_with(s.trunk_id)
-
-
 class TestCachingConfdClient(TestCase):
     def setUp(self):
         self.confd = Mock()
-        self.client = CachingConfdClient(self.confd)
+        self.client = ConfdCache(self.confd)
 
     def test_add_trunk(self):
         self._set_cache([])
@@ -225,7 +208,7 @@ class TestListTrunks(BaseEndpointsService):
     def test_iax_endpoints(self):
         call_ids = ['1234556.7']
         ast_endpoint = Endpoint('IAX2', s.name, None, call_ids)
-        self.service.status_cache.add_endpoint(ast_endpoint)
+        self.status_cache.add_endpoint(ast_endpoint)
         self.confd.trunks.list.return_value = {
             'total': s.total,
             'items': [
