@@ -13,6 +13,38 @@ class TestOnPeerStatus(TestCase):
         self.endpoints_service = Mock(EndpointsService)
         self.handler = EventHandler(self.endpoints_service)
 
+    def test_on_trunk_registering(self):
+        event = {
+            'ChannelType': 'PJSIP',
+            'Domain': 'sip:wazo-dev-gateway.lan.wazo.io',
+            'Event': 'Registry',
+            'Privilege': 'system,all',
+            'Status': 'Registered',
+            'Username': 'sip:dev_370@wazo-dev-gateway.lan.wazo.io',
+        }
+
+        self.handler.on_registry(event)
+
+        self.endpoints_service.update_trunk_endpoint.assert_called_once_with(
+            'PJSIP', 'dev_370', registered=True,
+        )
+
+    def test_on_trunk_deregistering(self):
+        event = {
+            'ChannelType': 'PJSIP',
+            'Domain': 'sip:wazo-dev-gateway.lan.wazo.io',
+            'Event': 'Registry',
+            'Privilege': 'system,all',
+            'Status': 'Unregistered',
+            'Username': 'sip:dev_370@wazo-dev-gateway.lan.wazo.io',
+        }
+
+        self.handler.on_registry(event)
+
+        self.endpoints_service.update_trunk_endpoint.assert_called_once_with(
+            'PJSIP', 'dev_370', registered=False,
+        )
+
     def test_on_peer_status_pjsip_registering(self):
         event = {
             'Event': 'PeerStatus',
@@ -24,7 +56,7 @@ class TestOnPeerStatus(TestCase):
 
         self.handler.on_peer_status(event)
 
-        self.endpoints_service.update_endpoint.assert_called_once_with(
+        self.endpoints_service.update_line_endpoint.assert_called_once_with(
             'PJSIP', 'ycetqvtr', registered=True,
         )
 
@@ -39,7 +71,7 @@ class TestOnPeerStatus(TestCase):
 
         self.handler.on_peer_status(event)
 
-        self.endpoints_service.update_endpoint.assert_called_once_with(
+        self.endpoints_service.update_line_endpoint.assert_called_once_with(
             'PJSIP', 'ycetqvtr', registered=False,
         )
 

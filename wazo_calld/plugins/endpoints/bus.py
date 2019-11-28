@@ -14,6 +14,7 @@ class EventHandler:
         consumer.on_ami_event('Hangup', self.on_hangup)
         consumer.on_ami_event('Newchannel', self.on_new_channel)
         consumer.on_ami_event('PeerStatus', self.on_peer_status)
+        consumer.on_ami_event('Registry', self.on_registry)
 
     def on_hangup(self, event):
         techno, name = self._techno_name_from_channel(event['Channel'])
@@ -37,7 +38,15 @@ class EventHandler:
         elif techno == 'PJSIP' and status == 'Unreachable':
             kwargs['registered'] = False
 
-        self._endpoints_service.update_endpoint(techno, name, **kwargs)
+        self._endpoints_service.update_line_endpoint(techno, name, **kwargs)
+
+    def on_registry(self, event):
+        techno = event['ChannelType']
+        begin, _ = event['Username'].split('@', 1)
+        _, username = begin.split(':', 1)
+        registered = event['Status'] == 'Registered'
+
+        self._endpoints_service.update_trunk_endpoint(techno, username, registered=registered)
 
     def _techno_name_from_channel(self, channel):
         techno, end = channel.split('/', 1)

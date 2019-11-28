@@ -16,6 +16,7 @@ from hamcrest import (
 )
 from unittest.mock import (
     Mock,
+    patch,
     sentinel as s,
 )
 from xivo_test_helpers.hamcrest.raises import raises
@@ -30,7 +31,8 @@ class BaseEndpointsService(TestCase):
         self.confd = Mock()
         self.ari = Mock()
         self.ari.endpoints.list.return_value = []
-        self.service = EndpointsService(self.confd, self.ari)
+        self.publisher = Mock()
+        self.service = EndpointsService(self.confd, self.ari, self.publisher)
         self.ari.endpoints.list.return_value = []
 
 
@@ -203,12 +205,13 @@ class TestListTrunks(BaseEndpointsService):
         )))
 
 
-class TestUpdateEndpoint(BaseEndpointsService):
+class TestUpdateLineEndpoint(BaseEndpointsService):
     def test_updating_the_registered(self):
         ast_endpoint = Endpoint('PJSIP', s.name, False, [])
         self.service.status_cache.add_endpoint(ast_endpoint)
 
-        self.service.update_endpoint('PJSIP', s.name, registered=True)
+        self.confd.trunks.list.return_value = {'items': []}
+        self.service.update_line_endpoint('PJSIP', s.name, registered=True)
 
         endpoint = self.service.status_cache.get('PJSIP', s.name)
         assert_that(endpoint, has_properties(
@@ -218,7 +221,7 @@ class TestUpdateEndpoint(BaseEndpointsService):
             current_call_count=0,
         ))
 
-        self.service.update_endpoint('PJSIP', s.name, registered=False)
+        self.service.update_line_endpoint('PJSIP', s.name, registered=False)
 
         endpoint = self.service.status_cache.get('PJSIP', s.name)
         assert_that(endpoint, has_properties(

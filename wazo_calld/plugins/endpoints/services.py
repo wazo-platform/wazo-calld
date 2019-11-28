@@ -3,10 +3,12 @@
 
 import logging
 import copy
+import threading
 from contextlib import contextmanager
 
 from requests import HTTPError
 
+from xivo_bus.resources.common.event import ArbitraryEvent
 from wazo_calld.exceptions import CalldUninitializedError, WazoConfdError
 
 logger = logging.getLogger(__name__)
@@ -111,6 +113,72 @@ class NotifyingStatusCache(StatusCache):
                 self._notify_fn(endpoint)
 
 
+class CachingConfdClient:
+
+    _asterisk_to_confd_techno_map = {
+        'PJSIP': 'sip',
+        'IAX2': 'iax',
+    }
+
+    def __init__(self, confd_client):
+        self._confd = confd_client
+        # TODO(pcm): update the trunks based on confd events
+        self._trunks = {}
+        self._initialized = False
+        self._initialization_lock = threading.Lock()
+
+    def get_trunk(self, techno, name):
+        if not self._initialized:
+            logger.info('%s %s not in our cache, refreshing...', techno, name)
+            self._initialize()
+
+        confd_techno = self._asterisk_to_confd_techno_map.get(techno, techno)
+        return self._trunks.get(confd_techno, {'name': {}})['name'].get(name, None)
+
+    def get_trunk_by_username(self, techno, username):
+        if not self._initialized:
+            logger.info('%s username: %s not in our cache, refreshing...', techno, username)
+            self._initialize()
+
+        confd_techno = self._asterisk_to_confd_techno_map.get(techno, techno)
+        return self._trunks.get(confd_techno, {'username': {}})['username'].get(username, None)
+
+    def _initialize(self):
+        with self._initialization_lock:
+            # The initialization migh have happened while we were waiting on the lock
+            if self._initialized:
+                return
+
+            result = self._confd.trunks.list(recurse=True)
+            self._update_trunk_cache(result['items'])
+
+    def _update_trunk_cache(self, trunks):
+        for trunk in trunks:
+            if trunk.get('endpoint_sip'):
+                techno = 'sip'
+                name = trunk['endpoint_sip']['name']
+                username = trunk['endpoint_sip']['username']
+            elif trunk.get('endpoint_iax'):
+                techno = 'iax'
+                name = trunk['endpoint_iax']['name']
+                username = name
+            elif trunk.get('endpoint_custom'):
+                techno = 'custom'
+                name = trunk['endpoint_custom']['interface']
+                username = name
+
+            value = {'id': trunk['id'], 'name': name, 'tenant_uuid': trunk['tenant_uuid']}
+            self._trunks.setdefault(techno, {'name': {}, 'username': {}})
+            self._trunks[techno]['name'][name] = value
+            self._trunks[techno]['username'][username] = value
+
+        logger.info(
+            'trunk cache updated %s entries',
+            sum(len(names) for names in self._trunks.values()),
+        )
+        self._initialized = True
+
+
 class EndpointsService:
 
     _confd_to_asterisk_techno_map = {
@@ -118,10 +186,12 @@ class EndpointsService:
         'iax': 'IAX2',
     }
 
-    def __init__(self, confd_client, ari):
+    def __init__(self, confd_client, ari, publisher):
+        self._confd_cache = CachingConfdClient(confd_client)
         self._confd = confd_client
         self._ari = ari
         self.status_cache = NotifyingStatusCache(self.notify_endpoint_updated, self._ari)
+        self._publisher = publisher
 
     def list_trunks(self, tenant_uuid):
         try:
@@ -139,8 +209,13 @@ class EndpointsService:
 
         return results, total, filtered
 
-    def update_endpoint(self, techno, name, registered=None):
+    def update_line_endpoint(self, techno, name, registered=None):
         with self.status_cache.update(techno, name) as endpoint:
+            endpoint.registered = registered
+
+    def update_trunk_endpoint(self, techno, username, registered):
+        trunk = self._confd_cache.get_trunk_by_username(techno, username)
+        with self.status_cache.update(techno, trunk['name']) as endpoint:
             endpoint.registered = registered
 
     def add_call(self, techno, name, unique_id):
@@ -152,7 +227,29 @@ class EndpointsService:
             endpoint.remove_call(unique_id)
 
     def notify_endpoint_updated(self, endpoint):
-        logger.critical('%s has been updated', endpoint)
+        trunk = self._confd_cache.get_trunk(endpoint.techno, endpoint.name)
+        if not trunk:
+            # This is a line, ignore it at the moment
+            return
+
+        body = {
+            'id': trunk['id'],
+            'type': 'trunk',
+            'technology': endpoint.techno,
+            'name': endpoint.name,
+            'registered': endpoint.registered,
+            'current_call_count': endpoint.current_call_count,
+        }
+
+        routing_key = 'endpoints.{}.status.updated'.format(trunk['id'])
+        event = ArbitraryEvent(
+            name='trunk_status_updated',
+            body=body,
+            required_acl='events.{}'.format(routing_key),
+        )
+        event.routing_key = routing_key
+        headers = {'tenant_uuid': trunk['tenant_uuid']}
+        self._publisher.publish(event, headers=headers)
 
     def _build_dynamic_fields(self, trunk):
         techno = trunk.get('technology')
