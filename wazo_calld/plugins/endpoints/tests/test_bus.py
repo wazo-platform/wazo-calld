@@ -140,3 +140,24 @@ class TestOnPeerStatus(TestCase):
         self.endpoints_service.add_call.assert_called_once_with(
             'PJSIP', 'dev_370', '1574445784.4',
         )
+
+    def test_on_trunk_created(self):
+        event = {'id': 42}
+
+        self.handler.on_trunk_created(event)
+
+        self.endpoints_service.add_trunk.assert_called_once_with(42)
+
+    def test_on_trunk_deleted(self):
+        event = {'id': 42}
+
+        self.handler.on_trunk_deleted(event)
+
+        self.endpoints_service.delete_trunk.assert_called_once_with(42)
+
+    def test_on_trunk_updated(self):
+        event = {'id': 42}
+
+        self.handler.on_trunk_updated(event)
+
+        self.endpoints_service.update_trunk.assert_called_once_with(42)

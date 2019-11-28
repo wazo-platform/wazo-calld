@@ -193,6 +193,15 @@ class EndpointsService:
         self.status_cache = NotifyingStatusCache(self.notify_endpoint_updated, self._ari)
         self._publisher = publisher
 
+    def add_trunk(self, trunk_id):
+        pass
+
+    def update_trunk(self, trunk_id):
+        pass
+
+    def delete_trunk(self, trunk_id):
+        pass
+
     def list_trunks(self, tenant_uuid):
         try:
             result = self._confd.trunks.list(tenant_uuid=tenant_uuid)
