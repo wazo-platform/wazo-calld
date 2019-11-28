@@ -148,7 +148,6 @@ class CachingConfdClient:
 
     def get_trunk(self, techno, name):
         if not self._initialized:
-            logger.info('%s %s not in our cache, refreshing...', techno, name)
             self._initialize()
 
         confd_techno = self._asterisk_to_confd_techno_map.get(techno, techno)
@@ -156,7 +155,6 @@ class CachingConfdClient:
 
     def get_trunk_by_username(self, techno, username):
         if not self._initialized:
-            logger.info('%s username: %s not in our cache, refreshing...', techno, username)
             self._initialize()
 
         confd_techno = self._asterisk_to_confd_techno_map.get(techno, techno)
