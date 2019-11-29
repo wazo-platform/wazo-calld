@@ -199,6 +199,11 @@ class CalldClient:
         result = requests.get(url, params=params, headers={'X-Auth-Token': token}, verify=False)
         return result
 
+    def list_trunk_endpoints(self, token=VALID_TOKEN):
+        response = self.get_trunk_endpoints_result(token)
+        assert_that(response.status_code, equal_to(200))
+        return response.json()
+
     def list_calls(self, application=None, application_instance=None, token=VALID_TOKEN):
         response = self.get_calls_result(application, application_instance, token)
         assert_that(response.status_code, equal_to(200))
