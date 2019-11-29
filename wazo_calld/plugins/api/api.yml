@@ -63,3 +63,37 @@ parameters:
     in: header
     description: "The tenant's UUID, defining the ownership of a given resource."
     required: false
+  direction:
+    required: false
+    name: direction
+    in: query
+    type: string
+    enum:
+    - asc
+    - desc
+    description: Sort list of items in 'asc' (ascending) or 'desc' (descending) order
+  limit:
+    required: false
+    name: limit
+    in: query
+    type: integer
+    description: Maximum number of items to return in the list
+  offset:
+    required: false
+    name: offset
+    in: query
+    type: integer
+    description: Number of items to skip over in the list. Useful for pagination.
+  order:
+    required: false
+    name: order
+    in: query
+    type: string
+    description: Name of the field to use for sorting the list of items returned.
+  search:
+    required: false
+    name: search
+    in: query
+    type: string
+    description: Search term for filtering a list of items. Only items with a field
+      containing the search term will be returned.

@@ -207,13 +207,18 @@ class EndpointsService:
         self._ari = ari
         self.status_cache = status_cache
 
-    def list_trunks(self, tenant_uuid):
+    def list_trunks(self, tenant_uuid, list_params):
         try:
-            result = self._confd.trunks.list(tenant_uuid=tenant_uuid)
+            result = self._confd.trunks.list(tenant_uuid=tenant_uuid, **list_params)
         except HTTPError as e:
             raise WazoConfdError(self._confd, e)
+        filtered = result['total']
 
-        total = filtered = result['total']
+        try:
+            count_result = self._confd.trunks.list(tenant_uuid=tenant_uuid, limit=1)
+        except HTTPError as e:
+            raise WazoConfdError(self._confd, e)
+        total = count_result['total']
 
         results = []
         for confd_trunk in result['items']:

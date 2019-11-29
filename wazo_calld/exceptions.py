@@ -11,6 +11,19 @@ logger = logging.getLogger(__name__)
 APIException = rest_api_helpers.APIException
 
 
+class InvalidListParamException(APIException):
+    def __init__(self, message, details=None):
+        super().__init__(400, message, 'invalid-list-param', details, 'users')
+
+    @classmethod
+    def from_errors(cls, errors):
+        for field, infos in errors.items():
+            if not isinstance(infos, list):
+                infos = [infos]
+            for info in infos:
+                return cls(info['message'], {field: info})
+
+
 class CalldUninitializedError(APIException):
 
     def __init__(self):
