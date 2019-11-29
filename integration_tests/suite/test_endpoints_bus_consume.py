@@ -210,3 +210,43 @@ class TestBusConsume(IntegrationTest):
             )))
 
         until.assert_(assert_function, tries=5)
+
+    def test_when_trunk_associated_events_can_be_published(self):
+        trunk_id = 42
+        tenant_uuid = 'the_tenant_uuid'
+        name = 'abcdef'
+        username = 'the-username'
+
+        self.ari.set_endpoints(
+            MockEndpoint('PJSIP', name, 'offline', channel_ids=[]),
+        )
+        # There are no trunks when starting calld
+
+        self.restart_service('calld')
+
+        events = self.bus.accumulator(routing_key='endpoints.{}.status.updated'.format(trunk_id))
+        self.reset_clients()
+        self.wait_strategy.wait(self)
+
+        # A trunk is created
+        self.confd.set_trunks(
+            MockTrunk(
+                trunk_id,
+                endpoint_sip={'name': name, 'username': username},
+                tenant_uuid=tenant_uuid,
+            )
+        )
+        self.bus.send_trunk_endpoint_associated_event(trunk_id, endpoint_id=3)
+
+        self.bus.send_ami_registry_event(
+            'PJSIP', 'sip:here', 'Registered', 'sip:{}@here'.format(username),
+        )
+
+        def assert_function():
+            assert_that(events.accumulate(), has_item(has_entries(
+                name='trunk_status_updated',
+                origin_uuid=XIVO_UUID,
+                data=has_entries(id=trunk_id),
+            )))
+
+        until.assert_(assert_function, tries=5)

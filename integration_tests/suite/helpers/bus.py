@@ -191,3 +191,10 @@ class BusClient(bus_helper.BusClient):
             'name': 'application_deleted',
         }
         self.send_event(payload, 'config.applications.deleted')
+
+    def send_trunk_endpoint_associated_event(self, trunk_id, endpoint_id):
+        payload = {
+            'data': {'trunk_id': trunk_id, 'endpoint_id': endpoint_id},
+            'name': 'trunk_endpoint_associated',
+        }
+        self.send_event(payload, 'config.trunks.endpoints.updated')
