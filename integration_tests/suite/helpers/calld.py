@@ -626,5 +626,5 @@ class CalldClient:
         requests.put = old_put
 
 
-def new_call_id():
-    return format(time.time(), '.2f')
+def new_call_id(leap=0):
+    return format(time.time() + leap, '.2f')

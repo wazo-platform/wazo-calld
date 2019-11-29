@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015 by Avencall
+# Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
@@ -15,8 +15,9 @@ from flask import request
 _EMPTY_RESPONSES = {
     'applications': {},
     'bridges': {},
-    'channels': {},
     'channel_variables': {},
+    'channels': {},
+    'endpoints': [],
     'global_variables': {},
     'originates': [],
 }
@@ -160,6 +161,12 @@ def post_bridge():
 @app.route('/ari/bridges/<bridge_id>/addChannel', methods=['POST'])
 def add_channel_to_bridge(bridge_id):
     return '', 204
+
+
+@app.route('/ari/endpoints')
+def list_endpoints():
+    result = _responses['endpoints']
+    return make_response(json.dumps(result), 200, {'Content-Type': 'application/json'})
 
 
 @app.route('/ari/channels/<channel_id>/variable')

@@ -33,6 +33,12 @@ class ARIClient:
                 'content': {bridge.id_(): bridge.to_dict() for bridge in mock_bridges}}
         requests.post(url, json=body)
 
+    def set_endpoints(self, *mock_endpoints):
+        url = self.url('_set_response')
+        body = {'response': 'endpoints',
+                'content': [endpoint.to_dict() for endpoint in mock_endpoints]}
+        requests.post(url, json=body)
+
     def set_originates(self, *mock_channels):
         url = self.url('_set_response')
         body = {'response': 'originates',
@@ -140,4 +146,21 @@ class MockBridge:
         return {
             'id': self._id,
             'channels': self._channels
+        }
+
+
+class MockEndpoint:
+
+    def __init__(self, techno, resource, state, channel_ids=None):
+        self._techno = techno
+        self._resource = resource
+        self._state = state
+        self._channel_ids = channel_ids
+
+    def to_dict(self):
+        return {
+            'resource': self._resource,
+            'technology': self._techno,
+            'state': self._state,
+            'channel_ids': self._channel_ids or []
         }

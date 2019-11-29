@@ -73,6 +73,15 @@ class ConfdClient:
 
         requests.post(url, json=body, verify=False)
 
+    def set_trunks(self, *mock_trunks):
+        url = self.url('_set_response')
+        body = {
+            'response': 'trunks',
+            'content': {trunk.id(): trunk.to_dict() for trunk in mock_trunks},
+        }
+
+        requests.post(url, json=body, verify=False)
+
     def set_voicemails(self, *mock_voicemails):
         url = self.url('_set_response')
         body = {'response': 'voicemails',
@@ -215,6 +224,33 @@ class MockConference:
             'extensions': extensions,
             'tenant_uuid': self._tenant_uuid,
         }
+
+
+class MockTrunk:
+    def __init__(
+            self, id, endpoint_sip=None, endpoint_iax=None, endpoint_custom=None, tenant_uuid=None
+    ):
+        self._id = id
+        self._tenant_uuid = tenant_uuid
+        self._endpoint_sip = endpoint_sip
+        self._endpoint_iax = endpoint_iax
+        self._endpoint_custom = endpoint_custom
+
+    def id(self):
+        return self._id
+
+    def to_dict(self):
+        trunk = {
+            'id': self._id,
+            'tenant_uuid': self._tenant_uuid,
+        }
+        if self._endpoint_sip:
+            trunk['endpoint_sip'] = self._endpoint_sip
+        if self._endpoint_iax:
+            trunk['endpoint_iax'] = self._endpoint_iax
+        if self._endpoint_custom:
+            trunk['endpoint_custom'] = self._endpoint_custom
+        return trunk
 
 
 class MockVoicemail:

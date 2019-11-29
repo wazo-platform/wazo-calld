@@ -5,6 +5,11 @@ from xivo_bus.resources.common.event import ArbitraryEvent
 
 
 class EndpointStatusNotifier:
+    _asterisk_to_confd_techno_map = {
+        'PJSIP': 'sip',
+        'IAX2': 'iax',
+    }
+
     def __init__(self, publisher, confd_cache):
         self._publisher = publisher
         self._confd_cache = confd_cache
@@ -18,7 +23,7 @@ class EndpointStatusNotifier:
         body = {
             'id': trunk['id'],
             'type': 'trunk',
-            'technology': endpoint.techno,
+            'technology': self._asterisk_to_confd_techno_map.get(endpoint.techno, endpoint.techno),
             'name': endpoint.name,
             'registered': endpoint.registered,
             'current_call_count': endpoint.current_call_count,

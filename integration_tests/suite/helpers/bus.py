@@ -51,11 +51,12 @@ class BusClient(bus_helper.BusClient):
             producer = Producer(connection, exchange=BUS_EXCHANGE_XIVO, auto_declare=True)
             producer.publish(json.dumps(event), routing_key=routing_key, content_type='application/json')
 
-    def send_ami_newchannel_event(self, channel_id):
+    def send_ami_newchannel_event(self, channel_id, channel=None):
         self.send_event({
             'data': {
                 'Event': 'Newchannel',
                 'Uniqueid': channel_id,
+                'Channel': channel or 'PJSIP/abcdef-00000001',
             }
         }, 'ami.Newchannel')
 
@@ -83,11 +84,12 @@ class BusClient(bus_helper.BusClient):
             }
         }, 'ami.Unhold')
 
-    def send_ami_hangup_event(self, channel_id, base_exten=None, sip_call_id=None):
+    def send_ami_hangup_event(self, channel_id, base_exten=None, sip_call_id=None, channel=None):
         self.send_event({
             'data': {
                 'Event': 'Hangup',
                 'Uniqueid': channel_id,
+                'Channel': channel or 'PJSIP/abcdef-00000001',
                 'ChannelStateDesc': 'Up',
                 'CallerIDName': 'my-caller-id-name',
                 'CallerIDNum': 'my-caller-id-num',
@@ -100,6 +102,29 @@ class BusClient(bus_helper.BusClient):
                 },
             }
         }, 'ami.Hangup')
+
+    def send_ami_peerstatus_event(self, channel_type, peer, status):
+        self.send_event({
+            'data': {
+                'Event': 'PeerStatus',
+                'Privilege': 'system,all',
+                'ChannelType': channel_type,
+                'Peer': peer,
+                'PeerStatus': status,
+            },
+        }, 'ami.PeerStatus')
+
+    def send_ami_registry_event(self, channel_type, domain, status, username):
+        self.send_event({
+            'data': {
+                'ChannelType': channel_type,
+                'Domain': domain,
+                'Event': 'Registry',
+                'Privilege': 'system,all',
+                'Status': status,
+                'Username': username,
+            },
+        }, 'ami.Registry')
 
     def send_moh_created_event(self, moh_uuid):
         self.send_event({
