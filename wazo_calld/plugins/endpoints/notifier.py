@@ -29,7 +29,7 @@ class EndpointStatusNotifier:
             'current_call_count': endpoint.current_call_count,
         }
 
-        routing_key = 'endpoints.{}.status.updated'.format(trunk['id'])
+        routing_key = 'trunks.{}.status.updated'.format(trunk['id'])
         event = ArbitraryEvent(
             name='trunk_status_updated',
             body=body,
