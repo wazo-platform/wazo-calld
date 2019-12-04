@@ -144,10 +144,6 @@ class ConfdCache:
         for techno, index, identifier in to_remove:
             del self._trunks[techno][index][identifier]
 
-    def update_trunk(self, trunk_id):
-        self.delete_trunk(trunk_id)
-        self.add_trunk(trunk_id)
-
     def get_trunk(self, techno, name):
         if not self._initialized:
             self._initialize()

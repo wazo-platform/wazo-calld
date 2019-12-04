@@ -258,10 +258,3 @@ class TestOnPeerStatus(TestCase):
         self.handler.on_trunk_deleted(event)
 
         self.confd_cache.delete_trunk.assert_called_once_with(42)
-
-    def test_on_trunk_updated(self):
-        event = {'id': 42}
-
-        self.handler.on_trunk_updated(event)
-
-        self.confd_cache.update_trunk.assert_called_once_with(42)

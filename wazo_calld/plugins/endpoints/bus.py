@@ -26,7 +26,6 @@ class EventHandler:
         consumer.on_event('trunk_endpoint_iax_dissociated', self.on_trunk_endpoint_dissociated)
         consumer.on_event('trunk_endpoint_custom_dissociated', self.on_trunk_endpoint_dissociated)
         consumer.on_event('trunk_deleted', self.on_trunk_endpoint_deleted)
-        consumer.on_event('trunk_updated', self.on_trunk_updated)
 
     def on_hangup(self, event):
         techno, name = self._techno_name_from_channel(event['Channel'])
@@ -93,9 +92,6 @@ class EventHandler:
 
     def on_trunk_deleted(self, event):
         self._confd_cache.delete_trunk(event['id'])
-
-    def on_trunk_updated(self, event):
-        self._confd_cache.update_trunk(event['id'])
 
     def _techno_name_from_channel(self, channel):
         techno, end = channel.split('/', 1)
