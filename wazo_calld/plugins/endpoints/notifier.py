@@ -1,7 +1,7 @@
 # Copyright 2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from xivo_bus.resources.common.event import ArbitraryEvent
+from xivo_bus.resources.trunk.event import TrunkStatusUpdatedEvent
 
 
 class EndpointStatusNotifier:
@@ -29,12 +29,6 @@ class EndpointStatusNotifier:
             'current_call_count': endpoint.current_call_count,
         }
 
-        routing_key = 'trunks.{}.status.updated'.format(trunk['id'])
-        event = ArbitraryEvent(
-            name='trunk_status_updated',
-            body=body,
-            required_acl='events.{}'.format(routing_key),
-        )
-        event.routing_key = routing_key
+        event = TrunkStatusUpdatedEvent(body)
         headers = {'tenant_uuid': trunk['tenant_uuid']}
         self._publisher.publish(event, headers=headers)
