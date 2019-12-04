@@ -19,8 +19,8 @@ logger = logging.getLogger(__name__)
 
 ROUTING_KEY_MAPPING = {
     'trunk_endpoint_associated': 'config.trunks.endpoints.updated',
+    'trunk_endpoint_dissociated': 'config.trunks.endpoints.deleted',
     'trunk_updated': 'config.trunk.updated',
-    'trunk_deleted': 'config.trunk.deleted',
     'application_created': 'config.applications.created',
     'application_deleted': 'config.applications.deleted',
     'application_edited': 'config.applications.edited',

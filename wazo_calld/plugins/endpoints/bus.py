@@ -17,8 +17,8 @@ class EventHandler:
         consumer.on_ami_event('PeerStatus', self.on_peer_status)
         consumer.on_ami_event('Registry', self.on_registry)
         consumer.on_event('trunk_endpoint_associated', self.on_trunk_endpoint_associated)
+        consumer.on_event('trunk_endpoint_dissociated', self.on_trunk_endpoint_dissociated)
         consumer.on_event('trunk_updated', self.on_trunk_updated)
-        consumer.on_event('trunk_deleted', self.on_trunk_deleted)
 
     def on_hangup(self, event):
         techno, name = self._techno_name_from_channel(event['Channel'])
@@ -56,11 +56,11 @@ class EventHandler:
     def on_trunk_endpoint_associated(self, event):
         self._confd_cache.add_trunk(event['trunk_id'])
 
+    def on_trunk_endpoint_dissociated(self, event):
+        self._confd_cache.delete_trunk(event['trunk_id'])
+
     def on_trunk_updated(self, event):
         self._confd_cache.update_trunk(event['id'])
-
-    def on_trunk_deleted(self, event):
-        self._confd_cache.delete_trunk(event['id'])
 
     def _techno_name_from_channel(self, channel):
         techno, end = channel.split('/', 1)
