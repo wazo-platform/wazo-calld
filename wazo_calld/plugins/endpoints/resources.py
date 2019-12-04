@@ -19,7 +19,7 @@ class TrunkEndpoints(AuthResource):
     def __init__(self, endpoints_service):
         self._endpoints_service = endpoints_service
 
-    @required_acl('calld.endpoints.trunks.read')
+    @required_acl('calld.trunks.read')
     def get(self):
         tenant_uuid = Tenant.autodetect().uuid
         try:

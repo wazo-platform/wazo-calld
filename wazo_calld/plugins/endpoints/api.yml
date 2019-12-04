@@ -3,7 +3,7 @@ paths:
     get:
       summary: List trunk endpoint statuses
       description: |
-        **Required ACL:** `calld.endpoints.trunks.read`
+        **Required ACL:** `calld.trunks.read`
 
         List endpoints that are configured on the engine and return information
         about there status.
