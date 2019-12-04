@@ -157,12 +157,76 @@ class TestOnPeerStatus(TestCase):
         self.updated_endpoint.add_call.assert_called_once_with('1574445784.4')
         assert_that(self.updated_endpoint, has_properties(techno='PJSIP', name='dev_370'))
 
-    def test_on_trunk_endpoint_associated(self):
-        event = {'trunk_id': 42, 'endpoint_id': 10}
+    def test_on_trunk_endpoint_sip_associated(self):
+        trunk_id = 42
+        tenant_uuid = '2c34c282-433e-4bb8-8d56-fec14ff7e1e9'
+        name = 'the-name'
+        username = 'the-username'
 
-        self.handler.on_trunk_endpoint_associated(event)
+        event = {
+            'endpoint_sip': {
+                'id': 45,
+                'name': name,
+                'tenant_uuid': tenant_uuid,
+                'username': username,
+            },
+            'trunk': {
+                'id': trunk_id,
+                'tenant_uuid': tenant_uuid,
+            },
+        }
 
-        self.confd_cache.add_trunk.assert_called_once_with(42)
+        self.handler.on_trunk_endpoint_sip_associated(event)
+
+        self.confd_cache.add_trunk.assert_called_once_with(
+            'sip', trunk_id, name, username, tenant_uuid,
+        )
+
+    def test_on_trunk_endpoint_iax_associated(self):
+        trunk_id = 42
+        tenant_uuid = '2c34c282-433e-4bb8-8d56-fec14ff7e1e9'
+        name = 'the-name'
+
+        event = {
+            'endpoint_iax': {
+                'id': 45,
+                'name': name,
+                'tenant_uuid': tenant_uuid,
+            },
+            'trunk': {
+                'id': trunk_id,
+                'tenant_uuid': tenant_uuid,
+            },
+        }
+
+        self.handler.on_trunk_endpoint_iax_associated(event)
+
+        self.confd_cache.add_trunk.assert_called_once_with(
+            'iax', trunk_id, name, None, tenant_uuid,
+        )
+
+    def test_on_trunk_endpoint_custom_associated(self):
+        trunk_id = 42
+        tenant_uuid = '2c34c282-433e-4bb8-8d56-fec14ff7e1e9'
+        interface = 'interface'
+
+        event = {
+            'endpoint_custom': {
+                'id': 45,
+                'interface': interface,
+                'tenant_uuid': tenant_uuid,
+            },
+            'trunk': {
+                'id': trunk_id,
+                'tenant_uuid': tenant_uuid,
+            },
+        }
+
+        self.handler.on_trunk_endpoint_custom_associated(event)
+
+        self.confd_cache.add_trunk.assert_called_once_with(
+            'custom', trunk_id, interface, None, tenant_uuid,
+        )
 
     def test_on_trunk_endpoint_dissociated(self):
         event = {'trunk_id': 42, 'endpoint_id': 10}

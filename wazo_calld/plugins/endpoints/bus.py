@@ -16,7 +16,9 @@ class EventHandler:
         consumer.on_ami_event('Newchannel', self.on_new_channel)
         consumer.on_ami_event('PeerStatus', self.on_peer_status)
         consumer.on_ami_event('Registry', self.on_registry)
-        consumer.on_event('trunk_endpoint_associated', self.on_trunk_endpoint_associated)
+        consumer.on_event('trunk_endpoint_sip_associated', self.on_trunk_endpoint_sip_associated)
+        consumer.on_event('trunk_endpoint_iax_associated', self.on_trunk_endpoint_iax_associated)
+        consumer.on_event('trunk_endpoint_custom_associated', self.on_trunk_endpoint_custom_associated)
         consumer.on_event('trunk_endpoint_dissociated', self.on_trunk_endpoint_dissociated)
         consumer.on_event('trunk_updated', self.on_trunk_updated)
 
@@ -53,8 +55,32 @@ class EventHandler:
         with self._endpoint_status_cache.update(techno, trunk['name']) as endpoint:
             endpoint.registered = event['Status'] == 'Registered'
 
-    def on_trunk_endpoint_associated(self, event):
-        self._confd_cache.add_trunk(event['trunk_id'])
+    def on_trunk_endpoint_sip_associated(self, event):
+        self._confd_cache.add_trunk(
+            'sip',
+            event['trunk']['id'],
+            event['endpoint_sip']['name'],
+            event['endpoint_sip']['username'],
+            event['trunk']['tenant_uuid'],
+        )
+
+    def on_trunk_endpoint_iax_associated(self, event):
+        self._confd_cache.add_trunk(
+            'iax',
+            event['trunk']['id'],
+            event['endpoint_iax']['name'],
+            None,
+            event['trunk']['tenant_uuid'],
+        )
+
+    def on_trunk_endpoint_custom_associated(self, event):
+        self._confd_cache.add_trunk(
+            'custom',
+            event['trunk']['id'],
+            event['endpoint_custom']['interface'],
+            None,
+            event['trunk']['tenant_uuid'],
+        )
 
     def on_trunk_endpoint_dissociated(self, event):
         self._confd_cache.delete_trunk(event['trunk_id'])

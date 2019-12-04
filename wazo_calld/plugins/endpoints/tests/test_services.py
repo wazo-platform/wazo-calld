@@ -44,16 +44,8 @@ class TestCachingConfdClient(TestCase):
 
     def test_add_trunk(self):
         self._set_cache([])
-        self.confd.trunks.get.return_value = {
-            'id': s.trunk_id,
-            'endpoint_sip': {
-                'name': s.name,
-                'username': s.username,
-            },
-            'tenant_uuid': s.tenant_uuid,
-        }
 
-        self.client.add_trunk(s.trunk_id)
+        self.client.add_trunk('sip', s.trunk_id, s.name, s.username, s.tenant_uuid)
 
         expected = {'id': s.trunk_id, 'name': s.name, 'tenant_uuid': s.tenant_uuid}
 

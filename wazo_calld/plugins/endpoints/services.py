@@ -125,9 +125,12 @@ class ConfdCache:
         self._initialized = False
         self._initialization_lock = threading.Lock()
 
-    def add_trunk(self, trunk_id):
-        trunk = self._confd.trunks.get(trunk_id)
-        self._update_trunk_cache([trunk])
+    def add_trunk(self, techno, trunk_id, name, username, tenant_uuid):
+        value = {'id': trunk_id, 'name': name, 'tenant_uuid': tenant_uuid}
+        self._trunks.setdefault(techno, {'name': {}, 'username': {}})
+        self._trunks[techno]['name'][name] = value
+        if username:
+            self._trunks[techno]['username'][username] = value
 
     def delete_trunk(self, trunk_id):
         to_remove = []
