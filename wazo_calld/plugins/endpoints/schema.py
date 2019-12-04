@@ -1,13 +1,7 @@
 # Copyright 2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from xivo.mallow_helpers import Schema, fields, ListSchema
-
-
-class EndpointListSchema(ListSchema):
-    sort_columns = ['id']
-    default_sort_column = 'id'
-    searchable_columns = ['id']
+from xivo.mallow_helpers import Schema, fields
 
 
 class EndpointBaseSchema(Schema):
@@ -24,4 +18,3 @@ class TrunkEndpointSchema(EndpointBaseSchema):
 
 
 trunk_endpoint_schema = TrunkEndpointSchema()
-endpoint_list_schema = EndpointListSchema()

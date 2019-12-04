@@ -84,15 +84,15 @@ class TestListTrunks(BaseEndpointsService):
             'items': [],
         }
 
-        self.service.list_trunks(s.tenant_uuid, {'limit': 2, 'offset': 3})
+        self.service.list_trunks(s.tenant_uuid)
 
-        self.confd.trunks.list.assert_any_call(tenant_uuid=s.tenant_uuid, limit=2, offset=3)
+        self.confd.trunks.list.assert_any_call(tenant_uuid=s.tenant_uuid)
 
     def test_error_from_confd(self):
         self.confd.trunks.list.side_effect = HTTPError
 
         assert_that(
-            calling(self.service.list_trunks).with_args(s.tenant_uuid, {}),
+            calling(self.service.list_trunks).with_args(s.tenant_uuid),
             raises(WazoConfdError).matching(
                 has_properties(
                     status_code=503,
@@ -107,7 +107,7 @@ class TestListTrunks(BaseEndpointsService):
             'items': [],
         }
 
-        items, total, filtered = self.service.list_trunks(s.tenant_uuid, {})
+        items, total, filtered = self.service.list_trunks(s.tenant_uuid)
 
         assert_that(total, equal_to(s.total))
 
@@ -117,7 +117,7 @@ class TestListTrunks(BaseEndpointsService):
             'items': [],
         }
 
-        items, total, filtered = self.service.list_trunks(s.tenant_uuid, {})
+        items, total, filtered = self.service.list_trunks(s.tenant_uuid)
 
         assert_that(filtered, equal_to(s.total))
 
@@ -137,7 +137,7 @@ class TestListTrunks(BaseEndpointsService):
             ]
         }
 
-        items, total, filtered = self.service.list_trunks(s.tenant_uuid, {})
+        items, total, filtered = self.service.list_trunks(s.tenant_uuid)
 
         assert_that(items, contains(has_entries(
             id=s.id,
@@ -163,7 +163,7 @@ class TestListTrunks(BaseEndpointsService):
             ]
         }
 
-        items, total, filtered = self.service.list_trunks(s.tenant_uuid, {})
+        items, total, filtered = self.service.list_trunks(s.tenant_uuid)
 
         assert_that(items, contains(has_entries(
             id=s.id,
@@ -188,7 +188,7 @@ class TestListTrunks(BaseEndpointsService):
         }
         self.ari.endpoints.list.return_value = []
 
-        items, total, filtered = self.service.list_trunks(s.tenant_uuid, {})
+        items, total, filtered = self.service.list_trunks(s.tenant_uuid)
 
         assert_that(items, contains(has_entries(
             id=s.id,
@@ -213,7 +213,7 @@ class TestListTrunks(BaseEndpointsService):
             ]
         }
 
-        items, total, filtered = self.service.list_trunks(s.tenant_uuid, {})
+        items, total, filtered = self.service.list_trunks(s.tenant_uuid)
 
         assert_that(items, contains(has_entries(
             id=s.id,
@@ -236,7 +236,7 @@ class TestListTrunks(BaseEndpointsService):
             ]
         }
 
-        items, total, filtered = self.service.list_trunks(s.tenant_uuid, {})
+        items, total, filtered = self.service.list_trunks(s.tenant_uuid)
 
         assert_that(items, contains(has_entries(
             id=s.id,
