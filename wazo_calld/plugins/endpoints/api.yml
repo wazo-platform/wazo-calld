@@ -1,5 +1,5 @@
 paths:
-  /endpoints/trunks:
+  /trunks:
     get:
       summary: List trunk endpoint statuses
       description: |

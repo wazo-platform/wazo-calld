@@ -41,7 +41,7 @@ class TestBusConsume(IntegrationTest):
         self.reset_clients()
         self.wait_strategy.wait(self)
 
-        result = self.calld.list_trunk_endpoints()
+        result = self.calld.list_trunks()
 
         assert_that(
             result, has_entries(

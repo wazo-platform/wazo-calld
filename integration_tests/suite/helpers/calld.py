@@ -193,14 +193,14 @@ class CalldClient:
                               verify=False)
         return result
 
-    def get_trunk_endpoints_result(self, token=None):
-        url = self.url('endpoints', 'trunks')
+    def get_trunks_result(self, token=None):
+        url = self.url('trunks')
         params = {}
         result = requests.get(url, params=params, headers={'X-Auth-Token': token}, verify=False)
         return result
 
-    def list_trunk_endpoints(self, token=VALID_TOKEN):
-        response = self.get_trunk_endpoints_result(token)
+    def list_trunks(self, token=VALID_TOKEN):
+        response = self.get_trunks_result(token)
         assert_that(response.status_code, equal_to(200))
         return response.json()
 

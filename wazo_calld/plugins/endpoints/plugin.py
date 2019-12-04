@@ -33,7 +33,7 @@ class Plugin:
 
         api.add_resource(
             TrunkEndpoints,
-            '/endpoints/trunks',
+            '/trunks',
             resource_class_args=[
                 endpoints_service,
             ],
