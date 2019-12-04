@@ -228,10 +228,34 @@ class TestOnPeerStatus(TestCase):
             'custom', trunk_id, interface, None, tenant_uuid,
         )
 
-    def test_on_trunk_endpoint_dissociated(self):
-        event = {'trunk_id': 42, 'endpoint_id': 10}
+    def test_on_trunk_endpoint_sip_dissociated(self):
+        trunk_id = 42
+        event = {'trunk': {'id': trunk_id}}
 
         self.handler.on_trunk_endpoint_dissociated(event)
+
+        self.confd_cache.delete_trunk.assert_called_once_with(trunk_id)
+
+    def test_on_trunk_endpoint_iax_dissociated(self):
+        trunk_id = 42
+        event = {'trunk': {'id': trunk_id}}
+
+        self.handler.on_trunk_endpoint_dissociated(event)
+
+        self.confd_cache.delete_trunk.assert_called_once_with(trunk_id)
+
+    def test_on_trunk_endpoint_custom_dissociated(self):
+        trunk_id = 42
+        event = {'trunk': {'id': trunk_id}}
+
+        self.handler.on_trunk_endpoint_dissociated(event)
+
+        self.confd_cache.delete_trunk.assert_called_once_with(trunk_id)
+
+    def test_on_trunk_deleted(self):
+        event = {'id': 42}
+
+        self.handler.on_trunk_deleted(event)
 
         self.confd_cache.delete_trunk.assert_called_once_with(42)
 

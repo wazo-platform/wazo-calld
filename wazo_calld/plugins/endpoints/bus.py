@@ -18,8 +18,14 @@ class EventHandler:
         consumer.on_ami_event('Registry', self.on_registry)
         consumer.on_event('trunk_endpoint_sip_associated', self.on_trunk_endpoint_sip_associated)
         consumer.on_event('trunk_endpoint_iax_associated', self.on_trunk_endpoint_iax_associated)
-        consumer.on_event('trunk_endpoint_custom_associated', self.on_trunk_endpoint_custom_associated)
-        consumer.on_event('trunk_endpoint_dissociated', self.on_trunk_endpoint_dissociated)
+        consumer.on_event(
+            'trunk_endpoint_custom_associated',
+            self.on_trunk_endpoint_custom_associated,
+        )
+        consumer.on_event('trunk_endpoint_sip_dissociated', self.on_trunk_endpoint_dissociated)
+        consumer.on_event('trunk_endpoint_iax_dissociated', self.on_trunk_endpoint_dissociated)
+        consumer.on_event('trunk_endpoint_custom_dissociated', self.on_trunk_endpoint_dissociated)
+        consumer.on_event('trunk_deleted', self.on_trunk_endpoint_deleted)
         consumer.on_event('trunk_updated', self.on_trunk_updated)
 
     def on_hangup(self, event):
@@ -83,7 +89,10 @@ class EventHandler:
         )
 
     def on_trunk_endpoint_dissociated(self, event):
-        self._confd_cache.delete_trunk(event['trunk_id'])
+        self._confd_cache.delete_trunk(event['trunk']['id'])
+
+    def on_trunk_deleted(self, event):
+        self._confd_cache.delete_trunk(event['id'])
 
     def on_trunk_updated(self, event):
         self._confd_cache.update_trunk(event['id'])
