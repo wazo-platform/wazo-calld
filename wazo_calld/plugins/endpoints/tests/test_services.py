@@ -3,13 +3,11 @@
 
 from unittest import TestCase
 
-from requests import HTTPError
-
 from hamcrest import (
     assert_that,
-    calling,
     contains,
     equal_to,
+    empty,
     has_entries,
     has_properties,
     not_,
@@ -18,9 +16,6 @@ from unittest.mock import (
     Mock,
     sentinel as s,
 )
-from xivo_test_helpers.hamcrest.raises import raises
-
-from wazo_calld.exceptions import WazoConfdError
 
 from ..services import ConfdCache, EndpointsService, Endpoint, NotifyingStatusCache
 
@@ -31,10 +26,58 @@ class BaseEndpointsService(TestCase):
         self.ari = Mock()
         self.ari.endpoints.list.return_value = []
         self.status_cache = NotifyingStatusCache(Mock(), self.ari)
-        self.service = EndpointsService(self.confd, self.ari, self.status_cache)
+        self.confd_cache = Mock(ConfdCache)
+        self.service = EndpointsService(self.confd_cache, self.ari, self.status_cache)
         self.ari.endpoints.list.return_value = []
-        self.confd_cache = Mock()
-        self.service._confd_cache = self.confd_cache
+
+
+class TestEndpointServiceListTrunks(BaseEndpointsService):
+    def test_that_unknown_endpoints_are_skipped(self):
+        self.status_cache.add_endpoint(Endpoint(s.techno, s.name, True, []))
+        self.confd_cache.get_trunk.return_value = None
+
+        items, total, filtered = self.service.list_trunks(s.tenant_uuid)
+
+        assert_that(items, empty())
+        assert_that(total, equal_to(0))
+        assert_that(filtered, equal_to(0))
+
+    def test_that_other_tenants_are_not_returned(self):
+        self.status_cache.add_endpoint(Endpoint(s.techno, s.name, True, []))
+        self.confd_cache.get_trunk.return_value = {
+            'id': s.id,
+            'name': s.name,
+            'techno': s.techno,
+            'tenant_uuid': s.other_tenant_uuid,
+        }
+
+        items, total, filtered = self.service.list_trunks(s.tenant_uuid)
+
+        assert_that(items, empty())
+        assert_that(total, equal_to(0))
+        assert_that(filtered, equal_to(0))
+
+    def test_that_the_id_and_tenant_uuid_are_added(self):
+        self.status_cache.add_endpoint(Endpoint('PJSIP', s.name, True, []))
+        self.confd_cache.get_trunk.return_value = {
+            'id': s.id,
+            'name': s.name,
+            'techno': 'sip',
+            'tenant_uuid': s.tenant_uuid,
+        }
+
+        items, total, filtered = self.service.list_trunks(s.tenant_uuid)
+
+        assert_that(items, contains(has_entries(
+            id=s.id,
+            name=s.name,
+            technology='sip',
+            tenant_uuid=s.tenant_uuid,
+            registered=True,
+            current_call_count=0,
+        )))
+        assert_that(total, equal_to(1))
+        assert_that(filtered, equal_to(1))
 
 
 class TestCachingConfdClient(TestCase):
@@ -47,7 +90,7 @@ class TestCachingConfdClient(TestCase):
 
         self.client.add_trunk('sip', s.trunk_id, s.name, s.username, s.tenant_uuid)
 
-        expected = {'id': s.trunk_id, 'name': s.name, 'tenant_uuid': s.tenant_uuid}
+        expected = {'id': s.trunk_id, 'techno': 'sip', 'name': s.name, 'tenant_uuid': s.tenant_uuid}
 
         result = self.client.get_trunk('sip', s.name)
         assert_that(result, equal_to(expected))
@@ -75,175 +118,6 @@ class TestCachingConfdClient(TestCase):
     def _set_cache(self, trunks):
         self.client._update_trunk_cache(trunks)
         self.client._initialized = True
-
-
-class TestListTrunks(BaseEndpointsService):
-    def test_that_the_tenant_is_forwarded_to_confd(self):
-        self.confd.trunks.list.return_value = {
-            'total': s.total,
-            'items': [],
-        }
-
-        self.service.list_trunks(s.tenant_uuid)
-
-        self.confd.trunks.list.assert_any_call(tenant_uuid=s.tenant_uuid)
-
-    def test_error_from_confd(self):
-        self.confd.trunks.list.side_effect = HTTPError
-
-        assert_that(
-            calling(self.service.list_trunks).with_args(s.tenant_uuid),
-            raises(WazoConfdError).matching(
-                has_properties(
-                    status_code=503,
-                    id_='wazo-confd-error',
-                )
-            )
-        )
-
-    def test_total_field(self):
-        self.confd.trunks.list.return_value = {
-            'total': s.total,
-            'items': [],
-        }
-
-        items, total, filtered = self.service.list_trunks(s.tenant_uuid)
-
-        assert_that(total, equal_to(s.total))
-
-    def test_filtered_field(self):
-        self.confd.trunks.list.return_value = {
-            'total': s.total,
-            'items': [],
-        }
-
-        items, total, filtered = self.service.list_trunks(s.tenant_uuid)
-
-        assert_that(filtered, equal_to(s.total))
-
-    def test_sip_endpoints_registered(self):
-        call_ids = ['1234567.8', '456687.8']
-        ast_endpoint = Endpoint('PJSIP', s.name, True, call_ids)
-        self.service.status_cache.add_endpoint(ast_endpoint)
-        self.confd.trunks.list.return_value = {
-            'total': s.total,
-            'items': [
-                {
-                    'id': s.id,
-                    'endpoint_sip': {'name': s.name},
-                    'endpoint_iax': None,
-                    'endpoint_custom': None,
-                }
-            ]
-        }
-
-        items, total, filtered = self.service.list_trunks(s.tenant_uuid)
-
-        assert_that(items, contains(has_entries(
-            id=s.id,
-            type='trunk',
-            technology='sip',
-            name=s.name,
-            registered=True,
-            current_call_count=2,
-        )))
-
-    def test_sip_endpoints_not_registered(self):
-        ast_endpoint = Endpoint('PJSIP', s.name, False, [])
-        self.service.status_cache.add_endpoint(ast_endpoint)
-        self.confd.trunks.list.return_value = {
-            'total': s.total,
-            'items': [
-                {
-                    'id': s.id,
-                    'endpoint_sip': {'name': s.name},
-                    'endpoint_iax': None,
-                    'endpoint_custom': None,
-                }
-            ]
-        }
-
-        items, total, filtered = self.service.list_trunks(s.tenant_uuid)
-
-        assert_that(items, contains(has_entries(
-            id=s.id,
-            type='trunk',
-            technology='sip',
-            name=s.name,
-            registered=False,
-            current_call_count=0,
-        )))
-
-    def test_sip_endpoints_before_asterisk_reload(self):
-        self.confd.trunks.list.return_value = {
-            'total': s.total,
-            'items': [
-                {
-                    'id': s.id,
-                    'endpoint_sip': {'name': s.name},
-                    'endpoint_iax': None,
-                    'endpoint_custom': None,
-                }
-            ]
-        }
-        self.ari.endpoints.list.return_value = []
-
-        items, total, filtered = self.service.list_trunks(s.tenant_uuid)
-
-        assert_that(items, contains(has_entries(
-            id=s.id,
-            type='trunk',
-            technology='sip',
-            name=s.name,
-        )))
-
-    def test_iax_endpoints(self):
-        call_ids = ['1234556.7']
-        ast_endpoint = Endpoint('IAX2', s.name, None, call_ids)
-        self.status_cache.add_endpoint(ast_endpoint)
-        self.confd.trunks.list.return_value = {
-            'total': s.total,
-            'items': [
-                {
-                    'id': s.id,
-                    'endpoint_sip': None,
-                    'endpoint_iax': {'name': s.name},
-                    'endpoint_custom': None,
-                }
-            ]
-        }
-
-        items, total, filtered = self.service.list_trunks(s.tenant_uuid)
-
-        assert_that(items, contains(has_entries(
-            id=s.id,
-            type='trunk',
-            technology='iax',
-            name=s.name,
-            current_call_count=1,
-        )))
-
-    def test_custom_endpoints(self):
-        self.confd.trunks.list.return_value = {
-            'total': s.total,
-            'items': [
-                {
-                    'id': s.id,
-                    'endpoint_sip': None,
-                    'endpoint_iax': None,
-                    'endpoint_custom': {'interface': s.interface},
-                }
-            ]
-        }
-
-        items, total, filtered = self.service.list_trunks(s.tenant_uuid)
-
-        assert_that(items, contains(has_entries(
-            id=s.id,
-            type='trunk',
-            technology='custom',
-            name=s.interface,
-        )))
 
 
 class TestEndpoint(TestCase):

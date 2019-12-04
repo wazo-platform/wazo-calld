@@ -5,12 +5,11 @@ paths:
       description: |
         **Required ACL:** `calld.trunks.read`
 
-        List endpoints that are configured on the engine and return information
-        about there status.
+        List the status of trunk endpoints that are configured on Asterisk
 
         Only the status of SIP endpoints can be fetched at the moment.
 
-        Unsupported endpoint technologies will be listed but the dynamic fields will be null.
+        Unsupported endpoint technologies will not be listed.
 
         This include the `registered` and `current_call_count`
       tags:
@@ -34,9 +33,6 @@ definitions:
       name:
         type: string
         description: The name of that given endpoint in Asterisk
-      type:
-        type: string
-        description: The endpoint type
       id:
         type: integer
         description: The ID of the matching confd trunk

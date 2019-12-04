@@ -6,9 +6,7 @@ import copy
 import threading
 from contextlib import contextmanager
 
-from requests import HTTPError
-
-from wazo_calld.exceptions import CalldUninitializedError, WazoConfdError
+from wazo_calld.exceptions import CalldUninitializedError
 
 logger = logging.getLogger(__name__)
 
@@ -79,6 +77,16 @@ class StatusCache:
 
         return self._endpoints.get(techno, {}).get(name)
 
+    def list(self):
+        if self._endpoints is None:
+            raise CalldUninitializedError()
+
+        endpoints = []
+        for name_endpoint in self._endpoints.values():
+            for endpoint in name_endpoint.values():
+                endpoints.append(endpoint)
+        return endpoints
+
     def _initialize(self):
         logger.debug('initializing endpoint status...')
         for endpoint in self._ari.endpoints.list():
@@ -126,7 +134,7 @@ class ConfdCache:
         self._initialization_lock = threading.Lock()
 
     def add_trunk(self, techno, trunk_id, name, username, tenant_uuid):
-        value = {'id': trunk_id, 'name': name, 'tenant_uuid': tenant_uuid}
+        value = {'id': trunk_id, 'techno': techno, 'name': name, 'tenant_uuid': tenant_uuid}
         self._trunks.setdefault(techno, {'name': {}, 'username': {}})
         self._trunks[techno]['name'][name] = value
         if username:
@@ -182,7 +190,13 @@ class ConfdCache:
                 name = trunk['endpoint_custom']['interface']
                 username = name
 
-            value = {'id': trunk['id'], 'name': name, 'tenant_uuid': trunk['tenant_uuid']}
+            value = {
+                'id': trunk['id'],
+                'techno': techno,
+                'name': name,
+                'tenant_uuid': trunk['tenant_uuid'],
+            }
+
             self._trunks.setdefault(techno, {'name': {}, 'username': {}})
             self._trunks[techno]['name'][name] = value
             self._trunks[techno]['username'][username] = value
@@ -196,66 +210,31 @@ class ConfdCache:
 
 class EndpointsService:
 
-    _confd_to_asterisk_techno_map = {
-        'sip': 'PJSIP',
-        'iax': 'IAX2',
-    }
-
-    def __init__(self, confd_client, ari, status_cache):
-        self._confd = confd_client
+    def __init__(self, confd_cache, ari, status_cache):
+        self._confd = confd_cache
         self._ari = ari
         self.status_cache = status_cache
 
     def list_trunks(self, tenant_uuid):
-        try:
-            result = self._confd.trunks.list(tenant_uuid=tenant_uuid)
-        except HTTPError as e:
-            raise WazoConfdError(self._confd, e)
-        filtered = result['total']
-
-        try:
-            count_result = self._confd.trunks.list(tenant_uuid=tenant_uuid, limit=1)
-        except HTTPError as e:
-            raise WazoConfdError(self._confd, e)
-        total = count_result['total']
+        asterisk_endpoints = self.status_cache.list()
 
         results = []
-        for confd_trunk in result['items']:
-            trunk = self._build_static_fields(confd_trunk)
-            trunk = self._build_dynamic_fields(trunk)
-            results.append(trunk)
+        for asterisk_endpoint in asterisk_endpoints:
+            confd_endpoint = self._confd.get_trunk(asterisk_endpoint.techno, asterisk_endpoint.name)
+            if not confd_endpoint:
+                continue
 
-        return results, total, filtered
+            if confd_endpoint['tenant_uuid'] != tenant_uuid:
+                continue
 
-    def _build_dynamic_fields(self, trunk):
-        techno = trunk.get('technology')
-        if techno not in ('sip', 'iax'):
-            return trunk
+            results.append({
+                'technology': confd_endpoint['techno'],
+                'name': asterisk_endpoint.name,
+                'id': confd_endpoint['id'],
+                'registered': asterisk_endpoint.registered,
+                'current_call_count': asterisk_endpoint.current_call_count,
+                'tenant_uuid': tenant_uuid,
+            })
 
-        ast_techno = self._confd_to_asterisk_techno_map.get(techno)
-        endpoint = self.status_cache.get(ast_techno, trunk['name'])
-        if not endpoint:
-            return trunk
-
-        trunk['registered'] = endpoint.registered
-        trunk['current_call_count'] = endpoint.current_call_count
-
-        return trunk
-
-    def _build_static_fields(self, confd_trunk):
-        trunk = {
-            'id': confd_trunk['id'],
-            'type': 'trunk',
-        }
-
-        if confd_trunk.get('endpoint_sip'):
-            trunk['technology'] = 'sip'
-            trunk['name'] = confd_trunk['endpoint_sip']['name']
-        elif confd_trunk.get('endpoint_iax'):
-            trunk['technology'] = 'iax'
-            trunk['name'] = confd_trunk['endpoint_iax']['name']
-        elif confd_trunk.get('endpoint_custom'):
-            trunk['technology'] = 'custom'
-            trunk['name'] = confd_trunk['endpoint_custom']['interface']
-
-        return trunk
+        count = len(results)
+        return results, count, count

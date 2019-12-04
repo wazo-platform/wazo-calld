@@ -90,7 +90,7 @@ class EventHandler:
     def on_trunk_endpoint_dissociated(self, event):
         self._confd_cache.delete_trunk(event['trunk']['id'])
 
-    def on_trunk_deleted(self, event):
+    def on_trunk_endpoint_deleted(self, event):
         self._confd_cache.delete_trunk(event['id'])
 
     def _techno_name_from_channel(self, channel):
