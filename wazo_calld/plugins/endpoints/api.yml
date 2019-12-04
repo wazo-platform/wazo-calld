@@ -14,7 +14,7 @@ paths:
 
         This include the `registered` and `current_call_count`
       tags:
-        - endpoints
+        - trunks
       parameters:
         - $ref: '#/parameters/TenantUUID'
         - $ref: '#/parameters/order'
