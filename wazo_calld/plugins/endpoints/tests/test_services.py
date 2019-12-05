@@ -6,6 +6,7 @@ from unittest import TestCase
 from hamcrest import (
     assert_that,
     contains,
+    contains_inanyorder,
     equal_to,
     empty,
     has_entries,
@@ -31,53 +32,42 @@ class BaseEndpointsService(TestCase):
         self.ari.endpoints.list.return_value = []
 
 
-class TestEndpointServiceListTrunks(BaseEndpointsService):
-    def test_that_unknown_endpoints_are_skipped(self):
-        self.status_cache.add_endpoint(Endpoint(s.techno, s.name, True, []))
-        self.confd_cache.get_trunk.return_value = None
+class TestEndpointService(BaseEndpointsService):
+    def test_list_trunks(self):
+        self.confd_cache.list_trunks.return_value = [
+            {
+                'id': 1,
+                'technology': 'sip',
+                'name': s.name_1,
+                'tenant_uuid': s.tenant_uuid,
+            },
+            {
+                'id': 2,
+                'technology': 'iax',
+                'name': s.name_2,
+                'tenant_uuid': s.tenant_uuid,
+            },
+            {
+                'id': 3,
+                'technology': 'custom',
+                'name': s.name_2,
+                'tenant_uuid': s.tenant_uuid,
+            },
+        ]
 
-        items, total, filtered = self.service.list_trunks(s.tenant_uuid)
+        self.status_cache.add_endpoint(
+            Endpoint('PJSIP', s.name_1, registered=True, channel_ids=[123, 456]),
+        )
 
-        assert_that(items, empty())
-        assert_that(total, equal_to(0))
-        assert_that(filtered, equal_to(0))
+        items, filtered, total = self.service.list_trunks(s.tenant_uuid)
 
-    def test_that_other_tenants_are_not_returned(self):
-        self.status_cache.add_endpoint(Endpoint(s.techno, s.name, True, []))
-        self.confd_cache.get_trunk.return_value = {
-            'id': s.id,
-            'name': s.name,
-            'techno': s.techno,
-            'tenant_uuid': s.other_tenant_uuid,
-        }
-
-        items, total, filtered = self.service.list_trunks(s.tenant_uuid)
-
-        assert_that(items, empty())
-        assert_that(total, equal_to(0))
-        assert_that(filtered, equal_to(0))
-
-    def test_that_the_id_and_tenant_uuid_are_added(self):
-        self.status_cache.add_endpoint(Endpoint('PJSIP', s.name, True, []))
-        self.confd_cache.get_trunk.return_value = {
-            'id': s.id,
-            'name': s.name,
-            'techno': 'sip',
-            'tenant_uuid': s.tenant_uuid,
-        }
-
-        items, total, filtered = self.service.list_trunks(s.tenant_uuid)
-
-        assert_that(items, contains(has_entries(
-            id=s.id,
-            name=s.name,
-            technology='sip',
-            tenant_uuid=s.tenant_uuid,
-            registered=True,
-            current_call_count=0,
-        )))
-        assert_that(total, equal_to(1))
-        assert_that(filtered, equal_to(1))
+        assert_that(filtered, equal_to(3))
+        assert_that(total, equal_to(3))
+        assert_that(items, contains_inanyorder(
+            has_entries(id=1, registered=True, current_call_count=2),
+            has_entries(id=2),
+            has_entries(id=3),
+        ))
 
 
 class TestCachingConfdClient(TestCase):
@@ -90,7 +80,12 @@ class TestCachingConfdClient(TestCase):
 
         self.client.add_trunk('sip', s.trunk_id, s.name, s.username, s.tenant_uuid)
 
-        expected = {'id': s.trunk_id, 'techno': 'sip', 'name': s.name, 'tenant_uuid': s.tenant_uuid}
+        expected = {
+            'id': s.trunk_id,
+            'technology': 'sip',
+            'name': s.name,
+            'tenant_uuid': s.tenant_uuid,
+        }
 
         result = self.client.get_trunk('sip', s.name)
         assert_that(result, equal_to(expected))
@@ -129,13 +124,45 @@ class TestCachingConfdClient(TestCase):
         result = self.client.get_trunk('sip', s.new_name)
         assert_that(result, has_entries(
             id=s.trunk_id,
-            techno='sip',
+            technology='sip',
             name=s.new_name,
             tenant_uuid=s.tenant_uuid,
         ))
 
         result = self.client.get_trunk('sip', s.name)
         assert_that(result, equal_to(None))
+
+    def test_list_trunks(self):
+        self._set_cache([
+            {
+                'id': 1,
+                'endpoint_sip': {'name': s.name_1, 'username': s.username_1},
+                'tenant_uuid': s.tenant_uuid,
+            },
+            {
+                'id': 2,
+                'endpoint_iax': {'name': s.name},
+                'tenant_uuid': s.tenant_uuid,
+            },
+            {
+                'id': 3,
+                'endpoint_custom': {'interface': s.interface},
+                'tenant_uuid': s.tenant_uuid,
+            },
+            {
+                'id': 4,
+                'endpoint_sip': {'name': s.ignored_name, 'username': s.ignored_username},
+                'tenant_uuid': s.other_tenant_uuid,
+            },
+        ])
+
+        result = self.client.list_trunks(s.tenant_uuid)
+
+        assert_that(result, contains_inanyorder(
+            has_entries(id=1),
+            has_entries(id=2),
+            has_entries(id=3),
+        ))
 
     def _set_cache(self, trunks):
         self.client._update_trunk_cache(trunks)

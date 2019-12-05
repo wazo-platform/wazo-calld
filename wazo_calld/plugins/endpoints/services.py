@@ -77,16 +77,6 @@ class StatusCache:
 
         return self._endpoints.get(techno, {}).get(name)
 
-    def list(self):
-        if self._endpoints is None:
-            raise CalldUninitializedError()
-
-        endpoints = []
-        for name_endpoint in self._endpoints.values():
-            for endpoint in name_endpoint.values():
-                endpoints.append(endpoint)
-        return endpoints
-
     def _initialize(self):
         logger.debug('initializing endpoint status...')
         for endpoint in self._ari.endpoints.list():
@@ -134,7 +124,7 @@ class ConfdCache:
         self._initialization_lock = threading.Lock()
 
     def add_trunk(self, techno, trunk_id, name, username, tenant_uuid):
-        value = {'id': trunk_id, 'techno': techno, 'name': name, 'tenant_uuid': tenant_uuid}
+        value = {'id': trunk_id, 'technology': techno, 'name': name, 'tenant_uuid': tenant_uuid}
         self._trunks.setdefault(techno, {'name': {}, 'username': {}})
         self._trunks[techno]['name'][name] = value
         if username:
@@ -166,6 +156,18 @@ class ConfdCache:
         confd_techno = self._asterisk_to_confd_techno_map.get(techno, techno)
         return self._trunks.get(confd_techno, {'username': {}})['username'].get(username, None)
 
+    def list_trunks(self, tenant_uuid):
+        if not self._initialized:
+            self._initialize()
+
+        results = []
+        for index_trunks in self._trunks.values():
+            for trunk in index_trunks['name'].values():
+                if trunk['tenant_uuid'] != tenant_uuid:
+                    continue
+                results.append(trunk)
+        return results
+
     def update_trunk(self, techno, trunk_id, name, username, tenant_uuid):
         self.delete_trunk(trunk_id)
         self.add_trunk(techno, trunk_id, name, username, tenant_uuid)
@@ -196,7 +198,7 @@ class ConfdCache:
 
             value = {
                 'id': trunk['id'],
-                'techno': techno,
+                'technology': techno,
                 'name': name,
                 'tenant_uuid': trunk['tenant_uuid'],
             }
@@ -214,31 +216,28 @@ class ConfdCache:
 
 class EndpointsService:
 
+    _techno_map = {
+        'sip': 'PJSIP',
+        'iax': 'IAX2',
+    }
+
     def __init__(self, confd_cache, ari, status_cache):
         self._confd = confd_cache
         self._ari = ari
         self.status_cache = status_cache
 
     def list_trunks(self, tenant_uuid):
-        asterisk_endpoints = self.status_cache.list()
+        confd_endpoints = self._confd.list_trunks(tenant_uuid)
 
         results = []
-        for asterisk_endpoint in asterisk_endpoints:
-            confd_endpoint = self._confd.get_trunk(asterisk_endpoint.techno, asterisk_endpoint.name)
-            if not confd_endpoint:
-                continue
-
-            if confd_endpoint['tenant_uuid'] != tenant_uuid:
-                continue
-
-            results.append({
-                'technology': confd_endpoint['techno'],
-                'name': asterisk_endpoint.name,
-                'id': confd_endpoint['id'],
-                'registered': asterisk_endpoint.registered,
-                'current_call_count': asterisk_endpoint.current_call_count,
-                'tenant_uuid': tenant_uuid,
-            })
+        for confd_endpoint in confd_endpoints:
+            endpoint = dict(confd_endpoint)
+            ast_techno = self._techno_map.get(endpoint['technology'], endpoint['technology'])
+            ast_endpoint = self.status_cache.get(ast_techno, confd_endpoint['name'])
+            if ast_endpoint:
+                endpoint['registered'] = ast_endpoint.registered
+                endpoint['current_call_count'] = ast_endpoint.current_call_count
+            results.append(endpoint)
 
         count = len(results)
         return results, count, count
