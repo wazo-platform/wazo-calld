@@ -56,8 +56,11 @@ class EventHandler:
 
     def on_registry(self, event):
         techno = event['ChannelType']
-        begin, _ = event['Username'].split('@', 1)
-        _, username = begin.split(':', 1)
+        try:
+            begin, _ = event['Username'].split('@', 1)
+            _, username = begin.split(':', 1)
+        except ValueError:
+            return
 
         trunk = self._confd_cache.get_trunk_by_username(techno, username)
         with self._endpoint_status_cache.update(techno, trunk['name']) as endpoint:
