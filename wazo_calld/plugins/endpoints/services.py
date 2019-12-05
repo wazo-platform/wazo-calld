@@ -166,6 +166,10 @@ class ConfdCache:
         confd_techno = self._asterisk_to_confd_techno_map.get(techno, techno)
         return self._trunks.get(confd_techno, {'username': {}})['username'].get(username, None)
 
+    def update_trunk(self, techno, trunk_id, name, username, tenant_uuid):
+        self.delete_trunk(trunk_id)
+        self.add_trunk(techno, trunk_id, name, username, tenant_uuid)
+
     def _initialize(self):
         with self._initialization_lock:
             # The initialization migh have happened while we were waiting on the lock

@@ -3,7 +3,7 @@
 
 from contextlib import contextmanager
 from unittest import TestCase
-from unittest.mock import Mock
+from unittest.mock import Mock, sentinel as s
 from hamcrest import assert_that, has_properties
 
 from ..bus import EventHandler
@@ -258,3 +258,89 @@ class TestOnPeerStatus(TestCase):
         self.handler.on_trunk_endpoint_deleted(event)
 
         self.confd_cache.delete_trunk.assert_called_once_with(42)
+
+    def test_on_endpoint_sip_updated(self):
+        event = {
+            'id': s.endpoint_id,
+            'name': s.name,
+            'tenant_uuid': s.tenant_uuid,
+            'username': s.username,
+            'trunk': {'id': s.trunk_id},
+            'line': None,
+        }
+
+        self.handler.on_trunk_endpoint_sip_updated(event)
+
+        self.confd_cache.update_trunk.assert_called_once_with(
+            'sip', s.trunk_id, s.name, s.username, s.tenant_uuid,
+        )
+
+    def test_on_endpoint_iax_updated(self):
+        event = {
+            'id': s.endpoint_id,
+            'name': s.name,
+            'tenant_uuid': s.tenant_uuid,
+            'trunk': {'id': s.trunk_id},
+            'line': None,
+        }
+
+        self.handler.on_trunk_endpoint_iax_updated(event)
+
+        self.confd_cache.update_trunk.assert_called_once_with(
+            'iax', s.trunk_id, s.name, None, s.tenant_uuid,
+        )
+
+    def test_on_endpoint_custom_updated(self):
+        event = {
+            'id': s.endpoint_id,
+            'interface': s.interface,
+            'tenant_uuid': s.tenant_uuid,
+            'trunk': {'id': s.trunk_id},
+            'line': None,
+        }
+
+        self.handler.on_trunk_endpoint_custom_updated(event)
+
+        self.confd_cache.update_trunk.assert_called_once_with(
+            'custom', s.trunk_id, s.interface, None, s.tenant_uuid,
+        )
+
+    def test_on_endpoint_sip_updated_line(self):
+        event = {
+            'id': s.endpoint_id,
+            'name': s.name,
+            'tenant_uuid': s.tenant_uuid,
+            'username': s.username,
+            'trunk': None,
+            'line': {'id': s.line_id},
+        }
+
+        self.handler.on_trunk_endpoint_sip_updated(event)
+
+        self.confd_cache.update_trunk.assert_not_called()
+
+    def test_on_endpoint_iax_updated_line(self):
+        event = {
+            'id': s.endpoint_id,
+            'name': s.name,
+            'tenant_uuid': s.tenant_uuid,
+            'trunk': None,
+            'line': {'id': s.line_id},
+        }
+
+        self.handler.on_trunk_endpoint_iax_updated(event)
+
+        self.confd_cache.update_trunk.assert_not_called()
+
+    def test_on_endpoint_custom_updated_line(self):
+        event = {
+            'id': s.endpoint_id,
+            'interface': s.interface,
+            'tenant_uuid': s.tenant_uuid,
+            'trunk': None,
+            'line': {'id': s.line_id},
+        }
+
+        self.handler.on_trunk_endpoint_custom_updated(event)
+
+        self.confd_cache.update_trunk.assert_not_called()

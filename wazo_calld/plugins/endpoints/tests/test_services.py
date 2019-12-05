@@ -115,6 +115,28 @@ class TestCachingConfdClient(TestCase):
         result = self.client.get_trunk_by_username('sip', s.username)
         assert_that(result, equal_to(None))
 
+    def test_update_trunk(self):
+        self._set_cache([
+            {
+                'id': s.trunk_id,
+                'endpoint_sip': {'name': s.name, 'username': s.username},
+                'tenant_uuid': s.tenant_uuid,
+            },
+        ])
+
+        self.client.update_trunk('sip', s.trunk_id, s.new_name, s.new_username, s.tenant_uuid)
+
+        result = self.client.get_trunk('sip', s.new_name)
+        assert_that(result, has_entries(
+            id=s.trunk_id,
+            techno='sip',
+            name=s.new_name,
+            tenant_uuid=s.tenant_uuid,
+        ))
+
+        result = self.client.get_trunk('sip', s.name)
+        assert_that(result, equal_to(None))
+
     def _set_cache(self, trunks):
         self.client._update_trunk_cache(trunks)
         self.client._initialized = True
