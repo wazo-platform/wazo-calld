@@ -44,7 +44,7 @@ class TestBusConsume(IntegrationTest):
 
         self.restart_service('calld')
 
-        events = self.bus.accumulator(routing_key='endpoints.{}.status.updated'.format(trunk_id))
+        events = self.bus.accumulator(routing_key='trunks.{}.status.updated'.format(trunk_id))
         self.reset_clients()
         self.wait_strategy.wait(self)
         self.bus.send_ami_hangup_event(call_id, channel='PJSIP/abcdef-00000001')
@@ -81,7 +81,7 @@ class TestBusConsume(IntegrationTest):
 
         self.restart_service('calld')
 
-        events = self.bus.accumulator(routing_key='endpoints.{}.status.updated'.format(trunk_id))
+        events = self.bus.accumulator(routing_key='trunks.{}.status.updated'.format(trunk_id))
         self.reset_clients()
         self.wait_strategy.wait(self)
         self.bus.send_ami_newchannel_event(new_call_id(leap=2), channel='PJSIP/abcdef-00000001')
@@ -118,7 +118,7 @@ class TestBusConsume(IntegrationTest):
 
         self.restart_service('calld')
 
-        events = self.bus.accumulator(routing_key='endpoints.{}.status.updated'.format(trunk_id))
+        events = self.bus.accumulator(routing_key='trunks.{}.status.updated'.format(trunk_id))
         self.reset_clients()
         self.wait_strategy.wait(self)
         self.bus.send_ami_peerstatus_event('PJSIP', 'PJSIP/abcdef', 'Reachable')
@@ -172,7 +172,7 @@ class TestBusConsume(IntegrationTest):
 
         self.restart_service('calld')
 
-        events = self.bus.accumulator(routing_key='endpoints.{}.status.updated'.format(trunk_id))
+        events = self.bus.accumulator(routing_key='trunks.{}.status.updated'.format(trunk_id))
         self.reset_clients()
         self.wait_strategy.wait(self)
         self.bus.send_ami_registry_event(
@@ -224,7 +224,7 @@ class TestBusConsume(IntegrationTest):
 
         self.restart_service('calld')
 
-        events = self.bus.accumulator(routing_key='endpoints.{}.status.updated'.format(trunk_id))
+        events = self.bus.accumulator(routing_key='trunks.{}.status.updated'.format(trunk_id))
         self.reset_clients()
         self.wait_strategy.wait(self)
 
