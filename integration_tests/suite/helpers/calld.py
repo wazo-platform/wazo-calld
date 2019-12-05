@@ -193,6 +193,17 @@ class CalldClient:
                               verify=False)
         return result
 
+    def get_trunks_result(self, token=None):
+        url = self.url('trunks')
+        params = {}
+        result = requests.get(url, params=params, headers={'X-Auth-Token': token}, verify=False)
+        return result
+
+    def list_trunks(self, token=VALID_TOKEN):
+        response = self.get_trunks_result(token)
+        assert_that(response.status_code, equal_to(200))
+        return response.json()
+
     def list_calls(self, application=None, application_instance=None, token=VALID_TOKEN):
         response = self.get_calls_result(application, application_instance, token)
         assert_that(response.status_code, equal_to(200))
@@ -620,5 +631,5 @@ class CalldClient:
         requests.put = old_put
 
 
-def new_call_id():
-    return format(time.time(), '.2f')
+def new_call_id(leap=0):
+    return format(time.time() + leap, '.2f')

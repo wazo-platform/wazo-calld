@@ -25,6 +25,7 @@ setup(
         'wazo_calld.plugins': [
             'api = wazo_calld.plugins.api.plugin:Plugin',
             'applications = wazo_calld.plugins.applications.plugin:Plugin',
+            'endpoints = wazo_calld.plugins.endpoints.plugin:Plugin',
             'calls = wazo_calld.plugins.calls.plugin:Plugin',
             'conferences = wazo_calld.plugins.conferences.plugin:Plugin',
             'dial_mobile = wazo_calld.plugins.dial_mobile.plugin:Plugin',

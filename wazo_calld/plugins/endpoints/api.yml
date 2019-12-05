@@ -1,0 +1,57 @@
+paths:
+  /trunks:
+    get:
+      summary: List trunk endpoint statuses
+      description: |
+        **Required ACL:** `calld.trunks.read`
+
+        List the status of trunk endpoints that are configured on Asterisk
+
+        Only the status of SIP endpoints can be fetched at the moment.
+
+        Unsupported endpoint technologies will not be listed.
+
+        This include the `registered` and `current_call_count`
+      tags:
+        - trunks
+      parameters:
+        - $ref: '#/parameters/TenantUUID'
+      responses:
+        '200':
+          description: A list of trunk status
+          schema:
+            $ref: '#/definitions/EndpointTrunks'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+definitions:
+  EndpointTrunk:
+    type: object
+    properties:
+      technology:
+        type: string
+        description: The technology of that endpoint only (SIP, IAX, or custom)
+      name:
+        type: string
+        description: The name of that given endpoint in Asterisk
+      id:
+        type: integer
+        description: The ID of the matching confd trunk
+      registered:
+        type: boolean
+        description: Wether or not this trunk is registered.
+      current_call_count:
+        type: integer
+        description: The number of ongoing calls on that trunk
+  EndpointTrunks:
+    type: object
+    properties:
+      items:
+        type: array
+        items:
+          $ref: '#/definitions/EndpointTrunk'
+      total:
+        type: integer
+        description: The number of trunk endpoint
+      filtered:
+        type: integer
+        description: The number of trunk endpoint matching the searched terms

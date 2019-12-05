@@ -1,5 +1,12 @@
 # Changelog
 
+## 19.17
+
+* The following endpoint has been added to list the status of trunks
+
+  * `GET /1.0/trunks`
+
+
 ## 19.10
 
 * The following endpoints have a new query parameter `line_id` to select a line

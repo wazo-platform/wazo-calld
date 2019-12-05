@@ -11,6 +11,29 @@ logger = logging.getLogger(__name__)
 APIException = rest_api_helpers.APIException
 
 
+class InvalidListParamException(APIException):
+    def __init__(self, message, details=None):
+        super().__init__(400, message, 'invalid-list-param', details, 'users')
+
+    @classmethod
+    def from_errors(cls, errors):
+        for field, infos in errors.items():
+            if not isinstance(infos, list):
+                infos = [infos]
+            for info in infos:
+                return cls(info['message'], {field: info})
+
+
+class CalldUninitializedError(APIException):
+
+    def __init__(self):
+        super().__init__(
+            status_code=503,
+            message='wazo-calld is not ready to handle this request',
+            error_id='wazo-calld-uninitialized',
+        )
+
+
 class WazoAmidError(APIException):
 
     def __init__(self, wazo_amid_client, error):
@@ -70,6 +93,22 @@ class TokenWithUserUUIDRequiredError(APIException):
             status_code=400,
             message='A valid token with a user UUID is required',
             error_id='token-with-user-uuid-required',
+        )
+
+
+class WazoConfdError(APIException):
+
+    def __init__(self, confd_client, error):
+        super().__init__(
+            status_code=503,
+            message='wazo-confd error',
+            error_id='wazo-confd-error',
+            details={
+                'wazo_confd_config': {'host': confd_client.host,
+                                      'port': confd_client.port,
+                                      'timeout': confd_client.timeout},
+                'original_error': str(error),
+            }
         )
 
 
