@@ -43,6 +43,21 @@ class TestOnPeerStatus(TestCase):
             has_properties(techno='PJSIP', name='foobar', registered=True),
         )
 
+    def test_on_misconfigured_trunk_registering_ignore_event(self):
+        event = {
+            'Cause': 'Registration Refused',
+            'ChannelType': 'IAX2',
+            'Domain': '194.146.225.32:4569',
+            'Event': 'Registry',
+            'Privilege': 'system,all',
+            'Status': 'Rejected',
+            'Username': 'trunkwazomd6',
+        }
+
+        self.handler.on_registry(event)
+
+        self.confd_cache.get_trunk_by_username.assert_not_called()
+
     def test_on_trunk_deregistering(self):
         self.confd_cache.get_trunk_by_username.return_value = {'name': 'foobar'}
         event = {
