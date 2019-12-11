@@ -19,18 +19,15 @@ from unittest.mock import (
 from ..services import ConfdCache, EndpointsService, Endpoint, NotifyingStatusCache
 
 
-class BaseEndpointsService(TestCase):
+class TestEndpointService(TestCase):
     def setUp(self):
-        self.confd = Mock()
         self.ari = Mock()
         self.ari.endpoints.list.return_value = []
         self.status_cache = NotifyingStatusCache(Mock(), self.ari)
         self.confd_cache = Mock(ConfdCache)
+
         self.service = EndpointsService(self.confd_cache, self.status_cache)
-        self.ari.endpoints.list.return_value = []
 
-
-class TestEndpointService(BaseEndpointsService):
     def test_list_lines(self):
         self.confd_cache.list_lines.return_value = [
             {
