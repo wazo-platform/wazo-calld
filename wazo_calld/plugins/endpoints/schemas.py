@@ -13,8 +13,13 @@ class EndpointBaseSchema(Schema):
     current_call_count = fields.Integer(default=None)
 
 
+class LineEndpointSchema(EndpointBaseSchema):
+    pass
+
+
 class TrunkEndpointSchema(EndpointBaseSchema):
     pass
 
 
 trunk_endpoint_schema = TrunkEndpointSchema()
+line_endpoint_schema = LineEndpointSchema()

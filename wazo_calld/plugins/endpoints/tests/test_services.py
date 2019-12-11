@@ -31,6 +31,42 @@ class BaseEndpointsService(TestCase):
 
 
 class TestEndpointService(BaseEndpointsService):
+    def test_list_lines(self):
+        self.confd_cache.list_lines.return_value = [
+            {
+                'id': 1,
+                'technology': 'sip',
+                'name': s.name_1,
+                'tenant_uuid': s.tenant_uuid,
+            },
+            {
+                'id': 2,
+                'technology': 'iax',
+                'name': s.name_2,
+                'tenant_uuid': s.tenant_uuid,
+            },
+            {
+                'id': 3,
+                'technology': 'custom',
+                'name': s.name_2,
+                'tenant_uuid': s.tenant_uuid,
+            },
+        ]
+
+        self.status_cache.add_endpoint(
+            Endpoint('PJSIP', s.name_1, registered=True, channel_ids=[123, 456]),
+        )
+
+        items, filtered, total = self.service.list_lines(s.tenant_uuid)
+
+        assert_that(filtered, equal_to(3))
+        assert_that(total, equal_to(3))
+        assert_that(items, contains_inanyorder(
+            has_entries(id=1, registered=True, current_call_count=2),
+            has_entries(id=2),
+            has_entries(id=3),
+        ))
+
     def test_list_trunks(self):
         self.confd_cache.list_trunks.return_value = [
             {
