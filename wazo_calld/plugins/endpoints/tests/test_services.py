@@ -5,10 +5,8 @@ from unittest import TestCase
 
 from hamcrest import (
     assert_that,
-    contains,
     contains_inanyorder,
     equal_to,
-    empty,
     has_entries,
     has_properties,
     not_,
