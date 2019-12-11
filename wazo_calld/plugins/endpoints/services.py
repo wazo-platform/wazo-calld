@@ -142,24 +142,13 @@ class ConfdCache:
             del self._trunks[techno][index][identifier]
 
     def get_line(self, techno, name):
-        return self._get_endpoint_by_name(techno, name, self._lines)
+        return self._get_endpoint_by_index(techno, name, self._lines, index='name')
 
     def get_trunk(self, techno, name):
-        return self._get_endpoint_by_name(techno, name, self._trunks)
-
-    def _get_endpoint_by_name(self, techno, name, endpoints):
-        if not self._initialized:
-            self._initialize()
-
-        confd_techno = self._asterisk_to_confd_techno_map.get(techno, techno)
-        return endpoints.get(confd_techno, {'name': {}})['name'].get(name, None)
+        return self._get_endpoint_by_index(techno, name, self._trunks, index='name')
 
     def get_trunk_by_username(self, techno, username):
-        if not self._initialized:
-            self._initialize()
-
-        confd_techno = self._asterisk_to_confd_techno_map.get(techno, techno)
-        return self._trunks.get(confd_techno, {'username': {}})['username'].get(username, None)
+        return self._get_endpoint_by_index(techno, username, self._trunks, index='username')
 
     def list_lines(self, tenant_uuid):
         if not self._initialized:
@@ -188,6 +177,13 @@ class ConfdCache:
     def update_trunk(self, techno, trunk_id, name, username, tenant_uuid):
         self.delete_trunk(trunk_id)
         self.add_trunk(techno, trunk_id, name, username, tenant_uuid)
+
+    def _get_endpoint_by_index(self, techno, value, endpoints, index):
+        if not self._initialized:
+            self._initialize()
+
+        confd_techno = self._asterisk_to_confd_techno_map.get(techno, techno)
+        return endpoints.get(confd_techno, {index: {}})[index].get(value, None)
 
     def _initialize(self):
         with self._initialization_lock:
