@@ -162,6 +162,64 @@ class TestCachingConfdClient(TestCase):
             has_entries(id=3),
         ))
 
+    def test_initialize_lines(self):
+        self.confd.trunks.list.return_value = {'items': [], 'total': 0}
+        self.confd.lines.list.return_value = {
+            "total": 3,
+            "items": [
+                {
+                    "id": 20,
+                    "tenant_uuid": s.tenant_uuid,
+                    "name": s.name_1,
+                    "protocol": "sip",
+                    "endpoint_sip": {"id": 18, "username": "5h8osw24", "name": s.name_1},
+                    "endpoint_sccp": None,
+                    "endpoint_custom": None,
+                },
+                {
+                    "id": 33,
+                    "tenant_uuid": s.tenant_uuid,
+                    "name": s.name_2,
+                    "protocol": "sccp",
+                    "endpoint_sip": None,
+                    "endpoint_sccp": {"id": 5},
+                    "endpoint_custom": None,
+                },
+                {
+                    "id": 38,
+                    "tenant_uuid": s.tenant_uuid,
+                    "name": s.interface,
+                    "protocol": "custom",
+                    "endpoint_sip": None,
+                    "endpoint_sccp": None,
+                    "endpoint_custom": {"id": 3, "interface": s.interface},
+                },
+            ]
+        }
+
+        result = self.client.list_lines(s.tenant_uuid)
+
+        assert_that(result, contains_inanyorder(
+            has_entries(
+                id=20,
+                name=s.name_1,
+                technology='sip',
+                tenant_uuid=s.tenant_uuid,
+            ),
+            has_entries(
+                id=33,
+                name=s.name_2,
+                technology='sccp',
+                tenant_uuid=s.tenant_uuid,
+            ),
+            has_entries(
+                id=38,
+                name=s.interface,
+                technology='custom',
+                tenant_uuid=s.tenant_uuid,
+            ),
+        ))
+
     def _set_cache(self, trunks):
         self.client._update_trunk_cache(trunks)
         self.client._initialized = True

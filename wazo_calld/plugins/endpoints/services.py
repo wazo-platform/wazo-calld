@@ -117,6 +117,7 @@ class ConfdCache:
     def __init__(self, confd_client):
         self._confd = confd_client
         self._trunks = {}
+        self._lines = {}
         self._initialized = False
         self._initialization_lock = threading.Lock()
 
@@ -153,6 +154,18 @@ class ConfdCache:
         confd_techno = self._asterisk_to_confd_techno_map.get(techno, techno)
         return self._trunks.get(confd_techno, {'username': {}})['username'].get(username, None)
 
+    def list_lines(self, tenant_uuid):
+        if not self._initialized:
+            self._initialize()
+
+        results = []
+        for index_lines in self._lines.values():
+            for line in index_lines['name'].values():
+                if line['tenant_uuid'] != tenant_uuid:
+                    continue
+                results.append(line)
+        return results
+
     def list_trunks(self, tenant_uuid):
         if not self._initialized:
             self._initialize()
@@ -175,8 +188,32 @@ class ConfdCache:
             if self._initialized:
                 return
 
-            result = self._confd.trunks.list(recurse=True)
-            self._update_trunk_cache(result['items'])
+            trunks = self._confd.trunks.list(recurse=True)['items']
+            self._update_trunk_cache(trunks)
+
+            lines = self._confd.lines.list(recurse=True)['items']
+            self._update_line_cache(lines)
+
+            self._initialized = True
+
+    def _update_line_cache(self, lines):
+        for line in lines:
+            techno = line['protocol']
+            name = line['name']
+            value = {
+                'id': line['id'],
+                'technology': techno,
+                'name': name,
+                'tenant_uuid': line['tenant_uuid'],
+            }
+
+            self._lines.setdefault(techno, {'name': {}})
+            self._lines[techno]['name'][name] = value
+
+        logger.info(
+            'line cache updated %s entries',
+            sum(len(names) for names in self._lines.values()),
+        )
 
     def _update_trunk_cache(self, trunks):
         for trunk in trunks:
@@ -208,7 +245,6 @@ class ConfdCache:
             'trunk cache updated %s entries',
             sum(len(names) for names in self._trunks.values()),
         )
-        self._initialized = True
 
 
 class EndpointsService:
