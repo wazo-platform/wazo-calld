@@ -5,7 +5,7 @@ from wazo_confd_client import Client as ConfdClient
 from xivo.pubsub import CallbackCollector
 
 from .bus import EventHandler
-from .http import TrunkEndpoints
+from .http import LineEndpoints, TrunkEndpoints
 from .services import ConfdCache, EndpointsService, NotifyingStatusCache
 from .notifier import EndpointStatusNotifier
 
@@ -39,6 +39,14 @@ class Plugin:
         api.add_resource(
             TrunkEndpoints,
             '/trunks',
+            resource_class_args=[
+                endpoints_service,
+            ],
+        )
+
+        api.add_resource(
+            LineEndpoints,
+            '/lines',
             resource_class_args=[
                 endpoints_service,
             ],

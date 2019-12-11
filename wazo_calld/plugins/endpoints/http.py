@@ -9,6 +9,15 @@ from wazo_calld.http import AuthResource
 from .schemas import trunk_endpoint_schema
 
 
+class LineEndpoints(AuthResource):
+
+    def __init__(self, endpoints_service):
+        self._endpoints_service = endpoints_service
+
+    def get(self):
+        return {'items': [], 'total': 0, 'filtered': 0}, 200
+
+
 class TrunkEndpoints(AuthResource):
 
     def __init__(self, endpoints_service):

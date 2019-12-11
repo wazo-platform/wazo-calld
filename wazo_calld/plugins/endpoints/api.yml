@@ -1,4 +1,29 @@
 paths:
+  /lines:
+    get:
+      summary: List line endpoint statuses
+      description: |
+        **Required ACL:** `calld.lines.read`
+
+        List the status of line endpoints that are configured on Asterisk
+
+        Supported technologies:
+
+          * SIP
+
+        Lines with unsupported technologies will be listed but there status
+        will be null
+      tags:
+        - lines
+      parameters:
+        - $ref: '#/parameters/TenantUUID'
+      responses:
+        '200':
+          description: A list of line status
+          schema:
+            $ref: '#/definitions/EndpointLines'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
   /trunks:
     get:
       summary: List trunk endpoint statuses
@@ -7,11 +32,12 @@ paths:
 
         List the status of trunk endpoints that are configured on Asterisk
 
-        Only the status of SIP endpoints can be fetched at the moment.
+        Supported technologies:
 
-        Unsupported endpoint technologies will not be listed.
+          * SIP
 
-        This include the `registered` and `current_call_count`
+        Trunks with unsupported technologies will be listed but there status
+        will be null
       tags:
         - trunks
       parameters:
@@ -24,12 +50,25 @@ paths:
         '503':
           $ref: '#/responses/AnotherServiceUnavailable'
 definitions:
-  EndpointTrunk:
+  EndpointLines:
+    type: object
+    properties:
+      items:
+        type: array
+        items:
+          $ref: '#/definitions/EndpointLine'
+      total:
+        type: integer
+        description: The number of line endpoint
+      filtered:
+        type: integer
+        description: The number of line endpoint matching the searched terms
+  EndpointLine:
     type: object
     properties:
       technology:
         type: string
-        description: The technology of that endpoint only (SIP, IAX, or custom)
+        description: The technology of that endpoint only (SIP, SCCP or custom)
       name:
         type: string
         description: The name of that given endpoint in Asterisk

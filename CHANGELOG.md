@@ -4,6 +4,11 @@
 
 * Configuration `startup_connection_tries` has been removed
 
+* The following endpoint has been added to list the status of lines
+
+  * `GET /1.0/lines`
+
+
 ## 19.17
 
 * The following endpoint has been added to list the status of trunks
