@@ -130,6 +130,42 @@ class TestCachingConfdClient(TestCase):
         result = self.client.get_trunk('sip', s.name)
         assert_that(result, equal_to(None))
 
+    def test_list_lines(self):
+        self._set_cache(lines=[
+            {
+                'id': 1,
+                'name': s.name_1,
+                'protocol': 'sip',
+                'tenant_uuid': s.tenant_uuid,
+            },
+            {
+                'id': 2,
+                'name': s.name_2,
+                'protocol': 'sccp',
+                'tenant_uuid': s.tenant_uuid,
+            },
+            {
+                'id': 3,
+                'name': s.interface,
+                'protocol': 'custom',
+                'tenant_uuid': s.tenant_uuid,
+            },
+            {
+                'id': 4,
+                'protocol': 'sip',
+                'name': 'ignored',
+                'tenant_uuid': s.other_tenant_uuid,
+            },
+        ])
+
+        result = self.client.list_lines(s.tenant_uuid)
+
+        assert_that(result, contains_inanyorder(
+            has_entries(id=1),
+            has_entries(id=2),
+            has_entries(id=3),
+        ))
+
     def test_list_trunks(self):
         self._set_cache([
             {
@@ -220,8 +256,12 @@ class TestCachingConfdClient(TestCase):
             ),
         ))
 
-    def _set_cache(self, trunks):
-        self.client._update_trunk_cache(trunks)
+    def _set_cache(self, trunks=None, lines=None):
+        if trunks:
+            self.client._update_trunk_cache(trunks)
+        if lines:
+            self.client._update_line_cache(lines)
+
         self.client._initialized = True
 
 
