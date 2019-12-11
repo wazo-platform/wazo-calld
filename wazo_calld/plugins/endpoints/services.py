@@ -263,23 +263,13 @@ class EndpointsService:
 
     def list_lines(self, tenant_uuid):
         confd_endpoints = self._confd.list_lines(tenant_uuid)
-
-        results = []
-        for confd_endpoint in confd_endpoints:
-            endpoint = dict(confd_endpoint)
-            ast_techno = self._techno_map.get(endpoint['technology'], endpoint['technology'])
-            ast_endpoint = self.status_cache.get(ast_techno, confd_endpoint['name'])
-            if ast_endpoint:
-                endpoint['registered'] = ast_endpoint.registered
-                endpoint['current_call_count'] = ast_endpoint.current_call_count
-            results.append(endpoint)
-
-        count = len(results)
-        return results, count, count
+        return self._list_endpoints(confd_endpoints)
 
     def list_trunks(self, tenant_uuid):
         confd_endpoints = self._confd.list_trunks(tenant_uuid)
+        return self._list_endpoints(confd_endpoints)
 
+    def _list_endpoints(self, confd_endpoints):
         results = []
         for confd_endpoint in confd_endpoints:
             endpoint = dict(confd_endpoint)
