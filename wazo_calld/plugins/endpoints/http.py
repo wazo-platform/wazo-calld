@@ -14,6 +14,7 @@ class LineEndpoints(AuthResource):
     def __init__(self, endpoints_service):
         self._endpoints_service = endpoints_service
 
+    @required_acl('calld.lines.read')
     def get(self):
         return {'items': [], 'total': 0, 'filtered': 0}, 200
 

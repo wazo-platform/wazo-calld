@@ -51,6 +51,11 @@ class TestAuthenticationCoverage(IntegrationTest):
 
     asset = 'basic_rest'
 
+    def test_auth_on_line_endpoint_list(self):
+        result = self.calld.get_lines_result()
+
+        assert_that(result.status_code, equal_to(401))
+
     def test_auth_on_trunk_endpoint_list(self):
         result = self.calld.get_trunks_result()
 

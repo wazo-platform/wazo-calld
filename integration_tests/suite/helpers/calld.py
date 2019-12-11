@@ -193,6 +193,17 @@ class CalldClient:
                               verify=False)
         return result
 
+    def get_lines_result(self, token=None):
+        url = self.url('lines')
+        params = {}
+        result = requests.get(url, params=params, headers={'X-Auth-Token': token}, verify=False)
+        return result
+
+    def list_lines(self, token=VALID_TOKEN):
+        response = self.get_lines_result(token)
+        assert_that(response.status_code, equal_to(200))
+        return response.json()
+
     def get_trunks_result(self, token=None):
         url = self.url('trunks')
         params = {}
