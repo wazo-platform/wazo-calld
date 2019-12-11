@@ -112,6 +112,7 @@ class ConfdCache:
     _asterisk_to_confd_techno_map = {
         'PJSIP': 'sip',
         'IAX2': 'iax',
+        'SCCP': 'sccp',
     }
 
     def __init__(self, confd_client):
@@ -140,12 +141,18 @@ class ConfdCache:
         for techno, index, identifier in to_remove:
             del self._trunks[techno][index][identifier]
 
+    def get_line(self, techno, name):
+        return self._get_endpoint_by_name(techno, name, self._lines)
+
     def get_trunk(self, techno, name):
+        return self._get_endpoint_by_name(techno, name, self._trunks)
+
+    def _get_endpoint_by_name(self, techno, name, endpoints):
         if not self._initialized:
             self._initialize()
 
         confd_techno = self._asterisk_to_confd_techno_map.get(techno, techno)
-        return self._trunks.get(confd_techno, {'name': {}})['name'].get(name, None)
+        return endpoints.get(confd_techno, {'name': {}})['name'].get(name, None)
 
     def get_trunk_by_username(self, techno, username):
         if not self._initialized:

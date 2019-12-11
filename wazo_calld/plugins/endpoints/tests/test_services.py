@@ -130,6 +130,31 @@ class TestCachingConfdClient(TestCase):
         result = self.client.get_trunk('sip', s.name)
         assert_that(result, equal_to(None))
 
+    def test_get_line(self):
+        self._set_cache(lines=[
+            {
+                'id': 1,
+                'name': s.name_1,
+                'protocol': 'sip',
+                'tenant_uuid': s.tenant_uuid_1,
+            },
+            {
+                'id': 2,
+                'name': s.name_2,
+                'protocol': 'sccp',
+                'tenant_uuid': s.tenant_uuid_2,
+            },
+        ])
+
+        result = self.client.get_line('PJSIP', s.name_1)
+        assert_that(result, has_entries(id=1, name=s.name_1, technology='sip', tenant_uuid=s.tenant_uuid_1))
+
+        result = self.client.get_line('SCCP', s.name_2)
+        assert_that(result, has_entries(id=2, name=s.name_2, technology='sccp', tenant_uuid=s.tenant_uuid_2))
+
+        result = self.client.get_line('PJSIP', s.name_2)
+        assert_that(result, equal_to(None))
+
     def test_list_lines(self):
         self._set_cache(lines=[
             {
