@@ -45,7 +45,6 @@ services:
       - 8500
     volumes:
       - ./consul:/usr/local/share/consul
-      - ./ssl:/usr/local/share/ssl
     command: python /usr/local/share/consul/mock-consul.py 8500
 
   calld:

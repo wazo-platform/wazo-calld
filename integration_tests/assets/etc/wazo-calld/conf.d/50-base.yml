@@ -27,7 +27,6 @@ confd:
 
 consul:
   host: consul
-  verify: /usr/local/share/ssl/consul/server.crt
 
 websocketd:
   wss: false

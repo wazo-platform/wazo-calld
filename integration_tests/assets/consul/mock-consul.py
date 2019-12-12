@@ -57,6 +57,4 @@ def service(service_name):
 
 
 if __name__ == "__main__":
-    context = ('/usr/local/share/ssl/consul/server.crt',
-               '/usr/local/share/ssl/consul/server.key')
-    app.run(host='0.0.0.0', port=port, ssl_context=context, debug=True)
+    app.run(host='0.0.0.0', port=port, debug=True)
