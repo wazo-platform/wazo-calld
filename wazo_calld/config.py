@@ -69,7 +69,7 @@ _DEFAULT_CONFIG = {
     'consul': {
         'host': 'localhost',
         'port': 8500,
-        'scheme': 'https',
+        'scheme': 'http',
         'verify': _CERT_FILE,
     },
     'service_discovery': {
