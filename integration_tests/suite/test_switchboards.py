@@ -7,7 +7,7 @@ import uuid
 
 from ari.exceptions import ARINotInStasis
 from hamcrest import (
-    all_of,
+    any_of,
     assert_that,
     contains,
     contains_string,
@@ -594,12 +594,17 @@ class TestSwitchboardConfdCache(IntegrationTest):
     def test_answer_confd_is_cached(self):
         token = random_uuid(prefix='my-token-')
         user_uuid = random_uuid(prefix='my-user-uuid-')
-        line_id = random_uuid(prefix='my-line-id-')
-        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT))
+        line_id = random_id()
         switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
-        self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
-        self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
-        self.confd.set_lines(MockLine(id=line_id, name='switchboard-operator/autoanswer', protocol='test'))
+
+        def reset_confd():
+            self.confd.reset()
+            self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
+            self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
+            self.confd.set_lines(MockLine(id=line_id, name='switchboard-operator/autoanswer', protocol='test'))
+
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT))
+        reset_confd()
         queued_call = MockChannel(
             id=random_uuid(prefix='first-call-'),
             caller_id_name='Weber',
@@ -613,16 +618,23 @@ class TestSwitchboardConfdCache(IntegrationTest):
         self.ari.set_originates(
             MockChannel(id=random_uuid(prefix='originate-')),
             MockChannel(id=random_uuid(prefix='originate-')),
+            MockChannel(id=random_uuid(prefix='originate-')),
+            MockChannel(id=random_uuid(prefix='originate-')),
+            MockChannel(id=random_uuid(prefix='originate-')),
         )
+
+        def confd_cache_refresh_triggered():
+            # Assert wazo-confd was called
+            assert_that(self.confd.requests(), has_entry('requests', any_of(
+                has_item(has_entry('path', contains_string('users'))),
+                has_item(has_entry('path', contains_string('switchboards'))),
+                has_item(has_entry('path', contains_string('lines'))),
+            )))
 
         # Answer one call: cache wazo-confd answers
         self.calld.switchboard_answer_queued_call(switchboard_uuid, queued_call.id_(), token)
 
-        # Empty wazo-confd logs
-        self.confd.reset()
-        self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
-        self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
-        self.confd.set_lines(MockLine(id=line_id, name='switchboard-operator/autoanswer', protocol='test'))
+        reset_confd()
 
         # Answer another call
         self.calld.switchboard_answer_queued_call(switchboard_uuid, queued_call.id_(), token)
@@ -638,6 +650,14 @@ class TestSwitchboardConfdCache(IntegrationTest):
             },
             routing_key='config.user.edited',
         )
+
+        reset_confd()
+
+        # Answer another call
+        self.calld.switchboard_answer_queued_call(switchboard_uuid, queued_call.id_(), token)
+
+        # Assert wazo-confd was called
+        until.assert_(confd_cache_refresh_triggered, timeout=5, message='switchboard confd cache was not refreshed')
         # Change switchboard config
         self.bus.send_event(
             event={
@@ -647,18 +667,29 @@ class TestSwitchboardConfdCache(IntegrationTest):
             routing_key='config.switchboards.{}.edited'.format(switchboard_uuid),
         )
 
-        def confd_cache_refresh_triggered():
-            self.ari.set_originates(MockChannel(id=random_uuid(prefix='originate-')))
+        reset_confd()
 
-            # Answer another call
-            self.calld.switchboard_answer_queued_call(switchboard_uuid, queued_call.id_(), token)
+        # Answer another call
+        self.calld.switchboard_answer_queued_call(switchboard_uuid, queued_call.id_(), token)
 
-            # Assert wazo-confd was called
-            assert_that(self.confd.requests(), has_entry('requests', all_of(
-                has_item(has_entry('path', contains_string('users'))),
-                has_item(has_entry('path', contains_string('switchboards'))),
-            )))
+        # Assert wazo-confd was called
+        until.assert_(confd_cache_refresh_triggered, timeout=5, message='switchboard confd cache was not refreshed')
 
+        # Change line id
+        self.bus.send_event(
+            event={
+                'name': 'line_edited',
+                'data': {'id': line_id},
+            },
+            routing_key='config.line.edited'.format(line_id),
+        )
+
+        reset_confd()
+
+        # Answer another call
+        self.calld.switchboard_answer_queued_call(switchboard_uuid, queued_call.id_(), token)
+
+        # Assert wazo-confd was called
         until.assert_(confd_cache_refresh_triggered, timeout=5, message='switchboard confd cache was not refreshed')
 
 

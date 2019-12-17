@@ -52,6 +52,13 @@ class ConfdClientGetUUIDCacheDecorator:
         return response
 
 
+class ConfdClientGetIDCacheDecorator(ConfdClientGetUUIDCacheDecorator):
+
+    def _on_entry_changed(self, event_body):
+        id = event_body['id']
+        self.invalidate_cache_entry(id)
+
+
 class ConfdClientUserLineGetCacheDecorator(ConfdClientGetUUIDCacheDecorator):
 
     def subscribe(self, bus_consumer):

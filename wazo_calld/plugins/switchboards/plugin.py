@@ -6,6 +6,7 @@ from wazo_confd_client import Client as ConfdClient
 from wazo_calld.ari_ import DEFAULT_APPLICATION_NAME
 
 from .confd_client_cache import (
+    ConfdClientGetIDCacheDecorator,
     ConfdClientGetUUIDCacheDecorator,
     ConfdClientUserLineGetCacheDecorator,
 )
@@ -34,7 +35,7 @@ class Plugin:
         confd_client = ConfdClient(**config['confd'])
         switchboard_get_cache = ConfdClientGetUUIDCacheDecorator(confd_client.switchboards.get, resource_name='switchboard')
         confd_client.switchboards.get = switchboard_get_cache
-        line_get_cache = ConfdClientGetUUIDCacheDecorator(confd_client.lines.get, resource_name='line')
+        line_get_cache = ConfdClientGetIDCacheDecorator(confd_client.lines.get, resource_name='line')
         confd_client.lines.get = line_get_cache
         user_line_get_cache = ConfdClientUserLineGetCacheDecorator(confd_client.users.get, resource_name='user')
         confd_client.users.get = user_line_get_cache
