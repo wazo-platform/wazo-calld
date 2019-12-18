@@ -6,7 +6,6 @@ import threading
 
 logger = logging.getLogger(__name__)
 
-
 hashed_args_kwargs_mark = object()  # sentinel for separating args from kwargs
 
 
@@ -31,11 +30,17 @@ class ConfdClientGetUUIDCacheDecorator:
             logger.debug('Removing %s %s from cache', self._resource_name, uuid)
             del self._cache[uuid]
 
+    def _make_key(self, args, kwargs):
+        # See lru_cache code for more details:
+        # https://github.com/python/cpython/blob/051ff526b5dc2c40c4a53d87089740358822edfa/Lib/functools.py#L438
+
+        return args + (hashed_args_kwargs_mark,) + tuple(sorted(kwargs.items()))
+
     def __call__(self, uuid, *args, **kwargs):
-        hashed_args = args + (hashed_args_kwargs_mark,) + tuple(sorted(kwargs.items()))
+        args_key = self._make_key(args, kwargs)
 
         try:
-            response = self._cache[uuid][hashed_args]
+            response = self._cache[uuid][args_key]
         except KeyError:
             pass
         else:
@@ -47,7 +52,7 @@ class ConfdClientGetUUIDCacheDecorator:
         with self._lock:
             logger.debug('Adding %s %s to cache', self._resource_name, uuid)
             self._cache.setdefault(uuid, {})
-            self._cache[uuid][hashed_args] = response
+            self._cache[uuid][args_key] = response
 
         return response
 
