@@ -1,10 +1,13 @@
 # Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+import random
 import unittest
+import uuid
 
 from ari.exceptions import ARINotInStasis
 from hamcrest import (
+    any_of,
     assert_that,
     contains,
     contains_string,
@@ -21,8 +24,12 @@ from hamcrest import (
 from operator import attrgetter
 from xivo_test_helpers import until
 
+from .helpers.ari_ import MockChannel
 from .helpers.auth import MockUserToken
-from .helpers.base import RealAsteriskIntegrationTest
+from .helpers.base import (
+    IntegrationTest,
+    RealAsteriskIntegrationTest,
+)
 from .helpers.constants import VALID_TOKEN, VALID_TENANT
 from .helpers.confd import (
     MockSwitchboard,
@@ -38,6 +45,14 @@ STASIS_APP_QUEUE = 'switchboard_queue'
 UUID_NOT_FOUND = '99999999-9999-9999-9999-999999999999'
 CALL_ID_NOT_FOUND = '99999999.99'
 TENANT_UUID_NOT_FOUND = '99999999-9999-9999-9999-999999999991'
+
+
+def random_uuid(prefix=''):
+    return prefix + str(uuid.uuid4())
+
+
+def random_id():
+    return random.randint(1, 1000000000)
 
 
 class TestSwitchboards(RealAsteriskIntegrationTest):
@@ -86,7 +101,7 @@ class TestSwitchboardCallsQueued(TestSwitchboards):
         assert_that(result.status_code, equal_to(404))
 
     def test_given_no_bridges_then_return_empty_list(self):
-        switchboard_uuid = 'my-switchboard-uuid'
+        switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
 
         calls = self.calld.switchboard_queued_calls(switchboard_uuid)
@@ -94,7 +109,7 @@ class TestSwitchboardCallsQueued(TestSwitchboards):
         assert_that(calls, has_entry('items', empty()))
 
     def test_given_switchboard_in_other_tenant_then_401(self):
-        switchboard_uuid = 'my-switchboard-uuid'
+        switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         switchboard = MockSwitchboard(uuid=switchboard_uuid)
         self.confd.set_switchboards(switchboard)
 
@@ -107,7 +122,7 @@ class TestSwitchboardCallsQueued(TestSwitchboards):
         assert_that(result.status_code, equal_to(401))
 
     def test_given_one_call_hungup_then_return_empty_list(self):
-        switchboard_uuid = 'my-switchboard-uuid'
+        switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         new_channel = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
@@ -122,7 +137,7 @@ class TestSwitchboardCallsQueued(TestSwitchboards):
         assert_that(calls, has_entry('items', empty()))
 
     def test_given_two_call_in_queue_then_list_two_calls(self):
-        switchboard_uuid = 'my-switchboard-uuid'
+        switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         new_channel_1 = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
@@ -154,7 +169,7 @@ class TestSwitchboardCallsQueued(TestSwitchboards):
             actual_call_ids = [call['id'] for call in calls['items']]
             assert_that(actual_call_ids, contains_inanyorder(*expected_call_ids))
 
-        switchboard_uuid = 'my-switchboard-uuid'
+        switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         new_channel_1 = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
@@ -174,7 +189,7 @@ class TestSwitchboardCallsQueued(TestSwitchboards):
         until.assert_(calls_are_queued, new_channel_2.id, tries=3)
 
     def test_given_no_calls_when_new_queued_call_then_bus_event(self):
-        switchboard_uuid = 'my-switchboard-uuid'
+        switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         routing_key = 'switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid)
         bus_events = self.bus.accumulator(routing_key)
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
@@ -201,7 +216,7 @@ class TestSwitchboardCallsQueued(TestSwitchboards):
         until.assert_(event_received, tries=3)
 
     def test_given_one_call_queued_when_hangup_then_bus_event(self):
-        switchboard_uuid = 'my-switchboard-uuid'
+        switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         routing_key = 'switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid)
         bus_events = self.bus.accumulator(routing_key)
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
@@ -239,7 +254,7 @@ class TestSwitchboardCallsQueued(TestSwitchboards):
         until.assert_(event_received, tries=3)
 
     def test_given_calld_stopped_and_queued_is_hung_up_when_calld_starts_then_bus_event(self):
-        switchboard_uuid = 'my-switchboard-uuid'
+        switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         routing_key = 'switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid)
         bus_events = self.bus.accumulator(routing_key)
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
@@ -296,9 +311,9 @@ class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
         assert_that(result.status_code, equal_to(503))
 
     def test_given_no_switchboard_when_answer_then_404(self):
-        token = 'my-token'
-        user_uuid = 'my-user-uuid'
-        line_id = 'my-line-id'
+        token = random_uuid(prefix='my-token-')
+        user_uuid = random_uuid(prefix='my-user-uuid-')
+        line_id = random_id()
         self.auth.set_token(MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT))
         switchboard_uuid = UUID_NOT_FOUND
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
@@ -317,9 +332,9 @@ class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
         assert_that(result.json()['message'].lower(), contains_string('switchboard'))
 
     def test_given_no_queued_call_when_answer_then_404(self):
-        token = 'my-token'
-        user_uuid = 'my-user-uuid'
-        line_id = 'my-line-id'
+        token = random_uuid(prefix='my-token-')
+        user_uuid = random_uuid(prefix='my-user-uuid-')
+        line_id = random_id()
         self.auth.set_token(MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT))
         switchboard_uuid = 'my-switchboard-uuid'
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
@@ -332,10 +347,10 @@ class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
         assert_that(result.json()['message'].lower(), contains_string('call'))
 
     def test_given_token_with_no_user_when_answer_then_400(self):
-        token = 'my-token'
-        user_uuid = 'my-user-uuid'
+        token = random_uuid(prefix='my-token-')
+        user_uuid = random_uuid(prefix='my-user-uuid-')
         self.auth.set_token(MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT))
-        switchboard_uuid = 'my-switchboard-uuid'
+        switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         bus_events = self.bus.accumulator('switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid))
         new_channel = self.ari.channels.originate(
@@ -352,10 +367,10 @@ class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
         assert_that(result.json()['message'].lower(), contains_string('user'))
 
     def test_given_operator_has_no_line_when_answer_then_400(self):
-        token = 'my-token'
-        user_uuid = 'my-user-uuid'
+        token = random_uuid(prefix='my-token-')
+        user_uuid = random_uuid(prefix='my-user-uuid-')
         self.auth.set_token(MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT))
-        switchboard_uuid = 'my-switchboard-uuid'
+        switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         self.confd.set_users(MockUser(uuid=user_uuid))
         routing_key = 'switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid)
@@ -374,11 +389,11 @@ class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
         assert_that(result.json()['message'].lower(), contains_string('line'))
 
     def test_given_one_queued_call_and_one_operator_when_answer_then_operator_is_bridged(self):
-        token = 'my-token'
-        user_uuid = 'my-user-uuid'
-        line_id = 'my-line-id'
+        token = random_uuid(prefix='my-token-')
+        user_uuid = random_uuid(prefix='my-user-uuid-')
+        line_id = random_id()
         self.auth.set_token(MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT))
-        switchboard_uuid = 'my-switchboard-uuid'
+        switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
         self.confd.set_lines(MockLine(id=line_id, name='switchboard-operator/autoanswer', protocol='test'))
@@ -398,12 +413,12 @@ class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
         until.true(self.channels_are_bridged, operator_channel, new_channel, tries=3)
 
     def test_given_one_queued_call_and_one_operator_when_answer_then_bus_event(self):
-        token = 'my-token'
-        user_uuid = 'my-user-uuid'
-        first_line_id = 1
-        second_line_id = 2
+        token = random_uuid(prefix='my-token-')
+        user_uuid = random_uuid(prefix='my-user-uuid-')
+        first_line_id = random_id()
+        second_line_id = random_id()
         self.auth.set_token(MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT))
-        switchboard_uuid = 'my-switchboard-uuid'
+        switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[first_line_id, second_line_id]))
         self.confd.set_lines(
@@ -446,12 +461,12 @@ class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
         )
 
     def test_given_one_queued_call_and_one_operator_when_answer_with_second_line_then_bus_event(self):
-        token = 'my-token'
-        user_uuid = 'my-user-uuid'
-        first_line_id = 1
-        second_line_id = 2
+        token = random_uuid(prefix='my-token-')
+        user_uuid = random_uuid(prefix='my-user-uuid-')
+        first_line_id = random_id()
+        second_line_id = random_id()
         self.auth.set_token(MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT))
-        switchboard_uuid = 'my-switchboard-uuid'
+        switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[first_line_id, second_line_id]))
         self.confd.set_lines(
@@ -496,13 +511,13 @@ class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
         )
 
     def test_given_one_queued_call_and_one_operator_when_answer_then_caller_id_is_correct_before_and_after_phone_answer(self):
-        token = 'my-token'
-        user_uuid = 'my-user-uuid'
-        line_id = 'my-line-id'
+        token = random_uuid(prefix='my-token-')
+        user_uuid = random_uuid(prefix='my-user-uuid-')
+        line_id = random_id()
         queued_caller_id = '"câller" <1234>'.encode('utf-8')
         operator_caller_id = '"ôperator" <9876>'.encode('utf-8')
         self.auth.set_token(MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT))
-        switchboard_uuid = 'my-switchboard-uuid'
+        switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
         self.confd.set_lines(MockLine(id=line_id, name='switchboard-operator', protocol='test'))
@@ -538,11 +553,11 @@ class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
         )
 
     def test_given_operator_is_answering_a_hungup_channel_when_answer_then_operator_is_hungup(self):
-        token = 'my-token'
-        user_uuid = 'my-user-uuid'
-        line_id = 'my-line-id'
+        token = random_uuid(prefix='my-token-')
+        user_uuid = random_uuid(prefix='my-user-uuid-')
+        line_id = random_id()
         self.auth.set_token(MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT))
-        switchboard_uuid = 'my-switchboard-uuid'
+        switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
         self.confd.set_lines(MockLine(id=line_id, name='switchboard-operator', protocol='test'))
@@ -567,6 +582,117 @@ class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
         until.assert_(operator_is_hungup, tries=3)
 
 
+class TestSwitchboardConfdCache(IntegrationTest):
+
+    asset = 'basic_rest'
+
+    def setUp(self):
+        super().setUp()
+        self.ari.reset()
+        self.confd.reset()
+
+    def test_answer_confd_is_cached(self):
+        token = random_uuid(prefix='my-token-')
+        user_uuid = random_uuid(prefix='my-user-uuid-')
+        line_id = random_id()
+        switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
+
+        def reset_confd():
+            self.confd.reset()
+            self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
+            self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
+            self.confd.set_lines(MockLine(id=line_id, name='switchboard-operator/autoanswer', protocol='test'))
+
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT))
+        reset_confd()
+        queued_call = MockChannel(
+            id=random_uuid(prefix='first-call-'),
+            caller_id_name='Weber',
+            caller_id_number='4185556666',
+            connected_line_name='Denis',
+            connected_line_number='4185557777',
+            creation_time='first-time',
+            state='Up'
+        )
+        self.ari.set_channels(queued_call)
+        self.ari.set_originates(
+            MockChannel(id=random_uuid(prefix='originate-')),
+            MockChannel(id=random_uuid(prefix='originate-')),
+            MockChannel(id=random_uuid(prefix='originate-')),
+            MockChannel(id=random_uuid(prefix='originate-')),
+            MockChannel(id=random_uuid(prefix='originate-')),
+        )
+
+        def confd_cache_refresh_triggered():
+            # Assert wazo-confd was called
+            assert_that(self.confd.requests(), has_entry('requests', any_of(
+                has_item(has_entry('path', contains_string('users'))),
+                has_item(has_entry('path', contains_string('switchboards'))),
+                has_item(has_entry('path', contains_string('lines'))),
+            )))
+
+        # Answer one call: cache wazo-confd answers
+        self.calld.switchboard_answer_queued_call(switchboard_uuid, queued_call.id_(), token)
+
+        reset_confd()
+
+        # Answer another call
+        self.calld.switchboard_answer_queued_call(switchboard_uuid, queued_call.id_(), token)
+
+        # Assert wazo-confd was not called
+        assert_that(self.confd.requests(), has_entry('requests', empty()))
+
+        # Change user config
+        self.bus.send_event(
+            event={
+                'name': 'user_edited',
+                'data': {'uuid': user_uuid},
+            },
+            routing_key='config.user.edited',
+        )
+
+        reset_confd()
+
+        # Answer another call
+        self.calld.switchboard_answer_queued_call(switchboard_uuid, queued_call.id_(), token)
+
+        # Assert wazo-confd was called
+        until.assert_(confd_cache_refresh_triggered, timeout=5, message='switchboard confd cache was not refreshed')
+        # Change switchboard config
+        self.bus.send_event(
+            event={
+                'name': 'switchboard_edited',
+                'data': {'uuid': switchboard_uuid},
+            },
+            routing_key='config.switchboards.{}.edited'.format(switchboard_uuid),
+        )
+
+        reset_confd()
+
+        # Answer another call
+        self.calld.switchboard_answer_queued_call(switchboard_uuid, queued_call.id_(), token)
+
+        # Assert wazo-confd was called
+        until.assert_(confd_cache_refresh_triggered, timeout=5, message='switchboard confd cache was not refreshed')
+
+        # Change line id
+        self.bus.send_event(
+            event={
+                'name': 'line_edited',
+                'data': {'id': line_id},
+            },
+            routing_key='config.line.edited'.format(line_id),
+        )
+
+        reset_confd()
+
+        # Answer another call
+        self.calld.switchboard_answer_queued_call(switchboard_uuid, queued_call.id_(), token)
+
+        # Assert wazo-confd was called
+        until.assert_(confd_cache_refresh_triggered, timeout=5, message='switchboard confd cache was not refreshed')
+
+
 class TestSwitchboardHoldCall(TestSwitchboards):
 
     def test_given_no_confd_when_hold_call_then_503(self):
@@ -578,7 +704,7 @@ class TestSwitchboardHoldCall(TestSwitchboards):
         assert_that(result.status_code, equal_to(503))
 
     def test_given_no_switchboard_when_hold_call_then_404(self):
-        switchboard_uuid = 'my-switchboard-uuid'
+        switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         routing_key = 'switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid)
         queued_bus_events = self.bus.accumulator(routing_key)
@@ -600,7 +726,7 @@ class TestSwitchboardHoldCall(TestSwitchboards):
         assert_that(result.json()['message'].lower(), contains_string('switchboard'))
 
     def test_given_no_call_when_hold_call_then_404(self):
-        switchboard_uuid = 'my-switchboard-uuid'
+        switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         call_id = CALL_ID_NOT_FOUND
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
 
@@ -614,11 +740,11 @@ class TestSwitchboardHoldCall(TestSwitchboards):
         assert_that(result.json()['message'].lower(), contains_string('call'))
 
     def test_given_operator_is_talking_when_hold_call_then_held_call_is_up_and_operator_is_hungup(self):
-        token = 'my-token'
-        user_uuid = 'my-user-uuid'
-        line_id = 'my-line-id'
+        token = random_uuid(prefix='my-token-')
+        user_uuid = random_uuid(prefix='my-user-uuid-')
+        line_id = random_id()
         self.auth.set_token(MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT))
-        switchboard_uuid = 'my-switchboard-uuid'
+        switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
         self.confd.set_lines(MockLine(id=line_id, name='switchboard-operator/autoanswer', protocol='test'))
@@ -646,11 +772,11 @@ class TestSwitchboardHoldCall(TestSwitchboards):
         assert_that(queued_call_id, self.c.is_talking())
 
     def test_given_operator_is_talking_when_hold_call_then_bus_event(self):
-        token = 'my-token'
-        user_uuid = 'my-user-uuid'
-        line_id = 'my-line-id'
+        token = random_uuid(prefix='my-token-')
+        user_uuid = random_uuid(prefix='my-user-uuid-')
+        line_id = random_id()
         self.auth.set_token(MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT))
-        switchboard_uuid = 'my-switchboard-uuid'
+        switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
         self.confd.set_lines(MockLine(id=line_id, name='switchboard-operator/autoanswer', protocol='test'))
@@ -689,11 +815,11 @@ class TestSwitchboardHoldCall(TestSwitchboards):
         until.assert_(event_received, tries=3)
 
     def test_hold_same_call_twice(self):
-        token = 'my-token'
-        user_uuid = 'my-user-uuid'
-        line_id = 'my-line-id'
+        token = random_uuid(prefix='my-token-')
+        user_uuid = random_uuid(prefix='my-user-uuid-')
+        line_id = random_id()
         self.auth.set_token(MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT))
-        switchboard_uuid = 'my-switchboard-uuid'
+        switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
         self.confd.set_lines(MockLine(id=line_id, name='switchboard-operator/autoanswer', protocol='test'))
@@ -742,7 +868,7 @@ class TestSwitchboardCallsHeld(TestSwitchboards):
         assert_that(result.status_code, equal_to(404))
 
     def test_given_switchboard_in_other_tenant_then_401(self):
-        switchboard_uuid = 'my-switchboard-uuid'
+        switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         switchboard = MockSwitchboard(uuid=switchboard_uuid)
         self.confd.set_switchboards(switchboard)
 
@@ -755,7 +881,7 @@ class TestSwitchboardCallsHeld(TestSwitchboards):
         assert_that(result.status_code, equal_to(401))
 
     def test_given_no_bridges_then_return_empty_list(self):
-        switchboard_uuid = 'my-switchboard-uuid'
+        switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
 
         calls = self.calld.switchboard_held_calls(switchboard_uuid)
@@ -763,7 +889,7 @@ class TestSwitchboardCallsHeld(TestSwitchboards):
         assert_that(calls, has_entry('items', empty()))
 
     def test_given_one_call_hungup_then_return_empty_list(self):
-        switchboard_uuid = 'my-switchboard-uuid'
+        switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         routing_key = 'switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid)
         queued_bus_events = self.bus.accumulator(routing_key)
@@ -781,7 +907,7 @@ class TestSwitchboardCallsHeld(TestSwitchboards):
         assert_that(calls, has_entry('items', empty()))
 
     def test_given_two_calls_held_then_list_two_calls(self):
-        switchboard_uuid = 'my-switchboard-uuid'
+        switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         routing_key = 'switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid)
         queued_bus_events = self.bus.accumulator(routing_key)
@@ -818,7 +944,7 @@ class TestSwitchboardCallsHeld(TestSwitchboards):
             actual_call_ids = [call['id'] for call in calls['items']]
             assert_that(actual_call_ids, contains_inanyorder(*expected_call_ids))
 
-        switchboard_uuid = 'my-switchboard-uuid'
+        switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         routing_key = 'switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid)
         queued_bus_events = self.bus.accumulator(routing_key)
@@ -885,7 +1011,7 @@ class TestSwitchboardCallsHeld(TestSwitchboards):
         until.assert_(event_received, tries=3)
 
     def test_given_calld_stopped_and_held_is_hung_up_when_calld_starts_then_bus_event(self):
-        switchboard_uuid = 'my-switchboard-uuid'
+        switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         routing_key = 'switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid)
         queued_bus_events = self.bus.accumulator(routing_key)
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
@@ -939,9 +1065,9 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
         assert_that(result.status_code, equal_to(503))
 
     def test_given_no_switchboard_when_answer_then_404(self):
-        token = 'my-token'
-        user_uuid = 'my-user-uuid'
-        line_id = 'my-line-id'
+        token = random_uuid(prefix='my-token-')
+        user_uuid = random_uuid(prefix='my-user-uuid-')
+        line_id = random_id()
         self.auth.set_token(MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT))
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
         self.confd.set_lines(MockLine(id=line_id, name='switchboard-operator/autoanswer', protocol='test'))
@@ -958,11 +1084,11 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
         assert_that(result.json()['message'].lower(), contains_string('switchboard'))
 
     def test_given_no_held_call_when_answer_then_404(self):
-        token = 'my-token'
-        user_uuid = 'my-user-uuid'
-        line_id = 'my-line-id'
+        token = random_uuid(prefix='my-token-')
+        user_uuid = random_uuid(prefix='my-user-uuid-')
+        line_id = random_id()
         self.auth.set_token(MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT))
-        switchboard_uuid = 'my-switchboard-uuid'
+        switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
         self.confd.set_lines(MockLine(id=line_id, name='switchboard-operator/autoanswer', protocol='test'))
@@ -973,10 +1099,10 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
         assert_that(result.json()['message'].lower(), contains_string('call'))
 
     def test_given_token_with_no_user_when_answer_then_400(self):
-        token = 'my-token'
-        user_uuid = 'my-user-uuid'
+        token = random_uuid(prefix='my-token-')
+        user_uuid = random_uuid(prefix='my-user-uuid-')
         self.auth.set_token(MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT))
-        switchboard_uuid = 'my-switchboard-uuid'
+        switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         routing_key = 'switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid)
         queued_bus_events = self.bus.accumulator(routing_key)
@@ -998,10 +1124,10 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
         assert_that(result.json()['message'].lower(), contains_string('user'))
 
     def test_given_operator_has_no_line_when_answer_then_400(self):
-        token = 'my-token'
-        user_uuid = 'my-user-uuid'
+        token = random_uuid(prefix='my-token-')
+        user_uuid = random_uuid(prefix='my-user-uuid-')
         self.auth.set_token(MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT))
-        switchboard_uuid = 'my-switchboard-uuid'
+        switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         self.confd.set_users(MockUser(uuid=user_uuid))
         routing_key = 'switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid)
@@ -1024,11 +1150,11 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
         assert_that(result.json()['message'].lower(), contains_string('line'))
 
     def test_given_one_held_call_and_one_operator_when_answer_then_operator_is_bridged(self):
-        token = 'my-token'
-        user_uuid = 'my-user-uuid'
-        line_id = 'my-line-id'
+        token = random_uuid(prefix='my-token-')
+        user_uuid = random_uuid(prefix='my-user-uuid-')
+        line_id = random_id()
         self.auth.set_token(MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT))
-        switchboard_uuid = 'my-switchboard-uuid'
+        switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
         self.confd.set_lines(MockLine(id=line_id, name='switchboard-operator/autoanswer', protocol='test'))
@@ -1052,12 +1178,12 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
         until.true(self.channels_are_bridged, operator_channel, new_channel, tries=3)
 
     def test_given_one_held_call_and_one_operator_when_answer_then_bus_event(self):
-        token = 'my-token'
-        user_uuid = 'my-user-uuid'
-        first_line_id = 1
-        second_line_id = 2
+        token = random_uuid(prefix='my-token-')
+        user_uuid = random_uuid(prefix='my-user-uuid-')
+        first_line_id = random_id()
+        second_line_id = random_id()
         self.auth.set_token(MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT))
-        switchboard_uuid = 'my-switchboard-uuid'
+        switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[first_line_id, second_line_id]))
         self.confd.set_lines(
@@ -1103,12 +1229,12 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
         )
 
     def test_given_one_held_call_and_one_operator_when_answer_with_second_line_then_bus_event(self):
-        token = 'my-token'
-        user_uuid = 'my-user-uuid'
-        first_line_id = 1
-        second_line_id = 2
+        token = random_uuid(prefix='my-token-')
+        user_uuid = random_uuid(prefix='my-user-uuid-')
+        first_line_id = random_id()
+        second_line_id = random_id()
         self.auth.set_token(MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT))
-        switchboard_uuid = 'my-switchboard-uuid'
+        switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[first_line_id, second_line_id]))
         self.confd.set_lines(
@@ -1156,13 +1282,13 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
         )
 
     def test_given_one_held_call_and_one_operator_when_answer_then_caller_id_is_correct_before_and_after_phone_answer(self):
-        token = 'my-token'
-        user_uuid = 'my-user-uuid'
-        line_id = 'my-line-id'
+        token = random_uuid(prefix='my-token-')
+        user_uuid = random_uuid(prefix='my-user-uuid-')
+        line_id = random_id()
         held_caller_id = '"câller" <1234>'.encode('utf-8')
         operator_caller_id = '"ôperator" <9876>'.encode('utf-8')
         self.auth.set_token(MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT))
-        switchboard_uuid = 'my-switchboard-uuid'
+        switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
         self.confd.set_lines(MockLine(id=line_id, name='switchboard-operator', protocol='test'))
@@ -1206,11 +1332,11 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
         )
 
     def test_given_operator_is_answering_a_hungup_channel_when_answer_then_operator_is_hungup(self):
-        token = 'my-token'
-        user_uuid = 'my-user-uuid'
-        line_id = 'my-line-id'
+        token = random_uuid(prefix='my-token-')
+        user_uuid = random_uuid(prefix='my-user-uuid-')
+        line_id = random_id()
         self.auth.set_token(MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT))
-        switchboard_uuid = 'my-switchboard-uuid'
+        switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
         self.confd.set_lines(MockLine(id=line_id, name='switchboard-operator', protocol='test'))

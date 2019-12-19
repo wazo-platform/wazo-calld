@@ -5,6 +5,11 @@ from wazo_confd_client import Client as ConfdClient
 
 from wazo_calld.ari_ import DEFAULT_APPLICATION_NAME
 
+from .confd_client_cache import (
+    ConfdClientGetIDCacheDecorator,
+    ConfdClientGetUUIDCacheDecorator,
+    ConfdClientUserLineGetCacheDecorator,
+)
 from .notifier import SwitchboardsNotifier
 from .resources import (
     SwitchboardCallHeldAnswerResource,
@@ -23,10 +28,17 @@ class Plugin:
         api = dependencies['api']
         ari = dependencies['ari']
         bus_publisher = dependencies['bus_publisher']
+        bus_consumer = dependencies['bus_consumer']
         config = dependencies['config']
         token_changed_subscribe = dependencies['token_changed_subscribe']
 
         confd_client = ConfdClient(**config['confd'])
+        switchboard_get_cache = ConfdClientGetUUIDCacheDecorator(confd_client.switchboards.get, resource_name='switchboard')
+        confd_client.switchboards.get = switchboard_get_cache
+        line_get_cache = ConfdClientGetIDCacheDecorator(confd_client.lines.get, resource_name='line')
+        confd_client.lines.get = line_get_cache
+        user_line_get_cache = ConfdClientUserLineGetCacheDecorator(confd_client.users.get, resource_name='user')
+        confd_client.users.get = user_line_get_cache
 
         token_changed_subscribe(confd_client.set_token)
 
@@ -36,6 +48,10 @@ class Plugin:
         ari.register_application(DEFAULT_APPLICATION_NAME)
         switchboards_stasis = SwitchboardsStasis(ari.client, confd_client, switchboards_notifier, switchboards_service)
         switchboards_stasis.subscribe()
+        switchboard_get_cache.subscribe(bus_consumer, events=['switchboard_edited', 'switchboard_deleted'])
+        # line-endpoint association emits line_edited too
+        line_get_cache.subscribe(bus_consumer, events=['line_edited', 'line_deleted'])
+        user_line_get_cache.subscribe(bus_consumer)
 
         api.add_resource(
             SwitchboardCallsQueuedResource,
