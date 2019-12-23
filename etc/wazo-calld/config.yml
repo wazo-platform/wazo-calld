@@ -73,8 +73,6 @@ ari:
   # How many seconds between each try to reconnect to ARI
   reconnection_delay: 10
 
-  # How many times should we try to connect to ARI at startup
-  startup_connection_tries: 10
   # How many seconds between each try to connect to ARI at startup
   startup_connection_delay: 1
 

@@ -71,9 +71,8 @@ class CoreARI:
         self.client = ARIClientProxy(**config['connection'])
 
     def _init_client(self):
-        connection_tries = self.config['startup_connection_tries']
         connection_delay = self.config['startup_connection_delay']
-        for _ in range(connection_tries):
+        while not self._should_stop:
             try:
                 self.client.init()
             except requests.ConnectionError:

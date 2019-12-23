@@ -41,7 +41,6 @@ _DEFAULT_CONFIG = {
             'password': 'opensesame',
         },
         'reconnection_delay': 10,
-        'startup_connection_tries': 10,
         'startup_connection_delay': 1,
     },
     'auth': {
