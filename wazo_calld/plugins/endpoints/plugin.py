@@ -26,7 +26,7 @@ class Plugin:
         notifier = EndpointStatusNotifier(bus_publisher, confd_cache)
 
         status_cache = NotifyingStatusCache(notifier.endpoint_updated, ari.client)
-        endpoints_service = EndpointsService(confd_cache, ari.client, status_cache)
+        endpoints_service = EndpointsService(confd_cache, status_cache)
 
         event_handler = EventHandler(status_cache, confd_cache)
         event_handler.subscribe(bus_consumer)

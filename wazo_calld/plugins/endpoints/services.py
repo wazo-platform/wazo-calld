@@ -221,9 +221,8 @@ class EndpointsService:
         'iax': 'IAX2',
     }
 
-    def __init__(self, confd_cache, ari, status_cache):
+    def __init__(self, confd_cache, status_cache):
         self._confd = confd_cache
-        self._ari = ari
         self.status_cache = status_cache
 
     def list_trunks(self, tenant_uuid):
