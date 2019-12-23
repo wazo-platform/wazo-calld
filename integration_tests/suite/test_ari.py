@@ -3,11 +3,29 @@
 
 import requests
 
-from hamcrest import assert_that
-from hamcrest import contains_string
+from hamcrest import (
+    assert_that,
+    contains_string,
+    equal_to,
+    has_entries,
+)
 from xivo_test_helpers import until
 
+from .helpers.constants import VALID_TOKEN
 from .helpers.base import IntegrationTest
+from .helpers.wait_strategy import CalldUpWaitStrategy
+
+
+class TestNoARI(IntegrationTest):
+
+    asset = 'no_ari'
+    wait_strategy = CalldUpWaitStrategy()
+
+    def test_given_no_ari_then_return_503(self):
+        result = self.calld.get_calls_result(token=VALID_TOKEN)
+
+        assert_that(result.status_code, equal_to(503))
+        assert_that(result.json(), has_entries(error_id='asterisk-ari-not-initialized'))
 
 
 class TestARIReconnection(IntegrationTest):

@@ -13,13 +13,12 @@ import ari
 import requests
 import swaggerpy.http_client
 
-
 from requests.exceptions import HTTPError
 from websocket import WebSocketException
 from xivo.pubsub import Pubsub
 from xivo.status import Status
 
-from .exceptions import ARIUnreachable
+from .exceptions import ARIUnreachable, AsteriskARINotInitialized
 
 logger = logging.getLogger(__name__)
 
@@ -44,12 +43,20 @@ class ARIClientProxy(ari.client.Client):
         self._base_url = base_url
         self._username = username
         self._password = password
+        self._initialized = False
 
     def init(self):
         split = urllib.parse.urlsplit(self._base_url)
         http_client = swaggerpy.http_client.SynchronousHttpClient()
         http_client.set_basic_auth(split.hostname, self._username, self._password)
         super().__init__(self._base_url, http_client)
+        self._initialized = True
+
+    def __getattr__(self, *args, **kwargs):
+        if not self._initialized:
+            raise AsteriskARINotInitialized()
+
+        return super().__getattr__(*args, **kwargs)
 
 
 class CoreARI:
