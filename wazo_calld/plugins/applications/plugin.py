@@ -4,6 +4,7 @@
 from wazo_auth_client import Client as AuthClient
 from wazo_confd_client import Client as ConfdClient
 from wazo_amid_client import Client as AmidClient
+from xivo.pubsub import CallbackCollector
 
 from .caches import ConfdApplicationsCache, MohCache
 from .notifier import ApplicationNotifier
@@ -78,7 +79,11 @@ class Plugin:
             confd_apps_cache,
             moh_cache,
         )
-        next_token_changed_subscribe(stasis.initialize)
+        startup_callback_collector = CallbackCollector()
+        next_token_changed_subscribe(startup_callback_collector.new_source())
+        ari.client_initialized_subscribe(startup_callback_collector.new_source())
+        startup_callback_collector.subscribe(stasis.initialize)
+
         confd_apps_cache.created_subscribe(stasis.add_ari_application)
         confd_apps_cache.updated_subscribe(service.update_destination_node)
         confd_apps_cache.deleted_subscribe(stasis.remove_ari_application)

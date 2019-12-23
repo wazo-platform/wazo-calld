@@ -82,7 +82,7 @@ class ApplicationStasis:
         call = formatter.from_channel(channel)
         self._notifier.call_updated(application_uuid, call)
 
-    def initialize(self, token):
+    def initialize(self):
         self._confd.wait_until_ready()
         applications = self._confd_apps.list()
         self._subscribe(applications)
