@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from wazo_confd_client import Client as ConfdClient
+from xivo.pubsub import CallbackCollector
 
 from .bus import EventHandler
 from .resources import TrunkEndpoints
@@ -27,6 +28,10 @@ class Plugin:
 
         status_cache = NotifyingStatusCache(notifier.endpoint_updated, ari.client)
         endpoints_service = EndpointsService(confd_cache, status_cache)
+
+        startup_callback_collector = CallbackCollector()
+        ari.client_initialized_subscribe(startup_callback_collector.new_source())
+        startup_callback_collector.subscribe(status_cache.initialize)
 
         event_handler = EventHandler(status_cache, confd_cache)
         event_handler.subscribe(bus_consumer)
