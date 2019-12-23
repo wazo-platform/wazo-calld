@@ -4,8 +4,7 @@
 from wazo_auth_client import Client as AuthClient
 from wazo_confd_client import Client as ConfdClient
 from wazo_amid_client import Client as AmidClient
-
-from wazo_calld.ari_ import DEFAULT_APPLICATION_NAME
+from xivo.pubsub import CallbackCollector
 
 from .bus_consume import CallsBusEventHandler
 from .dial_echo import DialEchoManager
@@ -43,9 +42,11 @@ class Plugin:
 
         calls_service = CallsService(amid_client, config['ari']['connection'], ari.client, confd_client, dial_echo_manager)
 
-        ari.register_application(DEFAULT_APPLICATION_NAME)
-        calls_stasis = CallsStasis(ari.client, collectd, bus_publisher, calls_service, config['uuid'], amid_client)
-        calls_stasis.subscribe()
+        calls_stasis = CallsStasis(ari, collectd, bus_publisher, calls_service, config['uuid'], amid_client)
+
+        startup_callback_collector = CallbackCollector()
+        ari.client_initialized_subscribe(startup_callback_collector.new_source())
+        startup_callback_collector.subscribe(calls_stasis.initialize)
 
         calls_bus_event_handler = CallsBusEventHandler(amid_client, ari.client, collectd, bus_publisher, calls_service, config['uuid'], dial_echo_manager)
         calls_bus_event_handler.subscribe(bus_consumer)
