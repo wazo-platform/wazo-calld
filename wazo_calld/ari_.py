@@ -5,11 +5,14 @@ import errno
 import logging
 import socket
 import time
+import urllib
 
 from contextlib import contextmanager
 
 import ari
 import requests
+import swaggerpy.http_client
+
 
 from requests.exceptions import HTTPError
 from websocket import WebSocketException
@@ -35,6 +38,20 @@ def asterisk_is_loading(error):
     return not_found(error) or service_unavailable(error)
 
 
+class ARIClientProxy(ari.client.Client):
+
+    def __init__(self, base_url, username, password):
+        self._base_url = base_url
+        self._username = username
+        self._password = password
+
+    def init(self):
+        split = urllib.parse.urlsplit(self._base_url)
+        http_client = swaggerpy.http_client.SynchronousHttpClient()
+        http_client.set_basic_auth(split.hostname, self._username, self._password)
+        super().__init__(self._base_url, http_client)
+
+
 class CoreARI:
 
     def __init__(self, config):
@@ -44,16 +61,14 @@ class CoreARI:
         self._should_delay_reconnect = True
         self._should_stop = False
         self._pubsub = Pubsub()
-        self.client = self._new_ari_client(
-            config['connection'],
-            config['startup_connection_tries'],
-            config['startup_connection_delay'],
-        )
+        self.client = ARIClientProxy(**config['connection'])
 
-    def _new_ari_client(self, ari_config, connection_tries, connection_delay):
+    def _init_client(self):
+        connection_tries = self.config['startup_connection_tries']
+        connection_delay = self.config['startup_connection_delay']
         for _ in range(connection_tries):
             try:
-                client = ari.connect(**ari_config)
+                self.client.init()
             except requests.ConnectionError:
                 logger.info('No ARI server found, retrying in %s seconds...', connection_delay)
                 time.sleep(connection_delay)
@@ -66,13 +81,12 @@ class CoreARI:
                 else:
                     raise
             self._pubsub.publish('client_initialized', message=None)
-            return client
-        raise ARIUnreachable(ari_config)
+            break
+        else:
+            raise ARIUnreachable(self.config['connection'])
 
     def client_initialized_subscribe(self, callback):
         self._pubsub.subscribe('client_initialized', callback)
-        # TODO REMOVE: only to fake the ari client init async
-        self._pubsub.publish('client_initialized', message=None)
 
     def reload(self):
         self._should_delay_reconnect = False
@@ -80,6 +94,7 @@ class CoreARI:
 
     def run(self):
         if not self._should_stop:
+            self._init_client()
             self._connect()
         while not self._should_stop:
             if self._should_delay_reconnect:
