@@ -1163,7 +1163,11 @@ class TestApplicationSnoop(BaseApplicationTestCase):
             'both',
         ).json()
 
-        result = self.calld.application_delete_snoop(self.app_uuid, snoop_2['uuid'])
+        try:
+            result = self.calld.application_delete_snoop(self.app_uuid, snoop_2['uuid'])
+        except KeyError:
+            print(snoop_2)
+            raise
         assert_that(result, has_properties(status_code=204))
         assert_that(
             self.calld.application_list_snoops(self.app_uuid).json(),
