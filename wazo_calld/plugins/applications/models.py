@@ -5,7 +5,7 @@ from uuid import uuid4
 from requests import HTTPError
 
 from ari.exceptions import ARINotFound
-from wazo_calld.helpers.ari_ import Channel as _ChannelHelper
+from wazo_calld.plugin_helpers.ari_ import Channel as _ChannelHelper
 
 from .exceptions import (
     NoSuchCall,

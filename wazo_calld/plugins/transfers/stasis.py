@@ -11,7 +11,7 @@ from ari.exceptions import ARINotInStasis
 
 from wazo_calld.ari_ import DEFAULT_APPLICATION_NAME
 from wazo_calld.exceptions import WazoAmidError
-from wazo_calld.helpers.ari_ import Channel
+from wazo_calld.plugin_helpers.ari_ import Channel
 
 from . import ari_helpers
 from .event import (

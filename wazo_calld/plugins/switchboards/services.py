@@ -7,8 +7,8 @@ from ari.exceptions import ARINotFound
 
 from xivo.caller_id import assemble_caller_id
 from wazo_calld.ari_ import DEFAULT_APPLICATION_NAME
-from wazo_calld.helpers.confd import User
-from wazo_calld.helpers.exceptions import InvalidUserUUID
+from wazo_calld.plugin_helpers.confd import User
+from wazo_calld.plugin_helpers.exceptions import InvalidUserUUID
 
 from .call import (
     HeldCall,
