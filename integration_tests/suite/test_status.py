@@ -17,6 +17,17 @@ from .helpers.wait_strategy import (
 )
 
 
+class TestStatusNoARI(IntegrationTest):
+
+    asset = 'no_ari'
+    wait_strategy = CalldUpWaitStrategy()
+
+    def test_given_no_ari_when_status_then_ari_fail(self):
+        result = self.calld.status()
+
+        assert_that(result['ari']['status'], equal_to('fail'))
+
+
 class TestStatusARIStops(IntegrationTest):
 
     asset = 'basic_rest'

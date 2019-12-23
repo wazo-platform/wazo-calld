@@ -8,23 +8,6 @@ from hamcrest import contains_string
 from xivo_test_helpers import until
 
 from .helpers.base import IntegrationTest
-from .helpers.wait_strategy import NoWaitStrategy
-
-
-class TestNoARI(IntegrationTest):
-
-    asset = 'no_ari'
-    wait_strategy = NoWaitStrategy()
-
-    def test_given_no_ari_when_calld_starts_then_calld_stops(self):
-        def calld_is_stopped():
-            status = self.service_status()
-            return not status['State']['Running']
-
-        until.true(calld_is_stopped, tries=10, message='wazo-calld did not stop while starting with no ARI')
-
-        log = self.service_logs()
-        assert_that(log, contains_string("ARI server unreachable... stopping"))
 
 
 class TestARIReconnection(IntegrationTest):
