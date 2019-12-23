@@ -998,6 +998,72 @@ class TestApplicationHold(BaseApplicationTestCase):
         )
 
 
+# This test class was extracted from TestApplicationSnoop to reduce log verbosity on zuul
+class TestApplicationSnoopDEBUG(BaseApplicationTestCase):
+
+    def setUp(self):
+        super().setUp()
+        self.app_uuid = self.no_node_app_uuid
+        self.caller_channel = self.call_app(self.no_node_app_uuid)
+        node = self.calld.application_new_node(
+            self.app_uuid,
+            calls=[self.caller_channel.id],
+        ).json()
+        self.answering_channel = self.calld.application_new_node_call(
+            self.app_uuid,
+            node['uuid'],
+            'local',
+            'recipient_autoanswer',
+        )
+
+    def test_delete(self):
+        supervisor_1_channel = self.calld.application_new_call(
+            self.app_uuid,
+            'local',
+            'recipient_autoanswer',
+        ).json()
+        supervisor_2_channel = self.calld.application_new_call(
+            self.app_uuid,
+            'local',
+            'recipient_autoanswer',
+        ).json()
+
+        snoop_1 = self.calld.application_call_snoop(
+            self.app_uuid,
+            self.caller_channel.id,
+            supervisor_1_channel['id'],
+            'both',
+        ).json()
+
+        snoop_2 = self.calld.application_call_snoop(
+            self.app_uuid,
+            self.caller_channel.id,
+            supervisor_2_channel['id'],
+            'both',
+        ).json()
+
+        try:
+            result = self.calld.application_delete_snoop(self.app_uuid, snoop_2['uuid'])
+        except KeyError:
+            print(snoop_2)
+            raise
+        assert_that(result, has_properties(status_code=204))
+        assert_that(
+            self.calld.application_list_snoops(self.app_uuid).json(),
+            has_entries(
+                items=contains_inanyorder(
+                    snoop_1,
+                )
+            )
+        )
+
+        result = self.calld.application_delete_snoop(self.app_uuid, snoop_2['uuid'])
+        assert_that(result, has_properties(status_code=404))
+
+        result = self.calld.application_delete_snoop(self.unknown_uuid, snoop_2['uuid'])
+        assert_that(result, has_properties(status_code=404))
+
+
 class TestApplicationSnoop(BaseApplicationTestCase):
 
     def setUp(self):
@@ -1136,53 +1202,6 @@ class TestApplicationSnoop(BaseApplicationTestCase):
             )
 
         until.assert_(event_received, tries=3)
-
-    def test_delete(self):
-        supervisor_1_channel = self.calld.application_new_call(
-            self.app_uuid,
-            'local',
-            'recipient_autoanswer',
-        ).json()
-        supervisor_2_channel = self.calld.application_new_call(
-            self.app_uuid,
-            'local',
-            'recipient_autoanswer',
-        ).json()
-
-        snoop_1 = self.calld.application_call_snoop(
-            self.app_uuid,
-            self.caller_channel.id,
-            supervisor_1_channel['id'],
-            'both',
-        ).json()
-
-        snoop_2 = self.calld.application_call_snoop(
-            self.app_uuid,
-            self.caller_channel.id,
-            supervisor_2_channel['id'],
-            'both',
-        ).json()
-
-        try:
-            result = self.calld.application_delete_snoop(self.app_uuid, snoop_2['uuid'])
-        except KeyError:
-            print(snoop_2)
-            raise
-        assert_that(result, has_properties(status_code=204))
-        assert_that(
-            self.calld.application_list_snoops(self.app_uuid).json(),
-            has_entries(
-                items=contains_inanyorder(
-                    snoop_1,
-                )
-            )
-        )
-
-        result = self.calld.application_delete_snoop(self.app_uuid, snoop_2['uuid'])
-        assert_that(result, has_properties(status_code=404))
-
-        result = self.calld.application_delete_snoop(self.unknown_uuid, snoop_2['uuid'])
-        assert_that(result, has_properties(status_code=404))
 
     def test_list(self):
         result = self.calld.application_list_snoops(self.app_uuid)
