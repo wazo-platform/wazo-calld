@@ -5,7 +5,7 @@ import base64
 
 from ari.exceptions import ARIHTTPError
 import requests
-from wazo_calld.helpers import confd
+from wazo_calld.plugin_helpers import confd
 
 from .exceptions import (
     NoSuchVoicemailGreeting,

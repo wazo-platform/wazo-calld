@@ -7,9 +7,9 @@ from ari.exceptions import ARINotFound
 from wazo_calld.ari_ import DEFAULT_APPLICATION_NAME
 from wazo_calld.exceptions import InvalidExtension
 from wazo_calld.exceptions import UserPermissionDenied
-from wazo_calld.helpers import ami
-from wazo_calld.helpers.ari_ import Channel
-from wazo_calld.helpers.confd import User
+from wazo_calld.plugin_helpers import ami
+from wazo_calld.plugin_helpers.ari_ import Channel
+from wazo_calld.plugin_helpers.confd import User
 
 from .call import Call
 from .exceptions import CallConnectError

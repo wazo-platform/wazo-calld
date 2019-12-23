@@ -14,7 +14,7 @@ from xivo.mallow.validate import (
     OneOf,
     validate_string_dict,
 )
-from wazo_calld.helpers.mallow import StrictDict
+from wazo_calld.plugin_helpers.mallow import StrictDict
 
 
 class BaseSchema(Schema):

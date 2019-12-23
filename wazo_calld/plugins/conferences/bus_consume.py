@@ -3,7 +3,7 @@
 
 import logging
 
-from wazo_calld.helpers.confd import Conference
+from wazo_calld.plugin_helpers.confd import Conference
 
 from .schemas import participant_schema
 
