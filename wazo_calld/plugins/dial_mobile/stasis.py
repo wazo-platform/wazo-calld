@@ -35,13 +35,17 @@ class DialMobileStasis:
             future_bridge_uuid = args[1]
             self._service.join_bridge(channel_id, future_bridge_uuid)
 
-    def add_ari_application(self):
+    def _add_ari_application(self):
         self._core_ari.register_application(self._app_name)
         self._core_ari.reload()
 
     def channel_destroyed(self, channel, event):
         self._service.notify_channel_gone(event['channel']['id'])
 
-    def subscribe(self):
+    def _subscribe(self):
         self._ari.on_channel_event('StasisStart', self.stasis_start)
         self._ari.on_channel_event('ChannelDestroyed', self.channel_destroyed)
+
+    def initialize(self):
+        self._subscribe()
+        self._add_ari_application()
