@@ -384,6 +384,9 @@ class ApplicationService:
         if not Channel(snooping_call_id, self._ari).is_in_stasis():
             raise CallNotInApplication(application['uuid'], snooping_call_id)
 
+        if not Channel(snooped_call_id, self._ari).is_in_stasis():
+            raise CallNotInApplication(application['uuid'], snooped_call_id)
+
         snoop = self._snoop_helper.create(
             application,
             snooped_call_id,
