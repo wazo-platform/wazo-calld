@@ -10,13 +10,11 @@ from ari.exceptions import ARINotFound
 from ari.exceptions import ARINotInStasis
 from contextlib import contextmanager
 from requests.packages import urllib3
-from wazo_calld_client import Client as RealCalldClient
+from wazo_calld_client import Client as CalldClient
 from xivo_test_helpers import until
 from xivo_test_helpers.asset_launching_test_case import AssetLaunchingTestCase
 from xivo_test_helpers.asset_launching_test_case import NoSuchService
 from xivo_test_helpers.asset_launching_test_case import NoSuchPort
-
-from wazo_calld_client.client import CalldClient
 
 from .amid import AmidClient
 from .ari_ import ARIClient
@@ -122,7 +120,7 @@ class IntegrationTest(AssetLaunchingTestCase):
 
     @classmethod
     def make_calld(cls, token=VALID_TOKEN):
-        return RealCalldClient('localhost', cls.service_port(9500, 'calld'), verify_certificate=False, token=token)
+        return CalldClient('localhost', cls.service_port(9500, 'calld'), verify_certificate=False, token=token)
 
     @classmethod
     @contextmanager
