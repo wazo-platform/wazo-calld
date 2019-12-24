@@ -1,7 +1,21 @@
-# Copyright 2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from wazo_calld.exceptions import APIException
+
+
+class CallNotInApplication(APIException):
+
+    def __init__(self, application_uuid, call_id):
+        super().__init__(
+            status_code=400,
+            message='Call not in application',
+            error_id='call-not-in-application',
+            details={
+                'application_uuid': str(application_uuid),
+                'call_id': str(call_id),
+            }
+        )
 
 
 class CallAlreadyInNode(APIException):

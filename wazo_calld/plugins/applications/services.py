@@ -8,6 +8,7 @@ from requests import HTTPError
 from ari.exceptions import ARINotFound
 from wazo_calld.helpers import ami
 from wazo_calld.helpers import confd
+from wazo_calld.helpers.ari_ import Channel
 from wazo_calld.exceptions import InvalidExtension
 from .models import (
     CallFormatter,
@@ -16,6 +17,7 @@ from .models import (
 )
 from .exceptions import (
     CallAlreadyInNode,
+    CallNotInApplication,
     DeleteDestinationNode,
     NoSuchApplication,
     NoSuchCall,
@@ -379,6 +381,9 @@ class ApplicationService:
         self._notifier.call_initiated(application['uuid'], call)
 
     def snoop_create(self, application, snooped_call_id, snooping_call_id, whisper_mode):
+        if not Channel(snooping_call_id, self._ari).is_in_stasis():
+            raise CallNotInApplication(application['uuid'], snooping_call_id)
+
         snoop = self._snoop_helper.create(
             application,
             snooped_call_id,
