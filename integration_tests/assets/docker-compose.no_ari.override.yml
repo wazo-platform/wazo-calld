@@ -7,4 +7,4 @@ services:
       - calld
       - rabbitmq
     environment:
-      TARGETS: "rabbitmq:5672 confd:9486 auth:9497"
+      TARGETS: "calld:9500 rabbitmq:5672 confd:9486 auth:9497"

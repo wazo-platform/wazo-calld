@@ -22,7 +22,6 @@ class TestApplicationStasisStartHandler(TestCase):
 
     def setUp(self):
         self.ari = Mock()
-        self.confd = Mock()
         self.service = Mock()
         self.notifier = Mock()
         self.confd_apps_cache = Mock()
@@ -30,7 +29,6 @@ class TestApplicationStasisStartHandler(TestCase):
 
         self.app = ApplicationStasis(
             self.ari,
-            self.confd,
             self.service,
             self.notifier,
             self.confd_apps_cache,
