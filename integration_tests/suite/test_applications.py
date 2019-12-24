@@ -14,6 +14,7 @@ from hamcrest import (
 )
 from xivo_test_helpers import until
 from xivo_test_helpers.hamcrest.uuid_ import uuid_
+
 from .helpers.base import RealAsteriskIntegrationTest
 from .helpers.confd import MockApplication, MockUser, MockMoh
 from .helpers.wait_strategy import CalldEverythingOkWaitStrategy, NoWaitStrategy
@@ -375,6 +376,12 @@ class TestApplication(BaseApplicationTestCase):
         response = self.calld.get_application(self.no_node_app_uuid)
 
         assert_that(response, has_properties(status_code=404))
+
+    def test_given_no_confd_when_node_app_then_return_503(self):
+        with self.confd_stopped():
+            self._restart_calld()
+            response = self.calld.get_application(self.node_app_uuid)
+            assert_that(response, has_properties(status_code=503))
 
     def test_delete_call(self):
         channel = self.call_app(self.node_app_uuid)

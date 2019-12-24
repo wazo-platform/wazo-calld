@@ -18,6 +18,16 @@ class CallNotInApplication(APIException):
         )
 
 
+class WazoConfdUnreachable(APIException):
+
+    def __init__(self):
+        super().__init__(
+            status_code=503,
+            message='wazo-confd server unreachable',
+            error_id='wazo-confd-unreachable',
+        )
+
+
 class CallAlreadyInNode(APIException):
 
     def __init__(self, application_uuid, node_uuid, call_id):

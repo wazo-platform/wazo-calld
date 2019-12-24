@@ -32,9 +32,8 @@ class AppNameHelper:
 
 class ApplicationStasis:
 
-    def __init__(self, ari, confd, service, notifier, confd_apps, moh):
+    def __init__(self, ari, service, notifier, confd_apps, moh):
         self._ari = ari.client
-        self._confd = confd
         self._confd_apps = confd_apps
         self._moh = moh
         self._core_ari = ari
@@ -83,7 +82,6 @@ class ApplicationStasis:
         self._notifier.call_updated(application_uuid, call)
 
     def initialize(self):
-        self._confd.wait_until_ready()
         applications = self._confd_apps.list()
         self._subscribe(applications)
         self._register_applications(applications)

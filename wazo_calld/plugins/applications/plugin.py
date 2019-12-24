@@ -6,7 +6,7 @@ from wazo_confd_client import Client as ConfdClient
 from wazo_amid_client import Client as AmidClient
 from xivo.pubsub import CallbackCollector
 
-from .caches import ConfdApplicationsCache, MohCache
+from .caches import ConfdApplicationsCache, MohCache, ConfdIsReadyThread
 from .notifier import ApplicationNotifier
 from .resources import (
     ApplicationCallAnswer,
@@ -47,6 +47,7 @@ class Plugin:
         config = dependencies['config']
         token_changed_subscribe = dependencies['token_changed_subscribe']
         next_token_changed_subscribe = dependencies['next_token_changed_subscribe']
+        pubsub = dependencies['pubsub']
 
         auth_client = AuthClient(**config['auth'])
         confd_client = ConfdClient(**config['confd'])
@@ -73,20 +74,24 @@ class Plugin:
 
         stasis = ApplicationStasis(
             ari,
-            confd_client,
             service,
             notifier,
             confd_apps_cache,
             moh_cache,
         )
+        confd_is_ready_thread = ConfdIsReadyThread(confd_client)
         startup_callback_collector = CallbackCollector()
         next_token_changed_subscribe(startup_callback_collector.new_source())
         ari.client_initialized_subscribe(startup_callback_collector.new_source())
+        confd_is_ready_thread.subscribe(startup_callback_collector.new_source())
         startup_callback_collector.subscribe(stasis.initialize)
 
         confd_apps_cache.created_subscribe(stasis.add_ari_application)
         confd_apps_cache.updated_subscribe(service.update_destination_node)
         confd_apps_cache.deleted_subscribe(stasis.remove_ari_application)
+
+        confd_is_ready_thread.start()
+        pubsub.subscribe('stopping', lambda _: confd_is_ready_thread.stop())
 
         api.add_resource(
             ApplicationItem,
