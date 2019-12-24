@@ -1,67 +1,90 @@
-events:
-  switchboard_queued_calls_updated:
-    summary: Update of the list of queued calls in a switchboard
-    description: Sent when a call is queued, hung up while in queue or answered
-    routing_key: switchboards.{switchboard_uuid}.calls.queued.updated
-    required_acl: switchboards.{switchboard_uuid}.calls.queued.updated
-    schema:
+asyncapi: '2.0.0'
+id: 'urn:wazo:wazo-calld'
+info:
+  title: wazo-calld events
+  version: '1.0.0'
+channels:
+  switchboards.{switchboard_uuid}.calls.queued.updated:
+    publish:
+      message:
+        $ref: '#/components/messages/switchboard_queued_calls_updated'
+  switchboards.{switchboard_uuid}.calls.queued.{call_id}.answer.updated:
+    publish:
+      message:
+        $ref: '#/components/messages/switchboard_queued_call_answered'
+  switchboards.{switchboard_uuid}.calls.held.updated:
+    publish:
+      message:
+        $ref: '#/components/messages/switchboard_held_calls_updated'
+  switchboards.{switchboard_uuid}.calls.held.{call_id}.answer.updated:
+    publish:
+      message:
+        $ref: '#/components/messages/switchboard_held_call_answered'
+
+components:
+  messages:
+    switchboard_queued_calls_updated:
+      summary: Update of the list of queued calls in a switchboard.
+      description: "Sent when a call is queued, hung up while in queue or answered. Required ACL: `switchboards.{switchboard_uuid}.calls.queued.updated`"
+      tags:
+        - switchboards
+        - calls
+      payload:
+        $ref: '#/components/schemas/switchboard-call-list'
+    switchboard_queued_call_answered:
+      summary: A call queued in a switchboard has been answered by a member
+      description: "The event is sent when the queued call is bridged, not when the answer action is requested. Required ACL: `switchboards.{switchboard_uuid}.calls.queued.{call_id}.answer.updated`"
+      tags:
+        - switchboards
+        - calls
+      payload:
+        $ref: '#/components/schemas/switchboard-call-operation'
+    switchboard_held_calls_updated:
+      summary: Update of the list of held calls in a switchboard.
+      description: "Sent when a call is held, hung up while in queue or answered. Required ACL: `switchboards.{switchboard_uuid}.calls.held.updated`"
+      tags:
+        - switchboards
+        - calls
+      payload:
+        $ref: '#/components/schemas/switchboard-call-list'
+    switchboard_held_call_answered:
+      summary: A call held in a switchboard has been answered by a member
+      description: "The event is sent when the held call is bridged, not when the answer action is requested. Required ACL: `switchboards.{switchboard_uuid}.calls.held.{call_id}.answer.updated`"
+      tags:
+        - switchboards
+        - calls
+      payload:
+        $ref: '#/components/schemas/switchboard-call-operation'
+
+  schemas:
+    switchboard-call-list:
       type: object
       properties:
         items:
           type: array
           items:
-            type: object
-            properties:
-              id:
-                type: string
-              caller_id_name:
-                type: string
-              caller_id_number:
-                type: string
-  switchboard_queued_call_answered:
-    summary: A call queued in a switchboard has been answered by a member
-    description: The event is sent when the queued call is bridged, not when the answer action is requested
-    routing_key: switchboards.{switchboard_uuid}.calls.queued.{call_id}.answer.updated
-    required_acl: switchboards.{switchboard_uuid}.calls.queued.{call_id}.answer.updated
-    schema:
+            $ref: '#/components/schemas/switchboard-call'
+    switchboard-call:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The call ID
+        caller_id_name:
+          type: string
+          description: The caller ID name of the caller
+        caller_id_number:
+          type: string
+          description: The caller ID number of the caller
+    switchboard-call-operation:
       type: object
       properties:
         switchboard_uuid:
           type: string
+          description: The switchboard UUID
         operator_call_id:
           type: string
+          description: The switchboard operator call ID
         caller_call_id:
           type: string
-  switchboard_held_calls_updated:
-    summary: Update of the list of held calls in a switchboard
-    description: Sent when a call is held, hung up while on hold or answered
-    routing_key: switchboards.{switchboard_uuid}.calls.held.updated
-    required_acl: switchboards.{switchboard_uuid}.calls.held.updated
-    schema:
-      type: object
-      properties:
-        items:
-          type: array
-          items:
-            type: object
-            properties:
-              id:
-                type: string
-              caller_id_name:
-                type: string
-              caller_id_number:
-                type: string
-  switchboard_held_call_answered:
-    summary: A call held in a switchboard has been answered by a member
-    description: The event is sent when the held call is bridged, not when the answer action is requested
-    routing_key: switchboards.{switchboard_uuid}.calls.held.{call_id}.answer.updated
-    required_acl: switchboards.{switchboard_uuid}.calls.held.{call_id}.answer.updated
-    schema:
-      type: object
-      properties:
-        switchboard_uuid:
-          type: string
-        operator_call_id:
-          type: string
-        caller_call_id:
-          type: string
+          description: The call ID of the caller
