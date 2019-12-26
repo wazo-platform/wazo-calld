@@ -12,8 +12,8 @@ from hamcrest import (
 from mock import Mock
 from unittest import TestCase
 
-from wazo_calld.exceptions import WazoConfdUnreachable
 from ..confd import Line
+from ..exceptions import WazoConfdUnreachable
 
 
 class TestLine(TestCase):

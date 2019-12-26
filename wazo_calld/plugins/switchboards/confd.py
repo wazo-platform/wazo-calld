@@ -4,8 +4,8 @@
 from requests import HTTPError
 from requests import RequestException
 
-from wazo_calld.exceptions import WazoConfdUnreachable
 from wazo_calld.plugin_helpers.confd import not_found
+from wazo_calld.plugin_helpers.exceptions import WazoConfdUnreachable
 
 
 class Switchboard:
