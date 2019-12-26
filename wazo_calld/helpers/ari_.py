@@ -1,6 +1,7 @@
 # Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+import time
 import json
 
 from ari.exceptions import ARINotFound, ARINotInStasis
@@ -201,6 +202,14 @@ class Channel:
             return self._get_var('CHANNEL(pjsip,call-id)')
         except ARINotFound:
             return
+
+    def wait_until_in_stasis(self, retry=20, delay=0.1):
+        for _ in range(retry):
+            if self.is_in_stasis():
+                return
+            time.sleep(delay)
+
+        raise Exception('call failed to enter stasis')
 
     def _get_var(self, var):
         return self._ari.channels.getChannelVar(channelId=self.id, variable=var)['value']

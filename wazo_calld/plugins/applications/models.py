@@ -180,15 +180,15 @@ class _Snoop:
         except ARINotFound:
             raise NoSuchCall(self.snooped_call_id)
 
+        _ChannelHelper(snoop_channel.id, ari).wait_until_in_stasis()
+
         snoop_channel.setChannelVar(
             variable=self._whisper_mode_chan_var,
             value=whisper_mode,
-            bypassStasis=True,
         )
         snoop_channel.setChannelVar(
             variable=self._snooped_call_id_chan_var,
             value=self.snooped_call_id,
-            bypassStasis=True,
         )
         self.whisper_mode = whisper_mode
 
