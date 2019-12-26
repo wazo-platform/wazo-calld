@@ -112,6 +112,22 @@ class NoSuchVoicemail(APIException):
         )
 
 
+class WazoAmidError(APIException):
+
+    def __init__(self, wazo_amid_client, error):
+        super().__init__(
+            status_code=503,
+            message='wazo-amid request error',
+            error_id='wazo-amid-error',
+            details={
+                'wazo_amid_config': {'host': wazo_amid_client.host,
+                                     'port': wazo_amid_client.port,
+                                     'timeout': wazo_amid_client.timeout},
+                'original_error': str(error),
+            }
+        )
+
+
 class WazoConfdUnreachable(APIException):
 
     def __init__(self, confd_client, error):

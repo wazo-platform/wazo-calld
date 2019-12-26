@@ -10,9 +10,9 @@ from ari.exceptions import (
     ARINotFound,
 )
 from wazo_calld.ari_ import DEFAULT_APPLICATION_NAME
-from wazo_calld.exceptions import WazoAmidError
 from wazo_calld.plugin_helpers import ami
 from wazo_calld.plugin_helpers.ari_ import Channel
+from wazo_calld.plugin_helpers.exceptions import WazoAmidError
 
 from .exceptions import (
     RelocateCreationError,

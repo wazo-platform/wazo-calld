@@ -8,7 +8,7 @@ from marshmallow import ValidationError
 from requests import RequestException
 from wazo_calld.plugin_helpers.confd import Conference
 from wazo_calld.plugin_helpers.ari_ import Channel
-from wazo_calld.exceptions import (
+from wazo_calld.plugin_helpers.exceptions import (
     WazoAmidError,
 )
 
