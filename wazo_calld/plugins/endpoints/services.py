@@ -6,7 +6,7 @@ import copy
 import threading
 from contextlib import contextmanager
 
-from wazo_calld.exceptions import CalldUninitializedError
+from wazo_calld.plugin_helpers.exceptions import CalldUninitializedError
 
 logger = logging.getLogger(__name__)
 

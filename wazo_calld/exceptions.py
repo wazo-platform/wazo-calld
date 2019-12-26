@@ -11,16 +11,6 @@ logger = logging.getLogger(__name__)
 APIException = rest_api_helpers.APIException
 
 
-class CalldUninitializedError(APIException):
-
-    def __init__(self):
-        super().__init__(
-            status_code=503,
-            message='wazo-calld is not ready to handle this request',
-            error_id='wazo-calld-uninitialized',
-        )
-
-
 class ARIUnreachable(Exception):
 
     def __init__(self, ari_config, original_error=None):

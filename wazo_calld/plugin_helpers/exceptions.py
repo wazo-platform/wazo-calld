@@ -4,6 +4,16 @@
 from wazo_calld.exceptions import APIException
 
 
+class CalldUninitializedError(APIException):
+
+    def __init__(self):
+        super().__init__(
+            status_code=503,
+            message='wazo-calld is not ready to handle this request',
+            error_id='wazo-calld-uninitialized',
+        )
+
+
 class TooManyChannels(Exception):
     def __init__(self, channels):
         self.channels = channels
