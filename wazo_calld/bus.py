@@ -17,38 +17,6 @@ from xivo_bus import PublishingQueue
 
 logger = logging.getLogger(__name__)
 
-ROUTING_KEY_MAPPING = {
-    'line_endpoint_sip_associated': 'config.lines.*.endpoints.sip.*.updated',
-    'line_endpoint_sip_dissociated': 'config.lines.*.endpoints.sip.*.deleted',
-    'line_endpoint_sccp_associated': 'config.lines.*.endpoints.sccp.*.updated',
-    'line_endpoint_sccp_dissociated': 'config.lines.*.endpoints.sccp.*.deleted',
-    'line_endpoint_custom_associated': 'config.lines.*.endpoints.custom.*.updated',
-    'line_endpoint_custom_dissociated': 'config.lines.*.endpoints.custom.*.deleted',
-    'trunk_endpoint_sip_associated': 'config.trunks.*.endpoints.sip.*.updated',
-    'trunk_endpoint_iax_associated': 'config.trunks.*.endpoints.iax.*.updated',
-    'trunk_endpoint_custom_associated': 'config.trunks.*.endpoints.custom.*.updated',
-    'trunk_endpoint_sip_dissociated': 'config.trunks.*.endpoints.sip.*.deleted',
-    'trunk_endpoint_iax_dissociated': 'config.trunks.*.endpoints.iax.*.deleted',
-    'trunk_endpoint_custom_dissociated': 'config.trunks.*.endpoints.custom.*.deleted',
-    'trunk_deleted': 'config.trunk.deleted',
-    'sip_endpoint_updated': 'config.sip_endpoint.updated',
-    'iax_endpoint_updated': 'config.iax_endpoint.updated',
-    'custom_endpoint_updated': 'config.custom_endpoint.updated',
-    'application_created': 'config.applications.created',
-    'application_deleted': 'config.applications.deleted',
-    'application_edited': 'config.applications.edited',
-    'line_deleted': 'config.line.deleted',
-    'line_edited': 'config.line.edited',
-    'moh_created': 'config.moh.created',
-    'moh_deleted': 'config.moh.deleted',
-    'switchboard_deleted': 'config.switchboards.*.deleted',
-    'switchboard_edited': 'config.switchboards.*.edited',
-    'user_deleted': 'config.user.deleted',
-    'user_edited': 'config.user.edited',
-    'user_line_associated': 'config.users.*.lines.*.updated',
-    'user_line_dissociated': 'config.users.*.lines.*.deleted',
-}
-
 
 class CoreBusPublisher:
 
@@ -65,7 +33,7 @@ class CoreBusPublisher:
     def _make_publisher(self):
         bus_url = 'amqp://{username}:{password}@{host}:{port}//'.format(**self.config)
         bus_connection = Connection(bus_url)
-        bus_exchange = Exchange(self.config['exchange_name'], type=self.config['exchange_type'])
+        bus_exchange = Exchange(self.config['publish_exchange_name'], type=self.config['publish_exchange_type'])
         bus_producer = Producer(bus_connection, exchange=bus_exchange, auto_declare=True)
         bus_marshaler = Marshaler(self._uuid)
         return Publisher(bus_producer, bus_marshaler)
@@ -84,8 +52,8 @@ class CoreBusConsumer(ConsumerMixin):
         self._events_pubsub = Pubsub()
 
         self._bus_url = 'amqp://{username}:{password}@{host}:{port}//'.format(**global_config['bus'])
-        self._exchange = Exchange(global_config['bus']['exchange_name'],
-                                  type=global_config['bus']['exchange_type'])
+        self._exchange = Exchange(global_config['bus']['subscribe_exchange_name'],
+                                  type=global_config['bus']['subscribe_exchange_type'])
         self._queue = kombu.Queue(exclusive=True)
         self._is_running = False
 
@@ -116,14 +84,12 @@ class CoreBusConsumer(ConsumerMixin):
         status['bus_consumer']['status'] = Status.ok if self.is_running() else Status.fail
 
     def on_ami_event(self, event_type, callback):
-        logger.debug('Added callback on AMI event "%s"', event_type)
-        self._queue.bindings.add(binding(self._exchange, routing_key='ami.{}'.format(event_type)))
-        self._events_pubsub.subscribe(event_type, callback)
+        self.on_event(event_type, callback)
 
     def on_event(self, event_name, callback):
         logger.debug('Added callback on event "%s"', event_name)
         self._queue.bindings.add(
-            kombu.binding(self._exchange, routing_key=ROUTING_KEY_MAPPING[event_name])
+            kombu.binding(self._exchange, arguments={'x-match': 'all', 'name': event_name})
         )
         self._events_pubsub.subscribe(event_name, callback)
 

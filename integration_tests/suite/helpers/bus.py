@@ -12,6 +12,7 @@ from xivo_test_helpers import bus as bus_helper
 
 from .constants import BUS_QUEUE_NAME
 from .constants import BUS_EXCHANGE_XIVO
+from .constants import BUS_EXCHANGE_HEADERS
 
 
 class BusClient(bus_helper.BusClient):
@@ -48,8 +49,8 @@ class BusClient(bus_helper.BusClient):
 
     def send_event(self, event, routing_key):
         with Connection(self._url) as connection:
-            producer = Producer(connection, exchange=BUS_EXCHANGE_XIVO, auto_declare=True)
-            producer.publish(json.dumps(event), routing_key=routing_key, content_type='application/json')
+            producer = Producer(connection, exchange=BUS_EXCHANGE_HEADERS, auto_declare=True)
+            producer.publish(json.dumps(event), headers={'name': event['name']}, content_type='application/json')
 
     def send_ami_newchannel_event(self, channel_id, channel=None):
         self.send_event({

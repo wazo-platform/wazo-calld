@@ -55,12 +55,14 @@ bus:
   password: guest
   host: localhost
   port: 5672
-  exchange_name: xivo
-  exchange_type: topic
+  publish_exchange_name: xivo
+  publish_exchange_type: topic
+  subscribe_exchange_name: wazo-headers
+  subscribe_exchange_type: headers
 
 # Event bus exchange for collectd (statistics)
 collectd:
-  exchange_name: collectd
+  publish_exchange_name: collectd
 
 # Asterisk ARI connection informations
 ari:

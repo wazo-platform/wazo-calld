@@ -1,4 +1,4 @@
-# Copyright (C) 2015-2016 Avencall
+# Copyright 2015-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -31,8 +31,8 @@ class CoreCollectd:
         bus_url = 'amqp://{username}:{password}@{host}:{port}//'.format(**self.config)
         bus_connection = Connection(bus_url)
         same_exchange_arguments_as_collectd = {'arguments': {'auto_delete': True}, 'durable': False}
-        bus_exchange = Exchange(self.config['exchange_name'],
-                                type=self.config['exchange_type'],
+        bus_exchange = Exchange(self.config['subscribe_exchange_name'],
+                                type=self.config['subscribe_exchange_type'],
                                 **same_exchange_arguments_as_collectd)
         bus_producer = Producer(bus_connection, exchange=bus_exchange, auto_declare=True)
         bus_marshaler = CollectdMarshaler(self._uuid)

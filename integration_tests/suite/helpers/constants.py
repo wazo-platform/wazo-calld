@@ -9,6 +9,7 @@ INVALID_ACL_TOKEN = 'invalid-acl-token'
 VALID_TOKEN = 'valid-token'
 VALID_TENANT = 'ffffffff-ffff-ffff-ffff-ffffffffffff'
 BUS_EXCHANGE_XIVO = Exchange('xivo', type='topic')
+BUS_EXCHANGE_HEADERS = Exchange('wazo-headers', type='headers')
 BUS_EXCHANGE_COLLECTD = Exchange('collectd', type='topic', durable=False)
 BUS_URL = 'amqp://guest:guest@localhost:5672//'
 BUS_QUEUE_NAME = 'integration'
