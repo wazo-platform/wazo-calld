@@ -37,14 +37,6 @@ class LegacyCalldClient:
         path = '/'.join(str(part) for part in parts)
         return self._url_tpl.format(host=self._host, port=self._port, path=path)
 
-    def application_call_moh_start(self, application_uuid, call_id, moh_uuid, token=VALID_TOKEN):
-        url = self.url('applications', application_uuid, 'calls', call_id, 'moh', moh_uuid, 'start')
-        return requests.put(url, headers=self._headers(token=token), verify=False)
-
-    def application_call_moh_stop(self, application_uuid, call_id, token=VALID_TOKEN):
-        url = self.url('applications', application_uuid, 'calls', call_id, 'moh', 'stop')
-        return requests.put(url, headers=self._headers(token=token), verify=False)
-
     def application_call_mute_start(self, application_uuid, call_id, token=VALID_TOKEN):
         url = self.url('applications', application_uuid, 'calls', call_id, 'mute', 'start')
         return requests.put(url, headers=self._headers(token=token), verify=False)

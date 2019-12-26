@@ -1429,14 +1429,16 @@ class TestApplicationMoh(BaseApplicationTestCase):
         ]
 
         for param in params:
-            result = self.calld.application_call_moh_start(*param)
-            assert_that(result, has_properties(status_code=404), param)
+            assert_that(
+                calling(self.calld_client.applications.start_moh).with_args(*param),
+                raises(CalldError).matching(has_properties(status_code=404)),
+            )
 
     def test_put_moh_stop_fail(self):
         app_uuid = self.no_node_app_uuid
         channel = self.call_app(self.no_node_app_uuid)
         unrelated_channel = self.call_app(self.node_app_uuid)
-        self.calld.application_call_moh_start(app_uuid, channel.id, self.moh_uuid)
+        self.calld_client.applications.start_moh(app_uuid, channel.id, self.moh_uuid)
 
         params = [
             (self.unknown_uuid, channel.id),
@@ -1444,8 +1446,10 @@ class TestApplicationMoh(BaseApplicationTestCase):
         ]
 
         for param in params:
-            result = self.calld.application_call_moh_stop(*param)
-            assert_that(result, has_properties(status_code=404), param)
+            assert_that(
+                calling(self.calld_client.applications.stop_moh).with_args(*param),
+                raises(CalldError).matching(has_properties(status_code=404)),
+            )
 
     def test_put_moh_start_success(self):
         app_uuid = self.no_node_app_uuid
@@ -1454,8 +1458,7 @@ class TestApplicationMoh(BaseApplicationTestCase):
         routing_key = 'applications.{uuid}.#'.format(uuid=app_uuid)
         event_accumulator = self.bus.accumulator(routing_key)
 
-        response = self.calld.application_call_moh_start(app_uuid, channel.id, self.moh_uuid)
-        assert_that(response, has_properties(status_code=204))
+        self.calld_client.applications.start_moh(app_uuid, channel.id, self.moh_uuid)
 
         def music_on_hold_started_event_received():
             events = event_accumulator.accumulate()
@@ -1495,9 +1498,8 @@ class TestApplicationMoh(BaseApplicationTestCase):
         routing_key = 'applications.{uuid}.#'.format(uuid=app_uuid)
         event_accumulator = self.bus.accumulator(routing_key)
 
-        self.calld.application_call_moh_start(app_uuid, channel.id, self.moh_uuid)
-        response = self.calld.application_call_moh_stop(app_uuid, channel.id)
-        assert_that(response, has_properties(status_code=204))
+        self.calld_client.applications.start_moh(app_uuid, channel.id, self.moh_uuid)
+        self.calld_client.applications.stop_moh(app_uuid, channel.id)
 
         def call_updated_event_received():
             events = event_accumulator.accumulate()
@@ -1551,8 +1553,7 @@ class TestApplicationMoh(BaseApplicationTestCase):
         routing_key = 'applications.{uuid}.#'.format(uuid=app_uuid)
         event_accumulator = self.bus.accumulator(routing_key)
 
-        response = self.calld.application_call_moh_start(app_uuid, channel.id, moh_uuid)
-        assert_that(response, has_properties(status_code=204))
+        self.calld_client.applications.start_moh(app_uuid, channel.id, moh_uuid)
 
         def music_on_hold_started_event_received():
             events = event_accumulator.accumulate()
@@ -1569,12 +1570,19 @@ class TestApplicationMoh(BaseApplicationTestCase):
         self._hitting_moh_cache(app_uuid, channel.id)
         self.bus.send_moh_deleted_event(self.moh_uuid)
 
-        response = self.calld.application_call_moh_start(app_uuid, channel.id, self.moh_uuid)
-        assert_that(response, has_properties(status_code=404))
+        assert_that(
+            calling(self.calld_client.applications.start_moh).with_args(
+                app_uuid, channel.id, self.moh_uuid
+            ),
+            raises(CalldError).matching(has_properties(status_code=404))
+        )
 
     def _hitting_moh_cache(self, app_uuid, channel_id):
         random = '00000000-0000-0000-0000-000000000000'
-        self.calld.application_call_moh_start(app_uuid, channel_id, random)
+        try:
+            self.calld_client.applications.start_moh(app_uuid, channel_id, random)
+        except CalldError:
+            pass
 
 
 class TestApplicationPlayback(BaseApplicationTestCase):
