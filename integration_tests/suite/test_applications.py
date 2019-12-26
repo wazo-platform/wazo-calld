@@ -1412,7 +1412,7 @@ class TestApplicationMoh(BaseApplicationTestCase):
         ]
 
         for param in params:
-            result = self.calld.application_call_moh_start(*params)
+            result = self.calld.application_call_moh_start(*param)
             assert_that(result, has_properties(status_code=404), param)
 
     def test_put_moh_stop_fail(self):
@@ -1427,7 +1427,7 @@ class TestApplicationMoh(BaseApplicationTestCase):
         ]
 
         for param in params:
-            result = self.calld.application_call_moh_stop(*params)
+            result = self.calld.application_call_moh_stop(*param)
             assert_that(result, has_properties(status_code=404), param)
 
     def test_put_moh_start_success(self):
@@ -1553,7 +1553,7 @@ class TestApplicationMoh(BaseApplicationTestCase):
         self.bus.send_moh_deleted_event(self.moh_uuid)
 
         response = self.calld.application_call_moh_start(app_uuid, channel.id, self.moh_uuid)
-        assert_that(response, has_properties(status_code=400))
+        assert_that(response, has_properties(status_code=404))
 
     def _hitting_moh_cache(self, app_uuid, channel_id):
         random = '00000000-0000-0000-0000-000000000000'
