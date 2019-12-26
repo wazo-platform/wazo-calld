@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
+import time
 
 from uuid import uuid4
 from requests import HTTPError
@@ -10,6 +11,7 @@ from ari.exceptions import ARINotFound
 from wazo_calld.helpers.ari_ import Channel as _ChannelHelper
 
 from .exceptions import (
+    CallNotInApplication,
     NoSuchCall,
     NoSuchSnoop,
 )
@@ -170,13 +172,16 @@ class _Snoop:
             raise
 
     def update_snoop_channel(self, snoop_channel):
+        logger.debug('updating the snoop channel from %s to %s', self._snoop_channel, snoop_channel)
         old_snoop_channel = self._snoop_channel
         self._snoop_channel = snoop_channel
+        logger.debug('adding the new snoop channel %s', self._snoop_channel)
         self._bridge.addChannel(channel=self._snoop_channel.id)
         if old_snoop_channel:
             old_snoop_channel.hangup()
 
     def new_snoop_channel(self, ari, whisper_mode):
+        logger.debug('Creating new snoop channel')
         try:
             snoop_channel = ari.channels.snoopChannel(
                 channelId=self.snooped_call_id,
@@ -199,7 +204,15 @@ class _Snoop:
         )
         self.whisper_mode = whisper_mode
 
-        return snoop_channel
+        for _ in range(10):
+            logger.debug('Waiting for the snoop channel to enter stasis')
+            if _ChannelHelper(snoop_channel.id, ari).is_in_stasis():
+                return snoop_channel
+            logger.debug('not in stasis yet.')
+            time.sleep(0.1)
+
+        logger.error('Snoop channel failed to enter stasis')
+        raise CallNotInApplication(self.application, snoop_channel.id)
 
     def destroy(self):
         if self._bridge:
