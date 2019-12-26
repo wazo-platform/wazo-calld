@@ -3,6 +3,7 @@
 
 from hamcrest import (
     assert_that,
+    calling,
     contains,
     contains_inanyorder,
     empty,
@@ -12,8 +13,10 @@ from hamcrest import (
     has_length,
     has_properties,
 )
+from wazo_calld_client.exceptions import CalldError
 from xivo_test_helpers import until
 from xivo_test_helpers.hamcrest.uuid_ import uuid_
+from xivo_test_helpers.hamcrest.raises import raises
 
 from .helpers.base import RealAsteriskIntegrationTest
 from .helpers.confd import MockApplication, MockUser, MockMoh
@@ -904,14 +907,21 @@ class TestApplicationHold(BaseApplicationTestCase):
         routing_key = 'applications.{uuid}.#'.format(uuid=app_uuid)
         event_accumulator = self.bus.accumulator(routing_key)
 
-        response = self.calld.application_call_hold_start(self.unknown_uuid, channel.id)
-        assert_that(response, has_properties(status_code=404))
+        assert_that(
+            calling(self.calld_client.applications.start_hold).with_args(
+                self.unknown_uuid, channel.id
+            ),
+            raises(CalldError).matching(has_properties(status_code=404))
+        )
 
-        response = self.calld.application_call_hold_start(app_uuid, other_channel.id)
-        assert_that(response, has_properties(status_code=404))
+        assert_that(
+            calling(self.calld_client.applications.start_hold).with_args(
+                app_uuid, other_channel.id
+            ),
+            raises(CalldError).matching(has_properties(status_code=404))
+        )
 
-        response = self.calld.application_call_hold_start(app_uuid, channel.id)
-        assert_that(response, has_properties(status_code=204))
+        self.calld_client.applications.start_hold(app_uuid, channel.id)
 
         def event_received():
             events = event_accumulator.accumulate()
@@ -949,13 +959,21 @@ class TestApplicationHold(BaseApplicationTestCase):
         channel = self.call_app(self.no_node_app_uuid)
         other_channel = self.call_app(self.node_app_uuid)
 
-        response = self.calld.application_call_hold_stop(self.unknown_uuid, channel.id)
-        assert_that(response, has_properties(status_code=404))
+        assert_that(
+            calling(self.calld_client.applications.stop_hold).with_args(
+                self.unknown_uuid, channel.id
+            ),
+            raises(CalldError).matching(has_properties(status_code=404))
+        )
 
-        response = self.calld.application_call_hold_stop(app_uuid, other_channel.id)
-        assert_that(response, has_properties(status_code=404))
+        assert_that(
+            calling(self.calld_client.applications.stop_hold).with_args(
+                app_uuid, other_channel.id
+            ),
+            raises(CalldError).matching(has_properties(status_code=404))
+        )
 
-        self.calld.application_call_hold_start(app_uuid, channel.id)
+        self.calld_client.applications.start_hold(app_uuid, channel.id)
 
         def call_held():
             response = self.calld.get_application_calls(app_uuid)
@@ -970,8 +988,7 @@ class TestApplicationHold(BaseApplicationTestCase):
         routing_key = 'applications.{uuid}.#'.format(uuid=app_uuid)
         event_accumulator = self.bus.accumulator(routing_key)
 
-        response = self.calld.application_call_hold_stop(app_uuid, channel.id)
-        assert_that(response, has_properties(status_code=204))
+        self.calld_client.applications.stop_hold(app_uuid, channel.id)
 
         def event_received():
             events = event_accumulator.accumulate()
