@@ -138,19 +138,6 @@ class WazoConfdUnreachable(APIException):
         )
 
 
-class UserPermissionDenied(APIException):
-
-    def __init__(self, user_uuid, details):
-        details = dict(details)
-        details['user'] = user_uuid
-        super().__init__(
-            status_code=403,
-            message='User does not have permission to handle objects of other users',
-            error_id='user-permission-denied',
-            details=details
-        )
-
-
 class InvalidExtension(APIException):
 
     def __init__(self, context, exten):
