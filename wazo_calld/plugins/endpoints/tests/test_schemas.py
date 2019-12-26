@@ -8,7 +8,7 @@ from hamcrest import (
     has_entries,
 )
 
-from ..schema import trunk_endpoint_schema
+from ..schemas import trunk_endpoint_schema
 
 
 class TestTrunkEndpointSchema(TestCase):

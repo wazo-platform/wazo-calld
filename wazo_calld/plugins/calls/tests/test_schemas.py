@@ -8,7 +8,7 @@ from hamcrest import (
 from unittest import TestCase
 
 from ..call import Call
-from ..schema import CallSchema
+from ..schemas import CallSchema
 
 
 class Testclassname(TestCase):

@@ -8,7 +8,7 @@ from hamcrest import (
 )
 
 from ..models import _Snoop
-from ..schema import ApplicationSnoopSchema
+from ..schemas import ApplicationSnoopSchema
 
 
 class TestApplicationSnoopSchema(TestCase):

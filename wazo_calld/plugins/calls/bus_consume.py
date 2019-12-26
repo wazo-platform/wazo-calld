@@ -13,7 +13,7 @@ from xivo_bus.resources.common.event import ArbitraryEvent
 from wazo_calld.plugin_helpers import ami
 from wazo_calld.plugin_helpers.ari_ import Channel
 
-from .schema import call_schema
+from .schemas import call_schema
 
 logger = logging.getLogger(__name__)
 

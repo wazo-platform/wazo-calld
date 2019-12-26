@@ -9,9 +9,9 @@ from wazo_calld.auth import required_acl
 from wazo_calld.auth import get_token_user_uuid_from_request
 from wazo_calld.http import AuthResource
 
-from .schema import call_schema
-from .schema import CallRequestSchema
-from .schema import UserCallRequestSchema
+from .schemas import call_schema
+from .schemas import CallRequestSchema
+from .schemas import UserCallRequestSchema
 
 logger = logging.getLogger(__name__)
 
