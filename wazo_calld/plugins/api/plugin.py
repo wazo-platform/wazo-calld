@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 
-from .resources import SwaggerResource
+from .http import SwaggerResource
 
 
 class Plugin:

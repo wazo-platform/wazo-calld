@@ -11,7 +11,7 @@ from .confd_client_cache import (
     ConfdClientUserLineGetCacheDecorator,
 )
 from .notifier import SwitchboardsNotifier
-from .resources import (
+from .http import (
     SwitchboardCallHeldAnswerResource,
     SwitchboardCallHeldResource,
     SwitchboardCallQueuedAnswerResource,

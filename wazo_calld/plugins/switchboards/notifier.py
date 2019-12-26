@@ -6,7 +6,7 @@ import logging
 from xivo.permission import escape as escape_permission
 from xivo_bus.resources.common.routing_key import escape as escape_routing_key
 from xivo_bus.resources.common.event import ArbitraryEvent
-from .resources import (
+from .http import (
     held_call_schema,
     queued_call_schema,
 )
