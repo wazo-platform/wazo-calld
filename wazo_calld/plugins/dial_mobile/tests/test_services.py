@@ -17,7 +17,7 @@ from hamcrest import (
 
 from ari.exceptions import ARINotFound
 
-from ..service import _PollingContactDialer as PollingContactDialer
+from ..services import _PollingContactDialer as PollingContactDialer
 
 
 class DialerTestCase(TestCase):
