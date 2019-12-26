@@ -44,7 +44,7 @@ services:
     ports:
       - 8500
     volumes:
-      - ./consul:/usr/local/share/consul
+      - ./consul_data:/usr/local/share/consul
     command: python /usr/local/share/consul/mock-consul.py 8500
 
   calld:
