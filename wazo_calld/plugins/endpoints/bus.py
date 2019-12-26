@@ -12,10 +12,10 @@ class EventHandler:
         self._confd_cache = confd_cache
 
     def subscribe(self, consumer):
-        consumer.on_ami_event('Hangup', self.on_hangup)
-        consumer.on_ami_event('Newchannel', self.on_new_channel)
-        consumer.on_ami_event('PeerStatus', self.on_peer_status)
-        consumer.on_ami_event('Registry', self.on_registry)
+        consumer.on_event('Hangup', self.on_hangup)
+        consumer.on_event('Newchannel', self.on_new_channel)
+        consumer.on_event('PeerStatus', self.on_peer_status)
+        consumer.on_event('Registry', self.on_registry)
         consumer.on_event('custom_endpoint_updated', self.on_endpoint_custom_updated)
         consumer.on_event('iax_endpoint_updated', self.on_trunk_endpoint_iax_updated)
         consumer.on_event('line_edited', self.on_line_edited)

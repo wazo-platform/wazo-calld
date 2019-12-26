@@ -83,9 +83,6 @@ class CoreBusConsumer(ConsumerMixin):
     def provide_status(self, status):
         status['bus_consumer']['status'] = Status.ok if self.is_running() else Status.fail
 
-    def on_ami_event(self, event_type, callback):
-        self.on_event(event_type, callback)
-
     def on_event(self, event_name, callback):
         logger.debug('Added callback on event "%s"', event_name)
         self._queue.bindings.add(

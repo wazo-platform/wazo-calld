@@ -14,7 +14,7 @@ class FaxesBusEventHandler:
         self._notifier = notifier
 
     def subscribe(self, bus_consumer):
-        bus_consumer.on_ami_event('UserEvent', self._fax_result)
+        bus_consumer.on_event('UserEvent', self._fax_result)
 
     def _fax_result(self, event):
         if event['UserEvent'] != 'FaxProgress':

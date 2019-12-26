@@ -32,18 +32,18 @@ class CallsBusEventHandler:
         self.notifier = notifier
 
     def subscribe(self, bus_consumer):
-        bus_consumer.on_ami_event('Newchannel', self._add_sip_call_id)
-        bus_consumer.on_ami_event('Newchannel', self._relay_channel_created)
-        bus_consumer.on_ami_event('Newchannel', self._collectd_channel_created)
-        bus_consumer.on_ami_event('Newstate', self._relay_channel_updated)
-        bus_consumer.on_ami_event('Newstate', self._relay_channel_answered)
-        bus_consumer.on_ami_event('NewConnectedLine', self._relay_channel_updated)
-        bus_consumer.on_ami_event('Hold', self._channel_hold)
-        bus_consumer.on_ami_event('Unhold', self._channel_unhold)
-        bus_consumer.on_ami_event('Hangup', self._relay_channel_hung_up)
-        bus_consumer.on_ami_event('Hangup', self._collectd_channel_ended)
-        bus_consumer.on_ami_event('UserEvent', self._set_dial_echo_result)
-        bus_consumer.on_ami_event('DTMFEnd', self._relay_dtmf)
+        bus_consumer.on_event('Newchannel', self._add_sip_call_id)
+        bus_consumer.on_event('Newchannel', self._relay_channel_created)
+        bus_consumer.on_event('Newchannel', self._collectd_channel_created)
+        bus_consumer.on_event('Newstate', self._relay_channel_updated)
+        bus_consumer.on_event('Newstate', self._relay_channel_answered)
+        bus_consumer.on_event('NewConnectedLine', self._relay_channel_updated)
+        bus_consumer.on_event('Hold', self._channel_hold)
+        bus_consumer.on_event('Unhold', self._channel_unhold)
+        bus_consumer.on_event('Hangup', self._relay_channel_hung_up)
+        bus_consumer.on_event('Hangup', self._collectd_channel_ended)
+        bus_consumer.on_event('UserEvent', self._set_dial_echo_result)
+        bus_consumer.on_event('DTMFEnd', self._relay_dtmf)
 
     def _add_sip_call_id(self, event):
         channel_id = event['Uniqueid']

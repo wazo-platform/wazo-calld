@@ -23,7 +23,7 @@ class VoicemailsBusEventHandler:
         self._voicemail_cache = voicemail_cache
 
     def subscribe(self, bus_consumer):
-        bus_consumer.on_ami_event('MessageWaiting', self._voicemail_updated)
+        bus_consumer.on_event('MessageWaiting', self._voicemail_updated)
 
     def _voicemail_updated(self, event):
         number, context = event['Mailbox'].split('@', 1)
