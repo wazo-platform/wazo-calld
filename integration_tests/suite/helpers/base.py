@@ -92,9 +92,7 @@ class IntegrationTest(AssetLaunchingTestCase):
             logger.debug(e)
             cls.calld = WrongClient('calld')
         try:
-            cls.calld_client = CalldClient('localhost', cls.service_port(9500, 'calld'),
-                                           verify_certificate=False)
-            cls.calld_client.set_token(VALID_TOKEN)
+            cls.calld_client = cls.make_calld(token=VALID_TOKEN)
         except (NoSuchService, NoSuchPort) as e:
             logger.debug(e)
             cls.calld_client = WrongClient('calld-client')
