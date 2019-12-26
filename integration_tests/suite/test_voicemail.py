@@ -29,11 +29,11 @@ from .helpers.hamcrest_ import HamcrestARIChannel
 
 
 VALID_GREETINGS = ('busy', 'unavailable', 'name')
-wave_file = os.path.join(ASSET_ROOT, 'bugs_29.wav')
+wave_file = os.path.join(ASSET_ROOT, 'voicemail_greetings', 'bunny_29.wav')
 with open(wave_file, 'rb') as f:
     WAVE_DATA_1 = f.read()
 
-wave_file = os.path.join(ASSET_ROOT, 'bugs_07.wav')
+wave_file = os.path.join(ASSET_ROOT, 'voicemail_greetings', 'bunny_07.wav')
 with open(wave_file, 'rb') as f:
     WAVE_DATA_2 = f.read()
 
