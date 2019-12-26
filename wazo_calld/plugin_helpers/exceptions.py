@@ -45,6 +45,20 @@ class UserPermissionDenied(APIException):
         )
 
 
+class InvalidExtension(APIException):
+
+    def __init__(self, context, exten):
+        super().__init__(
+            status_code=400,
+            message='Invalid extension',
+            error_id='invalid-extension',
+            details={
+                'context': context,
+                'exten': exten,
+            }
+        )
+
+
 class InvalidUserUUID(APIException):
 
     def __init__(self, user_uuid):

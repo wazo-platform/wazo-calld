@@ -10,7 +10,7 @@ from tempfile import mkstemp
 
 from wazo_calld.plugin_helpers import ami
 from wazo_calld.plugin_helpers.confd import User
-from wazo_calld.exceptions import InvalidExtension
+from wazo_calld.plugin_helpers.exceptions import InvalidExtension
 
 from .exceptions import FaxFailure
 
