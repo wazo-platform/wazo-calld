@@ -10,7 +10,6 @@ from ari.exceptions import ARINotFound
 from ari.exceptions import ARINotInStasis
 from contextlib import contextmanager
 from requests.packages import urllib3
-from wazo_calld_client import Client as CalldClient
 from xivo_test_helpers import until
 from xivo_test_helpers.asset_launching_test_case import AssetLaunchingTestCase
 from xivo_test_helpers.asset_launching_test_case import NoSuchService
@@ -23,7 +22,7 @@ from .bus import BusClient
 from .chan_test import ChanTest
 from .confd import ConfdClient
 from .constants import ASSET_ROOT, VALID_TOKEN
-from .calld import CalldClient as LegacyCalldClient
+from .calld import LegacyCalldClient, CalldClient
 from .stasis import StasisClient
 from .wait_strategy import CalldEverythingOkWaitStrategy
 
@@ -140,7 +139,7 @@ class IntegrationTest(AssetLaunchingTestCase):
     def _start_calld(cls):
         cls.start_service('calld')
         cls.reset_clients()
-        until.true(cls.calld.is_up, tries=5)
+        until.true(cls.calld_client.is_up, tries=5)
 
     @classmethod
     @contextmanager

@@ -8,10 +8,24 @@ import time
 from contextlib import contextmanager
 from hamcrest import assert_that, equal_to
 
+from wazo_calld_client import Client
+
 from .constants import VALID_TOKEN
 
 
-class CalldClient:
+class CalldClient(Client):
+
+    def is_up(self):
+        try:
+            self.status.get()
+        except requests.RequestException:
+            return False
+        except requests.HTTPError:
+            return True
+        return True
+
+
+class LegacyCalldClient:
 
     _url_tpl = 'https://{host}:{port}/1.0/{path}'
 
@@ -22,14 +36,6 @@ class CalldClient:
     def url(self, *parts):
         path = '/'.join(str(part) for part in parts)
         return self._url_tpl.format(host=self._host, port=self._port, path=path)
-
-    def is_up(self):
-        url = self.url()
-        try:
-            response = requests.get(url, verify=False)
-            return response.status_code == 404
-        except requests.RequestException:
-            return False
 
     def application_call_hold_start(self, application_uuid, call_id, token=VALID_TOKEN):
         url = self.url('applications', application_uuid, 'calls', call_id, 'hold', 'start')
