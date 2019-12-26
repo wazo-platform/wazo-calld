@@ -36,7 +36,7 @@ services:
       - "./etc/asterisk/modules.conf:/etc/asterisk/modules.conf"
       - "./etc/asterisk/musiconhold.conf:/etc/asterisk/musiconhold.conf"
       - "./ssl:/usr/local/share/ssl"
-    command: "asterisk -fT"
+    command: "asterisk -fTn"
 
   calld:
     volumes:
