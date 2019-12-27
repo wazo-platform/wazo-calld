@@ -20,6 +20,10 @@ class EventHandler:
         consumer.on_event('trunk_endpoint_sip_associated', self.on_trunk_endpoint_sip_associated)
         consumer.on_event('trunk_endpoint_iax_associated', self.on_trunk_endpoint_iax_associated)
         consumer.on_event(
+            'line_endpoint_custom_associated',
+            self.on_line_endpoint_custom_associated,
+        )
+        consumer.on_event(
             'trunk_endpoint_custom_associated',
             self.on_trunk_endpoint_custom_associated,
         )
@@ -93,6 +97,15 @@ class EventHandler:
             event['endpoint_iax']['name'],
             None,
             event['trunk']['tenant_uuid'],
+        )
+
+    def on_line_endpoint_custom_associated(self, event):
+        self._confd_cache.add_line(
+            'custom',
+            event['line']['id'],
+            event['endpoint_custom']['interface'],
+            None,
+            event['line']['tenant_uuid'],
         )
 
     def on_trunk_endpoint_custom_associated(self, event):

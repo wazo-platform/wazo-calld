@@ -244,6 +244,29 @@ class TestOnPeerStatus(TestCase):
             'iax', trunk_id, name, None, tenant_uuid,
         )
 
+    def test_on_line_endpoint_custom_associated(self):
+        line_id = 42
+        tenant_uuid = '2c34c282-433e-4bb8-8d56-fec14ff7e1e9'
+        interface = 'interface'
+
+        event = {
+            'endpoint_custom': {
+                'id': 45,
+                'interface': interface,
+                'tenant_uuid': tenant_uuid,
+            },
+            'line': {
+                'id': line_id,
+                'tenant_uuid': tenant_uuid,
+            },
+        }
+
+        self.handler.on_line_endpoint_custom_associated(event)
+
+        self.confd_cache.add_line.assert_called_once_with(
+            'custom', line_id, interface, None, tenant_uuid,
+        )
+
     def test_on_trunk_endpoint_custom_associated(self):
         trunk_id = 42
         tenant_uuid = '2c34c282-433e-4bb8-8d56-fec14ff7e1e9'
