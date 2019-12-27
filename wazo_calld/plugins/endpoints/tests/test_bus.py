@@ -337,6 +337,14 @@ class TestOnPeerStatus(TestCase):
 
         self.confd_cache.delete_trunk.assert_called_once_with(trunk_id)
 
+    def test_on_line_endpoint_custom_dissociated(self):
+        line_id = 42
+        event = {'line': {'id': line_id}}
+
+        self.handler.on_line_endpoint_dissociated(event)
+
+        self.confd_cache.delete_line.assert_called_once_with(line_id)
+
     def test_on_trunk_endpoint_custom_dissociated(self):
         trunk_id = 42
         event = {'trunk': {'id': trunk_id}}

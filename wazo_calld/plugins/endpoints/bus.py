@@ -16,25 +16,20 @@ class EventHandler:
         consumer.on_ami_event('Newchannel', self.on_new_channel)
         consumer.on_ami_event('PeerStatus', self.on_peer_status)
         consumer.on_ami_event('Registry', self.on_registry)
-        consumer.on_event('line_endpoint_sip_associated', self.on_line_endpoint_sip_associated)
-        consumer.on_event('trunk_endpoint_sip_associated', self.on_trunk_endpoint_sip_associated)
-        consumer.on_event('trunk_endpoint_iax_associated', self.on_trunk_endpoint_iax_associated)
-        consumer.on_event(
-            'line_endpoint_custom_associated',
-            self.on_line_endpoint_custom_associated,
-        )
-        consumer.on_event(
-            'trunk_endpoint_custom_associated',
-            self.on_trunk_endpoint_custom_associated,
-        )
-        consumer.on_event('line_endpoint_sip_dissociated', self.on_line_endpoint_dissociated)
-        consumer.on_event('trunk_endpoint_sip_dissociated', self.on_trunk_endpoint_dissociated)
-        consumer.on_event('trunk_endpoint_iax_dissociated', self.on_trunk_endpoint_dissociated)
-        consumer.on_event('trunk_endpoint_custom_dissociated', self.on_trunk_endpoint_dissociated)
-        consumer.on_event('trunk_deleted', self.on_trunk_endpoint_deleted)
-        consumer.on_event('sip_endpoint_updated', self.on_trunk_endpoint_sip_updated)
-        consumer.on_event('iax_endpoint_updated', self.on_trunk_endpoint_iax_updated)
         consumer.on_event('custom_endpoint_updated', self.on_trunk_endpoint_custom_updated)
+        consumer.on_event('iax_endpoint_updated', self.on_trunk_endpoint_iax_updated)
+        consumer.on_event('line_endpoint_custom_associated', self.on_line_endpoint_custom_associated)
+        consumer.on_event('line_endpoint_custom_dissociated', self.on_line_endpoint_dissociated)
+        consumer.on_event('line_endpoint_sip_associated', self.on_line_endpoint_sip_associated)
+        consumer.on_event('line_endpoint_sip_dissociated', self.on_line_endpoint_dissociated)
+        consumer.on_event('sip_endpoint_updated', self.on_trunk_endpoint_sip_updated)
+        consumer.on_event('trunk_deleted', self.on_trunk_endpoint_deleted)
+        consumer.on_event('trunk_endpoint_custom_associated', self.on_trunk_endpoint_custom_associated)
+        consumer.on_event('trunk_endpoint_custom_dissociated', self.on_trunk_endpoint_dissociated)
+        consumer.on_event('trunk_endpoint_iax_associated', self.on_trunk_endpoint_iax_associated)
+        consumer.on_event('trunk_endpoint_iax_dissociated', self.on_trunk_endpoint_dissociated)
+        consumer.on_event('trunk_endpoint_sip_associated', self.on_trunk_endpoint_sip_associated)
+        consumer.on_event('trunk_endpoint_sip_dissociated', self.on_trunk_endpoint_dissociated)
 
     def on_hangup(self, event):
         techno, name = self._techno_name_from_channel(event['Channel'])
