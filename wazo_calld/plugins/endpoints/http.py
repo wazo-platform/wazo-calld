@@ -21,8 +21,8 @@ class LineEndpoints(AuthResource):
         items, total, filtered = self._endpoints_service.list_lines(tenant_uuid)
         result = {
             'items': line_endpoint_schema.dump(items, many=True),
-            'total': 0,
-            'filtered': 0,
+            'total': total,
+            'filtered': filtered,
         }
 
         return result, 200
