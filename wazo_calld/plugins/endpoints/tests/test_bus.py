@@ -10,7 +10,7 @@ from ..bus import EventHandler
 from ..services import Endpoint, ConfdCache
 
 
-class TestOnPeerStatus(TestCase):
+class TestBusEvent(TestCase):
     def setUp(self):
         endpoint = self.updated_endpoint = Mock(Endpoint)
 
@@ -375,7 +375,23 @@ class TestOnPeerStatus(TestCase):
 
         self.confd_cache.delete_trunk.assert_called_once_with(42)
 
-    def test_on_endpoint_sip_updated(self):
+    def test_on_line_endpoint_sip_updated(self):
+        event = {
+            'id': s.endpoint_id,
+            'name': s.name,
+            'tenant_uuid': s.tenant_uuid,
+            'username': s.username,
+            'trunk': None,
+            'line': {'id': s.line_id},
+        }
+
+        self.handler.on_endpoint_sip_updated(event)
+
+        self.confd_cache.update_line.assert_called_once_with(
+            'sip', s.line_id, s.name, s.username, s.tenant_uuid,
+        )
+
+    def test_on_trunk_endpoint_sip_updated(self):
         event = {
             'id': s.endpoint_id,
             'name': s.name,
@@ -385,7 +401,7 @@ class TestOnPeerStatus(TestCase):
             'line': None,
         }
 
-        self.handler.on_trunk_endpoint_sip_updated(event)
+        self.handler.on_endpoint_sip_updated(event)
 
         self.confd_cache.update_trunk.assert_called_once_with(
             'sip', s.trunk_id, s.name, s.username, s.tenant_uuid,
@@ -431,7 +447,7 @@ class TestOnPeerStatus(TestCase):
             'line': {'id': s.line_id},
         }
 
-        self.handler.on_trunk_endpoint_sip_updated(event)
+        self.handler.on_endpoint_sip_updated(event)
 
         self.confd_cache.update_trunk.assert_not_called()
 

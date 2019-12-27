@@ -180,6 +180,9 @@ class ConfdCache:
                 results.append(trunk)
         return results
 
+    def update_line(self, techno, trunk_id, name, username, tenant_uuid):
+        pass
+
     def update_trunk(self, techno, trunk_id, name, username, tenant_uuid):
         self.delete_trunk(trunk_id)
         self.add_trunk(techno, trunk_id, name, username, tenant_uuid)
