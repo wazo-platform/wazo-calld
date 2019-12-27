@@ -23,7 +23,7 @@ class EventHandler:
         consumer.on_event('line_endpoint_custom_associated', self.on_line_endpoint_custom_associated)
         consumer.on_event('line_endpoint_custom_dissociated', self.on_line_endpoint_dissociated)
         consumer.on_event('line_endpoint_sccp_associated', self.on_line_endpoint_sccp_associated)
-        consumer.on_event('line_endpoint_sccp_dissociated', self.on_line_endpoint_sccp_dissociated)
+        consumer.on_event('line_endpoint_sccp_dissociated', self.on_line_endpoint_dissociated)
         consumer.on_event('line_endpoint_sip_associated', self.on_line_endpoint_sip_associated)
         consumer.on_event('line_endpoint_sip_dissociated', self.on_line_endpoint_dissociated)
         consumer.on_event('sip_endpoint_updated', self.on_endpoint_sip_updated)
