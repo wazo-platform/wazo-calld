@@ -375,6 +375,33 @@ class TestBusEvent(TestCase):
 
         self.confd_cache.delete_trunk.assert_called_once_with(42)
 
+    def test_on_line_updated(self):
+        event = {
+            'id': s.line_id,
+            'name': s.name,
+            'protocol': 'sccp',
+            'tenant_uuid': s.tenant_uuid,
+        }
+
+        self.handler.on_line_updated(event)
+
+        self.confd_cache.update_line.assert_called_once_with(
+            'sccp', s.line_id, s.name, None, s.tenant_uuid,
+        )
+
+        self.confd_cache.update_line.reset_mock()
+
+        event = {
+            'id': s.line_id,
+            'name': s.name,
+            'protocol': 'sip',
+            'tenant_uuid': s.tenant_uuid,
+        }
+
+        self.handler.on_line_updated(event)
+
+        self.confd_cache.update_line.assert_not_called()
+
     def test_on_line_endpoint_sip_updated(self):
         event = {
             'id': s.endpoint_id,
