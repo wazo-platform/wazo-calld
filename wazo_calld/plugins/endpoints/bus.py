@@ -16,7 +16,7 @@ class EventHandler:
         consumer.on_ami_event('Newchannel', self.on_new_channel)
         consumer.on_ami_event('PeerStatus', self.on_peer_status)
         consumer.on_ami_event('Registry', self.on_registry)
-        consumer.on_event('custom_endpoint_updated', self.on_trunk_endpoint_custom_updated)
+        consumer.on_event('custom_endpoint_updated', self.on_endpoint_custom_updated)
         consumer.on_event('iax_endpoint_updated', self.on_trunk_endpoint_iax_updated)
         consumer.on_event('line_deleted', self.on_line_endpoint_deleted)
         consumer.on_event('line_endpoint_custom_associated', self.on_line_endpoint_custom_associated)
@@ -171,18 +171,27 @@ class EventHandler:
             event['tenant_uuid'],
         )
 
-    def on_trunk_endpoint_custom_updated(self, event):
+    def on_endpoint_custom_updated(self, event):
         trunk = event['trunk']
-        if not trunk:
-            return
+        line = event['line']
 
-        self._confd_cache.update_trunk(
-            'custom',
-            event['trunk']['id'],
-            event['interface'],
-            None,
-            event['tenant_uuid'],
-        )
+        if trunk:
+            self._confd_cache.update_trunk(
+                'custom',
+                event['trunk']['id'],
+                event['interface'],
+                None,
+                event['tenant_uuid'],
+            )
+
+        if line:
+            self._confd_cache.update_line(
+                'custom',
+                event['line']['id'],
+                event['interface'],
+                None,
+                event['tenant_uuid'],
+            )
 
     def _techno_name_from_channel(self, channel):
         techno, end = channel.split('/', 1)

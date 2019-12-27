@@ -422,7 +422,7 @@ class TestBusEvent(TestCase):
             'iax', s.trunk_id, s.name, None, s.tenant_uuid,
         )
 
-    def test_on_endpoint_custom_updated(self):
+    def test_on_trunk_endpoint_custom_updated(self):
         event = {
             'id': s.endpoint_id,
             'interface': s.interface,
@@ -431,8 +431,9 @@ class TestBusEvent(TestCase):
             'line': None,
         }
 
-        self.handler.on_trunk_endpoint_custom_updated(event)
+        self.handler.on_endpoint_custom_updated(event)
 
+        self.confd_cache.update_line.assert_not_called()
         self.confd_cache.update_trunk.assert_called_once_with(
             'custom', s.trunk_id, s.interface, None, s.tenant_uuid,
         )
@@ -473,6 +474,9 @@ class TestBusEvent(TestCase):
             'line': {'id': s.line_id},
         }
 
-        self.handler.on_trunk_endpoint_custom_updated(event)
+        self.handler.on_endpoint_custom_updated(event)
 
         self.confd_cache.update_trunk.assert_not_called()
+        self.confd_cache.update_line.assert_called_once_with(
+            'custom', s.line_id, s.interface, None, s.tenant_uuid,
+        )
