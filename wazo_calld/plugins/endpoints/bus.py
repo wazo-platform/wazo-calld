@@ -18,7 +18,7 @@ class EventHandler:
         consumer.on_ami_event('Registry', self.on_registry)
         consumer.on_event('custom_endpoint_updated', self.on_endpoint_custom_updated)
         consumer.on_event('iax_endpoint_updated', self.on_trunk_endpoint_iax_updated)
-        consumer.on_event('line_updated', self.on_line_updated)
+        consumer.on_event('line_edited', self.on_line_edited)
         consumer.on_event('line_deleted', self.on_line_endpoint_deleted)
         consumer.on_event('line_endpoint_custom_associated', self.on_line_endpoint_custom_associated)
         consumer.on_event('line_endpoint_custom_dissociated', self.on_line_endpoint_dissociated)
@@ -89,7 +89,7 @@ class EventHandler:
             event['line']['tenant_uuid'],
         )
 
-    def on_line_updated(self, event):
+    def on_line_edited(self, event):
         if event['protocol'] != 'sccp':
             return
 
