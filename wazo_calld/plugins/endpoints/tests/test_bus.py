@@ -267,6 +267,14 @@ class TestOnPeerStatus(TestCase):
             'custom', trunk_id, interface, None, tenant_uuid,
         )
 
+    def test_on_line_endpoint_sip_dissociated(self):
+        line_id = 42
+        event = {'line': {'id': line_id}}
+
+        self.handler.on_line_endpoint_dissociated(event)
+
+        self.confd_cache.delete_line.assert_called_once_with(line_id)
+
     def test_on_trunk_endpoint_sip_dissociated(self):
         trunk_id = 42
         event = {'trunk': {'id': trunk_id}}

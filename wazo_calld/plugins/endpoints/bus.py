@@ -23,6 +23,7 @@ class EventHandler:
             'trunk_endpoint_custom_associated',
             self.on_trunk_endpoint_custom_associated,
         )
+        consumer.on_event('line_endpoint_sip_dissociated', self.on_line_endpoint_dissociated)
         consumer.on_event('trunk_endpoint_sip_dissociated', self.on_trunk_endpoint_dissociated)
         consumer.on_event('trunk_endpoint_iax_dissociated', self.on_trunk_endpoint_dissociated)
         consumer.on_event('trunk_endpoint_custom_dissociated', self.on_trunk_endpoint_dissociated)
@@ -102,6 +103,9 @@ class EventHandler:
             None,
             event['trunk']['tenant_uuid'],
         )
+
+    def on_line_endpoint_dissociated(self, event):
+        self._confd_cache.delete_line(event['line']['id'])
 
     def on_trunk_endpoint_dissociated(self, event):
         self._confd_cache.delete_trunk(event['trunk']['id'])

@@ -132,6 +132,9 @@ class ConfdCache:
         if username:
             self._trunks[techno]['username'][username] = value
 
+    def delete_line(self, trunk_id):
+        pass
+
     def delete_trunk(self, trunk_id):
         to_remove = []
 
