@@ -18,12 +18,13 @@ class EventHandler:
         consumer.on_ami_event('Registry', self.on_registry)
         consumer.on_event('custom_endpoint_updated', self.on_trunk_endpoint_custom_updated)
         consumer.on_event('iax_endpoint_updated', self.on_trunk_endpoint_iax_updated)
+        consumer.on_event('line_deleted', self.on_line_endpoint_deleted)
         consumer.on_event('line_endpoint_custom_associated', self.on_line_endpoint_custom_associated)
         consumer.on_event('line_endpoint_custom_dissociated', self.on_line_endpoint_dissociated)
-        consumer.on_event('line_endpoint_sip_associated', self.on_line_endpoint_sip_associated)
-        consumer.on_event('line_endpoint_sip_dissociated', self.on_line_endpoint_dissociated)
         consumer.on_event('line_endpoint_sccp_associated', self.on_line_endpoint_sccp_associated)
         consumer.on_event('line_endpoint_sccp_dissociated', self.on_line_endpoint_sccp_dissociated)
+        consumer.on_event('line_endpoint_sip_associated', self.on_line_endpoint_sip_associated)
+        consumer.on_event('line_endpoint_sip_dissociated', self.on_line_endpoint_dissociated)
         consumer.on_event('sip_endpoint_updated', self.on_trunk_endpoint_sip_updated)
         consumer.on_event('trunk_deleted', self.on_trunk_endpoint_deleted)
         consumer.on_event('trunk_endpoint_custom_associated', self.on_trunk_endpoint_custom_associated)
@@ -128,6 +129,9 @@ class EventHandler:
 
     def on_trunk_endpoint_dissociated(self, event):
         self._confd_cache.delete_trunk(event['trunk']['id'])
+
+    def on_line_endpoint_deleted(self, event):
+        self._confd_cache.delete_line(event['id'])
 
     def on_trunk_endpoint_deleted(self, event):
         self._confd_cache.delete_trunk(event['id'])
