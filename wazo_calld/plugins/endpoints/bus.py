@@ -81,6 +81,15 @@ class EventHandler:
             event['line']['tenant_uuid'],
         )
 
+    def on_line_endpoint_sccp_associated(self, event):
+        self._confd_cache.add_line(
+            'sccp',
+            event['line']['id'],
+            event['line']['name'],
+            None,
+            event['line']['tenant_uuid'],
+        )
+
     def on_trunk_endpoint_sip_associated(self, event):
         self._confd_cache.add_trunk(
             'sip',

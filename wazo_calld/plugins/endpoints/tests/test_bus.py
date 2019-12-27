@@ -221,6 +221,29 @@ class TestOnPeerStatus(TestCase):
             'sip', trunk_id, name, username, tenant_uuid,
         )
 
+    def test_on_line_endpoint_sccp_associated(self):
+        line_id = 42
+        tenant_uuid = '2c34c282-433e-4bb8-8d56-fec14ff7e1e9'
+        name = 'the-name'
+
+        event = {
+            'endpoint_sccp': {
+                'id': 7,
+                'tenant_uuid': tenant_uuid,
+            },
+            'line': {
+                'id': line_id,
+                'name': name,
+                'tenant_uuid': tenant_uuid,
+            },
+        }
+
+        self.handler.on_line_endpoint_sccp_associated(event)
+
+        self.confd_cache.add_line.assert_called_once_with(
+            'sccp', line_id, name, None, tenant_uuid,
+        )
+
     def test_on_trunk_endpoint_iax_associated(self):
         trunk_id = 42
         tenant_uuid = '2c34c282-433e-4bb8-8d56-fec14ff7e1e9'
