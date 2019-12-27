@@ -16,6 +16,7 @@ class EventHandler:
         consumer.on_ami_event('Newchannel', self.on_new_channel)
         consumer.on_ami_event('PeerStatus', self.on_peer_status)
         consumer.on_ami_event('Registry', self.on_registry)
+        consumer.on_event('line_endpoint_sip_associated', self.on_line_endpoint_sip_associated)
         consumer.on_event('trunk_endpoint_sip_associated', self.on_trunk_endpoint_sip_associated)
         consumer.on_event('trunk_endpoint_iax_associated', self.on_trunk_endpoint_iax_associated)
         consumer.on_event(
@@ -65,6 +66,15 @@ class EventHandler:
         trunk = self._confd_cache.get_trunk_by_username(techno, username)
         with self._endpoint_status_cache.update(techno, trunk['name']) as endpoint:
             endpoint.registered = event['Status'] == 'Registered'
+
+    def on_line_endpoint_sip_associated(self, event):
+        self._confd_cache.add_line(
+            'sip',
+            event['line']['id'],
+            event['endpoint_sip']['name'],
+            event['endpoint_sip']['username'],
+            event['line']['tenant_uuid'],
+        )
 
     def on_trunk_endpoint_sip_associated(self, event):
         self._confd_cache.add_trunk(

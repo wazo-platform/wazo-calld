@@ -172,6 +172,30 @@ class TestOnPeerStatus(TestCase):
         self.updated_endpoint.add_call.assert_called_once_with('1574445784.4')
         assert_that(self.updated_endpoint, has_properties(techno='PJSIP', name='dev_370'))
 
+    def test_on_line_endpoint_sip_associated(self):
+        line_id = 42
+        tenant_uuid = '2c34c282-433e-4bb8-8d56-fec14ff7e1e9'
+        name = 'the-name'
+        username = 'the-username'
+
+        event = {
+            'endpoint_sip': {
+                'id': 52,
+                'name': name,
+                'tenant_uuid': tenant_uuid,
+                'username': username,
+            },
+            'line': {
+                'id': line_id,
+                'tenant_uuid': tenant_uuid},
+        }
+
+        self.handler.on_line_endpoint_sip_associated(event)
+
+        self.confd_cache.add_line.assert_called_once_with(
+            'sip', line_id, name, username, tenant_uuid,
+        )
+
     def test_on_trunk_endpoint_sip_associated(self):
         trunk_id = 42
         tenant_uuid = '2c34c282-433e-4bb8-8d56-fec14ff7e1e9'

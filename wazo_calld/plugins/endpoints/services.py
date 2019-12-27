@@ -122,6 +122,9 @@ class ConfdCache:
         self._initialized = False
         self._initialization_lock = threading.Lock()
 
+    def add_line(self, techno, line_id, name, username, tenant_uuid):
+        pass
+
     def add_trunk(self, techno, trunk_id, name, username, tenant_uuid):
         value = {'id': trunk_id, 'technology': techno, 'name': name, 'tenant_uuid': tenant_uuid}
         self._trunks.setdefault(techno, {'name': {}, 'username': {}})
