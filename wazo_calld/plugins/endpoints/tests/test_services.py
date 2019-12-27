@@ -106,6 +106,21 @@ class TestCachingConfdClient(TestCase):
         self.confd = Mock()
         self.client = ConfdCache(self.confd)
 
+    def test_add_line(self):
+        self._set_cache([])
+
+        self.client.add_line('sip', s.line_id, s.name, s.username, s.tenant_uuid)
+
+        expected = {
+            'id': s.line_id,
+            'technology': 'sip',
+            'name': s.name,
+            'tenant_uuid': s.tenant_uuid,
+        }
+
+        result = self.client.get_line('sip', s.name)
+        assert_that(result, equal_to(expected))
+
     def test_add_trunk(self):
         self._set_cache([])
 
@@ -124,8 +139,24 @@ class TestCachingConfdClient(TestCase):
         result = self.client.get_trunk_by_username('sip', s.username)
         assert_that(result, equal_to(expected))
 
+    def test_delete_line(self):
+        self._set_cache(lines=[
+            {
+                'id': s.line_id,
+                'protocol': 'sip',
+                'name': s.name,
+                'endpoint_sip': {'name': s.name, 'username': s.username},
+                'tenant_uuid': s.tenant_uuid,
+            },
+        ])
+
+        self.client.delete_line(s.line_id)
+
+        result = self.client.get_line('sip', s.name)
+        assert_that(result, equal_to(None))
+
     def test_delete_trunk(self):
-        self._set_cache([
+        self._set_cache(trunks=[
             {
                 'id': s.trunk_id,
                 'endpoint_sip': {'name': s.name, 'username': s.username},
@@ -141,8 +172,32 @@ class TestCachingConfdClient(TestCase):
         result = self.client.get_trunk_by_username('sip', s.username)
         assert_that(result, equal_to(None))
 
+    def test_update_line(self):
+        self._set_cache(lines=[
+            {
+                'id': s.line_id,
+                'protocol': 'sip',
+                'name': s.name,
+                'endpoint_sip': {'name': s.name, 'username': s.username},
+                'tenant_uuid': s.tenant_uuid,
+            },
+        ])
+
+        self.client.update_line('sip', s.line_id, s.new_name, s.new_username, s.tenant_uuid)
+
+        result = self.client.get_line('sip', s.new_name)
+        assert_that(result, has_entries(
+            id=s.line_id,
+            technology='sip',
+            name=s.new_name,
+            tenant_uuid=s.tenant_uuid,
+        ))
+
+        result = self.client.get_line('sip', s.name)
+        assert_that(result, equal_to(None))
+
     def test_update_trunk(self):
-        self._set_cache([
+        self._set_cache(trunks=[
             {
                 'id': s.trunk_id,
                 'endpoint_sip': {'name': s.name, 'username': s.username},

@@ -123,17 +123,32 @@ class ConfdCache:
         self._initialization_lock = threading.Lock()
 
     def add_line(self, techno, line_id, name, username, tenant_uuid):
-        pass
+        value = {'id': line_id, 'technology': techno, 'name': name, 'tenant_uuid': tenant_uuid}
+        self._lines.setdefault(techno, {'name': {}, 'username': {}})
+        self._lines[techno]['name'][name] = value
+        if username:
+            self._lines[techno].setdefault('username', {})
+            self._lines[techno]['username'][username] = value
 
     def add_trunk(self, techno, trunk_id, name, username, tenant_uuid):
         value = {'id': trunk_id, 'technology': techno, 'name': name, 'tenant_uuid': tenant_uuid}
         self._trunks.setdefault(techno, {'name': {}, 'username': {}})
         self._trunks[techno]['name'][name] = value
         if username:
+            self._trunks[techno].setdefault('username', {})
             self._trunks[techno]['username'][username] = value
 
-    def delete_line(self, trunk_id):
-        pass
+    def delete_line(self, line_id):
+        to_remove = []
+
+        for techno, items in self._lines.items():
+            for index, items in items.items():
+                for identifier, line in items.items():
+                    if line['id'] == line_id:
+                        to_remove.append((techno, index, identifier))
+
+        for techno, index, identifier in to_remove:
+            del self._lines[techno][index][identifier]
 
     def delete_trunk(self, trunk_id):
         to_remove = []
@@ -180,8 +195,9 @@ class ConfdCache:
                 results.append(trunk)
         return results
 
-    def update_line(self, techno, trunk_id, name, username, tenant_uuid):
-        pass
+    def update_line(self, techno, line_id, name, username, tenant_uuid):
+        self.delete_line(line_id)
+        self.add_line(techno, line_id, name, username, tenant_uuid)
 
     def update_trunk(self, techno, trunk_id, name, username, tenant_uuid):
         self.delete_trunk(trunk_id)
