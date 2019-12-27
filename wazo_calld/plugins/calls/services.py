@@ -50,8 +50,8 @@ class CallsService:
                         channel_cache_entry = self._state_persistor.get(channel.id)
                     except KeyError:
                         continue
-                    if (channel_cache_entry.app == application_filter and
-                            channel_cache_entry.app_instance == application_instance_filter):
+                    if (channel_cache_entry.app == application_filter
+                       and channel_cache_entry.app_instance == application_instance_filter):
                         app_instance_channels.append(channel)
                 channels = app_instance_channels
 

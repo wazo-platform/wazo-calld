@@ -503,13 +503,13 @@ class TestCreateCall(IntegrationTest):
         self.amid.set_valid_exten('my-context', 'my-extension', priority)
 
         self.calld.originate(source=user_uuid,
-                               priority=priority,
-                               extension='my-extension',
-                               context='my-context',
-                               variables={'MY_VARIABLE': 'my-value',
-                                          'SECOND_VARIABLE': 'my-second-value',
-                                          'CONNECTEDLINE(name)': 'my-connected-line',
-                                          'XIVO_FIX_CALLERID': '1'})
+                             priority=priority,
+                             extension='my-extension',
+                             context='my-context',
+                             variables={'MY_VARIABLE': 'my-value',
+                                        'SECOND_VARIABLE': 'my-second-value',
+                                        'CONNECTEDLINE(name)': 'my-connected-line',
+                                        'XIVO_FIX_CALLERID': '1'})
 
         assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
             'method': 'POST',
@@ -537,9 +537,9 @@ class TestCreateCall(IntegrationTest):
         self.amid.set_valid_exten('my-context', 'my-extension', priority)
 
         self.calld.originate(source=user_uuid,
-                               priority=priority,
-                               extension='my-extension',
-                               context='my-context')
+                             priority=priority,
+                             extension='my-extension',
+                             context='my-context')
 
         assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
             'method': 'POST',
@@ -566,9 +566,9 @@ class TestCreateCall(IntegrationTest):
         self.amid.set_valid_exten('my-context', '#pound', priority)
 
         self.calld.originate(source=user_uuid,
-                               priority=priority,
-                               extension='#pound',
-                               context='my-context')
+                             priority=priority,
+                             extension='#pound',
+                             context='my-context')
 
         assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
             'method': 'POST',
@@ -588,9 +588,9 @@ class TestCreateCall(IntegrationTest):
         self.amid.set_valid_exten('my-context', 'my-extension', priority)
 
         result = self.calld.originate(source=user_uuid,
-                                        priority=priority,
-                                        extension='my-extension',
-                                        context='my-context')
+                                      priority=priority,
+                                      extension='my-extension',
+                                      context='my-context')
 
         assert_that(result, has_entry('call_id', 'new-call-id'))
         assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
@@ -603,10 +603,10 @@ class TestCreateCall(IntegrationTest):
         self.amid.set_valid_exten('my-context', 'my-extension', priority)
         with self.confd_stopped():
             result = self.calld.post_call_result(source='user-uuid',
-                                                   priority=priority,
-                                                   extension='my-extension',
-                                                   context='my-context',
-                                                   token=VALID_TOKEN)
+                                                 priority=priority,
+                                                 extension='my-extension',
+                                                 context='my-context',
+                                                 token=VALID_TOKEN)
 
         assert_that(result.status_code, equal_to(503))
 
@@ -618,10 +618,10 @@ class TestCreateCall(IntegrationTest):
         self.amid.set_valid_exten('my-context', 'my-extension', priority)
 
         result = self.calld.post_call_result(source=user_uuid,
-                                               priority=priority,
-                                               extension='my-extension',
-                                               context='my-context',
-                                               token=VALID_TOKEN)
+                                             priority=priority,
+                                             extension='my-extension',
+                                             context='my-context',
+                                             token=VALID_TOKEN)
 
         assert_that(result.status_code, equal_to(400))
         assert_that(result.json(), has_entry('message', contains_string('line')))
@@ -632,9 +632,9 @@ class TestCreateCall(IntegrationTest):
         self.amid.set_valid_exten('my-context', 'my-extension', priority)
 
         result = self.calld.post_call_result(source=user_uuid,
-                                               priority=priority,
-                                               extension='my-extension',
-                                               context='my-context', token=VALID_TOKEN)
+                                             priority=priority,
+                                             extension='my-extension',
+                                             context='my-context', token=VALID_TOKEN)
 
         assert_that(result.status_code, equal_to(400))
         assert_that(result.json(), has_entry('message', contains_string('user')))
@@ -658,10 +658,10 @@ class TestCreateCall(IntegrationTest):
         self.amid.set_no_valid_exten()
 
         result = self.calld.post_call_result(source=user_uuid,
-                                               priority=priority,
-                                               extension='not-found',
-                                               context='my-context',
-                                               token=VALID_TOKEN)
+                                             priority=priority,
+                                             extension='not-found',
+                                             context='my-context',
+                                             token=VALID_TOKEN)
 
         assert_that(result.status_code, equal_to(400))
         assert_that(result.json(), has_entry('details', has_item('exten')))
@@ -676,10 +676,10 @@ class TestCreateCall(IntegrationTest):
 
         with self.calld.send_no_content_type():
             result = self.calld.post_call_result(source=user_uuid,
-                                                   priority=priority,
-                                                   extension='my-extension',
-                                                   context='my-context',
-                                                   token=VALID_TOKEN)
+                                                 priority=priority,
+                                                 extension='my-extension',
+                                                 context='my-context',
+                                                 token=VALID_TOKEN)
 
         assert_that(result.status_code, equal_to(201), result.json())
 
@@ -693,11 +693,11 @@ class TestCreateCall(IntegrationTest):
         self.amid.set_valid_exten('my-context', 'my-extension', priority)
 
         result = self.calld.post_call_result(source=user_uuid,
-                                               line_id=line_id_not_found,
-                                               priority=priority,
-                                               extension='my-extension',
-                                               context='my-context',
-                                               token=VALID_TOKEN)
+                                             line_id=line_id_not_found,
+                                             priority=priority,
+                                             extension='my-extension',
+                                             context='my-context',
+                                             token=VALID_TOKEN)
 
         assert_that(result.status_code, equal_to(400), result.json())
         assert_that(result.json()['message'], contains_string('line'))
@@ -713,11 +713,11 @@ class TestCreateCall(IntegrationTest):
         self.amid.set_valid_exten('my-context', 'my-extension', priority)
 
         result = self.calld.post_call_result(source=user_uuid,
-                                               line_id=unassociated_line_id,
-                                               priority=priority,
-                                               extension='my-extension',
-                                               context='my-context',
-                                               token=VALID_TOKEN)
+                                             line_id=unassociated_line_id,
+                                             priority=priority,
+                                             extension='my-extension',
+                                             context='my-context',
+                                             token=VALID_TOKEN)
 
         assert_that(result.status_code, equal_to(400), result.json())
         assert_that(result.json()['message'].lower(), all_of(contains_string('line'),
@@ -734,10 +734,10 @@ class TestCreateCall(IntegrationTest):
         self.amid.set_valid_exten('my-context', 'my-extension', priority)
 
         self.calld.originate(source=user_uuid,
-                               line_id=second_line_id,
-                               priority=priority,
-                               extension='my-extension',
-                               context='my-context')
+                             line_id=second_line_id,
+                             priority=priority,
+                             extension='my-extension',
+                             context='my-context')
 
         assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
             'method': 'POST',
@@ -755,11 +755,11 @@ class TestCreateCall(IntegrationTest):
         self.ari.set_originates(MockChannel(id='new-call-id'))
 
         result = self.calld.post_call_result(source=user_uuid,
-                                               from_mobile=True,
-                                               priority=priority,
-                                               extension=extension,
-                                               context=context,
-                                               token=VALID_TOKEN)
+                                             from_mobile=True,
+                                             priority=priority,
+                                             extension=extension,
+                                             context=context,
+                                             token=VALID_TOKEN)
 
         assert_that(result.status_code, equal_to(400), result.json())
         assert_that(result.json()['message'].lower(), all_of(contains_string('line'),
@@ -775,11 +775,11 @@ class TestCreateCall(IntegrationTest):
         self.ari.set_originates(MockChannel(id='new-call-id'))
 
         result = self.calld.post_call_result(source=user_uuid,
-                                               from_mobile=True,
-                                               priority=priority,
-                                               extension=extension,
-                                               context=context,
-                                               token=VALID_TOKEN)
+                                             from_mobile=True,
+                                             priority=priority,
+                                             extension=extension,
+                                             context=context,
+                                             token=VALID_TOKEN)
 
         assert_that(result.status_code, equal_to(400), result.json())
         assert_that(result.json()['message'].lower(), all_of(contains_string('mobile'),
@@ -794,11 +794,11 @@ class TestCreateCall(IntegrationTest):
         self.ari.set_originates(MockChannel(id='new-call-id'))
 
         result = self.calld.post_call_result(source=user_uuid,
-                                               from_mobile=True,
-                                               priority=priority,
-                                               extension=extension,
-                                               context=context,
-                                               token=VALID_TOKEN)
+                                             from_mobile=True,
+                                             priority=priority,
+                                             extension=extension,
+                                             context=context,
+                                             token=VALID_TOKEN)
 
         assert_that(result.status_code, equal_to(400), result.json())
         assert_that(result.json()['message'].lower(), all_of(contains_string('mobile'),
@@ -814,11 +814,11 @@ class TestCreateCall(IntegrationTest):
         self.ari.set_originates(MockChannel(id='new-call-id'))
 
         result = self.calld.post_call_result(source=user_uuid,
-                                               from_mobile=True,
-                                               priority=priority,
-                                               extension=extension,
-                                               context=context,
-                                               token=VALID_TOKEN)
+                                             from_mobile=True,
+                                             priority=priority,
+                                             extension=extension,
+                                             context=context,
+                                             token=VALID_TOKEN)
 
         assert_that(result.status_code, equal_to(400), result.json())
         assert_that(result.json()['message'].lower(), all_of(contains_string('exten')))
@@ -910,11 +910,11 @@ class TestUserCreateCall(IntegrationTest):
         self.amid.set_valid_exten('my-context', 'my-extension')
 
         self.calld.originate_me(extension='my-extension',
-                                  variables={'MY_VARIABLE': 'my-value',
-                                             'SECOND_VARIABLE': 'my-second-value',
-                                             'CONNECTEDLINE(name)': 'my-connected-line',
-                                             'XIVO_FIX_CALLERID': '1'},
-                                  token=token)
+                                variables={'MY_VARIABLE': 'my-value',
+                                           'SECOND_VARIABLE': 'my-second-value',
+                                           'CONNECTEDLINE(name)': 'my-connected-line',
+                                           'XIVO_FIX_CALLERID': '1'},
+                                token=token)
 
         assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
             'method': 'POST',
@@ -1073,10 +1073,10 @@ class TestFailingARI(IntegrationTest):
         self.confd.set_users(MockUser(uuid='user-uuid', line_ids=['line-id']))
         self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL))
         result = self.calld.post_call_result(source='user-uuid',
-                                               priority=SOME_PRIORITY,
-                                               extension='extension',
-                                               context='context',
-                                               token=VALID_TOKEN)
+                                             priority=SOME_PRIORITY,
+                                             extension='extension',
+                                             context='context',
+                                             token=VALID_TOKEN)
 
         assert_that(result.status_code, equal_to(503))
 
@@ -1124,8 +1124,8 @@ class TestConnectUser(IntegrationTest):
     def test_given_no_confd_when_connect_user_then_503(self):
         with self.confd_stopped():
             result = self.calld.put_call_user_result(call_id='call-id',
-                                                       user_uuid='user-uuid',
-                                                       token=VALID_TOKEN)
+                                                     user_uuid='user-uuid',
+                                                     token=VALID_TOKEN)
 
         assert_that(result.status_code, equal_to(503))
 
@@ -1164,9 +1164,9 @@ class TestCallerID(RealAsteriskIntegrationTest):
         self.confd.set_users(MockUser(uuid='user-uuid', line_ids=['line-id']))
         self.confd.set_lines(MockLine(id='line-id', name='originator', protocol='test'))
         originator_call = self.calld.originate('user-uuid',
-                                                 priority='1',
-                                                 extension='ring-connected-line',
-                                                 context='local')
+                                               priority='1',
+                                               extension='ring-connected-line',
+                                               context='local')
         originator_channel = self.ari.channels.get(channelId=originator_call['call_id'])
         recipient_caller_id_name = 'rêcîpîênt'
         recipient_caller_id_number = 'ring-connected-line'

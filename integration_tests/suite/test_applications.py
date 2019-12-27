@@ -1137,49 +1137,6 @@ class TestApplicationSnoop(BaseApplicationTestCase):
 
         until.assert_(event_received, tries=3)
 
-    def test_delete(self):
-        supervisor_1_channel = self.calld.application_new_call(
-            self.app_uuid,
-            'local',
-            'recipient_autoanswer',
-        ).json()
-        supervisor_2_channel = self.calld.application_new_call(
-            self.app_uuid,
-            'local',
-            'recipient_autoanswer',
-        ).json()
-
-        snoop_1 = self.calld.application_call_snoop(
-            self.app_uuid,
-            self.caller_channel.id,
-            supervisor_1_channel['id'],
-            'both',
-        ).json()
-
-        snoop_2 = self.calld.application_call_snoop(
-            self.app_uuid,
-            self.caller_channel.id,
-            supervisor_2_channel['id'],
-            'both',
-        ).json()
-
-        result = self.calld.application_delete_snoop(self.app_uuid, snoop_2['uuid'])
-        assert_that(result, has_properties(status_code=204))
-        assert_that(
-            self.calld.application_list_snoops(self.app_uuid).json(),
-            has_entries(
-                items=contains_inanyorder(
-                    snoop_1,
-                )
-            )
-        )
-
-        result = self.calld.application_delete_snoop(self.app_uuid, snoop_2['uuid'])
-        assert_that(result, has_properties(status_code=404))
-
-        result = self.calld.application_delete_snoop(self.unknown_uuid, snoop_2['uuid'])
-        assert_that(result, has_properties(status_code=404))
-
     def test_list(self):
         result = self.calld.application_list_snoops(self.app_uuid)
         assert_that(
@@ -1388,6 +1345,53 @@ class TestApplicationSnoop(BaseApplicationTestCase):
                 whisper_mode,
             )
             assert_that(result, has_properties(status_code=400), whisper_mode)
+
+    def test_delete(self):
+        supervisor_1_channel = self.calld.application_new_call(
+            self.app_uuid,
+            'local',
+            'recipient_autoanswer',
+        ).json()
+        supervisor_2_channel = self.calld.application_new_call(
+            self.app_uuid,
+            'local',
+            'recipient_autoanswer',
+        ).json()
+
+        snoop_1 = self.calld.application_call_snoop(
+            self.app_uuid,
+            self.caller_channel.id,
+            supervisor_1_channel['id'],
+            'both',
+        ).json()
+
+        response = self.calld.application_call_snoop(
+            self.app_uuid,
+            self.caller_channel.id,
+            supervisor_2_channel['id'],
+            'both',
+        )
+        print(response.status_code)
+        print(response.json())
+        snoop_2 = response.json()
+
+        result = self.calld.application_delete_snoop(self.app_uuid, snoop_2['uuid'])
+
+        assert_that(result, has_properties(status_code=204))
+        assert_that(
+            self.calld.application_list_snoops(self.app_uuid).json(),
+            has_entries(
+                items=contains_inanyorder(
+                    snoop_1,
+                )
+            )
+        )
+
+        result = self.calld.application_delete_snoop(self.app_uuid, snoop_2['uuid'])
+        assert_that(result, has_properties(status_code=404))
+
+        result = self.calld.application_delete_snoop(self.unknown_uuid, snoop_2['uuid'])
+        assert_that(result, has_properties(status_code=404))
 
 
 class TestApplicationMoh(BaseApplicationTestCase):

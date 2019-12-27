@@ -44,8 +44,8 @@ class ConferencesService:
             raise WazoAmidError(self._amid, e)
 
         participant_list_result = participant_list.pop(0)
-        if (participant_list_result['Response'] == 'Error' and
-                participant_list_result['Message'] == 'No active conferences.'):
+        if (participant_list_result['Response'] == 'Error'
+           and participant_list_result['Message'] == 'No active conferences.'):
             return []
 
         if participant_list_result['Response'] != 'Success':

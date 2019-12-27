@@ -1,6 +1,8 @@
 # Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+import logging
+
 from uuid import uuid4
 from requests import HTTPError
 
@@ -11,6 +13,8 @@ from .exceptions import (
     NoSuchCall,
     NoSuchSnoop,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class InvalidSnoopBridge(Exception):
@@ -147,6 +151,7 @@ class _Snoop:
         self._snoop_channel = kwargs.get('snoop_channel')
 
     def create_bridge(self, ari):
+        logger.debug('creating a new snoop bridge for snoop %s %s', self.uuid, self.bridge_name)
         self._bridge = ari.bridges.createWithId(
             bridgeId=self.uuid,
             name=self.bridge_name,
@@ -154,22 +159,27 @@ class _Snoop:
         )
 
         try:
+            logger.debug('adding the snooping call to the bridge %s %s', self.uuid, self.snooping_call_id)
             self._bridge.addChannel(channel=self.snooping_call_id)
         except HTTPError as e:
             response = getattr(e, 'response', None)
             status_code = getattr(response, 'status_code', None)
+            logger.debug('failed to add the channel to the snooping bridge %s', status_code)
             if status_code == 400:
                 raise NoSuchCall(self.snooping_call_id, status_code=400)
             raise
 
     def update_snoop_channel(self, snoop_channel):
+        logger.debug('updating the snoop channel from %s to %s', self._snoop_channel, snoop_channel)
         old_snoop_channel = self._snoop_channel
         self._snoop_channel = snoop_channel
+        logger.debug('adding the new snoop channel %s', self._snoop_channel)
         self._bridge.addChannel(channel=self._snoop_channel.id)
         if old_snoop_channel:
             old_snoop_channel.hangup()
 
     def new_snoop_channel(self, ari, whisper_mode):
+        logger.debug('Creating new snoop channel')
         try:
             snoop_channel = ari.channels.snoopChannel(
                 channelId=self.snooped_call_id,
@@ -259,7 +269,8 @@ class SnoopHelper:
             snoop.create_bridge(self._ari)
             snoop_channel = snoop.new_snoop_channel(self._ari, whisper_mode)
             snoop.update_snoop_channel(snoop_channel)
-        except Exception:
+        except Exception as e:
+            logger.debug('Error while creating the snoop bridge, destroying it. %s', e)
             snoop.destroy()
             raise
         return snoop

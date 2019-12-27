@@ -83,8 +83,8 @@ class TransfersStasis:
         if isinstance(exception, InvalidEvent):
             event = exception.event
             logger.error('invalid stasis event received: %s', event)
-        elif (isinstance(exception, WazoAmidError) or
-              isinstance(exception, TransferException)):
+        elif (isinstance(exception, WazoAmidError)
+              or isinstance(exception, TransferException)):
             self.handle_error(exception)
         else:
             raise exception

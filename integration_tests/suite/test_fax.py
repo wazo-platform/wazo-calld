@@ -125,9 +125,9 @@ class TestFax(RealAsteriskIntegrationTest):
             fax_content = fax_file.read()
 
         fax = calld.faxes.send(fax_content,
-                                 context='recipient',
-                                 extension='recipient-fax',
-                                 caller_id='fax wait')
+                               context='recipient',
+                               extension='recipient-fax',
+                               caller_id='fax wait')
 
         assert_that(fax, has_entries({
             'id': is_not(empty()),
@@ -150,9 +150,9 @@ class TestFax(RealAsteriskIntegrationTest):
         events = self.bus.accumulator('faxes.outbound.#')
 
         result = calld.faxes.send(fax_content,
-                                    context='recipient',
-                                    extension='recipient-fax',
-                                    caller_id='fax success')
+                                  context='recipient',
+                                  extension='recipient-fax',
+                                  caller_id='fax success')
         fax_id = result['id']
 
         def bus_events_received():
@@ -186,9 +186,9 @@ class TestFax(RealAsteriskIntegrationTest):
         events = self.bus.accumulator('faxes.outbound.#')
 
         result = calld.faxes.send(fax_content,
-                                    context='recipient',
-                                    extension='recipient-fax',
-                                    caller_id='fax fail')
+                                  context='recipient',
+                                  extension='recipient-fax',
+                                  caller_id='fax fail')
         fax_id = result['id']
 
         def bus_events_received():
@@ -269,8 +269,8 @@ class TestFax(RealAsteriskIntegrationTest):
 
         try:
             calld.faxes.send_from_user(fax_content,
-                                         extension='recipient-fax',
-                                         caller_id='fax wait')
+                                       extension='recipient-fax',
+                                       caller_id='fax wait')
         except Exception as e:
             raise AssertionError('Sending fax raised an exception: {}'.format(e))
 
@@ -294,8 +294,8 @@ class TestFax(RealAsteriskIntegrationTest):
         events = self.bus.accumulator('faxes.outbound.users.some-user-id.#')
 
         result = calld.faxes.send_from_user(fax_content,
-                                              extension='recipient-fax',
-                                              caller_id='fax success')
+                                            extension='recipient-fax',
+                                            caller_id='fax success')
         fax_id = result['id']
 
         def bus_events_received():

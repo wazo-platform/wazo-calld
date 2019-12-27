@@ -103,9 +103,9 @@ class TestTransfers(RealAsteriskIntegrationTest):
                                              key=lambda channel: channel.json['creationtime']))
         for channel_right_candidate in ordered_candidates:
             try:
-                if (channel_right_candidate.getChannelVar(variable='CHANNEL(linkedid)')['value'] == linkedid and
-                        channel_right_candidate.id != channel_left.id and
-                        channel_right_candidate.id not in [excluded.id for excluded in exclude]):
+                if (channel_right_candidate.getChannelVar(variable='CHANNEL(linkedid)')['value'] == linkedid
+                   and channel_right_candidate.id != channel_left.id
+                   and channel_right_candidate.id not in [excluded.id for excluded in exclude]):
                     return channel_right_candidate
             except ARINotFound:
                 continue
@@ -140,8 +140,7 @@ class TestTransfers(RealAsteriskIntegrationTest):
         def channels_have_been_created_in_calld(caller_id, callee_id):
             calls = self.calld.list_calls(application=STASIS_APP, application_instance=STASIS_APP_INSTANCE)
             channel_ids = [call['call_id'] for call in calls['items']]
-            return (caller_id in channel_ids and
-                    callee_id in channel_ids)
+            return (caller_id in channel_ids and callee_id in channel_ids)
 
         until.true(channels_have_been_created_in_calld, callee.id, caller.id, tries=3)
 
@@ -165,8 +164,7 @@ class TestTransfers(RealAsteriskIntegrationTest):
         def channels_are_talking(caller, callee):
             try:
                 next(bridge for bridge in self.ari.bridges.list()
-                     if (caller.id in bridge.json['channels'] and
-                         callee.id in bridge.json['channels']))
+                     if (caller.id in bridge.json['channels'] and callee.id in bridge.json['channels']))
                 return True
             except StopIteration:
                 return False
@@ -178,8 +176,8 @@ class TestTransfers(RealAsteriskIntegrationTest):
     def given_ringing_transfer(self):
         transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()
         response = self.calld.create_transfer(transferred_channel_id,
-                                                initiator_channel_id,
-                                                **RECIPIENT)
+                                              initiator_channel_id,
+                                              **RECIPIENT)
 
         transfer_id = response['id']
         recipient_channel_id = response['recipient_call']
@@ -192,9 +190,9 @@ class TestTransfers(RealAsteriskIntegrationTest):
     def given_answered_transfer(self, variables=None, initiator_uuid=None):
         transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis(callee_uuid=initiator_uuid)
         response = self.calld.create_transfer(transferred_channel_id,
-                                                initiator_channel_id,
-                                                variables=variables,
-                                                **RECIPIENT_AUTOANSWER)
+                                              initiator_channel_id,
+                                              variables=variables,
+                                              **RECIPIENT_AUTOANSWER)
 
         transfer_id = response['id']
         recipient_channel_id = response['recipient_call']
@@ -505,8 +503,8 @@ class TestCreateTransfer(TestTransfers):
 
         events = self.bus.accumulator('calls.transfer.created')
         self.calld.create_transfer(transferred_channel_id,
-                                     initiator_channel_id,
-                                     **RECIPIENT)
+                                   initiator_channel_id,
+                                   **RECIPIENT)
 
         def event_is_sent():
             assert_that(events.accumulate(), has_item(has_entry('name', 'transfer_created')))
@@ -518,8 +516,8 @@ class TestCreateTransfer(TestTransfers):
 
         events = self.bus.accumulator('calls.transfer.created')
         self.calld.create_transfer(transferred_channel_id,
-                                     initiator_channel_id,
-                                     **RECIPIENT)
+                                   initiator_channel_id,
+                                   **RECIPIENT)
 
         def event_is_sent():
             assert_that(events.accumulate(), has_item(has_entry('name', 'transfer_created')))
@@ -530,8 +528,8 @@ class TestCreateTransfer(TestTransfers):
         transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis(callee_uuid='my-uuid')
 
         response = self.calld.create_transfer(transferred_channel_id,
-                                                initiator_channel_id,
-                                                **RECIPIENT)
+                                              initiator_channel_id,
+                                              **RECIPIENT)
 
         assert_that(response, has_entry('initiator_uuid', 'my-uuid'))
 
@@ -539,8 +537,8 @@ class TestCreateTransfer(TestTransfers):
         transferred_channel_id, initiator_channel_id = self.given_bridged_call_not_stasis(callee_uuid='my-uuid')
 
         response = self.calld.create_transfer(transferred_channel_id,
-                                                initiator_channel_id,
-                                                **RECIPIENT)
+                                              initiator_channel_id,
+                                              **RECIPIENT)
 
         assert_that(response, has_entry('initiator_uuid', 'my-uuid'))
 
@@ -551,8 +549,8 @@ class TestCreateTransfer(TestTransfers):
         self.ari.channels.setChannelVar(channelId=initiator_channel_id, variable='CALLERID(name)', value=initiator_caller_id_name.encode('utf-8'))
 
         response = self.calld.create_transfer(transferred_channel_id,
-                                                initiator_channel_id,
-                                                **RECIPIENT_CALLER_ID)
+                                              initiator_channel_id,
+                                              **RECIPIENT_CALLER_ID)
 
         def caller_id_are_right():
             recipient_channel = self.ari.channels.get(channelId=response['recipient_call'])
@@ -572,8 +570,8 @@ class TestCreateTransfer(TestTransfers):
         self.ari.channels.setChannelVar(channelId=transferred_channel_id, variable='CALLERID(name)', value=transferred_caller_id_name.encode('utf-8'))
 
         self.calld.create_blind_transfer(transferred_channel_id,
-                                           initiator_channel_id,
-                                           **RECIPIENT_CALLER_ID)
+                                         initiator_channel_id,
+                                         **RECIPIENT_CALLER_ID)
 
         def caller_id_are_right():
             transferred_channel = self.ari.channels.get(channelId=transferred_channel_id)
@@ -608,9 +606,9 @@ class TestCreateTransfer(TestTransfers):
         custom_variables = {'TEST': 'foobar'}
 
         response = self.calld.create_transfer(transferred_channel_id,
-                                                initiator_channel_id,
-                                                variables=custom_variables,
-                                                **RECIPIENT_CALLER_ID)
+                                              initiator_channel_id,
+                                              variables=custom_variables,
+                                              **RECIPIENT_CALLER_ID)
 
         recipient_channel_id = response['recipient_call']
         expected = {'TEST': 'foobar',
@@ -626,8 +624,8 @@ class TestCreateTransfer(TestTransfers):
         transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()
 
         response = self.calld.create_transfer(transferred_channel_id,
-                                                initiator_channel_id,
-                                                **RECIPIENT_CALLER_ID)
+                                              initiator_channel_id,
+                                              **RECIPIENT_CALLER_ID)
         recipient_channel_id = response['recipient_call']
         assert_that(calling(self.ari.channels.getChannelVar).with_args(channelId=recipient_channel_id,
                                                                        variable='XIVO_USERID'),
@@ -854,8 +852,8 @@ class TestUserCreateTransfer(TestTransfers):
         transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis(user_uuid)
 
         response = self.calld.create_user_transfer(initiator_channel_id,
-                                                     RECIPIENT['exten'],
-                                                     token)
+                                                   RECIPIENT['exten'],
+                                                   token)
 
         assert_that(response, all_of(has_entries({'transferred_call': transferred_channel_id,
                                                   'initiator_call': initiator_channel_id,
@@ -1012,8 +1010,8 @@ class TestTransferFromStasis(TestTransfers):
         transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()
 
         response = self.calld.create_transfer(transferred_channel_id,
-                                                initiator_channel_id,
-                                                **RECIPIENT)
+                                              initiator_channel_id,
+                                              **RECIPIENT)
         recipient_channel_id = response['recipient_call']
         self.answer_recipient_channel(recipient_channel_id)
 
@@ -1035,8 +1033,8 @@ class TestTransferFromStasis(TestTransfers):
         transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()
 
         response = self.calld.create_transfer(transferred_channel_id,
-                                                initiator_channel_id,
-                                                **RECIPIENT_BUSY)
+                                              initiator_channel_id,
+                                              **RECIPIENT_BUSY)
 
         transfer_id = response['id']
         recipient_channel_id = response['recipient_call']
@@ -1052,8 +1050,8 @@ class TestTransferFromStasis(TestTransfers):
         transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()
 
         response = self.calld.create_blind_transfer(transferred_channel_id,
-                                                      initiator_channel_id,
-                                                      **RECIPIENT)
+                                                    initiator_channel_id,
+                                                    **RECIPIENT)
 
         transfer_id = response['id']
         recipient_channel_id = response['recipient_call']
@@ -1068,8 +1066,8 @@ class TestTransferFromStasis(TestTransfers):
         transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()
 
         response = self.calld.create_transfer(transferred_channel_id,
-                                                initiator_channel_id,
-                                                **RECIPIENT)
+                                              initiator_channel_id,
+                                              **RECIPIENT)
 
         self.ari.channels.hangup(channelId=initiator_channel_id)
 
@@ -1086,8 +1084,8 @@ class TestTransferFromStasis(TestTransfers):
         transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()
 
         response = self.calld.create_blind_transfer(transferred_channel_id,
-                                                      initiator_channel_id,
-                                                      **RECIPIENT)
+                                                    initiator_channel_id,
+                                                    **RECIPIENT)
 
         transfer_id = response['id']
         recipient_channel_id = response['recipient_call']
@@ -1105,8 +1103,8 @@ class TestTransferFromStasis(TestTransfers):
         transferred_channel_id, initiator_channel_id = self.given_bridged_call_stasis()
 
         response = self.calld.create_blind_transfer(transferred_channel_id,
-                                                      initiator_channel_id,
-                                                      **RECIPIENT)
+                                                    initiator_channel_id,
+                                                    **RECIPIENT)
 
         self.ari.channels.hangup(channelId=transferred_channel_id)
 

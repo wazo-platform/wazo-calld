@@ -282,7 +282,7 @@ class _MessageAccess:
                 logger.error('could not read voicemail message %s: no such file', path)
                 raise VoicemailMessageStorageError()
             raise
-        except Exception as e:
+        except Exception:
             logger.error('error while parsing voicemail message info %s', path, exc_info=True)
             raise VoicemailMessageStorageError()
 
