@@ -1365,15 +1365,12 @@ class TestApplicationSnoop(BaseApplicationTestCase):
             'both',
         ).json()
 
-        response = self.calld.application_call_snoop(
+        snoop_2 = self.calld.application_call_snoop(
             self.app_uuid,
             self.caller_channel.id,
             supervisor_2_channel['id'],
             'both',
-        )
-        print(response.status_code)
-        print(response.json())
-        snoop_2 = response.json()
+        ).json()
 
         result = self.calld.application_delete_snoop(self.app_uuid, snoop_2['uuid'])
 
