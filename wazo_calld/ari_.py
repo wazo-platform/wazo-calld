@@ -1,4 +1,4 @@
-# Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import errno
@@ -157,7 +157,13 @@ class CoreARI:
         '''self.sync() should be called before calling self.stop(), in case the
         ari client does not have the websocket yet'''
 
-        while self._is_running and not self.client.websockets:
+        while self._is_running:
+            try:
+                ari_websockets = self.client.websockets
+            except AsteriskARINotInitialized:
+                ari_websockets = None
+            if ari_websockets:
+                return
             time.sleep(0.1)
 
     def stop(self):
