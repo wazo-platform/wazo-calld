@@ -18,7 +18,7 @@ from websocket import WebSocketException
 from xivo.pubsub import Pubsub
 from xivo.status import Status
 
-from .exceptions import ARIUnreachable, AsteriskARINotInitialized
+from .exceptions import AsteriskARINotInitialized
 
 logger = logging.getLogger(__name__)
 
@@ -71,25 +71,19 @@ class CoreARI:
         self.client = ARIClientProxy(**config['connection'])
 
     def _init_client(self):
-        connection_delay = self.config['startup_connection_delay']
-        while not self._should_stop:
-            try:
-                self.client.init()
-            except requests.ConnectionError:
-                logger.info('No ARI server found, retrying in %s seconds...', connection_delay)
-                time.sleep(connection_delay)
-                continue
-            except requests.HTTPError as e:
-                if asterisk_is_loading(e):
-                    logger.info('ARI is not ready yet, retrying in %s seconds...', connection_delay)
-                    time.sleep(connection_delay)
-                    continue
-                else:
-                    raise
-            self._pubsub.publish('client_initialized', message=None)
-            break
-        else:
-            raise ARIUnreachable(self.config['connection'])
+        try:
+            self.client.init()
+        except requests.ConnectionError:
+            logger.info('No ARI server found')
+            return False
+        except requests.HTTPError as e:
+            if asterisk_is_loading(e):
+                logger.info('ARI is not ready yet')
+                return False
+            else:
+                raise
+        self._pubsub.publish('client_initialized', message=None)
+        return True
 
     def client_initialized_subscribe(self, callback):
         self._pubsub.subscribe('client_initialized', callback)
@@ -99,9 +93,15 @@ class CoreARI:
         self._trigger_disconnect()
 
     def run(self):
-        if not self._should_stop:
-            self._init_client()
-            self._connect()
+        while not self._should_stop:
+            initialized = self._init_client()
+            if initialized:
+                break
+            connection_delay = self.config['startup_connection_delay']
+            logger.warning('ARI not initialized, retrying in %s seconds...', connection_delay)
+            time.sleep(connection_delay)
+        self._should_delay_reconnect = False
+
         while not self._should_stop:
             if self._should_delay_reconnect:
                 delay = self.config['reconnection_delay']
