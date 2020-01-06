@@ -1,4 +1,4 @@
-/var/log/xivo-ctid-ng.log {
+/var/log/wazo-calld.log {
     daily
     rotate 15
     compress
