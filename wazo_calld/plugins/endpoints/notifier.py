@@ -1,4 +1,4 @@
-# Copyright 2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from xivo_bus.resources.trunk.event import TrunkStatusUpdatedEvent
@@ -30,11 +30,11 @@ class EndpointStatusNotifier:
             body['id'] = trunk['id']
             event = TrunkStatusUpdatedEvent(body)
             headers = {'tenant_uuid': trunk['tenant_uuid']}
+            return self._publisher.publish(event, headers=headers)
 
         line = self._confd_cache.get_line(endpoint.techno, endpoint.name)
         if line:
             body['id'] = line['id']
             event = LineStatusUpdatedEvent(body)
             headers = {'tenant_uuid': line['tenant_uuid']}
-
-        self._publisher.publish(event, headers=headers)
+            return self._publisher.publish(event, headers=headers)
