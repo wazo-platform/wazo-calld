@@ -52,6 +52,12 @@ class ARIClientProxy(ari.client.Client):
         super().__init__(self._base_url, http_client)
         self._initialized = True
 
+    def close(self):
+        if not self._initialized:
+            return
+
+        return super().close()
+
     def __getattr__(self, *args, **kwargs):
         if not self._initialized:
             raise AsteriskARINotInitialized()
