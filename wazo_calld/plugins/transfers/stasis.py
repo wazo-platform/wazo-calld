@@ -30,8 +30,9 @@ logger = logging.getLogger(__name__)
 
 class TransfersStasis:
 
-    def __init__(self, amid_client, ari_client, services, state_factory, state_persistor, xivo_uuid):
-        self.ari = ari_client
+    def __init__(self, amid_client, ari, services, state_factory, state_persistor, xivo_uuid):
+        self.ari = ari.client
+        self._core_ari = ari
         self.amid = amid_client
         self.services = services
         self.xivo_uuid = xivo_uuid
@@ -42,7 +43,11 @@ class TransfersStasis:
         self.state_factory = state_factory
         self.state_persistor = state_persistor
 
-    def subscribe(self):
+    def initialize(self):
+        self._subscribe()
+        self._core_ari.register_application(DEFAULT_APPLICATION_NAME)
+
+    def _subscribe(self):
         self.ari.on_application_registered(DEFAULT_APPLICATION_NAME, self.process_lost_hangups)
         self.ari.on_channel_event('ChannelEnteredBridge', self.release_hangup_lock)
         self.ari.on_channel_event('ChannelDestroyed', self.bypass_hangup_lock_from_source)

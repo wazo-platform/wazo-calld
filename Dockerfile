@@ -24,4 +24,4 @@ RUN true \
 
 EXPOSE 9500
 
-CMD ["wazo-calld", "-fd"]
+CMD ["wazo-calld", "-d"]

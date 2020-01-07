@@ -16,6 +16,8 @@ from wazo_calld.config import load as load_config
 
 logger = logging.getLogger(__name__)
 
+FOREGROUND = True  # Always in foreground systemd takes care of daemonizing
+
 
 def main(argv=None):
     argv = argv or sys.argv[1:]
@@ -26,7 +28,7 @@ def main(argv=None):
 
     xivo_logging.setup_logging(
         config['log_filename'],
-        config['foreground'],
+        FOREGROUND,
         config['debug'],
         config['log_level']
     )
@@ -42,7 +44,7 @@ def main(argv=None):
     controller = Controller(config)
     signal.signal(signal.SIGTERM, partial(sigterm, controller))
 
-    with pidfile_context(config['pid_filename'], config['foreground']):
+    with pidfile_context(config['pid_filename'], FOREGROUND):
         controller.run()
 
 

@@ -1,21 +1,24 @@
-# Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import errno
 import logging
 import socket
 import time
+import urllib
 
 from contextlib import contextmanager
 
 import ari
 import requests
+import swaggerpy.http_client
 
 from requests.exceptions import HTTPError
 from websocket import WebSocketException
+from xivo.pubsub import Pubsub
 from xivo.status import Status
 
-from .exceptions import ARIUnreachable
+from .exceptions import AsteriskARINotInitialized
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +37,34 @@ def asterisk_is_loading(error):
     return not_found(error) or service_unavailable(error)
 
 
+class ARIClientProxy(ari.client.Client):
+
+    def __init__(self, base_url, username, password):
+        self._base_url = base_url
+        self._username = username
+        self._password = password
+        self._initialized = False
+
+    def init(self):
+        split = urllib.parse.urlsplit(self._base_url)
+        http_client = swaggerpy.http_client.SynchronousHttpClient()
+        http_client.set_basic_auth(split.hostname, self._username, self._password)
+        super().__init__(self._base_url, http_client)
+        self._initialized = True
+
+    def close(self):
+        if not self._initialized:
+            return
+
+        return super().close()
+
+    def __getattr__(self, *args, **kwargs):
+        if not self._initialized:
+            raise AsteriskARINotInitialized()
+
+        return super().__getattr__(*args, **kwargs)
+
+
 class CoreARI:
 
     def __init__(self, config):
@@ -42,36 +73,41 @@ class CoreARI:
         self._is_running = False
         self._should_delay_reconnect = True
         self._should_stop = False
-        self.client = self._new_ari_client(
-            config['connection'],
-            config['startup_connection_tries'],
-            config['startup_connection_delay'],
-        )
+        self._pubsub = Pubsub()
+        self.client = ARIClientProxy(**config['connection'])
 
-    def _new_ari_client(self, ari_config, connection_tries, connection_delay):
-        for _ in range(connection_tries):
-            try:
-                return ari.connect(**ari_config)
-            except requests.ConnectionError:
-                logger.info('No ARI server found, retrying in %s seconds...', connection_delay)
-                time.sleep(connection_delay)
-                continue
-            except requests.HTTPError as e:
-                if asterisk_is_loading(e):
-                    logger.info('ARI is not ready yet, retrying in %s seconds...', connection_delay)
-                    time.sleep(connection_delay)
-                    continue
-                else:
-                    raise
-        raise ARIUnreachable(ari_config)
+    def _init_client(self):
+        try:
+            self.client.init()
+        except requests.ConnectionError:
+            logger.info('No ARI server found')
+            return False
+        except requests.HTTPError as e:
+            if asterisk_is_loading(e):
+                logger.info('ARI is not ready yet')
+                return False
+            else:
+                raise
+        self._pubsub.publish('client_initialized', message=None)
+        return True
+
+    def client_initialized_subscribe(self, callback):
+        self._pubsub.subscribe('client_initialized', callback)
 
     def reload(self):
         self._should_delay_reconnect = False
         self._trigger_disconnect()
 
     def run(self):
-        if not self._should_stop:
-            self._connect()
+        while not self._should_stop:
+            initialized = self._init_client()
+            if initialized:
+                break
+            connection_delay = self.config['startup_connection_delay']
+            logger.warning('ARI not initialized, retrying in %s seconds...', connection_delay)
+            time.sleep(connection_delay)
+        self._should_delay_reconnect = False
+
         while not self._should_stop:
             if self._should_delay_reconnect:
                 delay = self.config['reconnection_delay']
@@ -127,7 +163,13 @@ class CoreARI:
         '''self.sync() should be called before calling self.stop(), in case the
         ari client does not have the websocket yet'''
 
-        while self._is_running and not self.client.websockets:
+        while self._is_running:
+            try:
+                ari_websockets = self.client.websockets
+            except AsteriskARINotInitialized:
+                ari_websockets = None
+            if ari_websockets:
+                return
             time.sleep(0.1)
 
     def stop(self):

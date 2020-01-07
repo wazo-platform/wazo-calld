@@ -26,7 +26,7 @@ class BaseEndpointsService(TestCase):
         self.ari.endpoints.list.return_value = []
         self.status_cache = NotifyingStatusCache(Mock(), self.ari)
         self.confd_cache = Mock(ConfdCache)
-        self.service = EndpointsService(self.confd_cache, self.ari, self.status_cache)
+        self.service = EndpointsService(self.confd_cache, self.status_cache)
         self.ari.endpoints.list.return_value = []
 
 

@@ -62,9 +62,6 @@ class StatusCache:
         self._ari = ari
         self._endpoints = endpoints or {}
 
-        if not self._endpoints:
-            self._initialize()
-
     def add_endpoint(self, endpoint):
         if endpoint.techno not in self._endpoints:
             self._endpoints.setdefault(endpoint.techno, {})
@@ -77,7 +74,7 @@ class StatusCache:
 
         return self._endpoints.get(techno, {}).get(name)
 
-    def _initialize(self):
+    def initialize(self):
         logger.debug('initializing endpoint status...')
         for endpoint in self._ari.endpoints.list():
             endpoint_obj = Endpoint.from_ari_endpoint_list(endpoint.json)
@@ -221,9 +218,8 @@ class EndpointsService:
         'iax': 'IAX2',
     }
 
-    def __init__(self, confd_cache, ari, status_cache):
+    def __init__(self, confd_cache, status_cache):
         self._confd = confd_cache
-        self._ari = ari
         self.status_cache = status_cache
 
     def list_trunks(self, tenant_uuid):

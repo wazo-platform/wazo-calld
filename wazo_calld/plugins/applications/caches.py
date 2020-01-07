@@ -2,15 +2,61 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
+import requests
 import threading
 
-from .exceptions import NoSuchApplication, NoSuchMoh
+from .exceptions import NoSuchApplication, NoSuchMoh, WazoConfdUnreachable
 
 UNINITIALIZED_FMT = 'Received an event when {} cache is not initialized'
 UNINITIALIZED_APP = UNINITIALIZED_FMT.format('application')
 UNINITIALIZED_MOH = UNINITIALIZED_FMT.format('moh')
 
 logger = logging.getLogger(__name__)
+
+
+# If this helper is used more than once, then it should go to the wazo-confd-client
+class ConfdIsReadyThread:
+
+    def __init__(self, confd_client):
+        self._confd_client = confd_client
+        self._started = False
+        self._should_stop = threading.Event()
+        self._retry_time = 1
+        self.callback = None
+
+    def start(self):
+        if self._started:
+            raise Exception('Check when wazo-confd is ready already started')
+
+        self._started = True
+        thread_name = 'check_when_confd_is_ready'
+        self._thread = threading.Thread(target=self._run, name=thread_name)
+        self._thread.start()
+
+    def stop(self):
+        self._should_stop.set()
+        logger.debug('joining check_when_confd_is_ready thread...')
+        self._thread.join()
+
+    def subscribe(self, callback):
+        self.callback = callback
+
+    def _run(self):
+        while not self._should_stop.is_set():
+            if self._is_ready():
+                self.callback()
+                return
+            logger.info('wazo-confd is not ready yet, retrying in %s seconds...', self._retry_time)
+            self._should_stop.wait(timeout=self._retry_time)
+
+    def _is_ready(self):
+        try:
+            self._confd_client.infos.get()
+        except requests.ConnectionError:
+            return False
+        except requests.HTTPError:
+            pass
+        return True
 
 
 class ConfdApplicationsCache:
@@ -25,7 +71,10 @@ class ConfdApplicationsCache:
     def _applications(self):
         with self._cache_lock:
             if self._cache is None:
-                result = self._confd.applications.list(recurse=True)['items']
+                try:
+                    result = self._confd.applications.list(recurse=True)['items']
+                except requests.ConnectionError:
+                    raise WazoConfdUnreachable()
                 self._cache = {app['uuid']: app for app in result}
         return self._cache
 
@@ -96,7 +145,10 @@ class MohCache:
     def _moh(self):
         with self._cache_lock:
             if self._cache is None:
-                result = self._confd.moh.list(recurse=True)['items']
+                try:
+                    result = self._confd.moh.list(recurse=True)['items']
+                except requests.ConnectionError:
+                    raise WazoConfdUnreachable()
                 self._cache = {moh['uuid']: moh for moh in result}
                 logger.info('MOH cache initialized: %s', self._cache)
         return self._cache

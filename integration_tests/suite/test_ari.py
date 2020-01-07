@@ -3,28 +3,29 @@
 
 import requests
 
-from hamcrest import assert_that
-from hamcrest import contains_string
+from hamcrest import (
+    assert_that,
+    contains_string,
+    equal_to,
+    has_entries,
+)
 from xivo_test_helpers import until
 
+from .helpers.constants import VALID_TOKEN
 from .helpers.base import IntegrationTest
-from .helpers.wait_strategy import NoWaitStrategy
+from .helpers.wait_strategy import CalldUpWaitStrategy
 
 
 class TestNoARI(IntegrationTest):
 
     asset = 'no_ari'
-    wait_strategy = NoWaitStrategy()
+    wait_strategy = CalldUpWaitStrategy()
 
-    def test_given_no_ari_when_calld_starts_then_calld_stops(self):
-        def calld_is_stopped():
-            status = self.service_status()
-            return not status['State']['Running']
+    def test_given_no_ari_then_return_503(self):
+        result = self.calld.get_calls_result(token=VALID_TOKEN)
 
-        until.true(calld_is_stopped, tries=10, message='wazo-calld did not stop while starting with no ARI')
-
-        log = self.service_logs()
-        assert_that(log, contains_string("ARI server unreachable... stopping"))
+        assert_that(result.status_code, equal_to(503))
+        assert_that(result.json(), has_entries(error_id='asterisk-ari-not-initialized'))
 
 
 class TestARIReconnection(IntegrationTest):

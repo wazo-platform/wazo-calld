@@ -14,12 +14,17 @@ logger = logging.getLogger(__name__)
 class SwitchboardsStasis:
 
     def __init__(self, ari, confd, switchboard_notifier, switchboard_service):
-        self._ari = ari
+        self._ari = ari.client
+        self._core_ari = ari
         self._confd = confd
         self._notifier = switchboard_notifier
         self._service = switchboard_service
 
-    def subscribe(self):
+    def initialize(self):
+        self._subscribe()
+        self._core_ari.register_application(DEFAULT_APPLICATION_NAME)
+
+    def _subscribe(self):
         self._ari.on_application_registered(
             DEFAULT_APPLICATION_NAME, self.notify_all_switchboard_queued
         )

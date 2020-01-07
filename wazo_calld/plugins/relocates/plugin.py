@@ -4,8 +4,7 @@
 from wazo_auth_client import Client as AuthClient
 from wazo_confd_client import Client as ConfdClient
 from wazo_amid_client import Client as AmidClient
-
-from wazo_calld.ari_ import DEFAULT_APPLICATION_NAME
+from xivo.pubsub import CallbackCollector
 
 from .notifier import RelocatesNotifier
 from .resources import (
@@ -42,9 +41,11 @@ class Plugin:
         notifier = RelocatesNotifier(bus_publisher)
         relocates_service = RelocatesService(amid_client, ari.client, confd_client, notifier, relocates, state_factory)
 
-        ari.register_application(DEFAULT_APPLICATION_NAME)
-        relocates_stasis = RelocatesStasis(ari.client, relocates)
-        relocates_stasis.subscribe()
+        relocates_stasis = RelocatesStasis(ari, relocates)
+
+        startup_callback_collector = CallbackCollector()
+        ari.client_initialized_subscribe(startup_callback_collector.new_source())
+        startup_callback_collector.subscribe(relocates_stasis.initialize)
 
         api.add_resource(UserRelocatesResource, '/users/me/relocates', resource_class_args=[auth_client, relocates_service])
         api.add_resource(UserRelocateResource, '/users/me/relocates/<relocate_uuid>', resource_class_args=[auth_client, relocates_service])

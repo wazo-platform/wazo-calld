@@ -1,11 +1,14 @@
 # Changelog
 
+## 20.01
+
+* Configuration `startup_connection_tries` has been removed
+
 ## 19.17
 
 * The following endpoint has been added to list the status of trunks
 
   * `GET /1.0/trunks`
-
 
 ## 19.10
 

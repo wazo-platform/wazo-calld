@@ -86,6 +86,16 @@ class AsteriskARIError(APIException):
         )
 
 
+class AsteriskARINotInitialized(APIException):
+
+    def __init__(self):
+        super().__init__(
+            status_code=503,
+            message='Asterisk ARI client not initialized',
+            error_id='asterisk-ari-not-initialized',
+        )
+
+
 class TokenWithUserUUIDRequiredError(APIException):
 
     def __init__(self):

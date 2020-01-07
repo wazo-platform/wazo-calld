@@ -5,7 +5,7 @@ from wazo_auth_client import Client as AuthClient
 from wazo_confd_client import Client as ConfdClient
 from wazo_amid_client import Client as AmidClient
 
-from wazo_calld.ari_ import DEFAULT_APPLICATION_NAME
+from xivo.pubsub import CallbackCollector
 
 from .notifier import TransferNotifier
 from .resources import (
@@ -44,9 +44,11 @@ class Plugin:
 
         transfers_service = TransfersService(amid_client, ari.client, confd_client, state_factory, state_persistor, transfer_lock)
 
-        ari.register_application(DEFAULT_APPLICATION_NAME)
-        transfers_stasis = TransfersStasis(amid_client, ari.client, transfers_service, state_factory, state_persistor, config['uuid'])
-        transfers_stasis.subscribe()
+        transfers_stasis = TransfersStasis(amid_client, ari, transfers_service, state_factory, state_persistor, config['uuid'])
+
+        startup_callback_collector = CallbackCollector()
+        ari.client_initialized_subscribe(startup_callback_collector.new_source())
+        startup_callback_collector.subscribe(transfers_stasis.initialize)
 
         notifier = TransferNotifier(bus_publisher)
 
