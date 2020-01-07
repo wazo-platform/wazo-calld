@@ -1,4 +1,4 @@
 https://github.com/wazo-platform/xivo-test-helpers/archive/master.zip
 mock
 nose
-pyhamcrest
+pyhamcrest<1.10 # Version 1.10 is broken
