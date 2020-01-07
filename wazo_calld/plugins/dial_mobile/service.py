@@ -144,7 +144,7 @@ class DialMobileService:
         logger.info('dial_all_contacts(%s, %s)', channel_id, aor)
         future_bridge_uuid = str(uuid.uuid4())
 
-        logger.debug('%s is waiting for a channel to join the bridge %s', future_bridge_uuid)
+        logger.debug('%s is waiting for a channel to join the bridge %s', channel_id, future_bridge_uuid)
         dialer = _PollingContactDialer(self._ari, future_bridge_uuid, channel_id, aor)
         self._contact_dialers[future_bridge_uuid] = dialer
         self._outgoing_calls[future_bridge_uuid] = channel_id
