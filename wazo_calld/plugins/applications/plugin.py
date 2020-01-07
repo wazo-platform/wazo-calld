@@ -8,7 +8,7 @@ from xivo.pubsub import CallbackCollector
 
 from .caches import ConfdApplicationsCache, MohCache, ConfdIsReadyThread
 from .notifier import ApplicationNotifier
-from .resources import (
+from .http import (
     ApplicationCallAnswer,
     ApplicationCallHoldStartList,
     ApplicationCallHoldStopList,

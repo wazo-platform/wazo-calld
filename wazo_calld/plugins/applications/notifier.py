@@ -3,7 +3,7 @@
 
 import logging
 
-from .schema import (
+from .schemas import (
     application_call_schema,
     application_node_schema,
     application_playback_schema,

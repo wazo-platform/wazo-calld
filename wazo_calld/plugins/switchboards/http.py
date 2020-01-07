@@ -5,35 +5,14 @@ from xivo.tenant_flask_helpers import Tenant, token
 
 from flask import request
 
-from marshmallow import Schema, fields
-
 from wazo_calld.auth import required_acl
 from wazo_calld.http import AuthResource
 
-
-class QueuedCallSchema(Schema):
-    id = fields.String(attribute='id')
-    caller_id_name = fields.String()
-    caller_id_number = fields.String()
-
-
-queued_call_schema = QueuedCallSchema()
-
-
-class HeldCallSchema(Schema):
-    id = fields.String(attribute='id')
-    caller_id_name = fields.String()
-    caller_id_number = fields.String()
-
-
-held_call_schema = HeldCallSchema()
-
-
-class AnswerCallSchema(Schema):
-    line_id = fields.Integer(missing=None)
-
-
-answer_call_schema = AnswerCallSchema()
+from .schemas import (
+    answer_call_schema,
+    held_call_schema,
+    queued_call_schema,
+)
 
 
 class SwitchboardCallsQueuedResource(AuthResource):

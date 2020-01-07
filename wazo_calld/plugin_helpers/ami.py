@@ -6,7 +6,7 @@ import re
 
 from requests import RequestException
 
-from wazo_calld.exceptions import WazoAmidError
+from .exceptions import WazoAmidError
 
 logger = logging.getLogger(__name__)
 

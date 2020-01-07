@@ -7,7 +7,7 @@ from wazo_calld.auth import get_token_user_uuid_from_request
 from wazo_calld.auth import required_acl
 from wazo_calld.http import AuthResource
 
-from .schema import (
+from .schemas import (
     relocate_schema,
     user_relocate_request_schema,
 )

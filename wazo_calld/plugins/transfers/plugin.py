@@ -8,7 +8,7 @@ from wazo_amid_client import Client as AmidClient
 from xivo.pubsub import CallbackCollector
 
 from .notifier import TransferNotifier
-from .resources import (
+from .http import (
     TransferCompleteResource,
     TransferResource,
     TransfersResource,

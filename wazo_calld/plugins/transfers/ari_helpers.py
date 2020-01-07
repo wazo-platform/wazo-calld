@@ -6,8 +6,8 @@ import logging
 
 from ari.exceptions import ARINotFound, ARINotInStasis
 
-from wazo_calld.exceptions import WazoAmidError
-from wazo_calld.helpers import ami
+from wazo_calld.plugin_helpers import ami
+from wazo_calld.plugin_helpers.exceptions import WazoAmidError
 
 logger = logging.getLogger(__name__)
 

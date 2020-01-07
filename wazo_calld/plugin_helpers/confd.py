@@ -4,8 +4,6 @@
 from requests import HTTPError
 from requests import RequestException
 
-from wazo_calld.exceptions import WazoConfdUnreachable
-
 from .exceptions import (
     InvalidUserUUID,
     InvalidUserLine,
@@ -13,6 +11,7 @@ from .exceptions import (
     NoSuchUserVoicemail,
     NoSuchVoicemail,
     UserMissingMainLine,
+    WazoConfdUnreachable,
 )
 
 

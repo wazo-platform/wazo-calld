@@ -7,7 +7,7 @@ from wazo_amid_client import Client as AmidClient
 
 from .bus_consume import FaxesBusEventHandler
 from .notifier import FaxesNotifier
-from .resources import (
+from .http import (
     FaxesResource,
     UserFaxesResource,
 )

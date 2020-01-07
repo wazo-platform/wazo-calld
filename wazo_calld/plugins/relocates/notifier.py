@@ -1,4 +1,4 @@
-# Copyright 2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -9,7 +9,7 @@ from xivo_bus.resources.calls.relocate import (
     RelocateInitiatedEvent,
     RelocateEndedEvent
 )
-from .schema import relocate_schema
+from .schemas import relocate_schema
 
 logger = logging.getLogger(__name__)
 

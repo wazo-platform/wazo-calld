@@ -7,7 +7,7 @@ from wazo_amid_client import Client as AmidClient
 from xivo.pubsub import CallbackCollector
 
 from .notifier import RelocatesNotifier
-from .resources import (
+from .http import (
     UserRelocateCancelResource,
     UserRelocateCompleteResource,
     UserRelocateResource,

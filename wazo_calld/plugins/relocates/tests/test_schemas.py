@@ -9,7 +9,7 @@ from hamcrest import (
 )
 from marshmallow import ValidationError
 from unittest import TestCase
-from ..schema import user_relocate_request_schema
+from ..schemas import user_relocate_request_schema
 
 VALID_RELOCATE = {
     'initiator_call': '123456789.0',

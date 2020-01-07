@@ -1,9 +1,11 @@
-# Copyright 2016 by Avencall
+# Copyright 2016-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from wazo_calld.helpers.ari_ import (GlobalVariableAdapter,
-                                     GlobalVariableJsonAdapter,
-                                     GlobalVariableNameDecorator)
+from wazo_calld.plugin_helpers.ari_ import (
+    GlobalVariableAdapter,
+    GlobalVariableJsonAdapter,
+    GlobalVariableNameDecorator,
+)
 
 
 class ChannelCacheEntry:

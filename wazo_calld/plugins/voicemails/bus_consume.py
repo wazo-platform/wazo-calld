@@ -1,4 +1,4 @@
-# Copyright 2016-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -9,7 +9,7 @@ from xivo_bus.resources.voicemail.event import (
     DeleteUserVoicemailMessageEvent,
 )
 
-from .resources import voicemail_message_schema
+from .http import voicemail_message_schema
 
 logger = logging.getLogger(__name__)
 

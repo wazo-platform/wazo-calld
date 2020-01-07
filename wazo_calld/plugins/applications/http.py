@@ -6,7 +6,7 @@ from flask import request
 from wazo_calld.auth import required_acl
 from wazo_calld.http import AuthResource
 
-from .schema import (
+from .schemas import (
     application_call_request_schema,
     application_call_user_request_schema,
     application_call_schema,

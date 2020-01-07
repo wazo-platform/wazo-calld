@@ -5,18 +5,18 @@ import re
 import logging
 import threading
 
-from wazo_calld.exceptions import UserPermissionDenied
-from wazo_calld.helpers import ami
-from wazo_calld.helpers.ari_ import (
+from wazo_calld.plugin_helpers import ami
+from wazo_calld.plugin_helpers.ari_ import (
     ARINotFound,
     Channel,
 )
-from wazo_calld.helpers.confd import User
-from wazo_calld.helpers.exceptions import (
-    NotEnoughChannels,
-    TooManyChannels,
+from wazo_calld.plugin_helpers.confd import User
+from wazo_calld.plugin_helpers.exceptions import (
     InvalidUserLine,
     InvalidUserUUID,
+    NotEnoughChannels,
+    TooManyChannels,
+    UserPermissionDenied,
 )
 
 from .exceptions import (

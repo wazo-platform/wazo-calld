@@ -8,7 +8,7 @@ from xivo.pubsub import CallbackCollector
 
 from .bus_consume import CallsBusEventHandler
 from .dial_echo import DialEchoManager
-from .resources import (
+from .http import (
     CallResource,
     CallsResource,
     ConnectCallToUserResource,

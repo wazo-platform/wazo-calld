@@ -10,7 +10,7 @@ services:
     ports:
       - 9491
     volumes:
-      - ./wazo-amid:/usr/local/share/wazo-amid
+      - ./amid_data:/usr/local/share/wazo-amid
       - ./ssl:/usr/local/share/ssl
     command: python /usr/local/share/wazo-amid/mock-wazo-amid.py 9491
 
@@ -19,7 +19,7 @@ services:
     ports:
       - 5039
     volumes:
-      - ./ari:/usr/local/share/ari
+      - ./ari_data:/usr/local/share/ari
       - ./ssl/ari:/usr/local/share/ari-ssl
     environment:
       PYTHONPATH: /usr/local/share/ari
@@ -44,7 +44,7 @@ services:
     ports:
       - 8500
     volumes:
-      - ./consul:/usr/local/share/consul
+      - ./consul_data:/usr/local/share/consul
     command: python /usr/local/share/consul/mock-consul.py 8500
 
   calld:
@@ -74,7 +74,7 @@ services:
     ports:
       - 9502
     volumes:
-      - ./xivo-websocketd:/usr/local/share/websocketd
+      - ./websocketd_data:/usr/local/share/websocketd
     environment:
       PYTHONPATH: /usr/local/share/websocketd
     command: gunicorn -b 0.0.0.0:9502 -k flask_sockets.worker mock_websocketd:app

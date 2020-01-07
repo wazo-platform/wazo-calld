@@ -4,7 +4,7 @@
 from xivo.pubsub import CallbackCollector
 
 from .stasis import DialMobileStasis
-from .service import DialMobileService
+from .services import DialMobileService
 
 
 class Plugin:

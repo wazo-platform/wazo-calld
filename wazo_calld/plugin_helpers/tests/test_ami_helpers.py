@@ -10,9 +10,9 @@ from hamcrest import raises
 from mock import Mock
 from unittest import TestCase
 
-from wazo_calld.exceptions import WazoAmidError
 from ..ami import extension_exists
 from ..ami import moh_class_exists
+from ..exceptions import WazoAmidError
 
 SOME_EXTEN = 'some-exten'
 SOME_CONTEXT = 'some-context'

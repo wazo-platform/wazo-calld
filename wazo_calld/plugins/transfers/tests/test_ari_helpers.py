@@ -8,7 +8,7 @@ from mock import patch
 from mock import sentinel
 from unittest import TestCase
 
-from wazo_calld.exceptions import WazoAmidError
+from wazo_calld.plugin_helpers.exceptions import WazoAmidError
 
 from ..ari_helpers import hold_transferred_call
 

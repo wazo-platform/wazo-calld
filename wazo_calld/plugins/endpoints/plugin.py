@@ -5,7 +5,7 @@ from wazo_confd_client import Client as ConfdClient
 from xivo.pubsub import CallbackCollector
 
 from .bus import EventHandler
-from .resources import TrunkEndpoints
+from .http import TrunkEndpoints
 from .services import ConfdCache, EndpointsService, NotifyingStatusCache
 from .notifier import EndpointStatusNotifier
 
