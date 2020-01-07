@@ -1,9 +1,16 @@
 # Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from hamcrest import assert_that
-from hamcrest import contains_string
-from hamcrest import equal_to
+from hamcrest import (
+    assert_that,
+    calling,
+    contains_string,
+    equal_to,
+    has_properties,
+)
+
+from xivo_test_helpers.hamcrest.raises import raises
+from wazo_calld_client.exceptions import CalldError
 
 from .helpers.base import IntegrationTest
 from .helpers.constants import INVALID_ACL_TOKEN, VALID_TOKEN
@@ -52,14 +59,18 @@ class TestAuthenticationCoverage(IntegrationTest):
     asset = 'basic_rest'
 
     def test_auth_on_line_endpoint_list(self):
-        result = self.calld.get_lines_result()
-
-        assert_that(result.status_code, equal_to(401))
+        self.calld_client.set_token(None)
+        assert_that(
+            calling(self.calld_client.lines.list_lines),
+            raises(CalldError).matching(has_properties(status_code=401))
+        )
 
     def test_auth_on_trunk_endpoint_list(self):
-        result = self.calld.get_trunks_result()
-
-        assert_that(result.status_code, equal_to(401))
+        self.calld_client.set_token(None)
+        assert_that(
+            calling(self.calld_client.trunks.list_trunks),
+            raises(CalldError).matching(has_properties(status_code=401))
+        )
 
     def test_auth_on_list_calls(self):
         result = self.calld.get_calls_result()

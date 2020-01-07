@@ -1,4 +1,4 @@
-# Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
@@ -192,28 +192,6 @@ class CalldClient:
                               headers=self._headers(token=token),
                               verify=False)
         return result
-
-    def get_lines_result(self, token=None):
-        url = self.url('lines')
-        params = {}
-        result = requests.get(url, params=params, headers=self._headers(token=token), verify=False)
-        return result
-
-    def list_lines(self, token=VALID_TOKEN):
-        response = self.get_lines_result(token)
-        assert_that(response.status_code, equal_to(200))
-        return response.json()
-
-    def get_trunks_result(self, token=None):
-        url = self.url('trunks')
-        params = {}
-        result = requests.get(url, params=params, headers=self._headers(token=token), verify=False)
-        return result
-
-    def list_trunks(self, token=VALID_TOKEN):
-        response = self.get_trunks_result(token)
-        assert_that(response.status_code, equal_to(200))
-        return response.json()
 
     def list_calls(self, application=None, application_instance=None, token=VALID_TOKEN):
         response = self.get_calls_result(application, application_instance, token)
