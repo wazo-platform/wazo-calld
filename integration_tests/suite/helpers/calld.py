@@ -1,4 +1,4 @@
-# Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
@@ -33,43 +33,43 @@ class CalldClient:
 
     def application_call_hold_start(self, application_uuid, call_id, token=VALID_TOKEN):
         url = self.url('applications', application_uuid, 'calls', call_id, 'hold', 'start')
-        return requests.put(url, headers={'X-Auth-Token': token}, verify=False)
+        return requests.put(url, headers=self._headers(token=token), verify=False)
 
     def application_call_hold_stop(self, application_uuid, call_id, token=VALID_TOKEN):
         url = self.url('applications', application_uuid, 'calls', call_id, 'hold', 'stop')
-        return requests.put(url, headers={'X-Auth-Token': token}, verify=False)
+        return requests.put(url, headers=self._headers(token=token), verify=False)
 
     def application_call_moh_start(self, application_uuid, call_id, moh_uuid, token=VALID_TOKEN):
         url = self.url('applications', application_uuid, 'calls', call_id, 'moh', moh_uuid, 'start')
-        return requests.put(url, headers={'X-Auth-Token': token}, verify=False)
+        return requests.put(url, headers=self._headers(token=token), verify=False)
 
     def application_call_moh_stop(self, application_uuid, call_id, token=VALID_TOKEN):
         url = self.url('applications', application_uuid, 'calls', call_id, 'moh', 'stop')
-        return requests.put(url, headers={'X-Auth-Token': token}, verify=False)
+        return requests.put(url, headers=self._headers(token=token), verify=False)
 
     def application_call_mute_start(self, application_uuid, call_id, token=VALID_TOKEN):
         url = self.url('applications', application_uuid, 'calls', call_id, 'mute', 'start')
-        return requests.put(url, headers={'X-Auth-Token': token}, verify=False)
+        return requests.put(url, headers=self._headers(token=token), verify=False)
 
     def application_call_mute_stop(self, application_uuid, call_id, token=VALID_TOKEN):
         url = self.url('applications', application_uuid, 'calls', call_id, 'mute', 'stop')
-        return requests.put(url, headers={'X-Auth-Token': token}, verify=False)
+        return requests.put(url, headers=self._headers(token=token), verify=False)
 
     def application_call_answer(self, application_uuid, call_id, token=VALID_TOKEN):
         url = self.url('applications', application_uuid, 'calls', call_id, 'answer')
-        return requests.put(url, headers={'X-Auth-Token': token}, verify=False)
+        return requests.put(url, headers=self._headers(token=token), verify=False)
 
     def application_progress_start(self, application_uuid, call_id, token=VALID_TOKEN):
         url = self.url('applications', application_uuid, 'calls', call_id, 'progress', 'start')
-        return requests.put(url, headers={'X-Auth-Token': token}, verify=False)
+        return requests.put(url, headers=self._headers(token=token), verify=False)
 
     def application_progress_stop(self, application_uuid, call_id, token=VALID_TOKEN):
         url = self.url('applications', application_uuid, 'calls', call_id, 'progress', 'stop')
-        return requests.put(url, headers={'X-Auth-Token': token}, verify=False)
+        return requests.put(url, headers=self._headers(token=token), verify=False)
 
     def application_call_playback(self, application_uuid, call_id, body, token=VALID_TOKEN):
         url = self.url('applications', application_uuid, 'calls', call_id, 'playbacks')
-        return requests.post(url, json=body, headers={'X-Auth-Token': token}, verify=False)
+        return requests.post(url, json=body, headers=self._headers(token=token), verify=False)
 
     def application_call_snoop(
             self, application_uuid, call_id, snooper_call_id, whisper=None, token=VALID_TOKEN):
@@ -78,28 +78,28 @@ class CalldClient:
             'whisper_mode': whisper,
             'snooping_call_id': snooper_call_id,
         }
-        return requests.post(url, json=body, headers={'X-Auth-Token': token}, verify=False)
+        return requests.post(url, json=body, headers=self._headers(token=token), verify=False)
 
     def application_edit_snoop(self, application_uuid, snoop_uuid, whisper=None, token=VALID_TOKEN):
         url = self.url('applications', application_uuid, 'snoops', snoop_uuid)
         body = {'whisper_mode': whisper}
-        return requests.put(url, json=body, headers={'X-Auth-Token': token}, verify=False)
+        return requests.put(url, json=body, headers=self._headers(token=token), verify=False)
 
     def application_delete_snoop(self, application_uuid, snoop_uuid, token=VALID_TOKEN):
         url = self.url('applications', application_uuid, 'snoops', snoop_uuid)
-        return requests.delete(url, headers={'X-Auth-Token': token}, verify=False)
+        return requests.delete(url, headers=self._headers(token=token), verify=False)
 
     def application_get_snoop(self, application_uuid, snoop_uuid, token=VALID_TOKEN):
         url = self.url('applications', application_uuid, 'snoops', snoop_uuid)
-        return requests.get(url, headers={'X-Auth-Token': token}, verify=False)
+        return requests.get(url, headers=self._headers(token=token), verify=False)
 
     def application_list_snoops(self, application_uuid, token=VALID_TOKEN):
         url = self.url('applications', application_uuid, 'snoops')
-        return requests.get(url, headers={'X-Auth-Token': token}, verify=False)
+        return requests.get(url, headers=self._headers(token=token), verify=False)
 
     def application_stop_playback(self, application_uuid, playback_id, token=VALID_TOKEN):
         url = self.url('applications', application_uuid, 'playbacks', playback_id)
-        return requests.delete(url, headers={'X-Auth-Token': token}, verify=False)
+        return requests.delete(url, headers=self._headers(token=token), verify=False)
 
     def application_new_call(
             self,
@@ -111,13 +111,13 @@ class CalldClient:
     ):
         url = self.url('applications', application_uuid, 'calls')
         body = dict(context=context, exten=exten, **kwargs)
-        return requests.post(url, json=body, headers={'X-Auth-Token': token}, verify=False)
+        return requests.post(url, json=body, headers=self._headers(token=token), verify=False)
 
     def application_new_node(self, application_uuid, calls=None, token=VALID_TOKEN):
         calls = calls or {}
         body = {'calls': [{'id': call} for call in calls]}
         url = self.url('applications', application_uuid, 'nodes')
-        return requests.post(url, json=body, headers={'X-Auth-Token': token}, verify=False)
+        return requests.post(url, json=body, headers=self._headers(token=token), verify=False)
 
     def application_new_node_call(
             self,
@@ -130,7 +130,7 @@ class CalldClient:
     ):
         url = self.url('applications', application_uuid, 'nodes', node_uuid, 'calls')
         body = dict(context=context, exten=exten, **kwargs)
-        return requests.post(url, json=body, headers={'X-Auth-Token': token}, verify=False)
+        return requests.post(url, json=body, headers=self._headers(token=token), verify=False)
 
     def application_new_node_call_user(
             self,
@@ -142,42 +142,42 @@ class CalldClient:
     ):
         url = self.url('applications', application_uuid, 'nodes', node_uuid, 'calls', 'user')
         body = dict(user_uuid=user_uuid, **kwargs)
-        return requests.post(url, json=body, headers={'X-Auth-Token': token}, verify=False)
+        return requests.post(url, json=body, headers=self._headers(token=token), verify=False)
 
     def application_node_add_call(self, application_uuid, node_uuid, call_id, token=VALID_TOKEN):
         url = self.url('applications', application_uuid, 'nodes', node_uuid, 'calls', call_id)
-        return requests.put(url, headers={'X-Auth-Token': token}, verify=False)
+        return requests.put(url, headers=self._headers(token=token), verify=False)
 
     def get_application(self, application_uuid, token=VALID_TOKEN):
         url = self.url('applications', application_uuid)
-        response = requests.get(url, headers={'X-Auth-Token': token}, verify=False)
+        response = requests.get(url, headers=self._headers(token=token), verify=False)
         return response
 
     def get_application_calls(self, application_uuid, token=VALID_TOKEN):
         url = self.url('applications', application_uuid, 'calls')
-        response = requests.get(url, headers={'X-Auth-Token': token}, verify=False)
+        response = requests.get(url, headers=self._headers(token=token), verify=False)
         return response
 
     def get_application_nodes(self, application_uuid, token=VALID_TOKEN):
         url = self.url('applications', application_uuid, 'nodes')
-        response = requests.get(url, headers={'X-Auth-Token': token}, verify=False)
+        response = requests.get(url, headers=self._headers(token=token), verify=False)
         return response
 
     def delete_application_call(self, application_uuid, call_id, token=VALID_TOKEN):
         url = self.url('applications', application_uuid, 'calls', call_id)
-        return requests.delete(url, headers={'X-Auth-Token': token}, verify=False)
+        return requests.delete(url, headers=self._headers(token=token), verify=False)
 
     def delete_application_node(self, application_uuid, node_uuid, token=VALID_TOKEN):
         url = self.url('applications', application_uuid, 'nodes', node_uuid)
-        return requests.delete(url, headers={'X-Auth-Token': token}, verify=False)
+        return requests.delete(url, headers=self._headers(token=token), verify=False)
 
     def delete_application_node_call(self, application_uuid, node_uuid, call_id, token=VALID_TOKEN):
         url = self.url('applications', application_uuid, 'nodes', node_uuid, 'calls', call_id)
-        return requests.delete(url, headers={'X-Auth-Token': token}, verify=False)
+        return requests.delete(url, headers=self._headers(token=token), verify=False)
 
     def get_application_node(self, application_uuid, node_uuid, token=VALID_TOKEN):
         url = self.url('applications', application_uuid, 'nodes', node_uuid)
-        response = requests.get(url, headers={'X-Auth-Token': token}, verify=False)
+        response = requests.get(url, headers=self._headers(token=token), verify=False)
         return response
 
     def get_calls_result(self, application=None, application_instance=None, token=None):
@@ -189,20 +189,9 @@ class CalldClient:
                 params['application_instance'] = application_instance
         result = requests.get(url,
                               params=params,
-                              headers={'X-Auth-Token': token},
+                              headers=self._headers(token=token),
                               verify=False)
         return result
-
-    def get_trunks_result(self, token=None):
-        url = self.url('trunks')
-        params = {}
-        result = requests.get(url, params=params, headers={'X-Auth-Token': token}, verify=False)
-        return result
-
-    def list_trunks(self, token=VALID_TOKEN):
-        response = self.get_trunks_result(token)
-        assert_that(response.status_code, equal_to(200))
-        return response.json()
 
     def list_calls(self, application=None, application_instance=None, token=VALID_TOKEN):
         response = self.get_calls_result(application, application_instance, token)
@@ -218,7 +207,7 @@ class CalldClient:
                 params['application_instance'] = application_instance
         result = requests.get(url,
                               params=params,
-                              headers={'X-Auth-Token': token},
+                              headers=self._headers(token=token),
                               verify=False)
         return result
 
@@ -230,7 +219,7 @@ class CalldClient:
     def get_call_result(self, call_id, token=None):
         url = self.url('calls', call_id)
         result = requests.get(url,
-                              headers={'X-Auth-Token': token},
+                              headers=self._headers(token=token),
                               verify=False)
         return result
 
@@ -239,7 +228,17 @@ class CalldClient:
         assert_that(response.status_code, equal_to(200))
         return response.json()
 
-    def post_call_result(self, source, priority, extension, context, variables=None, line_id=None, from_mobile=False, token=None):
+    def post_call_result(
+            self,
+            source,
+            priority,
+            extension,
+            context,
+            variables=None,
+            line_id=None,
+            from_mobile=False,
+            token=None,
+    ):
         body = {
             'source': {
                 'user': source,
@@ -263,12 +262,24 @@ class CalldClient:
         url = self.url('calls')
         result = requests.post(url,
                                json=body,
-                               headers={'X-Auth-Token': token},
+                               headers=self._headers(token=token),
                                verify=False)
         return result
 
-    def originate(self, source, priority, extension, context, variables=None, line_id=None, from_mobile=False, token=VALID_TOKEN):
-        response = self.post_call_result(source, priority, extension, context, variables, line_id, from_mobile, token=token)
+    def originate(
+            self,
+            source,
+            priority,
+            extension,
+            context,
+            variables=None,
+            line_id=None,
+            from_mobile=False,
+            token=VALID_TOKEN,
+    ):
+        response = self.post_call_result(
+            source, priority, extension, context, variables, line_id, from_mobile, token=token,
+        )
         assert_that(response.status_code, equal_to(201))
         return response.json()
 
@@ -276,11 +287,18 @@ class CalldClient:
         url = self.url('users', 'me', 'calls')
         result = requests.post(url,
                                json=body,
-                               headers={'X-Auth-Token': token},
+                               headers=self._headers(token=token),
                                verify=False)
         return result
 
-    def originate_me(self, extension, variables=None, line_id=None, from_mobile=False, token=VALID_TOKEN):
+    def originate_me(
+            self,
+            extension,
+            variables=None,
+            line_id=None,
+            from_mobile=False,
+            token=VALID_TOKEN,
+    ):
         body = {
             'extension': extension
         }
@@ -297,7 +315,7 @@ class CalldClient:
     def delete_call_result(self, call_id, token=None):
         url = self.url('calls', call_id)
         result = requests.delete(url,
-                                 headers={'X-Auth-Token': token},
+                                 headers=self._headers(token=token),
                                  verify=False)
         return result
 
@@ -308,7 +326,7 @@ class CalldClient:
     def delete_user_me_call_result(self, call_id, token=None):
         url = self.url('users', 'me', 'calls', call_id)
         result = requests.delete(url,
-                                 headers={'X-Auth-Token': token},
+                                 headers=self._headers(token=token),
                                  verify=False)
         return result
 
@@ -319,7 +337,7 @@ class CalldClient:
     def put_call_user_result(self, call_id, user_uuid, token):
         url = self.url('calls', call_id, 'user', user_uuid)
         result = requests.put(url,
-                              headers={'X-Auth-Token': token},
+                              headers=self._headers(token=token),
                               verify=False)
         return result
 
@@ -331,7 +349,7 @@ class CalldClient:
     def get_users_me_transfers_result(self, token=None):
         url = self.url('users', 'me', 'transfers')
         result = requests.get(url,
-                              headers={'X-Auth-Token': token},
+                              headers=self._headers(token=token),
                               verify=False)
         return result
 
@@ -344,11 +362,19 @@ class CalldClient:
         url = self.url('transfers')
         result = requests.post(url,
                                json=body,
-                               headers={'X-Auth-Token': token},
+                               headers=self._headers(token=token),
                                verify=False)
         return result
 
-    def create_transfer(self, transferred_call, initiator_call, context, exten, variables=None, timeout=None):
+    def create_transfer(
+            self,
+            transferred_call,
+            initiator_call,
+            context,
+            exten,
+            variables=None,
+            timeout=None,
+    ):
         body = {
             'transferred_call': transferred_call,
             'initiator_call': initiator_call,
@@ -380,7 +406,7 @@ class CalldClient:
         url = self.url('users', 'me', 'transfers')
         result = requests.post(url,
                                json=body,
-                               headers={'X-Auth-Token': token},
+                               headers=self._headers(token=token),
                                verify=False)
         return result
 
@@ -397,7 +423,7 @@ class CalldClient:
     def put_complete_transfer_result(self, transfer_id, token=None):
         url = self.url('transfers', transfer_id, 'complete')
         result = requests.put(url,
-                              headers={'X-Auth-Token': token},
+                              headers=self._headers(token=token),
                               verify=False)
         return result
 
@@ -408,7 +434,7 @@ class CalldClient:
     def put_users_me_complete_transfer_result(self, transfer_id, token=None):
         url = self.url('users', 'me', 'transfers', transfer_id, 'complete')
         result = requests.put(url,
-                              headers={'X-Auth-Token': token},
+                              headers=self._headers(token=token),
                               verify=False)
         return result
 
@@ -419,7 +445,7 @@ class CalldClient:
     def delete_transfer_result(self, transfer_id, token=None):
         url = self.url('transfers', transfer_id)
         result = requests.delete(url,
-                                 headers={'X-Auth-Token': token},
+                                 headers=self._headers(token=token),
                                  verify=False)
         return result
 
@@ -431,7 +457,7 @@ class CalldClient:
     def delete_users_me_transfer_result(self, transfer_id, token=None):
         url = self.url('users', 'me', 'transfers', transfer_id)
         result = requests.delete(url,
-                                 headers={'X-Auth-Token': token},
+                                 headers=self._headers(token=token),
                                  verify=False)
         return result
 
@@ -443,7 +469,7 @@ class CalldClient:
     def get_transfer_result(self, transfer_id, token=None):
         url = self.url('transfers', transfer_id)
         result = requests.get(url,
-                              headers={'X-Auth-Token': token},
+                              headers=self._headers(token=token),
                               verify=False)
         return result
 
@@ -455,7 +481,7 @@ class CalldClient:
     def get_status_result(self, token=None):
         url = self.url('status')
         result = requests.get(url,
-                              headers={'X-Auth-Token': token},
+                              headers=self._headers(token=token),
                               verify=False)
         return result
 
@@ -467,87 +493,73 @@ class CalldClient:
     def get_voicemail_result(self, voicemail_id, token=None):
         url = self.url('voicemails', voicemail_id)
         result = requests.get(url,
-                              headers={'X-Auth-Token': token},
+                              headers=self._headers(token=token),
                               verify=False)
         return result
 
     def get_user_me_voicemail_result(self, token=None):
         url = self.url('users', 'me', 'voicemails')
         result = requests.get(url,
-                              headers={'X-Auth-Token': token},
+                              headers=self._headers(token=token),
                               verify=False)
         return result
 
     def get_voicemail_folder_result(self, voicemail_id, folder_id, token=None):
         url = self.url('voicemails', voicemail_id, 'folders', folder_id)
         result = requests.get(url,
-                              headers={'X-Auth-Token': token},
+                              headers=self._headers(token=token),
                               verify=False)
         return result
 
     def get_user_me_voicemail_folder_result(self, folder_id, token=None):
         url = self.url('users', 'me', 'voicemails', 'folders', folder_id)
         result = requests.get(url,
-                              headers={'X-Auth-Token': token},
+                              headers=self._headers(token=token),
                               verify=False)
         return result
 
     def delete_voicemail_message_result(self, voicemail_id, message_id, token=None):
         url = self.url('voicemails', voicemail_id, 'messages', message_id)
         result = requests.delete(url,
-                                 headers={'X-Auth-Token': token},
+                                 headers=self._headers(token=token),
                                  verify=False)
         return result
 
     def delete_user_me_voicemail_message_result(self, message_id, token=None):
         url = self.url('users', 'me', 'voicemails', 'messages', message_id)
         result = requests.delete(url,
-                                 headers={'X-Auth-Token': token},
+                                 headers=self._headers(token=token),
                                  verify=False)
         return result
 
     def get_voicemail_message_result(self, voicemail_id, message_id, token=None):
         url = self.url('voicemails', voicemail_id, 'messages', message_id)
-        result = requests.get(url,
-                              headers={'X-Auth-Token': token},
-                              verify=False)
+        result = requests.get(url, headers=self._headers(token=token), verify=False)
         return result
 
     def get_user_me_voicemail_message_result(self, message_id, token=None):
         url = self.url('users', 'me', 'voicemails', 'messages', message_id)
-        result = requests.get(url,
-                              headers={'X-Auth-Token': token},
-                              verify=False)
+        result = requests.get(url, headers=self._headers(token=token), verify=False)
         return result
 
     def put_voicemail_message_result(self, message, voicemail_id, message_id, token=None):
         url = self.url('voicemails', voicemail_id, 'messages', message_id)
-        result = requests.put(url,
-                              json=message,
-                              headers={'X-Auth-Token': token},
-                              verify=False)
+        result = requests.put(url, json=message, headers=self._headers(token=token), verify=False)
         return result
 
     def put_user_me_voicemail_message_result(self, message, message_id, token=None):
         url = self.url('users', 'me', 'voicemails', 'messages', message_id)
-        result = requests.put(url,
-                              json=message,
-                              headers={'X-Auth-Token': token},
-                              verify=False)
+        result = requests.put(url, json=message, headers=self._headers(token=token), verify=False)
         return result
 
     def get_voicemail_recording_result(self, voicemail_id, message_id, token=None):
         url = self.url('voicemails', voicemail_id, 'messages', message_id, 'recording')
-        result = requests.get(url,
-                              headers={'X-Auth-Token': token},
-                              verify=False)
+        result = requests.get(url, headers=self._headers(token=token), verify=False)
         return result
 
     def get_user_me_voicemail_recording_result(self, message_id, token=None):
         url = self.url('users', 'me', 'voicemails', 'messages', message_id, 'recording')
-        result = requests.get(url,
-                              headers={'X-Auth-Token': token},
-                              verify=False)
+        result = requests.get(url, headers=self._headers(token=token), verify=False)
         return result
 
     def switchboard_queued_calls(self, switchboard_uuid, token=VALID_TOKEN, tenant_uuid=None):
@@ -558,9 +570,7 @@ class CalldClient:
 
     def get_switchboard_queued_calls_result(self, switchboard_uuid, token=None, tenant_uuid=None):
         url = self.url('switchboards', switchboard_uuid, 'calls', 'queued')
-        headers = {'X-Auth-Token': token}
-        if tenant_uuid:
-            headers['Wazo-Tenant'] = tenant_uuid
+        headers = self._headers(token=token, tenant_uuid=tenant_uuid)
         return requests.get(url, headers=headers, verify=False)
 
     def switchboard_answer_queued_call(self, switchboard_uuid, call_id, token,
@@ -576,7 +586,7 @@ class CalldClient:
                                                   line_id=None):
         url = self.url('switchboards', switchboard_uuid, 'calls', 'queued', call_id, 'answer')
         params = {'line_id': line_id} if line_id else None
-        return requests.put(url, headers={'X-Auth-Token': token}, params=params, verify=False)
+        return requests.put(url, headers=self._headers(token), params=params, verify=False)
 
     def switchboard_hold_call(self, switchboard_uuid, call_id, token=VALID_TOKEN):
         response = self.put_switchboard_held_call_result(switchboard_uuid, call_id, token)
@@ -584,7 +594,7 @@ class CalldClient:
 
     def put_switchboard_held_call_result(self, switchboard_uuid, call_id, token=None):
         url = self.url('switchboards', switchboard_uuid, 'calls', 'held', call_id)
-        return requests.put(url, headers={'X-Auth-Token': token}, verify=False)
+        return requests.put(url, headers=self._headers(token=token), verify=False)
 
     def switchboard_held_calls(self, switchboard_uuid, token=VALID_TOKEN, tenant_uuid=None):
         response = self.get_switchboard_held_calls_result(switchboard_uuid, token, tenant_uuid)
@@ -594,9 +604,7 @@ class CalldClient:
 
     def get_switchboard_held_calls_result(self, switchboard_uuid, token=None, tenant_uuid=None):
         url = self.url('switchboards', switchboard_uuid, 'calls', 'held')
-        headers = {'X-Auth-Token': token}
-        if tenant_uuid:
-            headers['Wazo-Tenant'] = tenant_uuid
+        headers = self._headers(token=token, tenant_uuid=tenant_uuid)
         return requests.get(url, headers=headers, verify=False)
 
     def switchboard_answer_held_call(self, switchboard_uuid, call_id, token,
@@ -612,7 +620,15 @@ class CalldClient:
                                                 line_id=None):
         url = self.url('switchboards', switchboard_uuid, 'calls', 'held', call_id, 'answer')
         params = {'line_id': line_id} if line_id else None
-        return requests.put(url, headers={'X-Auth-Token': token}, params=params, verify=False)
+        return requests.put(url, headers=self._headers(token=token), params=params, verify=False)
+
+    def _headers(self, token=None, tenant_uuid=None):
+        headers = {}
+        if token is not None:
+            headers['X-Auth-Token'] = token
+        if tenant_uuid is not None:
+            headers['Wazo-Tenant'] = tenant_uuid
+        return headers
 
     @contextmanager
     def send_no_content_type(self):

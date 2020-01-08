@@ -10,7 +10,7 @@ from ..bus import EventHandler
 from ..services import Endpoint, ConfdCache
 
 
-class TestOnPeerStatus(TestCase):
+class TestBusEvent(TestCase):
     def setUp(self):
         endpoint = self.updated_endpoint = Mock(Endpoint)
 
@@ -172,6 +172,30 @@ class TestOnPeerStatus(TestCase):
         self.updated_endpoint.add_call.assert_called_once_with('1574445784.4')
         assert_that(self.updated_endpoint, has_properties(techno='PJSIP', name='dev_370'))
 
+    def test_on_line_endpoint_sip_associated(self):
+        line_id = 42
+        tenant_uuid = '2c34c282-433e-4bb8-8d56-fec14ff7e1e9'
+        name = 'the-name'
+        username = 'the-username'
+
+        event = {
+            'endpoint_sip': {
+                'id': 52,
+                'name': name,
+                'tenant_uuid': tenant_uuid,
+                'username': username,
+            },
+            'line': {
+                'id': line_id,
+                'tenant_uuid': tenant_uuid},
+        }
+
+        self.handler.on_line_endpoint_sip_associated(event)
+
+        self.confd_cache.add_line.assert_called_once_with(
+            'sip', line_id, name, username, tenant_uuid,
+        )
+
     def test_on_trunk_endpoint_sip_associated(self):
         trunk_id = 42
         tenant_uuid = '2c34c282-433e-4bb8-8d56-fec14ff7e1e9'
@@ -197,6 +221,29 @@ class TestOnPeerStatus(TestCase):
             'sip', trunk_id, name, username, tenant_uuid,
         )
 
+    def test_on_line_endpoint_sccp_associated(self):
+        line_id = 42
+        tenant_uuid = '2c34c282-433e-4bb8-8d56-fec14ff7e1e9'
+        name = 'the-name'
+
+        event = {
+            'endpoint_sccp': {
+                'id': 7,
+                'tenant_uuid': tenant_uuid,
+            },
+            'line': {
+                'id': line_id,
+                'name': name,
+                'tenant_uuid': tenant_uuid,
+            },
+        }
+
+        self.handler.on_line_endpoint_sccp_associated(event)
+
+        self.confd_cache.add_line.assert_called_once_with(
+            'sccp', line_id, name, None, tenant_uuid,
+        )
+
     def test_on_trunk_endpoint_iax_associated(self):
         trunk_id = 42
         tenant_uuid = '2c34c282-433e-4bb8-8d56-fec14ff7e1e9'
@@ -218,6 +265,29 @@ class TestOnPeerStatus(TestCase):
 
         self.confd_cache.add_trunk.assert_called_once_with(
             'iax', trunk_id, name, None, tenant_uuid,
+        )
+
+    def test_on_line_endpoint_custom_associated(self):
+        line_id = 42
+        tenant_uuid = '2c34c282-433e-4bb8-8d56-fec14ff7e1e9'
+        interface = 'interface'
+
+        event = {
+            'endpoint_custom': {
+                'id': 45,
+                'interface': interface,
+                'tenant_uuid': tenant_uuid,
+            },
+            'line': {
+                'id': line_id,
+                'tenant_uuid': tenant_uuid,
+            },
+        }
+
+        self.handler.on_line_endpoint_custom_associated(event)
+
+        self.confd_cache.add_line.assert_called_once_with(
+            'custom', line_id, interface, None, tenant_uuid,
         )
 
     def test_on_trunk_endpoint_custom_associated(self):
@@ -243,6 +313,22 @@ class TestOnPeerStatus(TestCase):
             'custom', trunk_id, interface, None, tenant_uuid,
         )
 
+    def test_on_line_endpoint_sip_dissociated(self):
+        line_id = 42
+        event = {'line': {'id': line_id}}
+
+        self.handler.on_line_endpoint_dissociated(event)
+
+        self.confd_cache.delete_line.assert_called_once_with(line_id)
+
+    def test_on_line_endpoint_sccp_dissociated(self):
+        line_id = 42
+        event = {'line': {'id': line_id}}
+
+        self.handler.on_line_endpoint_dissociated(event)
+
+        self.confd_cache.delete_line.assert_called_once_with(line_id)
+
     def test_on_trunk_endpoint_sip_dissociated(self):
         trunk_id = 42
         event = {'trunk': {'id': trunk_id}}
@@ -259,6 +345,14 @@ class TestOnPeerStatus(TestCase):
 
         self.confd_cache.delete_trunk.assert_called_once_with(trunk_id)
 
+    def test_on_line_endpoint_custom_dissociated(self):
+        line_id = 42
+        event = {'line': {'id': line_id}}
+
+        self.handler.on_line_endpoint_dissociated(event)
+
+        self.confd_cache.delete_line.assert_called_once_with(line_id)
+
     def test_on_trunk_endpoint_custom_dissociated(self):
         trunk_id = 42
         event = {'trunk': {'id': trunk_id}}
@@ -267,6 +361,13 @@ class TestOnPeerStatus(TestCase):
 
         self.confd_cache.delete_trunk.assert_called_once_with(trunk_id)
 
+    def test_on_line_deleted(self):
+        event = {'id': 42}
+
+        self.handler.on_line_endpoint_deleted(event)
+
+        self.confd_cache.delete_line.assert_called_once_with(42)
+
     def test_on_trunk_deleted(self):
         event = {'id': 42}
 
@@ -274,7 +375,50 @@ class TestOnPeerStatus(TestCase):
 
         self.confd_cache.delete_trunk.assert_called_once_with(42)
 
-    def test_on_endpoint_sip_updated(self):
+    def test_on_line_edited(self):
+        event = {
+            'id': s.line_id,
+            'name': s.name,
+            'protocol': 'sccp',
+            'tenant_uuid': s.tenant_uuid,
+        }
+
+        self.handler.on_line_edited(event)
+
+        self.confd_cache.update_line.assert_called_once_with(
+            'sccp', s.line_id, s.name, None, s.tenant_uuid,
+        )
+
+        self.confd_cache.update_line.reset_mock()
+
+        event = {
+            'id': s.line_id,
+            'name': s.name,
+            'protocol': 'sip',
+            'tenant_uuid': s.tenant_uuid,
+        }
+
+        self.handler.on_line_edited(event)
+
+        self.confd_cache.update_line.assert_not_called()
+
+    def test_on_line_endpoint_sip_updated(self):
+        event = {
+            'id': s.endpoint_id,
+            'name': s.name,
+            'tenant_uuid': s.tenant_uuid,
+            'username': s.username,
+            'trunk': None,
+            'line': {'id': s.line_id},
+        }
+
+        self.handler.on_endpoint_sip_updated(event)
+
+        self.confd_cache.update_line.assert_called_once_with(
+            'sip', s.line_id, s.name, s.username, s.tenant_uuid,
+        )
+
+    def test_on_trunk_endpoint_sip_updated(self):
         event = {
             'id': s.endpoint_id,
             'name': s.name,
@@ -284,7 +428,7 @@ class TestOnPeerStatus(TestCase):
             'line': None,
         }
 
-        self.handler.on_trunk_endpoint_sip_updated(event)
+        self.handler.on_endpoint_sip_updated(event)
 
         self.confd_cache.update_trunk.assert_called_once_with(
             'sip', s.trunk_id, s.name, s.username, s.tenant_uuid,
@@ -305,7 +449,7 @@ class TestOnPeerStatus(TestCase):
             'iax', s.trunk_id, s.name, None, s.tenant_uuid,
         )
 
-    def test_on_endpoint_custom_updated(self):
+    def test_on_trunk_endpoint_custom_updated(self):
         event = {
             'id': s.endpoint_id,
             'interface': s.interface,
@@ -314,8 +458,9 @@ class TestOnPeerStatus(TestCase):
             'line': None,
         }
 
-        self.handler.on_trunk_endpoint_custom_updated(event)
+        self.handler.on_endpoint_custom_updated(event)
 
+        self.confd_cache.update_line.assert_not_called()
         self.confd_cache.update_trunk.assert_called_once_with(
             'custom', s.trunk_id, s.interface, None, s.tenant_uuid,
         )
@@ -330,7 +475,7 @@ class TestOnPeerStatus(TestCase):
             'line': {'id': s.line_id},
         }
 
-        self.handler.on_trunk_endpoint_sip_updated(event)
+        self.handler.on_endpoint_sip_updated(event)
 
         self.confd_cache.update_trunk.assert_not_called()
 
@@ -356,6 +501,9 @@ class TestOnPeerStatus(TestCase):
             'line': {'id': s.line_id},
         }
 
-        self.handler.on_trunk_endpoint_custom_updated(event)
+        self.handler.on_endpoint_custom_updated(event)
 
         self.confd_cache.update_trunk.assert_not_called()
+        self.confd_cache.update_line.assert_called_once_with(
+            'custom', s.line_id, s.interface, None, s.tenant_uuid,
+        )

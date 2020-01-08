@@ -18,6 +18,12 @@ from xivo_bus import PublishingQueue
 logger = logging.getLogger(__name__)
 
 ROUTING_KEY_MAPPING = {
+    'line_endpoint_sip_associated': 'config.lines.*.endpoints.sip.*.updated',
+    'line_endpoint_sip_dissociated': 'config.lines.*.endpoints.sip.*.deleted',
+    'line_endpoint_sccp_associated': 'config.lines.*.endpoints.sccp.*.updated',
+    'line_endpoint_sccp_dissociated': 'config.lines.*.endpoints.sccp.*.deleted',
+    'line_endpoint_custom_associated': 'config.lines.*.endpoints.custom.*.updated',
+    'line_endpoint_custom_dissociated': 'config.lines.*.endpoints.custom.*.deleted',
     'trunk_endpoint_sip_associated': 'config.trunks.*.endpoints.sip.*.updated',
     'trunk_endpoint_iax_associated': 'config.trunks.*.endpoints.iax.*.updated',
     'trunk_endpoint_custom_associated': 'config.trunks.*.endpoints.custom.*.updated',

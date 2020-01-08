@@ -6,7 +6,26 @@ from xivo.tenant_flask_helpers import Tenant
 from wazo_calld.auth import required_acl
 from wazo_calld.http import AuthResource
 
-from .schemas import trunk_endpoint_schema
+from .schemas import line_endpoint_schema, trunk_endpoint_schema
+
+
+class LineEndpoints(AuthResource):
+
+    def __init__(self, endpoints_service):
+        self._endpoints_service = endpoints_service
+
+    @required_acl('calld.lines.read')
+    def get(self):
+        tenant_uuid = Tenant.autodetect().uuid
+
+        items, total, filtered = self._endpoints_service.list_lines(tenant_uuid)
+        result = {
+            'items': line_endpoint_schema.dump(items, many=True),
+            'total': total,
+            'filtered': filtered,
+        }
+
+        return result, 200
 
 
 class TrunkEndpoints(AuthResource):

@@ -161,12 +161,23 @@ class MockUser:
 
 class MockLine:
 
-    def __init__(self, id, name=None, protocol=None, users=None, context=None):
+    def __init__(
+            self,
+            id,
+            name=None,
+            protocol=None,
+            users=None,
+            context=None,
+            endpoint_sip=None,
+            tenant_uuid=None,
+    ):
         self._id = id
         self._name = name
         self._protocol = protocol
         self._users = users or []
         self._context = context
+        self._endpoint_sip = endpoint_sip
+        self._tenant_uuid = tenant_uuid
 
     def id_(self):
         return self._id
@@ -180,6 +191,8 @@ class MockLine:
             'name': self._name,
             'protocol': self._protocol,
             'context': self._context,
+            'endpoint_sip': self._endpoint_sip,
+            'tenant_uuid': self._tenant_uuid,
         }
 
 
