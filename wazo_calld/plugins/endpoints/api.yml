@@ -50,6 +50,24 @@ paths:
         '503':
           $ref: '#/responses/AnotherServiceUnavailable'
 definitions:
+  EndpointLine:
+    type: object
+    properties:
+      technology:
+        type: string
+        description: The technology of that endpoint only (SIP, SCCP or custom)
+      name:
+        type: string
+        description: The name of that given endpoint in Asterisk
+      id:
+        type: integer
+        description: The ID of the matching confd line
+      registered:
+        type: boolean
+        description: Wether or not this trunk is registered.
+      current_call_count:
+        type: integer
+        description: The number of ongoing calls on that line
   EndpointLines:
     type: object
     properties:
@@ -63,12 +81,12 @@ definitions:
       filtered:
         type: integer
         description: The number of line endpoint matching the searched terms
-  EndpointLine:
+  EndpointTrunk:
     type: object
     properties:
       technology:
         type: string
-        description: The technology of that endpoint only (SIP, SCCP or custom)
+        description: The technology of that endpoint only (SIP, IAX or custom)
       name:
         type: string
         description: The name of that given endpoint in Asterisk
