@@ -648,7 +648,6 @@ class TestSwitchboardConfdCache(IntegrationTest):
                 'name': 'user_edited',
                 'data': {'uuid': user_uuid},
             },
-            routing_key='config.user.edited',
         )
 
         reset_confd()
@@ -664,7 +663,6 @@ class TestSwitchboardConfdCache(IntegrationTest):
                 'name': 'switchboard_edited',
                 'data': {'uuid': switchboard_uuid},
             },
-            routing_key='config.switchboards.{}.edited'.format(switchboard_uuid),
         )
 
         reset_confd()
@@ -681,7 +679,6 @@ class TestSwitchboardConfdCache(IntegrationTest):
                 'name': 'line_edited',
                 'data': {'id': line_id},
             },
-            routing_key='config.line.edited',
         )
 
         reset_confd()

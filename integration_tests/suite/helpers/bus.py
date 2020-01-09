@@ -47,7 +47,7 @@ class BusClient(bus_helper.BusClient):
                 except TimeoutError:
                     pass
 
-    def send_event(self, event, routing_key):
+    def send_event(self, event):
         with Connection(self._url) as connection:
             producer = Producer(connection, exchange=BUS_EXCHANGE_HEADERS, auto_declare=True)
             producer.publish(json.dumps(event), headers={'name': event['name']}, content_type='application/json')
@@ -60,7 +60,7 @@ class BusClient(bus_helper.BusClient):
                 'Uniqueid': channel_id,
                 'Channel': channel or 'PJSIP/abcdef-00000001',
             }
-        }, 'ami.Newchannel')
+        })
 
     def send_ami_newstate_event(self, channel_id, state='Up'):
         self.send_event({
@@ -70,7 +70,7 @@ class BusClient(bus_helper.BusClient):
                 'Uniqueid': channel_id,
                 'ChannelStateDesc': state,
             }
-        }, 'ami.Newstate')
+        })
 
     def send_ami_hold_event(self, channel_id):
         self.send_event({
@@ -79,7 +79,7 @@ class BusClient(bus_helper.BusClient):
                 'Event': 'Hold',
                 'Uniqueid': channel_id,
             }
-        }, 'ami.Hold')
+        })
 
     def send_ami_unhold_event(self, channel_id):
         self.send_event({
@@ -88,7 +88,7 @@ class BusClient(bus_helper.BusClient):
                 'Event': 'Unhold',
                 'Uniqueid': channel_id,
             },
-        }, 'ami.Unhold')
+        })
 
     def send_ami_hangup_event(self, channel_id, base_exten=None, sip_call_id=None, channel=None):
         self.send_event({
@@ -108,7 +108,7 @@ class BusClient(bus_helper.BusClient):
                     'WAZO_SIP_CALL_ID': sip_call_id,
                 },
             },
-        }, 'ami.Hangup')
+        })
 
     def send_ami_peerstatus_event(self, channel_type, peer, status):
         self.send_event({
@@ -120,7 +120,7 @@ class BusClient(bus_helper.BusClient):
                 'Peer': peer,
                 'PeerStatus': status,
             },
-        }, 'ami.PeerStatus')
+        })
 
     def send_ami_registry_event(self, channel_type, domain, status, username):
         self.send_event({
@@ -133,7 +133,7 @@ class BusClient(bus_helper.BusClient):
                 'Status': status,
                 'Username': username,
             },
-        }, 'ami.Registry')
+        })
 
     def send_ami_dtmf_end_digit(self, channel_id, digit):
         self.send_event({
@@ -142,7 +142,7 @@ class BusClient(bus_helper.BusClient):
                 'Uniqueid': channel_id,
                 'Digit': digit,
             },
-        }, 'ami.DTMFEnd')
+        })
 
     def send_moh_created_event(self, moh_uuid):
         self.send_event({
@@ -151,7 +151,7 @@ class BusClient(bus_helper.BusClient):
                 'uuid': moh_uuid,
                 'name': 'default',
             },
-        }, 'config.moh.created')
+        })
 
     def send_moh_deleted_event(self, moh_uuid):
         self.send_event({
@@ -160,7 +160,7 @@ class BusClient(bus_helper.BusClient):
                 'uuid': moh_uuid,
                 'name': 'default',
             },
-        }, 'config.moh.deleted')
+        })
 
     def send_application_created_event(self, application_uuid, destination=None):
         payload = {
@@ -178,7 +178,7 @@ class BusClient(bus_helper.BusClient):
                 'music_on_hold': None,
                 'answer': False,
             }
-        self.send_event(payload, 'config.applications.created')
+        self.send_event(payload)
 
     def send_application_edited_event(self, application_uuid, destination=None):
         payload = {
@@ -196,7 +196,7 @@ class BusClient(bus_helper.BusClient):
                 'music_on_hold': None,
                 'answer': False,
             }
-        self.send_event(payload, 'config.applications.edited')
+        self.send_event(payload)
 
     def send_application_deleted_event(self, application_uuid):
         payload = {
@@ -208,11 +208,11 @@ class BusClient(bus_helper.BusClient):
                 'destination_options': {},
             },
         }
-        self.send_event(payload, 'config.applications.deleted')
+        self.send_event(payload)
 
     def send_trunk_endpoint_associated_event(self, trunk_id, endpoint_id):
         payload = {
             'name': 'trunk_endpoint_associated',
             'data': {'trunk_id': trunk_id, 'endpoint_id': endpoint_id},
         }
-        self.send_event(payload, 'config.trunks.endpoints.updated')
+        self.send_event(payload)
