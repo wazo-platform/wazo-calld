@@ -54,6 +54,7 @@ class BusClient(bus_helper.BusClient):
 
     def send_ami_newchannel_event(self, channel_id, channel=None):
         self.send_event({
+            'name': 'Newchannel',
             'data': {
                 'Event': 'Newchannel',
                 'Uniqueid': channel_id,
@@ -63,6 +64,7 @@ class BusClient(bus_helper.BusClient):
 
     def send_ami_newstate_event(self, channel_id, state='Up'):
         self.send_event({
+            'name': 'Newstate',
             'data': {
                 'Event': 'Newstate',
                 'Uniqueid': channel_id,
@@ -72,6 +74,7 @@ class BusClient(bus_helper.BusClient):
 
     def send_ami_hold_event(self, channel_id):
         self.send_event({
+            'name': 'Hold',
             'data': {
                 'Event': 'Hold',
                 'Uniqueid': channel_id,
@@ -80,14 +83,16 @@ class BusClient(bus_helper.BusClient):
 
     def send_ami_unhold_event(self, channel_id):
         self.send_event({
+            'name': 'Unhold',
             'data': {
                 'Event': 'Unhold',
                 'Uniqueid': channel_id,
-            }
+            },
         }, 'ami.Unhold')
 
     def send_ami_hangup_event(self, channel_id, base_exten=None, sip_call_id=None, channel=None):
         self.send_event({
+            'name': 'Hangup',
             'data': {
                 'Event': 'Hangup',
                 'Uniqueid': channel_id,
@@ -102,11 +107,12 @@ class BusClient(bus_helper.BusClient):
                     'XIVO_BASE_EXTEN': base_exten if base_exten else '*10',
                     'WAZO_SIP_CALL_ID': sip_call_id,
                 },
-            }
+            },
         }, 'ami.Hangup')
 
     def send_ami_peerstatus_event(self, channel_type, peer, status):
         self.send_event({
+            'name': 'PeerStatus',
             'data': {
                 'Event': 'PeerStatus',
                 'Privilege': 'system,all',
@@ -118,6 +124,7 @@ class BusClient(bus_helper.BusClient):
 
     def send_ami_registry_event(self, channel_type, domain, status, username):
         self.send_event({
+            'name': 'Registry',
             'data': {
                 'ChannelType': channel_type,
                 'Domain': domain,
@@ -139,31 +146,31 @@ class BusClient(bus_helper.BusClient):
 
     def send_moh_created_event(self, moh_uuid):
         self.send_event({
+            'name': 'moh_created',
             'data': {
                 'uuid': moh_uuid,
                 'name': 'default',
             },
-            'name': 'moh_created',
         }, 'config.moh.created')
 
     def send_moh_deleted_event(self, moh_uuid):
         self.send_event({
+            'name': 'moh_deleted',
             'data': {
                 'uuid': moh_uuid,
                 'name': 'default',
             },
-            'name': 'moh_deleted',
         }, 'config.moh.deleted')
 
     def send_application_created_event(self, application_uuid, destination=None):
         payload = {
+            'name': 'application_created',
             'data': {
                 'uuid': application_uuid,
                 'name': 'test-app-name',
                 'destination': destination,
                 'destination_options': {},
             },
-            'name': 'application_created',
         }
         if destination:
             payload['data']['destination_options'] = {
@@ -175,13 +182,13 @@ class BusClient(bus_helper.BusClient):
 
     def send_application_edited_event(self, application_uuid, destination=None):
         payload = {
+            'name': 'application_edited',
             'data': {
                 'uuid': application_uuid,
                 'name': 'test-app-name',
                 'destination': destination,
                 'destination_options': {},
             },
-            'name': 'application_edited',
         }
         if destination:
             payload['data']['destination_options'] = {
@@ -193,19 +200,19 @@ class BusClient(bus_helper.BusClient):
 
     def send_application_deleted_event(self, application_uuid):
         payload = {
+            'name': 'application_deleted',
             'data': {
                 'uuid': application_uuid,
                 'name': 'test-app-name',
                 'destination': None,
                 'destination_options': {},
             },
-            'name': 'application_deleted',
         }
         self.send_event(payload, 'config.applications.deleted')
 
     def send_trunk_endpoint_associated_event(self, trunk_id, endpoint_id):
         payload = {
-            'data': {'trunk_id': trunk_id, 'endpoint_id': endpoint_id},
             'name': 'trunk_endpoint_associated',
+            'data': {'trunk_id': trunk_id, 'endpoint_id': endpoint_id},
         }
         self.send_event(payload, 'config.trunks.endpoints.updated')
