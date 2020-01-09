@@ -14,6 +14,18 @@ from .exceptions import (
 
 logger = logging.getLogger(__name__)
 
+AUTO_ANSWER_VARIABLES = {
+    # Aastra/Mitel need Alert-Info: info=alert-autoanswer
+    # Polycom need Alert-Info: xivo-autoanswer
+    # Snom need Alert-Info: <http://something>;info=alert-autoanswer;delay=0
+    # Which models need the other headers is unknown
+    'PJSIP_HEADER(add,Alert-Info)': '<http://wazo.community>;info=alert-autoanswer;delay=0;xivo-autoanswer',
+    'PJSIP_HEADER(add,Answer-After)': '0',
+    'PJSIP_HEADER(add,Answer-Mode)': 'Auto',
+    'PJSIP_HEADER(add,Call-Info)': ';answer-after=0',
+    'PJSIP_HEADER(add,P-Auto-answer)': 'normal',
+}
+
 
 def set_channel_var_sync(channel, var, value, bypass_stasis=False):
     # TODO remove this when Asterisk gets fixed to set var synchronously

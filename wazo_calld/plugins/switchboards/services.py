@@ -1,4 +1,4 @@
-# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -7,6 +7,7 @@ from ari.exceptions import ARINotFound
 
 from xivo.caller_id import assemble_caller_id
 from wazo_calld.ari_ import DEFAULT_APPLICATION_NAME
+from wazo_calld.plugin_helpers.ari_ import AUTO_ANSWER_VARIABLES
 from wazo_calld.plugin_helpers.confd import User
 from wazo_calld.plugin_helpers.exceptions import InvalidUserUUID
 
@@ -23,17 +24,6 @@ from .exceptions import (
 
 BRIDGE_QUEUE_ID = 'switchboard-{uuid}-queue'
 BRIDGE_HOLD_ID = 'switchboard-{uuid}-hold'
-AUTO_ANSWER_VARIABLES = {
-    # Aastra/Mitel need Alert-Info: info=alert-autoanswer
-    # Polycom need Alert-Info: xivo-autoanswer
-    # Snom need Alert-Info: <http://something>;info=alert-autoanswer;delay=0
-    # Which models need the other headers is unknown
-    'PJSIP_HEADER(add,Alert-Info)': '<http://wazo.community>;info=alert-autoanswer;delay=0;xivo-autoanswer',
-    'PJSIP_HEADER(add,Answer-After)': '0',
-    'PJSIP_HEADER(add,Answer-Mode)': 'Auto',
-    'PJSIP_HEADER(add,Call-Info)': ';answer-after=0',
-    'PJSIP_HEADER(add,P-Auto-answer)': 'normal',
-}
 
 logger = logging.getLogger(__name__)
 
