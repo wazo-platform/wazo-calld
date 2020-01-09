@@ -1,4 +1,4 @@
-# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -88,13 +88,14 @@ class RelocateStateReady(RelocateState):
 
     def initiate(self, relocate, destination):
         endpoint = destination.ari_endpoint()
+        variables = relocate.recipient_variables or {}
         try:
             new_channel = self._ari.channels.originate(
                 endpoint=endpoint,
                 app=DEFAULT_APPLICATION_NAME,
                 appArgs=['relocate', relocate.uuid, 'recipient'],
                 originator=relocate.relocated_channel,
-                variables={'variables': relocate.recipient_variables},
+                variables={'variables': variables},
                 timeout=relocate.timeout,
             )
         except HTTPError:

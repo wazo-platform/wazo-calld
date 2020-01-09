@@ -182,6 +182,9 @@ definitions:
         $ref: '#/definitions/RelocateCompletions'
       timeout:
         $ref: '#/definitions/Timeout'
+      auto_answer:
+        type: boolean
+        description: Inform the phone that it should answer automatically.
     example:
       initiator_call: '123456.789'
       destination: line
@@ -190,6 +193,7 @@ definitions:
         contact: 5f3ff5ga
       completions:
         - "answer"
+      auto_answer: false
     required:
       - initiator_call
       - destination

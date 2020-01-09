@@ -1,4 +1,4 @@
-# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -25,6 +25,7 @@ class Relocate:
         self.relocated_channel = None
         self.initiator_channel = None
         self.recipient_channel = None
+        self.recipient_variables = None
         self.initiator = None
         self.completions = None
 
