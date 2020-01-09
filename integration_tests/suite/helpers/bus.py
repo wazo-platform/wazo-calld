@@ -11,13 +11,12 @@ from kombu.exceptions import TimeoutError
 from xivo_test_helpers import bus as bus_helper
 
 from .constants import BUS_QUEUE_NAME
-from .constants import BUS_EXCHANGE_XIVO
 from .constants import BUS_EXCHANGE_HEADERS
 
 
 class BusClient(bus_helper.BusClient):
 
-    def listen_events(self, routing_key, exchange=BUS_EXCHANGE_XIVO):
+    def listen_events(self, routing_key, exchange):
         with Connection(self._url) as conn:
             queue = Queue(BUS_QUEUE_NAME, exchange=exchange, routing_key=routing_key, channel=conn.channel())
             queue.declare()
