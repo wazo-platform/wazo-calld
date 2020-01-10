@@ -1,4 +1,4 @@
-# Copyright 2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -28,7 +28,7 @@ class ConfdClientGetUUIDCacheDecorator:
     def invalidate_cache_entry(self, uuid):
         with self._lock:
             logger.debug('Removing %s %s from cache', self._resource_name, uuid)
-            del self._cache[uuid]
+            self._cache.pop(uuid, None)
 
     def _make_key(self, args, kwargs):
         # See lru_cache code for more details:

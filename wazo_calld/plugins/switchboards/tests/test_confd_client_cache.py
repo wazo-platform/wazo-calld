@@ -1,4 +1,4 @@
-# Copyright 2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from hamcrest import (
@@ -57,3 +57,9 @@ class TestConfdCacheGetUUID(TestCase):
 
         result = self.cache_get('some-uuid')
         assert_that(result, equal_to('some-new-response'))
+
+    def test_invalidate_unknown_entry(self):
+        try:
+            self.cache_get.invalidate_cache_entry('some-uuid')
+        except KeyError:
+            self.fail('invalidate_cache_entry raised KeyError')
