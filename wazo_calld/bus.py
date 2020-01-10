@@ -1,14 +1,10 @@
-# Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import kombu
+import kombu.mixins
 import logging
 
-from kombu import binding
-from kombu import Connection
-from kombu import Exchange
-from kombu import Producer
-from kombu.mixins import ConsumerMixin
 from xivo.pubsub import Pubsub
 from xivo.status import Status
 from xivo_bus import Marshaler
@@ -32,9 +28,9 @@ class CoreBusPublisher:
 
     def _make_publisher(self):
         bus_url = 'amqp://{username}:{password}@{host}:{port}//'.format(**self.config)
-        bus_connection = Connection(bus_url)
-        bus_exchange = Exchange(self.config['publish_exchange_name'], type=self.config['publish_exchange_type'])
-        bus_producer = Producer(bus_connection, exchange=bus_exchange, auto_declare=True)
+        bus_connection = kombu.Connection(bus_url)
+        bus_exchange = kombu.Exchange(self.config['publish_exchange_name'], type=self.config['publish_exchange_type'])
+        bus_producer = kombu.Producer(bus_connection, exchange=bus_exchange, auto_declare=True)
         bus_marshaler = Marshaler(self._uuid)
         return Publisher(bus_producer, bus_marshaler)
 
@@ -46,20 +42,20 @@ class CoreBusPublisher:
         self._publisher.stop()
 
 
-class CoreBusConsumer(ConsumerMixin):
+class CoreBusConsumer(kombu.mixins.ConsumerMixin):
 
     def __init__(self, global_config):
         self._events_pubsub = Pubsub()
 
         self._bus_url = 'amqp://{username}:{password}@{host}:{port}//'.format(**global_config['bus'])
-        self._exchange = Exchange(global_config['bus']['subscribe_exchange_name'],
-                                  type=global_config['bus']['subscribe_exchange_type'])
+        self._exchange = kombu.Exchange(global_config['bus']['subscribe_exchange_name'],
+                                        type=global_config['bus']['subscribe_exchange_type'])
         self._queue = kombu.Queue(exclusive=True)
         self._is_running = False
 
     def run(self):
         logger.info("Running AMQP consumer")
-        with Connection(self._bus_url) as connection:
+        with kombu.Connection(self._bus_url) as connection:
             self.connection = connection
 
             super().run()
