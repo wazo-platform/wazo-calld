@@ -24,7 +24,7 @@ class NoWaitStrategy(WaitStrategy):
 class CalldUpWaitStrategy(WaitStrategy):
 
     def wait(self, integration_test):
-        until.true(integration_test.calld.is_up, tries=5)
+        until.true(integration_test.calld_client.is_up, tries=5)
 
 
 class CalldConnectionsOkWaitStrategy(WaitStrategy):

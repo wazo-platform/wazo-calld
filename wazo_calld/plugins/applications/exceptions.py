@@ -89,7 +89,7 @@ class NoSuchMoh(APIException):
 
     def __init__(self, uuid):
         super().__init__(
-            status_code=400,
+            status_code=404,
             message='No such music on hold',
             error_id='no-such-moh',
             details={

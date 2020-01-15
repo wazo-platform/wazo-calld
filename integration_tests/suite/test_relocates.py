@@ -1,5 +1,5 @@
 
-# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -18,7 +18,6 @@ from hamcrest import has_property
 from hamcrest import not_
 from xivo_test_helpers import until
 from xivo_test_helpers.hamcrest.raises import raises
-from wazo_calld_client import Client as CalldClient
 from wazo_calld_client.exceptions import CalldError
 
 from .helpers.auth import MockUserToken
@@ -51,9 +50,6 @@ class TestRelocates(RealAsteriskIntegrationTest):
     def setUp(self):
         super().setUp()
         self.c = HamcrestARIChannel(self.ari)
-
-    def make_calld(self, token):
-        return CalldClient('localhost', self.service_port(9500, 'calld'), token=token, verify_certificate=False)
 
     def stasis_channel(self):
         def channel_is_in_stasis(channel_id):
