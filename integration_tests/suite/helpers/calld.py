@@ -18,10 +18,10 @@ class CalldClient(Client):
     def is_up(self):
         try:
             self.status.get()
-        except requests.RequestException:
-            return False
         except requests.HTTPError:
             return True
+        except requests.RequestException:
+            return False
         return True
 
 
