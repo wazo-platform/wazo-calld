@@ -45,6 +45,7 @@ _DEFAULT_CONFIG = {
     'auth': {
         'host': 'localhost',
         'port': 9497,
+        'https': True,
         'verify_certificate': _CERT_FILE,
         'key_file': '/var/lib/wazo-auth-keys/wazo-calld-key.yml',
     },
@@ -62,6 +63,7 @@ _DEFAULT_CONFIG = {
     'confd': {
         'host': 'localhost',
         'port': 9486,
+        'https': True,
         'verify_certificate': _CERT_FILE,
     },
     'consul': {

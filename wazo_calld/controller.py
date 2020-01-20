@@ -41,8 +41,7 @@ class Controller:
                                              config['consul'],
                                              config['service_discovery'],
                                              config['bus'],
-                                             partial(self_check,
-                                                     config['rest_api']['port'])]
+                                             partial(self_check, config)]
 
         self._pubsub = pubsub.Pubsub()
         plugin_helpers.load(

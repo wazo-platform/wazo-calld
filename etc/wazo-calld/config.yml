@@ -42,12 +42,14 @@ auth:
   host: localhost
   port: 9497
   timeout: 2
+  https: true
   verify_certificate: /usr/share/xivo-certs/server.crt
   key_file: /var/lib/wazo-auth-keys/wazo-calld-key.yml
 
 confd:
   host: localhost
   port: 9486
+  https: true
   verify_certificate: /usr/share/xivo-certs/server.crt
 
 # Event bus (AMQP) connection informations
