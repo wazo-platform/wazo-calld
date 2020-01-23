@@ -58,10 +58,11 @@ class HTTPServer:
 
         bind_addr = (self.config['listen'], self.config['port'])
         self.server = wsgi.WSGIServer(bind_addr=bind_addr, wsgi_app=wsgi_app_https)
-        self.server.ssl_adapter = http_helpers.ssl_adapter(
-            self.config['certificate'],
-            self.config['private_key'],
-        )
+        if self.config['certificate'] and self.config['private_key']:
+            self.server.ssl_adapter = http_helpers.ssl_adapter(
+                self.config['certificate'],
+                self.config['private_key'],
+            )
         logger.debug(
             'WSGIServer starting... uid: %s, listen: %s:%s',
             os.getuid(),
