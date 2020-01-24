@@ -1,4 +1,4 @@
-# Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -25,12 +25,13 @@ logger = logging.getLogger(__name__)
 
 class CallsService:
 
-    def __init__(self, amid_client, ari_config, ari, confd_client, dial_echo_manager):
+    def __init__(self, amid_client, ari_config, ari, confd_client, dial_echo_manager, notifier):
         self._ami = amid_client
         self._ari_config = ari_config
         self._ari = ari
         self._confd = confd_client
         self._dial_echo_manager = dial_echo_manager
+        self._notifier = notifier
         self._state_persistor = ReadOnlyStatePersistor(self._ari)
 
     def list_calls(self, application_filter=None, application_instance_filter=None):
@@ -177,6 +178,28 @@ class CallsService:
 
         self._ari.channels.hangup(channelId=channel_id)
 
+    def mute(self, call_id):
+        try:
+            channel = self._ari.channels.get(channelId=call_id)
+            self.set_channel_var_sync(channel, 'WAZO_CALL_MUTED', '1')
+            channel.mute(direction='in')
+        except ARINotFound:
+            raise NoSuchCall(call_id)
+
+        call = Call(channel.id)
+        self._notifier.call_updated(call)
+
+    def unmute(self, call_id):
+        try:
+            channel = self._ari.channels.get(channelId=call_id)
+            self.set_channel_var_sync(channel, 'WAZO_CALL_MUTED', '')
+            channel.unmute(direction='in')
+        except ARINotFound:
+            raise NoSuchCall(call_id)
+
+        call = Call(channel.id)
+        self._notifier.call_updated(call)
+
     def hangup_user(self, call_id, user_uuid):
         channel = Channel(call_id, self._ari)
         if not channel.exists() or channel.is_local():
@@ -249,3 +272,13 @@ class CallsService:
         call.sip_call_id = event_variables.get('WAZO_SIP_CALL_ID') or None
 
         return call
+
+    def set_channel_var_sync(self, channel, var, value):
+        # TODO remove this when Asterisk gets fixed to set var synchronously
+        def get_value():
+            try:
+                return channel.getChannelVar(variable=var)['value']
+            except ARINotFound as e:
+                if e.original_error.response.reason == 'Variable Not Found':
+                    return None
+                raise

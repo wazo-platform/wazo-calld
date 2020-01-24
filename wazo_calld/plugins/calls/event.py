@@ -66,3 +66,26 @@ class ConnectCallEvent(StartCallEvent):
         if len(event['args']) < 3:
             raise InvalidConnectCallEvent()
         return event['args'][2]
+
+
+class _BaseEvent:
+
+    required_acl = 'events.{}'
+
+    def marshal(self):
+        return self._body
+
+
+class _BaseCallItemEvent(_BaseEvent):
+
+    def __init__(self, call):
+        self.routing_key = self.routing_key.format(call['id'])
+        self.required_acl = self.required_acl.format(self.routing_key)
+        self._body = {
+            'call': call
+        }
+
+
+class CallUpdated(_BaseCallItemEvent):
+    name = 'call_updated'
+    routing_key = 'calls.{}.updated'
