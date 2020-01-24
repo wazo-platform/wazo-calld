@@ -1,4 +1,4 @@
-# Copyright 2016-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import iso8601
@@ -79,7 +79,7 @@ class _BaseEvent:
 class _BaseCallItemEvent(_BaseEvent):
 
     def __init__(self, call):
-        self.routing_key = self.routing_key.format(call['id'])
+        self.routing_key = self.routing_key.format(call['call_id'])
         self.required_acl = self.required_acl.format(self.routing_key)
         self._body = {
             'call': call

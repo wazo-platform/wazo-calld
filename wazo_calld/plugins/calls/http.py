@@ -94,6 +94,9 @@ class CallResource(AuthResource):
 
 class CallMuteStartResource(AuthResource):
 
+    def __init__(self, calls_service):
+        self.calls_service = calls_service
+
     @required_acl('calld.calls.{call_id}.mute.start.update')
     def put(self, call_id):
         self.calls_service.mute(call_id)
@@ -101,6 +104,9 @@ class CallMuteStartResource(AuthResource):
 
 
 class CallMuteStopResource(AuthResource):
+
+    def __init__(self, calls_service):
+        self.calls_service = calls_service
 
     @required_acl('calld.calls.{call_id}.mute.stop.update')
     def put(self, call_id):

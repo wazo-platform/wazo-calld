@@ -6,7 +6,7 @@ import logging
 from .schemas import (
     call_schema,
 )
-from .events import (
+from .event import (
     CallUpdated,
 )
 
