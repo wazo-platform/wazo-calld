@@ -1,4 +1,4 @@
-# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -6,6 +6,8 @@ import logging
 from .exceptions import (
     NoSuchSnoop,
 )
+from wazo_calld.plugin_helpers.ari_ import set_channel_var_sync
+
 from .models import (
     CallFormatter,
     make_node_from_bridge,
@@ -149,7 +151,7 @@ class ApplicationStasis:
 
         moh = self._moh.find_by_name(event['moh_class'])
         if moh:
-            self._service.set_channel_var_sync(channel, 'WAZO_MOH_UUID', str(moh['uuid']))
+            set_channel_var_sync(channel, 'WAZO_MOH_UUID', str(moh['uuid']))
 
         formatter = CallFormatter(application, self._ari)
         call = formatter.from_channel(channel)
@@ -162,7 +164,7 @@ class ApplicationStasis:
 
         application = self._service.get_application(application_uuid)
 
-        self._service.set_channel_var_sync(channel, 'WAZO_MOH_UUID', '')
+        set_channel_var_sync(channel, 'WAZO_MOH_UUID', '')
         formatter = CallFormatter(application, self._ari)
         call = formatter.from_channel(channel)
         self._notifier.call_updated(application_uuid, call)

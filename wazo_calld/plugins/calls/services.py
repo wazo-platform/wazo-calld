@@ -6,7 +6,7 @@ import logging
 from ari.exceptions import ARINotFound
 from wazo_calld.ari_ import DEFAULT_APPLICATION_NAME
 from wazo_calld.plugin_helpers import ami
-from wazo_calld.plugin_helpers.ari_ import Channel
+from wazo_calld.plugin_helpers.ari_ import Channel, set_channel_var_sync
 from wazo_calld.plugin_helpers.confd import User
 from wazo_calld.plugin_helpers.exceptions import (
     InvalidExtension,
@@ -181,7 +181,7 @@ class CallsService:
     def mute(self, call_id):
         try:
             channel = self._ari.channels.get(channelId=call_id)
-            self.set_channel_var_sync(channel, 'WAZO_CALL_MUTED', '1')
+            set_channel_var_sync(channel, 'WAZO_CALL_MUTED', '1')
             channel.mute(direction='in')
         except ARINotFound:
             raise NoSuchCall(call_id)
@@ -192,7 +192,7 @@ class CallsService:
     def unmute(self, call_id):
         try:
             channel = self._ari.channels.get(channelId=call_id)
-            self.set_channel_var_sync(channel, 'WAZO_CALL_MUTED', '')
+            set_channel_var_sync(channel, 'WAZO_CALL_MUTED', '')
             channel.unmute(direction='in')
         except ARINotFound:
             raise NoSuchCall(call_id)
@@ -272,13 +272,3 @@ class CallsService:
         call.sip_call_id = event_variables.get('WAZO_SIP_CALL_ID') or None
 
         return call
-
-    def set_channel_var_sync(self, channel, var, value):
-        # TODO remove this when Asterisk gets fixed to set var synchronously
-        def get_value():
-            try:
-                return channel.getChannelVar(variable=var)['value']
-            except ARINotFound as e:
-                if e.original_error.response.reason == 'Variable Not Found':
-                    return None
-                raise

@@ -1,6 +1,7 @@
-# Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+import logging
 import time
 import json
 
@@ -10,6 +11,29 @@ from .exceptions import (
     NotEnoughChannels,
     TooManyChannels,
 )
+
+logger = logging.getLogger(__name__)
+
+
+def set_channel_var_sync(channel, var, value):
+    # TODO remove this when Asterisk gets fixed to set var synchronously
+    def get_value():
+        try:
+            return channel.getChannelVar(variable=var)['value']
+        except ARINotFound as e:
+            if e.original_error.response.reason == 'Variable Not Found':
+                return None
+            raise
+
+    channel.setChannelVar(variable=var, value=value)
+    for _ in range(20):
+        if get_value() == value:
+            return
+
+        logger.debug('waiting for a setvar to complete')
+        time.sleep(0.01)
+
+    raise Exception('failed to set channel variable {}={}'.format(var, value))
 
 
 class GlobalVariableAdapter:
