@@ -1,4 +1,4 @@
-# Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from wazo_auth_client import Client as AuthClient
@@ -11,8 +11,8 @@ from .notifier import CallNotifier
 from .dial_echo import DialEchoManager
 from .http import (
     CallResource,
-    CallResourceMuteStart,
-    CallResourceMuteStop,
+    CallMuteStartResource,
+    CallMuteStopResource,
     CallsResource,
     ConnectCallToUserResource,
     MyCallResource,
@@ -58,7 +58,7 @@ class Plugin:
         api.add_resource(CallsResource, '/calls', resource_class_args=[calls_service])
         api.add_resource(MyCallsResource, '/users/me/calls', resource_class_args=[auth_client, calls_service])
         api.add_resource(CallResource, '/calls/<call_id>', resource_class_args=[calls_service])
-        api.add_resource(CallResourceMuteStart, '/calls/<call_id>/mute/start', resource_class_args=[calls_service])
-        api.add_resource(CallResourceMuteStop, '/calls/<call_id>/mute/stop', resource_class_args=[calls_service])
+        api.add_resource(CallMuteStartResource, '/calls/<call_id>/mute/start', resource_class_args=[calls_service])
+        api.add_resource(CallMuteStopResource, '/calls/<call_id>/mute/stop', resource_class_args=[calls_service])
         api.add_resource(MyCallResource, '/users/me/calls/<call_id>', resource_class_args=[auth_client, calls_service])
         api.add_resource(ConnectCallToUserResource, '/calls/<call_id>/user/<user_uuid>', resource_class_args=[calls_service])

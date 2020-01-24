@@ -1,4 +1,4 @@
-# Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -92,7 +92,7 @@ class CallResource(AuthResource):
         return None, 204
 
 
-class CallResourceMuteStart(AuthResource):
+class CallMuteStartResource(AuthResource):
 
     @required_acl('calld.calls.{call_id}.mute.start.update')
     def put(self, call_id):
@@ -100,7 +100,7 @@ class CallResourceMuteStart(AuthResource):
         return '', 204
 
 
-class CallResourceMuteStop(AuthResource):
+class CallMuteStopResource(AuthResource):
 
     @required_acl('calld.calls.{call_id}.mute.stop.update')
     def put(self, call_id):
