@@ -181,7 +181,7 @@ class CallsService:
     def mute(self, call_id):
         try:
             channel = self._ari.channels.get(channelId=call_id)
-            set_channel_var_sync(channel, 'WAZO_CALL_MUTED', '1')
+            set_channel_var_sync(channel, 'WAZO_CALL_MUTED', '1', bypass_stasis=True)
             channel.mute(direction='in')
         except ARINotFound:
             raise NoSuchCall(call_id)
@@ -192,7 +192,7 @@ class CallsService:
     def unmute(self, call_id):
         try:
             channel = self._ari.channels.get(channelId=call_id)
-            set_channel_var_sync(channel, 'WAZO_CALL_MUTED', '')
+            set_channel_var_sync(channel, 'WAZO_CALL_MUTED', '', bypass_stasis=True)
             channel.unmute(direction='in')
         except ARINotFound:
             raise NoSuchCall(call_id)

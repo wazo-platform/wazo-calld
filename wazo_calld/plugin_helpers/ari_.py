@@ -15,7 +15,7 @@ from .exceptions import (
 logger = logging.getLogger(__name__)
 
 
-def set_channel_var_sync(channel, var, value):
+def set_channel_var_sync(channel, var, value, bypass_stasis=False):
     # TODO remove this when Asterisk gets fixed to set var synchronously
     def get_value():
         try:
@@ -25,7 +25,7 @@ def set_channel_var_sync(channel, var, value):
                 return None
             raise
 
-    channel.setChannelVar(variable=var, value=value)
+    channel.setChannelVar(variable=var, value=value, bypassStasis=bypass_stasis)
     for _ in range(20):
         if get_value() == value:
             return
