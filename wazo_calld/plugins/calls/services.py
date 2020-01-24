@@ -182,22 +182,24 @@ class CallsService:
         try:
             channel = self._ari.channels.get(channelId=call_id)
             set_channel_var_sync(channel, 'WAZO_CALL_MUTED', '1', bypass_stasis=True)
-            channel.mute(direction='in')
         except ARINotFound:
             raise NoSuchCall(call_id)
 
-        call = Call(channel.id)
+        ami.mute(self._ami, call_id)
+
+        call = Call(call_id)
         self._notifier.call_updated(call)
 
     def unmute(self, call_id):
         try:
             channel = self._ari.channels.get(channelId=call_id)
             set_channel_var_sync(channel, 'WAZO_CALL_MUTED', '', bypass_stasis=True)
-            channel.unmute(direction='in')
         except ARINotFound:
             raise NoSuchCall(call_id)
 
-        call = Call(channel.id)
+        ami.unmute(self._ami, call_id)
+
+        call = Call(call_id)
         self._notifier.call_updated(call)
 
     def hangup_user(self, call_id, user_uuid):
