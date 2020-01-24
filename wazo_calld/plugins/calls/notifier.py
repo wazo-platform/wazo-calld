@@ -20,6 +20,6 @@ class CallNotifier:
 
     def call_updated(self, call):
         logger.debug('Call (%s) updated', call.id_)
-        call = call_schema.dump(call)
-        event = CallUpdated(application_uuid, call)
+        call_serialized = call_schema.dump(call)
+        event = CallUpdated(call_serialized)
         self._bus.publish(event)
