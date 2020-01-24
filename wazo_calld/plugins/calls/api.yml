@@ -229,6 +229,48 @@ paths:
             $ref: '#/definitions/Error'
         '503':
           $ref: '#/responses/AnotherServiceUnavailable'
+  /users/me/calls/{call_id}/mute/start:
+    put:
+      summary: Mute a call from user
+      description: '**Required ACL:** `calld.users.me.calls.{call_id}.mute.start.update`
+
+
+        Only calls owned by the authenticated user may be mute.'
+      parameters:
+      - $ref: '#/parameters/CallID'
+      tags:
+      - calls
+      - users
+      responses:
+        '204':
+          description: The call is now muted
+        '404':
+          description: No such call
+          schema:
+            $ref: '#/definitions/Error'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+  /users/me/calls/{call_id}/mute/stop:
+    put:
+      summary: Unmute a call from user
+      description: '**Required ACL:** `calls.users.me.calls.{call_id}.mute.stop.update`
+
+
+        Only calls owned by the authenticated user may be unmute.'
+      parameters:
+      - $ref: '#/parameters/CallID'
+      tags:
+      - calls
+      - users
+      responses:
+        '204':
+          description: The call is now unmuted
+        '404':
+          description: No such call
+          schema:
+            $ref: '#/definitions/Error'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
 definitions:
   CallRequest:
     type: object

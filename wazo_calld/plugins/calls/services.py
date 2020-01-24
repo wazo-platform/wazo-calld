@@ -202,14 +202,16 @@ class CallsService:
         call = Call(call_id)
         self._notifier.call_updated(call)
 
+    def mute_user(self, call_id, user_uuid):
+        self._verify_user(call_id, user_uuid)
+        self.mute(call_id)
+
+    def unmute_user(self, call_id, user_uuid):
+        self._verify_user(call_id, user_uuid)
+        self.unmute(call_id)
+
     def hangup_user(self, call_id, user_uuid):
-        channel = Channel(call_id, self._ari)
-        if not channel.exists() or channel.is_local():
-            raise NoSuchCall(call_id)
-
-        if channel.user() != user_uuid:
-            raise UserPermissionDenied(user_uuid, {'call': call_id})
-
+        self._verify_user(call_id, user_uuid)
         self._ari.channels.hangup(channelId=call_id)
 
     def connect_user(self, call_id, user_uuid):
@@ -274,3 +276,11 @@ class CallsService:
         call.sip_call_id = event_variables.get('WAZO_SIP_CALL_ID') or None
 
         return call
+
+    def _verify_user(self, call_id, user_uuid):
+        channel = Channel(call_id, self._ari)
+        if not channel.exists() or channel.is_local():
+            raise NoSuchCall(call_id)
+
+        if channel.user() != user_uuid:
+            raise UserPermissionDenied(user_uuid, {'call': call_id})

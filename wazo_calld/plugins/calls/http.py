@@ -114,6 +114,32 @@ class CallMuteStopResource(AuthResource):
         return '', 204
 
 
+class MyCallMuteStartResource(AuthResource):
+
+    def __init__(self, auth_client, calls_service):
+        self.auth_client = auth_client
+        self.calls_service = calls_service
+
+    @required_acl('calld.users.me.calls.{call_id}.mute.start.update')
+    def put(self, call_id):
+        user_uuid = get_token_user_uuid_from_request(self.auth_client)
+        self.calls_service.mute_user(call_id, user_uuid)
+        return '', 204
+
+
+class MyCallMuteStopResource(AuthResource):
+
+    def __init__(self, auth_client, calls_service):
+        self.auth_client = auth_client
+        self.calls_service = calls_service
+
+    @required_acl('calld.users.me.calls.{call_id}.mute.stop.update')
+    def put(self, call_id):
+        user_uuid = get_token_user_uuid_from_request(self.auth_client)
+        self.calls_service.unmute_user(call_id, user_uuid)
+        return '', 204
+
+
 class MyCallResource(AuthResource):
 
     def __init__(self, auth_client, calls_service):
