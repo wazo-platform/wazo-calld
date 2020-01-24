@@ -211,6 +211,13 @@ class Channel:
         except ARINotFound:
             return False
 
+    def muted(self):
+        try:
+            muted = self._get_var('WAZO_CALL_MUTED')
+            return muted == '1'
+        except ARINotFound:
+            return False
+
     def is_progress(self):
         try:
             progress = self._get_var('WAZO_CALL_PROGRESS')

@@ -188,6 +188,7 @@ class CallsService:
         ami.mute(self._ami, call_id)
 
         call = Call(call_id)
+        call.muted = True
         self._notifier.call_updated(call)
 
     def unmute(self, call_id):
@@ -200,6 +201,7 @@ class CallsService:
         ami.unmute(self._ami, call_id)
 
         call = Call(call_id)
+        call.muted = False
         self._notifier.call_updated(call)
 
     def mute_user(self, call_id, user_uuid):
@@ -252,6 +254,7 @@ class CallsService:
         call.peer_caller_id_number = channel.json['connected']['number']
         call.user_uuid = channel_helper.user()
         call.on_hold = channel_helper.on_hold()
+        call.muted = channel_helper.muted()
         call.bridges = [bridge.id for bridge in ari.bridges.list() if channel.id in bridge.json['channels']]
         call.talking_to = {connected_channel.id: connected_channel.user()
                            for connected_channel in channel_helper.connected_channels()}
