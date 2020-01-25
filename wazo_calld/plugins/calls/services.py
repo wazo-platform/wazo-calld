@@ -187,8 +187,7 @@ class CallsService:
 
         ami.mute(self._ami, call_id)
 
-        call = Call(call_id)
-        call.muted = True
+        call = self.make_call_from_channel(self._ari, channel)
         self._notifier.call_updated(call)
 
     def unmute(self, call_id):
@@ -200,8 +199,7 @@ class CallsService:
 
         ami.unmute(self._ami, call_id)
 
-        call = Call(call_id)
-        call.muted = False
+        call = self.make_call_from_channel(self._ari, channel)
         self._notifier.call_updated(call)
 
     def mute_user(self, call_id, user_uuid):
