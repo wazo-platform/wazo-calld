@@ -5,9 +5,9 @@ https://github.com/wazo-platform/wazo-lib-rest-client/archive/master.zip
 https://github.com/wazo-platform/wazo-calld-client/archive/master.zip
 docker-compose
 kombu
-nose
 openapi-spec-validator
 psycopg2-binary
 pyhamcrest<1.10 # Version 1.10 is broken
+pytest
 requests
 stevedore  # from wazo-calld-client
