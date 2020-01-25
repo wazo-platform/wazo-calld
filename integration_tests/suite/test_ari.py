@@ -1,17 +1,18 @@
-# Copyright 2016-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import requests
 
 from hamcrest import (
     assert_that,
+    calling,
     contains_string,
-    equal_to,
-    has_entries,
+    has_properties
 )
 from xivo_test_helpers import until
+from xivo_test_helpers.hamcrest.raises import raises
+from wazo_calld_client.exceptions import CalldError
 
-from .helpers.constants import VALID_TOKEN
 from .helpers.base import IntegrationTest
 from .helpers.wait_strategy import CalldUpWaitStrategy
 
@@ -22,10 +23,13 @@ class TestNoARI(IntegrationTest):
     wait_strategy = CalldUpWaitStrategy()
 
     def test_given_no_ari_then_return_503(self):
-        result = self.calld.get_calls_result(token=VALID_TOKEN)
-
-        assert_that(result.status_code, equal_to(503))
-        assert_that(result.json(), has_entries(error_id='asterisk-ari-not-initialized'))
+        assert_that(
+            calling(self.calld_client.calls.list_calls),
+            raises(CalldError).matching(has_properties(
+                status_code=503,
+                error_id='asterisk-ari-not-initialized',
+            ))
+        )
 
 
 class TestARIReconnection(IntegrationTest):

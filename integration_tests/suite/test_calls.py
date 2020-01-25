@@ -13,11 +13,11 @@ from hamcrest import (
     contains_string,
     empty,
     equal_to,
-    has_properties,
     has_entries,
     has_entry,
     has_item,
     has_items,
+    has_properties,
     not_,
     starts_with,
 )
@@ -55,7 +55,7 @@ class TestListCalls(IntegrationTest):
         self.confd.reset()
 
     def test_given_no_calls_when_list_calls_then_empty_list(self):
-        calls = self.calld.list_calls()
+        calls = self.calld_client.calls.list_calls()
 
         assert_that(calls, has_entry('items', contains()))
 
@@ -85,7 +85,7 @@ class TestListCalls(IntegrationTest):
         self.confd.set_users(MockUser(uuid='user1-uuid'),
                              MockUser(uuid='user2-uuid'))
 
-        calls = self.calld.list_calls()
+        calls = self.calld_client.calls.list_calls()
 
         assert_that(calls, has_entry('items', contains_inanyorder(
             has_entries({'call_id': 'first-id',
@@ -117,7 +117,7 @@ class TestListCalls(IntegrationTest):
         self.ari.set_channels(MockChannel(id='first-id'),
                               MockChannel(id='second-id'))
 
-        calls = self.calld.list_calls()
+        calls = self.calld_client.calls.list_calls()
 
         assert_that(calls, has_entry('items', contains_inanyorder(
             has_entries({'call_id': 'first-id',
@@ -131,7 +131,7 @@ class TestListCalls(IntegrationTest):
                               MockChannel(id='third-id'))
         self.ari.set_applications(MockApplication(name='my-app', channels=['first-id', 'third-id']))
 
-        calls = self.calld.list_calls(application='my-app')
+        calls = self.calld_client.calls.list_calls(application='my-app')
 
         assert_that(calls, has_entry('items', contains_inanyorder(
             has_entries({'call_id': 'first-id'}),
@@ -141,7 +141,7 @@ class TestListCalls(IntegrationTest):
         self.ari.set_channels(MockChannel(id='first-id'),
                               MockChannel(id='second-id'))
 
-        calls = self.calld.list_calls(application='my-app', token=VALID_TOKEN)
+        calls = self.calld_client.calls.list_calls(application='my-app')
 
         assert_that(calls, has_entry('items', empty()))
 
@@ -161,7 +161,10 @@ class TestListCalls(IntegrationTest):
                                                                              'app_instance': 'appX',
                                                                              'state': 'talking'})})
 
-        calls = self.calld.list_calls(application='my-app', application_instance='appX')
+        calls = self.calld_client.calls.list_calls(
+            application='my-app',
+            application_instance='appX',
+        )
 
         assert_that(calls, has_entry('items', contains_inanyorder(
             has_entries({'call_id': 'first-id'}),
@@ -172,7 +175,7 @@ class TestListCalls(IntegrationTest):
                               MockChannel(id='second-id'))
         self.ari.set_applications(MockApplication(name='my-app', channels=['__AST_CHANNEL_ALL_TOPIC']))
 
-        calls = self.calld.list_calls(application='my-app')
+        calls = self.calld_client.calls.list_calls(application='my-app')
 
         assert_that(calls,
                     has_entry('items', contains_inanyorder(
@@ -190,7 +193,10 @@ class TestListCalls(IntegrationTest):
                                                                               'state': 'talking'})})
         self.ari.set_applications(MockApplication(name='my-app', channels=['__AST_CHANNEL_ALL_TOPIC']))
 
-        calls = self.calld.list_calls(application='my-app', application_instance='appX', token=VALID_TOKEN)
+        calls = self.calld_client.calls.list_calls(
+            application='my-app',
+            application_instance='appX',
+        )
 
         assert_that(calls, has_entry('items', contains(
             has_entries({'call_id': 'first-id'}))))
@@ -204,7 +210,7 @@ class TestListCalls(IntegrationTest):
         self.ari.set_channel_variable({'first-id': {'XIVO_USERUUID': 'user1-uuid'},
                                        'second-id': {'XIVO_USERUUID': 'user2-uuid'}})
 
-        calls = self.calld.list_calls()
+        calls = self.calld_client.calls.list_calls()
 
         assert_that(calls, has_entry('items', contains_inanyorder(
             has_entries({'call_id': 'first-id',
@@ -1067,14 +1073,22 @@ class TestFailingARI(IntegrationTest):
         self.confd.reset()
 
     def test_given_no_ari_when_list_calls_then_503(self):
-        result = self.calld.get_calls_result(token=VALID_TOKEN)
-
-        assert_that(result.status_code, equal_to(503))
+        assert_that(
+            calling(self.calld_client.calls.list_call),
+            raises(CalldError).matching(has_properties(
+                status_code=503,
+                error_id='asterisk-ari-error',
+            ))
+        )
 
     def test_given_no_ari_when_get_call_then_503(self):
-        result = self.calld.get_call_result('first-id', token=VALID_TOKEN)
-
-        assert_that(result.status_code, equal_to(503))
+        assert_that(
+            calling(self.calld_client.calls.get_call).with_args('id'),
+            raises(CalldError).matching(has_properties(
+                status_code=503,
+                error_id='asterisk-ari-error',
+            ))
+        )
 
     def test_given_no_ari_when_originate_then_503(self):
         self.confd.set_users(MockUser(uuid='user-uuid', line_ids=['line-id']))

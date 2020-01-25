@@ -37,24 +37,6 @@ class LegacyCalldClient:
         path = '/'.join(str(part) for part in parts)
         return self._url_tpl.format(host=self._host, port=self._port, path=path)
 
-    def get_calls_result(self, application=None, application_instance=None, token=None):
-        url = self.url('calls')
-        params = {}
-        if application:
-            params['application'] = application
-            if application_instance:
-                params['application_instance'] = application_instance
-        result = requests.get(url,
-                              params=params,
-                              headers=self._headers(token=token),
-                              verify=False)
-        return result
-
-    def list_calls(self, application=None, application_instance=None, token=VALID_TOKEN):
-        response = self.get_calls_result(application, application_instance, token)
-        assert_that(response.status_code, equal_to(200))
-        return response.json()
-
     def get_users_me_calls_result(self, application=None, application_instance=None, token=None):
         url = self.url('users', 'me', 'calls')
         params = {}

@@ -1,4 +1,4 @@
-# Copyright 2016-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -138,7 +138,10 @@ class TestTransfers(RealAsteriskIntegrationTest):
         callee.setChannelVar(variable='XIVO_USERUUID', value=callee_uuid)
 
         def channels_have_been_created_in_calld(caller_id, callee_id):
-            calls = self.calld.list_calls(application=STASIS_APP, application_instance=STASIS_APP_INSTANCE)
+            calls = self.calld_client.calls.list_calls(
+                application=STASIS_APP,
+                application_instance=STASIS_APP_INSTANCE,
+            )
             channel_ids = [call['call_id'] for call in calls['items']]
             return (caller_id in channel_ids and callee_id in channel_ids)
 
