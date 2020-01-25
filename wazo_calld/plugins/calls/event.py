@@ -81,9 +81,7 @@ class _BaseCallItemEvent(_BaseEvent):
     def __init__(self, call):
         self.routing_key = self.routing_key.format(call['call_id'])
         self.required_acl = self.required_acl.format(self.routing_key)
-        self._body = {
-            'call': call
-        }
+        self._body = call
 
 
 class CallUpdated(_BaseCallItemEvent):
