@@ -1,16 +1,19 @@
-# Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+import uuid
 import json
 
 from hamcrest import (
     all_of,
     assert_that,
+    calling,
     contains,
     contains_inanyorder,
     contains_string,
     empty,
     equal_to,
+    has_properties,
     has_entries,
     has_entry,
     has_item,
@@ -18,7 +21,9 @@ from hamcrest import (
     not_,
     starts_with,
 )
+from wazo_calld_client.exceptions import CalldError
 from xivo_test_helpers import until
+from xivo_test_helpers.hamcrest.raises import raises
 
 from .helpers.ari_ import MockApplication
 from .helpers.ari_ import MockBridge
@@ -31,8 +36,10 @@ from .helpers.confd import MockUser
 from .helpers.constants import VALID_TOKEN
 from .helpers.wait_strategy import CalldUpWaitStrategy
 
+ENDPOINT_AUTOANSWER = 'Test/integration-caller/autoanswer'
 SOME_LOCAL_CHANNEL_NAME = 'Local/channel'
 SOME_PRIORITY = 1
+UNKNOWN_UUID = '00000000-0000-0000-0000-000000000000'
 
 # TODO PJSIP update to pjsip when migrating
 CONFD_SIP_PROTOCOL = 'sip'
@@ -1234,29 +1241,22 @@ class TestUserCreateCallFromMobile(RealAsteriskIntegrationTest):
         assert_that(result_channel.json['name'], starts_with('Test/integration-mobile'))
 
 
-class TestCallMute(IntegrationTest):
+class TestCallMute(RealAsteriskIntegrationTest):
+
+    asset = 'real_asterisk'
 
     def test_put_mute_start(self):
-        channel = self.call_app(self.no_node_app_uuid)
-        other_channel = self.call_app(self.node_app_uuid)
+        channel_id = self.given_call_not_stasis()
 
         assert_that(
-            calling(self.calld_client.calls.start_mute).with_args(
-                channel.id
-            ),
-            raises(CalldError).matching(has_properties(status_code=404))
-        )
-        assert_that(
-            calling(self.calld_client.calls.start_mute).with_args(
-                other_channel.id
-            ),
+            calling(self.calld_client.calls.start_mute).with_args(UNKNOWN_UUID),
             raises(CalldError).matching(has_properties(status_code=404))
         )
 
         routing_key = 'calls.*.updated'
         event_accumulator = self.bus.accumulator(routing_key)
 
-        self.calld_client.calls.start_mute(channel.id)
+        self.calld_client.calls.start_mute(channel_id)
 
         def event_received():
             events = event_accumulator.accumulate()
@@ -1266,10 +1266,8 @@ class TestCallMute(IntegrationTest):
                     has_entries(
                         name='call_updated',
                         data=has_entries(
-                            call=has_entries(
-                                id=channel.id,
-                                muted=True,
-                            )
+                            call_id=channel_id,
+                            muted=True,
                         )
                     )
                 )
@@ -1279,34 +1277,20 @@ class TestCallMute(IntegrationTest):
 
         assert_that(
             self.calld_client.calls.list_calls()['items'],
-            contains(
-                has_entries(
-                    id=channel.id,
-                    muted=True,
-                )
-            )
+            has_items(has_entries(call_id=channel_id, muted=True))
         )
 
     def test_put_mute_stop(self):
-        channel = self.call_app(self.no_node_app_uuid)
-        other_channel = self.call_app(self.node_app_uuid)
+        channel_id = self.given_call_not_stasis()
 
         assert_that(
-            calling(self.calld_client.calls.stop_mute).with_args(
-                channel.id
-            ),
-            raises(CalldError).matching(has_properties(status_code=404))
-        )
-        assert_that(
-            calling(self.calld_client.calls.stop_mute).with_args(
-                other_channel.id
-            ),
+            calling(self.calld_client.calls.stop_mute).with_args(UNKNOWN_UUID),
             raises(CalldError).matching(has_properties(status_code=404))
         )
         routing_key = 'calls.*.updated'
         event_accumulator = self.bus.accumulator(routing_key)
 
-        self.calld_client.calls.stop_mute(channel.id)
+        self.calld_client.calls.stop_mute(channel_id)
 
         def event_received():
             events = event_accumulator.accumulate()
@@ -1316,10 +1300,8 @@ class TestCallMute(IntegrationTest):
                     has_entries(
                         name='call_updated',
                         data=has_entries(
-                            call=has_entries(
-                                id=channel.id,
-                                muted=False,
-                            )
+                            call_id=channel_id,
+                            muted=False,
                         )
                     )
                 )
@@ -1329,10 +1311,15 @@ class TestCallMute(IntegrationTest):
 
         assert_that(
             self.calld_client.calls.list_calls()['items'],
-            contains(
-                has_entries(
-                    id=channel.id,
-                    muted=False,
-                )
-            )
+            has_items(has_entries(call_id=channel_id, muted=False)),
         )
+
+    def given_call_not_stasis(self, user_uuid=None):
+        user_uuid = user_uuid or str(uuid.uuid4())
+        call = self.ari.channels.originate(
+            endpoint=ENDPOINT_AUTOANSWER,
+            context='local',
+            extension='dial-autoanswer',
+            variables={'variables': {'XIVO_USERUUID': user_uuid}}
+        )
+        return call.id
