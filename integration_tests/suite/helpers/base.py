@@ -1,4 +1,4 @@
-# Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import ari
@@ -177,6 +177,10 @@ class IntegrationTest(AssetLaunchingTestCase):
 
             until.return_(ari_is_up, timeout=5, message='ari did not restart')
             cls.reset_clients()
+
+    def setUp(self):
+        super().setUp()
+        self.calld_client.set_token(VALID_TOKEN)
 
 
 class RealAsteriskIntegrationTest(IntegrationTest):

@@ -1262,15 +1262,10 @@ class TestCallMute(RealAsteriskIntegrationTest):
             events = event_accumulator.accumulate()
             assert_that(
                 events,
-                has_items(
-                    has_entries(
-                        name='call_updated',
-                        data=has_entries(
-                            call_id=channel_id,
-                            muted=True,
-                        )
-                    )
-                )
+                has_items(has_entries(
+                    name='call_updated',
+                    data=has_entries(call_id=channel_id, muted=True)
+                ))
             )
 
         until.assert_(event_received, tries=3)
@@ -1283,43 +1278,38 @@ class TestCallMute(RealAsteriskIntegrationTest):
     def test_put_mute_start_from_user(self):
         user_uuid = str(uuid.uuid4())
         token = self.given_user_token(user_uuid)
-        calld = self.make_calld(token)
+        self.calld_client.set_token(token)
         channel_id = self.given_call_not_stasis(user_uuid=user_uuid)
         other_channel_id = self.given_call_not_stasis()
 
         assert_that(
-            calling(calld.calls.start_mute_from_user).with_args(UNKNOWN_UUID),
+            calling(self.calld_client.calls.start_mute_from_user).with_args(UNKNOWN_UUID),
             raises(CalldError).matching(has_properties(status_code=404))
         )
         assert_that(
-            calling(calld.calls.start_mute_from_user).with_args(other_channel_id),
+            calling(self.calld_client.calls.start_mute_from_user).with_args(other_channel_id),
             raises(CalldError).matching(has_properties(status_code=403))
         )
 
         routing_key = 'calls.*.updated'
         event_accumulator = self.bus.accumulator(routing_key)
 
-        calld.calls.start_mute_from_user(channel_id)
+        self.calld_client.calls.start_mute_from_user(channel_id)
 
         def event_received():
             events = event_accumulator.accumulate()
             assert_that(
                 events,
-                has_items(
-                    has_entries(
-                        name='call_updated',
-                        data=has_entries(
-                            call_id=channel_id,
-                            muted=True,
-                        )
-                    )
-                )
+                has_items(has_entries(
+                    name='call_updated',
+                    data=has_entries(call_id=channel_id, muted=True)
+                ))
             )
 
         until.assert_(event_received, tries=3)
 
         assert_that(
-            self.calld_client.calls.list_calls()['items'],
+            self.calld_client.calls.list_calls_from_user()['items'],
             has_items(has_entries(call_id=channel_id, muted=True))
         )
 
@@ -1339,15 +1329,10 @@ class TestCallMute(RealAsteriskIntegrationTest):
             events = event_accumulator.accumulate()
             assert_that(
                 events,
-                has_items(
-                    has_entries(
-                        name='call_updated',
-                        data=has_entries(
-                            call_id=channel_id,
-                            muted=False,
-                        )
-                    )
-                )
+                has_items(has_entries(
+                    name='call_updated',
+                    data=has_entries(call_id=channel_id, muted=False)
+                ))
             )
 
         until.assert_(event_received, tries=3)
@@ -1360,43 +1345,38 @@ class TestCallMute(RealAsteriskIntegrationTest):
     def test_put_mute_stop_from_user(self):
         user_uuid = str(uuid.uuid4())
         token = self.given_user_token(user_uuid)
-        calld = self.make_calld(token)
+        self.calld_client.set_token(token)
         channel_id = self.given_call_not_stasis(user_uuid=user_uuid)
         other_channel_id = self.given_call_not_stasis()
 
         assert_that(
-            calling(calld.calls.stop_mute_from_user).with_args(UNKNOWN_UUID),
+            calling(self.calld_client.calls.stop_mute_from_user).with_args(UNKNOWN_UUID),
             raises(CalldError).matching(has_properties(status_code=404))
         )
         assert_that(
-            calling(calld.calls.stop_mute_from_user).with_args(other_channel_id),
+            calling(self.calld_client.calls.stop_mute_from_user).with_args(other_channel_id),
             raises(CalldError).matching(has_properties(status_code=403))
         )
 
         routing_key = 'calls.*.updated'
         event_accumulator = self.bus.accumulator(routing_key)
 
-        calld.calls.stop_mute_from_user(channel_id)
+        self.calld_client.calls.stop_mute_from_user(channel_id)
 
         def event_received():
             events = event_accumulator.accumulate()
             assert_that(
                 events,
-                has_items(
-                    has_entries(
-                        name='call_updated',
-                        data=has_entries(
-                            call_id=channel_id,
-                            muted=False,
-                        )
-                    )
-                )
+                has_items(has_entries(
+                    name='call_updated',
+                    data=has_entries(call_id=channel_id, muted=False)
+                ))
             )
 
         until.assert_(event_received, tries=3)
 
         assert_that(
-            self.calld_client.calls.list_calls()['items'],
+            self.calld_client.calls.list_calls_from_user()['items'],
             has_items(has_entries(call_id=channel_id, muted=False))
         )
 
