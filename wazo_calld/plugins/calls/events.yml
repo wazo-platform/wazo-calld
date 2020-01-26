@@ -42,6 +42,8 @@ definitions:
         type: string
       on_hold:
         type: boolean
+      muted:
+        type: boolean
       talking_to:
         type: object
       user_uuid:

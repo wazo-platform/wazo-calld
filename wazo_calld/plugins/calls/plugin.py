@@ -1,4 +1,4 @@
-# Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from wazo_auth_client import Client as AuthClient
@@ -7,13 +7,18 @@ from wazo_amid_client import Client as AmidClient
 from xivo.pubsub import CallbackCollector
 
 from .bus_consume import CallsBusEventHandler
+from .notifier import CallNotifier
 from .dial_echo import DialEchoManager
 from .http import (
     CallResource,
+    CallMuteStartResource,
+    CallMuteStopResource,
     CallsResource,
     ConnectCallToUserResource,
     MyCallResource,
     MyCallsResource,
+    MyCallMuteStartResource,
+    MyCallMuteStopResource,
 )
 from .services import CallsService
 from .stasis import CallsStasis
@@ -40,7 +45,8 @@ class Plugin:
 
         dial_echo_manager = DialEchoManager()
 
-        calls_service = CallsService(amid_client, config['ari']['connection'], ari.client, confd_client, dial_echo_manager)
+        notifier = CallNotifier(bus_publisher)
+        calls_service = CallsService(amid_client, config['ari']['connection'], ari.client, confd_client, dial_echo_manager, notifier)
 
         calls_stasis = CallsStasis(ari, collectd, bus_publisher, calls_service, config['uuid'], amid_client)
 
@@ -54,5 +60,9 @@ class Plugin:
         api.add_resource(CallsResource, '/calls', resource_class_args=[calls_service])
         api.add_resource(MyCallsResource, '/users/me/calls', resource_class_args=[auth_client, calls_service])
         api.add_resource(CallResource, '/calls/<call_id>', resource_class_args=[calls_service])
+        api.add_resource(CallMuteStartResource, '/calls/<call_id>/mute/start', resource_class_args=[calls_service])
+        api.add_resource(CallMuteStopResource, '/calls/<call_id>/mute/stop', resource_class_args=[calls_service])
         api.add_resource(MyCallResource, '/users/me/calls/<call_id>', resource_class_args=[auth_client, calls_service])
+        api.add_resource(MyCallMuteStartResource, '/users/me/calls/<call_id>/mute/start', resource_class_args=[auth_client, calls_service])
+        api.add_resource(MyCallMuteStopResource, '/users/me/calls/<call_id>/mute/stop', resource_class_args=[auth_client, calls_service])
         api.add_resource(ConnectCallToUserResource, '/calls/<call_id>/user/<user_uuid>', resource_class_args=[calls_service])

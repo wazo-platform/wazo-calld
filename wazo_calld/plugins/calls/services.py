@@ -1,4 +1,4 @@
-# Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -6,7 +6,7 @@ import logging
 from ari.exceptions import ARINotFound
 from wazo_calld.ari_ import DEFAULT_APPLICATION_NAME
 from wazo_calld.plugin_helpers import ami
-from wazo_calld.plugin_helpers.ari_ import Channel
+from wazo_calld.plugin_helpers.ari_ import Channel, set_channel_var_sync
 from wazo_calld.plugin_helpers.confd import User
 from wazo_calld.plugin_helpers.exceptions import (
     InvalidExtension,
@@ -25,12 +25,13 @@ logger = logging.getLogger(__name__)
 
 class CallsService:
 
-    def __init__(self, amid_client, ari_config, ari, confd_client, dial_echo_manager):
+    def __init__(self, amid_client, ari_config, ari, confd_client, dial_echo_manager, notifier):
         self._ami = amid_client
         self._ari_config = ari_config
         self._ari = ari
         self._confd = confd_client
         self._dial_echo_manager = dial_echo_manager
+        self._notifier = notifier
         self._state_persistor = ReadOnlyStatePersistor(self._ari)
 
     def list_calls(self, application_filter=None, application_instance_filter=None):
@@ -177,14 +178,40 @@ class CallsService:
 
         self._ari.channels.hangup(channelId=channel_id)
 
-    def hangup_user(self, call_id, user_uuid):
-        channel = Channel(call_id, self._ari)
-        if not channel.exists() or channel.is_local():
+    def mute(self, call_id):
+        try:
+            channel = self._ari.channels.get(channelId=call_id)
+            set_channel_var_sync(channel, 'WAZO_CALL_MUTED', '1', bypass_stasis=True)
+        except ARINotFound:
             raise NoSuchCall(call_id)
 
-        if channel.user() != user_uuid:
-            raise UserPermissionDenied(user_uuid, {'call': call_id})
+        ami.mute(self._ami, call_id)
 
+        call = self.make_call_from_channel(self._ari, channel)
+        self._notifier.call_updated(call)
+
+    def unmute(self, call_id):
+        try:
+            channel = self._ari.channels.get(channelId=call_id)
+            set_channel_var_sync(channel, 'WAZO_CALL_MUTED', '', bypass_stasis=True)
+        except ARINotFound:
+            raise NoSuchCall(call_id)
+
+        ami.unmute(self._ami, call_id)
+
+        call = self.make_call_from_channel(self._ari, channel)
+        self._notifier.call_updated(call)
+
+    def mute_user(self, call_id, user_uuid):
+        self._verify_user(call_id, user_uuid)
+        self.mute(call_id)
+
+    def unmute_user(self, call_id, user_uuid):
+        self._verify_user(call_id, user_uuid)
+        self.unmute(call_id)
+
+    def hangup_user(self, call_id, user_uuid):
+        self._verify_user(call_id, user_uuid)
         self._ari.channels.hangup(channelId=call_id)
 
     def connect_user(self, call_id, user_uuid):
@@ -225,6 +252,7 @@ class CallsService:
         call.peer_caller_id_number = channel.json['connected']['number']
         call.user_uuid = channel_helper.user()
         call.on_hold = channel_helper.on_hold()
+        call.muted = channel_helper.muted()
         call.bridges = [bridge.id for bridge in ari.bridges.list() if channel.id in bridge.json['channels']]
         call.talking_to = {connected_channel.id: connected_channel.user()
                            for connected_channel in channel_helper.connected_channels()}
@@ -249,3 +277,11 @@ class CallsService:
         call.sip_call_id = event_variables.get('WAZO_SIP_CALL_ID') or None
 
         return call
+
+    def _verify_user(self, call_id, user_uuid):
+        channel = Channel(call_id, self._ari)
+        if not channel.exists() or channel.is_local():
+            raise NoSuchCall(call_id)
+
+        if channel.user() != user_uuid:
+            raise UserPermissionDenied(user_uuid, {'call': call_id})

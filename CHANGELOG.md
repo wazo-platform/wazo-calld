@@ -1,5 +1,20 @@
 # Changelog
 
+## 20.02
+
+* New attribute `muted` for Call objects in routes:
+
+  * `GET,POST /calls`
+  * `GET /calls/{call_id}`
+  * `GET,POST /users/me/calls`
+
+* New API to mute calls
+
+  * `PUT /calls/{call_id}/mute/start`
+  * `PUT /calls/{call_id}/mute/stop`
+  * `PUT /users/me/calls/{call_id}/mute/start`
+  * `PUT /users/me/calls/{call_id}/mute/stop`
+
 ## 20.01
 
 * Configuration `startup_connection_tries` has been removed

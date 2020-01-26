@@ -1,13 +1,12 @@
-# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
-import time
 
 from requests import HTTPError
 from ari.exceptions import ARINotFound
 from wazo_calld.plugin_helpers import ami, confd
-from wazo_calld.plugin_helpers.ari_ import Channel
+from wazo_calld.plugin_helpers.ari_ import Channel, set_channel_var_sync
 from wazo_calld.plugin_helpers.exceptions import InvalidExtension
 from .models import (
     CallFormatter,
@@ -43,7 +42,7 @@ class ApplicationService:
     def call_mute(self, application, call_id):
         try:
             channel = self._ari.channels.get(channelId=call_id)
-            self.set_channel_var_sync(channel, 'WAZO_CALL_MUTED', '1')
+            set_channel_var_sync(channel, 'WAZO_CALL_MUTED', '1')
             channel.mute(direction='in')
         except ARINotFound:
             raise NoSuchCall(call_id)
@@ -55,7 +54,7 @@ class ApplicationService:
     def call_unmute(self, application, call_id):
         try:
             channel = self._ari.channels.get(channelId=call_id)
-            self.set_channel_var_sync(channel, 'WAZO_CALL_MUTED', '')
+            set_channel_var_sync(channel, 'WAZO_CALL_MUTED', '')
             channel.unmute(direction='in')
         except ARINotFound:
             raise NoSuchCall(call_id)
@@ -73,7 +72,7 @@ class ApplicationService:
         channel.answer()
 
     def start_user_outgoing_call(self, application, channel):
-        self.set_channel_var_sync(channel, 'WAZO_USER_OUTGOING_CALL', 'true')
+        set_channel_var_sync(channel, 'WAZO_USER_OUTGOING_CALL', 'true')
         variables = self.get_channel_variables(channel)
         formatter = CallFormatter(application, self._ari)
         call = formatter.from_channel(channel, variables=variables)
@@ -108,7 +107,7 @@ class ApplicationService:
         try:
             channel = self._ari.channels.get(channelId=call_id)
             channel.ring()
-            self.set_channel_var_sync(channel, 'WAZO_CALL_PROGRESS', '1')
+            set_channel_var_sync(channel, 'WAZO_CALL_PROGRESS', '1')
         except ARINotFound:
             raise NoSuchCall(call_id)
 
@@ -116,7 +115,7 @@ class ApplicationService:
         try:
             channel = self._ari.channels.get(channelId=call_id)
             channel.ringStop()
-            self.set_channel_var_sync(channel, 'WAZO_CALL_PROGRESS', '')
+            set_channel_var_sync(channel, 'WAZO_CALL_PROGRESS', '')
         except ARINotFound:
             raise NoSuchCall(call_id)
 
@@ -464,26 +463,6 @@ class ApplicationService:
             self._ari.playbacks.stop(playbackId=playback_id)
         except ARINotFound:
             raise NoSuchPlayback(playback_id)
-
-    def set_channel_var_sync(self, channel, var, value):
-        # TODO remove this when Asterisk gets fixed to set var synchronously
-        def get_value():
-            try:
-                return channel.getChannelVar(variable=var)['value']
-            except ARINotFound as e:
-                if e.original_error.response.reason == 'Variable Not Found':
-                    return None
-                raise
-
-        channel.setChannelVar(variable=var, value=value)
-        for _ in range(20):
-            if get_value() == value:
-                return
-
-            logger.debug('waiting for a setvar to complete')
-            time.sleep(0.01)
-
-        raise Exception('failed to set channel variable {}={}'.format(var, value))
 
     @staticmethod
     def _extract_variables(lines):

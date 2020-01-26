@@ -118,9 +118,9 @@ class TestConferenceParticipants(TestConferences):
             MockConference(id=conference_id, name='conference'),
         )
         self.auth.set_token(MockUserToken(token, tenant_uuid='my-tenant', user_uuid=user_uuid))
-        calld = self.make_calld(token=token)
+        self.calld_client.set_token(token)
 
-        assert_that(calling(calld.conferences.user_list_participants).with_args(conference_id),
+        assert_that(calling(self.calld_client.conferences.user_list_participants).with_args(conference_id),
                     raises(CalldError).matching(has_properties({
                         'status_code': 403,
                         'error_id': 'user-not-participant',
@@ -136,9 +136,9 @@ class TestConferenceParticipants(TestConferences):
         self.auth.set_token(MockUserToken(token, tenant_uuid='my-tenant', user_uuid=user_uuid))
         self.given_call_in_conference(CONFERENCE1_EXTENSION, caller_id_name='participant1', user_uuid=user_uuid)
         self.given_call_in_conference(CONFERENCE1_EXTENSION, caller_id_name='participant2')
-        calld = self.make_calld(token=token)
+        self.calld_client.set_token(token)
 
-        participants = calld.conferences.user_list_participants(conference_id)
+        participants = self.calld_client.conferences.user_list_participants(conference_id)
 
         assert_that(participants, has_entries({
             'total': 2,

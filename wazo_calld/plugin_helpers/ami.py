@@ -1,4 +1,4 @@
-# Copyright 2016-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -59,5 +59,29 @@ def redirect(amid, channel, context, exten, priority=1, extra_channel=None):
         destination['ExtraChannel'] = extra_channel
     try:
         amid.action('Redirect', destination)
+    except RequestException as e:
+        raise WazoAmidError(amid, e)
+
+
+def mute(amid, channel):
+    destination = {
+        'Channel': channel,
+        'Direction': 'in',
+        'State': 'on',
+    }
+    try:
+        amid.action('MuteAudio', destination)
+    except RequestException as e:
+        raise WazoAmidError(amid, e)
+
+
+def unmute(amid, channel):
+    destination = {
+        'Channel': channel,
+        'Direction': 'in',
+        'State': 'off',
+    }
+    try:
+        amid.action('MuteAudio', destination)
     except RequestException as e:
         raise WazoAmidError(amid, e)
