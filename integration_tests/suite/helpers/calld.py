@@ -24,6 +24,13 @@ class CalldClient(Client):
             return False
         return True
 
+    @contextmanager
+    def send_no_content_type(self):
+        old_content_type = self.calls.headers.get('Content-Type')
+        self.calls.headers['Content-Type'] = ''
+        yield
+        self.calls.headers['Content-Type'] = old_content_type
+
 
 class LegacyCalldClient:
 
@@ -36,109 +43,6 @@ class LegacyCalldClient:
     def url(self, *parts):
         path = '/'.join(str(part) for part in parts)
         return self._url_tpl.format(host=self._host, port=self._port, path=path)
-
-    def get_calls_result(self, application=None, application_instance=None, token=None):
-        url = self.url('calls')
-        params = {}
-        if application:
-            params['application'] = application
-            if application_instance:
-                params['application_instance'] = application_instance
-        result = requests.get(url,
-                              params=params,
-                              headers=self._headers(token=token),
-                              verify=False)
-        return result
-
-    def list_calls(self, application=None, application_instance=None, token=VALID_TOKEN):
-        response = self.get_calls_result(application, application_instance, token)
-        assert_that(response.status_code, equal_to(200))
-        return response.json()
-
-    def get_users_me_calls_result(self, application=None, application_instance=None, token=None):
-        url = self.url('users', 'me', 'calls')
-        params = {}
-        if application:
-            params['application'] = application
-            if application_instance:
-                params['application_instance'] = application_instance
-        result = requests.get(url,
-                              params=params,
-                              headers=self._headers(token=token),
-                              verify=False)
-        return result
-
-    def list_my_calls(self, application=None, application_instance=None, token=VALID_TOKEN):
-        response = self.get_users_me_calls_result(application, application_instance, token)
-        assert_that(response.status_code, equal_to(200))
-        return response.json()
-
-    def get_call_result(self, call_id, token=None):
-        url = self.url('calls', call_id)
-        result = requests.get(url,
-                              headers=self._headers(token=token),
-                              verify=False)
-        return result
-
-    def get_call(self, call_id, token=VALID_TOKEN):
-        response = self.get_call_result(call_id, token=token)
-        assert_that(response.status_code, equal_to(200))
-        return response.json()
-
-    def post_call_result(
-            self,
-            source,
-            priority,
-            extension,
-            context,
-            variables=None,
-            line_id=None,
-            from_mobile=False,
-            token=None,
-    ):
-        body = {
-            'source': {
-                'user': source,
-            },
-            'destination': {
-                'priority': priority,
-                'extension': extension,
-                'context': context,
-            },
-        }
-        if variables:
-            body['variables'] = variables
-        if line_id:
-            body['source']['line_id'] = line_id
-        if from_mobile:
-            body['source']['from_mobile'] = from_mobile
-
-        return self.post_call_raw(body, token)
-
-    def post_call_raw(self, body, token=None):
-        url = self.url('calls')
-        result = requests.post(url,
-                               json=body,
-                               headers=self._headers(token=token),
-                               verify=False)
-        return result
-
-    def originate(
-            self,
-            source,
-            priority,
-            extension,
-            context,
-            variables=None,
-            line_id=None,
-            from_mobile=False,
-            token=VALID_TOKEN,
-    ):
-        response = self.post_call_result(
-            source, priority, extension, context, variables, line_id, from_mobile, token=token,
-        )
-        assert_that(response.status_code, equal_to(201))
-        return response.json()
 
     def post_user_me_call_result(self, body, token=None):
         url = self.url('users', 'me', 'calls')
