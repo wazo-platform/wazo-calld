@@ -68,22 +68,17 @@ class ConnectCallEvent(StartCallEvent):
         return event['args'][2]
 
 
-class _BaseEvent:
+class CallUpdated:
 
-    required_acl = 'events.{}'
+    name = 'call_updated'
+    routing_key = 'calls.call.updated'
+    required_acl = 'events.calls.{user_uuid}'
+
+    def __init__(self, call):
+        self.required_acl = self.required_acl.format(
+            user_uuid=call['user_uuid']
+        )
+        self._body = call
 
     def marshal(self):
         return self._body
-
-
-class _BaseCallItemEvent(_BaseEvent):
-
-    def __init__(self, call):
-        self.routing_key = self.routing_key.format(call['call_id'])
-        self.required_acl = self.required_acl.format(self.routing_key)
-        self._body = call
-
-
-class CallUpdated(_BaseCallItemEvent):
-    name = 'call_updated'
-    routing_key = 'calls.{}.updated'

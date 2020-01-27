@@ -54,7 +54,16 @@ class Plugin:
         ari.client_initialized_subscribe(startup_callback_collector.new_source())
         startup_callback_collector.subscribe(calls_stasis.initialize)
 
-        calls_bus_event_handler = CallsBusEventHandler(amid_client, ari.client, collectd, bus_publisher, calls_service, config['uuid'], dial_echo_manager)
+        calls_bus_event_handler = CallsBusEventHandler(
+            amid_client,
+            ari.client,
+            collectd,
+            bus_publisher,
+            calls_service,
+            config['uuid'],
+            dial_echo_manager,
+            notifier,
+        )
         calls_bus_event_handler.subscribe(bus_consumer)
 
         api.add_resource(CallsResource, '/calls', resource_class_args=[calls_service])
