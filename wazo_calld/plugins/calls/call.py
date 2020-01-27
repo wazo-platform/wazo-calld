@@ -19,3 +19,4 @@ class Call:
         self.muted = False
         self.is_caller = False
         self.dialed_extension = None
+        self.is_mobile = False

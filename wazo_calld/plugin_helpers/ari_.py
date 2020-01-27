@@ -218,6 +218,13 @@ class Channel:
         except ARINotFound:
             return False
 
+    def is_mobile(self):
+        try:
+            is_mobile = self._get_var('WAZO_WAIT_FOR_MOBILE')
+            return is_mobile == '1'
+        except ARINotFound:
+            return False
+
     def is_progress(self):
         try:
             progress = self._get_var('WAZO_CALL_PROGRESS')

@@ -353,6 +353,9 @@ definitions:
         type: string
         description: Matches the `Call-ID` SIP header of the call. This value can be `null` when not using SIP
         readOnly: true
+      is_mobile:
+        type: boolean
+        description: Define is the call is from a mobile device
   UserCallRequest:
     type: object
     properties:

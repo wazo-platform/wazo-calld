@@ -54,3 +54,6 @@ definitions:
       sip_call_id:
         type: string
         description: The value of the `Call-ID` header of `SIP` calls. Will be `null` for calls that are not `SIP`
+      is_mobile:
+        type: boolean
+        description: Define is the call is from mobile device

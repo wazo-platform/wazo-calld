@@ -259,6 +259,7 @@ class CallsService:
         call.is_caller = channel_helper.is_caller()
         call.dialed_extension = channel_helper.dialed_extension()
         call.sip_call_id = channel_helper.sip_call_id()
+        call.is_mobile = channel_helper.is_mobile()
 
         return call
 
