@@ -19,7 +19,8 @@ class CallNotifier:
         self._bus = bus
 
     def call_updated(self, call):
-        logger.debug('Call (%s) updated', call.id_)
         call_serialized = call_schema.dump(call)
-        event = CallUpdated(call_serialized)
-        self._bus.publish(event)
+        self._bus.publish(
+            CallUpdated(call_serialized),
+            headers={'user_uuid:{uuid}'.format(uuid=call.user_uuid): True}
+        )

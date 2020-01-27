@@ -187,6 +187,8 @@ class CallsService:
 
         ami.mute(self._ami, call_id)
 
+        # NOTE(fblackburn): asterisk should send back an event
+        # instead of falsy pretend that channel is muted
         call = self.make_call_from_channel(self._ari, channel)
         self._notifier.call_updated(call)
 
@@ -199,6 +201,8 @@ class CallsService:
 
         ami.unmute(self._ami, call_id)
 
+        # NOTE(fblackburn): asterisk should send back an event
+        # instead of falsy pretend that channel is unmuted
         call = self.make_call_from_channel(self._ari, channel)
         self._notifier.call_updated(call)
 

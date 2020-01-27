@@ -1,4 +1,4 @@
-# Copyright 2016-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 class CallsBusEventHandler:
 
-    def __init__(self, ami, ari, collectd, bus_publisher, services, xivo_uuid, dial_echo_manager):
+    def __init__(self, ami, ari, collectd, bus_publisher, services, xivo_uuid, dial_echo_manager, notifier):
         self.ami = ami
         self.ari = ari
         self.collectd = collectd
@@ -28,6 +28,7 @@ class CallsBusEventHandler:
         self.services = services
         self.xivo_uuid = xivo_uuid
         self.dial_echo_manager = dial_echo_manager
+        self.notifier = notifier
 
     def subscribe(self, bus_consumer):
         bus_consumer.on_ami_event('Newchannel', self._add_sip_call_id)
@@ -89,13 +90,7 @@ class CallsBusEventHandler:
             logger.debug('channel %s not found', channel_id)
             return
         call = self.services.make_call_from_channel(self.ari, channel)
-        bus_event = ArbitraryEvent(
-            name='call_updated',
-            body=call_schema.dump(call),
-            required_acl='events.calls.{}'.format(call.user_uuid)
-        )
-        bus_event.routing_key = 'calls.call.updated'
-        self.bus_publisher.publish(bus_event, headers={'user_uuid:{uuid}'.format(uuid=call.user_uuid): True})
+        self.notifier.call_updated(call)
 
     def _relay_channel_hung_up(self, event):
         channel_id = event['Uniqueid']
