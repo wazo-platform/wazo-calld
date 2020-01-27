@@ -180,7 +180,10 @@ class IntegrationTest(AssetLaunchingTestCase):
 
     def setUp(self):
         super().setUp()
-        self.calld_client.set_token(VALID_TOKEN)
+        try:
+            self.calld_client.set_token(VALID_TOKEN)
+        except WrongClient:
+            pass
 
 
 class RealAsteriskIntegrationTest(IntegrationTest):
