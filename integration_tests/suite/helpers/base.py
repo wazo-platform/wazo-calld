@@ -35,12 +35,18 @@ if os.environ.get('TEST_LOGS') != 'verbose':
     logging.getLogger('docker.utils.config').setLevel(logging.INFO)
 
 
+class ClientCreateException(Exception):
+
+    def __init__(self, client_name):
+        super().__init__(f'Could not create client {client_name}')
+
+
 class WrongClient:
     def __init__(self, client_name):
         self.client_name = client_name
 
     def __getattr__(self, member):
-        raise Exception('Could not create client {}'.format(self.client_name))
+        raise ClientCreateException(self.client_name)
 
 
 class IntegrationTest(AssetLaunchingTestCase):
@@ -182,7 +188,7 @@ class IntegrationTest(AssetLaunchingTestCase):
         super().setUp()
         try:
             self.calld_client.set_token(VALID_TOKEN)
-        except WrongClient:
+        except ClientCreateException:
             pass
 
 
