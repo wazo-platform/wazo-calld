@@ -1,4 +1,4 @@
-# Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
@@ -60,11 +60,12 @@ class BusClient(bus_helper.BusClient):
             }
         }, 'ami.Newchannel')
 
-    def send_ami_newstate_event(self, channel_id):
+    def send_ami_newstate_event(self, channel_id, state='Up'):
         self.send_event({
             'data': {
                 'Event': 'Newstate',
                 'Uniqueid': channel_id,
+                'ChannelStateDesc': state,
             }
         }, 'ami.Newstate')
 

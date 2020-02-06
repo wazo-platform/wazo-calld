@@ -1,4 +1,4 @@
-# Copyright 2016-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from hamcrest import assert_that
@@ -101,6 +101,22 @@ class TestBusConsume(IntegrationTest):
         def assert_function():
             assert_that(events.accumulate(), has_item(has_entries({
                 'name': 'call_updated',
+                'origin_uuid': XIVO_UUID,
+                'data': has_entries({'call_id': call_id, 'status': 'Up'})
+            })))
+
+        until.assert_(assert_function, tries=5)
+
+    def test_when_channel_answered_then_bus_event(self):
+        call_id = new_call_id()
+        self.ari.set_channels(MockChannel(id=call_id, state='Up'))
+        events = self.bus.accumulator(routing_key='calls.call.answered')
+
+        self.bus.send_ami_newstate_event(call_id, state='Up')
+
+        def assert_function():
+            assert_that(events.accumulate(), has_item(has_entries({
+                'name': 'call_answered',
                 'origin_uuid': XIVO_UUID,
                 'data': has_entries({'call_id': call_id, 'status': 'Up'})
             })))

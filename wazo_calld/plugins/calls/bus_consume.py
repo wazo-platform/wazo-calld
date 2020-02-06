@@ -35,6 +35,7 @@ class CallsBusEventHandler:
         bus_consumer.on_ami_event('Newchannel', self._relay_channel_created)
         bus_consumer.on_ami_event('Newchannel', self._collectd_channel_created)
         bus_consumer.on_ami_event('Newstate', self._relay_channel_updated)
+        bus_consumer.on_ami_event('Newstate', self._relay_channel_answered)
         bus_consumer.on_ami_event('NewConnectedLine', self._relay_channel_updated)
         bus_consumer.on_ami_event('Hold', self._channel_hold)
         bus_consumer.on_ami_event('Unhold', self._channel_unhold)
@@ -91,6 +92,20 @@ class CallsBusEventHandler:
             return
         call = self.services.make_call_from_channel(self.ari, channel)
         self.notifier.call_updated(call)
+
+    def _relay_channel_answered(self, event):
+        if event['ChannelStateDesc'] != 'Up':
+            return
+
+        channel_id = event['Uniqueid']
+        logger.debug('Relaying to bus: channel %s answered', channel_id)
+        try:
+            channel = self.ari.channels.get(channelId=channel_id)
+        except ARINotFound:
+            logger.debug('channel %s not found', channel_id)
+            return
+        call = self.services.make_call_from_channel(self.ari, channel)
+        self.notifier.call_answered(call)
 
     def _relay_channel_hung_up(self, event):
         channel_id = event['Uniqueid']
