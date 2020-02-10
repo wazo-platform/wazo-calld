@@ -17,3 +17,4 @@ python-consul==0.7.1
 pyyaml==3.13  # from xivo-lib-python
 requests==2.21.0
 stevedore==1.29.0
+werkzeug==0.14.1
