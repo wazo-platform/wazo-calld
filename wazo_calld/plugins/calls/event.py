@@ -82,3 +82,19 @@ class CallUpdated:
 
     def marshal(self):
         return self._body
+
+
+class CallAnswered:
+
+    name = 'call_answered'
+    routing_key = 'calls.call.answered'
+    required_acl = 'events.calls.{user_uuid}'
+
+    def __init__(self, call):
+        self.required_acl = self.required_acl.format(
+            user_uuid=call['user_uuid']
+        )
+        self._body = call
+
+    def marshal(self):
+        return self._body
