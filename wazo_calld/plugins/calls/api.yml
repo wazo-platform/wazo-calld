@@ -312,6 +312,9 @@ definitions:
       from_mobile:
         type: boolean
         description: "Start the call from the user's mobile phone. Default is False"
+      all_lines:
+        type: boolean
+        description: Use all of the lines of the user to make the call (ignored when `line_id` is specified).
     required:
       - user
   Call:
@@ -368,6 +371,9 @@ definitions:
       from_mobile:
         type: boolean
         description: "Start the call from the user's mobile phone. Default is False. Limitation: this feature may return a wrong call_id if the outgoing call used to dial the mobile number has more than one associated trunk."
+      all_lines:
+        type: boolean
+        description: Use all of the lines of the user to make the call (ignored when `line_id` is specified).
     required:
       - extension
   TalkingTo:

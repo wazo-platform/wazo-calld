@@ -843,6 +843,57 @@ class TestCreateCall(IntegrationTest):
                                ['context', 'my-context'],
                                ['endpoint', 'pjsip/second-line-name'])}))))
 
+    def test_create_call_all_lines(self):
+        user_uuid = 'user-uuid'
+        second_line_id = 12345
+        priority = 1
+        self.confd.set_users(MockUser(uuid='user-uuid', line_ids=['first-line-id', second_line_id]))
+        self.confd.set_lines(MockLine(id='first-line-id', name='first-line-name', protocol=CONFD_SIP_PROTOCOL),
+                             MockLine(id=second_line_id, name='second-line-name', protocol=CONFD_SIP_PROTOCOL))
+        self.ari.set_originates(MockChannel(id='new-call-id'))
+        self.amid.set_valid_exten('my-context', 'my-extension', priority)
+
+        call_args = {
+            'source': {'user': user_uuid, 'all_lines': True},
+            'destination': {
+                'priority': priority,
+                'extension': 'my-extension',
+                'context': 'my-context',
+            },
+        }
+        self.calld_client.calls.make_call(call_args)
+
+        assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
+            'method': 'POST',
+            'path': '/ari/channels',
+            'query': has_items(['priority', str(priority)],
+                               ['extension', 'my-extension'],
+                               ['context', 'my-context'],
+                               ['endpoint', 'local/user-uuid@usersharedlines'])}))))
+
+    def test_create_call_all_lines_with_no_line(self):
+        user_uuid = 'user-uuid'
+        context, extension, priority = 'my-context', 'my-extension', 1
+        self.amid.set_valid_exten(context, extension, priority)
+        self.confd.set_users(MockUser(uuid='user-uuid', mobile='my-mobile'))
+        self.ari.set_originates(MockChannel(id='new-call-id'))
+        call_args = {
+            'source': {'user': user_uuid, 'from_mobile': True},
+            'destination': {
+                'priority': priority,
+                'extension': extension,
+                'context': context,
+            }
+        }
+
+        assert_that(
+            calling(self.calld_client.calls.make_call).with_args(call_args),
+            raises(CalldError).matching(has_properties(
+                status_code=400,
+                error_id='user-missing-main-line',
+            ))
+        )
+
     def test_create_call_from_mobile_with_no_line(self):
         user_uuid = 'user-uuid'
         context, extension, priority = 'my-context', 'my-extension', 1
@@ -1164,6 +1215,27 @@ class TestUserCreateCall(IntegrationTest):
                                ['extension', 'my-extension'],
                                ['context', 'second-context'],
                                ['endpoint', 'pjsip/second-line-name'])}))))
+
+    def test_create_call_all_lines(self):
+        user_uuid = 'user-uuid'
+        second_line_id = 12345
+        token = 'my-token'
+        self.auth.set_token(MockUserToken(token, user_uuid))
+        self.confd.set_users(MockUser(uuid='user-uuid', line_ids=['first-line-id', second_line_id]))
+        self.confd.set_lines(MockLine(id='first-line-id', name='first-line-name', protocol=CONFD_SIP_PROTOCOL, context='first-context'),
+                             MockLine(id=second_line_id, name='second-line-name', protocol=CONFD_SIP_PROTOCOL, context='second-context'))
+        self.ari.set_originates(MockChannel(id='new-call-id'))
+        self.amid.set_valid_exten('first-context', 'my-extension')
+
+        self.calld.originate_me('my-extension', all_lines=True, token=token)
+
+        assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
+            'method': 'POST',
+            'path': '/ari/channels',
+            'query': has_items(['priority', '1'],
+                               ['extension', 'my-extension'],
+                               ['context', 'first-context'],
+                               ['endpoint', 'local/user-uuid@usersharedlines'])}))))
 
 
 class TestFailingARI(IntegrationTest):
