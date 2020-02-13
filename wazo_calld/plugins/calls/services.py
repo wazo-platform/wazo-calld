@@ -122,7 +122,7 @@ class CallsService:
             user = User(source_user, self._confd)
             if 'line_id' in request['source']:
                 endpoint = user.line(request['source']['line_id']).interface()
-            elif 'all_lines' in request['source'] and request['source']['all_lines']:
+            elif request['source']['all_lines']:
                 endpoint = "local/%s@usersharedlines" % (source_user,)
             else:
                 endpoint = user.main_line().interface()
@@ -151,18 +151,18 @@ class CallsService:
             context = User(user_uuid, self._confd).line(request['line_id']).context()
         else:
             context = User(user_uuid, self._confd).main_line().context()
+
         new_request = {
             'destination': {'context': context,
                             'extension': request['extension'],
                             'priority': 1},
             'source': {'user': user_uuid,
-                       'from_mobile': request['from_mobile']},
+                       'from_mobile': request['from_mobile'],
+                       'all_lines': request['all_lines']},
             'variables': request['variables']
         }
         if 'line_id' in request:
             new_request['source']['line_id'] = request['line_id']
-        elif request.get('all_lines', False):
-            new_request['source']['all_lines'] = True
         return self.originate(new_request)
 
     def get(self, call_id):
