@@ -16,6 +16,7 @@ class CallBaseSchema(Schema):
 class CallRequestSourceSchema(CallBaseSchema):
     from_mobile = fields.Boolean(missing=False)
     line_id = fields.Integer()
+    all_lines = fields.Boolean(missing=False)
     user = fields.String(required=True)
 
 
@@ -38,6 +39,7 @@ class CallRequestSchema(CallBaseSchema):
 class UserCallRequestSchema(CallBaseSchema):
     extension = fields.String(validate=Length(min=1), required=True)
     line_id = fields.Integer()
+    all_lines = fields.Boolean(missing=False)
     from_mobile = fields.Boolean(missing=False)
     variables = StrictDict(key_field=fields.String(required=True, validate=Length(min=1)),
                            value_field=fields.String(required=True, validate=Length(min=1)),

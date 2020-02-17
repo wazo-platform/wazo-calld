@@ -119,10 +119,13 @@ class CallsService:
             channel = self._ari.channels.get(channelId=channel_id)
 
         else:
+            user = User(source_user, self._confd)
             if 'line_id' in request['source']:
-                endpoint = User(source_user, self._confd).line(request['source']['line_id']).interface()
+                endpoint = user.line(request['source']['line_id']).interface()
+            elif request['source']['all_lines']:
+                endpoint = "local/%s@usersharedlines" % (source_user,)
             else:
-                endpoint = User(source_user, self._confd).main_line().interface()
+                endpoint = user.main_line().interface()
 
             context, extension, priority = requested_context, requested_extension, requested_priority
 
@@ -148,12 +151,14 @@ class CallsService:
             context = User(user_uuid, self._confd).line(request['line_id']).context()
         else:
             context = User(user_uuid, self._confd).main_line().context()
+
         new_request = {
             'destination': {'context': context,
                             'extension': request['extension'],
                             'priority': 1},
             'source': {'user': user_uuid,
-                       'from_mobile': request['from_mobile']},
+                       'from_mobile': request['from_mobile'],
+                       'all_lines': request['all_lines']},
             'variables': request['variables']
         }
         if 'line_id' in request:
