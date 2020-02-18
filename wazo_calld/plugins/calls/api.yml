@@ -315,6 +315,9 @@ definitions:
       all_lines:
         type: boolean
         description: Use all of the lines of the user to make the call (ignored when `line_id` is specified).
+      auto_answer:
+        type: boolean
+        description: Inform the phone that it should answer automatically.
     required:
       - user
   Call:
@@ -374,6 +377,9 @@ definitions:
       all_lines:
         type: boolean
         description: Use all of the lines of the user to make the call (ignored when `line_id` is specified).
+      auto_answer:
+        type: boolean
+        description: Inform the phone that it should answer automatically.
     required:
       - extension
   TalkingTo:
