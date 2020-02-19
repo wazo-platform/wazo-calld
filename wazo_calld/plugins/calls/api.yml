@@ -317,7 +317,7 @@ definitions:
         description: Use all of the lines of the user to make the call (ignored when `line_id` is specified).
       auto_answer:
         type: boolean
-        description: Inform the caller phone that it should answer automatically.
+        description: "Inform the phone that it should answer automatically. Limitation: this does not work if `all_lines` is true, if `from_mobile` is true or if the phone is SCCP."
     required:
       - user
   Call:
@@ -379,7 +379,7 @@ definitions:
         description: Use all of the lines of the user to make the call (ignored when `line_id` is specified).
       auto_answer_caller:
         type: boolean
-        description: Inform the caller phone that it should answer automatically.
+        description: "Inform the caller phone that it should answer automatically. Limitation: this does not work if `all_lines` is true, if `from_mobile` is true or if the phone is SCCP."
     required:
       - extension
   TalkingTo:
