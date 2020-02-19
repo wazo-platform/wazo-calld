@@ -992,6 +992,37 @@ class TestCreateCall(IntegrationTest):
             ))
         )
 
+    def test_create_call_auto_answer(self):
+        user_uuid = 'user-uuid'
+        second_line_id = 12345
+        priority = 1
+        self.confd.set_users(MockUser(uuid='user-uuid', line_ids=['first-line-id', second_line_id]))
+        self.confd.set_lines(MockLine(id='first-line-id', name='first-line-name', protocol=CONFD_SIP_PROTOCOL))
+        self.ari.set_originates(MockChannel(id='new-call-id'))
+        self.amid.set_valid_exten('my-context', 'my-extension', priority)
+
+        call_args = {
+            'source': {'user': user_uuid, 'auto_answer': True},
+            'destination': {
+                'priority': priority,
+                'extension': 'my-extension',
+                'context': 'my-context',
+            },
+        }
+        self.calld_client.calls.make_call(call_args)
+
+        assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
+            'method': 'POST',
+            'path': '/ari/channels',
+            'json': has_entries({'variables': has_entries({
+                'PJSIP_HEADER(add,Alert-Info)': '<http://wazo.community>;info=alert-autoanswer;delay=0;xivo-autoanswer',
+                'PJSIP_HEADER(add,Answer-After)': '0',
+                'PJSIP_HEADER(add,Answer-Mode)': 'Auto',
+                'PJSIP_HEADER(add,Call-Info)': ';answer-after=0',
+                'PJSIP_HEADER(add,P-Auto-answer)': 'normal',
+            })}),
+        }))))
+
 
 class TestUserCreateCall(IntegrationTest):
 
@@ -1236,6 +1267,30 @@ class TestUserCreateCall(IntegrationTest):
                                ['extension', 'my-extension'],
                                ['context', 'first-context'],
                                ['endpoint', 'local/user-uuid@usersharedlines'])}))))
+
+    def test_create_call_auto_answer(self):
+        user_uuid = 'user-uuid'
+        second_line_id = 12345
+        token = 'my-token'
+        self.auth.set_token(MockUserToken(token, user_uuid))
+        self.confd.set_users(MockUser(uuid='user-uuid', line_ids=['first-line-id', second_line_id]))
+        self.confd.set_lines(MockLine(id='first-line-id', name='first-line-name', protocol=CONFD_SIP_PROTOCOL, context='first-context'))
+        self.ari.set_originates(MockChannel(id='new-call-id'))
+        self.amid.set_valid_exten('first-context', 'my-extension')
+
+        self.calld.originate_me('my-extension', token=token, auto_answer_caller=True)
+
+        assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
+            'method': 'POST',
+            'path': '/ari/channels',
+            'json': has_entries({'variables': has_entries({
+                'PJSIP_HEADER(add,Alert-Info)': '<http://wazo.community>;info=alert-autoanswer;delay=0;xivo-autoanswer',
+                'PJSIP_HEADER(add,Answer-After)': '0',
+                'PJSIP_HEADER(add,Answer-Mode)': 'Auto',
+                'PJSIP_HEADER(add,Call-Info)': ';answer-after=0',
+                'PJSIP_HEADER(add,P-Auto-answer)': 'normal',
+            })}),
+        }))))
 
 
 class TestFailingARI(IntegrationTest):
