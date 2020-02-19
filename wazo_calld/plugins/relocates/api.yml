@@ -184,7 +184,7 @@ definitions:
         $ref: '#/definitions/Timeout'
       auto_answer:
         type: boolean
-        description: Inform the phone that it should answer automatically.
+        description: Inform the destination phone that it should answer automatically.
     example:
       initiator_call: '123456.789'
       destination: line

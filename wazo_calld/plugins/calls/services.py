@@ -166,8 +166,8 @@ class CallsService:
         }
         if 'line_id' in request:
             new_request['source']['line_id'] = request['line_id']
-        if 'auto_answer' in request:
-            new_request['source']['auto_answer'] = request['auto_answer']
+        if 'auto_answer_caller' in request:
+            new_request['source']['auto_answer'] = request['auto_answer_caller']
         return self.originate(new_request)
 
     def get(self, call_id):

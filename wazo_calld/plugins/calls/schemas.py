@@ -45,7 +45,7 @@ class UserCallRequestSchema(CallBaseSchema):
     variables = StrictDict(key_field=fields.String(required=True, validate=Length(min=1)),
                            value_field=fields.String(required=True, validate=Length(min=1)),
                            missing=dict)
-    auto_answer = fields.Boolean(missing=False)
+    auto_answer_caller = fields.Boolean(missing=False)
 
 
 class CallSchema(CallBaseSchema):
