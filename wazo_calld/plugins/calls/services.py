@@ -6,7 +6,7 @@ import logging
 from ari.exceptions import ARINotFound
 from wazo_calld.ari_ import DEFAULT_APPLICATION_NAME
 from wazo_calld.plugin_helpers import ami
-from wazo_calld.plugin_helpers.ari_ import Channel, set_channel_var_sync
+from wazo_calld.plugin_helpers.ari_ import AUTO_ANSWER_VARIABLES, Channel, set_channel_var_sync
 from wazo_calld.plugin_helpers.confd import User
 from wazo_calld.plugin_helpers.exceptions import (
     InvalidExtension,
@@ -129,6 +129,9 @@ class CallsService:
 
             context, extension, priority = requested_context, requested_extension, requested_priority
 
+            if request['source']['auto_answer']:
+                variables.update(AUTO_ANSWER_VARIABLES)
+
             variables.setdefault('XIVO_FIX_CALLERID', '1')
             variables.setdefault('CONNECTEDLINE(name)', extension)
             variables.setdefault('CONNECTEDLINE(num)', '' if extension.startswith('#') else extension)
@@ -163,6 +166,8 @@ class CallsService:
         }
         if 'line_id' in request:
             new_request['source']['line_id'] = request['line_id']
+        if 'auto_answer_caller' in request:
+            new_request['source']['auto_answer'] = request['auto_answer_caller']
         return self.originate(new_request)
 
     def get(self, call_id):

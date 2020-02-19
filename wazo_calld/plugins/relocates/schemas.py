@@ -1,4 +1,4 @@
-# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from marshmallow import (
@@ -59,6 +59,7 @@ class UserRelocateRequestSchema(Schema):
     location = LocationField(missing=dict)
     completions = fields.List(fields.Str(validate=OneOf(VALID_COMPLETIONS)), missing=['answer'])
     timeout = fields.Integer(validate=Range(min=1), missing=30)
+    auto_answer = fields.Boolean(missing=False)
 
 
 user_relocate_request_schema = UserRelocateRequestSchema()
@@ -75,6 +76,7 @@ class RelocateSchema(Schema):
     completions = fields.List(fields.Str(validate=OneOf(VALID_COMPLETIONS)), missing=['answer'])
     initiator = fields.Str(validate=Length(equal=36), required=True)
     timeout = fields.Integer(validate=Range(min=1), missing=30)
+    auto_answer = fields.Boolean(missing=False)
 
 
 relocate_schema = RelocateSchema()

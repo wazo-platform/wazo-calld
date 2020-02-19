@@ -1,4 +1,4 @@
-# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import re
@@ -7,6 +7,7 @@ import threading
 
 from wazo_calld.plugin_helpers import ami
 from wazo_calld.plugin_helpers.ari_ import (
+    AUTO_ANSWER_VARIABLES,
     ARINotFound,
     Channel,
 )
@@ -194,7 +195,7 @@ class RelocatesService:
 
         return relocate
 
-    def create_from_user(self, initiator_call, destination, location, completions, timeout, user_uuid):
+    def create_from_user(self, initiator_call, destination, location, completions, timeout, auto_answer, user_uuid):
         if Channel(initiator_call, self.ari).user() != user_uuid:
             raise UserPermissionDenied(user_uuid, {'call': initiator_call})
 
@@ -219,6 +220,8 @@ class RelocatesService:
                         'context': line_context}
             variables = {'WAZO_DEREFERENCED_USERUUID': user_uuid}
 
+        if auto_answer:
+            variables.update(AUTO_ANSWER_VARIABLES)
         relocate = Relocate(self.state_factory)
         relocate.initiator = user_uuid
         relocate.recipient_variables = variables

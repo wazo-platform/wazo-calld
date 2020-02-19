@@ -59,6 +59,7 @@ class LegacyCalldClient:
             line_id=None,
             from_mobile=False,
             all_lines=False,
+            auto_answer_caller=False,
             token=VALID_TOKEN,
     ):
         body = {
@@ -72,6 +73,8 @@ class LegacyCalldClient:
             body['from_mobile'] = from_mobile
         if all_lines:
             body['all_lines'] = all_lines
+        if auto_answer_caller:
+            body['auto_answer_caller'] = auto_answer_caller
         response = self.post_user_me_call_result(body, token=token)
         assert_that(response.status_code, equal_to(201))
         return response.json()
