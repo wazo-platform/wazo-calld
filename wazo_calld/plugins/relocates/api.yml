@@ -184,7 +184,7 @@ definitions:
         $ref: '#/definitions/Timeout'
       auto_answer:
         type: boolean
-        description: Inform the destination phone that it should answer automatically.
+        description: "Inform the destination phone that it should answer automatically. Limitation: this does not work on SCCP phones."
     example:
       initiator_call: '123456.789'
       destination: line
