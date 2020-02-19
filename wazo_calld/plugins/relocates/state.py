@@ -88,14 +88,13 @@ class RelocateStateReady(RelocateState):
 
     def initiate(self, relocate, destination):
         endpoint = destination.ari_endpoint()
-        variables = relocate.recipient_variables or {}
         try:
             new_channel = self._ari.channels.originate(
                 endpoint=endpoint,
                 app=DEFAULT_APPLICATION_NAME,
                 appArgs=['relocate', relocate.uuid, 'recipient'],
                 originator=relocate.relocated_channel,
-                variables={'variables': variables},
+                variables={'variables': relocate.recipient_variables},
                 timeout=relocate.timeout,
             )
         except HTTPError:

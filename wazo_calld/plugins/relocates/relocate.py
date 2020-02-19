@@ -25,7 +25,7 @@ class Relocate:
         self.relocated_channel = None
         self.initiator_channel = None
         self.recipient_channel = None
-        self.recipient_variables = None
+        self.recipient_variables = {}
         self.initiator = None
         self.completions = None
 
