@@ -18,6 +18,7 @@ from hamcrest import (
 from ari.exceptions import ARINotFound
 
 from ..services import _PollingContactDialer as PollingContactDialer
+from ..services import DialMobileService
 
 
 class DialerTestCase(TestCase):
@@ -150,3 +151,17 @@ class TestRemoveRingingChannels(DialerTestCase):
         self.poller._remove_ringing_channels()
 
         self.ari.channels.hangup.assert_called_with(channelId=s.channel_2_id)
+
+
+class DialMobileServiceTestCase(DialerTestCase):
+
+    def setUp(self):
+        self.ari = Mock()
+        self.service = DialMobileService(self.ari)
+        self.channel_id = '1234567890.42'
+        self.aor = 'foobar'
+
+    def test_that_caller_channel_rings(self):
+        self.service.dial_all_contacts(self.channel_id, self.aor)
+
+        self.ari.client.channels.ring.assert_called_once_with(channelId=self.channel_id)
