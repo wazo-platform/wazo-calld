@@ -13,6 +13,7 @@ from hamcrest import contains_inanyorder
 from hamcrest import empty
 from hamcrest import has_entry
 from hamcrest import has_entries
+from hamcrest import has_item
 from hamcrest import has_properties
 from hamcrest import has_property
 from hamcrest import not_
@@ -189,6 +190,7 @@ class TestRelocates(RealAsteriskIntegrationTest):
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
         self.confd.set_lines(MockLine(id=line_id, name='recipient_autoanswer@local', protocol='local', context=SOME_CONTEXT))
         self.calld_client.set_token(token)
+        events = self.bus.accumulator('calls.relocate.*')
         destination = 'line'
         location = {'line_id': line_id}
         completions = ['api']
@@ -198,6 +200,14 @@ class TestRelocates(RealAsteriskIntegrationTest):
             assert_that(relocate['relocated_call'], self.c.is_talking(), 'relocated channel not talking')
             assert_that(relocate['initiator_call'], self.c.is_talking(), 'initiator channel not talking')
             assert_that(relocate['recipient_call'], self.c.is_talking(), 'recipient channel not talking')
+            assert_that(events.accumulate(), has_item(
+                has_entries({
+                    'name': 'relocate_answered',
+                    'data': has_entries({
+                        'uuid': relocate['uuid']
+                    }),
+                }),
+            ))
 
         until.assert_(all_talking, timeout=5)
 
