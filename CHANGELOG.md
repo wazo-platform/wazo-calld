@@ -1,5 +1,20 @@
 # Changelog
 
+## 20.03
+
+* New attribute `all_lines` in routes:
+
+  * `POST /calls`
+  * `POST /users/me/calls`
+  
+* New event `call_answered` is sent when a call is answered.
+* New attribute `auto_answer` in routes:
+
+  * `POST /calls`
+  * `POST /relocates`
+
+* New attribute `auto_answer_caller` in route `POST /users/me/calls`
+
 ## 20.02
 
 * New attribute `muted` for Call objects in routes:
