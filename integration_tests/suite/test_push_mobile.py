@@ -1,4 +1,4 @@
-# Copyright 2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from hamcrest import (
@@ -20,6 +20,7 @@ class TestPushMobile(RealAsteriskIntegrationTest):
         events = self.bus.accumulator('calls.call.push_notification')
 
         push_mobile_event = {
+            'name': 'UserEvent',
             'data': {
                 'UserEvent': 'Pushmobile',
                 'Uniqueid': '1560784195.313',
@@ -45,7 +46,7 @@ class TestPushMobile(RealAsteriskIntegrationTest):
             }
         }
 
-        self.bus.publish(push_mobile_event, routing_key='ami.UserEvent')
+        self.bus.send_event(push_mobile_event)
 
         def bus_events_received():
             assert_that(events.accumulate(), contains(
