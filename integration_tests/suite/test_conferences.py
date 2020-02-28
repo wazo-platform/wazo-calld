@@ -661,7 +661,7 @@ class TestConferenceParticipants(TestConferences):
         until.assert_(talking_user_event_received, listening_user_bus_events, talking=True, timeout=10)
 
         # send fake "stopped talking" AMI event
-        self.bus.publish(
+        self.bus.send_event(
             {
                 'name': 'ConfbridgeTalking',
                 'data': {
@@ -675,7 +675,6 @@ class TestConferenceParticipants(TestConferences):
                     'TalkingStatus': 'off',
                 }
             },
-            routing_key='ami.ConfbridgeTalking'
         )
 
         until.assert_(talking_event_received, admin_bus_events, talking=False, timeout=10)
