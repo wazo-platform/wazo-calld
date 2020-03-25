@@ -4,7 +4,6 @@ rest_api:
 
 amid:
   host: amid
-  verify_certificate: /usr/local/share/ssl/amid/server.crt
 
 ari:
   connection:

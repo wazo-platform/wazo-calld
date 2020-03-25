@@ -11,7 +11,6 @@ services:
       - 9491
     volumes:
       - ./amid_data:/usr/local/share/wazo-amid
-      - ./ssl:/usr/local/share/ssl
     command: python /usr/local/share/wazo-amid/mock-wazo-amid.py 9491
 
   ari:
