@@ -130,7 +130,6 @@ paths:
       consumes:
       - audio/wav
       tags:
-      - users
       - voicemails
       responses:
         '204':

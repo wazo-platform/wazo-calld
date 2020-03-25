@@ -6,7 +6,7 @@
 
   * `POST /calls`
   * `POST /users/me/calls`
-  
+
 * New event `call_answered` is sent when a call is answered.
 * New attribute `auto_answer` in routes:
 
