@@ -1,7 +1,5 @@
 rest_api:
-  https:
-    certificate: /usr/local/share/ssl/amid/server.crt
-    private_key: /usr/local/share/ssl/amid/server.key
+  listen: 0.0.0.0
 
 ami:
   host: ari

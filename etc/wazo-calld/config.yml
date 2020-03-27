@@ -82,7 +82,8 @@ ari:
 amid:
     host: localhost
     port: 9491
-    verify_certificate: /usr/share/xivo-certs/server.crt
+    prefix: null
+    https: false
 
 # consul connection informations
 consul:

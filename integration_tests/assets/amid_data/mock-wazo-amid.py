@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) 2016 The Wazo Authors  (see AUTHORS file)
+# Copyright 2016-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -14,8 +14,6 @@ app = Flask(__name__)
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
-
-context = ('/usr/local/share/ssl/amid/server.crt', '/usr/local/share/ssl/amid/server.key')
 
 action_response = ''
 valid_extens = []
@@ -98,4 +96,4 @@ def show_dialplan():
 
 if __name__ == "__main__":
     port = int(sys.argv[1])
-    app.run(host='0.0.0.0', port=port, ssl_context=context, debug=True)
+    app.run(host='0.0.0.0', port=port, debug=True)
