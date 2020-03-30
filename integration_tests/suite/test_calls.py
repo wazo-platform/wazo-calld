@@ -578,7 +578,8 @@ class TestCreateCall(IntegrationTest):
         assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
             'method': 'POST',
             'path': '/ari/channels',
-            'json': has_entries({'variables': {'CONNECTEDLINE(num)': 'my-extension',
+            'json': has_entries({'variables': {'WAZO_USERUUID': 'user-uuid',
+                                               'CONNECTEDLINE(num)': 'my-extension',
                                                'CONNECTEDLINE(name)': 'my-extension',
                                                'CALLERID(name)': 'my-extension',
                                                'CALLERID(num)': 'my-extension',
@@ -1147,7 +1148,8 @@ class TestUserCreateCall(IntegrationTest):
         assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
             'method': 'POST',
             'path': '/ari/channels',
-            'json': has_entries({'variables': {'CONNECTEDLINE(name)': 'my-extension',
+            'json': has_entries({'variables': {'WAZO_USERUUID': 'user-uuid',
+                                               'CONNECTEDLINE(name)': 'my-extension',
                                                'CONNECTEDLINE(num)': 'my-extension',
                                                'CALLERID(name)': 'my-extension',
                                                'CALLERID(num)': 'my-extension',

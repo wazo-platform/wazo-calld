@@ -133,6 +133,7 @@ class CallsService:
                 variables.update(AUTO_ANSWER_VARIABLES)
 
             variables.setdefault('XIVO_FIX_CALLERID', '1')
+            variables.setdefault('WAZO_USERUUID', source_user)
             variables.setdefault('CONNECTEDLINE(name)', extension)
             variables.setdefault('CONNECTEDLINE(num)', '' if extension.startswith('#') else extension)
             variables.setdefault('CALLERID(name)', extension)
