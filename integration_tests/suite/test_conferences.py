@@ -625,22 +625,40 @@ class TestConferenceParticipants(TestConferences):
         self.confd.set_conferences(
             MockConference(id=conference_id, name='conference'),
         )
-        bus_events = self.bus.accumulator('conferences.{}.participants.talk'.format(conference_id))
+        talking_user_uuid = 'talking-user-uuid'
+        listening_user_uuid = 'listening-user-uuid'
 
-        self.given_call_in_conference(CONFERENCE1_EXTENSION, caller_id_name='participant1')
+        admin_bus_events = self.bus.accumulator(f'conferences.{conference_id}.participants.talk')
+        talking_user_bus_events = self.bus.accumulator(f'conferences.users.{talking_user_uuid}.participants.talk')
+        listening_user_bus_events = self.bus.accumulator(f'conferences.users.{listening_user_uuid}.participants.talk')
+
+        # listening user must enter the conference first, to receive the event from the talking user
+        self.given_call_in_conference(CONFERENCE1_EXTENSION, caller_id_name='participant2', user_uuid=listening_user_uuid)
+        self.given_call_in_conference(CONFERENCE1_EXTENSION, caller_id_name='participant1', user_uuid=talking_user_uuid)
         participants = self.calld_client.conferences.list_participants(conference_id)
-        participant = participants['items'][0]
+        talking_participant = [participant for participant in participants['items'] if participant['user_uuid'] == talking_user_uuid][0]
 
-        def talking_event_received(talking):
+        def talking_event_received(bus_events, talking):
             assert_that(bus_events.accumulate(), has_item(has_entries({
                 'name': 'conference_participant_talk_started' if talking else 'conference_participant_talk_stopped',
                 'data': has_entries({
-                    'id': participant['id'],
+                    'id': talking_participant['id'],
                     'conference_id': conference_id,
                 })
             })))
 
-        until.assert_(talking_event_received, talking=True, timeout=10, message='Talking start event was not received')
+        def talking_user_event_received(bus_events, talking):
+            assert_that(bus_events.accumulate(), has_item(has_entries({
+                'name': 'conference_user_participant_talk_started' if talking else 'conference_user_participant_talk_stopped',
+                'data': has_entries({
+                    'id': talking_participant['id'],
+                    'conference_id': conference_id,
+                })
+            })))
+
+        until.assert_(talking_event_received, admin_bus_events, talking=True, timeout=10, message='Talking start event was not received')
+        until.assert_(talking_user_event_received, talking_user_bus_events, talking=True, timeout=10, message='Talking start event was not received by talking user')
+        until.assert_(talking_user_event_received, listening_user_bus_events, talking=True, timeout=10, message='Talking start event was not received by listening user')
 
         # send fake "stopped talking" AMI event
         self.bus.publish(
@@ -649,15 +667,17 @@ class TestConferenceParticipants(TestConferences):
                 'data': {
                     'Event': 'ConfbridgeTalking',
                     'Conference': conference_id,
-                    'CallerIDNum': participant['caller_id_number'],
-                    'CallerIDName': participant['caller_id_name'],
+                    'CallerIDNum': talking_participant['caller_id_number'],
+                    'CallerIDName': talking_participant['caller_id_name'],
                     'Admin': 'No',
-                    'Language': participant['language'],
-                    'Uniqueid': participant['id'],
+                    'Language': talking_participant['language'],
+                    'Uniqueid': talking_participant['id'],
                     'TalkingStatus': 'off',
                 }
             },
             routing_key='ami.ConfbridgeTalking'
         )
 
-        until.assert_(talking_event_received, talking=False, timeout=10, message='Talking stop event was not received')
+        until.assert_(talking_event_received, admin_bus_events, talking=False, timeout=10, message='Talking stop event was not received')
+        until.assert_(talking_user_event_received, talking_user_bus_events, talking=False, timeout=10, message='Talking stop event was not received by talking user')
+        until.assert_(talking_user_event_received, listening_user_bus_events, talking=False, timeout=10, message='Talking stop event was not received by listening user')

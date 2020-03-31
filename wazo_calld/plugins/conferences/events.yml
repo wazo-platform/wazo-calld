@@ -38,6 +38,12 @@ channels:
         oneOf:
           - $ref: '#/components/messages/conference_participant_talk_started'
           - $ref: '#/components/messages/conference_participant_talk_stopped'
+  calld.conferences.users.{user_uuid}.participants.talk:
+    publish:
+      message:
+        oneOf:
+          - $ref: '#/components/messages/conference_user_participant_talk_started'
+          - $ref: '#/components/messages/conference_user_participant_talk_stopped'
 components:
   messages:
     conference_participant_joined:
@@ -76,8 +82,16 @@ components:
       description: A conference participant started talking
       payload:
         $ref: '#/components/schemas/conference-participant'
+    conference_user_participant_talk_started:
+      description: A conference participant started talking. This event is accessible to users.
+      payload:
+        $ref: '#/components/schemas/conference-participant'
     conference_participant_talk_stopped:
       description: A conference participant stopped talking
+      payload:
+        $ref: '#/components/schemas/conference-participant'
+    conference_user_participant_talk_stopped:
+      description: A conference participant stopped talking. This event is accessible to users.
       payload:
         $ref: '#/components/schemas/conference-participant'
   schemas:
