@@ -656,9 +656,9 @@ class TestConferenceParticipants(TestConferences):
                 })
             })))
 
-        until.assert_(talking_event_received, admin_bus_events, talking=True, timeout=10, message='Talking start event was not received')
-        until.assert_(talking_user_event_received, talking_user_bus_events, talking=True, timeout=10, message='Talking start event was not received by talking user')
-        until.assert_(talking_user_event_received, listening_user_bus_events, talking=True, timeout=10, message='Talking start event was not received by listening user')
+        until.assert_(talking_event_received, admin_bus_events, talking=True, timeout=10)
+        until.assert_(talking_user_event_received, talking_user_bus_events, talking=True, timeout=10)
+        until.assert_(talking_user_event_received, listening_user_bus_events, talking=True, timeout=10)
 
         # send fake "stopped talking" AMI event
         self.bus.publish(
@@ -678,6 +678,6 @@ class TestConferenceParticipants(TestConferences):
             routing_key='ami.ConfbridgeTalking'
         )
 
-        until.assert_(talking_event_received, admin_bus_events, talking=False, timeout=10, message='Talking stop event was not received')
-        until.assert_(talking_user_event_received, talking_user_bus_events, talking=False, timeout=10, message='Talking stop event was not received by talking user')
-        until.assert_(talking_user_event_received, listening_user_bus_events, talking=False, timeout=10, message='Talking stop event was not received by listening user')
+        until.assert_(talking_event_received, admin_bus_events, talking=False, timeout=10)
+        until.assert_(talking_user_event_received, talking_user_bus_events, talking=False)
+        until.assert_(talking_user_event_received, listening_user_bus_events, talking=False)
