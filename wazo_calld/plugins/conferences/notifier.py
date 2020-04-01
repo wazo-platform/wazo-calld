@@ -1,4 +1,4 @@
-# Copyright 2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from xivo_bus.resources.conference.event import (
@@ -12,6 +12,8 @@ from xivo_bus.resources.conference.event import (
     RecordStoppedConferenceEvent,
     UserParticipantJoinedConferenceEvent,
     UserParticipantLeftConferenceEvent,
+    UserParticipantTalkStartedConferenceEvent,
+    UserParticipantTalkStoppedConferenceEvent,
 )
 
 
@@ -65,7 +67,7 @@ class ConferencesNotifier:
         for user_uuid_concerned in participants.valid_user_uuids():
             headers['user_uuid:{}'.format(user_uuid_concerned)] = True
         conference_event = ParticipantLeftConferenceEvent(conference_id, participant)
-        self._bus_producer.publish(conference_event)
+        self._bus_producer.publish(conference_event, headers=headers)
 
     def participant_muted(self, conference_id, participant):
         event = ParticipantMutedConferenceEvent(conference_id, participant)
@@ -83,10 +85,18 @@ class ConferencesNotifier:
         event = RecordStoppedConferenceEvent(conference_id)
         self._bus_producer.publish(event)
 
-    def participant_talk_started(self, conference_id, participant):
+    def participant_talk_started(self, conference_id, participant, participants):
+        for user_uuid_concerned in Participants(*participants).valid_user_uuids():
+            user_event = UserParticipantTalkStartedConferenceEvent(conference_id, participant, user_uuid_concerned)
+            self._bus_producer.publish(user_event)
+
         event = ParticipantTalkStartedConferenceEvent(conference_id, participant)
         self._bus_producer.publish(event)
 
-    def participant_talk_stopped(self, conference_id, participant):
+    def participant_talk_stopped(self, conference_id, participant, participants):
+        for user_uuid_concerned in Participants(*participants).valid_user_uuids():
+            user_event = UserParticipantTalkStoppedConferenceEvent(conference_id, participant, user_uuid_concerned)
+            self._bus_producer.publish(user_event)
+
         event = ParticipantTalkStoppedConferenceEvent(conference_id, participant)
         self._bus_producer.publish(event)

@@ -1,4 +1,4 @@
-# Copyright 2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -38,10 +38,10 @@ class ConferencesBusEventHandler:
             'admin': event['Admin'] == 'Yes',
             'language': event['Language'],
             'call_id': event['Uniqueid'],
+            'user_uuid': event.get('ChanVariable', {}).get('XIVO_USERUUID'),
         }
 
         participant = participant_schema.load(raw_participant)
-        participant['user_uuid'] = event.get('ChanVariable', {}).get('XIVO_USERUUID')
         conference = Conference.from_id(conference_id, self._confd)
 
         participants_already_present = self._service.list_participants(conference.tenant_uuid,
@@ -61,10 +61,10 @@ class ConferencesBusEventHandler:
             'admin': event['Admin'] == 'Yes',
             'language': event['Language'],
             'call_id': event['Uniqueid'],
+            'user_uuid': event.get('ChanVariable', {}).get('XIVO_USERUUID'),
         }
 
         participant = participant_schema.load(raw_participant)
-        participant['user_uuid'] = event.get('ChanVariable', {}).get('XIVO_USERUUID')
 
         conference = Conference.from_id(conference_id, self._confd)
 
@@ -85,6 +85,7 @@ class ConferencesBusEventHandler:
             'admin': event['Admin'] == 'Yes',
             'language': event['Language'],
             'call_id': event['Uniqueid'],
+            'user_uuid': event.get('ChanVariable', {}).get('XIVO_USERUUID'),
         }
 
         participant = participant_schema.load(raw_participant)
@@ -103,6 +104,7 @@ class ConferencesBusEventHandler:
             'admin': event['Admin'] == 'Yes',
             'language': event['Language'],
             'call_id': event['Uniqueid'],
+            'user_uuid': event.get('ChanVariable', {}).get('XIVO_USERUUID'),
         }
 
         participant = participant_schema.load(raw_participant)
@@ -135,11 +137,17 @@ class ConferencesBusEventHandler:
             'admin': event['Admin'] == 'Yes',
             'language': event['Language'],
             'call_id': event['Uniqueid'],
+            'user_uuid': event.get('ChanVariable', {}).get('XIVO_USERUUID'),
         }
 
         participant = participant_schema.load(raw_participant)
 
+        conference = Conference.from_id(conference_id, self._confd)
+
+        participants = self._service.list_participants(conference.tenant_uuid,
+                                                       conference_id)
+
         if talking:
-            self._notifier.participant_talk_started(conference_id, participant)
+            self._notifier.participant_talk_started(conference_id, participant, participants)
         else:
-            self._notifier.participant_talk_stopped(conference_id, participant)
+            self._notifier.participant_talk_stopped(conference_id, participant, participants)
