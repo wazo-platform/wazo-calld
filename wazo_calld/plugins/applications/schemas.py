@@ -77,7 +77,7 @@ class ApplicationNodeSchema(BaseSchema):
 
 
 class ApplicationSnoopPutSchema(BaseSchema):
-    whisper_mode = fields.String(validate=OneOf(['in', 'out', 'both']), missing=None)
+    whisper_mode = fields.String(validate=OneOf(['in', 'out', 'both', 'none']), missing=None)
 
     @post_load
     def load_whisper_mode(self, data):
