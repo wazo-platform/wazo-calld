@@ -14,7 +14,6 @@ ari:
 auth:
   host: auth
   timeout: 2
-  verify_certificate: /usr/local/share/ssl/auth/server.crt
   key_file: /etc/wazo-calld/key.yml
 
 bus:

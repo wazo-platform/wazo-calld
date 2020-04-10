@@ -42,8 +42,8 @@ auth:
   host: localhost
   port: 9497
   timeout: 2
-  https: true
-  verify_certificate: /usr/share/xivo-certs/server.crt
+  prefix: null
+  https: false
   key_file: /var/lib/wazo-auth-keys/wazo-calld-key.yml
 
 confd:
