@@ -1,4 +1,4 @@
-# Copyright 2013-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2013-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import requests
@@ -11,7 +11,7 @@ class AuthClient:
         self.port = port
 
     def url(self, *parts):
-        return 'https://{host}:{port}/{path}'.format(
+        return 'http://{host}:{port}/{path}'.format(
             host=self.host,
             port=self.port,
             path='/'.join(parts)
@@ -19,7 +19,7 @@ class AuthClient:
 
     def set_token(self, token):
         url = self.url('_set_token')
-        requests.post(url, json=token.to_dict(), verify=False)
+        requests.post(url, json=token.to_dict())
 
 
 class MockUserToken:

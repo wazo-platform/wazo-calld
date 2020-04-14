@@ -46,8 +46,8 @@ _DEFAULT_CONFIG = {
     'auth': {
         'host': 'localhost',
         'port': 9497,
-        'https': True,
-        'verify_certificate': _CERT_FILE,
+        'prefix': None,
+        'https': False,
         'key_file': '/var/lib/wazo-auth-keys/wazo-calld-key.yml',
     },
     'bus': {
