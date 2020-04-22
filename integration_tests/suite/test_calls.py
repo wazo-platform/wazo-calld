@@ -1657,3 +1657,99 @@ class TestCallMute(RealAsteriskIntegrationTest):
         token = 'my-token'
         self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
         return token
+
+
+class TestCallSendDTMF(RealAsteriskIntegrationTest):
+
+    asset = 'real_asterisk'
+
+    def test_put_dtmf(self):
+        user_uuid = str(uuid.uuid4())
+        channel_id = self.given_call_not_stasis(user_uuid=user_uuid)
+
+        assert_that(
+            calling(self.calld_client.calls.send_dtmf_digits).with_args(UNKNOWN_UUID, '1234'),
+            raises(CalldError).matching(has_properties(status_code=404))
+        )
+
+        assert_that(
+            calling(self.calld_client.calls.send_dtmf_digits).with_args(channel_id, 'invalid'),
+            raises(CalldError).matching(has_properties(status_code=400))
+        )
+
+        routing_key = 'ami.*'
+        event_accumulator = self.bus.accumulator(routing_key)
+
+        test_str = '12*#'
+        self.calld_client.calls.send_dtmf_digits(channel_id, test_str)
+
+        def amid_dtmf_events_received():
+            events = event_accumulator.accumulate()
+            for expected_digit in test_str:
+                assert_that(
+                    events,
+                    has_item(has_entries(
+                        name='DTMFEnd',
+                        data=has_entries(
+                            Direction='Received',
+                            Digit=expected_digit,
+                            Uniqueid=channel_id,
+                        ),
+                    ))
+                )
+
+        until.assert_(amid_dtmf_events_received, tries=3)
+
+    def test_put_dtmf_from_user(self):
+        user_uuid = str(uuid.uuid4())
+        token = self.given_user_token(user_uuid)
+        self.calld_client.set_token(token)
+        channel_id = self.given_call_not_stasis(user_uuid=user_uuid)
+        other_channel_id = self.given_call_not_stasis()
+
+        assert_that(
+            calling(self.calld_client.calls.send_dtmf_digits_from_user).with_args(UNKNOWN_UUID, '1234'),
+            raises(CalldError).matching(has_properties(status_code=404))
+        )
+        assert_that(
+            calling(self.calld_client.calls.send_dtmf_digits_from_user).with_args(other_channel_id, '1234'),
+            raises(CalldError).matching(has_properties(status_code=403))
+        )
+
+        routing_key = 'ami.*'
+        event_accumulator = self.bus.accumulator(routing_key)
+
+        test_str = '12*#'
+        self.calld_client.calls.send_dtmf_digits(channel_id, test_str)
+
+        def amid_dtmf_events_received():
+            events = event_accumulator.accumulate()
+            for expected_digit in test_str:
+                assert_that(
+                    events,
+                    has_item(has_entries(
+                        name='DTMFEnd',
+                        data=has_entries(
+                            Direction='Received',
+                            Digit=expected_digit,
+                            Uniqueid=channel_id,
+                        ),
+                    ))
+                )
+
+        until.assert_(amid_dtmf_events_received, tries=3)
+
+    def given_call_not_stasis(self, user_uuid=None):
+        user_uuid = user_uuid or str(uuid.uuid4())
+        call = self.ari.channels.originate(
+            endpoint=ENDPOINT_AUTOANSWER,
+            context='local',
+            extension='dial-autoanswer',
+            variables={'variables': {'XIVO_USERUUID': user_uuid}}
+        )
+        return call.id
+
+    def given_user_token(self, user_uuid):
+        token = 'my-token'
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
+        return token

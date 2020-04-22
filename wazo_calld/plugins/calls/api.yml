@@ -125,6 +125,24 @@ paths:
             $ref: '#/definitions/Error'
         '503':
           $ref: '#/responses/AnotherServiceUnavailable'
+  /calls/{call_id}/dtmf:
+    put:
+      summary: Send DTMF digits to a call
+      description: '**Required ACL:** `calld.calls.{call_id}.dtmf.update'
+      parameters:
+      - $ref: '#/parameters/CallID'
+      - $ref: '#/parameters/Digits'
+      tags:
+      - calls
+      responses:
+        '204':
+          description: The digits have been sent
+        '404':
+          description: No such call
+          schema:
+            $ref: '#/definitions/Error'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
   /calls/{call_id}/user/{user_uuid}:
     put:
       summary: Connect a call to a user
@@ -253,7 +271,7 @@ paths:
   /users/me/calls/{call_id}/mute/stop:
     put:
       summary: Unmute a call from user
-      description: '**Required ACL:** `calls.users.me.calls.{call_id}.mute.stop.update`
+      description: '**Required ACL:** `calld.users.me.calls.{call_id}.mute.stop.update`
 
 
         Only calls owned by the authenticated user may be unmute.'
@@ -265,6 +283,25 @@ paths:
       responses:
         '204':
           description: The call is now unmuted
+        '404':
+          description: No such call
+          schema:
+            $ref: '#/definitions/Error'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+  /users/me/calls/{call_id}/dtmf:
+    put:
+      summary: Send DTMF digits to a call
+      description: '**Required ACL:** `calld.users.me.calls.{call_id}.dtmf.update'
+      parameters:
+      - $ref: '#/parameters/CallID'
+      - $ref: '#/parameters/Digits'
+      tags:
+      - calls
+      - users
+      responses:
+        '204':
+          description: The digits have been sent
         '404':
           description: No such call
           schema:
@@ -393,4 +430,10 @@ parameters:
     in: path
     description: ID of the call
     required: true
+    type: string
+  Digits:
+    name: digits
+    in: query
+    description: Digits to send via DTMF
+    required: True
     type: string

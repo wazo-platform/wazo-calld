@@ -10,6 +10,7 @@ from wazo_calld.auth import get_token_user_uuid_from_request
 from wazo_calld.http import AuthResource
 
 from .schemas import call_schema
+from .schemas import CallDtmfSchema
 from .schemas import CallRequestSchema
 from .schemas import UserCallRequestSchema
 
@@ -17,6 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 call_request_schema = CallRequestSchema()
+call_dtmf_schema = CallDtmfSchema()
 user_call_request_schema = UserCallRequestSchema()
 
 
@@ -152,6 +154,32 @@ class MyCallResource(AuthResource):
         self.calls_service.hangup_user(call_id, user_uuid)
 
         return None, 204
+
+
+class CallDtmfResource(AuthResource):
+
+    def __init__(self, calls_service):
+        self.calls_service = calls_service
+
+    @required_acl('calld.calls.{call_id}.dtmf.update')
+    def put(self, call_id):
+        request_args = call_dtmf_schema.load(request.args)
+        self.calls_service.send_dtmf(call_id, request_args['digits'])
+        return '', 204
+
+
+class MyCallDtmfResource(AuthResource):
+
+    def __init__(self, auth_client, calls_service):
+        self.auth_client = auth_client
+        self.calls_service = calls_service
+
+    @required_acl('calld.users.me.calls.{call_id}.dtmf.update')
+    def put(self, call_id):
+        request_args = call_dtmf_schema.load(request.args)
+        user_uuid = get_token_user_uuid_from_request(self.auth_client)
+        self.calls_service.send_dtmf_user(call_id, user_uuid, request_args['digits'])
+        return '', 204
 
 
 class ConnectCallToUserResource(AuthResource):

@@ -4,6 +4,7 @@
 from marshmallow import EXCLUDE, Schema, fields, post_dump
 from marshmallow.validate import Length
 from marshmallow.validate import Range
+from marshmallow.validate import Regexp
 
 from wazo_calld.plugin_helpers.mallow import StrictDict
 
@@ -46,6 +47,10 @@ class UserCallRequestSchema(CallBaseSchema):
                            value_field=fields.String(required=True, validate=Length(min=1)),
                            missing=dict)
     auto_answer_caller = fields.Boolean(missing=False)
+
+
+class CallDtmfSchema(CallBaseSchema):
+    digits = fields.String(validate=Regexp(r'^[0-9*#]+$'))
 
 
 class CallSchema(CallBaseSchema):

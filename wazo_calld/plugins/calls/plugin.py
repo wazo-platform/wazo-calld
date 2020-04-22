@@ -13,12 +13,14 @@ from .http import (
     CallResource,
     CallMuteStartResource,
     CallMuteStopResource,
+    CallDtmfResource,
     CallsResource,
     ConnectCallToUserResource,
     MyCallResource,
     MyCallsResource,
     MyCallMuteStartResource,
     MyCallMuteStopResource,
+    MyCallDtmfResource,
 )
 from .services import CallsService
 from .stasis import CallsStasis
@@ -71,7 +73,9 @@ class Plugin:
         api.add_resource(CallResource, '/calls/<call_id>', resource_class_args=[calls_service])
         api.add_resource(CallMuteStartResource, '/calls/<call_id>/mute/start', resource_class_args=[calls_service])
         api.add_resource(CallMuteStopResource, '/calls/<call_id>/mute/stop', resource_class_args=[calls_service])
+        api.add_resource(CallDtmfResource, '/calls/<call_id>/dtmf', resource_class_args=[calls_service])
         api.add_resource(MyCallResource, '/users/me/calls/<call_id>', resource_class_args=[auth_client, calls_service])
         api.add_resource(MyCallMuteStartResource, '/users/me/calls/<call_id>/mute/start', resource_class_args=[auth_client, calls_service])
         api.add_resource(MyCallMuteStopResource, '/users/me/calls/<call_id>/mute/stop', resource_class_args=[auth_client, calls_service])
+        api.add_resource(MyCallDtmfResource, '/users/me/calls/<call_id>/dtmf', resource_class_args=[auth_client, calls_service])
         api.add_resource(ConnectCallToUserResource, '/calls/<call_id>/user/<user_uuid>', resource_class_args=[calls_service])

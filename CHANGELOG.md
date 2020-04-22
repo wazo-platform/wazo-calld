@@ -1,5 +1,12 @@
 # Changelog
 
+## 20.06
+
+* New API to send DTMF digits to a call
+
+  * `PUT /calls/{call_id}/dtmf`
+  * `PUT /users/me/calls/{call_id}/dtmf`
+
 ## 20.03
 
 * New attribute `all_lines` in routes:
