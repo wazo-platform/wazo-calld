@@ -77,22 +77,9 @@ class ApplicationNodeSchema(BaseSchema):
 
 
 class ApplicationSnoopPutSchema(BaseSchema):
-    whisper_mode = fields.String(validate=OneOf(['in', 'out', 'both', 'none']), missing=None)
+    whisper_mode = fields.String(validate=OneOf(['in', 'out', 'both', 'none']), missing='none')
 
-    @post_load
-    def load_whisper_mode(self, data):
-        whisper_mode = data.get('whisper_mode')
-        if whisper_mode is None:
-            data['whisper_mode'] = 'none'
-        return data
-
-    @pre_dump
-    def dump_whisper_mode(self, data):
-        if data.whisper_mode == 'none':
-            data.whisper_mode = None
-        return data
-
-
+    
 class ApplicationSnoopSchema(ApplicationSnoopPutSchema):
     uuid = fields.String(dump_only=True)
     snooped_call_id = fields.String(dump_only=True)
