@@ -6,7 +6,7 @@ import os
 
 from cheroot import wsgi
 from datetime import timedelta
-from flask import Flask, request
+from flask import Flask
 from flask_restful import Api
 from flask_cors import CORS
 from werkzeug.contrib.fixers import ProxyFix
@@ -22,20 +22,13 @@ app = Flask('wazo_calld')
 api = Api(app, prefix='/{}'.format(VERSION))
 
 
-def log_request_params(response):
-    http_helpers.log_request_hide_token(response)
-    logger.debug('request data: %s', request.data or '""')
-    logger.debug('response body: %s', response.data.strip() if response.data else '""')
-    return response
-
-
 class HTTPServer:
 
     def __init__(self, global_config):
         self.config = global_config['rest_api']
         http_helpers.add_logger(app, logger)
         app.before_request(http_helpers.log_before_request)
-        app.after_request(log_request_params)
+        app.after_request(http_helpers.log_request)
         app.secret_key = os.urandom(24)
         app.permanent_session_lifetime = timedelta(minutes=5)
         app.config['auth'] = global_config['auth']
