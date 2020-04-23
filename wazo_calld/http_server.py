@@ -1,4 +1,4 @@
-# Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -19,7 +19,6 @@ VERSION = 1.0
 
 logger = logging.getLogger(__name__)
 app = Flask('wazo_calld')
-adapter_app = Flask('wazo_calld_adapter')
 api = Api(app, prefix='/{}'.format(VERSION))
 
 
@@ -35,14 +34,11 @@ class HTTPServer:
     def __init__(self, global_config):
         self.config = global_config['rest_api']
         http_helpers.add_logger(app, logger)
-        http_helpers.add_logger(adapter_app, logger)
         app.before_request(http_helpers.log_before_request)
         app.after_request(log_request_params)
         app.secret_key = os.urandom(24)
         app.permanent_session_lifetime = timedelta(minutes=5)
         app.config['auth'] = global_config['auth']
-        adapter_app.after_request(log_request_params)
-        adapter_app.permanent_session_lifetime = timedelta(minutes=5)
         auth_verifier.set_config(global_config['auth'])
         self._load_cors()
         self.server = None
