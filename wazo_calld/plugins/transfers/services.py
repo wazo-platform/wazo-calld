@@ -1,4 +1,4 @@
-# Copyright 2016-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -60,7 +60,7 @@ class TransfersService:
             transfer_state = self.state_factory.make_from_class(TransferStateReady)
 
         try:
-            new_state = transfer_state.create(transferred_channel, initiator_channel, context, exten, variables, timeout)
+            new_state = transfer_state.create(transferred_channel, initiator_channel, context, exten, flow, variables, timeout)
         except Exception:
             self.transfer_lock.release(initiator_call)
             raise

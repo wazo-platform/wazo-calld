@@ -1,4 +1,4 @@
-# Copyright 2016-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -169,7 +169,7 @@ class TransferStateReady(TransferState):
     name = TransferStatus.ready
 
     @transition
-    def create(self, transferred_channel, initiator_channel, context, exten, variables, timeout):
+    def create(self, transferred_channel, initiator_channel, context, exten, flow, variables, timeout):
         initiator_uuid = Channel(initiator_channel.id, self._ari).user()
         if initiator_uuid is None:
             raise TransferCreationError('initiator has no user UUID')
@@ -203,6 +203,7 @@ class TransferStateReady(TransferState):
         self.transfer.initiator_call = initiator_channel.id
         self.transfer.recipient_call = recipient_call
         self.transfer.status = self.name
+        self.transfer.flow = flow
         self._notifier.created(self.transfer)
 
         return TransferStateRingback.from_state(self)
@@ -217,7 +218,7 @@ class TransferStateReadyNonStasis(TransferState):
     name = 'ready_non_stasis'
 
     @transition
-    def create(self, transferred_channel, initiator_channel, context, exten, variables, timeout):
+    def create(self, transferred_channel, initiator_channel, context, exten, flow, variables, timeout):
         initiator_uuid = Channel(initiator_channel.id, self._ari).user()
         if initiator_uuid is None:
             raise TransferCreationError('initiator has no user UUID')
@@ -239,6 +240,7 @@ class TransferStateReadyNonStasis(TransferState):
         self.transfer.initiator_call = initiator_channel.id
         self.transfer.transferred_call = transferred_channel.id
         self.transfer.status = self.name
+        self.transfer.flow = flow
         self._notifier.created(self.transfer)
 
         return TransferStateStarting.from_state(self)
