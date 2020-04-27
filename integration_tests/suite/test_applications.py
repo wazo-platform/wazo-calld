@@ -102,7 +102,6 @@ class BaseApplicationTestCase(RealAsteriskIntegrationTest):
         return until.true(call_entered_application, event_accumulator, timeout=10, message='Failed to start call')
 
     def call_from_user(self, app_uuid, exten):
-        app_uuid = self.no_node_app_uuid
         context = 'stasis-wazo-app-{}'.format(app_uuid)
         response = self.chan_test.call(context, exten)
         return response.json()['uniqueid']
