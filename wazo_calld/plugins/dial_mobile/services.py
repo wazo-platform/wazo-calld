@@ -1,4 +1,4 @@
-# Copyright 2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import uuid
@@ -127,8 +127,7 @@ class _PollingContactDialer:
                 self._ari.channels.hangup(channelId=self._caller_channel_id)
             except ARINotFound:
                 pass  # Already gone
-            finally:
-                return
+            return
 
         raise _NoSuchChannel(channel_id)
 
