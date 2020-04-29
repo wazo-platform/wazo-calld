@@ -1,13 +1,11 @@
-# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from marshmallow import (
     EXCLUDE,
     Schema,
     fields,
-    pre_dump,
     pre_load,
-    post_load,
 )
 from xivo.mallow.validate import (
     Length,
@@ -79,7 +77,7 @@ class ApplicationNodeSchema(BaseSchema):
 class ApplicationSnoopPutSchema(BaseSchema):
     whisper_mode = fields.String(validate=OneOf(['in', 'out', 'both', 'none']), missing='none')
 
-    
+
 class ApplicationSnoopSchema(ApplicationSnoopPutSchema):
     uuid = fields.String(dump_only=True)
     snooped_call_id = fields.String(dump_only=True)
