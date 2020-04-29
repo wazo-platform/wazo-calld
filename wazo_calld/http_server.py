@@ -1,4 +1,4 @@
-# Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -6,7 +6,7 @@ import os
 
 from cheroot import wsgi
 from datetime import timedelta
-from flask import Flask, request
+from flask import Flask
 from flask_restful import Api
 from flask_cors import CORS
 from werkzeug.contrib.fixers import ProxyFix
@@ -19,15 +19,7 @@ VERSION = 1.0
 
 logger = logging.getLogger(__name__)
 app = Flask('wazo_calld')
-adapter_app = Flask('wazo_calld_adapter')
 api = Api(app, prefix='/{}'.format(VERSION))
-
-
-def log_request_params(response):
-    http_helpers.log_request_hide_token(response)
-    logger.debug('request data: %s', request.data or '""')
-    logger.debug('response body: %s', response.data.strip() if response.data else '""')
-    return response
 
 
 class HTTPServer:
@@ -35,14 +27,11 @@ class HTTPServer:
     def __init__(self, global_config):
         self.config = global_config['rest_api']
         http_helpers.add_logger(app, logger)
-        http_helpers.add_logger(adapter_app, logger)
         app.before_request(http_helpers.log_before_request)
-        app.after_request(log_request_params)
+        app.after_request(http_helpers.log_request)
         app.secret_key = os.urandom(24)
         app.permanent_session_lifetime = timedelta(minutes=5)
         app.config['auth'] = global_config['auth']
-        adapter_app.after_request(log_request_params)
-        adapter_app.permanent_session_lifetime = timedelta(minutes=5)
         auth_verifier.set_config(global_config['auth'])
         self._load_cors()
         self.server = None
