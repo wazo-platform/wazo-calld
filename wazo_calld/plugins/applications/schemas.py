@@ -1,13 +1,11 @@
-# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from marshmallow import (
     EXCLUDE,
     Schema,
     fields,
-    pre_dump,
     pre_load,
-    post_load,
 )
 from xivo.mallow.validate import (
     Length,
@@ -77,20 +75,7 @@ class ApplicationNodeSchema(BaseSchema):
 
 
 class ApplicationSnoopPutSchema(BaseSchema):
-    whisper_mode = fields.String(validate=OneOf(['in', 'out', 'both']), missing=None)
-
-    @post_load
-    def load_whisper_mode(self, data):
-        whisper_mode = data.get('whisper_mode')
-        if whisper_mode is None:
-            data['whisper_mode'] = 'none'
-        return data
-
-    @pre_dump
-    def dump_whisper_mode(self, data):
-        if data.whisper_mode == 'none':
-            data.whisper_mode = None
-        return data
+    whisper_mode = fields.String(validate=OneOf(['in', 'out', 'both', 'none']), missing='none')
 
 
 class ApplicationSnoopSchema(ApplicationSnoopPutSchema):
