@@ -33,8 +33,6 @@ services:
     image: wazopbx/wazo-confd-mock
     ports:
       - 9486
-    volumes:
-      - ./ssl:/usr/local/share/ssl
 
   consul:
     image: p0bailey/docker-flask
