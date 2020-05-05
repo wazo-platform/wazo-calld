@@ -71,7 +71,7 @@ class _PollingContactDialer:
 
             time.sleep(0.25)
 
-        self._remove_ringing_channels()
+        self._remove_unanswered_channels()
 
     def _channel_is_up(self, channel_id):
         try:
@@ -97,12 +97,13 @@ class _PollingContactDialer:
         self._called_contacts.add(contact)
         self._dialed_channels.add(channel)
 
-    def _remove_ringing_channels(self):
+    def _remove_unanswered_channels(self):
         for channel in self._dialed_channels:
             try:
                 channel_info = channel.get()
-                if channel_info.json['state'] == 'Ringing':
-                    self._ari.channels.hangup(channelId=channel.id)
+                if channel_info.json['state'] == 'Up':
+                    continue
+                self._ari.channels.hangup(channelId=channel.id)
             except ARINotFound:
                 continue  # The channel has already been hung up
 

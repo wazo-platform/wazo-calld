@@ -1,4 +1,4 @@
-# Copyright 2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from unittest import TestCase
@@ -115,7 +115,7 @@ class TestGetContacts(DialerTestCase):
         assert_that(result, contains('contact1', 'contact2', 'contact3'))
 
 
-class TestRemoveRingingChannels(DialerTestCase):
+class TestRemoveUnansweredChannels(DialerTestCase):
 
     def test_that_hungup_channels_do_not_interrupt(self):
         channel_1 = Mock()
@@ -127,7 +127,7 @@ class TestRemoveRingingChannels(DialerTestCase):
 
         self.poller._dialed_channels = [channel_1, channel_2]
 
-        self.poller._remove_ringing_channels()
+        self.poller._remove_unanswered_channels()
 
         self.ari.channels.hangup.assert_called_once_with(channelId=s.channel_2_id)
 
@@ -148,9 +148,20 @@ class TestRemoveRingingChannels(DialerTestCase):
 
         self.ari.channels.hangup.side_effect = hangup_mock
 
-        self.poller._remove_ringing_channels()
+        self.poller._remove_unanswered_channels()
 
         self.ari.channels.hangup.assert_called_with(channelId=s.channel_2_id)
+
+    def test_that_channels_that_are_not_ringing_yet_are_removed(self):
+        channel_1 = Mock()
+        channel_1.id = s.channel_1_id
+        channel_1.get.return_value = Mock(json={'state': 'Down'})
+
+        self.poller._dialed_channels = [channel_1]
+
+        self.poller._remove_unanswered_channels()
+
+        self.ari.channels.hangup.assert_called_with(channelId=s.channel_1_id)
 
 
 class DialMobileServiceTestCase(DialerTestCase):
