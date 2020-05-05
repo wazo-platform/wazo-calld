@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
+import threading
 
 from wazo_calld.plugin_helpers.ari_ import (
     GlobalVariableAdapter,
@@ -20,9 +21,12 @@ class StatePersistor:
                                                       'XIVO_TRANSFERS_{}')
         self._index = GlobalVariableConstantNameAdapter(GlobalVariableJsonAdapter(GlobalVariableAdapter(ari)),
                                                         'XIVO_TRANSFERS_INDEX')
+        self._lock = threading.RLock()
 
     def get(self, transfer_id):
-        return Transfer.from_dict(self._transfers.get(transfer_id))
+        with self._lock:
+            transfer_dict = self._transfers.get(transfer_id)
+        return Transfer.from_dict(transfer_dict)
 
     def get_by_channel(self, channel_id):
         for transfer in self.list():
@@ -34,30 +38,35 @@ class StatePersistor:
             raise KeyError(channel_id)
 
     def upsert(self, transfer):
-        self._transfers.set(transfer.id, transfer.to_dict())
         logger.debug('transfer: %s upsert starting', transfer.id)
-        index = set(self._index.get(default=[]))
-        index.add(transfer.id)
-        self._index.set(list(index))
+        with self._lock:
+            self._transfers.set(transfer.id, transfer.to_dict())
+            index = set(self._index.get(default=[]))
+            index.add(transfer.id)
+            self._index.set(list(index))
         logger.debug('transfer: %s upsert done', transfer.id)
 
     def remove(self, transfer_id):
-        self._transfers.unset(transfer_id)
         logger.debug('transfer: %s remove starting', transfer_id)
-        index = set(self._index.get(default=[]))
-        try:
-            index.remove(transfer_id)
-        except KeyError:
-            logger.debug('transfer: %s remove done, not found', transfer_id)
-            return
-        self._index.set(list(index))
+        with self._lock:
+            self._transfers.unset(transfer_id)
+            index = set(self._index.get(default=[]))
+            try:
+                index.remove(transfer_id)
+            except KeyError:
+                logger.debug('transfer: %s remove done, not found', transfer_id)
+                return
+            self._index.set(list(index))
         logger.debug('transfer: %s remove done', transfer_id)
 
     def list(self):
-        for transfer_id in self._index.get(default=[]):
-            try:
-                transfer = self.get(transfer_id)
-            except KeyError:
-                logger.debug('transfer list: transfer %s found in index, but details not found', transfer_id)
-                continue
-            yield transfer
+        results = []
+        with self._lock:
+            for transfer_id in self._index.get(default=[]):
+                try:
+                    transfer = self.get(transfer_id)
+                except KeyError:
+                    logger.debug('transfer list: transfer %s found in index, but details not found', transfer_id)
+                    continue
+                results.append(transfer)
+        return results
