@@ -1,4 +1,4 @@
-# Copyright 2016-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -55,4 +55,9 @@ class StatePersistor:
 
     def list(self):
         for transfer_id in self._index.get(default=[]):
-            yield self.get(transfer_id)
+            try:
+                transfer = self.get(transfer_id)
+            except KeyError:
+                logger.debug('transfer list: transfer %s found in index, but details not found', transfer_id)
+                continue
+            yield transfer
