@@ -49,8 +49,8 @@ auth:
 confd:
   host: localhost
   port: 9486
-  https: true
-  verify_certificate: /usr/share/xivo-certs/server.crt
+  prefix: null
+  https: false
 
 # Event bus (AMQP) connection informations
 bus:
