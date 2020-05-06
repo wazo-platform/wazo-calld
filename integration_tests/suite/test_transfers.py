@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
+import json
 import uuid
 
 from ari.exceptions import ARINotFound
@@ -426,6 +427,28 @@ class TestUserListTransfers(TestTransfers):
             'id': transfer1_id,
             'initiator_uuid': user_uuid,
         })))
+
+    def test_list_with_broken_index(self):
+        token = 'my-token'
+        user_uuid = 'user-uuid'
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
+        _, __, ___, transfer1_id = self.given_answered_transfer(initiator_uuid=user_uuid)
+        _, __, ___, transfer2_id = self.given_answered_transfer(initiator_uuid=user_uuid)
+        transfers_index = json.loads(self.ari.asterisk.getGlobalVar(variable='XIVO_TRANSFERS_INDEX')['value'])
+        transfers_index.insert(0, 'invalid')
+        transfers_index = self.ari.asterisk.setGlobalVar(variable='XIVO_TRANSFERS_INDEX', value=json.dumps(transfers_index))
+
+        result = self.calld.list_my_transfers(token)
+
+        assert_that(result['items'], contains_inanyorder(
+            has_entries({
+                'id': transfer1_id,
+                'initiator_uuid': user_uuid,
+            }),
+            has_entries({
+                'id': transfer2_id,
+                'initiator_uuid': user_uuid,
+            })))
 
 
 class TestCreateTransfer(TestTransfers):
