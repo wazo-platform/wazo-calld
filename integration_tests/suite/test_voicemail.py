@@ -1,4 +1,4 @@
-# Copyright 2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import os
@@ -237,6 +237,17 @@ class TestVoicemails(RealAsteriskIntegrationTest):
 
         self.calld_client.voicemails.delete_voicemail_greeting_from_user(
             "busy"
+        )
+
+    def test_voicemail_user_has_no_voicemail(self):
+        self.confd.set_users(MockUser(uuid=self._user_uuid, voicemail=None))
+        assert_that(
+            calling(self.calld_client.voicemails.get_voicemail_from_user),
+            raises(CalldError).matching(has_properties(
+                status_code=404,
+                message=contains_string("No such user voicemail"),
+                details=has_entry("user_uuid", self._user_uuid),
+            ))
         )
 
     def test_voicemail_workflow(self):

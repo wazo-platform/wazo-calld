@@ -1,4 +1,4 @@
-# Copyright 2016-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from requests import HTTPError
@@ -132,9 +132,10 @@ class Conference:
 
 def get_user_voicemail(user_uuid, confd_client):
     try:
-        return confd_client.users.get(user_uuid)['voicemail']
-    except IndexError:
-        raise NoSuchUserVoicemail(user_uuid)
+        voicemail = confd_client.users.get(user_uuid)['voicemail']
+        if not voicemail:
+            raise NoSuchUserVoicemail(user_uuid)
+        return voicemail
     except HTTPError as e:
         if not_found(e):
             raise NoSuchUserVoicemail(user_uuid)
