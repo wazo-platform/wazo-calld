@@ -18,7 +18,7 @@ services:
     volumes:
       - "./ssl:/usr/local/share/ssl"
       - "./etc/wazo-amid:/etc/wazo-amid"
-    command: "wazo-amid -fd"
+    command: "wazo-amid -d"
 
   ari:
     image: ari-real
