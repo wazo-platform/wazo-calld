@@ -1,8 +1,6 @@
 # Copyright 2015-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-import logging
-
 from flask import request
 
 from wazo_calld.auth import required_acl
@@ -13,8 +11,6 @@ from .schemas import call_schema
 from .schemas import CallDtmfSchema
 from .schemas import CallRequestSchema
 from .schemas import UserCallRequestSchema
-
-logger = logging.getLogger(__name__)
 
 
 call_request_schema = CallRequestSchema()
