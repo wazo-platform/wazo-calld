@@ -1,4 +1,4 @@
-# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from wazo_auth_client import Client as AuthClient
@@ -22,6 +22,7 @@ from .http import (
     ApplicationCallProgressStart,
     ApplicationCallProgressStop,
     ApplicationCallSnoopList,
+    ApplicationDTMFList,
     ApplicationItem,
     ApplicationNodeCallItem,
     ApplicationNodeCallList,
@@ -201,5 +202,11 @@ class Plugin:
         api.add_resource(
             ApplicationSnoopItem,
             '/applications/<uuid:application_uuid>/snoops/<uuid:snoop_uuid>',
+            resource_class_args=[service],
+        )
+
+        api.add_resource(
+            ApplicationDTMFList,
+            '/applications/<uuid:application_uuid>/calls/<call_id>/dtmf',
             resource_class_args=[service],
         )

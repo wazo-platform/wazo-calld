@@ -1,11 +1,15 @@
 # Changelog
 
-## 20.06
+## 20.07
 
 * New API to send DTMF digits to a call
 
   * `PUT /calls/{call_id}/dtmf`
   * `PUT /users/me/calls/{call_id}/dtmf`
+
+* New API to send DTMF digits to a call inside an application
+
+  * `PUT /applications/{application_uuid}/calls/{call_id}/dtmf`
 
 ## 20.03
 

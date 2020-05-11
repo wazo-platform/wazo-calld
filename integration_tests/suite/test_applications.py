@@ -9,6 +9,7 @@ from hamcrest import (
     empty,
     equal_to,
     has_entries,
+    has_item,
     has_items,
     has_length,
     has_properties,
@@ -2339,3 +2340,54 @@ class TestDTMFEvents(BaseApplicationTestCase):
             )
 
         until.assert_(event_received, tries=3)
+
+
+class TestApplicationSendDTMF(BaseApplicationTestCase):
+
+    def test_put_dtmf(self):
+        app_uuid = self.node_app_uuid
+        channel = self.call_app(app_uuid)
+
+        assert_that(
+            calling(self.calld_client.applications.send_dtmf_digits).with_args(
+                app_uuid, self.unknown_uuid, '1234'
+            ),
+            raises(CalldError).matching(has_properties(status_code=404))
+        )
+
+        assert_that(
+            calling(self.calld_client.applications.send_dtmf_digits).with_args(
+                self.unknown_uuid, channel.id, '5678'
+            ),
+            raises(CalldError).matching(has_properties(status_code=404))
+        )
+
+        assert_that(
+            calling(self.calld_client.applications.send_dtmf_digits).with_args(
+                app_uuid, channel.id, 'invalid'
+            ),
+            raises(CalldError).matching(has_properties(status_code=400))
+        )
+
+        routing_key = 'ami.*'
+        event_accumulator = self.bus.accumulator(routing_key)
+
+        test_str = '12*#'
+        self.calld_client.applications.send_dtmf_digits(app_uuid, channel.id, test_str)
+
+        def amid_dtmf_events_received():
+            events = event_accumulator.accumulate()
+            for expected_digit in test_str:
+                assert_that(
+                    events,
+                    has_item(has_entries(
+                        name='DTMFEnd',
+                        data=has_entries(
+                            Direction='Received',
+                            Digit=expected_digit,
+                            Uniqueid=channel.id,
+                        ),
+                    ))
+                )
+
+        until.assert_(amid_dtmf_events_received, tries=3)

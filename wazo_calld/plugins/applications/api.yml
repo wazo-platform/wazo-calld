@@ -355,6 +355,26 @@ paths:
         '503':
           $ref: '#/responses/AnotherServiceUnavailable'
 
+  /applications/{application_uuid}/calls/{call_id}/dtmf:
+    put:
+      summary: Send DTMF digits to a call
+      description: '**Required ACL:** `calld.applications.{application_uuid}.calls.{call_id}.dtmf.update'
+      parameters:
+      - $ref: '#/parameters/ApplicationUUID'
+      - $ref: '#/parameters/ApplicationCallID'
+      - $ref: '#/parameters/ApplicationDigits'
+      tags:
+      - applications
+      responses:
+        '204':
+          description: The digits have been sent
+        '404':
+          description: No such application or call
+          schema:
+            $ref: '#/definitions/Error'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+
   /applications/{application_uuid}/nodes:
     get:
       summary: List nodes from the application
@@ -840,4 +860,10 @@ parameters:
     in: path
     description: UUID of the snoop
     required: true
+    type: string
+  ApplicationDigits:
+    name: digits
+    in: query
+    description: Digits to send via DTMF
+    required: True
     type: string

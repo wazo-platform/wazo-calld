@@ -464,6 +464,14 @@ class ApplicationService:
         except ARINotFound:
             raise NoSuchPlayback(playback_id)
 
+    def send_dtmf(self, call_id, digits):
+        try:
+            self._ari.channels.get(channelId=call_id)
+        except ARINotFound:
+            raise NoSuchCall(call_id)
+        for digit in digits:
+            ami.dtmf(self._amid, call_id, digit)
+
     @staticmethod
     def _extract_variables(lines):
         prefix = 'X_WAZO_'
