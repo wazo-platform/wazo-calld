@@ -2348,6 +2348,7 @@ class TestApplicationSendDTMF(BaseApplicationTestCase):
         app_uuid = self.node_app_uuid
         channel = self.call_app(app_uuid)
 
+        # Unknown channel ID
         assert_that(
             calling(self.calld_client.applications.send_dtmf_digits).with_args(
                 app_uuid, self.unknown_uuid, '1234'
@@ -2355,6 +2356,7 @@ class TestApplicationSendDTMF(BaseApplicationTestCase):
             raises(CalldError).matching(has_properties(status_code=404))
         )
 
+        # Unknown app UUID
         assert_that(
             calling(self.calld_client.applications.send_dtmf_digits).with_args(
                 self.unknown_uuid, channel.id, '5678'
@@ -2362,6 +2364,7 @@ class TestApplicationSendDTMF(BaseApplicationTestCase):
             raises(CalldError).matching(has_properties(status_code=404))
         )
 
+        # Invalid DTMF
         assert_that(
             calling(self.calld_client.applications.send_dtmf_digits).with_args(
                 app_uuid, channel.id, 'invalid'
@@ -2372,6 +2375,7 @@ class TestApplicationSendDTMF(BaseApplicationTestCase):
         routing_key = 'ami.*'
         event_accumulator = self.bus.accumulator(routing_key)
 
+        # Valid DTMF
         test_str = '12*#'
         self.calld_client.applications.send_dtmf_digits(app_uuid, channel.id, test_str)
 

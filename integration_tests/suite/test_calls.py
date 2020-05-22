@@ -1667,11 +1667,13 @@ class TestCallSendDTMF(RealAsteriskIntegrationTest):
         user_uuid = str(uuid.uuid4())
         channel_id = self.given_call_not_stasis(user_uuid=user_uuid)
 
+        # Invalid channel ID
         assert_that(
             calling(self.calld_client.calls.send_dtmf_digits).with_args(UNKNOWN_UUID, '1234'),
             raises(CalldError).matching(has_properties(status_code=404))
         )
 
+        # Invalid DTMF
         assert_that(
             calling(self.calld_client.calls.send_dtmf_digits).with_args(channel_id, 'invalid'),
             raises(CalldError).matching(has_properties(status_code=400))
@@ -1680,6 +1682,7 @@ class TestCallSendDTMF(RealAsteriskIntegrationTest):
         routing_key = 'ami.*'
         event_accumulator = self.bus.accumulator(routing_key)
 
+        # Valid DTMF
         test_str = '12*#'
         self.calld_client.calls.send_dtmf_digits(channel_id, test_str)
 
@@ -1707,10 +1710,13 @@ class TestCallSendDTMF(RealAsteriskIntegrationTest):
         channel_id = self.given_call_not_stasis(user_uuid=user_uuid)
         other_channel_id = self.given_call_not_stasis()
 
+        # Invalid channel ID
         assert_that(
             calling(self.calld_client.calls.send_dtmf_digits_from_user).with_args(UNKNOWN_UUID, '1234'),
             raises(CalldError).matching(has_properties(status_code=404))
         )
+
+        # Wrong user channel ID
         assert_that(
             calling(self.calld_client.calls.send_dtmf_digits_from_user).with_args(other_channel_id, '1234'),
             raises(CalldError).matching(has_properties(status_code=403))
@@ -1719,6 +1725,7 @@ class TestCallSendDTMF(RealAsteriskIntegrationTest):
         routing_key = 'ami.*'
         event_accumulator = self.bus.accumulator(routing_key)
 
+        # Valid DTMF
         test_str = '12*#'
         self.calld_client.calls.send_dtmf_digits(channel_id, test_str)
 
