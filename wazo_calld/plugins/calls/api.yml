@@ -127,7 +127,7 @@ paths:
           $ref: '#/responses/AnotherServiceUnavailable'
   /calls/{call_id}/dtmf:
     put:
-      summary: Send DTMF digits to a call
+      summary: Simulate a user pressing DTMF keys
       description: '**Required ACL:** `calld.calls.{call_id}.dtmf.update'
       parameters:
       - $ref: '#/parameters/CallID'
@@ -291,7 +291,7 @@ paths:
           $ref: '#/responses/AnotherServiceUnavailable'
   /users/me/calls/{call_id}/dtmf:
     put:
-      summary: Send DTMF digits to a call
+      summary: Simulate a user pressing DTMF keys
       description: '**Required ACL:** `calld.users.me.calls.{call_id}.dtmf.update'
       parameters:
       - $ref: '#/parameters/CallID'

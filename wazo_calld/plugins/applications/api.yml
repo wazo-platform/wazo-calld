@@ -357,7 +357,7 @@ paths:
 
   /applications/{application_uuid}/calls/{call_id}/dtmf:
     put:
-      summary: Send DTMF digits to a call
+      summary: Simulate a user pressing DTMF keys
       description: '**Required ACL:** `calld.applications.{application_uuid}.calls.{call_id}.dtmf.update'
       parameters:
       - $ref: '#/parameters/ApplicationUUID'

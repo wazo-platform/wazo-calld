@@ -100,6 +100,6 @@ parameters:
   DTMFDigits:
     name: digits
     in: query
-    description: Digits to send via DTMF.
+    description: Digits to send via DTMF. Must contain only `0-9*#`.
     required: True
     type: string
