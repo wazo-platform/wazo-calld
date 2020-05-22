@@ -158,12 +158,6 @@ class CallsBusEventHandler:
         channel_id = event['Uniqueid']
         digit = event['Digit']
         logger.debug('Relaying to bus: channel %s DTMF digit %s', channel_id, digit)
-        try:
-            channel = self.ari.channels.get(channelId=channel_id)
-        except ARINotFound:
-            logger.debug('channel %s not found', channel_id)
-            return
-
-        user_uuid = self.services.make_call_from_channel(self.ari, channel).user_uuid
+        user_uuid = Channel(channel_id, self.ari).user()
         bus_msg = CallDTMFEvent(channel_id, digit, user_uuid)
         self.bus_publisher.publish(bus_msg, headers={'user_uuid:{uuid}'.format(uuid=user_uuid): True})
