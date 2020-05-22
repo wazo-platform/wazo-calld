@@ -50,7 +50,7 @@ class UserCallRequestSchema(CallBaseSchema):
 
 
 class CallDtmfSchema(CallBaseSchema):
-    digits = fields.String(validate=Regexp(r'^[0-9*#]+$'))
+    digits = fields.String(validate=Regexp(r'^[0-9*#]+$'), required=True)
 
 
 class CallSchema(CallBaseSchema):
