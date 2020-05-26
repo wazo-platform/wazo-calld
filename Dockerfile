@@ -1,27 +1,34 @@
-FROM python:3.7-buster
+FROM python:3.7-slim-buster AS compile-image
+LABEL maintainer="Wazo Maintainers <dev@wazo.community>"
 
-ENV DEBIAN_FRONTEND noninteractive
+RUN python -m venv /opt/venv
+# Activate virtual env
+ENV PATH="/opt/venv/bin:$PATH"
 
-ADD . /usr/src/wazo-calld
-ADD ./contribs/docker/certs /usr/share/xivo-certs
-
+COPY . /usr/src/wazo-calld
 WORKDIR /usr/src/wazo-calld
+RUN pip install -r requirements.txt
+RUN python setup.py install
+
+FROM python:3.7-slim-buster AS build-image
+COPY --from=compile-image /opt/venv /opt/venv
+
+COPY ./etc/wazo-calld /etc/wazo-calld
+COPY ./contribs/docker/certs /usr/share/xivo-certs
+COPY ./bin/wazo-pdf2fax /usr/bin/wazo-pdf2fax
 
 RUN true \
-    && apt-get -qq update \
-    && apt-get -qq -y install libpq-dev libyaml-dev ghostscript \
-    && pip install -r requirements.txt \
-    && python setup.py install \
-    && cp -av etc/wazo-calld /etc \
-    && install -m 755 -o root -g www-data bin/wazo-pdf2fax /usr/bin/wazo-pdf2fax \
+    && apt-get -q update \
+    && apt-get -yq install --no-install-recommends ghostscript \
+    && adduser --quiet --system --group --home /var/lib/wazo-calld wazo-calld \
     && mkdir -p /etc/wazo-calld/conf.d \
-    && touch /var/log/wazo-calld.log \
-    && chown www-data /var/log/wazo-calld.log \
     && install -d -o www-data -g www-data /run/wazo-calld/ \
-    && apt-get clean \
-    && rm -fr /usr/src/wazo-calld /var/lib/apt/lists/* \
-    && true
+    && install -o www-data -g www-data /dev/null /var/log/wazo-calld.log \
+    && chown root:www-data /usr/bin/wazo-pdf2fax \
+    && rm -fr /var/lib/apt/lists/*
 
 EXPOSE 9500
 
+# Activate virtual env
+ENV PATH="/opt/venv/bin:$PATH"
 CMD ["wazo-calld", "-d"]
