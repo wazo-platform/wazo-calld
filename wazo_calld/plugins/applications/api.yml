@@ -355,6 +355,26 @@ paths:
         '503':
           $ref: '#/responses/AnotherServiceUnavailable'
 
+  /applications/{application_uuid}/calls/{call_id}/dtmf:
+    put:
+      summary: Simulate a user pressing DTMF keys
+      description: '**Required ACL:** `calld.applications.{application_uuid}.calls.{call_id}.dtmf.update'
+      parameters:
+      - $ref: '#/parameters/ApplicationUUID'
+      - $ref: '#/parameters/ApplicationCallID'
+      - $ref: '#/parameters/DTMFDigits'
+      tags:
+      - applications
+      responses:
+        '204':
+          description: The digits have been sent
+        '404':
+          description: No such application or call
+          schema:
+            $ref: '#/definitions/Error'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+
   /applications/{application_uuid}/nodes:
     get:
       summary: List nodes from the application

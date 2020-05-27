@@ -85,3 +85,15 @@ def unmute(amid, channel):
         amid.action('MuteAudio', destination)
     except RequestException as e:
         raise WazoAmidError(amid, e)
+
+
+def dtmf(amid, channel, digit):
+    destination = {
+        'Channel': channel,
+        'Digit': digit,
+        'Receive': True,
+    }
+    try:
+        amid.action('PlayDTMF', destination)
+    except RequestException as e:
+        raise WazoAmidError(amid, e)

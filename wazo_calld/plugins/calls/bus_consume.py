@@ -8,6 +8,7 @@ from xivo_bus.collectd.channels import ChannelCreatedCollectdEvent
 from xivo_bus.collectd.channels import ChannelEndedCollectdEvent
 from xivo_bus.resources.calls.hold import CallOnHoldEvent
 from xivo_bus.resources.calls.hold import CallResumeEvent
+from xivo_bus.resources.calls.dtmf import CallDTMFEvent
 from xivo_bus.resources.common.event import ArbitraryEvent
 
 from wazo_calld.plugin_helpers import ami
@@ -42,6 +43,7 @@ class CallsBusEventHandler:
         bus_consumer.on_ami_event('Hangup', self._relay_channel_hung_up)
         bus_consumer.on_ami_event('Hangup', self._collectd_channel_ended)
         bus_consumer.on_ami_event('UserEvent', self._set_dial_echo_result)
+        bus_consumer.on_ami_event('DTMFEnd', self._relay_dtmf)
 
     def _add_sip_call_id(self, event):
         channel_id = event['Uniqueid']
@@ -151,3 +153,11 @@ class CallsBusEventHandler:
             event['wazo_dial_echo_request_id'],
             {'channel_id': event['channel_id']}
         )
+
+    def _relay_dtmf(self, event):
+        channel_id = event['Uniqueid']
+        digit = event['Digit']
+        logger.debug('Relaying to bus: channel %s DTMF digit %s', channel_id, digit)
+        user_uuid = Channel(channel_id, self.ari).user()
+        bus_msg = CallDTMFEvent(channel_id, digit, user_uuid)
+        self.bus_publisher.publish(bus_msg, headers={'user_uuid:{uuid}'.format(uuid=user_uuid): True})

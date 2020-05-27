@@ -174,3 +174,19 @@ class TestBusConsume(IntegrationTest):
             })))
 
         until.assert_(assert_function, tries=5)
+
+    def test_when_channel_dtmf_then_bus_event(self):
+        call_id = new_call_id()
+        self.ari.set_channels(MockChannel(id=call_id))
+        events = self.bus.accumulator(routing_key='calls.dtmf.created')
+
+        self.bus.send_ami_dtmf_end_digit(call_id, '1')
+
+        def assert_function():
+            assert_that(events.accumulate(), has_item(has_entries({
+                'name': 'call_dtmf_created',
+                'origin_uuid': XIVO_UUID,
+                'data': has_entries({'call_id': call_id, 'digit': '1'})
+            })))
+
+        until.assert_(assert_function, tries=5)

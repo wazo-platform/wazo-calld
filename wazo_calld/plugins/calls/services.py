@@ -293,6 +293,18 @@ class CallsService:
 
         return call
 
+    def send_dtmf(self, call_id, digits):
+        try:
+            self._ari.channels.get(channelId=call_id)
+        except ARINotFound:
+            raise NoSuchCall(call_id)
+        for digit in digits:
+            ami.dtmf(self._ami, call_id, digit)
+
+    def send_dtmf_user(self, call_id, user_uuid, digits):
+        self._verify_user(call_id, user_uuid)
+        self.send_dtmf(call_id, digits)
+
     def _verify_user(self, call_id, user_uuid):
         channel = Channel(call_id, self._ari)
         if not channel.exists() or channel.is_local():

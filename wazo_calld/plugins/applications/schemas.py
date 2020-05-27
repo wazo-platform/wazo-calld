@@ -10,6 +10,7 @@ from marshmallow import (
 from xivo.mallow.validate import (
     Length,
     OneOf,
+    Regexp,
     validate_string_dict,
 )
 from wazo_calld.plugin_helpers.mallow import StrictDict
@@ -89,9 +90,14 @@ class ApplicationSchema(Schema):
     destination_node_uuid = fields.String()
 
 
+class ApplicationDTMFSchema(BaseSchema):
+    digits = fields.String(validate=Regexp(r'^[0-9*#]+$'))
+
+
 application_call_request_schema = ApplicationCallRequestSchema()
 application_call_user_request_schema = ApplicationCallUserRequestSchema()
 application_call_schema = ApplicationCallSchema()
+application_dtmf_schema = ApplicationDTMFSchema()
 application_node_schema = ApplicationNodeSchema()
 application_playback_schema = ApplicationCallPlaySchema()
 application_schema = ApplicationSchema()

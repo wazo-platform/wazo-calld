@@ -1,5 +1,16 @@
 # Changelog
 
+## 20.08
+
+* New API to simulate a user pressing DTMF keys
+
+  * `PUT /calls/{call_id}/dtmf`
+  * `PUT /users/me/calls/{call_id}/dtmf`
+
+* New API to simulate a user pressing DTMF keys inside an application
+
+  * `PUT /applications/{application_uuid}/calls/{call_id}/dtmf`
+
 ## 20.03
 
 * New attribute `all_lines` in routes:

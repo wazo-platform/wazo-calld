@@ -12,7 +12,7 @@ from unittest import TestCase
 from ..services import CallsService
 
 
-class Testclassname(TestCase):
+class TestServices(TestCase):
 
     def setUp(self):
         self.services = CallsService(Mock(), Mock(), Mock(), Mock(), Mock(), Mock())

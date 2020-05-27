@@ -127,6 +127,15 @@ class BusClient(bus_helper.BusClient):
             },
         }, 'ami.Registry')
 
+    def send_ami_dtmf_end_digit(self, channel_id, digit):
+        self.send_event({
+            'data': {
+                'Event': 'DTMFEnd',
+                'Uniqueid': channel_id,
+                'Digit': digit,
+            },
+        }, 'ami.DTMFEnd')
+
     def send_moh_created_event(self, moh_uuid):
         self.send_event({
             'data': {

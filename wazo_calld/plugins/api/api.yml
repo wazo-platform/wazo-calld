@@ -97,3 +97,9 @@ parameters:
     type: string
     description: Search term for filtering a list of items. Only items with a field
       containing the search term will be returned.
+  DTMFDigits:
+    name: digits
+    in: query
+    description: Digits to send via DTMF. Must contain only `0-9*#`.
+    required: True
+    type: string

@@ -1,4 +1,4 @@
-# Copyright 2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from hamcrest import (
@@ -11,7 +11,7 @@ from ..call import Call
 from ..schemas import CallSchema
 
 
-class Testclassname(TestCase):
+class TestSchemas(TestCase):
 
     def test_given_peer_caller_id_number_empty_when_dump_then_dialed_extension(self):
         call = Call('some-id')

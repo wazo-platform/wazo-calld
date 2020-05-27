@@ -1,4 +1,4 @@
-# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from flask import request
@@ -10,6 +10,7 @@ from .schemas import (
     application_call_request_schema,
     application_call_user_request_schema,
     application_call_schema,
+    application_dtmf_schema,
     application_node_schema,
     application_playback_schema,
     application_schema,
@@ -284,3 +285,14 @@ class ApplicationNodeList(_BaseResource):
         call_ids = [call['id_'] for call in form.get('calls', [])]
         node = self._service.create_node_with_calls(application_uuid, call_ids)
         return application_node_schema.dump(node), 201
+
+
+class ApplicationDTMFList(_BaseResource):
+
+    @required_acl('calld.applications.{application_uuid}.calls.{call_id}.dtmf.update')
+    def put(self, application_uuid, call_id):
+        request_args = application_dtmf_schema.load(request.args)
+        application = self._service.get_application(application_uuid)
+        self._service.get_call_id(application, call_id)
+        self._service.send_dtmf(call_id, request_args['digits'])
+        return '', 204
