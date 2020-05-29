@@ -3,6 +3,10 @@
 ## 20.08
 
 * Deprecate SSL configuration
+* New API to check if voicemail greeting exists
+
+  * `HEAD /voicemails/{voicemail_id}/greetings/<greeting>`
+
 * New API to simulate a user pressing DTMF keys
 
   * `PUT /calls/{call_id}/dtmf`

@@ -10,9 +10,10 @@ from hamcrest import (
     contains,
     contains_string,
     equal_to,
-    has_entry,
     has_entries,
+    has_entry,
     has_properties,
+    not_,
 )
 
 from xivo_test_helpers.hamcrest.raises import raises
@@ -60,6 +61,18 @@ class TestVoicemails(RealAsteriskIntegrationTest):
         self.auth.set_token(MockUserToken(self._user_token, user_uuid=self._user_uuid,
                                           tenant_uuid=VALID_TENANT))
         self.calld_client.set_token(self._user_token)
+
+    def test_voicemail_head_greeting_invalid_voicemail(self):
+        exists = self.calld_client.voicemails.voicemail_greeting_exists(
+            "not-exists", "busy"
+        )
+        assert_that(not_(exists))
+
+    def test_voicemail_head_greeting_invalid_greeting(self):
+        exists = self.calld_client.voicemails.voicemail_greeting_exists(
+            self._voicemail_id, "not-exists"
+        )
+        assert_that(not_(exists))
 
     def test_voicemail_get_greeting_invalid_voicemail(self):
         assert_that(
@@ -142,6 +155,12 @@ class TestVoicemails(RealAsteriskIntegrationTest):
                 details=has_entry("greeting", "busy"),
             ))
         )
+
+    def test_voicemail_head_unset_greeting(self):
+        exists = self.calld_client.voicemails.voicemail_greeting_exists(
+            self._voicemail_id, "busy"
+        )
+        assert_that(not_(exists))
 
     def test_voicemail_get_unset_greeting(self):
         assert_that(
@@ -273,6 +292,11 @@ class TestVoicemails(RealAsteriskIntegrationTest):
         )
 
         for greeting in VALID_GREETINGS:
+            exists = self.calld_client.voicemails.voicemail_greeting_exists(
+                self._voicemail_id, greeting
+            )
+            assert_that(exists)
+
             data = self.calld_client.voicemails.get_voicemail_greeting(
                 self._voicemail_id, greeting
             )

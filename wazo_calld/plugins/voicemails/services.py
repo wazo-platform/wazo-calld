@@ -1,4 +1,4 @@
-# Copyright 2016-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import base64
@@ -81,6 +81,19 @@ class VoicemailsService:
                 voicemail=vm_conf['number'],
                 greeting=greeting,
             )['greeting_base64'].encode())
+        except ARIHTTPError as e:
+            if e.original_error.response.status_code == 404:
+                raise NoSuchVoicemailGreeting(greeting)
+            raise
+
+    def validate_greeting_exists(self, voicemail_id, greeting):
+        vm_conf = confd.get_voicemail(voicemail_id, self._confd_client)
+        try:
+            self._ari.wazo.getVoicemailGreeting(
+                context=vm_conf['context'],
+                voicemail=vm_conf['number'],
+                greeting=greeting,
+            )
         except ARIHTTPError as e:
             if e.original_error.response.status_code == 404:
                 raise NoSuchVoicemailGreeting(greeting)

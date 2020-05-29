@@ -1,4 +1,4 @@
-# Copyright 2016-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import re
@@ -267,6 +267,13 @@ class VoicemailGreetingResource(_BaseVoicemailGreetingResource):
         voicemail_id = _validate_voicemail_id(voicemail_id)
         greeting = _validate_greeting(greeting)
         return self._post(voicemail_id, greeting)
+
+    @required_acl('calld.voicemails.{voicemail_id}.greetings.{greeting}.read')
+    def head(self, voicemail_id, greeting):
+        voicemail_id = _validate_voicemail_id(voicemail_id)
+        greeting = _validate_greeting(greeting)
+        self._voicemails_service.validate_greeting_exists(voicemail_id, greeting)
+        return '', 200
 
     @required_acl('calld.voicemails.{voicemail_id}.greetings.{greeting}.read')
     def get(self, voicemail_id, greeting):

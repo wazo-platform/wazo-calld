@@ -140,6 +140,23 @@ paths:
           $ref: '#/responses/NotFoundError'
         '503':
           $ref: '#/responses/AnotherServiceUnavailable'
+    head:
+      summary: Check if greeting exists
+      description: '**Required ACL:** `calld.voicemails.{voicemail_id}.greetings.{greeting}.read`'
+      parameters:
+      - $ref: '#/parameters/VoicemailID'
+      - $ref: '#/parameters/VoicemailGreeting'
+      tags:
+      - voicemails
+      responses:
+        '200':
+          description: Greeting exists
+        '400':
+          $ref: '#/responses/InvalidRequest'
+        '404':
+          $ref: '#/responses/NotFoundError'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
     get:
       summary: Get a custom greeting
       description: '**Required ACL:** `calld.voicemails.{voicemail_id}.greetings.{greeting}.read`'
