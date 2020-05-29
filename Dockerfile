@@ -14,7 +14,6 @@ FROM python:3.7-slim-buster AS build-image
 COPY --from=compile-image /opt/venv /opt/venv
 
 COPY ./etc/wazo-calld /etc/wazo-calld
-COPY ./contribs/docker/certs /usr/share/xivo-certs
 COPY ./bin/wazo-pdf2fax /usr/bin/wazo-pdf2fax
 
 RUN true \

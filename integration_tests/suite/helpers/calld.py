@@ -34,7 +34,7 @@ class CalldClient(Client):
 
 class LegacyCalldClient:
 
-    _url_tpl = 'https://{host}:{port}/1.0/{path}'
+    _url_tpl = 'http://{host}:{port}/1.0/{path}'
 
     def __init__(self, host, port):
         self._host = host
@@ -48,8 +48,7 @@ class LegacyCalldClient:
         url = self.url('users', 'me', 'calls')
         result = requests.post(url,
                                json=body,
-                               headers=self._headers(token=token),
-                               verify=False)
+                               headers=self._headers(token=token))
         return result
 
     def originate_me(
@@ -81,9 +80,7 @@ class LegacyCalldClient:
 
     def delete_call_result(self, call_id, token=None):
         url = self.url('calls', call_id)
-        result = requests.delete(url,
-                                 headers=self._headers(token=token),
-                                 verify=False)
+        result = requests.delete(url, headers=self._headers(token=token))
         return result
 
     def hangup_call(self, call_id, token=VALID_TOKEN):
@@ -92,9 +89,7 @@ class LegacyCalldClient:
 
     def delete_user_me_call_result(self, call_id, token=None):
         url = self.url('users', 'me', 'calls', call_id)
-        result = requests.delete(url,
-                                 headers=self._headers(token=token),
-                                 verify=False)
+        result = requests.delete(url, headers=self._headers(token=token))
         return result
 
     def hangup_my_call(self, call_id, token=VALID_TOKEN):
@@ -103,9 +98,7 @@ class LegacyCalldClient:
 
     def put_call_user_result(self, call_id, user_uuid, token):
         url = self.url('calls', call_id, 'user', user_uuid)
-        result = requests.put(url,
-                              headers=self._headers(token=token),
-                              verify=False)
+        result = requests.put(url, headers=self._headers(token=token))
         return result
 
     def connect_user(self, call_id, user_uuid):
@@ -115,9 +108,7 @@ class LegacyCalldClient:
 
     def get_users_me_transfers_result(self, token=None):
         url = self.url('users', 'me', 'transfers')
-        result = requests.get(url,
-                              headers=self._headers(token=token),
-                              verify=False)
+        result = requests.get(url, headers=self._headers(token=token))
         return result
 
     def list_my_transfers(self, token=VALID_TOKEN):
@@ -129,8 +120,7 @@ class LegacyCalldClient:
         url = self.url('transfers')
         result = requests.post(url,
                                json=body,
-                               headers=self._headers(token=token),
-                               verify=False)
+                               headers=self._headers(token=token))
         return result
 
     def create_transfer(
@@ -173,8 +163,7 @@ class LegacyCalldClient:
         url = self.url('users', 'me', 'transfers')
         result = requests.post(url,
                                json=body,
-                               headers=self._headers(token=token),
-                               verify=False)
+                               headers=self._headers(token=token))
         return result
 
     def create_user_transfer(self, initiator_call, exten, token=VALID_TOKEN):
@@ -189,9 +178,7 @@ class LegacyCalldClient:
 
     def put_complete_transfer_result(self, transfer_id, token=None):
         url = self.url('transfers', transfer_id, 'complete')
-        result = requests.put(url,
-                              headers=self._headers(token=token),
-                              verify=False)
+        result = requests.put(url, headers=self._headers(token=token))
         return result
 
     def complete_transfer(self, transfer_id):
@@ -200,9 +187,7 @@ class LegacyCalldClient:
 
     def put_users_me_complete_transfer_result(self, transfer_id, token=None):
         url = self.url('users', 'me', 'transfers', transfer_id, 'complete')
-        result = requests.put(url,
-                              headers=self._headers(token=token),
-                              verify=False)
+        result = requests.put(url, headers=self._headers(token=token))
         return result
 
     def complete_my_transfer(self, transfer_id, token=VALID_TOKEN):
@@ -211,33 +196,25 @@ class LegacyCalldClient:
 
     def delete_transfer_result(self, transfer_id, token=None):
         url = self.url('transfers', transfer_id)
-        result = requests.delete(url,
-                                 headers=self._headers(token=token),
-                                 verify=False)
+        result = requests.delete(url, headers=self._headers(token=token))
         return result
 
     def cancel_transfer(self, transfer_id):
-        response = self.delete_transfer_result(transfer_id,
-                                               token=VALID_TOKEN)
+        response = self.delete_transfer_result(transfer_id, token=VALID_TOKEN)
         assert_that(response.status_code, equal_to(204))
 
     def delete_users_me_transfer_result(self, transfer_id, token=None):
         url = self.url('users', 'me', 'transfers', transfer_id)
-        result = requests.delete(url,
-                                 headers=self._headers(token=token),
-                                 verify=False)
+        result = requests.delete(url, headers=self._headers(token=token))
         return result
 
     def cancel_my_transfer(self, transfer_id, token=VALID_TOKEN):
-        response = self.delete_users_me_transfer_result(transfer_id,
-                                                        token=token)
+        response = self.delete_users_me_transfer_result(transfer_id, token=token)
         assert_that(response.status_code, equal_to(204))
 
     def get_transfer_result(self, transfer_id, token=None):
         url = self.url('transfers', transfer_id)
-        result = requests.get(url,
-                              headers=self._headers(token=token),
-                              verify=False)
+        result = requests.get(url, headers=self._headers(token=token))
         return result
 
     def get_transfer(self, transfer_id, token=VALID_TOKEN):
@@ -247,9 +224,7 @@ class LegacyCalldClient:
 
     def get_status_result(self, token=None):
         url = self.url('status')
-        result = requests.get(url,
-                              headers=self._headers(token=token),
-                              verify=False)
+        result = requests.get(url, headers=self._headers(token=token))
         return result
 
     def status(self, token=VALID_TOKEN):
@@ -259,74 +234,62 @@ class LegacyCalldClient:
 
     def get_voicemail_result(self, voicemail_id, token=None):
         url = self.url('voicemails', voicemail_id)
-        result = requests.get(url,
-                              headers=self._headers(token=token),
-                              verify=False)
+        result = requests.get(url, headers=self._headers(token=token))
         return result
 
     def get_user_me_voicemail_result(self, token=None):
         url = self.url('users', 'me', 'voicemails')
-        result = requests.get(url,
-                              headers=self._headers(token=token),
-                              verify=False)
+        result = requests.get(url, headers=self._headers(token=token))
         return result
 
     def get_voicemail_folder_result(self, voicemail_id, folder_id, token=None):
         url = self.url('voicemails', voicemail_id, 'folders', folder_id)
-        result = requests.get(url,
-                              headers=self._headers(token=token),
-                              verify=False)
+        result = requests.get(url, headers=self._headers(token=token))
         return result
 
     def get_user_me_voicemail_folder_result(self, folder_id, token=None):
         url = self.url('users', 'me', 'voicemails', 'folders', folder_id)
-        result = requests.get(url,
-                              headers=self._headers(token=token),
-                              verify=False)
+        result = requests.get(url, headers=self._headers(token=token))
         return result
 
     def delete_voicemail_message_result(self, voicemail_id, message_id, token=None):
         url = self.url('voicemails', voicemail_id, 'messages', message_id)
-        result = requests.delete(url,
-                                 headers=self._headers(token=token),
-                                 verify=False)
+        result = requests.delete(url, headers=self._headers(token=token))
         return result
 
     def delete_user_me_voicemail_message_result(self, message_id, token=None):
         url = self.url('users', 'me', 'voicemails', 'messages', message_id)
-        result = requests.delete(url,
-                                 headers=self._headers(token=token),
-                                 verify=False)
+        result = requests.delete(url, headers=self._headers(token=token))
         return result
 
     def get_voicemail_message_result(self, voicemail_id, message_id, token=None):
         url = self.url('voicemails', voicemail_id, 'messages', message_id)
-        result = requests.get(url, headers=self._headers(token=token), verify=False)
+        result = requests.get(url, headers=self._headers(token=token))
         return result
 
     def get_user_me_voicemail_message_result(self, message_id, token=None):
         url = self.url('users', 'me', 'voicemails', 'messages', message_id)
-        result = requests.get(url, headers=self._headers(token=token), verify=False)
+        result = requests.get(url, headers=self._headers(token=token))
         return result
 
     def put_voicemail_message_result(self, message, voicemail_id, message_id, token=None):
         url = self.url('voicemails', voicemail_id, 'messages', message_id)
-        result = requests.put(url, json=message, headers=self._headers(token=token), verify=False)
+        result = requests.put(url, json=message, headers=self._headers(token=token))
         return result
 
     def put_user_me_voicemail_message_result(self, message, message_id, token=None):
         url = self.url('users', 'me', 'voicemails', 'messages', message_id)
-        result = requests.put(url, json=message, headers=self._headers(token=token), verify=False)
+        result = requests.put(url, json=message, headers=self._headers(token=token))
         return result
 
     def get_voicemail_recording_result(self, voicemail_id, message_id, token=None):
         url = self.url('voicemails', voicemail_id, 'messages', message_id, 'recording')
-        result = requests.get(url, headers=self._headers(token=token), verify=False)
+        result = requests.get(url, headers=self._headers(token=token))
         return result
 
     def get_user_me_voicemail_recording_result(self, message_id, token=None):
         url = self.url('users', 'me', 'voicemails', 'messages', message_id, 'recording')
-        result = requests.get(url, headers=self._headers(token=token), verify=False)
+        result = requests.get(url, headers=self._headers(token=token))
         return result
 
     def switchboard_queued_calls(self, switchboard_uuid, token=VALID_TOKEN, tenant_uuid=None):
@@ -338,7 +301,7 @@ class LegacyCalldClient:
     def get_switchboard_queued_calls_result(self, switchboard_uuid, token=None, tenant_uuid=None):
         url = self.url('switchboards', switchboard_uuid, 'calls', 'queued')
         headers = self._headers(token=token, tenant_uuid=tenant_uuid)
-        return requests.get(url, headers=headers, verify=False)
+        return requests.get(url, headers=headers)
 
     def switchboard_answer_queued_call(self, switchboard_uuid, call_id, token,
                                        line_id=None):
@@ -353,7 +316,7 @@ class LegacyCalldClient:
                                                   line_id=None):
         url = self.url('switchboards', switchboard_uuid, 'calls', 'queued', call_id, 'answer')
         params = {'line_id': line_id} if line_id else None
-        return requests.put(url, headers=self._headers(token), params=params, verify=False)
+        return requests.put(url, headers=self._headers(token), params=params)
 
     def switchboard_hold_call(self, switchboard_uuid, call_id, token=VALID_TOKEN):
         response = self.put_switchboard_held_call_result(switchboard_uuid, call_id, token)
@@ -361,7 +324,7 @@ class LegacyCalldClient:
 
     def put_switchboard_held_call_result(self, switchboard_uuid, call_id, token=None):
         url = self.url('switchboards', switchboard_uuid, 'calls', 'held', call_id)
-        return requests.put(url, headers=self._headers(token=token), verify=False)
+        return requests.put(url, headers=self._headers(token=token))
 
     def switchboard_held_calls(self, switchboard_uuid, token=VALID_TOKEN, tenant_uuid=None):
         response = self.get_switchboard_held_calls_result(switchboard_uuid, token, tenant_uuid)
@@ -372,7 +335,7 @@ class LegacyCalldClient:
     def get_switchboard_held_calls_result(self, switchboard_uuid, token=None, tenant_uuid=None):
         url = self.url('switchboards', switchboard_uuid, 'calls', 'held')
         headers = self._headers(token=token, tenant_uuid=tenant_uuid)
-        return requests.get(url, headers=headers, verify=False)
+        return requests.get(url, headers=headers)
 
     def switchboard_answer_held_call(self, switchboard_uuid, call_id, token,
                                      line_id=None):
@@ -387,7 +350,7 @@ class LegacyCalldClient:
                                                 line_id=None):
         url = self.url('switchboards', switchboard_uuid, 'calls', 'held', call_id, 'answer')
         params = {'line_id': line_id} if line_id else None
-        return requests.put(url, headers=self._headers(token=token), params=params, verify=False)
+        return requests.put(url, headers=self._headers(token=token), params=params)
 
     def _headers(self, token=None, tenant_uuid=None):
         headers = {}

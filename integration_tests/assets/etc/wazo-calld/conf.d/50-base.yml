@@ -1,6 +1,5 @@
 rest_api:
-  certificate: /usr/local/share/ssl/calld/server.crt
-  private_key: /usr/local/share/ssl/calld/server.key
+  listen: 0.0.0.0
 
 amid:
   host: amid

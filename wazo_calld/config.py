@@ -8,8 +8,7 @@ from xivo.chain_map import ChainMap
 from xivo.config_helper import read_config_file_hierarchy, parse_config_file
 from xivo.xivo_logging import get_log_level_by_name
 
-_CERT_FILE = '/usr/share/xivo-certs/server.crt'
-_DEFAULT_HTTPS_PORT = 9500
+_DEFAULT_HTTP_PORT = 9500
 _DEFAULT_CONFIG = {
     'config_file': '/etc/wazo-calld/config.yml',
     'extra_config_files': '/etc/wazo-calld/conf.d/',
@@ -19,10 +18,10 @@ _DEFAULT_CONFIG = {
     'pid_filename': '/run/wazo-calld/wazo-calld.pid',
     'user': 'www-data',
     'rest_api': {
-        'listen': '0.0.0.0',
-        'port': _DEFAULT_HTTPS_PORT,
-        'certificate': _CERT_FILE,
-        'private_key': '/usr/share/xivo-certs/server.key',
+        'listen': '127.0.0.1',
+        'port': _DEFAULT_HTTP_PORT,
+        'certificate': None,
+        'private_key': None,
         'cors': {
             'enabled': True,
             'allow_headers': ['Content-Type', 'X-Auth-Token', 'Wazo-Tenant'],
@@ -76,7 +75,7 @@ _DEFAULT_CONFIG = {
         'enabled': True,
         'advertise_address': 'auto',
         'advertise_address_interface': 'eth0',
-        'advertise_port': _DEFAULT_HTTPS_PORT,
+        'advertise_port': _DEFAULT_HTTP_PORT,
         'ttl_interval': 30,
         'refresh_interval': 27,
         'retry_interval': 2,
