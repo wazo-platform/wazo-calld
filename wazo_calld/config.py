@@ -71,7 +71,6 @@ _DEFAULT_CONFIG = {
         'host': 'localhost',
         'port': 8500,
         'scheme': 'http',
-        'verify': _CERT_FILE,
     },
     'service_discovery': {
         'enabled': True,

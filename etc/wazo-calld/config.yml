@@ -90,7 +90,6 @@ consul:
   scheme: http
   host: localhost
   port: 8500
-  verify: /usr/share/xivo-certs/server.crt
   token: 'the_one_ring'
 
 enabled_plugins:
