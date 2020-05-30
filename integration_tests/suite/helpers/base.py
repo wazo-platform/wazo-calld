@@ -123,7 +123,7 @@ class IntegrationTest(AssetLaunchingTestCase):
 
     @classmethod
     def make_calld(cls, token=VALID_TOKEN):
-        return CalldClient('localhost', cls.service_port(9500, 'calld'), verify_certificate=False, token=token)
+        return CalldClient('localhost', cls.service_port(9500, 'calld'), prefix=None, https=False, token=token)
 
     @classmethod
     @contextmanager

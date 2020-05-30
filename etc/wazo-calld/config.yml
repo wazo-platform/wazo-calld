@@ -20,13 +20,10 @@ pidfile: /run/wazo-calld.pid
 rest_api:
 
   # Listening address
-  listen: 0.0.0.0
+  listen: 127.0.0.1
 
   # Listening port
   port: 9500
-
-  certificate: /usr/share/xivo-certs/server.crt
-  private_key: /usr/share/xivo-certs/server.key
 
   #CORS configuration. See Flask-CORS documentation for other values.
   cors:
@@ -90,7 +87,6 @@ consul:
   scheme: http
   host: localhost
   port: 8500
-  verify: /usr/share/xivo-certs/server.crt
   token: 'the_one_ring'
 
 enabled_plugins:
