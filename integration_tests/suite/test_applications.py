@@ -13,6 +13,7 @@ from hamcrest import (
     has_items,
     has_length,
     has_properties,
+    not_,
 )
 from wazo_calld_client.exceptions import CalldError
 from xivo_test_helpers import until
@@ -60,6 +61,18 @@ class BaseApplicationTestCase(RealAsteriskIntegrationTest):
         # TODO: add a way to load new apps without restarting
         self._restart_calld()
         CalldEverythingOkWaitStrategy().wait(self)
+
+        def applications_created():
+            try:
+                app1 = self.calld_client.applications.get(self.node_app_uuid)
+                app2 = self.calld_client.applications.get(self.no_node_app_uuid)
+            except CalldError:
+                app1 = None
+                app2 = None
+            assert_that(app1, not_(None))
+            assert_that(app2, not_(None))
+
+        until.assert_(applications_created, tries=3)
 
     def call_app(self, app_uuid, variables=None):
         kwargs = {
@@ -355,24 +368,37 @@ class TestApplication(BaseApplicationTestCase):
         app_uuid = '00000000-0000-0000-0000-000000000001'
         self.bus.send_application_created_event(app_uuid)
 
-        application = self.calld_client.applications.get(app_uuid)
+        def application_created():
+            try:
+                application = self.calld_client.applications.get(app_uuid)
+            except CalldError:
+                application = None
+            assert_that(application, has_entries(destination_node_uuid=None))
 
-        assert_that(application, has_entries(destination_node_uuid=None))
+        until.assert_(application_created, tries=3)
 
     def test_confd_application_edited_event_update_cache(self):
         self.bus.send_application_edited_event(self.no_node_app_uuid, destination='node')
 
-        application = self.calld_client.applications.get(self.no_node_app_uuid)
+        def application_updated():
+            try:
+                application = self.calld_client.applications.get(self.no_node_app_uuid)
+            except CalldError:
+                application = None
+            assert_that(application, has_entries(destination_node_uuid=uuid_()))
 
-        assert_that(application, has_entries(destination_node_uuid=uuid_()))
+        until.assert_(application_updated, tries=3)
 
     def test_confd_application_deleted_event_update_cache(self):
         self.bus.send_application_deleted_event(self.no_node_app_uuid)
 
-        assert_that(
-            calling(self.calld_client.applications.get).with_args(self.no_node_app_uuid),
-            raises(CalldError).matching(has_properties(status_code=404))
-        )
+        def application_deleted():
+            assert_that(
+                calling(self.calld_client.applications.get).with_args(self.no_node_app_uuid),
+                raises(CalldError).matching(has_properties(status_code=404))
+            )
+
+        until.assert_(application_deleted, tries=3)
 
     def test_given_no_confd_when_node_app_then_return_503(self):
         with self.confd_stopped():
