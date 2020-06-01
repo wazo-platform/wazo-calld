@@ -6,6 +6,7 @@
 * New API to check if voicemail greeting exists
 
   * `HEAD /voicemails/{voicemail_id}/greetings/<greeting>`
+  * `HEAD /users/me/voicemails/{voicemail_id}/greetings/<greeting>`
 
 * New API to simulate a user pressing DTMF keys
 
