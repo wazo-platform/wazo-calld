@@ -13,6 +13,7 @@ from hamcrest import (
     has_items,
     has_length,
     has_properties,
+    not_,
 )
 from wazo_calld_client.exceptions import CalldError
 from xivo_test_helpers import until
@@ -60,6 +61,18 @@ class BaseApplicationTestCase(RealAsteriskIntegrationTest):
         # TODO: add a way to load new apps without restarting
         self._restart_calld()
         CalldEverythingOkWaitStrategy().wait(self)
+
+        def applications_created():
+            try:
+                app1 = self.calld_client.applications.get(self.node_app_uuid)
+                app2 = self.calld_client.applications.get(self.no_node_app_uuid)
+            except CalldError:
+                app1 = None
+                app2 = None
+            assert_that(app1, not_(None))
+            assert_that(app2, not_(None))
+
+        until.assert_(applications_created, tries=3)
 
     def call_app(self, app_uuid, variables=None):
         kwargs = {
