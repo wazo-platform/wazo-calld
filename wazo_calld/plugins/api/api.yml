@@ -4,7 +4,7 @@ info:
   description: Control your calls from a REST API
   version: 1.0.0
 schemes:
-- https
+- http
 basePath: /1.0
 produces:
 - application/json
