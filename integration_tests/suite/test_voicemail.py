@@ -120,6 +120,12 @@ class TestVoicemails(RealAsteriskIntegrationTest):
             ))
         )
 
+    def test_voicemail_head_greeting_invalid_greeting_from_user(self):
+        exists = self.calld_client.voicemails.voicemail_greeting_from_user_exists(
+            "not-exists"
+        )
+        assert_that(not_(exists))
+
     def test_voicemail_get_greeting_invalid_greeting_from_user(self):
         assert_that(
             calling(self.calld_client.voicemails.get_voicemail_greeting_from_user).with_args(
@@ -173,6 +179,12 @@ class TestVoicemails(RealAsteriskIntegrationTest):
                 details=has_entry("greeting", "busy"),
             ))
         )
+
+    def test_voicemail_head_unset_greeting_from_user(self):
+        exists = self.calld_client.voicemails.voicemail_greeting_from_user_exists(
+            "busy"
+        )
+        assert_that(not_(exists))
 
     def test_voicemail_get_unset_greeting_from_user(self):
         assert_that(
@@ -350,6 +362,11 @@ class TestVoicemails(RealAsteriskIntegrationTest):
         )
 
         for greeting in VALID_GREETINGS:
+            exists = self.calld_client.voicemails.voicemail_greeting_from_user_exists(
+                greeting
+            )
+            assert_that(exists)
+
             data = self.calld_client.voicemails.get_voicemail_greeting_from_user(
                 greeting
             )

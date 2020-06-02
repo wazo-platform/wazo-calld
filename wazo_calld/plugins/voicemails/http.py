@@ -307,6 +307,15 @@ class UserVoicemailGreetingResource(_BaseVoicemailGreetingResource):
         return self._post(voicemail_id, greeting)
 
     @required_acl('calld.users.me.voicemails.greetings.{greeting}.read')
+    def head(self, greeting):
+        voicemail_id = _get_voicemail_id_from_request(
+            self._auth_client, self._voicemails_service
+        )
+        greeting = _validate_greeting(greeting)
+        self._voicemails_service.validate_greeting_exists(voicemail_id, greeting)
+        return '', 200
+
+    @required_acl('calld.users.me.voicemails.greetings.{greeting}.read')
     def get(self, greeting):
         voicemail_id = _get_voicemail_id_from_request(self._auth_client, self._voicemails_service)
         greeting = _validate_greeting(greeting)
