@@ -1,7 +1,6 @@
 # Copyright 2016-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-import logging
 import json
 import uuid
 
@@ -61,9 +60,6 @@ SOME_CHANNEL_ID = '123456789.123'
 SOME_TRANSFER_ID = '123456789.123'
 STASIS_APP = 'callcontrol'
 STASIS_APP_INSTANCE = 'integration-tests'
-
-logging.getLogger('swaggerpy.client').setLevel(logging.INFO)
-logging.getLogger('requests.packages.urllib3.connectionpool').setLevel(logging.INFO)
 
 
 class TestTransfers(RealAsteriskIntegrationTest):
