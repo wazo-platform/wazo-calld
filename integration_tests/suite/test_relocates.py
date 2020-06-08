@@ -2,7 +2,6 @@
 # Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-import logging
 import uuid
 
 from ari.exceptions import ARINotInStasis
@@ -39,9 +38,6 @@ SOME_USER_UUID = '68b884c3-515b-4acf-9034-c77896877acb'
 SOME_CONTEXT = 'some-context'
 STASIS_APP = 'callcontrol'
 STASIS_APP_INSTANCE = 'integration-tests'
-
-logging.getLogger('swaggerpy.client').setLevel(logging.INFO)
-logging.getLogger('requests.packages.urllib3.connectionpool').setLevel(logging.INFO)
 
 
 class TestRelocates(RealAsteriskIntegrationTest):
