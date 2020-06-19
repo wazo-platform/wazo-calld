@@ -5,6 +5,7 @@ import json
 
 from kombu import Connection
 from kombu import Consumer
+from kombu import Exchange
 from kombu import Producer
 from kombu import Queue
 from kombu.exceptions import TimeoutError
@@ -45,6 +46,28 @@ class BusClient(bus_helper.BusClient):
                         conn.drain_events(timeout=0.5)
                 except TimeoutError:
                     pass
+
+    def bind_exchanges(self, upstream_exchange_name, downstream_exchange_name):
+        with Connection(self._url) as connection:
+            upstream_exchange = Exchange(
+                upstream_exchange_name,
+                type='topic',
+                auto_delete=False,
+                durable=False,
+                delivery_mode='persistent',
+            )
+            exchange = Exchange(
+                downstream_exchange_name,
+                type='headers',
+                auto_delete=False,
+                durable=False,
+                delivery_mode='persistent',
+            )
+
+            upstream_exchange.bind(connection).declare()
+            exchange = exchange.bind(connection)
+            exchange.declare()
+            exchange.bind_to(upstream_exchange, routing_key='#')
 
     def send_event(self, event):
         with Connection(self._url) as connection:

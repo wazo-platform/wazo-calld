@@ -197,6 +197,7 @@ class RealAsteriskIntegrationTest(IntegrationTest):
     def setUpClass(cls):
         super().setUpClass()
         cls.chan_test = ChanTest(cls.ari_config())
+        cls.bus.bind_exchanges(upstream_exchange_name='xivo', downstream_exchange_name='wazo-headers')
 
     @classmethod
     def ari_config(cls):
