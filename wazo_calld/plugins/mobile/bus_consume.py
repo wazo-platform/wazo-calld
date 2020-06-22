@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
@@ -27,6 +27,7 @@ class PushNotificationBusEventHandler(object):
         body = {
             'peer_caller_id_number': event["CallerIDNum"],
             'peer_caller_id_name': event["CallerIDName"],
+            'call_id': event["Uniqueid"],
         }
 
         bus_event = ArbitraryEvent(

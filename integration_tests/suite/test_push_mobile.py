@@ -1,4 +1,4 @@
-# Copyright 2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from hamcrest import (
@@ -54,6 +54,7 @@ class TestPushMobile(RealAsteriskIntegrationTest):
                     data=has_entries(
                         peer_caller_id_number='8001',
                         peer_caller_id_name='my name is 8001',
+                        call_id='1560784195.313',
                     ),
                     required_acl='events.calls.fb27eb93-d21c-483f-8068-e685c90b07e1',
                 ),
