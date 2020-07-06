@@ -125,6 +125,52 @@ paths:
             $ref: '#/definitions/Error'
         '503':
           $ref: '#/responses/AnotherServiceUnavailable'
+  /calls/{call_id}/hold/start:
+    put:
+      summary: Hold a call
+      description: '**Required ACL:** `calld.calls.{call_id}.hold.start.update`
+
+
+      All this route does is send an event on the bus.
+      This works **only** if the phone brand has a corresponding phoned plugin
+      to handle the event.
+      '
+      parameters:
+      - $ref: '#/parameters/CallID'
+      tags:
+      - calls
+      responses:
+        '204':
+          description: The call is now held
+        '404':
+          description: No such call
+          schema:
+            $ref: '#/definitions/Error'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+  /calls/{call_id}/hold/stop:
+    put:
+      summary: Unhold a call
+      description: '**Required ACL:** `calld.calls.{call_id}.hold.stop.update`
+
+
+      All this route does is send an event on the bus.
+      This works **only** if the phone brand has a corresponding phoned plugin
+      to handle the event.
+      '
+      parameters:
+      - $ref: '#/parameters/CallID'
+      tags:
+      - calls
+      responses:
+        '204':
+          description: The call is now unheld
+        '404':
+          description: No such call
+          schema:
+            $ref: '#/definitions/Error'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
   /calls/{call_id}/dtmf:
     put:
       summary: Simulate a user pressing DTMF keys
@@ -283,6 +329,48 @@ paths:
       responses:
         '204':
           description: The call is now unmuted
+        '404':
+          description: No such call
+          schema:
+            $ref: '#/definitions/Error'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+  /users/me/calls/{call_id}/hold/start:
+    put:
+      summary: Hold a call from user
+      description: '**Required ACL:** `calld.users.me.calls.{call_id}.hold.start.update`
+
+
+        Only calls owned by the authenticated user may be held.'
+      parameters:
+      - $ref: '#/parameters/CallID'
+      tags:
+      - calls
+      - users
+      responses:
+        '204':
+          description: The call is now held
+        '404':
+          description: No such call
+          schema:
+            $ref: '#/definitions/Error'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+  /users/me/calls/{call_id}/hold/stop:
+    put:
+      summary: Unhold a call from user
+      description: '**Required ACL:** `calld.users.me.calls.{call_id}.hold.stop.update`
+
+
+        Only calls owned by the authenticated user may be unheld.'
+      parameters:
+      - $ref: '#/parameters/CallID'
+      tags:
+      - calls
+      - users
+      responses:
+        '204':
+          description: The call is now unheld
         '404':
           description: No such call
           schema:

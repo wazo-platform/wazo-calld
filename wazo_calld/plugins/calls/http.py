@@ -178,6 +178,54 @@ class MyCallDtmfResource(AuthResource):
         return '', 204
 
 
+class CallHoldResource(AuthResource):
+
+    def __init__(self, calls_service):
+        self.calls_service = calls_service
+
+    @required_acl('calld.calls.{call_id}.hold.start.update')
+    def put(self, call_id):
+        self.calls_service.hold(call_id)
+        return '', 204
+
+
+class CallUnholdResource(AuthResource):
+
+    def __init__(self, calls_service):
+        self.calls_service = calls_service
+
+    @required_acl('calld.calls.{call_id}.hold.stop.update')
+    def put(self, call_id):
+        self.calls_service.unhold(call_id)
+        return '', 204
+
+
+class MyCallHoldResource(AuthResource):
+
+    def __init__(self, auth_client, calls_service):
+        self.auth_client = auth_client
+        self.calls_service = calls_service
+
+    @required_acl('calld.users.me.calls.{call_id}.hold.start.update')
+    def put(self, call_id):
+        user_uuid = get_token_user_uuid_from_request(self.auth_client)
+        self.calls_service.hold_user(call_id, user_uuid)
+        return '', 204
+
+
+class MyCallUnholdResource(AuthResource):
+
+    def __init__(self, auth_client, calls_service):
+        self.auth_client = auth_client
+        self.calls_service = calls_service
+
+    @required_acl('calld.users.me.calls.{call_id}.hold.stop.update')
+    def put(self, call_id):
+        user_uuid = get_token_user_uuid_from_request(self.auth_client)
+        self.calls_service.unhold_user(call_id, user_uuid)
+        return '', 204
+
+
 class ConnectCallToUserResource(AuthResource):
 
     def __init__(self, calls_service):

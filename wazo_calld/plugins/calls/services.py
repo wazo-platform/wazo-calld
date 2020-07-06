@@ -305,6 +305,32 @@ class CallsService:
         self._verify_user(call_id, user_uuid)
         self.send_dtmf(call_id, digits)
 
+    def hold(self, call_id):
+        try:
+            self._ari.channels.get(channelId=call_id)
+        except ARINotFound:
+            raise NoSuchCall(call_id)
+
+        user_uuid = Channel(call_id, self._ari).user()
+        # TODO call phoned
+
+    def hold_user(self, call_id, user_uuid):
+        self._verify_user(call_id, user_uuid)
+        self.hold(call_id)
+
+    def unhold(self, call_id):
+        try:
+            self._ari.channels.get(channelId=call_id)
+        except ARINotFound:
+            raise NoSuchCall(call_id)
+
+        user_uuid = Channel(call_id, self._ari).user()
+        # TODO call phoned
+
+    def unhold_user(self, call_id, user_uuid):
+        self._verify_user(call_id, user_uuid)
+        self.unhold(call_id)
+
     def _verify_user(self, call_id, user_uuid):
         channel = Channel(call_id, self._ari)
         if not channel.exists() or channel.is_local():
