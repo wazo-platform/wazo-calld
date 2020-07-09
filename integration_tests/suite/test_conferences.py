@@ -190,14 +190,44 @@ class TestConferenceParticipants(TestConferences):
         self.confd.set_conferences(
             MockConference(id=conference_id, name='conference', tenant_uuid=tenant_uuid),
         )
-        bus_events = self.bus.accumulator('conferences.users.{}.participants.joined'.format(user_uuid))
+        conference_bus_events = self.bus.accumulator('conferences.users.{}.participants.joined'.format(user_uuid))
+        call_bus_events = self.bus.accumulator('calls.call.updated')
 
         self.given_call_in_conference(CONFERENCE1_EXTENSION, user_uuid=user_uuid)
-        self.given_call_in_conference(CONFERENCE1_EXTENSION, user_uuid=other_user_uuid)
+        other_channel_id = self.given_call_in_conference(CONFERENCE1_EXTENSION, user_uuid=other_user_uuid)
 
-        def user_participant_joined_event_received(*expected_user_uuids):
-            user_uuids = [event['data']['user_uuid'] for event in bus_events.accumulate()]
-            assert_that(user_uuids, has_items(*expected_user_uuids))
+        def user_participant_joined_event_received(first_user_uuid, second_user_uuid):
+            assert_that(
+                conference_bus_events.accumulate(),
+                has_items(
+                    has_entries({
+                        'name': 'conference_user_participant_joined',
+                        'data': has_entries({
+                            'user_uuid': first_user_uuid,
+                        })
+                    }),
+                    has_entries({
+                        'name': 'conference_user_participant_joined',
+                        'data': has_entries({
+                            'user_uuid': second_user_uuid,
+                        })
+                    })
+                )
+            )
+            assert_that(
+                call_bus_events.accumulate(),
+                has_items(
+                    has_entries({
+                        'name': 'call_updated',
+                        'data': has_entries({
+                            'user_uuid': first_user_uuid,
+                            'talking_to': has_entries({
+                                other_channel_id: second_user_uuid
+                            })
+                        })
+                    }),
+                )
+            )
 
         until.assert_(user_participant_joined_event_received, user_uuid, other_user_uuid, timeout=10)
 
@@ -227,18 +257,49 @@ class TestConferenceParticipants(TestConferences):
         self.confd.set_conferences(
             MockConference(id=conference_id, name='conference', tenant_uuid=tenant_uuid),
         )
-        bus_events = self.bus.accumulator('conferences.users.{}.participants.left'.format(user_uuid))
+        conference_bus_events = self.bus.accumulator('conferences.users.{}.participants.left'.format(user_uuid))
+        call_bus_events = self.bus.accumulator('calls.call.updated')
 
         channel_id = self.given_call_in_conference(CONFERENCE1_EXTENSION, user_uuid=user_uuid)
         other_channel_id = self.given_call_in_conference(CONFERENCE1_EXTENSION, user_uuid=other_user_uuid)
 
         def user_participant_left_event_received(expected_user_uuid):
-            user_uuids = [event['data']['user_uuid'] for event in bus_events.accumulate()]
-            assert_that(user_uuids, has_item(expected_user_uuid))
+            assert_that(
+                conference_bus_events.accumulate(),
+                has_items(
+                    has_entries({
+                        'name': 'conference_user_participant_left',
+                        'data': has_entries({
+                            'user_uuid': user_uuid,
+                        })
+                    }),
+                    has_entries({
+                        'name': 'conference_user_participant_left',
+                        'data': has_entries({
+                            'user_uuid': other_user_uuid,
+                        })
+                    })
+                )
+            )
+
+        def call_updated_event_received():
+            assert_that(
+                call_bus_events.accumulate(),
+                has_items(
+                    has_entries({
+                        'name': 'call_updated',
+                        'data': has_entries({
+                            'user_uuid': user_uuid,
+                            'talking_to': empty(),
+                        })
+                    }),
+                )
+            )
 
         self.ari.channels.get(channelId=other_channel_id).hangup()
 
         until.assert_(user_participant_left_event_received, other_user_uuid, timeout=10)
+        until.assert_(call_updated_event_received, timeout=10)
 
         self.ari.channels.get(channelId=channel_id).hangup()
 
