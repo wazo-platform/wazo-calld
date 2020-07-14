@@ -44,6 +44,8 @@ class CallsBusEventHandler:
         bus_consumer.on_ami_event('Hangup', self._collectd_channel_ended)
         bus_consumer.on_ami_event('UserEvent', self._set_dial_echo_result)
         bus_consumer.on_ami_event('DTMFEnd', self._relay_dtmf)
+        bus_consumer.on_ami_event('BridgeEnter', self._relay_channel_entered_bridge)
+        bus_consumer.on_ami_event('BridgeLeave', self._relay_channel_left_bridge)
 
     def _add_sip_call_id(self, event):
         channel_id = event['Uniqueid']
@@ -161,3 +163,52 @@ class CallsBusEventHandler:
         user_uuid = Channel(channel_id, self.ari).user()
         bus_msg = CallDTMFEvent(channel_id, digit, user_uuid)
         self.bus_publisher.publish(bus_msg, headers={'user_uuid:{uuid}'.format(uuid=user_uuid): True})
+
+    def _relay_channel_entered_bridge(self, event):
+        channel_id = event['Uniqueid']
+        bridge_id = event['BridgeUniqueid']
+        logger.debug('Relaying to bus: channel %s entered bridge %s', channel_id, bridge_id)
+        if int(event['BridgeNumChannels']) == 1:
+            logger.debug('ignoring channel %s entered bridge %s: channel is alone', channel_id, bridge_id)
+            return
+
+        try:
+            participant_channel_ids = self.ari.bridges.get(bridgeId=bridge_id).json['channels']
+        except ARINotFound:
+            logger.debug('bridge %s not found', bridge_id)
+            return
+
+        for participant_channel_id in participant_channel_ids:
+            try:
+                channel = self.ari.channels.get(channelId=participant_channel_id)
+            except ARINotFound:
+                logger.debug('channel %s not found', participant_channel_id)
+                return
+
+            call = self.services.make_call_from_channel(self.ari, channel)
+            self.notifier.call_updated(call)
+
+    def _relay_channel_left_bridge(self, event):
+        channel_id = event['Uniqueid']
+        bridge_id = event['BridgeUniqueid']
+        if int(event['BridgeNumChannels']) == 0:
+            logger.debug('ignoring channel %s left bridge %s: bridge is empty', channel_id, bridge_id)
+            return
+
+        logger.debug('Relaying to bus: channel %s left bridge %s', channel_id, bridge_id)
+
+        try:
+            participant_channel_ids = self.ari.bridges.get(bridgeId=bridge_id).json['channels']
+        except ARINotFound:
+            logger.debug('bridge %s not found', bridge_id)
+            return
+
+        for participant_channel_id in participant_channel_ids:
+            try:
+                channel = self.ari.channels.get(channelId=participant_channel_id)
+            except ARINotFound:
+                logger.debug('channel %s not found', participant_channel_id)
+                return
+
+            call = self.services.make_call_from_channel(self.ari, channel)
+            self.notifier.call_updated(call)
