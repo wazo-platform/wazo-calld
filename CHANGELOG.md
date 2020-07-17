@@ -9,6 +9,10 @@
   * `PUT /users/me/calls/{call_id}/hold/start`
   * `PUT /users/me/calls/{call_id}/hold/stop`
 
+## 20.10
+
+* The event `call_updated` is sent to all conference participants when a new participant joins.
+
 ## 20.08
 
 * Deprecate SSL configuration
