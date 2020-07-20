@@ -28,6 +28,7 @@ class PushNotificationBusEventHandler(object):
             'peer_caller_id_number': event["CallerIDNum"],
             'peer_caller_id_name': event["CallerIDName"],
             'call_id': event["Uniqueid"],
+            'video': event["WAZO_VIDEO_CALL"],
         }
 
         bus_event = ArbitraryEvent(
