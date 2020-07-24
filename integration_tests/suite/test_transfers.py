@@ -202,6 +202,11 @@ class TestTransfers(RealAsteriskIntegrationTest):
 
         until.true(channel_is_in_bridge, recipient_channel_id, transfer_id, tries=5)
 
+        def transfer_is_answered(transfer_id):
+            return self.calld.get_transfer(transfer_id)['status'] == 'answered'
+
+        until.true(transfer_is_answered, transfer_id, timeout=5, message='transfer was not answered')
+
         return (transferred_channel_id,
                 initiator_channel_id,
                 recipient_channel_id,
