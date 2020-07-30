@@ -176,8 +176,11 @@ class DialMobileService:
             type='mixing',
             bridgeId=future_bridge_uuid,
         )
-        bridge.addChannel(channel=channel_id)
-        bridge.addChannel(channel=outgoing_channel_id)
+        # Without the inhibitConnectedLineUpdates everyone in the bridge will receive a new
+        # connected line update with the caller ID of the caller when PAI is trusted, including
+        # the caller...
+        bridge.addChannel(channel=channel_id, inhibitConnectedLineUpdates=True)
+        bridge.addChannel(channel=outgoing_channel_id, inhibitConnectedLineUpdates=True)
 
     def notify_channel_gone(self, channel_id):
         to_remove = None
