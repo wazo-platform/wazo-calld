@@ -12,10 +12,6 @@ debug: false
 # Log file.
 logfile: /var/log/wazo-calld.log
 
-# PID file.
-pidfile: /run/wazo-calld.pid
-
-
 # REST API server
 rest_api:
 
