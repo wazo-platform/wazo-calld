@@ -104,7 +104,7 @@ class IntegrationTest(AssetLaunchingTestCase):
             cls.phoned = PhonedClient('localhost', cls.service_port(9498, 'phoned'))
         except (NoSuchService, NoSuchPort) as e:
             logger.debug(e)
-            cls.calld = WrongClient('phoned')
+            cls.phoned = WrongClient('phoned')
         try:
             cls.stasis = StasisClient('localhost', cls.service_port(5039, 'ari'))
         except (NoSuchService, NoSuchPort) as e:
