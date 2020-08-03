@@ -2,12 +2,14 @@
 Description=wazo-calld server
 ConditionPathExists=!/var/lib/wazo/disabled
 After=network.target asterisk.service rabbitmq-server.service wazo-auth.service wazo-confd.service
-Before=monit.service
+StartLimitBurst=15
+StartLimitIntervalSec=150
 
 [Service]
 Environment=PYTHONUNBUFFERED=TRUE
-ExecStartPre=/usr/bin/install -d -o www-data -g www-data /run/wazo-calld
 ExecStart=/usr/bin/wazo-calld
+Restart=on-failure
+RestartSec=5
 
 [Install]
 WantedBy=multi-user.target

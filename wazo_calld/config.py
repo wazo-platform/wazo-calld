@@ -15,7 +15,6 @@ _DEFAULT_CONFIG = {
     'debug': False,
     'log_level': 'info',
     'log_filename': '/var/log/wazo-calld.log',
-    'pid_filename': '/run/wazo-calld/wazo-calld.pid',
     'user': 'www-data',
     'rest_api': {
         'listen': '127.0.0.1',
