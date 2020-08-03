@@ -6,6 +6,8 @@
 
   * `PUT /calls/{call_id}/hold/start`
   * `PUT /calls/{call_id}/hold/stop`
+  * `PUT /users/me/calls/{call_id}/hold/start`
+  * `PUT /users/me/calls/{call_id}/hold/stop`
 
 ## 20.08
 
