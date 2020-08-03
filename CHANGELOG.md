@@ -1,5 +1,12 @@
 # Changelog
 
+## 20.11
+
+* New API to hold calls
+
+  * `PUT /calls/{call_id}/hold/start`
+  * `PUT /calls/{call_id}/hold/stop`
+
 ## 20.08
 
 * Deprecate SSL configuration

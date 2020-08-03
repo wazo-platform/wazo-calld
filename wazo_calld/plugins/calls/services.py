@@ -12,6 +12,7 @@ from wazo_calld.plugin_helpers.exceptions import (
     InvalidExtension,
     UserPermissionDenied,
 )
+from xivo.asterisk.protocol_interface import protocol_interface_from_channel
 
 from .call import Call
 from .exceptions import CallConnectError
@@ -25,12 +26,13 @@ logger = logging.getLogger(__name__)
 
 class CallsService:
 
-    def __init__(self, amid_client, ari_config, ari, confd_client, dial_echo_manager, notifier):
+    def __init__(self, amid_client, ari_config, ari, confd_client, dial_echo_manager, phoned_client, notifier):
         self._ami = amid_client
         self._ari_config = ari_config
         self._ari = ari
         self._confd = confd_client
         self._dial_echo_manager = dial_echo_manager
+        self._phoned_client = phoned_client
         self._notifier = notifier
         self._state_persistor = ReadOnlyStatePersistor(self._ari)
 
@@ -307,12 +309,13 @@ class CallsService:
 
     def hold(self, call_id):
         try:
-            self._ari.channels.get(channelId=call_id)
+            channel = self._ari.channels.get(channelId=call_id)
         except ARINotFound:
             raise NoSuchCall(call_id)
 
-        user_uuid = Channel(call_id, self._ari).user()
-        # TODO call phoned
+        protocol_interface = protocol_interface_from_channel(channel.json['name'])
+
+        self._phoned_client.hold_endpoint(protocol_interface.interface)
 
     def hold_user(self, call_id, user_uuid):
         self._verify_user(call_id, user_uuid)
@@ -320,12 +323,13 @@ class CallsService:
 
     def unhold(self, call_id):
         try:
-            self._ari.channels.get(channelId=call_id)
+            channel = self._ari.channels.get(channelId=call_id)
         except ARINotFound:
             raise NoSuchCall(call_id)
 
-        user_uuid = Channel(call_id, self._ari).user()
-        # TODO call phoned
+        protocol_interface = protocol_interface_from_channel(channel.json['name'])
+
+        self._phoned_client.unhold_endpoint(protocol_interface.interface)
 
     def unhold_user(self, call_id, user_uuid):
         self._verify_user(call_id, user_uuid)

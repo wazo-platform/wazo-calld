@@ -34,6 +34,14 @@ services:
     ports:
       - 9486
 
+  phoned:
+    image: p0bailey/docker-flask
+    ports:
+      - 9498
+    volumes:
+      - ./phoned_data:/usr/local/share/wazo-phoned
+    command: python /usr/local/share/wazo-phoned/mock-wazo-phoned.py 9498
+
   consul:
     image: p0bailey/docker-flask
     ports:

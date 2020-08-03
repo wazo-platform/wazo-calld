@@ -6,21 +6,21 @@ import requests
 
 class PhonedClient:
 
-    def __init__(self, config):
-        self.config = config.get('phoned', {})
+    def __init__(self, **config):
+        self.config = config
         self.token = None
 
     def set_token(self, token):
         self.token = token
 
     def hold_endpoint(self, endpoint_name):
-        url = '{}:{}/endoints/{}/hold/start'.format(self.config['host'])
+        url = 'http://{}:{}/0.1/endpoints/{}/hold/start'.format(self.config['host'], self.config['port'], endpoint_name)
         headers = {'X-Auth-Token': self.token}
-        result = requests.get(url, headers=headers)
+        result = requests.put(url, headers=headers)
         result.raise_for_status()
 
     def unhold_endpoint(self, endpoint_name):
-        url = '{}/endoints/{}/hold/start'
+        url = 'http://{}:{}/0.1/endpoints/{}/hold/stop'.format(self.config['host'], self.config['port'], endpoint_name)
         headers = {'X-Auth-Token': self.token}
-        result = requests.get(url, headers=headers)
+        result = requests.put(url, headers=headers)
         result.raise_for_status()

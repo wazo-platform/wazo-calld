@@ -1760,3 +1760,43 @@ class TestCallSendDTMF(RealAsteriskIntegrationTest):
         token = 'my-token'
         self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
         return token
+
+
+class TestCallHold(IntegrationTest):
+
+    asset = 'basic_rest'
+
+    def setUp(self):
+        super().setUp()
+        self.ari.reset()
+        self.phoned.reset()
+
+    def test_hold(self):
+        self.ari.set_channels(MockChannel(id='first-id',
+                                          state='Up',
+                                          name='PJSIP/abcdef-000001'))
+        self.ari.set_channel_variable({'first-id': {'CHANNEL(channeltype)': 'PJSIP',
+                                                    'CHANNEL(pjsip,call-id)': 'a-sip-call-id'}})
+
+
+        # Invalid channel ID
+        assert_that(
+            calling(self.calld_client.calls.start_hold).with_args(UNKNOWN_UUID),
+            raises(CalldError).matching(has_properties(status_code=404))
+        )
+
+        # Hold
+        self.calld_client.calls.start_hold('first-id')
+
+        assert_that(self.phoned.requests(), has_entry('requests', has_item(has_entries({
+            'method': 'PUT',
+            'path': '/0.1/endpoints/abcdef/hold/start',
+        }))))
+
+        # Unhold
+        self.calld_client.calls.stop_hold('first-id')
+
+        assert_that(self.phoned.requests(), has_entry('requests', has_item(has_entries({
+            'method': 'PUT',
+            'path': '/0.1/endpoints/abcdef/hold/stop',
+        }))))

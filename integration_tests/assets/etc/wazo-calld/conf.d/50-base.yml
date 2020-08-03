@@ -24,6 +24,9 @@ confd:
 consul:
   host: consul
 
+phoned:
+  host: phoned
+
 websocketd:
   wss: false
   host: websocketd

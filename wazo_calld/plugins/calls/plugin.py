@@ -5,6 +5,7 @@ from wazo_auth_client import Client as AuthClient
 from wazo_confd_client import Client as ConfdClient
 from wazo_amid_client import Client as AmidClient
 from xivo.pubsub import CallbackCollector
+from wazo_calld.phoned import PhonedClient
 
 from .bus_consume import CallsBusEventHandler
 from .notifier import CallNotifier
@@ -46,13 +47,15 @@ class Plugin:
 
         auth_client = AuthClient(**config['auth'])
         confd_client = ConfdClient(**config['confd'])
+        phoned_client = PhonedClient(**config['phoned'])
 
         token_changed_subscribe(confd_client.set_token)
+        token_changed_subscribe(phoned_client.set_token)
 
         dial_echo_manager = DialEchoManager()
 
         notifier = CallNotifier(bus_publisher)
-        calls_service = CallsService(amid_client, config['ari']['connection'], ari.client, confd_client, dial_echo_manager, notifier)
+        calls_service = CallsService(amid_client, config['ari']['connection'], ari.client, confd_client, dial_echo_manager, phoned_client, notifier)
 
         calls_stasis = CallsStasis(ari, collectd, bus_publisher, calls_service, config['uuid'], amid_client)
 
