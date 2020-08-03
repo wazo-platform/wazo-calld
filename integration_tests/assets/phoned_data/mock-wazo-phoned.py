@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
-import json
 import sys
 
 from flask import Flask
