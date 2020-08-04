@@ -65,6 +65,12 @@ _DEFAULT_CONFIG = {
         'prefix': None,
         'https': False,
     },
+    'phoned': {
+        'host': 'localhost',
+        'port': 9498,
+        'prefix': None,
+        'https': False,
+    },
     'consul': {
         'host': 'localhost',
         'port': 8500,

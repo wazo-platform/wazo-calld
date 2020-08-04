@@ -78,6 +78,13 @@ amid:
     prefix: null
     https: false
 
+# wazo-phoned connection informations
+phoned:
+    host: localhost
+    port: 9498
+    prefix: null
+    https: false
+
 # consul connection informations
 consul:
   scheme: http

@@ -23,6 +23,7 @@ from .chan_test import ChanTest
 from .confd import ConfdClient
 from .constants import ASSET_ROOT, VALID_TOKEN
 from .calld import LegacyCalldClient, CalldClient
+from .phoned import PhonedClient
 from .stasis import StasisClient
 from .wait_strategy import CalldEverythingOkWaitStrategy
 
@@ -99,6 +100,11 @@ class IntegrationTest(AssetLaunchingTestCase):
         except (NoSuchService, NoSuchPort) as e:
             logger.debug(e)
             cls.calld_client = WrongClient('calld-client')
+        try:
+            cls.phoned = PhonedClient('localhost', cls.service_port(9498, 'phoned'))
+        except (NoSuchService, NoSuchPort) as e:
+            logger.debug(e)
+            cls.phoned = WrongClient('phoned')
         try:
             cls.stasis = StasisClient('localhost', cls.service_port(5039, 'ari'))
         except (NoSuchService, NoSuchPort) as e:
