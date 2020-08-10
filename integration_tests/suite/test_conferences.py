@@ -243,7 +243,7 @@ class TestConferenceParticipants(TestConferences):
 
         channel_id = self.given_call_in_conference(CONFERENCE1_EXTENSION, caller_id_name='participant1')
 
-        self.ari.channels.get(channelId=channel_id).hangup()
+        self.ari.channels.hangup(channelId=channel_id)
 
         def participant_left_event_received(expected_caller_id_name):
             caller_id_names = [event['data']['caller_id_name']
@@ -299,12 +299,12 @@ class TestConferenceParticipants(TestConferences):
                 )
             )
 
-        self.ari.channels.get(channelId=other_channel_id).hangup()
+        self.ari.channels.hangup(channelId=other_channel_id)
 
         until.assert_(user_participant_left_event_received, other_user_uuid, timeout=10)
         until.assert_(call_updated_event_received, timeout=10)
 
-        self.ari.channels.get(channelId=channel_id).hangup()
+        self.ari.channels.hangup(channelId=channel_id)
 
         until.assert_(user_participant_left_event_received, user_uuid, timeout=10)
 
