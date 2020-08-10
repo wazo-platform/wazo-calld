@@ -26,11 +26,14 @@ from .helpers.base import RealAsteriskIntegrationTest
 from .helpers.confd import MockConference
 from .helpers.hamcrest_ import HamcrestARIChannel
 
-USER_UUID = str(uuid.uuid4())
 ENDPOINT_AUTOANSWER = 'Test/integration-caller/autoanswer'
 CONFERENCE1_EXTENSION = '4001'
 CONFERENCE1_ID = 4001
 CONFERENCE1_TENANT_UUID = '404afda0-36ba-43de-9571-a06c81b9c43e'
+
+
+def make_user_uuid():
+    return str(uuid.uuid4())
 
 
 class TestConferences(RealAsteriskIntegrationTest):
@@ -185,7 +188,7 @@ class TestConferenceParticipants(TestConferences):
     def test_user_participant_joins_sends_event(self):
         conference_id = CONFERENCE1_ID
         tenant_uuid = CONFERENCE1_TENANT_UUID
-        user_uuid = USER_UUID
+        user_uuid = make_user_uuid()
         other_user_uuid = 'another-uuid'
         self.confd.set_conferences(
             MockConference(id=conference_id, name='conference', tenant_uuid=tenant_uuid),
@@ -252,7 +255,7 @@ class TestConferenceParticipants(TestConferences):
     def test_user_participant_leaves_sends_event(self):
         conference_id = CONFERENCE1_ID
         tenant_uuid = CONFERENCE1_TENANT_UUID
-        user_uuid = USER_UUID
+        user_uuid = make_user_uuid()
         other_user_uuid = 'another-uuid'
         self.confd.set_conferences(
             MockConference(id=conference_id, name='conference', tenant_uuid=tenant_uuid),
