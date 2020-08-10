@@ -273,15 +273,9 @@ class TestConferenceParticipants(TestConferences):
                     has_entries({
                         'name': 'conference_user_participant_left',
                         'data': has_entries({
-                            'user_uuid': user_uuid,
+                            'user_uuid': expected_user_uuid,
                         })
                     }),
-                    has_entries({
-                        'name': 'conference_user_participant_left',
-                        'data': has_entries({
-                            'user_uuid': other_user_uuid,
-                        })
-                    })
                 )
             )
 
