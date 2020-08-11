@@ -12,7 +12,6 @@ ari:
 
 auth:
   host: auth
-  timeout: 2
   key_file: /etc/wazo-calld/key.yml
 
 bus:
