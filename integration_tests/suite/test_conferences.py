@@ -26,11 +26,14 @@ from .helpers.base import RealAsteriskIntegrationTest
 from .helpers.confd import MockConference
 from .helpers.hamcrest_ import HamcrestARIChannel
 
-USER_UUID = str(uuid.uuid4())
 ENDPOINT_AUTOANSWER = 'Test/integration-caller/autoanswer'
 CONFERENCE1_EXTENSION = '4001'
 CONFERENCE1_ID = 4001
 CONFERENCE1_TENANT_UUID = '404afda0-36ba-43de-9571-a06c81b9c43e'
+
+
+def make_user_uuid():
+    return str(uuid.uuid4())
 
 
 class TestConferences(RealAsteriskIntegrationTest):
@@ -185,7 +188,7 @@ class TestConferenceParticipants(TestConferences):
     def test_user_participant_joins_sends_event(self):
         conference_id = CONFERENCE1_ID
         tenant_uuid = CONFERENCE1_TENANT_UUID
-        user_uuid = USER_UUID
+        user_uuid = make_user_uuid()
         other_user_uuid = 'another-uuid'
         self.confd.set_conferences(
             MockConference(id=conference_id, name='conference', tenant_uuid=tenant_uuid),
@@ -240,7 +243,7 @@ class TestConferenceParticipants(TestConferences):
 
         channel_id = self.given_call_in_conference(CONFERENCE1_EXTENSION, caller_id_name='participant1')
 
-        self.ari.channels.get(channelId=channel_id).hangup()
+        self.ari.channels.hangup(channelId=channel_id)
 
         def participant_left_event_received(expected_caller_id_name):
             caller_id_names = [event['data']['caller_id_name']
@@ -252,7 +255,7 @@ class TestConferenceParticipants(TestConferences):
     def test_user_participant_leaves_sends_event(self):
         conference_id = CONFERENCE1_ID
         tenant_uuid = CONFERENCE1_TENANT_UUID
-        user_uuid = USER_UUID
+        user_uuid = make_user_uuid()
         other_user_uuid = 'another-uuid'
         self.confd.set_conferences(
             MockConference(id=conference_id, name='conference', tenant_uuid=tenant_uuid),
@@ -270,15 +273,9 @@ class TestConferenceParticipants(TestConferences):
                     has_entries({
                         'name': 'conference_user_participant_left',
                         'data': has_entries({
-                            'user_uuid': user_uuid,
+                            'user_uuid': expected_user_uuid,
                         })
                     }),
-                    has_entries({
-                        'name': 'conference_user_participant_left',
-                        'data': has_entries({
-                            'user_uuid': other_user_uuid,
-                        })
-                    })
                 )
             )
 
@@ -296,12 +293,12 @@ class TestConferenceParticipants(TestConferences):
                 )
             )
 
-        self.ari.channels.get(channelId=other_channel_id).hangup()
+        self.ari.channels.hangup(channelId=other_channel_id)
 
         until.assert_(user_participant_left_event_received, other_user_uuid, timeout=10)
         until.assert_(call_updated_event_received, timeout=10)
 
-        self.ari.channels.get(channelId=channel_id).hangup()
+        self.ari.channels.hangup(channelId=channel_id)
 
         until.assert_(user_participant_left_event_received, user_uuid, timeout=10)
 
