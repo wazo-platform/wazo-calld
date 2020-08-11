@@ -88,6 +88,7 @@ _DEFAULT_CONFIG = {
     'remote_credentials': {
     },
     'enabled_plugins': {
+        'adhoc_conferences': True,
         'api': True,
         'applications': True,
         'calls': True,

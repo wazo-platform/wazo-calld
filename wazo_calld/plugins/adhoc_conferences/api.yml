@@ -1,0 +1,40 @@
+paths:
+  /users/me/conferences/adhoc:
+    post:
+      summary: Create an adhoc conference
+      description: '**Required ACL:** `calld.users.me.conferences.adhoc.create`'
+      parameters:
+      - name: body
+        in: body
+        description: Parameters of the conference calls
+        required: true
+        schema:
+          $ref: '#/definitions/ConferenceAdhocCreation'
+      tags:
+      - conferences
+      responses:
+        '201':
+          description: Conference adhoc has been created
+          schema:
+            $ref: '#/definitions/ConferenceAdhoc'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+definitions:
+  ConferenceAdhocCreation:
+    type: object
+    properties:
+      host_call_id:
+        description: The call_id of the host call
+        type: string
+      participant_call_ids:
+        description: The call_id of the participating calls in this conference, excluding the host.
+        type: array
+        items:
+          type: string
+  ConferenceAdhoc:
+    type: object
+    properties:
+      conference_id:
+        description: The ID of the adhoc conference
+        type: string
+      
