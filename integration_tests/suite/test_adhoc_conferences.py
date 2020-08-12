@@ -11,8 +11,7 @@ from hamcrest import (
 from xivo_test_helpers.hamcrest.raises import raises
 from wazo_calld_client.exceptions import CalldError
 from .helpers.base import RealAsteriskIntegrationTest
-
-SOME_CHANNEL_ID = '123456789.123'
+from .helpers.constants import SOME_CHANNEL_ID
 
 
 def make_user_uuid():

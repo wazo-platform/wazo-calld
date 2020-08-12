@@ -27,7 +27,7 @@ from xivo_test_helpers import until
 
 from .helpers.base import IntegrationTest
 from .helpers.base import RealAsteriskIntegrationTest
-from .helpers.constants import VALID_TOKEN
+from .helpers.constants import SOME_CHANNEL_ID, VALID_TOKEN
 from .helpers.confd import MockUser
 from .helpers.confd import MockLine
 from .helpers.auth import MockUserToken
@@ -56,7 +56,6 @@ RECIPIENT_CALLER_ID = {
     'context': 'local',
     'exten': 'answer-caller-id',
 }
-SOME_CHANNEL_ID = '123456789.123'
 SOME_TRANSFER_ID = '123456789.123'
 STASIS_APP = 'callcontrol'
 STASIS_APP_INSTANCE = 'integration-tests'
