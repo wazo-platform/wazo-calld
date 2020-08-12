@@ -22,9 +22,8 @@ from xivo_test_helpers.hamcrest.raises import raises
 
 from .helpers.base import RealAsteriskIntegrationTest
 from .helpers.confd import MockApplication, MockUser, MockMoh
+from .helpers.constants import ENDPOINT_AUTOANSWER
 from .helpers.wait_strategy import CalldEverythingOkWaitStrategy, NoWaitStrategy
-
-ENDPOINT_AUTOANSWER = 'Test/integration-caller/autoanswer'
 
 
 class BaseApplicationTestCase(RealAsteriskIntegrationTest):

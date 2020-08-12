@@ -24,9 +24,9 @@ from wazo_calld_client.exceptions import CalldError
 from .helpers.auth import MockUserToken
 from .helpers.base import RealAsteriskIntegrationTest
 from .helpers.confd import MockConference
+from .helpers.constants import ENDPOINT_AUTOANSWER
 from .helpers.hamcrest_ import HamcrestARIChannel
 
-ENDPOINT_AUTOANSWER = 'Test/integration-caller/autoanswer'
 CONFERENCE1_EXTENSION = '4001'
 CONFERENCE1_ID = 4001
 CONFERENCE1_TENANT_UUID = '404afda0-36ba-43de-9571-a06c81b9c43e'

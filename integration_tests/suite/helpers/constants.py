@@ -23,3 +23,7 @@ SOME_CALL_ID = '987654321.123'
 STASIS_APP_NAME = 'callcontrol'
 STASIS_APP_INSTANCE_NAME = 'switchboard-red'
 STASIS_APP_ARGS = [STASIS_APP_INSTANCE_NAME]
+
+ENDPOINT_AUTOANSWER = 'Test/integration-caller/autoanswer'
+STASIS_APP = 'callcontrol'
+STASIS_APP_INSTANCE = 'integration-tests'

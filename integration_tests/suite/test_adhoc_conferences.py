@@ -13,11 +13,12 @@ from xivo_test_helpers.hamcrest.raises import raises
 from xivo_test_helpers import until
 from wazo_calld_client.exceptions import CalldError
 from .helpers.base import RealAsteriskIntegrationTest
-from .helpers.constants import SOME_CALL_ID
-
-ENDPOINT_AUTOANSWER = 'Test/integration-caller/autoanswer'
-STASIS_APP = 'callcontrol'
-STASIS_APP_INSTANCE = 'integration-tests'
+from .helpers.constants import (
+    ENDPOINT_AUTOANSWER,
+    SOME_CALL_ID,
+    STASIS_APP,
+    STASIS_APP_INSTANCE
+)
 
 
 def make_user_uuid():

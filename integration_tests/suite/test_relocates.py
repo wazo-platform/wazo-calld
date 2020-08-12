@@ -25,19 +25,19 @@ from .helpers.base import RealAsteriskIntegrationTest
 from .helpers.confd import MockUser
 from .helpers.confd import MockLine
 from .helpers.constants import (
+    ENDPOINT_AUTOANSWER,
+    STASIS_APP,
+    STASIS_APP_INSTANCE,
     INVALID_ACL_TOKEN,
     VALID_TOKEN,
 )
 from .helpers.hamcrest_ import HamcrestARIChannel
 
-ENDPOINT_AUTOANSWER = 'Test/integration-caller/autoanswer'
 SOME_CALL_ID = '12345.6789'
 SOME_LINE_ID = 12
 SOME_LINE_NAME = 'line-name'
 SOME_USER_UUID = '68b884c3-515b-4acf-9034-c77896877acb'
 SOME_CONTEXT = 'some-context'
-STASIS_APP = 'callcontrol'
-STASIS_APP_INSTANCE = 'integration-tests'
 
 
 class TestRelocates(RealAsteriskIntegrationTest):

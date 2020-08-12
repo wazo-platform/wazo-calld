@@ -27,7 +27,13 @@ from xivo_test_helpers import until
 
 from .helpers.base import IntegrationTest
 from .helpers.base import RealAsteriskIntegrationTest
-from .helpers.constants import SOME_CHANNEL_ID, VALID_TOKEN
+from .helpers.constants import (
+    ENDPOINT_AUTOANSWER,
+    STASIS_APP,
+    STASIS_APP_INSTANCE,
+    SOME_CHANNEL_ID,
+    VALID_TOKEN
+)
 from .helpers.confd import MockUser
 from .helpers.confd import MockLine
 from .helpers.auth import MockUserToken
@@ -35,7 +41,6 @@ from .helpers.hamcrest_ import HamcrestARIBridge
 from .helpers.hamcrest_ import HamcrestARIChannel
 from .helpers.wait_strategy import CalldUpWaitStrategy
 
-ENDPOINT_AUTOANSWER = 'Test/integration-caller/autoanswer'
 RECIPIENT = {
     'context': 'local',
     'exten': 'recipient',
@@ -57,8 +62,6 @@ RECIPIENT_CALLER_ID = {
     'exten': 'answer-caller-id',
 }
 SOME_TRANSFER_ID = '123456789.123'
-STASIS_APP = 'callcontrol'
-STASIS_APP_INSTANCE = 'integration-tests'
 
 
 class TestTransfers(RealAsteriskIntegrationTest):

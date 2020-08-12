@@ -30,7 +30,7 @@ from .helpers.base import (
     IntegrationTest,
     RealAsteriskIntegrationTest,
 )
-from .helpers.constants import VALID_TOKEN, VALID_TENANT
+from .helpers.constants import ENDPOINT_AUTOANSWER, VALID_TOKEN, VALID_TENANT
 from .helpers.confd import (
     MockSwitchboard,
     MockLine,
@@ -38,7 +38,6 @@ from .helpers.confd import (
 )
 from .helpers.hamcrest_ import HamcrestARIChannel
 
-ENDPOINT_AUTOANSWER = 'Test/integration-caller/autoanswer'
 STASIS_APP = 'callcontrol'
 STASIS_APP_INSTANCE = 'switchboard'
 STASIS_APP_QUEUE = 'switchboard_queue'
