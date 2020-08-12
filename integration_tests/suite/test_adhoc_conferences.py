@@ -21,7 +21,7 @@ def make_user_uuid():
 
 class TestAdhocConference(RealAsteriskIntegrationTest):
 
-    asset = 'real_asterisk_conference'
+    asset = 'real_asterisk'
 
     def test_user_create_adhoc_conference_no_auth(self):
         calld_no_auth = self.make_calld(token=None)
@@ -33,3 +33,16 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
         }
         assert_that(calling(calld_no_auth.adhoc_conferences.create_from_user).with_args(body),
                     raises(CalldError).matching(has_properties(status_code=401)))
+
+    def test_user_create_adhoc_conference_no_host_call(self):
+        body = {
+            'host_call_id': SOME_CHANNEL_ID,
+            'participant_call_ids': [
+                SOME_CHANNEL_ID,
+            ],
+        }
+        assert_that(calling(self.calld_client.adhoc_conferences.create_from_user).with_args(body),
+                    raises(CalldError).matching(has_properties({
+                        'status_code': 400,
+                        'error_id': 'host-call-not-found',
+                    })))
