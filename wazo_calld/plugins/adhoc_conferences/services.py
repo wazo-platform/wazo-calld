@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from ari.exceptions import ARINotFound
-from .exceptions import HostCallNotFound
+from .exceptions import HostCallNotFound, ParticipantCallNotFound
 
 
 class AdhocConferencesService:
@@ -15,3 +15,9 @@ class AdhocConferencesService:
             host_channel = self._ari.channels.get(channelId=host_call_id)
         except ARINotFound:
             raise HostCallNotFound(host_call_id)
+
+        for participant_call_id in participant_call_ids:
+            try:
+                participant_channel = self._ari.channels.get(channelId=participant_call_id)
+            except ARINotFound:
+                raise ParticipantCallNotFound(host_call_id)
