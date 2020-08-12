@@ -11,7 +11,7 @@ from hamcrest import (
 from xivo_test_helpers.hamcrest.raises import raises
 from wazo_calld_client.exceptions import CalldError
 from .helpers.base import RealAsteriskIntegrationTest
-from .helpers.constants import SOME_CHANNEL_ID
+from .helpers.constants import SOME_CALL_ID
 
 
 def make_user_uuid():
@@ -25,9 +25,9 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
     def test_user_create_adhoc_conference_no_auth(self):
         calld_no_auth = self.make_calld(token=None)
         body = {
-            'host_call_id': SOME_CHANNEL_ID,
+            'host_call_id': SOME_CALL_ID,
             'participant_call_ids': [
-                SOME_CHANNEL_ID,
+                SOME_CALL_ID,
             ],
         }
         assert_that(calling(calld_no_auth.adhoc_conferences.create_from_user).with_args(body),
@@ -35,9 +35,9 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
 
     def test_user_create_adhoc_conference_no_host_call(self):
         body = {
-            'host_call_id': SOME_CHANNEL_ID,
+            'host_call_id': SOME_CALL_ID,
             'participant_call_ids': [
-                SOME_CHANNEL_ID,
+                SOME_CALL_ID,
             ],
         }
         assert_that(calling(self.calld_client.adhoc_conferences.create_from_user).with_args(body),
