@@ -25,5 +25,5 @@ STASIS_APP_INSTANCE_NAME = 'switchboard-red'
 STASIS_APP_ARGS = [STASIS_APP_INSTANCE_NAME]
 
 ENDPOINT_AUTOANSWER = 'Test/integration-caller/autoanswer'
-STASIS_APP = 'callcontrol'
-STASIS_APP_INSTANCE = 'integration-tests'
+SOME_STASIS_APP = 'callcontrol'
+SOME_STASIS_APP_INSTANCE = 'integration-tests'

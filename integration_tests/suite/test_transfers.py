@@ -29,8 +29,8 @@ from .helpers.base import IntegrationTest
 from .helpers.base import RealAsteriskIntegrationTest
 from .helpers.constants import (
     ENDPOINT_AUTOANSWER,
-    STASIS_APP,
-    STASIS_APP_INSTANCE,
+    SOME_STASIS_APP,
+    SOME_STASIS_APP_INSTANCE,
     SOME_CHANNEL_ID,
     VALID_TOKEN
 )
@@ -120,8 +120,8 @@ class TestTransfers(RealAsteriskIntegrationTest):
                 return False
 
         new_channel = self.ari.channels.originate(endpoint=ENDPOINT_AUTOANSWER,
-                                                  app=STASIS_APP,
-                                                  appArgs=[STASIS_APP_INSTANCE])
+                                                  app=SOME_STASIS_APP,
+                                                  appArgs=[SOME_STASIS_APP_INSTANCE])
         until.true(channel_is_in_stasis, new_channel.id, tries=2)
         bridge.addChannel(channel=new_channel.id)
 
@@ -138,8 +138,8 @@ class TestTransfers(RealAsteriskIntegrationTest):
 
         def channels_have_been_created_in_calld(caller_id, callee_id):
             calls = self.calld_client.calls.list_calls(
-                application=STASIS_APP,
-                application_instance=STASIS_APP_INSTANCE,
+                application=SOME_STASIS_APP,
+                application_instance=SOME_STASIS_APP_INSTANCE,
             )
             channel_ids = [call['call_id'] for call in calls['items']]
             return (caller_id in channel_ids and callee_id in channel_ids)
