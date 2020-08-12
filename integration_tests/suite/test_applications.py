@@ -20,9 +20,9 @@ from xivo_test_helpers import until
 from xivo_test_helpers.hamcrest.uuid_ import uuid_
 from xivo_test_helpers.hamcrest.raises import raises
 
-from .helpers.base import RealAsteriskIntegrationTest
 from .helpers.confd import MockApplication, MockUser, MockMoh
 from .helpers.constants import ENDPOINT_AUTOANSWER
+from .helpers.real_asterisk import RealAsteriskIntegrationTest
 from .helpers.wait_strategy import CalldEverythingOkWaitStrategy, NoWaitStrategy
 
 

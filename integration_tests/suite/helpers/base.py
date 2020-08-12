@@ -1,13 +1,10 @@
 # Copyright 2015-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-import ari
 import os
 import logging
 import tempfile
 
-from ari.exceptions import ARINotFound
-from ari.exceptions import ARINotInStasis
 from contextlib import contextmanager
 from requests.packages import urllib3
 from xivo_test_helpers import until
@@ -19,7 +16,6 @@ from .amid import AmidClient
 from .ari_ import ARIClient
 from .auth import AuthClient
 from .bus import BusClient
-from .chan_test import ChanTest
 from .confd import ConfdClient
 from .constants import ASSET_ROOT, VALID_TOKEN
 from .calld import LegacyCalldClient, CalldClient
@@ -194,41 +190,3 @@ class IntegrationTest(AssetLaunchingTestCase):
             self.calld_client.set_token(VALID_TOKEN)
         except ClientCreateException:
             pass
-
-
-class RealAsteriskIntegrationTest(IntegrationTest):
-    asset = 'real_asterisk'
-
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        cls.chan_test = ChanTest(cls.ari_config())
-
-    @classmethod
-    def ari_config(cls):
-        return {
-            'base_url': 'http://localhost:{port}'.format(port=cls.service_port(5039, 'ari')),
-            'username': 'xivo',
-            'password': 'xivo',
-        }
-
-    def setUp(self):
-        super().setUp()
-        self.ari = ari.connect(**self.ari_config())
-        self.reset_ari()
-
-    def tearDown(self):
-        super().tearDown()
-
-    def reset_ari(self):
-        for channel in self.ari.channels.list():
-            try:
-                channel.hangup()
-            except (ARINotInStasis, ARINotFound):
-                pass
-
-        for bridge in self.ari.bridges.list():
-            try:
-                bridge.destroy()
-            except (ARINotInStasis, ARINotFound):
-                pass

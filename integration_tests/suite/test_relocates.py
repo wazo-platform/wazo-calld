@@ -4,7 +4,6 @@
 
 import uuid
 
-from ari.exceptions import ARINotInStasis
 from hamcrest import assert_that
 from hamcrest import calling
 from hamcrest import contains
@@ -21,16 +20,13 @@ from xivo_test_helpers.hamcrest.raises import raises
 from wazo_calld_client.exceptions import CalldError
 
 from .helpers.auth import MockUserToken
-from .helpers.base import RealAsteriskIntegrationTest
+from .helpers.real_asterisk import RealAsteriskIntegrationTest, RealAsterisk
 from .helpers.confd import MockUser
 from .helpers.confd import MockLine
 from .helpers.constants import (
     ENDPOINT_AUTOANSWER,
     SOME_CALL_ID,
-    SOME_STASIS_APP,
-    SOME_STASIS_APP_INSTANCE,
     INVALID_ACL_TOKEN,
-    VALID_TOKEN,
 )
 from .helpers.hamcrest_ import HamcrestARIChannel
 
@@ -47,45 +43,7 @@ class TestRelocates(RealAsteriskIntegrationTest):
     def setUp(self):
         super().setUp()
         self.c = HamcrestARIChannel(self.ari)
-
-    def stasis_channel(self):
-        def channel_is_in_stasis(channel_id):
-            try:
-                self.ari.channels.setChannelVar(channelId=channel_id, variable='TEST_STASIS', value='')
-                return True
-            except ARINotInStasis:
-                return False
-
-        new_channel = self.ari.channels.originate(endpoint=ENDPOINT_AUTOANSWER,
-                                                  app=SOME_STASIS_APP,
-                                                  appArgs=[SOME_STASIS_APP_INSTANCE])
-        until.true(channel_is_in_stasis, new_channel.id, tries=2)
-
-        return new_channel
-
-    def given_bridged_call_stasis(self, caller_uuid=None, callee_uuid=None):
-        bridge = self.ari.bridges.create(type='mixing')
-
-        caller = self.stasis_channel()
-        caller_uuid = caller_uuid or str(uuid.uuid4())
-        caller.setChannelVar(variable='XIVO_USERUUID', value=caller_uuid)
-        bridge.addChannel(channel=caller.id)
-
-        callee = self.stasis_channel()
-        callee_uuid = callee_uuid or str(uuid.uuid4())
-        callee.setChannelVar(variable='XIVO_USERUUID', value=callee_uuid)
-        bridge.addChannel(channel=callee.id)
-
-        self.calld_client.set_token(VALID_TOKEN)
-
-        def channels_have_been_created_in_calld(caller_id, callee_id):
-            calls = self.calld_client.calls.list_calls(application=SOME_STASIS_APP, application_instance=SOME_STASIS_APP_INSTANCE)
-            channel_ids = [call['call_id'] for call in calls['items']]
-            return (caller_id in channel_ids and callee_id in channel_ids)
-
-        until.true(channels_have_been_created_in_calld, callee.id, caller.id, tries=3)
-
-        return caller.id, callee.id
+        self.real_asterisk = RealAsterisk(self.ari, self.calld_client)
 
     def given_bridged_call_not_stasis(self, caller_uuid=None, callee_uuid=None, caller_variables=None):
         caller_uuid = caller_uuid or str(uuid.uuid4())
@@ -145,7 +103,7 @@ class TestRelocates(RealAsteriskIntegrationTest):
 
     def given_ringing_user_relocate(self):
         user_uuid = str(uuid.uuid4())
-        relocated_channel_id, initiator_channel_id = self.given_bridged_call_stasis(callee_uuid=user_uuid)
+        relocated_channel_id, initiator_channel_id = self.real_asterisk.given_bridged_call_stasis(callee_uuid=user_uuid)
         line_id = SOME_LINE_ID
         token = self.given_user_token(user_uuid)
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
@@ -180,7 +138,7 @@ class TestRelocates(RealAsteriskIntegrationTest):
 
     def given_answered_user_relocate(self):
         user_uuid = SOME_USER_UUID
-        relocated_channel_id, initiator_channel_id = self.given_bridged_call_stasis(callee_uuid=user_uuid)
+        relocated_channel_id, initiator_channel_id = self.real_asterisk.given_bridged_call_stasis(callee_uuid=user_uuid)
         line_id = SOME_LINE_ID
         token = self.given_user_token(user_uuid)
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
@@ -211,7 +169,7 @@ class TestRelocates(RealAsteriskIntegrationTest):
 
     def given_completed_user_relocate(self):
         user_uuid = SOME_USER_UUID
-        relocated_channel_id, initiator_channel_id = self.given_bridged_call_stasis(callee_uuid=user_uuid)
+        relocated_channel_id, initiator_channel_id = self.real_asterisk.given_bridged_call_stasis(callee_uuid=user_uuid)
         line_id = SOME_LINE_ID
         token = self.given_user_token(user_uuid)
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
@@ -400,7 +358,7 @@ class TestCreateUserRelocate(TestRelocates):
     def test_given_channel_does_not_belong_to_user_when_relocate_then_403(self):
         user_uuid = SOME_USER_UUID
         token = self.given_user_token(user_uuid)
-        relocated_channel_id, initiator_channel_id = self.given_bridged_call_stasis()
+        relocated_channel_id, initiator_channel_id = self.real_asterisk.given_bridged_call_stasis()
         self.calld_client.set_token(token)
 
         assert_that(
@@ -419,7 +377,7 @@ class TestCreateUserRelocate(TestRelocates):
         user_uuid = SOME_USER_UUID
         line_id = SOME_LINE_ID
         token = self.given_user_token(user_uuid)
-        relocated_channel_id, initiator_channel_id = self.given_bridged_call_stasis(callee_uuid=user_uuid)
+        relocated_channel_id, initiator_channel_id = self.real_asterisk.given_bridged_call_stasis(callee_uuid=user_uuid)
         self.calld_client.set_token(token)
 
         assert_that(
@@ -438,7 +396,7 @@ class TestCreateUserRelocate(TestRelocates):
         user_uuid = SOME_USER_UUID
         line_id = SOME_LINE_ID
         token = self.given_user_token(user_uuid)
-        relocated_channel_id, initiator_channel_id = self.given_bridged_call_stasis(callee_uuid=user_uuid)
+        relocated_channel_id, initiator_channel_id = self.real_asterisk.given_bridged_call_stasis(callee_uuid=user_uuid)
         self.confd.set_users(MockUser(uuid=user_uuid))
         self.calld_client.set_token(token)
 
@@ -458,7 +416,7 @@ class TestCreateUserRelocate(TestRelocates):
         user_uuid = SOME_USER_UUID
         line_id = SOME_LINE_ID
         token = self.given_user_token(user_uuid)
-        initiator_channel = self.stasis_channel()
+        initiator_channel = self.real_asterisk.stasis_channel()
         initiator_channel.setChannelVar(variable='XIVO_USERUUID', value=user_uuid)
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
         self.confd.set_lines(MockLine(id=line_id, name='recipient_autoanswer@local', protocol='local', context=SOME_CONTEXT))
@@ -497,7 +455,7 @@ class TestCreateUserRelocate(TestRelocates):
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
         self.confd.set_lines(MockLine(id=line_id, name='recipient_autoanswer@local', protocol='local', context=SOME_CONTEXT))
         token = self.given_user_token(user_uuid)
-        relocated_channel_id, initiator_channel_id = self.given_bridged_call_stasis(callee_uuid=user_uuid)
+        relocated_channel_id, initiator_channel_id = self.real_asterisk.given_bridged_call_stasis(callee_uuid=user_uuid)
         events = self.bus.accumulator('calls.relocate.*')
         self.calld_client.set_token(token)
 
@@ -583,7 +541,7 @@ class TestCreateUserRelocate(TestRelocates):
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id], mobile=None))
         self.confd.set_lines(MockLine(id=line_id, context='local'))
         token = self.given_user_token(user_uuid)
-        relocated_channel_id, initiator_channel_id = self.given_bridged_call_stasis(callee_uuid=user_uuid)
+        relocated_channel_id, initiator_channel_id = self.real_asterisk.given_bridged_call_stasis(callee_uuid=user_uuid)
         self.calld_client.set_token(token)
 
         assert_that(
@@ -602,7 +560,7 @@ class TestCreateUserRelocate(TestRelocates):
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id], mobile='recipient_autoanswer'))
         self.confd.set_lines(MockLine(id=line_id, context='local'))
         token = self.given_user_token(user_uuid)
-        relocated_channel_id, initiator_channel_id = self.given_bridged_call_stasis(callee_uuid=user_uuid)
+        relocated_channel_id, initiator_channel_id = self.real_asterisk.given_bridged_call_stasis(callee_uuid=user_uuid)
         self.calld_client.set_token(token)
 
         relocate = self.calld_client.relocates.create_from_user(initiator_channel_id, 'mobile')
@@ -807,7 +765,7 @@ class TestCreateUserRelocate(TestRelocates):
 
     def test_given_call_when_relocate_to_mobile_and_relocate_to_line_then_relocate_completed(self):
         user_uuid = SOME_USER_UUID
-        initiator_channel, callee_channel = self.given_bridged_call_stasis(caller_uuid=user_uuid)
+        initiator_channel, callee_channel = self.real_asterisk.given_bridged_call_stasis(caller_uuid=user_uuid)
         token = self.given_user_token(user_uuid)
         line_id = SOME_LINE_ID
         self.calld_client.set_token(token)
@@ -850,7 +808,7 @@ class TestCreateUserRelocate(TestRelocates):
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
         self.confd.set_lines(MockLine(id=line_id, name='ring@local', protocol='local', context=SOME_CONTEXT))
         token = self.given_user_token(user_uuid)
-        relocated_channel_id, initiator_channel_id = self.given_bridged_call_stasis(callee_uuid=user_uuid)
+        relocated_channel_id, initiator_channel_id = self.real_asterisk.given_bridged_call_stasis(callee_uuid=user_uuid)
         self.calld_client.set_token(token)
 
         relocate = self.calld_client.relocates.create_from_user(initiator_channel_id, 'line', {'line_id': line_id}, timeout=1)

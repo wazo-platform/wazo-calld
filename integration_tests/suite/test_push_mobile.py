@@ -9,7 +9,7 @@ from hamcrest import (
 
 from xivo_test_helpers import until
 
-from .helpers.base import RealAsteriskIntegrationTest
+from .helpers.real_asterisk import RealAsteriskIntegrationTest
 
 
 class TestPushMobile(RealAsteriskIntegrationTest):

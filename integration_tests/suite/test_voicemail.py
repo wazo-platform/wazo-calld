@@ -20,13 +20,13 @@ from xivo_test_helpers.hamcrest.raises import raises
 from wazo_calld_client.exceptions import CalldError
 
 from .helpers.auth import MockUserToken
-from .helpers.base import RealAsteriskIntegrationTest
 from .helpers.confd import (
     MockUser,
     MockVoicemail,
 )
 from .helpers.constants import ASSET_ROOT, VALID_TENANT
 from .helpers.hamcrest_ import HamcrestARIChannel
+from .helpers.real_asterisk import RealAsteriskIntegrationTest
 
 
 VALID_GREETINGS = ('busy', 'unavailable', 'name')

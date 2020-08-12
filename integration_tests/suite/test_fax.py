@@ -1,4 +1,4 @@
-# Copyright 2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import os
@@ -17,13 +17,13 @@ from xivo_test_helpers import until
 from xivo_test_helpers.hamcrest.raises import raises
 from wazo_calld_client.exceptions import CalldError
 
-from .helpers.base import RealAsteriskIntegrationTest
 from .helpers.auth import MockUserToken
 from .helpers.confd import (
     MockLine,
     MockUser,
 )
 from .helpers.constants import ASSET_ROOT, VALID_TOKEN
+from .helpers.real_asterisk import RealAsteriskIntegrationTest
 
 
 class TestFax(RealAsteriskIntegrationTest):
