@@ -26,6 +26,7 @@ from .helpers.confd import MockUser
 from .helpers.confd import MockLine
 from .helpers.constants import (
     ENDPOINT_AUTOANSWER,
+    SOME_CALL_ID,
     SOME_STASIS_APP,
     SOME_STASIS_APP_INSTANCE,
     INVALID_ACL_TOKEN,
@@ -33,7 +34,6 @@ from .helpers.constants import (
 )
 from .helpers.hamcrest_ import HamcrestARIChannel
 
-SOME_CALL_ID = '12345.6789'
 SOME_LINE_ID = 12
 SOME_LINE_NAME = 'line-name'
 SOME_USER_UUID = '68b884c3-515b-4acf-9034-c77896877acb'
