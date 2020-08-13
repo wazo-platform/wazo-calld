@@ -30,3 +30,16 @@ class ParticipantCallNotFound(AdhocConferenceException):
                 'participant_call_id': participant_call_id,
             }
         )
+
+
+class HostPermissionDenied(AdhocConferenceException):
+    def __init__(self, host_call_id, user_uuid):
+        super().__init__(
+            status_code=400,
+            message='Adhoc conference creation error: user does not own host call',
+            error_id='host-call-permission-denied',
+            details={
+                'host_call_id': host_call_id,
+                'user_uuid': user_uuid,
+            }
+        )

@@ -4,6 +4,7 @@
 import os
 import logging
 import tempfile
+import uuid
 
 from contextlib import contextmanager
 from requests.packages import urllib3
@@ -190,3 +191,8 @@ class IntegrationTest(AssetLaunchingTestCase):
             self.calld_client.set_token(VALID_TOKEN)
         except ClientCreateException:
             pass
+
+
+def make_user_uuid():
+    return str(uuid.uuid4())
+

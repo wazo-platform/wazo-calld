@@ -2,7 +2,13 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from ari.exceptions import ARINotFound
-from .exceptions import HostCallNotFound, ParticipantCallNotFound
+from wazo_calld.plugin_helpers.ari_ import Channel
+
+from .exceptions import (
+    HostCallNotFound,
+    HostPermissionDenied,
+    ParticipantCallNotFound,
+)
 
 
 class AdhocConferencesService:
@@ -21,3 +27,7 @@ class AdhocConferencesService:
                 participant_channel = self._ari.channels.get(channelId=participant_call_id)
             except ARINotFound:
                 raise ParticipantCallNotFound(host_call_id)
+
+        host_call_user = Channel(host_call_id, self._ari).user()
+        if host_call_user != user_uuid:
+            raise HostPermissionDenied(host_call_id, user_uuid)
