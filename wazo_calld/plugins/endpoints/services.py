@@ -248,7 +248,7 @@ class ConfdCache:
             if trunk.get('endpoint_sip'):
                 techno = 'sip'
                 name = trunk['endpoint_sip']['name']
-                for key, value in trunk['endpoint_sip'].get('auth_section_options', []):
+                for key, value in trunk['endpoint_sip']['auth_section_options']:
                     if key == 'username':
                         username = value
                         break
