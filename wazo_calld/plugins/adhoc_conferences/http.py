@@ -6,6 +6,8 @@ from flask import request
 from wazo_calld.auth import required_acl
 from wazo_calld.http import AuthResource
 
+from .schemas import adhoc_conference_creation_schema
+
 
 class UserAdhocConferencesResource(AuthResource):
 
@@ -15,7 +17,7 @@ class UserAdhocConferencesResource(AuthResource):
     @required_acl('calld.users.me.conferences.adhoc.create')
     def post(self):
         user_uuid = None
-        request_body = request.get_json(force=True)
+        request_body = adhoc_conference_creation_schema.load(request.get_json(force=True))
         self._adhoc_conference_service.create_from_user(
             request_body['host_call_id'],
             request_body['participant_call_ids'],

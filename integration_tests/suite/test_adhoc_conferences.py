@@ -74,3 +74,11 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
                         'status_code': 400,
                         'error_id': 'host-call-permission-denied',
                     })))
+
+    def test_user_create_adhoc_conference_invalid_request(self):
+        assert_that(calling(self.calld_client.adhoc_conferences.create_from_user)
+                    .with_args(None, None),
+                    raises(CalldError).matching(has_properties({
+                        'status_code': 400,
+                        'error_id': 'invalid-data',
+                    })))
