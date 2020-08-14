@@ -43,3 +43,14 @@ class HostPermissionDenied(AdhocConferenceException):
                 'user_uuid': user_uuid,
             }
         )
+
+
+class AdhocConferenceCreationError(AdhocConferenceException):
+    def __init__(self, message, details=None):
+        details = details or {}
+        super().__init__(
+            status_code=400,
+            message=message,
+            error_id='host-call-creation-error',
+            details=details
+        )
