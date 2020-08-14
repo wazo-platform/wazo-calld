@@ -37,7 +37,10 @@ class TestTrunkBusConsume(IntegrationTest):
         self.confd.set_trunks(
             MockTrunk(
                 trunk_id,
-                endpoint_sip={'name': name, 'username': 'the-username'},
+                endpoint_sip={
+                    'name': name,
+                    'auth_section_options': [['username', 'the-username']],
+                },
                 tenant_uuid=tenant_uuid,
             )
         )
@@ -74,7 +77,10 @@ class TestTrunkBusConsume(IntegrationTest):
         self.confd.set_trunks(
             MockTrunk(
                 trunk_id,
-                endpoint_sip={'name': name, 'username': 'the-username'},
+                endpoint_sip={
+                    'name': name,
+                    'auth_section_options': [['username', 'the-username']],
+                },
                 tenant_uuid=tenant_uuid,
             )
         )
@@ -111,7 +117,10 @@ class TestTrunkBusConsume(IntegrationTest):
         self.confd.set_trunks(
             MockTrunk(
                 trunk_id,
-                endpoint_sip={'name': name, 'username': 'the-username'},
+                endpoint_sip={
+                    'name': name,
+                    'auth_section_options': [['username', 'the-username']],
+                },
                 tenant_uuid=tenant_uuid,
             )
         )
@@ -165,7 +174,10 @@ class TestTrunkBusConsume(IntegrationTest):
         self.confd.set_trunks(
             MockTrunk(
                 trunk_id,
-                endpoint_sip={'name': name, 'username': username},
+                endpoint_sip={
+                    'name': name,
+                    'auth_section_options': [['username', username]],
+                },
                 tenant_uuid=tenant_uuid,
             )
         )
@@ -232,7 +244,10 @@ class TestTrunkBusConsume(IntegrationTest):
         self.confd.set_trunks(
             MockTrunk(
                 trunk_id,
-                endpoint_sip={'name': name, 'username': username},
+                endpoint_sip={
+                    'name': name,
+                    'auth_section_options': [['username', username]],
+                },
                 tenant_uuid=tenant_uuid,
             )
         )
@@ -277,7 +292,10 @@ class TestLineBusConsume(IntegrationTest):
                 line_id,
                 name=name,
                 protocol='sip',
-                endpoint_sip={'name': name, 'username': 'the-username'},
+                endpoint_sip={
+                    'name': name,
+                    'auth_section_options': [['username', 'the-username']],
+                },
                 tenant_uuid=tenant_uuid,
             )
         )
@@ -316,7 +334,10 @@ class TestLineBusConsume(IntegrationTest):
                 line_id,
                 name=name,
                 protocol='sip',
-                endpoint_sip={'name': name, 'username': 'the-username'},
+                endpoint_sip={
+                    'name': name,
+                    'auth_section_options': [['username', 'the-username']],
+                },
                 tenant_uuid=tenant_uuid,
             )
         )
@@ -355,7 +376,10 @@ class TestLineBusConsume(IntegrationTest):
                 line_id,
                 name=name,
                 protocol='sip',
-                endpoint_sip={'name': name, 'username': 'the-username'},
+                endpoint_sip={
+                    'name': name,
+                    'auth_section_options': [['username', 'the-username']],
+                },
                 tenant_uuid=tenant_uuid,
             )
         )
