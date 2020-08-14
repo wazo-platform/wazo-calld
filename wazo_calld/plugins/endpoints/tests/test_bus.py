@@ -1,4 +1,4 @@
-# Copyright 2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from contextlib import contextmanager
@@ -183,7 +183,7 @@ class TestBusEvent(TestCase):
                 'id': 52,
                 'name': name,
                 'tenant_uuid': tenant_uuid,
-                'username': username,
+                'auth_section_options': [['username', username]],
             },
             'line': {
                 'id': line_id,
@@ -207,7 +207,7 @@ class TestBusEvent(TestCase):
                 'id': 45,
                 'name': name,
                 'tenant_uuid': tenant_uuid,
-                'username': username,
+                'auth_section_options': [['username', username]],
             },
             'trunk': {
                 'id': trunk_id,
@@ -407,7 +407,7 @@ class TestBusEvent(TestCase):
             'id': s.endpoint_id,
             'name': s.name,
             'tenant_uuid': s.tenant_uuid,
-            'username': s.username,
+            'auth_section_options': [['username', s.username]],
             'trunk': None,
             'line': {'id': s.line_id},
         }
@@ -423,7 +423,7 @@ class TestBusEvent(TestCase):
             'id': s.endpoint_id,
             'name': s.name,
             'tenant_uuid': s.tenant_uuid,
-            'username': s.username,
+            'auth_section_options': [['username', s.username]],
             'trunk': {'id': s.trunk_id},
             'line': None,
         }
@@ -470,7 +470,7 @@ class TestBusEvent(TestCase):
             'id': s.endpoint_id,
             'name': s.name,
             'tenant_uuid': s.tenant_uuid,
-            'username': s.username,
+            'auth_section_options': [['username', s.username]],
             'trunk': None,
             'line': {'id': s.line_id},
         }
