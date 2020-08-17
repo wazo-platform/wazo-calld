@@ -26,10 +26,8 @@ from xivo_test_helpers import until
 
 from .helpers.ari_ import MockChannel
 from .helpers.auth import MockUserToken
-from .helpers.base import (
-    IntegrationTest,
-    RealAsteriskIntegrationTest,
-)
+from .helpers.base import IntegrationTest
+from .helpers.real_asterisk import RealAsteriskIntegrationTest
 from .helpers.constants import ENDPOINT_AUTOANSWER, VALID_TOKEN, VALID_TENANT
 from .helpers.confd import (
     MockSwitchboard,
