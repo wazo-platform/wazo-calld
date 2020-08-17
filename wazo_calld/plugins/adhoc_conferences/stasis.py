@@ -20,6 +20,7 @@ class AdhocConferencesStasis:
 
     def _subscribe(self):
         self.ari.on_channel_event('StasisStart', self.on_stasis_start)
+        self.ari.on_channel_event('ChannelLeftBridge', self.on_channel_left_bridge)
 
     def initialize(self):
         self._subscribe()
@@ -51,3 +52,65 @@ class AdhocConferencesStasis:
         channel_id = event['channel']['id']
         logger.debug('adhoc conference %s: bridging participant %s', adhoc_conference_id, channel_id)
         bridge.addChannel(channel=channel_id)
+
+        channel = event_objects['channel']
+        try:
+            is_adhoc_conference_host = channel.getChannelVar(variable='WAZO_IS_ADHOC_CONFERENCE_HOST')['value'] == 'true'
+        except ARINotFound:
+            logger.error('adhoc conference %s: channel %s hungup too early or variable not found', adhoc_conference_id, channel_id)
+            return
+
+        if is_adhoc_conference_host:
+            try:
+                bridge.setBridgeVar(variable='WAZO_ADHOC_CONFERENCE_HOST', value=channel_id)
+            except ARINotFound:
+                logger.error('adhoc conference %s: bridge was destroyed too early when join')
+                return
+
+    def on_channel_left_bridge(self, channel, event):
+        adhoc_conference_id = event['bridge']['id']
+        channel_id = event['channel']['id']
+
+        if not self._channel_left_adhoc_conference(channel_id, adhoc_conference_id):
+            logger.debug('adhoc conference: ignoring channel %s left bridge', channel_id)
+            return
+
+        logger.debug('adhoc conference %s: channel %s left', adhoc_conference_id, channel_id)
+
+        try:
+            adhoc_conference_host_channel_id = self.ari.bridges.getBridgeVar(bridgeId=adhoc_conference_id, variable='WAZO_ADHOC_CONFERENCE_HOST').get('WAZO_ADHOC_CONFERENCE_HOST')
+        except ARINotFound:
+            logger.error('adhoc conference %s: bridge was destroyed too early when leaving')
+            return
+
+        if adhoc_conference_host_channel_id == channel_id:
+            logger.debug('adhoc conference %s: host %s left, hanging up all participants', adhoc_conference_id, channel_id)
+            self._hangup_all_participants(adhoc_conference_id)
+
+    def _hangup_all_participants(self, adhoc_conference_id):
+        try:
+            channel_ids = self.ari.bridges.get(bridgeId=adhoc_conference_id).json['channels']
+        except ARINotFound:
+            logger.error('adhoc conference %s: bridge was destroyed too early when destroying', adhoc_conference_id)
+            return
+
+        logger.debug('adhoc conference %s: found %s participants', adhoc_conference_id, len(channel_ids))
+        for channel_id in channel_ids:
+            logger.debug('adhoc conference %s: hanging up participant %s', adhoc_conference_id, channel_id)
+            try:
+                self.ari.channels.hangup(channelId=channel_id)
+            except ARINotFound:
+                pass
+
+        logger.debug('adhoc conference %s: destroying bridge', adhoc_conference_id)
+        try:
+            self.ari.bridges.destroy(bridgeId=adhoc_conference_id)
+        except ARINotFound:
+            pass
+
+    def _channel_left_adhoc_conference(self, channel_id, bridge_id):
+        try:
+            self.ari.bridges.getBridgeVar(bridgeId=bridge_id, variable='WAZO_ADHOC_CONFERENCE_HOST').get('WAZO_ADHOC_CONFERENCE_HOST')
+        except ARINotFound:
+            return False
+        return True
