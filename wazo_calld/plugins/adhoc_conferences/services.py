@@ -64,8 +64,10 @@ class AdhocConferencesService:
     def _find_call_peer(self, call_id):
         try:
             return Channel(call_id, self._ari).only_connected_channel().id
-        except (TooManyChannels, NotEnoughChannels):
-            raise  # replace me
+        except NotEnoughChannels:
+            raise AdhocConferenceCreationError(f'could not determine peer of call {call_id}: call has no peers')
+        except TooManyChannels as e:
+            raise AdhocConferenceCreationError(f'could not determine peer of call {call_id}: call has {len(e.channels)} peers')
 
     def _redirect_host(self, host_call_id, host_peer_channel_id, adhoc_conference_id):
         try:
