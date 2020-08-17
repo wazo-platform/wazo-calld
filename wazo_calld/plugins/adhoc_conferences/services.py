@@ -3,7 +3,7 @@
 
 import uuid
 
-from ari.exceptions import ARINotFound
+from ari.exceptions import ARIException, ARINotFound
 
 from wazo_calld.plugin_helpers.ari_ import Channel
 from wazo_calld.plugin_helpers import ami
@@ -54,11 +54,21 @@ class AdhocConferencesService:
             raise AdhocConferenceCreationError('participant call was hungup')
 
         logger.debug('adhoc conference %s: redirecting host call %s and peer %s', adhoc_conference_id, host_call_id, host_peer_channel_id)
+        try:
+            host_channel.setChannelVar(variable='WAZO_ADHOC_CONFERENCE_ID',
+                                       value=adhoc_conference_id,
+                                       bypassStasis=True)
+            host_peer_channel.setChannelVar(variable='WAZO_ADHOC_CONFERENCE_ID',
+                                            value=adhoc_conference_id,
+                                            bypassStasis=True)
+        except ARIException as e:
+            logger.exception('ARI error: %s', e)
+            return
         ami.redirect(
             self._amid_client,
             host_peer_channel.json['name'],
-            context='adhoc_conference',
-            exten=adhoc_conference_id,
+            context='convert_to_stasis',
+            exten='adhoc_conference',
             extra_channel=host_channel.json['name'],
         )
 
@@ -77,13 +87,20 @@ class AdhocConferencesService:
                 raise AdhocConferenceCreationError('participant call was hungup')
 
             logger.debug('adhoc conference %s: redirecting participant call %s and discarding peer %s', adhoc_conference_id, participant_channel_id, discarded_host_channel_id)
+            try:
+                participant_channel.setChannelVar(variable='WAZO_ADHOC_CONFERENCE_ID',
+                                                  value=adhoc_conference_id,
+                                                  bypassStasis=True)
+            except ARIException as e:
+                logger.exception('ARI error: %s', e)
+                return
             ami.redirect(
                 self._amid_client,
                 participant_channel.json['name'],
-                context='adhoc_conference',
-                exten=adhoc_conference_id,
+                context='convert_to_stasis',
+                exten='adhoc_conference',
                 extra_channel=discarded_host_channel.json['name'],
-                extra_context='adhoc_conference',
+                extra_context='convert_to_stasis',
                 extra_exten='h'
             )
 
