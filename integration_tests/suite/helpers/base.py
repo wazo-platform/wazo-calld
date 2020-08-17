@@ -195,4 +195,3 @@ class IntegrationTest(AssetLaunchingTestCase):
 
 def make_user_uuid():
     return str(uuid.uuid4())
-
