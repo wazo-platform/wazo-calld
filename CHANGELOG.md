@@ -1,5 +1,11 @@
 # Changelog
 
+## 20.12
+
+* New API to create adhoc conferences
+
+  * `POST /users/me/conferences/adhoc`
+
 ## 20.11
 
 * New API to hold calls
