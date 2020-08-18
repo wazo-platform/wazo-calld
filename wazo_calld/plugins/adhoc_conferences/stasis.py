@@ -11,6 +11,8 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+ADHOC_CONFERENCE_STASIS_APP = 'adhoc_conference'
+
 
 class AdhocConferencesStasis:
 
@@ -26,20 +28,20 @@ class AdhocConferencesStasis:
 
     def initialize(self):
         self._subscribe()
-        self._core_ari.register_application(DEFAULT_APPLICATION_NAME)
+        self._core_ari.register_application(ADHOC_CONFERENCE_STASIS_APP)
 
     def on_stasis_start(self, event_objects, event):
+        if event['application'] != ADHOC_CONFERENCE_STASIS_APP:
+            return
+
         logger.debug('on_stasis_start: %(id)s (%(name)s)', event['channel'])
         try:
-            sub_app, adhoc_conference_id = event['args']
+            (adhoc_conference_id,) = event['args']
         except ValueError:
             logger.debug('ignoring StasisStart event: channel %s, app %s, args %s',
                          event['channel']['name'],
                          event['application'],
                          event['args'])
-            return
-
-        if sub_app != 'adhoc_conference':
             return
 
         with self.adhoc_conference_creation_lock:
@@ -72,12 +74,11 @@ class AdhocConferencesStasis:
                 return
 
     def on_channel_left_bridge(self, channel, event):
+        if event['application'] != ADHOC_CONFERENCE_STASIS_APP:
+            return
+
         adhoc_conference_id = event['bridge']['id']
         channel_id = event['channel']['id']
-
-        if not self._channel_left_adhoc_conference(channel_id, adhoc_conference_id):
-            logger.debug('adhoc conference: ignoring channel %s left bridge', channel_id)
-            return
 
         logger.debug('adhoc conference %s: channel %s left', adhoc_conference_id, channel_id)
 
@@ -119,10 +120,3 @@ class AdhocConferencesStasis:
             pass
 
         self._notifier.deleted(adhoc_conference_id, host_user_uuid)
-
-    def _channel_left_adhoc_conference(self, channel_id, bridge_id):
-        try:
-            Bridge(bridge_id, self.ari).global_variables.get(variable='WAZO_ADHOC_CONFERENCE_HOST')
-        except KeyError:
-            return False
-        return True
