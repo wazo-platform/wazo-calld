@@ -70,7 +70,7 @@ class AdhocConferencesStasis:
             try:
                 bridge.setBridgeVar(variable='WAZO_ADHOC_CONFERENCE_HOST_USER_UUID', value=host_user_uuid)
             except ARINotFound:
-                logger.error('adhoc conference %s: bridge was destroyed too early when join')
+                logger.error('adhoc conference %s: bridge was destroyed too early when join', adhoc_conference_id)
                 return
 
     def on_channel_left_bridge(self, channel, event):
@@ -85,7 +85,7 @@ class AdhocConferencesStasis:
         try:
             adhoc_conference_host_channel_id = Bridge(adhoc_conference_id, self.ari).global_variables.get(variable='WAZO_ADHOC_CONFERENCE_HOST')
         except KeyError:
-            logger.error('adhoc conference %s: could not find conference')
+            logger.error('adhoc conference %s: could not find conference', adhoc_conference_id)
             return
 
         if adhoc_conference_host_channel_id == channel_id:
