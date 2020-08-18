@@ -267,3 +267,31 @@ class Bridge:
             GlobalVariableAdapter(self._ari),
             'WAZO_BRIDGE_{bridge_id}_VARIABLE_{{}}'.format(bridge_id=self.id)
         )
+
+    def has_lone_channel(self):
+        try:
+            bridge = self._ari.bridges.get(bridgeId=self.id)
+        except ARINotFound:
+            return False
+
+        return len(bridge.json['channels']) == 1
+
+    def is_empty(self):
+        try:
+            bridge = self._ari.bridges.get(bridgeId=self.id)
+        except ARINotFound:
+            return False
+
+        return len(bridge.json['channels']) == 0
+
+    def hangup_all(self):
+        try:
+            bridge = self._ari.bridges.get(bridgeId=self.id)
+        except ARINotFound:
+            return
+
+        for channel_id in bridge.json['channels']:
+            try:
+                self._ari.channels.hangup(channelId=channel_id)
+            except ARINotFound:
+                pass

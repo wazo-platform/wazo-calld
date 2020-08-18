@@ -4,7 +4,6 @@
 import threading
 
 from ari.exceptions import ARINotFound
-from wazo_calld.ari_ import DEFAULT_APPLICATION_NAME
 from wazo_calld.plugin_helpers.ari_ import Bridge, Channel
 
 import logging
@@ -25,6 +24,7 @@ class AdhocConferencesStasis:
     def _subscribe(self):
         self.ari.on_channel_event('StasisStart', self.on_stasis_start)
         self.ari.on_channel_event('ChannelLeftBridge', self.on_channel_left_bridge)
+        self.ari.on_bridge_event('BridgeDestroyed', self.on_bridge_destroyed)
 
     def initialize(self):
         self._subscribe()
@@ -53,6 +53,11 @@ class AdhocConferencesStasis:
                     type='mixing',
                     bridgeId=adhoc_conference_id,
                 )
+                self.ari.applications.subscribe(
+                    applicationName=ADHOC_CONFERENCE_STASIS_APP,
+                    eventSource=f'bridge:{bridge.id}',
+                )
+
         channel_id = event['channel']['id']
         logger.debug('adhoc conference %s: bridging participant %s', adhoc_conference_id, channel_id)
         bridge.addChannel(channel=channel_id)
@@ -65,13 +70,10 @@ class AdhocConferencesStasis:
             return
 
         if is_adhoc_conference_host:
-            Bridge(adhoc_conference_id, self.ari).global_variables.set('WAZO_ADHOC_CONFERENCE_HOST', channel_id)
+            bridge_helper = Bridge(bridge.id, self.ari)
+            bridge_helper.global_variables.set('WAZO_HOST_CHANNEL_ID', channel_id)
             host_user_uuid = Channel(channel_id, self.ari).user()
-            try:
-                bridge.setBridgeVar(variable='WAZO_ADHOC_CONFERENCE_HOST_USER_UUID', value=host_user_uuid)
-            except ARINotFound:
-                logger.error('adhoc conference %s: bridge was destroyed too early when join', adhoc_conference_id)
-                return
+            bridge_helper.global_variables.set('WAZO_HOST_USER_UUID', host_user_uuid)
 
     def on_channel_left_bridge(self, channel, event):
         if event['application'] != ADHOC_CONFERENCE_STASIS_APP:
@@ -82,23 +84,27 @@ class AdhocConferencesStasis:
 
         logger.debug('adhoc conference %s: channel %s left', adhoc_conference_id, channel_id)
 
+        bridge_helper = Bridge(adhoc_conference_id, self.ari)
         try:
-            adhoc_conference_host_channel_id = Bridge(adhoc_conference_id, self.ari).global_variables.get(variable='WAZO_ADHOC_CONFERENCE_HOST')
+            adhoc_conference_host_channel_id = bridge_helper.global_variables.get(variable='WAZO_HOST_CHANNEL_ID')
         except KeyError:
-            logger.error('adhoc conference %s: could not find conference', adhoc_conference_id)
+            logger.error('adhoc conference %s: could not retrieve host channel id', adhoc_conference_id)
             return
 
         if adhoc_conference_host_channel_id == channel_id:
             logger.debug('adhoc conference %s: host %s left, hanging up all participants', adhoc_conference_id, channel_id)
             self._hangup_all_participants(adhoc_conference_id)
+        elif bridge_helper.has_lone_channel():
+            logger.debug('adhoc conference %s: only one participant %s left, hanging up', adhoc_conference_id, channel_id)
+            bridge_helper.hangup_all()
+        elif bridge_helper.is_empty():
+            logger.debug('adhoc conference %s: bridge is empty, destroying', adhoc_conference_id)
+            try:
+                self.ari.bridges.destroy(bridgeId=adhoc_conference_id)
+            except ARINotFound:
+                pass
 
     def _hangup_all_participants(self, adhoc_conference_id):
-        try:
-            host_user_uuid = self.ari.bridges.getBridgeVar(bridgeId=adhoc_conference_id, variable='WAZO_ADHOC_CONFERENCE_HOST_USER_UUID').get('WAZO_ADHOC_CONFERENCE_HOST_USER_UUID')
-        except ARINotFound:
-            logger.error('adhoc conference %s: bridge was destroyed too early when leaving (user_uuid)', adhoc_conference_id)
-            return
-
         try:
             channel_ids = self.ari.bridges.get(bridgeId=adhoc_conference_id).json['channels']
         except ARINotFound:
@@ -119,4 +125,19 @@ class AdhocConferencesStasis:
         except ARINotFound:
             pass
 
-        self._notifier.deleted(adhoc_conference_id, host_user_uuid)
+    def on_bridge_destroyed(self, bridge, event):
+        if event['application'] != ADHOC_CONFERENCE_STASIS_APP:
+            return
+
+        logger.debug('adhoc conference %s: bridge was destroyed', bridge.id)
+
+        try:
+            host_user_uuid = Bridge(bridge.id, self.ari).global_variables.get('WAZO_HOST_USER_UUID')
+        except KeyError:
+            logger.error('adhoc conference %s: could not retrieve host user uuid', bridge.id)
+            return
+
+        self._notifier.deleted(bridge.id, host_user_uuid)
+
+        host_user_uuid = Bridge(bridge.id, self.ari).global_variables.unset('WAZO_HOST_USER_UUID')
+        host_user_uuid = Bridge(bridge.id, self.ari).global_variables.unset('WAZO_HOST_CHANNEL_ID')
