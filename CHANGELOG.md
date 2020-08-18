@@ -5,6 +5,11 @@
 * New API to create adhoc conferences
 
   * `POST /users/me/conferences/adhoc`
+  
+* New events for adhoc conferences:
+
+  * `adhoc_conference_created`
+  * `adhoc_conference_deleted`
 
 ## 20.11
 

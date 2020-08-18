@@ -5,7 +5,7 @@ import threading
 
 from ari.exceptions import ARINotFound
 from wazo_calld.ari_ import DEFAULT_APPLICATION_NAME
-from wazo_calld.plugin_helpers.ari_ import Bridge
+from wazo_calld.plugin_helpers.ari_ import Bridge, Channel
 
 import logging
 
@@ -14,9 +14,10 @@ logger = logging.getLogger(__name__)
 
 class AdhocConferencesStasis:
 
-    def __init__(self, ari):
+    def __init__(self, ari, notifier):
         self.ari = ari.client
         self._core_ari = ari
+        self._notifier = notifier
         self.adhoc_conference_creation_lock = threading.Lock()
 
     def _subscribe(self):
@@ -63,6 +64,12 @@ class AdhocConferencesStasis:
 
         if is_adhoc_conference_host:
             Bridge(adhoc_conference_id, self.ari).global_variables.set('WAZO_ADHOC_CONFERENCE_HOST', channel_id)
+            host_user_uuid = Channel(channel_id, self.ari).user()
+            try:
+                bridge.setBridgeVar(variable='WAZO_ADHOC_CONFERENCE_HOST_USER_UUID', value=host_user_uuid)
+            except ARINotFound:
+                logger.error('adhoc conference %s: bridge was destroyed too early when join')
+                return
 
     def on_channel_left_bridge(self, channel, event):
         adhoc_conference_id = event['bridge']['id']
@@ -86,6 +93,12 @@ class AdhocConferencesStasis:
 
     def _hangup_all_participants(self, adhoc_conference_id):
         try:
+            host_user_uuid = self.ari.bridges.getBridgeVar(bridgeId=adhoc_conference_id, variable='WAZO_ADHOC_CONFERENCE_HOST_USER_UUID').get('WAZO_ADHOC_CONFERENCE_HOST_USER_UUID')
+        except ARINotFound:
+            logger.error('adhoc conference %s: bridge was destroyed too early when leaving (user_uuid)', adhoc_conference_id)
+            return
+
+        try:
             channel_ids = self.ari.bridges.get(bridgeId=adhoc_conference_id).json['channels']
         except ARINotFound:
             logger.error('adhoc conference %s: bridge was destroyed too early when destroying', adhoc_conference_id)
@@ -104,6 +117,8 @@ class AdhocConferencesStasis:
             self.ari.bridges.destroy(bridgeId=adhoc_conference_id)
         except ARINotFound:
             pass
+
+        self._notifier.deleted(adhoc_conference_id, host_user_uuid)
 
     def _channel_left_adhoc_conference(self, channel_id, bridge_id):
         try:

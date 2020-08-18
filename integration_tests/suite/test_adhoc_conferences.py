@@ -9,6 +9,7 @@ from hamcrest import (
     assert_that,
     calling,
     has_entries,
+    has_item,
     has_length,
     has_properties,
 )
@@ -120,6 +121,7 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
         user_uuid = make_user_uuid()
         token = self.make_user_token(user_uuid)
         self.calld_client.set_token(token)
+        host_events = self.bus.accumulator('adhoc_conferences.users.{}.#'.format(user_uuid))
 
         host_call1_id, participant1_call_id = self.real_asterisk.given_bridged_call_stasis(caller_uuid=user_uuid)
         host_call2_id, participant2_call_id = self.real_asterisk.given_bridged_call_stasis(caller_uuid=user_uuid)
@@ -144,7 +146,16 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
             }))
             assert_that(host_call2_id, self.c.is_hungup())
         until.assert_(calls_are_bridged, timeout=10)
-        # todo: expect bus event
+
+        def bus_events_are_sent():
+            assert_that(host_events.accumulate(),
+                        has_item(has_entries({
+                            'name': 'adhoc_conference_created',
+                            'data': {
+                                'conference_id': adhoc_conference['conference_id'],
+                                'user_uuid': user_uuid,
+                            }})))
+        until.assert_(bus_events_are_sent, timeout=10)
 
     def test_user_create_adhoc_conference_participant_in_conference(self):
         pass
@@ -203,8 +214,9 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
         user_uuid = make_user_uuid()
         token = self.make_user_token(user_uuid)
         self.calld_client.set_token(token)
-        _, call_ids = self.given_adhoc_conference(user_uuid, participant_count=3)
+        adhoc_conference_id, call_ids = self.given_adhoc_conference(user_uuid, participant_count=3)
         host_call_id, participant1_call_id, participant2_call_id = call_ids
+        host_events = self.bus.accumulator('adhoc_conferences.users.{}.#'.format(user_uuid))
 
         self.ari.channels.hangup(channelId=host_call_id)
 
@@ -213,3 +225,13 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
             assert_that(participant1_call_id, self.c.is_hungup())
             assert_that(participant2_call_id, self.c.is_hungup())
         until.assert_(calls_are_hungup, timeout=10)
+
+        def bus_events_are_sent():
+            assert_that(host_events.accumulate(),
+                        has_item(has_entries({
+                            'name': 'adhoc_conference_deleted',
+                            'data': {
+                                'conference_id': adhoc_conference_id,
+                                'user_uuid': user_uuid,
+                            }})))
+        until.assert_(bus_events_are_sent, timeout=10)

@@ -8,6 +8,7 @@ from xivo.pubsub import CallbackCollector
 from .http import (
     UserAdhocConferencesResource,
 )
+from .notifier import AdhocConferencesNotifier
 from .services import AdhocConferencesService
 from .stasis import AdhocConferencesStasis
 
@@ -17,6 +18,7 @@ class Plugin:
     def load(self, dependencies):
         api = dependencies['api']
         ari = dependencies['ari']
+        bus_publisher = dependencies['bus_publisher']
         config = dependencies['config']
         token_changed_subscribe = dependencies['token_changed_subscribe']
 
@@ -25,10 +27,11 @@ class Plugin:
 
         token_changed_subscribe(amid_client.set_token)
 
-        adhoc_conferences_service = AdhocConferencesService(amid_client, ari.client)
+        notifier = AdhocConferencesNotifier(bus_publisher)
+        adhoc_conferences_service = AdhocConferencesService(amid_client, ari.client, notifier)
 
         startup_callback_collector = CallbackCollector()
-        adhoc_conferences_stasis = AdhocConferencesStasis(ari)
+        adhoc_conferences_stasis = AdhocConferencesStasis(ari, notifier)
         ari.client_initialized_subscribe(startup_callback_collector.new_source())
         startup_callback_collector.subscribe(adhoc_conferences_stasis.initialize)
 

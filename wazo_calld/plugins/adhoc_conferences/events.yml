@@ -1,0 +1,13 @@
+events:
+  adhoc_conference_created:
+    summary: An adhoc conference was created
+    routing_key: "adhoc_conferences.users.{user_uuid}.created"
+    required_acl: "adhoc_conferences.users.{user_uuid}.created"
+    schema:
+      '$ref': '#/definitions/AdhocConference'
+definitions:
+  AdhocConference:
+    type: object
+    properties:
+      conference_id:
+        type: string
