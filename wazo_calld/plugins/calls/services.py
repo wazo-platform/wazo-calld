@@ -258,7 +258,8 @@ class CallsService:
 
         return new_channel.id
 
-    def make_call_from_channel(self, ari, channel):
+    @staticmethod
+    def make_call_from_channel(ari, channel):
         channel_helper = Channel(channel.id, ari)
         call = Call(channel.id)
         call.creation_time = channel.json['creationtime']
@@ -279,7 +280,8 @@ class CallsService:
 
         return call
 
-    def make_call_from_ami_event(self, event):
+    @staticmethod
+    def make_call_from_ami_event(event):
         event_variables = event['ChanVariable']
         call = Call(event['Uniqueid'])
         call.status = event['ChannelStateDesc']
