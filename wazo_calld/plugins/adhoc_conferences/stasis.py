@@ -119,12 +119,6 @@ class AdhocConferencesStasis:
             except ARINotFound:
                 pass
 
-        logger.debug('adhoc conference %s: destroying bridge', adhoc_conference_id)
-        try:
-            self.ari.bridges.destroy(bridgeId=adhoc_conference_id)
-        except ARINotFound:
-            pass
-
     def on_bridge_destroyed(self, bridge, event):
         if event['application'] != ADHOC_CONFERENCE_STASIS_APP:
             return
