@@ -131,7 +131,6 @@ paths:
       description: '**Required ACL:** `calld.calls.{call_id}.hold.start.update`
 
 
-      All this route does is send an event on the bus.
       This works **only** if the phone brand has a corresponding phoned plugin
       to handle the event.
       '
@@ -154,7 +153,6 @@ paths:
       description: '**Required ACL:** `calld.calls.{call_id}.hold.stop.update`
 
 
-      All this route does is send an event on the bus.
       This works **only** if the phone brand has a corresponding phoned plugin
       to handle the event.
       '
