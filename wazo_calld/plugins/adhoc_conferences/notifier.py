@@ -4,7 +4,9 @@
 from xivo_bus.resources.adhoc_conference.event import (
     AdhocConferenceCreatedUserEvent,
     AdhocConferenceDeletedUserEvent,
+    AdhocConferenceParticipantLeftUserEvent,
 )
+from wazo_calld.plugins.calls.schemas import call_schema
 
 
 class AdhocConferencesNotifier:
@@ -25,3 +27,14 @@ class AdhocConferencesNotifier:
         }
         event = AdhocConferenceDeletedUserEvent(adhoc_conference_id, host_user_uuid)
         self._bus_producer.publish(event, headers=headers)
+
+    def participant_left(self, adhoc_conference_id, other_participant_user_uuids, participant_call):
+        for other_participant_user_uuid in other_participant_user_uuids:
+            participant_call_body = call_schema.dump(participant_call)
+            self._bus_producer.publish(
+                AdhocConferenceParticipantLeftUserEvent(
+                    adhoc_conference_id,
+                    other_participant_user_uuid,
+                    participant_call_body,
+                )
+            )

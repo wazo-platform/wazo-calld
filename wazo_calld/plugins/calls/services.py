@@ -295,6 +295,24 @@ class CallsService:
 
         return call
 
+    @staticmethod
+    def make_call_from_dead_channel(channel):
+        event_variables = channel.json['channelvars']
+        call = Call(channel.id)
+        call.creation_time = channel.json['creationtime']
+        call.status = channel.json['state']
+        call.caller_id_name = channel.json['caller']['name']
+        call.caller_id_number = channel.json['caller']['number']
+        call.peer_caller_id_name = channel.json['connected']['name']
+        call.peer_caller_id_number = channel.json['connected']['number']
+        call.user_uuid = event_variables.get('WAZO_DEREFERENCED_USERUUID') or event_variables.get('XIVO_USERUUID') or None
+        call.dialed_extension = event_variables.get('XIVO_BASE_EXTEN') or None
+        call.bridges = []
+        call.talking_to = {}
+        call.sip_call_id = event_variables.get('WAZO_SIP_CALL_ID') or None
+
+        return call
+
     def send_dtmf(self, call_id, digits):
         try:
             self._ari.channels.get(channelId=call_id)

@@ -5,6 +5,7 @@ import threading
 
 from ari.exceptions import ARINotFound
 from wazo_calld.plugin_helpers.ari_ import Bridge, Channel
+from wazo_calld.plugins.calls.services import CallsService
 
 import logging
 
@@ -85,6 +86,10 @@ class AdhocConferencesStasis:
         logger.debug('adhoc conference %s: channel %s left', adhoc_conference_id, channel_id)
 
         bridge_helper = Bridge(adhoc_conference_id, self.ari)
+
+        participant_call = CallsService.make_call_from_dead_channel(channel)
+        other_participant_uuids = bridge_helper.valid_user_uuids()
+        self._notifier.participant_left(adhoc_conference_id, other_participant_uuids, participant_call)
 
         if bridge_helper.has_lone_channel():
             logger.debug('adhoc conference %s: only one participant %s left, hanging up', adhoc_conference_id, channel_id)

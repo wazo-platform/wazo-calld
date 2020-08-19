@@ -295,3 +295,11 @@ class Bridge:
                 self._ari.channels.hangup(channelId=channel_id)
             except ARINotFound:
                 pass
+
+    def valid_user_uuids(self):
+        try:
+            bridge = self._ari.bridges.get(bridgeId=self.id)
+        except ARINotFound:
+            return set()
+
+        return set(Channel(channel_id, self._ari).user() for channel_id in bridge.json['channels'])

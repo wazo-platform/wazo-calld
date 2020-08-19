@@ -43,14 +43,24 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
         self.auth.set_token(MockUserToken(token_id, tenant_uuid=tenant_uuid, user_uuid=user_uuid))
         return token_id
 
-    def given_adhoc_conference(self, user_uuid, participant_count):
+    def given_adhoc_conference(self, *user_uuids, participant_count):
         participant_call_ids = []
+        user_uuids = list(user_uuids)
 
-        host_call_id, participant_call_id = self.real_asterisk.given_bridged_call_stasis(caller_uuid=user_uuid)
+        host_uuid = user_uuids.pop(0)
+        try:
+            participant_uuid = user_uuids.pop(0)
+        except IndexError:
+            participant_uuid = None
+        host_call_id, participant_call_id = self.real_asterisk.given_bridged_call_stasis(caller_uuid=host_uuid, callee_uuid=participant_uuid)
         participant_call_ids.append(participant_call_id)
 
         for _ in range(participant_count - 2):
-            _, participant_call_id = self.real_asterisk.given_bridged_call_stasis(caller_uuid=user_uuid)
+            try:
+                participant_uuid = user_uuids.pop(0)
+            except IndexError:
+                participant_uuid = None
+            _, participant_call_id = self.real_asterisk.given_bridged_call_stasis(caller_uuid=host_uuid, callee_uuid=participant_uuid)
             participant_call_ids.append(participant_call_id)
 
         adhoc_conference = self.calld_client.adhoc_conferences.create_from_user(
@@ -176,11 +186,15 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
         pass
 
     def test_extra_participant_hangup(self):
-        user_uuid = make_user_uuid()
-        token = self.make_user_token(user_uuid)
+        host_uuid = make_user_uuid()
+        participant1_uuid = make_user_uuid()
+        participant2_uuid = make_user_uuid()
+        token = self.make_user_token(host_uuid)
         self.calld_client.set_token(token)
-        _, call_ids = self.given_adhoc_conference(user_uuid, participant_count=3)
+        adhoc_conference_id, call_ids = self.given_adhoc_conference(host_uuid, participant1_uuid, participant2_uuid, participant_count=3)
         host_call_id, participant1_call_id, participant2_call_id = call_ids
+        host_events = self.bus.accumulator('adhoc_conferences.users.{}.#'.format(host_uuid))
+        participant1_events = self.bus.accumulator('adhoc_conferences.users.{}.#'.format(participant1_uuid))
 
         self.ari.channels.hangup(channelId=participant2_call_id)
 
@@ -194,7 +208,30 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
             assert_that(participant2_call_id, self.c.is_hungup())
         until.assert_(calls_are_still_bridged, timeout=10)
 
-        # todo: expect bus event
+        def bus_events_are_sent():
+            assert_that(host_events.accumulate(),
+                        has_item(has_entries({
+                            'name': 'adhoc_conference_participant_left',
+                            'data': has_entries({
+                                'conference_id': adhoc_conference_id,
+                                'user_uuid': host_uuid,
+                                'participant_call': has_entries({
+                                    'call_id': participant2_call_id,
+                                    'user_uuid': participant2_uuid,
+                                }),
+                            })})))
+            assert_that(participant1_events.accumulate(),
+                        has_item(has_entries({
+                            'name': 'adhoc_conference_participant_left',
+                            'data': has_entries({
+                                'conference_id': adhoc_conference_id,
+                                'user_uuid': participant1_uuid,
+                                'participant_call': has_entries({
+                                    'call_id': participant2_call_id,
+                                    'user_uuid': participant2_uuid,
+                                }),
+                            })})))
+        until.assert_(bus_events_are_sent, timeout=10)
 
     def test_last_participant_hangup(self):
         user_uuid = make_user_uuid()
