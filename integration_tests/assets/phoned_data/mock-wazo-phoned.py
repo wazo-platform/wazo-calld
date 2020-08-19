@@ -65,6 +65,11 @@ def stop_hold(endpoint):
     return '', 204
 
 
+@app.route("/0.1/endpoints/<endpoint>/answer", methods=['PUT'])
+def answer(endpoint):
+    return '', 204
+
+
 if __name__ == "__main__":
     port = int(sys.argv[1])
     app.run(host='0.0.0.0', port=port, debug=True)

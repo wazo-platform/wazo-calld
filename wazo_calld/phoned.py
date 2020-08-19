@@ -24,3 +24,9 @@ class PhonedClient:
         headers = {'X-Auth-Token': self.token}
         result = requests.put(url, headers=headers)
         result.raise_for_status()
+
+    def answer_endpoint(self, endpoint_name):
+        url = 'http://{}:{}/0.1/endpoints/{}/answer'.format(self.config['host'], self.config['port'], endpoint_name)
+        headers = {'X-Auth-Token': self.token}
+        result = requests.put(url, headers=headers)
+        result.raise_for_status()
