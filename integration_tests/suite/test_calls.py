@@ -1843,3 +1843,71 @@ class TestCallHold(IntegrationTest):
         token = 'my-token'
         self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
         return token
+
+
+class TestCallAnswer(IntegrationTest):
+
+    asset = 'basic_rest'
+
+    def setUp(self):
+        super().setUp()
+        self.ari.reset()
+        self.phoned.reset()
+
+    def test_answer(self):
+        self.ari.set_channels(MockChannel(id='first-id',
+                                          state='Up',
+                                          name='PJSIP/abcdef-000001'))
+
+        # Invalid channel ID
+        assert_that(
+            calling(self.calld_client.calls.answer).with_args(UNKNOWN_UUID),
+            raises(CalldError).matching(has_properties(status_code=404))
+        )
+
+        # Answer
+        self.calld_client.calls.answer('first-id')
+
+        assert_that(self.phoned.requests(), has_entry('requests', has_item(has_entries({
+            'method': 'PUT',
+            'path': '/0.1/endpoints/abcdef/answer',
+        }))))
+
+    def test_user_answer(self):
+        user_uuid = str(uuid.uuid4())
+        someone_else_uuid = str(uuid.uuid4())
+        token = self.given_user_token(user_uuid)
+        self.calld_client.set_token(token)
+        self.ari.set_channels(MockChannel(id='user-channel-id',
+                                          state='Up',
+                                          name='PJSIP/abcdef-000001'),
+                              MockChannel(id='someone-else-channel-id',
+                                          state='Up',
+                                          name='PJSIP/ghijkl-000002'))
+        self.ari.set_channel_variable({'user-channel-id': {'XIVO_USERUUID': user_uuid},
+                                       'someone-else-channel-id': {'XIVO_USERUUID': someone_else_uuid}})
+
+        # Invalid channel ID
+        assert_that(
+            calling(self.calld_client.calls.answer_from_user).with_args(UNKNOWN_UUID),
+            raises(CalldError).matching(has_properties(status_code=404))
+        )
+
+        # Unauthorized channel
+        assert_that(
+            calling(self.calld_client.calls.answer_from_user).with_args('someone-else-channel-id'),
+            raises(CalldError).matching(has_properties(status_code=403))
+        )
+
+        # Answer
+        self.calld_client.calls.answer_from_user('user-channel-id')
+
+        assert_that(self.phoned.requests(), has_entry('requests', has_item(has_entries({
+            'method': 'PUT',
+            'path': '/0.1/endpoints/abcdef/answer',
+        }))))
+
+    def given_user_token(self, user_uuid):
+        token = 'my-token'
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
+        return token

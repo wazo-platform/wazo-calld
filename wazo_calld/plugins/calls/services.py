@@ -335,6 +335,20 @@ class CallsService:
         self._verify_user(call_id, user_uuid)
         self.unhold(call_id)
 
+    def answer(self, call_id):
+        try:
+            channel = self._ari.channels.get(channelId=call_id)
+        except ARINotFound:
+            raise NoSuchCall(call_id)
+
+        protocol_interface = protocol_interface_from_channel(channel.json['name'])
+
+        self._phoned_client.answer_endpoint(protocol_interface.interface)
+
+    def answer_user(self, call_id, user_uuid):
+        self._verify_user(call_id, user_uuid)
+        self.answer(call_id)
+
     def _verify_user(self, call_id, user_uuid):
         channel = Channel(call_id, self._ari)
         if not channel.exists() or channel.is_local():

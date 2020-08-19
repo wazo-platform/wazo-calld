@@ -6,6 +6,11 @@
 
   * `POST /users/me/conferences/adhoc`
 
+* New API to answer calls
+
+  * `PUT /calls/{call_id}/answer`
+  * `PUT /user/me/calls/{call_id}/answer`
+
 ## 20.11
 
 * New API to hold calls
