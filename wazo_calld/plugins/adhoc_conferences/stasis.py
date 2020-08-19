@@ -85,16 +85,8 @@ class AdhocConferencesStasis:
         logger.debug('adhoc conference %s: channel %s left', adhoc_conference_id, channel_id)
 
         bridge_helper = Bridge(adhoc_conference_id, self.ari)
-        try:
-            adhoc_conference_host_channel_id = bridge_helper.global_variables.get(variable='WAZO_HOST_CHANNEL_ID')
-        except KeyError:
-            logger.error('adhoc conference %s: could not retrieve host channel id', adhoc_conference_id)
-            return
 
-        if adhoc_conference_host_channel_id == channel_id:
-            logger.debug('adhoc conference %s: host %s left, hanging up all participants', adhoc_conference_id, channel_id)
-            self._hangup_all_participants(adhoc_conference_id)
-        elif bridge_helper.has_lone_channel():
+        if bridge_helper.has_lone_channel():
             logger.debug('adhoc conference %s: only one participant %s left, hanging up', adhoc_conference_id, channel_id)
             bridge_helper.hangup_all()
         elif bridge_helper.is_empty():
@@ -103,6 +95,15 @@ class AdhocConferencesStasis:
                 self.ari.bridges.destroy(bridgeId=adhoc_conference_id)
             except ARINotFound:
                 pass
+        else:
+            try:
+                adhoc_conference_host_channel_id = bridge_helper.global_variables.get(variable='WAZO_HOST_CHANNEL_ID')
+            except KeyError:
+                logger.error('adhoc conference %s: could not retrieve host channel id', adhoc_conference_id)
+                return
+            if adhoc_conference_host_channel_id == channel_id:
+                logger.debug('adhoc conference %s: host %s left, hanging up all participants', adhoc_conference_id, channel_id)
+                self._hangup_all_participants(adhoc_conference_id)
 
     def _hangup_all_participants(self, adhoc_conference_id):
         try:
