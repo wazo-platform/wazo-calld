@@ -167,3 +167,8 @@ class AdhocConferencesService:
         participants = self._ari.bridges.get(bridgeId=adhoc_conference_id).json['channels']
         if participant_call_id not in participants:
             raise ParticipantCallNotFound(participant_call_id)
+
+        try:
+            self._ari.channels.hangup(channelId=participant_call_id)
+        except ARINotFound:
+            pass

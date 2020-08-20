@@ -490,4 +490,47 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
                     })))
 
     def test_user_remove_participant_correct(self):
-        pass
+        host_uuid = make_user_uuid()
+        participant1_uuid = make_user_uuid()
+        participant2_uuid = make_user_uuid()
+        token = self.make_user_token(host_uuid)
+        self.calld_client.set_token(token)
+        adhoc_conference_id, call_ids = self.given_adhoc_conference(host_uuid, participant1_uuid, participant2_uuid, participant_count=3)
+        host_call_id, participant1_call_id, participant2_call_id = call_ids
+        host_events = self.bus.accumulator('adhoc_conferences.users.{}.#'.format(host_uuid))
+        participant1_events = self.bus.accumulator('adhoc_conferences.users.{}.#'.format(participant1_uuid))
+
+        self.calld_client.adhoc_conferences.remove_participant_from_user(adhoc_conference_id, participant2_call_id)
+
+        def calls_are_still_bridged():
+            host_call1 = self.calld_client.calls.get_call(host_call_id)
+            assert_that(host_call1, has_entries({
+                'talking_to': has_entries({
+                    participant1_call_id: anything(),
+                })
+            }))
+            assert_that(participant2_call_id, self.c.is_hungup())
+        until.assert_(calls_are_still_bridged, timeout=10)
+
+        def bus_events_are_sent():
+            assert_that(host_events.accumulate(),
+                        has_item(has_entries({
+                            'name': 'adhoc_conference_participant_left',
+                            'data': has_entries({
+                                'conference_id': adhoc_conference_id,
+                                'participant_call': has_entries({
+                                    'call_id': participant2_call_id,
+                                    'user_uuid': participant2_uuid,
+                                }),
+                            })})))
+            assert_that(participant1_events.accumulate(),
+                        has_item(has_entries({
+                            'name': 'adhoc_conference_participant_left',
+                            'data': has_entries({
+                                'conference_id': adhoc_conference_id,
+                                'participant_call': has_entries({
+                                    'call_id': participant2_call_id,
+                                    'user_uuid': participant2_uuid,
+                                }),
+                            })})))
+        until.assert_(bus_events_are_sent, timeout=10)
