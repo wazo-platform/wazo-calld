@@ -258,6 +258,53 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
                         'error_id': 'adhoc-conference-not-found',
                     })))
 
+    def test_user_delete_adhoc_conference_correct(self):
+        host_uuid = make_user_uuid()
+        participant_uuid = make_user_uuid()
+        token = self.make_user_token(host_uuid)
+        self.calld_client.set_token(token)
+        adhoc_conference_id, call_ids = self.given_adhoc_conference(host_uuid, participant_uuid, participant_count=2)
+        host_call_id, participant_call_id = call_ids
+        host_events = self.bus.accumulator('adhoc_conferences.users.{}.#'.format(host_uuid))
+
+        self.calld_client.adhoc_conferences.delete_from_user(adhoc_conference_id)
+
+        def calls_are_hungup():
+            assert_that(host_call_id, self.c.is_hungup())
+            assert_that(participant_call_id, self.c.is_hungup())
+        until.assert_(calls_are_hungup, timeout=10)
+
+        def bus_events_are_sent():
+            assert_that(host_events.accumulate(),
+                        has_item(has_entries({
+                            'name': 'adhoc_conference_deleted',
+                            'data': {
+                                'conference_id': adhoc_conference_id,
+                            }})))
+            assert_that(host_events.accumulate(), has_items(
+                has_entries({
+                    'name': 'adhoc_conference_participant_left',
+                    'data': has_entries({
+                        'conference_id': adhoc_conference_id,
+                        'participant_call': has_entries({
+                            'call_id': participant_call_id,
+                            'user_uuid': participant_uuid,
+                        }),
+                    })
+                }),
+                has_entries({
+                    'name': 'adhoc_conference_participant_left',
+                    'data': has_entries({
+                        'conference_id': adhoc_conference_id,
+                        'participant_call': has_entries({
+                            'call_id': host_call_id,
+                            'user_uuid': host_uuid,
+                        }),
+                    })
+                }),
+            ))
+        until.assert_(bus_events_are_sent, timeout=10)
+
     def test_extra_participant_hangup(self):
         host_uuid = make_user_uuid()
         participant1_uuid = make_user_uuid()
