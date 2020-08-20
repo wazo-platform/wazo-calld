@@ -85,7 +85,10 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
         calld_no_auth = self.make_calld(token=None)
         assert_that(calling(calld_no_auth.adhoc_conferences.create_from_user)
                     .with_args(SOME_CALL_ID, SOME_CALL_ID),
-                    raises(CalldError).matching(has_properties(status_code=401)))
+                    raises(CalldError).matching(has_properties({
+                        'status_code': 401,
+                        'error_id': 'unauthorized',
+                    })))
 
     def test_user_create_adhoc_conference_no_host_call(self):
         caller_call_id, callee_call_id = self.real_asterisk.given_bridged_call_stasis()
