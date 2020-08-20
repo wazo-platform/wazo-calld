@@ -10,6 +10,8 @@
 
   * `adhoc_conference_created`
   * `adhoc_conference_deleted`
+  * `adhoc_conference_participant_joined`
+  * `adhoc_conference_participant_left`
 
 ## 20.11
 
