@@ -70,11 +70,24 @@ class AdhocConferencesStasis:
             logger.error('adhoc conference %s: channel %s hungup too early or variable not found', adhoc_conference_id, channel_id)
             return
 
+        bridge_helper = Bridge(bridge.id, self.ari)
+        participant_call = CallsService.make_call_from_channel(self. ari, channel)
+        other_participant_uuids = bridge_helper.valid_user_uuids()
+        self._notifier.participant_joined(adhoc_conference_id, other_participant_uuids, participant_call)
+
         if is_adhoc_conference_host:
-            bridge_helper = Bridge(bridge.id, self.ari)
             bridge_helper.global_variables.set('WAZO_HOST_CHANNEL_ID', channel_id)
             host_user_uuid = Channel(channel_id, self.ari).user()
             bridge_helper.global_variables.set('WAZO_HOST_USER_UUID', host_user_uuid)
+
+            for channel_id in bridge.json['channels']:
+                try:
+                    other_participant_channel = self.ari.channels.get(channelId=channel_id)
+                except ARINotFound:
+                    logger.error('adhoc conference %s: participant %s hanged up before host arrived', adhoc_conference_id, channel_id)
+                    continue
+                other_participant_call = CallsService.make_call_from_channel(self.ari, other_participant_channel)
+                self._notifier.participant_joined(adhoc_conference_id, [host_user_uuid], other_participant_call)
 
     def on_channel_left_bridge(self, channel, event):
         if event['application'] != ADHOC_CONFERENCE_STASIS_APP:

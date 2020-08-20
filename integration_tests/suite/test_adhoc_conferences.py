@@ -10,6 +10,7 @@ from hamcrest import (
     calling,
     has_entries,
     has_item,
+    has_items,
     has_length,
     has_properties,
 )
@@ -128,13 +129,15 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
                     })))
 
     def test_user_create_adhoc_conference_correct(self):
-        user_uuid = make_user_uuid()
-        token = self.make_user_token(user_uuid)
+        host_uuid = make_user_uuid()
+        participant1_uuid = make_user_uuid()
+        participant2_uuid = make_user_uuid()
+        token = self.make_user_token(host_uuid)
         self.calld_client.set_token(token)
-        host_events = self.bus.accumulator('adhoc_conferences.users.{}.#'.format(user_uuid))
+        host_events = self.bus.accumulator('adhoc_conferences.users.{}.#'.format(host_uuid))
 
-        host_call1_id, participant1_call_id = self.real_asterisk.given_bridged_call_stasis(caller_uuid=user_uuid)
-        host_call2_id, participant2_call_id = self.real_asterisk.given_bridged_call_stasis(caller_uuid=user_uuid)
+        host_call1_id, participant1_call_id = self.real_asterisk.given_bridged_call_stasis(caller_uuid=host_uuid, callee_uuid=participant1_uuid)
+        host_call2_id, participant2_call_id = self.real_asterisk.given_bridged_call_stasis(caller_uuid=host_uuid, callee_uuid=participant2_uuid)
 
         adhoc_conference = self.calld_client.adhoc_conferences.create_from_user(
             host_call1_id,
@@ -163,8 +166,32 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
                             'name': 'adhoc_conference_created',
                             'data': {
                                 'conference_id': adhoc_conference['conference_id'],
-                                'user_uuid': user_uuid,
+                                'user_uuid': host_uuid,
                             }})))
+            assert_that(host_events.accumulate(), has_items(
+                has_entries({
+                    'name': 'adhoc_conference_participant_joined',
+                    'data': has_entries({
+                        'conference_id': adhoc_conference['conference_id'],
+                        'user_uuid': host_uuid,
+                        'participant_call': has_entries({
+                            'call_id': participant1_call_id,
+                            'user_uuid': participant1_uuid,
+                        }),
+                    })
+                }),
+                has_entries({
+                    'name': 'adhoc_conference_participant_joined',
+                    'data': has_entries({
+                        'conference_id': adhoc_conference['conference_id'],
+                        'user_uuid': host_uuid,
+                        'participant_call': has_entries({
+                            'call_id': participant2_call_id,
+                            'user_uuid': participant2_uuid,
+                        }),
+                    })
+                }),
+            ))
         until.assert_(bus_events_are_sent, timeout=10)
 
     def test_user_create_adhoc_conference_participant_in_conference(self):
