@@ -30,6 +30,20 @@ class UserAdhocConferencesResource(AuthResource):
         return adhoc_conference, 201
 
 
+class UserAdhocConferenceResource(AuthResource):
+
+    def __init__(self, adhoc_conference_service, auth_client):
+        self._adhoc_conference_service = adhoc_conference_service
+        self._auth_client = auth_client
+
+    @required_acl('calld.users.me.conferences.adhoc.create')
+    def delete(self, adhoc_conference_id):
+        user_uuid = None
+        self._adhoc_conference_service.delete_from_user(adhoc_conference_id, user_uuid)
+
+        return '', 204
+
+
 class UserAdhocConferenceParticipantResource(AuthResource):
 
     def __init__(self, adhoc_conference_service, auth_client):

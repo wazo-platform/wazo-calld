@@ -219,6 +219,45 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
         # response should not be different than a non-existing call, to avoid malicious call discovery
         pass
 
+    def test_user_delete_adhoc_conference_no_auth(self):
+        calld_no_auth = self.make_calld(token=INVALID_ACL_TOKEN)
+        assert_that(calling(calld_no_auth.adhoc_conferences.delete_from_user)
+                    .with_args(SOME_ADHOC_CONFERENCE_ID),
+                    raises(CalldError).matching(has_properties({
+                        'status_code': 401,
+                        'error_id': 'unauthorized',
+                    })))
+
+    def test_user_delete_adhoc_conference_no_adhoc_conference(self):
+        user_uuid = make_user_uuid()
+        token = self.make_user_token(user_uuid)
+        self.calld_client.set_token(token)
+
+        assert_that(calling(self.calld_client.adhoc_conferences.delete_from_user)
+                    .with_args(SOME_ADHOC_CONFERENCE_ID),
+                    raises(CalldError).matching(has_properties({
+                        'status_code': 404,
+                        'error_id': 'adhoc-conference-not-found',
+                    })))
+
+    def test_user_delete_adhoc_conference_user_does_not_own_adhoc_conference(self):
+        user_uuid = make_user_uuid()
+        token = self.make_user_token(user_uuid)
+        self.calld_client.set_token(token)
+        adhoc_conference_id, _ = self.given_adhoc_conference(user_uuid, participant_count=2)
+        another_user_uuid = make_user_uuid()
+        another_token = self.make_user_token(another_user_uuid)
+        self.calld_client.set_token(another_token)
+
+        # response should not be different than a non-existing adhoc conference
+        # to avoid malicious adhoc conference discovery
+        assert_that(calling(self.calld_client.adhoc_conferences.delete_from_user)
+                    .with_args(adhoc_conference_id),
+                    raises(CalldError).matching(has_properties({
+                        'status_code': 404,
+                        'error_id': 'adhoc-conference-not-found',
+                    })))
+
     def test_extra_participant_hangup(self):
         host_uuid = make_user_uuid()
         participant1_uuid = make_user_uuid()
