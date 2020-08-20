@@ -119,11 +119,12 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
         self.calld_client.set_token(token)
         host_call_id, participant_call_id = self.real_asterisk.given_bridged_call_stasis(caller_uuid=another_user_uuid)
 
+        # response should not be different than a non-existing call, to avoid malicious call discovery
         assert_that(calling(self.calld_client.adhoc_conferences.create_from_user)
                     .with_args(host_call_id, participant_call_id),
                     raises(CalldError).matching(has_properties({
                         'status_code': 400,
-                        'error_id': 'host-call-permission-denied',
+                        'error_id': 'host-call-not-found',
                     })))
 
     def test_user_create_adhoc_conference_invalid_request(self):
@@ -197,22 +198,25 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
             ))
         until.assert_(bus_events_are_sent, timeout=10)
 
-    def test_user_create_adhoc_conference_participant_in_conference(self):
+    def test_user_create_adhoc_conference_participant_in_conference_with_host(self):
         pass
 
     def test_user_create_adhoc_conference_participant_is_lone_channel(self):
+        # response should not be different than a non-existing call, to avoid malicious call discovery
         pass
 
     def test_user_create_adhoc_conference_participant_not_in_stasis(self):
         pass
 
     def test_user_create_adhoc_conference_participant_not_talking_to_host(self):
+        # response should not be different than a non-existing call, to avoid malicious call discovery
         pass
 
     def test_user_create_adhoc_conference_participant_ringing(self):
         pass
 
     def test_user_create_adhoc_conference_host_not_talking_to_participant(self):
+        # response should not be different than a non-existing call, to avoid malicious call discovery
         pass
 
     def test_extra_participant_hangup(self):
@@ -355,11 +359,13 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
         another_token = self.make_user_token(another_user_uuid)
         self.calld_client.set_token(another_token)
 
+        # response should not be different than a non-existing adhoc conference
+        # to avoid malicious adhoc conference discovery
         assert_that(calling(self.calld_client.adhoc_conferences.add_participant_from_user)
                     .with_args(adhoc_conference_id, participant_call_id),
                     raises(CalldError).matching(has_properties({
-                        'status_code': 400,
-                        'error_id': 'adhoc-conference-permission-denied',
+                        'status_code': 404,
+                        'error_id': 'adhoc-conference-not-found',
                     })))
 
     def test_user_add_participant_correct(self):
@@ -401,12 +407,14 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
         until.assert_(bus_events_are_sent, timeout=10)
 
     def test_user_add_participant_is_lone_channel(self):
+        # response should not be different than a non-existing call, to avoid malicious call discovery
         pass
 
     def test_user_add_participant_not_in_stasis(self):
         pass
 
     def test_user_add_participant_not_talking_to_host(self):
+        # response should not be different than a non-existing call, to avoid malicious call discovery
         pass
 
     def test_user_add_participant_ringing(self):
@@ -472,11 +480,13 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
         another_token = self.make_user_token(another_user_uuid)
         self.calld_client.set_token(another_token)
 
+        # response should not be different than a non-existing adhoc conference
+        # to avoid malicious adhoc conference discovery
         assert_that(calling(self.calld_client.adhoc_conferences.remove_participant_from_user)
                     .with_args(adhoc_conference_id, participant_call_id),
                     raises(CalldError).matching(has_properties({
-                        'status_code': 400,
-                        'error_id': 'adhoc-conference-permission-denied',
+                        'status_code': 404,
+                        'error_id': 'adhoc-conference-not-found',
                     })))
 
     def test_user_remove_participant_correct(self):
