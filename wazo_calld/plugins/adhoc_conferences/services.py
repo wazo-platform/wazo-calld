@@ -5,12 +5,14 @@ import uuid
 
 from ari.exceptions import ARIException, ARINotFound
 
-from wazo_calld.plugin_helpers.ari_ import Channel
+from wazo_calld.plugin_helpers.ari_ import Bridge, Channel
 from wazo_calld.plugin_helpers import ami
 from wazo_calld.plugin_helpers.exceptions import NotEnoughChannels, TooManyChannels
 
 from .exceptions import (
     AdhocConferenceCreationError,
+    AdhocConferenceNotFound,
+    AdhocConferencePermissionDenied,
     HostCallNotFound,
     HostPermissionDenied,
     ParticipantCallNotFound,
@@ -138,3 +140,14 @@ class AdhocConferencesService:
             extra_context='convert_to_stasis',
             extra_exten='h'
         )
+
+    def add_participant_from_user(self, adhoc_conference_id, participant_call_id, user_uuid):
+        bridge_helper = Bridge(adhoc_conference_id, self._ari)
+        if not bridge_helper.exists():
+            raise AdhocConferenceNotFound(adhoc_conference_id)
+
+        if not Channel(participant_call_id, self._ari).exists():
+            raise ParticipantCallNotFound(participant_call_id)
+
+        if bridge_helper.global_variables.get(variable='WAZO_HOST_USER_UUID') != user_uuid:
+            raise AdhocConferencePermissionDenied(adhoc_conference_id, user_uuid)

@@ -54,3 +54,28 @@ class AdhocConferenceCreationError(AdhocConferenceException):
             error_id='host-call-creation-error',
             details=details
         )
+
+
+class AdhocConferenceNotFound(AdhocConferenceException):
+    def __init__(self, adhoc_conference_id):
+        super().__init__(
+            status_code=404,
+            message='Adhoc conference not found',
+            error_id='adhoc-conference-not-found',
+            details={
+                'adhoc_conference_id': adhoc_conference_id,
+            }
+        )
+
+
+class AdhocConferencePermissionDenied(AdhocConferenceException):
+    def __init__(self, adhoc_conference_id, user_uuid):
+        super().__init__(
+            status_code=400,
+            message='Permission denied: user does not own adhoc conference',
+            error_id='adhoc-conference-permission-denied',
+            details={
+                'adhoc_conference_id': adhoc_conference_id,
+                'user_uuid': user_uuid,
+            }
+        )

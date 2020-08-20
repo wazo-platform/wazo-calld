@@ -28,3 +28,20 @@ class UserAdhocConferencesResource(AuthResource):
         )
 
         return adhoc_conference, 201
+
+
+class UserAdhocConferenceParticipantResource(AuthResource):
+
+    def __init__(self, adhoc_conference_service, auth_client):
+        self._adhoc_conference_service = adhoc_conference_service
+        self._auth_client = auth_client
+
+    @required_acl('calld.users.me.conferences.adhoc.participants.update')
+    def put(self, adhoc_conference_id, call_id):
+        user_uuid = None
+        self._adhoc_conference_service.add_participant_from_user(
+            adhoc_conference_id,
+            call_id,
+            user_uuid,
+        )
+        return '', 204
