@@ -24,6 +24,7 @@ class AdhocConferencesStasis:
 
     def _subscribe(self):
         self.ari.on_channel_event('StasisStart', self.on_stasis_start)
+        self.ari.on_channel_event('ChannelEnteredBridge', self.on_channel_entered_bridge)
         self.ari.on_channel_event('ChannelLeftBridge', self.on_channel_left_bridge)
         self.ari.on_bridge_event('BridgeDestroyed', self.on_bridge_destroyed)
 
@@ -63,14 +64,22 @@ class AdhocConferencesStasis:
         logger.debug('adhoc conference %s: bridging participant %s', adhoc_conference_id, channel_id)
         bridge.addChannel(channel=channel_id)
 
-        channel = event_objects['channel']
+    def on_channel_entered_bridge(self, channel, event):
+        if event['application'] != ADHOC_CONFERENCE_STASIS_APP:
+            return
+
+        adhoc_conference_id = event['bridge']['id']
+        channel_id = event['channel']['id']
+
+        logger.debug('adhoc conference %s: channel %s entered', adhoc_conference_id, channel_id)
+
         try:
             is_adhoc_conference_host = channel.getChannelVar(variable='WAZO_IS_ADHOC_CONFERENCE_HOST')['value'] == 'true'
         except ARINotFound:
             logger.error('adhoc conference %s: channel %s hungup too early or variable not found', adhoc_conference_id, channel_id)
             return
 
-        bridge_helper = Bridge(bridge.id, self.ari)
+        bridge_helper = Bridge(adhoc_conference_id, self.ari)
         participant_call = CallsService.make_call_from_channel(self. ari, channel)
         other_participant_uuids = bridge_helper.valid_user_uuids()
         self._notifier.participant_joined(adhoc_conference_id, other_participant_uuids, participant_call)
@@ -80,7 +89,7 @@ class AdhocConferencesStasis:
             host_user_uuid = Channel(channel_id, self.ari).user()
             bridge_helper.global_variables.set('WAZO_HOST_USER_UUID', host_user_uuid)
 
-            for channel_id in bridge.json['channels']:
+            for channel_id in event['bridge']['channels']:
                 try:
                     other_participant_channel = self.ari.channels.get(channelId=channel_id)
                 except ARINotFound:
