@@ -45,3 +45,13 @@ class UserAdhocConferenceParticipantResource(AuthResource):
             user_uuid,
         )
         return '', 204
+
+    @required_acl('calld.users.me.conferences.adhoc.participants.delete')
+    def delete(self, adhoc_conference_id, call_id):
+        user_uuid = get_token_user_uuid_from_request(self._auth_client)
+        self._adhoc_conference_service.remove_participant_from_user(
+            adhoc_conference_id,
+            call_id,
+            user_uuid,
+        )
+        return '', 204

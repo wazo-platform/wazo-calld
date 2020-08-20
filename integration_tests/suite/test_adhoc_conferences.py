@@ -412,5 +412,72 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
     def test_user_add_participant_ringing(self):
         pass
 
-    def test_user_add_host_not_talking_to_participant(self):
+    def test_user_remove_participant_no_auth(self):
+        calld_no_auth = self.make_calld(token=INVALID_ACL_TOKEN)
+        assert_that(calling(calld_no_auth.adhoc_conferences.remove_participant_from_user)
+                    .with_args(SOME_CALL_ID, SOME_CALL_ID),
+                    raises(CalldError).matching(has_properties({
+                        'status_code': 401,
+                        'error_id': 'unauthorized',
+                    })))
+
+    def test_user_remove_participant_no_adhoc_conference(self):
+        user_uuid = make_user_uuid()
+        token = self.make_user_token(user_uuid)
+        self.calld_client.set_token(token)
+        host_call_id, participant_call_id = self.real_asterisk.given_bridged_call_stasis(caller_uuid=user_uuid)
+
+        assert_that(calling(self.calld_client.adhoc_conferences.remove_participant_from_user)
+                    .with_args(SOME_ADHOC_CONFERENCE_ID, participant_call_id),
+                    raises(CalldError).matching(has_properties({
+                        'status_code': 404,
+                        'error_id': 'adhoc-conference-not-found',
+                    })))
+
+    def test_user_remove_participant_no_call(self):
+        user_uuid = make_user_uuid()
+        token = self.make_user_token(user_uuid)
+        self.calld_client.set_token(token)
+        adhoc_conference_id, call_ids = self.given_adhoc_conference(user_uuid, participant_count=2)
+
+        assert_that(calling(self.calld_client.adhoc_conferences.remove_participant_from_user)
+                    .with_args(adhoc_conference_id, SOME_CALL_ID),
+                    raises(CalldError).matching(has_properties({
+                        'status_code': 400,
+                        'error_id': 'participant-call-not-found',
+                    })))
+
+    def test_user_remove_participant_not_in_adhoc_conference(self):
+        user_uuid = make_user_uuid()
+        token = self.make_user_token(user_uuid)
+        self.calld_client.set_token(token)
+        adhoc_conference_id, call_ids = self.given_adhoc_conference(user_uuid, participant_count=2)
+        host_call_id, participant_call_id = self.real_asterisk.given_bridged_call_stasis(caller_uuid=user_uuid)
+
+        # response should not be different than a non-existing call, to avoid malicious call discovery
+        assert_that(calling(self.calld_client.adhoc_conferences.remove_participant_from_user)
+                    .with_args(adhoc_conference_id, participant_call_id),
+                    raises(CalldError).matching(has_properties({
+                        'status_code': 400,
+                        'error_id': 'participant-call-not-found',
+                    })))
+
+    def test_user_remove_participant_user_does_not_own_adhoc_conference(self):
+        user_uuid = make_user_uuid()
+        token = self.make_user_token(user_uuid)
+        self.calld_client.set_token(token)
+        adhoc_conference_id, _ = self.given_adhoc_conference(user_uuid, participant_count=2)
+        _, participant_call_id = self.real_asterisk.given_bridged_call_stasis(caller_uuid=user_uuid)
+        another_user_uuid = make_user_uuid()
+        another_token = self.make_user_token(another_user_uuid)
+        self.calld_client.set_token(another_token)
+
+        assert_that(calling(self.calld_client.adhoc_conferences.remove_participant_from_user)
+                    .with_args(adhoc_conference_id, participant_call_id),
+                    raises(CalldError).matching(has_properties({
+                        'status_code': 400,
+                        'error_id': 'adhoc-conference-permission-denied',
+                    })))
+
+    def test_user_remove_participant_correct(self):
         pass
