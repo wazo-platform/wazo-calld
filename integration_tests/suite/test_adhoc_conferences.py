@@ -166,14 +166,12 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
                             'name': 'adhoc_conference_created',
                             'data': {
                                 'conference_id': adhoc_conference['conference_id'],
-                                'user_uuid': host_uuid,
                             }})))
             assert_that(host_events.accumulate(), has_items(
                 has_entries({
                     'name': 'adhoc_conference_participant_joined',
                     'data': has_entries({
                         'conference_id': adhoc_conference['conference_id'],
-                        'user_uuid': host_uuid,
                         'participant_call': has_entries({
                             'call_id': participant1_call_id,
                             'user_uuid': participant1_uuid,
@@ -184,7 +182,6 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
                     'name': 'adhoc_conference_participant_joined',
                     'data': has_entries({
                         'conference_id': adhoc_conference['conference_id'],
-                        'user_uuid': host_uuid,
                         'participant_call': has_entries({
                             'call_id': participant2_call_id,
                             'user_uuid': participant2_uuid,
@@ -241,7 +238,6 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
                             'name': 'adhoc_conference_participant_left',
                             'data': has_entries({
                                 'conference_id': adhoc_conference_id,
-                                'user_uuid': host_uuid,
                                 'participant_call': has_entries({
                                     'call_id': participant2_call_id,
                                     'user_uuid': participant2_uuid,
@@ -252,7 +248,6 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
                             'name': 'adhoc_conference_participant_left',
                             'data': has_entries({
                                 'conference_id': adhoc_conference_id,
-                                'user_uuid': participant1_uuid,
                                 'participant_call': has_entries({
                                     'call_id': participant2_call_id,
                                     'user_uuid': participant2_uuid,
@@ -281,7 +276,6 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
                             'name': 'adhoc_conference_deleted',
                             'data': {
                                 'conference_id': adhoc_conference_id,
-                                'user_uuid': user_uuid,
                             }})))
         until.assert_(bus_events_are_sent, timeout=10)
 
@@ -307,6 +301,5 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
                             'name': 'adhoc_conference_deleted',
                             'data': {
                                 'conference_id': adhoc_conference_id,
-                                'user_uuid': user_uuid,
                             }})))
         until.assert_(bus_events_are_sent, timeout=10)
