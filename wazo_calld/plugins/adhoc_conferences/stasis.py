@@ -89,14 +89,17 @@ class AdhocConferencesStasis:
             host_user_uuid = Channel(channel_id, self.ari).user()
             bridge_helper.global_variables.set('WAZO_HOST_USER_UUID', host_user_uuid)
 
-            for channel_id in event['bridge']['channels']:
-                try:
-                    other_participant_channel = self.ari.channels.get(channelId=channel_id)
-                except ARINotFound:
-                    logger.error('adhoc conference %s: participant %s hanged up before host arrived', adhoc_conference_id, channel_id)
-                    continue
-                other_participant_call = CallsService.make_call_from_channel(self.ari, other_participant_channel)
-                self._notifier.participant_joined(adhoc_conference_id, [host_user_uuid], other_participant_call)
+            self._notify_host_of_channels_already_present(adhoc_conference_id, event['bridge']['channels'], host_user_uuid)
+
+    def _notify_host_of_channels_already_present(self, adhoc_conference_id, channel_ids, host_user_uuid):
+        for channel_id in channel_ids:
+            try:
+                other_participant_channel = self.ari.channels.get(channelId=channel_id)
+            except ARINotFound:
+                logger.error('adhoc conference %s: participant %s hanged up before host arrived', adhoc_conference_id, channel_id)
+                continue
+            other_participant_call = CallsService.make_call_from_channel(self.ari, other_participant_channel)
+            self._notifier.participant_joined(adhoc_conference_id, [host_user_uuid], other_participant_call)
 
     def on_channel_left_bridge(self, channel, event):
         if event['application'] != ADHOC_CONFERENCE_STASIS_APP:
