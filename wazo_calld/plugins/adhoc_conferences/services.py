@@ -151,3 +151,6 @@ class AdhocConferencesService:
 
         if bridge_helper.global_variables.get(variable='WAZO_HOST_USER_UUID') != user_uuid:
             raise AdhocConferencePermissionDenied(adhoc_conference_id, user_uuid)
+
+        discarded_host_channel_id = self._find_call_peer(participant_call_id)
+        self._redirect_participant(participant_call_id, discarded_host_channel_id, adhoc_conference_id)
