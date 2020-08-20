@@ -22,6 +22,7 @@ from .helpers.base import make_user_uuid
 from .helpers.real_asterisk import RealAsteriskIntegrationTest
 from .helpers.constants import (
     SOME_CALL_ID,
+    INVALID_ACL_TOKEN,
     VALID_TOKEN,
 )
 from .helpers.hamcrest_ import HamcrestARIChannel
@@ -82,7 +83,7 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
         return adhoc_conference['conference_id'], [host_call_id] + participant_call_ids
 
     def test_user_create_adhoc_conference_no_auth(self):
-        calld_no_auth = self.make_calld(token=None)
+        calld_no_auth = self.make_calld(token=INVALID_ACL_TOKEN)
         assert_that(calling(calld_no_auth.adhoc_conferences.create_from_user)
                     .with_args(SOME_CALL_ID, SOME_CALL_ID),
                     raises(CalldError).matching(has_properties({
@@ -310,7 +311,7 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
         until.assert_(bus_events_are_sent, timeout=10)
 
     def test_user_add_participant_no_auth(self):
-        calld_no_auth = self.make_calld(token=None)
+        calld_no_auth = self.make_calld(token=INVALID_ACL_TOKEN)
         assert_that(calling(calld_no_auth.adhoc_conferences.add_participant_from_user)
                     .with_args(SOME_CALL_ID, SOME_CALL_ID),
                     raises(CalldError).matching(has_properties({
