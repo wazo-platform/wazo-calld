@@ -33,6 +33,23 @@ paths:
       responses:
         '204':
           description: Participants in conference adhoc has been added
+        '400':
+          $ref: '#/responses/InvalidRequest'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+    delete:
+      summary: Remove a participant from an adhoc conference
+      description: '**Required ACL:** `calld.users.me.conferences.adhoc.participants.delete`'
+      parameters:
+        - $ref: '#/parameters/AdhocConferenceID'
+        - $ref: '#/parameters/CallID'
+      tags:
+      - adhoc_conferences
+      responses:
+        '204':
+          description: Participants in conference adhoc has been removed
+        '400':
+          $ref: '#/responses/InvalidRequest'
         '503':
           $ref: '#/responses/AnotherServiceUnavailable'
 definitions:
