@@ -29,13 +29,12 @@ from .helpers.ari_ import MockBridge
 from .helpers.ari_ import MockChannel
 from .helpers.auth import MockUserToken
 from .helpers.base import IntegrationTest
-from .helpers.base import RealAsteriskIntegrationTest
 from .helpers.confd import MockLine
 from .helpers.confd import MockUser
-from .helpers.constants import VALID_TOKEN
+from .helpers.constants import ENDPOINT_AUTOANSWER, VALID_TOKEN
+from .helpers.real_asterisk import RealAsteriskIntegrationTest
 from .helpers.wait_strategy import CalldUpWaitStrategy
 
-ENDPOINT_AUTOANSWER = 'Test/integration-caller/autoanswer'
 SOME_LOCAL_CHANNEL_NAME = 'Local/channel'
 SOME_PRIORITY = 1
 UNKNOWN_UUID = '00000000-0000-0000-0000-000000000000'

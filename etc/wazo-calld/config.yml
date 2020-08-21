@@ -92,6 +92,7 @@ consul:
   token: 'the_one_ring'
 
 enabled_plugins:
+  adhoc_conferences: true
   api: true
   applications: true
   calls: true

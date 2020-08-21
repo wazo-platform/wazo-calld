@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from setuptools import setup
@@ -23,6 +23,7 @@ setup(
             'wazo-calld=wazo_calld.main:main',
         ],
         'wazo_calld.plugins': [
+            'adhoc_conferences = wazo_calld.plugins.adhoc_conferences.plugin:Plugin',
             'api = wazo_calld.plugins.api.plugin:Plugin',
             'applications = wazo_calld.plugins.applications.plugin:Plugin',
             'endpoints = wazo_calld.plugins.endpoints.plugin:Plugin',

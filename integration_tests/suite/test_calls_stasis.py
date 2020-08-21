@@ -1,4 +1,4 @@
-# Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
@@ -11,8 +11,8 @@ from xivo_test_helpers import until
 
 from .helpers.ari_ import MockChannel
 from .helpers.base import IntegrationTest
-from .helpers.constants import STASIS_APP_NAME
-from .helpers.constants import STASIS_APP_INSTANCE_NAME
+from .helpers.constants import SOME_STASIS_APP
+from .helpers.constants import SOME_STASIS_APP_INSTANCE
 from .helpers.calld import new_call_id
 from .helpers.confd import MockLine
 from .helpers.confd import MockUser
@@ -32,10 +32,15 @@ class TestDialedFrom(IntegrationTest):
         new_call_id_ = new_call_id()
         self.ari.set_channels(MockChannel(id=call_id), MockChannel(id=new_call_id_))
         self.ari.set_global_variables({'XIVO_CHANNELS_{}'.format(call_id): json.dumps({'state': 'ringing',
-                                                                                       'app': STASIS_APP_NAME,
-                                                                                       'app_instance': STASIS_APP_INSTANCE_NAME})})
+                                                                                       'app': SOME_STASIS_APP,
+                                                                                       'app_instance': SOME_STASIS_APP_INSTANCE})})
 
-        self.stasis.event_answer_connect(from_=call_id, new_call_id=new_call_id_)
+        self.stasis.event_answer_connect(
+            from_=call_id,
+            new_call_id=new_call_id_,
+            stasis_app=SOME_STASIS_APP,
+            stasis_app_instance=SOME_STASIS_APP_INSTANCE
+        )
 
         def assert_function():
             assert_that(self.ari.requests(), has_entry('requests', has_items(has_entries({

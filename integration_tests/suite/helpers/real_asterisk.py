@@ -1,0 +1,116 @@
+# Copyright 2020 The Wazo Authors  (see the AUTHORS file)
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+import ari
+from ari.exceptions import ARINotFound
+from ari.exceptions import ARINotInStasis
+from xivo_test_helpers import until
+
+from .base import IntegrationTest, make_user_uuid
+from .chan_test import ChanTest
+from .constants import (
+    ENDPOINT_AUTOANSWER,
+    SOME_STASIS_APP,
+    SOME_STASIS_APP_INSTANCE,
+    VALID_TOKEN,
+)
+
+
+class RealAsteriskIntegrationTest(IntegrationTest):
+    asset = 'real_asterisk'
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.chan_test = ChanTest(cls.ari_config())
+
+    @classmethod
+    def ari_config(cls):
+        return {
+            'base_url': 'http://localhost:{port}'.format(port=cls.service_port(5039, 'ari')),
+            'username': 'xivo',
+            'password': 'xivo',
+        }
+
+    def setUp(self):
+        super().setUp()
+        self.ari = ari.connect(**self.ari_config())
+        self.reset_ari()
+
+    def tearDown(self):
+        super().tearDown()
+
+    def reset_ari(self):
+        for channel in self.ari.channels.list():
+            try:
+                channel.hangup()
+            except (ARINotInStasis, ARINotFound):
+                pass
+
+        for bridge in self.ari.bridges.list():
+            try:
+                bridge.destroy()
+            except (ARINotInStasis, ARINotFound):
+                pass
+
+
+class RealAsterisk:
+
+    def __init__(self, ari, calld_client):
+        self.ari = ari
+        self.calld_client = calld_client
+
+    def add_channel_to_bridge(self, bridge):
+        def channel_is_in_stasis(channel_id):
+            try:
+                self.ari.channels.setChannelVar(channelId=channel_id, variable='TEST_STASIS', value='')
+                return True
+            except ARINotInStasis:
+                return False
+
+        new_channel = self.ari.channels.originate(endpoint=ENDPOINT_AUTOANSWER,
+                                                  app=SOME_STASIS_APP,
+                                                  appArgs=[SOME_STASIS_APP_INSTANCE])
+        until.true(channel_is_in_stasis, new_channel.id, tries=2)
+        bridge.addChannel(channel=new_channel.id)
+
+        return new_channel
+
+    def stasis_channel(self):
+        def channel_is_in_stasis(channel_id):
+            try:
+                self.ari.channels.setChannelVar(channelId=channel_id, variable='TEST_STASIS', value='')
+                return True
+            except ARINotInStasis:
+                return False
+
+        new_channel = self.ari.channels.originate(endpoint=ENDPOINT_AUTOANSWER,
+                                                  app=SOME_STASIS_APP,
+                                                  appArgs=[SOME_STASIS_APP_INSTANCE])
+        until.true(channel_is_in_stasis, new_channel.id, tries=2)
+
+        return new_channel
+
+    def given_bridged_call_stasis(self, caller_uuid=None, callee_uuid=None):
+        bridge = self.ari.bridges.create(type='mixing')
+
+        caller = self.stasis_channel()
+        caller_uuid = caller_uuid or make_user_uuid()
+        caller.setChannelVar(variable='XIVO_USERUUID', value=caller_uuid)
+        bridge.addChannel(channel=caller.id)
+
+        callee = self.stasis_channel()
+        callee_uuid = callee_uuid or make_user_uuid()
+        callee.setChannelVar(variable='XIVO_USERUUID', value=callee_uuid)
+        bridge.addChannel(channel=callee.id)
+
+        self.calld_client.set_token(VALID_TOKEN)
+
+        def channels_have_been_created_in_calld(caller_id, callee_id):
+            calls = self.calld_client.calls.list_calls(application=SOME_STASIS_APP, application_instance=SOME_STASIS_APP_INSTANCE)
+            channel_ids = [call['call_id'] for call in calls['items']]
+            return (caller_id in channel_ids and callee_id in channel_ids)
+
+        until.true(channels_have_been_created_in_calld, callee.id, caller.id, tries=3)
+
+        return caller.id, callee.id

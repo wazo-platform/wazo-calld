@@ -48,7 +48,7 @@ def moh_class_exists(amid, moh_class):
     return moh_class in classes
 
 
-def redirect(amid, channel, context, exten, priority=1, extra_channel=None):
+def redirect(amid, channel, context, exten, priority=1, extra_channel=None, extra_context=None, extra_exten=None, extra_priority=None):
     destination = {
         'Channel': channel,
         'Context': context,
@@ -57,6 +57,14 @@ def redirect(amid, channel, context, exten, priority=1, extra_channel=None):
     }
     if extra_channel:
         destination['ExtraChannel'] = extra_channel
+    if extra_context:
+        destination['ExtraContext'] = extra_context
+    if extra_exten:
+        destination['ExtraExten'] = extra_exten
+        destination.setdefault('ExtraPriority', 1)
+    if extra_priority:
+        destination['ExtraPriority'] = extra_priority
+
     try:
         amid.action('Redirect', destination)
     except RequestException as e:
