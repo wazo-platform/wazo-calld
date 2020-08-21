@@ -2,7 +2,7 @@ paths:
   /users/me/conferences/adhoc:
     post:
       summary: Create an adhoc conference
-      description: '**Required ACL:** `calld.users.me.conferences.adhoc.create`'
+      description: '**Required ACL:** `calld.users.me.conferences.adhoc.create`. An adhoc conference allows a user to merge multiple calls in one conversation. It acts like a conference room, but has no dedicated extension. The user creating the adhoc conference acts as the owner of the conference and controls who enters or leaves the conference. The conference will be destroyed when the owner leaves the conference.'
       parameters:
       - name: body
         in: body
