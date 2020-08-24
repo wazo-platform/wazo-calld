@@ -31,16 +31,20 @@ class AdhocConferencesService:
 
     def create_from_user(self, host_call_id, participant_call_ids, user_uuid):
         logger.debug('creating adhoc conference from user %s with host %s and participants %s', user_uuid, host_call_id, participant_call_ids)
-        for participant_call_id in participant_call_ids:
-            if not Channel(participant_call_id, self._ari).exists():
-                raise ParticipantCallNotFound(host_call_id)
-
         host_channel = Channel(host_call_id, self._ari)
         if not host_channel.exists():
             raise HostCallNotFound(host_call_id)
 
         if host_channel.user() != user_uuid:
             raise HostCallNotFound(host_call_id)
+
+        for participant_call_id in participant_call_ids:
+            if not Channel(participant_call_id, self._ari).exists():
+                raise ParticipantCallNotFound(participant_call_id)
+
+            peer_call_id = self._find_call_peer(participant_call_id)
+            if Channel(peer_call_id, self._ari).user() != user_uuid:
+                raise ParticipantCallNotFound(participant_call_id)
 
         adhoc_conference_id = str(uuid.uuid4())
         logger.debug('creating adhoc conference %s', adhoc_conference_id)
