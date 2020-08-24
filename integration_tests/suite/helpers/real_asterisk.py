@@ -114,3 +114,26 @@ class RealAsterisk:
         until.true(channels_have_been_created_in_calld, callee.id, caller.id, tries=3)
 
         return caller.id, callee.id
+
+    def given_bridged_call_not_stasis(self, caller_uuid=None, callee_uuid=None, caller_variables=None):
+        caller_uuid = caller_uuid or make_user_uuid()
+        callee_uuid = callee_uuid or make_user_uuid()
+        variables = {'XIVO_USERUUID': caller_uuid,
+                     '__CALLEE_XIVO_USERUUID': callee_uuid}
+        variables.update(caller_variables or {})
+        caller = self.ari.channels.originate(endpoint=ENDPOINT_AUTOANSWER,
+                                             context='local',
+                                             extension='dial-autoanswer',
+                                             variables={'variables': variables})
+
+        def bridged_channel(caller):
+            try:
+                bridge = next(bridge for bridge in self.ari.bridges.list()
+                              if caller.id in bridge.json['channels'])
+                callee_channel_id = next(iter(set(bridge.json['channels']) - {caller.id}))
+                return callee_channel_id
+            except StopIteration:
+                return False
+
+        callee_channel_id = until.true(bridged_channel, caller, timeout=3)
+        return caller.id, callee_channel_id

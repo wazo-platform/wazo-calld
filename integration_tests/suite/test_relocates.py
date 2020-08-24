@@ -24,7 +24,6 @@ from .helpers.real_asterisk import RealAsteriskIntegrationTest, RealAsterisk
 from .helpers.confd import MockUser
 from .helpers.confd import MockLine
 from .helpers.constants import (
-    ENDPOINT_AUTOANSWER,
     SOME_CALL_ID,
     INVALID_ACL_TOKEN,
 )
@@ -44,29 +43,6 @@ class TestRelocates(RealAsteriskIntegrationTest):
         super().setUp()
         self.c = HamcrestARIChannel(self.ari)
         self.real_asterisk = RealAsterisk(self.ari, self.calld_client)
-
-    def given_bridged_call_not_stasis(self, caller_uuid=None, callee_uuid=None, caller_variables=None):
-        caller_uuid = caller_uuid or str(uuid.uuid4())
-        callee_uuid = callee_uuid or str(uuid.uuid4())
-        variables = {'XIVO_USERUUID': caller_uuid,
-                     '__CALLEE_XIVO_USERUUID': callee_uuid}
-        variables.update(caller_variables or {})
-        caller = self.ari.channels.originate(endpoint=ENDPOINT_AUTOANSWER,
-                                             context='local',
-                                             extension='dial-autoanswer',
-                                             variables={'variables': variables})
-
-        def bridged_channel(caller):
-            try:
-                bridge = next(bridge for bridge in self.ari.bridges.list()
-                              if caller.id in bridge.json['channels'])
-                callee_channel_id = next(iter(set(bridge.json['channels']) - {caller.id}))
-                return callee_channel_id
-            except StopIteration:
-                return False
-
-        callee_channel_id = until.true(bridged_channel, caller, timeout=3)
-        return caller.id, callee_channel_id
 
     def given_mobile_call(self):
         user_uuid = str(uuid.uuid4())
@@ -117,7 +93,7 @@ class TestRelocates(RealAsteriskIntegrationTest):
 
     def given_waiting_relocated_user_relocate(self):
         user_uuid = str(uuid.uuid4())
-        relocated_channel_id, initiator_channel_id = self.given_bridged_call_not_stasis(callee_uuid=user_uuid, caller_variables={'WAIT_BEFORE_STASIS': '60'})
+        relocated_channel_id, initiator_channel_id = self.real_asterisk.given_bridged_call_not_stasis(callee_uuid=user_uuid, caller_variables={'WAIT_BEFORE_STASIS': '60'})
         line_id = SOME_LINE_ID
         token = self.given_user_token(user_uuid)
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
@@ -498,7 +474,7 @@ class TestCreateUserRelocate(TestRelocates):
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
         self.confd.set_lines(MockLine(id=line_id, name='recipient_autoanswer@local', protocol='local', context=SOME_CONTEXT))
         token = self.given_user_token(user_uuid)
-        relocated_channel_id, initiator_channel_id = self.given_bridged_call_not_stasis(callee_uuid=user_uuid)
+        relocated_channel_id, initiator_channel_id = self.real_asterisk.given_bridged_call_not_stasis(callee_uuid=user_uuid)
         events = self.bus.accumulator('calls.relocate.*')
         self.calld_client.set_token(token)
 
