@@ -411,7 +411,7 @@ paths:
       - users
       responses:
         '204':
-          description: The call is now unheld
+          description: The call is now answered
         '404':
           description: No such call
           schema:
