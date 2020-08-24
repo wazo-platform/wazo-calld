@@ -13,6 +13,7 @@ from .exceptions import (
     AdhocConferenceCreationError,
     AdhocConferenceNotFound,
     HostCallNotFound,
+    HostCallAlreadyInConference,
     ParticipantCallNotFound,
 )
 
@@ -69,7 +70,7 @@ class AdhocConferencesService:
         except NotEnoughChannels:
             raise AdhocConferenceCreationError(f'could not determine peer of call {call_id}: call has no peers')
         except TooManyChannels as e:
-            raise AdhocConferenceCreationError(f'could not determine peer of call {call_id}: call has {len(e.channels)} peers')
+            raise HostCallAlreadyInConference(call_id)
 
     def _redirect_host(self, host_call_id, host_peer_channel_id, adhoc_conference_id):
         try:

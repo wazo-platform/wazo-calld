@@ -43,6 +43,18 @@ class HostCallNotFound(AdhocConferenceException):
         )
 
 
+class HostCallAlreadyInConference(AdhocConferenceException):
+    def __init__(self, host_call_id):
+        super().__init__(
+            status_code=409,
+            message='Adhoc conference creation error: host already in conference',
+            error_id='host-already-in-conference',
+            details={
+                'host_call_id': host_call_id,
+            }
+        )
+
+
 class ParticipantCallNotFound(AdhocConferenceException):
     def __init__(self, participant_call_id):
         super().__init__(

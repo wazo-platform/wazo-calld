@@ -207,11 +207,18 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
         until.assert_(bus_events_are_sent, timeout=10)
 
     def test_user_create_adhoc_conference_participant_in_conference_with_host(self):
-        pass
+        user_uuid = make_user_uuid()
+        token = self.make_user_token(user_uuid)
+        self.calld_client.set_token(token)
+        adhoc_conference_id, call_ids = self.given_adhoc_conference(user_uuid, participant_count=3)
+        host_call_id, participant_call_id, _ = call_ids
 
-    def test_user_create_adhoc_conference_participant_is_lone_channel(self):
-        # response should not be different than a non-existing call, to avoid malicious call discovery
-        pass
+        assert_that(calling(self.calld_client.adhoc_conferences.create_from_user)
+                    .with_args(host_call_id, participant_call_id),
+                    raises(CalldError).matching(has_properties({
+                        'status_code': 409,
+                        'error_id': 'host-already-in-conference',
+                    })))
 
     def test_user_create_adhoc_conference_participant_not_in_stasis(self):
         pass
