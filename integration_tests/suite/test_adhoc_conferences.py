@@ -8,6 +8,7 @@ from hamcrest import (
     anything,
     assert_that,
     calling,
+    equal_to,
     has_entries,
     has_item,
     has_items,
@@ -145,6 +146,8 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
 
         host_call1_id, participant1_call_id = self.real_asterisk.given_bridged_call_stasis(caller_uuid=host_uuid, callee_uuid=participant1_uuid)
         host_call2_id, participant2_call_id = self.real_asterisk.given_bridged_call_stasis(caller_uuid=host_uuid, callee_uuid=participant2_uuid)
+        host_caller_id_num = "6845"
+        self.ari.channels.setChannelVar(channelId=host_call1_id, variable='CALLERID(num)', value=host_caller_id_num)
 
         adhoc_conference = self.calld_client.adhoc_conferences.create_from_user(
             host_call1_id,
@@ -166,6 +169,11 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
             }))
             assert_that(host_call2_id, self.c.is_hungup())
         until.assert_(calls_are_bridged, timeout=10)
+
+        def callerid_are_correct():
+            host_connected_line = self.ari.channels.getChannelVar(channelId=host_call1_id, variable='CONNECTEDLINE(all)')['value']
+            assert_that(host_connected_line, equal_to('"Conference" <6845>'))
+        until.assert_(callerid_are_correct, timeout=10)
 
         def bus_events_are_sent():
             assert_that(host_events.accumulate(),
@@ -463,6 +471,7 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
         participant2_uuid = make_user_uuid()
         host_call2_id, participant2_call_id = self.real_asterisk.given_bridged_call_stasis(caller_uuid=host_uuid, callee_uuid=participant2_uuid)
         host_events = self.bus.accumulator('adhoc_conferences.users.{}.#'.format(host_uuid))
+        host_connected_line_before = self.ari.channels.getChannelVar(channelId=host_call1_id, variable='CONNECTEDLINE(all)')['value']
 
         self.calld_client.adhoc_conferences.add_participant_from_user(adhoc_conference_id, participant2_call_id)
 
@@ -476,6 +485,11 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
             }))
             assert_that(host_call2_id, self.c.is_hungup())
         until.assert_(calls_are_bridged, timeout=10)
+
+        def callerid_are_correct():
+            host_connected_line = self.ari.channels.getChannelVar(channelId=host_call1_id, variable='CONNECTEDLINE(all)')['value']
+            assert_that(host_connected_line, equal_to(host_connected_line_before))
+        until.assert_(callerid_are_correct, timeout=10)
 
         def bus_events_are_sent():
             assert_that(host_events.accumulate(), has_items(
