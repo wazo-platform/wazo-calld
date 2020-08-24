@@ -66,6 +66,10 @@ def start_hold(endpoint):
 
 @app.route("/0.1/endpoints/<endpoint>/hold/stop", methods=['PUT'])
 def stop_hold(endpoint):
+    if endpoint == 'not-found':
+        return '', 404
+    if endpoint == 'no-plugin':
+        return '', 400
     return '', 204
 
 
