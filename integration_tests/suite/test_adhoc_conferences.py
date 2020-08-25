@@ -71,13 +71,14 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
             _, participant_call_id = self.real_asterisk.given_bridged_call_stasis(caller_uuid=host_uuid, callee_uuid=participant_uuid)
             participant_call_ids.append(participant_call_id)
 
-        adhoc_conference = self.calld_client.adhoc_conferences.create_from_user(
+        calld_client = self.make_user_calld(host_uuid)
+        adhoc_conference = calld_client.adhoc_conferences.create_from_user(
             host_call_id,
             *participant_call_ids
         )
 
         def calls_are_bridged():
-            host_call1 = self.calld_client.calls.get_call(host_call_id)
+            host_call1 = calld_client.calls.get_call(host_call_id)
             assert_that(host_call1, has_entries({
                 'talking_to': has_length(participant_count)
             }))

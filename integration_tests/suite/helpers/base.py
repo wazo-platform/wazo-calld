@@ -15,7 +15,7 @@ from xivo_test_helpers.asset_launching_test_case import NoSuchPort
 
 from .amid import AmidClient
 from .ari_ import ARIClient
-from .auth import AuthClient
+from .auth import AuthClient, MockUserToken
 from .bus import BusClient
 from .confd import ConfdClient
 from .constants import ASSET_ROOT, VALID_TOKEN
@@ -125,6 +125,13 @@ class IntegrationTest(AssetLaunchingTestCase):
     @classmethod
     def make_calld(cls, token=VALID_TOKEN):
         return CalldClient('localhost', cls.service_port(9500, 'calld'), prefix=None, https=False, token=token)
+
+    @classmethod
+    def make_user_calld(cls, user_uuid, tenant_uuid=None):
+        token_id = str(uuid.uuid4())
+        tenant_uuid = tenant_uuid or str(uuid.uuid4())
+        cls.auth.set_token(MockUserToken(token_id, tenant_uuid=tenant_uuid, user_uuid=user_uuid))
+        return CalldClient('localhost', cls.service_port(9500, 'calld'), prefix=None, https=False, token=token_id)
 
     @classmethod
     @contextmanager
