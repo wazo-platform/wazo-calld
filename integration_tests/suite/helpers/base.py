@@ -131,7 +131,7 @@ class IntegrationTest(AssetLaunchingTestCase):
         token_id = str(uuid.uuid4())
         tenant_uuid = tenant_uuid or str(uuid.uuid4())
         cls.auth.set_token(MockUserToken(token_id, tenant_uuid=tenant_uuid, user_uuid=user_uuid))
-        return CalldClient('localhost', cls.service_port(9500, 'calld'), prefix=None, https=False, token=token_id)
+        return cls.make_calld(token=token_id)
 
     @classmethod
     @contextmanager
