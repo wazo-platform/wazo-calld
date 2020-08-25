@@ -47,7 +47,7 @@ class ParticipantCallNotFound(AdhocConferenceException):
     def __init__(self, participant_call_id):
         super().__init__(
             status_code=400,
-            message='Adhoc conference creation error: participant call not found',
+            message='Adhoc conference participant call not found',
             error_id='participant-call-not-found',
             details={
                 'participant_call_id': participant_call_id,
