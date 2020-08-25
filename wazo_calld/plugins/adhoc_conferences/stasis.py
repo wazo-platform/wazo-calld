@@ -5,6 +5,7 @@ import threading
 
 from ari.exceptions import ARINotFound
 from wazo_calld.ari_ import DEFAULT_APPLICATION_NAME
+from wazo_calld.plugin_helpers.ari_ import Bridge
 
 import logging
 
@@ -61,11 +62,7 @@ class AdhocConferencesStasis:
             return
 
         if is_adhoc_conference_host:
-            try:
-                bridge.setBridgeVar(variable='WAZO_ADHOC_CONFERENCE_HOST', value=channel_id)
-            except ARINotFound:
-                logger.error('adhoc conference %s: bridge was destroyed too early when join')
-                return
+            Bridge(adhoc_conference_id, self.ari).global_variables.set('WAZO_ADHOC_CONFERENCE_HOST', channel_id)
 
     def on_channel_left_bridge(self, channel, event):
         adhoc_conference_id = event['bridge']['id']
@@ -78,9 +75,9 @@ class AdhocConferencesStasis:
         logger.debug('adhoc conference %s: channel %s left', adhoc_conference_id, channel_id)
 
         try:
-            adhoc_conference_host_channel_id = self.ari.bridges.getBridgeVar(bridgeId=adhoc_conference_id, variable='WAZO_ADHOC_CONFERENCE_HOST').get('WAZO_ADHOC_CONFERENCE_HOST')
-        except ARINotFound:
-            logger.error('adhoc conference %s: bridge was destroyed too early when leaving')
+            adhoc_conference_host_channel_id = Bridge(adhoc_conference_id, self.ari).global_variables.get(variable='WAZO_ADHOC_CONFERENCE_HOST')
+        except KeyError:
+            logger.error('adhoc conference %s: could not find conference')
             return
 
         if adhoc_conference_host_channel_id == channel_id:
@@ -110,7 +107,7 @@ class AdhocConferencesStasis:
 
     def _channel_left_adhoc_conference(self, channel_id, bridge_id):
         try:
-            self.ari.bridges.getBridgeVar(bridgeId=bridge_id, variable='WAZO_ADHOC_CONFERENCE_HOST').get('WAZO_ADHOC_CONFERENCE_HOST')
-        except ARINotFound:
+            Bridge(bridge_id, self.ari).global_variables.get(variable='WAZO_ADHOC_CONFERENCE_HOST')
+        except KeyError:
             return False
         return True
