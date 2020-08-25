@@ -19,7 +19,6 @@ from hamcrest import (
 from xivo_test_helpers.hamcrest.raises import raises
 from wazo_calld_client.exceptions import CalldError
 
-from .helpers.auth import MockUserToken
 from .helpers.confd import (
     MockUser,
     MockVoicemail,
@@ -49,7 +48,6 @@ class TestVoicemails(RealAsteriskIntegrationTest):
         self.confd.reset()
 
         self._voicemail_id = 1234
-        self._user_token = str(uuid.uuid4())
         self._user_uuid = str(uuid.uuid4())
 
         self.confd.set_users(MockUser(uuid=self._user_uuid,
@@ -58,9 +56,7 @@ class TestVoicemails(RealAsteriskIntegrationTest):
             MockVoicemail(self._voicemail_id, "8000", "voicemail-name",
                           "default", user_uuids=[self._user_uuid])
         )
-        self.auth.set_token(MockUserToken(self._user_token, user_uuid=self._user_uuid,
-                                          tenant_uuid=VALID_TENANT))
-        self.calld_client.set_token(self._user_token)
+        self.calld_client = self.make_user_calld(self._user_uuid, tenant_uuid=VALID_TENANT)
 
     def test_voicemail_head_greeting_invalid_voicemail(self):
         exists = self.calld_client.voicemails.voicemail_greeting_exists(
