@@ -37,7 +37,10 @@ class AdhocConferencesNotifier:
                     adhoc_conference_id,
                     other_participant_user_uuid,
                     participant_call_body,
-                )
+                ),
+                headers={
+                    f'user_uuid:{other_participant_user_uuid}': True
+                }
             )
 
     def participant_left(self, adhoc_conference_id, other_participant_user_uuids, participant_call):
@@ -48,5 +51,8 @@ class AdhocConferencesNotifier:
                     adhoc_conference_id,
                     other_participant_user_uuid,
                     participant_call_body,
-                )
+                ),
+                headers={
+                    f'user_uuid:{other_participant_user_uuid}': True
+                }
             )
