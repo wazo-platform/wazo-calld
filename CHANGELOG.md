@@ -5,6 +5,8 @@
 * New API to create adhoc conferences
 
   * `POST /users/me/conferences/adhoc`
+  * `PUT /users/me/conferences/adhoc/{adhoc_conference_id}/participants/{call_id}`
+  * `DELETE /users/me/conferences/adhoc/{adhoc_conference_id}/participants/{call_id}`
   
 * New events for adhoc conferences:
 

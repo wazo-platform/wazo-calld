@@ -303,3 +303,10 @@ class Bridge:
             return set()
 
         return set(Channel(channel_id, self._ari).user() for channel_id in bridge.json['channels'])
+
+    def exists(self):
+        try:
+            self._ari.bridges.get(bridgeId=self.id)
+        except ARINotFound:
+            return False
+        return True

@@ -5,14 +5,14 @@ import uuid
 
 from ari.exceptions import ARIException, ARINotFound
 
-from wazo_calld.plugin_helpers.ari_ import Channel
+from wazo_calld.plugin_helpers.ari_ import Bridge, Channel
 from wazo_calld.plugin_helpers import ami
 from wazo_calld.plugin_helpers.exceptions import NotEnoughChannels, TooManyChannels
 
 from .exceptions import (
     AdhocConferenceCreationError,
+    AdhocConferenceNotFound,
     HostCallNotFound,
-    HostPermissionDenied,
     ParticipantCallNotFound,
 )
 
@@ -39,7 +39,7 @@ class AdhocConferencesService:
             raise HostCallNotFound(host_call_id)
 
         if host_channel.user() != user_uuid:
-            raise HostPermissionDenied(host_call_id, host_channel.user())
+            raise HostCallNotFound(host_call_id)
 
         adhoc_conference_id = str(uuid.uuid4())
         logger.debug('creating adhoc conference %s', adhoc_conference_id)
@@ -138,3 +138,37 @@ class AdhocConferencesService:
             extra_context='convert_to_stasis',
             extra_exten='h'
         )
+
+    def add_participant_from_user(self, adhoc_conference_id, participant_call_id, user_uuid):
+        bridge_helper = Bridge(adhoc_conference_id, self._ari)
+        if not bridge_helper.exists():
+            raise AdhocConferenceNotFound(adhoc_conference_id)
+
+        if not Channel(participant_call_id, self._ari).exists():
+            raise ParticipantCallNotFound(participant_call_id)
+
+        if bridge_helper.global_variables.get(variable='WAZO_HOST_USER_UUID') != user_uuid:
+            raise AdhocConferenceNotFound(adhoc_conference_id)
+
+        discarded_host_channel_id = self._find_call_peer(participant_call_id)
+        self._redirect_participant(participant_call_id, discarded_host_channel_id, adhoc_conference_id)
+
+    def remove_participant_from_user(self, adhoc_conference_id, participant_call_id, user_uuid):
+        bridge_helper = Bridge(adhoc_conference_id, self._ari)
+        if not bridge_helper.exists():
+            raise AdhocConferenceNotFound(adhoc_conference_id)
+
+        if bridge_helper.global_variables.get(variable='WAZO_HOST_USER_UUID') != user_uuid:
+            raise AdhocConferenceNotFound(adhoc_conference_id)
+
+        if not Channel(participant_call_id, self._ari).exists():
+            raise ParticipantCallNotFound(participant_call_id)
+
+        participants = self._ari.bridges.get(bridgeId=adhoc_conference_id).json['channels']
+        if participant_call_id not in participants:
+            raise ParticipantCallNotFound(participant_call_id)
+
+        try:
+            self._ari.channels.hangup(channelId=participant_call_id)
+        except ARINotFound:
+            pass

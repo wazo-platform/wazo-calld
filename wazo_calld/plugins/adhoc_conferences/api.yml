@@ -11,12 +11,43 @@ paths:
         schema:
           $ref: '#/definitions/ConferenceAdhocCreation'
       tags:
-      - conferences
+      - adhoc_conferences
       responses:
         '201':
           description: Conference adhoc has been created
           schema:
             $ref: '#/definitions/ConferenceAdhoc'
+        '400':
+          $ref: '#/responses/InvalidRequest'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+  /users/me/conferences/adhoc/{conference_id}/participants/{call_id}:
+    put:
+      summary: Add a participant into an adhoc conference
+      description: '**Required ACL:** `calld.users.me.conferences.adhoc.participants.update`'
+      parameters:
+        - $ref: '#/parameters/AdhocConferenceID'
+        - $ref: '#/parameters/CallID'
+      tags:
+      - adhoc_conferences
+      responses:
+        '204':
+          description: Participant has been added to the adhoc conference
+        '400':
+          $ref: '#/responses/InvalidRequest'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+    delete:
+      summary: Remove a participant from an adhoc conference
+      description: '**Required ACL:** `calld.users.me.conferences.adhoc.participants.delete`'
+      parameters:
+        - $ref: '#/parameters/AdhocConferenceID'
+        - $ref: '#/parameters/CallID'
+      tags:
+      - adhoc_conferences
+      responses:
+        '204':
+          description: Participant has been removed from the adhoc conference
         '400':
           $ref: '#/responses/InvalidRequest'
         '503':
@@ -39,3 +70,10 @@ definitions:
       conference_id:
         description: The ID of the adhoc conference
         type: string
+parameters:
+  AdhocConferenceID:
+    name: conference_id
+    in: path
+    description: ID of the adhoc conference
+    required: true
+    type: string
