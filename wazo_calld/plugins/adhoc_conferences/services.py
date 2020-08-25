@@ -84,12 +84,19 @@ class AdhocConferencesService:
             host_channel.setChannelVar(variable='WAZO_ADHOC_CONFERENCE_ID',
                                        value=adhoc_conference_id,
                                        bypassStasis=True)
+            host_channel.setChannelVar(variable='WAZO_IS_ADHOC_CONFERENCE_HOST',
+                                       value='true',
+                                       bypassStasis=True)
             host_peer_channel.setChannelVar(variable='WAZO_ADHOC_CONFERENCE_ID',
                                             value=adhoc_conference_id,
+                                            bypassStasis=True)
+            host_peer_channel.setChannelVar(variable='WAZO_IS_ADHOC_CONFERENCE_HOST',
+                                            value='false',
                                             bypassStasis=True)
         except ARIException as e:
             logger.exception('ARI error: %s', e)
             return
+
         ami.redirect(
             self._amid_client,
             host_peer_channel.json['name'],
@@ -113,9 +120,13 @@ class AdhocConferencesService:
             participant_channel.setChannelVar(variable='WAZO_ADHOC_CONFERENCE_ID',
                                               value=adhoc_conference_id,
                                               bypassStasis=True)
+            participant_channel.setChannelVar(variable='WAZO_IS_ADHOC_CONFERENCE_HOST',
+                                              value='false',
+                                              bypassStasis=True)
         except ARIException as e:
             logger.exception('ARI error: %s', e)
             return
+
         ami.redirect(
             self._amid_client,
             participant_channel.json['name'],

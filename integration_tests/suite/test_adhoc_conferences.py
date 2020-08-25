@@ -9,6 +9,7 @@ from hamcrest import (
     assert_that,
     calling,
     has_entries,
+    has_length,
     has_properties,
 )
 from xivo_test_helpers.hamcrest.raises import raises
@@ -40,6 +41,31 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
         tenant_uuid = tenant_uuid or str(uuid.uuid4())
         self.auth.set_token(MockUserToken(token_id, tenant_uuid=tenant_uuid, user_uuid=user_uuid))
         return token_id
+
+    def given_adhoc_conference(self, user_uuid, participant_count):
+        participant_call_ids = []
+
+        host_call_id, participant_call_id = self.real_asterisk.given_bridged_call_stasis(caller_uuid=user_uuid)
+        participant_call_ids.append(participant_call_id)
+
+        for _ in range(participant_count - 2):
+            _, participant_call_id = self.real_asterisk.given_bridged_call_stasis(caller_uuid=user_uuid)
+            participant_call_ids.append(participant_call_id)
+
+        adhoc_conference = self.calld_client.adhoc_conferences.create_from_user(
+            host_call_id,
+            *participant_call_ids
+        )
+
+        def calls_are_bridged():
+            host_call1 = self.calld_client.calls.get_call(host_call_id)
+            assert_that(host_call1, has_entries({
+                'talking_to': has_length(participant_count - 1)
+            }))
+        until.assert_(calls_are_bridged, timeout=10)
+        # todo: expect bus event
+
+        return adhoc_conference['conference_id'], [host_call_id] + participant_call_ids
 
     def test_user_create_adhoc_conference_no_auth(self):
         calld_no_auth = self.make_calld(token=None)
@@ -139,10 +165,51 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
         pass
 
     def test_extra_participant_hangup(self):
-        pass
+        user_uuid = make_user_uuid()
+        token = self.make_user_token(user_uuid)
+        self.calld_client.set_token(token)
+        _, call_ids = self.given_adhoc_conference(user_uuid, participant_count=3)
+        host_call_id, participant1_call_id, participant2_call_id = call_ids
+
+        self.ari.channels.hangup(channelId=participant2_call_id)
+
+        def calls_are_still_bridged():
+            host_call1 = self.calld_client.calls.get_call(host_call_id)
+            assert_that(host_call1, has_entries({
+                'talking_to': has_entries({
+                    participant1_call_id: anything(),
+                })
+            }))
+            assert_that(participant2_call_id, self.c.is_hungup())
+        until.assert_(calls_are_still_bridged, timeout=10)
+
+        # todo: expect bus event
 
     def test_last_participant_hangup(self):
-        pass
+        user_uuid = make_user_uuid()
+        token = self.make_user_token(user_uuid)
+        self.calld_client.set_token(token)
+        _, call_ids = self.given_adhoc_conference(user_uuid, participant_count=2)
+        host_call_id, participant1_call_id = call_ids
+
+        self.ari.channels.hangup(channelId=participant1_call_id)
+
+        def calls_are_hungup():
+            assert_that(host_call_id, self.c.is_hungup())
+            assert_that(participant1_call_id, self.c.is_hungup())
+        until.assert_(calls_are_hungup, timeout=10)
 
     def test_host_hangup(self):
-        pass
+        user_uuid = make_user_uuid()
+        token = self.make_user_token(user_uuid)
+        self.calld_client.set_token(token)
+        _, call_ids = self.given_adhoc_conference(user_uuid, participant_count=3)
+        host_call_id, participant1_call_id, participant2_call_id = call_ids
+
+        self.ari.channels.hangup(channelId=host_call_id)
+
+        def calls_are_hungup():
+            assert_that(host_call_id, self.c.is_hungup())
+            assert_that(participant1_call_id, self.c.is_hungup())
+            assert_that(participant2_call_id, self.c.is_hungup())
+        until.assert_(calls_are_hungup, timeout=10)

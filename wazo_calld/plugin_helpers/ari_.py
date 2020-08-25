@@ -256,3 +256,14 @@ class Channel:
 
     def _get_var(self, var):
         return self._ari.channels.getChannelVar(channelId=self.id, variable=var)['value']
+
+
+class Bridge:
+
+    def __init__(self, bridge_id, ari):
+        self.id = bridge_id
+        self._ari = ari
+        self.global_variables = GlobalVariableNameDecorator(
+            GlobalVariableAdapter(self._ari),
+            'WAZO_BRIDGE_{bridge_id}_VARIABLE_{{}}'.format(bridge_id=self.id)
+        )
