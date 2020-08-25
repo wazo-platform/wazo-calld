@@ -32,7 +32,7 @@ paths:
       - adhoc_conferences
       responses:
         '204':
-          description: Participants in conference adhoc has been added
+          description: Participant has been added to the adhoc conference
         '400':
           $ref: '#/responses/InvalidRequest'
         '503':
@@ -47,7 +47,7 @@ paths:
       - adhoc_conferences
       responses:
         '204':
-          description: Participants in conference adhoc has been removed
+          description: Participant has been removed from the adhoc conference
         '400':
           $ref: '#/responses/InvalidRequest'
         '503':
