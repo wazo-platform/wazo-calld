@@ -38,24 +38,37 @@ class AdhocConferencesService:
         if host_channel.user() != user_uuid:
             raise HostCallNotFound(host_call_id)
 
+        logger.debug('adhoc conference: looking for peer of host %s', host_call_id)
+        try:
+            host_peer_wazo_channel = self._find_peer_channel(host_call_id)
+        except NotEnoughChannels:
+            raise AdhocConferenceCreationError(f'could not determine peer of call {host_call_id}: call has no peers')
+        except TooManyChannels:
+            raise HostCallAlreadyInConference(host_call_id)
+
         for participant_call_id in participant_call_ids:
             if not Channel(participant_call_id, self._ari).exists():
                 raise ParticipantCallNotFound(participant_call_id)
 
-            peer_call_id = self._find_call_peer(participant_call_id)
-            if Channel(peer_call_id, self._ari).user() != user_uuid:
+            try:
+                peer_wazo_channel = self._find_peer_channel(participant_call_id)
+            except NotEnoughChannels:
+                logger.error('adhoc conference: participant %s is a lone channel', participant_call_id)
+                raise ParticipantCallNotFound(participant_call_id)
+            except TooManyChannels as e:
+                logger.error('adhoc conference: participant %s is already talking to %s channels', participant_call_id, len(list(e.channels)))
+                raise ParticipantCallNotFound(participant_call_id)
+
+            if peer_wazo_channel.user() != user_uuid:
                 raise ParticipantCallNotFound(participant_call_id)
 
         adhoc_conference_id = str(uuid.uuid4())
         logger.debug('creating adhoc conference %s', adhoc_conference_id)
         self._notifier.created(adhoc_conference_id, user_uuid)
 
-        logger.debug('adhoc conference %s: looking for peer of host %s', adhoc_conference_id, host_call_id)
-        host_peer_channel_id = self._find_call_peer(host_call_id)
+        self._redirect_host(host_call_id, host_peer_wazo_channel.id, adhoc_conference_id)
 
-        self._redirect_host(host_call_id, host_peer_channel_id, adhoc_conference_id)
-
-        remaining_participant_call_ids = set(participant_call_ids) - {host_peer_channel_id}
+        remaining_participant_call_ids = set(participant_call_ids) - {host_peer_wazo_channel.id}
         logger.debug('adhoc conference %s: remaining participants %s', adhoc_conference_id, remaining_participant_call_ids)
         for participant_call_id in remaining_participant_call_ids:
             logger.debug('adhoc conference %s: looking for peer of participant %s', adhoc_conference_id, participant_call_id)
@@ -73,7 +86,7 @@ class AdhocConferencesService:
             return Channel(call_id, self._ari).only_connected_channel().id
         except NotEnoughChannels:
             raise AdhocConferenceCreationError(f'could not determine peer of call {call_id}: call has no peers')
-        except TooManyChannels as e:
+        except TooManyChannels:
             raise HostCallAlreadyInConference(call_id)
 
     def _find_peer_channel(self, call_id):

@@ -269,6 +269,36 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
                         'error_id': 'participant-call-not-found',
                     })))
 
+    def test_user_create_adhoc_conference_with_host_lone_channel(self):
+        host_uuid = make_user_uuid()
+        token = self.make_user_token(host_uuid)
+        self.calld_client.set_token(token)
+        _, participant1_call_id = self.real_asterisk.given_bridged_call_stasis(caller_uuid=host_uuid)
+        lone_call_id = self.real_asterisk.stasis_channel().id
+
+        # response should not be different than a non-existing call, to avoid malicious call discovery
+        assert_that(calling(self.calld_client.adhoc_conferences.create_from_user)
+                    .with_args(lone_call_id, participant1_call_id),
+                    raises(CalldError).matching(has_properties({
+                        'status_code': 400,
+                        'error_id': 'host-call-not-found',
+                    })))
+
+    def test_user_create_adhoc_conference_with_participant_lone_channel(self):
+        host_uuid = make_user_uuid()
+        token = self.make_user_token(host_uuid)
+        self.calld_client.set_token(token)
+        host_call_id, participant1_call_id = self.real_asterisk.given_bridged_call_stasis(caller_uuid=host_uuid)
+        lone_call_id = self.real_asterisk.stasis_channel().id
+
+        # response should not be different than a non-existing call, to avoid malicious call discovery
+        assert_that(calling(self.calld_client.adhoc_conferences.create_from_user)
+                    .with_args(host_call_id, participant1_call_id, lone_call_id),
+                    raises(CalldError).matching(has_properties({
+                        'status_code': 400,
+                        'error_id': 'participant-call-not-found',
+                    })))
+
     def test_user_delete_adhoc_conference_no_auth(self):
         calld_no_auth = self.make_calld(token=INVALID_ACL_TOKEN)
         assert_that(calling(calld_no_auth.adhoc_conferences.delete_from_user)
@@ -575,7 +605,7 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
         self.calld_client.set_token(token)
         adhoc_conference_id, call_ids = self.given_adhoc_conference(host_uuid, participant_count=2)
         host_call_id, participant_call_id = call_ids
-        lone_call_id = self.real_asterisk.stasis_channel()
+        lone_call_id = self.real_asterisk.stasis_channel().id
 
         # response should not be different than a non-existing call, to avoid malicious call discovery
         assert_that(calling(self.calld_client.adhoc_conferences.add_participant_from_user)
