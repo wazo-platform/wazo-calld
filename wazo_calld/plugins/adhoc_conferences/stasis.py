@@ -164,5 +164,6 @@ class AdhocConferencesStasis:
 
         self._notifier.deleted(bridge.id, host_user_uuid)
 
-        host_user_uuid = Bridge(bridge.id, self.ari).global_variables.unset('WAZO_HOST_USER_UUID')
-        host_user_uuid = Bridge(bridge.id, self.ari).global_variables.unset('WAZO_HOST_CHANNEL_ID')
+        bridge_helper = Bridge(bridge.id, self.ari)
+        bridge_helper.global_variables.unset('WAZO_HOST_USER_UUID')
+        bridge_helper.global_variables.unset('WAZO_HOST_CHANNEL_ID')
