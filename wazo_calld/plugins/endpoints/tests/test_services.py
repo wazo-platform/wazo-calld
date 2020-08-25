@@ -159,16 +159,22 @@ class TestCachingConfdClient(TestCase):
         assert_that(result, equal_to(None))
 
     def test_delete_trunk(self):
-        self._set_cache(trunks=[
-            {
-                'id': s.trunk_id,
-                'endpoint_sip': {
+        self._set_cache(
+            trunks=[
+                {
+                    'id': s.trunk_id,
+                    'endpoint_sip': {'name': s.name},
+                    'tenant_uuid': s.tenant_uuid,
+                },
+            ],
+            endpoints=[
+                {
                     'name': s.name,
                     'auth_section_options': [['username', s.username]],
-                },
-                'tenant_uuid': s.tenant_uuid,
-            },
-        ])
+                    'tenant_uuid': s.tenant_uuid,
+                }
+            ],
+        )
 
         self.client.delete_trunk(s.trunk_id)
 
@@ -206,16 +212,22 @@ class TestCachingConfdClient(TestCase):
         assert_that(result, equal_to(None))
 
     def test_update_trunk(self):
-        self._set_cache(trunks=[
-            {
-                'id': s.trunk_id,
-                'endpoint_sip': {
+        self._set_cache(
+            trunks=[
+                {
+                    'id': s.trunk_id,
+                    'endpoint_sip': {'name': s.name},
+                    'tenant_uuid': s.tenant_uuid,
+                },
+            ],
+            endpoints=[
+                {
                     'name': s.name,
                     'auth_section_options': [['username', s.username]],
-                },
-                'tenant_uuid': s.tenant_uuid,
-            },
-        ])
+                    'tenant_uuid': s.tenant_uuid,
+                }
+            ],
+        )
 
         self.client.update_trunk('sip', s.trunk_id, s.new_name, s.new_username, s.tenant_uuid)
 
@@ -292,34 +304,42 @@ class TestCachingConfdClient(TestCase):
         ))
 
     def test_list_trunks(self):
-        self._set_cache([
-            {
-                'id': 1,
-                'endpoint_sip': {
+        self._set_cache(
+            trunks=[
+                {
+                    'id': 1,
+                    'endpoint_sip': {'name': s.name_1},
+                    'tenant_uuid': s.tenant_uuid,
+                },
+                {
+                    'id': 2,
+                    'endpoint_iax': {'name': s.name},
+                    'tenant_uuid': s.tenant_uuid,
+                },
+                {
+                    'id': 3,
+                    'endpoint_custom': {'interface': s.interface},
+                    'tenant_uuid': s.tenant_uuid,
+                },
+                {
+                    'id': 4,
+                    'endpoint_sip': {'name': s.ignored_name},
+                    'tenant_uuid': s.other_tenant_uuid,
+                },
+            ],
+            endpoints=[
+                {
                     'name': s.name_1,
                     'auth_section_options': [['username', s.username_1]],
+                    'tenant_uuid': s.tenant_uuid,
                 },
-                'tenant_uuid': s.tenant_uuid,
-            },
-            {
-                'id': 2,
-                'endpoint_iax': {'name': s.name},
-                'tenant_uuid': s.tenant_uuid,
-            },
-            {
-                'id': 3,
-                'endpoint_custom': {'interface': s.interface},
-                'tenant_uuid': s.tenant_uuid,
-            },
-            {
-                'id': 4,
-                'endpoint_sip': {
+                {
                     'name': s.ignored_name,
                     'auth_section_options': [['username', s.ignored_username]],
+                    'tenant_uuid': s.other_tenant_uuid,
                 },
-                'tenant_uuid': s.other_tenant_uuid,
-            },
-        ])
+            ],
+        )
 
         result = self.client.list_trunks(s.tenant_uuid)
 
@@ -331,6 +351,7 @@ class TestCachingConfdClient(TestCase):
 
     def test_initialize_lines(self):
         self.confd.trunks.list.return_value = {'items': [], 'total': 0}
+        self.confd.endpoints_sip.list.return_value = {'items': [], 'total': 0}
         self.confd.lines.list.return_value = {
             "total": 3,
             "items": [
@@ -387,9 +408,9 @@ class TestCachingConfdClient(TestCase):
             ),
         ))
 
-    def _set_cache(self, trunks=None, lines=None):
+    def _set_cache(self, trunks=None, lines=None, endpoints=None):
         if trunks:
-            self.client._update_trunk_cache(trunks)
+            self.client._update_trunk_cache(trunks, endpoints)
         if lines:
             self.client._update_line_cache(lines)
 
