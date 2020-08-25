@@ -23,9 +23,10 @@ logger = logging.getLogger(__name__)
 
 class AdhocConferencesService:
 
-    def __init__(self, amid_client, ari):
+    def __init__(self, amid_client, ari, notifier):
         self._amid_client = amid_client
         self._ari = ari
+        self._notifier = notifier
 
     def create_from_user(self, host_call_id, participant_call_ids, user_uuid):
         logger.debug('creating adhoc conference from user %s with host %s and participants %s', user_uuid, host_call_id, participant_call_ids)
@@ -42,6 +43,7 @@ class AdhocConferencesService:
 
         adhoc_conference_id = str(uuid.uuid4())
         logger.debug('creating adhoc conference %s', adhoc_conference_id)
+        self._notifier.created(adhoc_conference_id, user_uuid)
 
         logger.debug('adhoc conference %s: looking for peer of host %s', adhoc_conference_id, host_call_id)
         host_peer_channel_id = self._find_call_peer(host_call_id)

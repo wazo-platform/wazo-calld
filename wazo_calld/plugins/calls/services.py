@@ -258,7 +258,8 @@ class CallsService:
 
         return new_channel.id
 
-    def make_call_from_channel(self, ari, channel):
+    @staticmethod
+    def make_call_from_channel(ari, channel):
         channel_helper = Channel(channel.id, ari)
         call = Call(channel.id)
         call.creation_time = channel.json['creationtime']
@@ -279,7 +280,8 @@ class CallsService:
 
         return call
 
-    def make_call_from_ami_event(self, event):
+    @staticmethod
+    def make_call_from_ami_event(event):
         event_variables = event['ChanVariable']
         call = Call(event['Uniqueid'])
         call.status = event['ChannelStateDesc']
@@ -287,6 +289,24 @@ class CallsService:
         call.caller_id_number = event['CallerIDNum']
         call.peer_caller_id_name = event['ConnectedLineName']
         call.peer_caller_id_number = event['ConnectedLineNum']
+        call.user_uuid = event_variables.get('WAZO_DEREFERENCED_USERUUID') or event_variables.get('XIVO_USERUUID') or None
+        call.dialed_extension = event_variables.get('XIVO_BASE_EXTEN') or None
+        call.bridges = []
+        call.talking_to = {}
+        call.sip_call_id = event_variables.get('WAZO_SIP_CALL_ID') or None
+
+        return call
+
+    @staticmethod
+    def make_call_from_dead_channel(channel):
+        event_variables = channel.json['channelvars']
+        call = Call(channel.id)
+        call.creation_time = channel.json['creationtime']
+        call.status = channel.json['state']
+        call.caller_id_name = channel.json['caller']['name']
+        call.caller_id_number = channel.json['caller']['number']
+        call.peer_caller_id_name = channel.json['connected']['name']
+        call.peer_caller_id_number = channel.json['connected']['number']
         call.user_uuid = event_variables.get('WAZO_DEREFERENCED_USERUUID') or event_variables.get('XIVO_USERUUID') or None
         call.dialed_extension = event_variables.get('XIVO_BASE_EXTEN') or None
         call.bridges = []

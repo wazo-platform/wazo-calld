@@ -1,4 +1,4 @@
-# Copyright 2016-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
@@ -208,6 +208,9 @@ class TransfersStasis:
         transfer_state.transferred_hangup()
 
     def clean_bridge(self, channel, event):
+        if event['application'] != 'callcontrol':
+            return
+
         try:
             bridge = self.ari.bridges.get(bridgeId=event['bridge']['id'])
         except ARINotFound:
