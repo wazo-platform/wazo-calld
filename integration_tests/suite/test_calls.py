@@ -1773,12 +1773,30 @@ class TestCallHold(IntegrationTest):
     def test_hold(self):
         self.ari.set_channels(MockChannel(id='first-id',
                                           state='Up',
-                                          name='PJSIP/abcdef-000001'))
+                                          name='PJSIP/abcdef-000001'),
+                              MockChannel(id='second-id-no-device',
+                                          state='Up',
+                                          name='PJSIP/not-found-000002'),
+                              MockChannel(id='third-id-no-device-plugin',
+                                          state='Up',
+                                          name='PJSIP/no-plugin-000003'))
 
         # Invalid channel ID
         assert_that(
             calling(self.calld_client.calls.start_hold).with_args(UNKNOWN_UUID),
             raises(CalldError).matching(has_properties(status_code=404))
+        )
+
+        # Channel device is not found on phoned
+        assert_that(
+            calling(self.calld_client.calls.start_hold).with_args('second-id-no-device'),
+            raises(CalldError).matching(has_properties(status_code=503))
+        )
+
+        # Channel device has no plugin on phoned
+        assert_that(
+            calling(self.calld_client.calls.start_hold).with_args('third-id-no-device-plugin'),
+            raises(CalldError).matching(has_properties(status_code=503))
         )
 
         # Hold
@@ -1788,6 +1806,35 @@ class TestCallHold(IntegrationTest):
             'method': 'PUT',
             'path': '/0.1/endpoints/abcdef/hold/start',
         }))))
+
+    def test_unhold(self):
+        self.ari.set_channels(MockChannel(id='first-id',
+                                          state='Up',
+                                          name='PJSIP/abcdef-000001'),
+                              MockChannel(id='second-id-no-device',
+                                          state='Up',
+                                          name='PJSIP/not-found-000002'),
+                              MockChannel(id='third-id-no-device-plugin',
+                                          state='Up',
+                                          name='PJSIP/no-plugin-000003'))
+
+        # Invalid channel ID
+        assert_that(
+            calling(self.calld_client.calls.stop_hold).with_args(UNKNOWN_UUID),
+            raises(CalldError).matching(has_properties(status_code=404))
+        )
+
+        # Channel device is not found on phoned
+        assert_that(
+            calling(self.calld_client.calls.stop_hold).with_args('second-id-no-device'),
+            raises(CalldError).matching(has_properties(status_code=503))
+        )
+
+        # Channel device has no plugin on phoned
+        assert_that(
+            calling(self.calld_client.calls.stop_hold).with_args('third-id-no-device-plugin'),
+            raises(CalldError).matching(has_properties(status_code=503))
+        )
 
         # Unhold
         self.calld_client.calls.stop_hold('first-id')
@@ -1807,9 +1854,17 @@ class TestCallHold(IntegrationTest):
                                           name='PJSIP/abcdef-000001'),
                               MockChannel(id='someone-else-channel-id',
                                           state='Up',
-                                          name='PJSIP/ghijkl-000002'))
+                                          name='PJSIP/ghijkl-000002'),
+                              MockChannel(id='user-channel-id-device-no-plugin',
+                                          state='Up',
+                                          name='PJSIP/no-plugin-000003'),
+                              MockChannel(id='user-channel-id-no-device',
+                                          state='Up',
+                                          name='PJSIP/not-found-000004'))
         self.ari.set_channel_variable({'user-channel-id': {'XIVO_USERUUID': user_uuid},
-                                       'someone-else-channel-id': {'XIVO_USERUUID': someone_else_uuid}})
+                                       'someone-else-channel-id': {'XIVO_USERUUID': someone_else_uuid},
+                                       'user-channel-id-device-no-plugin': {'XIVO_USERUUID': user_uuid},
+                                       'user-channel-id-no-device': {'XIVO_USERUUID': user_uuid}})
 
         # Invalid channel ID
         assert_that(
@@ -1823,6 +1878,18 @@ class TestCallHold(IntegrationTest):
             raises(CalldError).matching(has_properties(status_code=403))
         )
 
+        # Channel device is not found on phoned
+        assert_that(
+            calling(self.calld_client.calls.start_hold_from_user).with_args('user-channel-id-no-device'),
+            raises(CalldError).matching(has_properties(status_code=503))
+        )
+
+        # Channel device has no plugin on phoned
+        assert_that(
+            calling(self.calld_client.calls.start_hold_from_user).with_args('user-channel-id-device-no-plugin'),
+            raises(CalldError).matching(has_properties(status_code=503))
+        )
+
         # Hold
         self.calld_client.calls.start_hold_from_user('user-channel-id')
 
@@ -1831,12 +1898,164 @@ class TestCallHold(IntegrationTest):
             'path': '/0.1/endpoints/abcdef/hold/start',
         }))))
 
+    def test_user_unhold(self):
+        user_uuid = str(uuid.uuid4())
+        someone_else_uuid = str(uuid.uuid4())
+        token = self.given_user_token(user_uuid)
+        self.calld_client.set_token(token)
+        self.ari.set_channels(MockChannel(id='user-channel-id',
+                                          state='Up',
+                                          name='PJSIP/abcdef-000001'),
+                              MockChannel(id='someone-else-channel-id',
+                                          state='Up',
+                                          name='PJSIP/ghijkl-000002'),
+                              MockChannel(id='user-channel-id-device-no-plugin',
+                                          state='Up',
+                                          name='PJSIP/no-plugin-000003'),
+                              MockChannel(id='user-channel-id-no-device',
+                                          state='Up',
+                                          name='PJSIP/not-found-000004'))
+        self.ari.set_channel_variable({'user-channel-id': {'XIVO_USERUUID': user_uuid},
+                                       'someone-else-channel-id': {'XIVO_USERUUID': someone_else_uuid},
+                                       'user-channel-id-device-no-plugin': {'XIVO_USERUUID': user_uuid},
+                                       'user-channel-id-no-device': {'XIVO_USERUUID': user_uuid}})
+
+        # Invalid channel ID
+        assert_that(
+            calling(self.calld_client.calls.stop_hold_from_user).with_args(UNKNOWN_UUID),
+            raises(CalldError).matching(has_properties(status_code=404))
+        )
+
+        # Unauthorized channel
+        assert_that(
+            calling(self.calld_client.calls.stop_hold_from_user).with_args('someone-else-channel-id'),
+            raises(CalldError).matching(has_properties(status_code=403))
+        )
+
+        # Channel device is not found on phoned
+        assert_that(
+            calling(self.calld_client.calls.stop_hold_from_user).with_args('user-channel-id-no-device'),
+            raises(CalldError).matching(has_properties(status_code=503))
+        )
+
+        # Channel device has no plugin on phoned
+        assert_that(
+            calling(self.calld_client.calls.stop_hold_from_user).with_args('user-channel-id-device-no-plugin'),
+            raises(CalldError).matching(has_properties(status_code=503))
+        )
+
         # Unhold
         self.calld_client.calls.stop_hold_from_user('user-channel-id')
 
         assert_that(self.phoned.requests(), has_entry('requests', has_item(has_entries({
             'method': 'PUT',
             'path': '/0.1/endpoints/abcdef/hold/stop',
+        }))))
+
+    def given_user_token(self, user_uuid):
+        token = 'my-token'
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
+        return token
+
+
+class TestCallAnswer(IntegrationTest):
+
+    asset = 'basic_rest'
+
+    def setUp(self):
+        super().setUp()
+        self.ari.reset()
+        self.phoned.reset()
+
+    def test_answer(self):
+        self.ari.set_channels(MockChannel(id='first-id',
+                                          state='Up',
+                                          name='PJSIP/abcdef-000001'),
+                              MockChannel(id='second-id-no-device',
+                                          state='Up',
+                                          name='PJSIP/not-found-000002'),
+                              MockChannel(id='third-id-no-device-plugin',
+                                          state='Up',
+                                          name='PJSIP/no-plugin-000003'))
+
+        # Invalid channel ID
+        assert_that(
+            calling(self.calld_client.calls.answer).with_args(UNKNOWN_UUID),
+            raises(CalldError).matching(has_properties(status_code=404))
+        )
+
+        # Channel device is not found on phoned
+        assert_that(
+            calling(self.calld_client.calls.answer).with_args('second-id-no-device'),
+            raises(CalldError).matching(has_properties(status_code=503))
+        )
+
+        # Channel device has no plugin on phoned
+        assert_that(
+            calling(self.calld_client.calls.answer).with_args('third-id-no-device-plugin'),
+            raises(CalldError).matching(has_properties(status_code=503))
+        )
+
+        # Answer
+        self.calld_client.calls.answer('first-id')
+
+        assert_that(self.phoned.requests(), has_entry('requests', has_item(has_entries({
+            'method': 'PUT',
+            'path': '/0.1/endpoints/abcdef/answer',
+        }))))
+
+    def test_user_answer(self):
+        user_uuid = str(uuid.uuid4())
+        someone_else_uuid = str(uuid.uuid4())
+        token = self.given_user_token(user_uuid)
+        self.calld_client.set_token(token)
+        self.ari.set_channels(MockChannel(id='user-channel-id',
+                                          state='Up',
+                                          name='PJSIP/abcdef-000001'),
+                              MockChannel(id='someone-else-channel-id',
+                                          state='Up',
+                                          name='PJSIP/ghijkl-000002'),
+                              MockChannel(id='user-channel-id-device-no-plugin',
+                                          state='Up',
+                                          name='PJSIP/no-plugin-000003'),
+                              MockChannel(id='user-channel-id-no-device',
+                                          state='Up',
+                                          name='PJSIP/not-found-000004'))
+        self.ari.set_channel_variable({'user-channel-id': {'XIVO_USERUUID': user_uuid},
+                                       'someone-else-channel-id': {'XIVO_USERUUID': someone_else_uuid},
+                                       'user-channel-id-device-no-plugin': {'XIVO_USERUUID': user_uuid},
+                                       'user-channel-id-no-device': {'XIVO_USERUUID': user_uuid}})
+
+        # Invalid channel ID
+        assert_that(
+            calling(self.calld_client.calls.answer_from_user).with_args(UNKNOWN_UUID),
+            raises(CalldError).matching(has_properties(status_code=404))
+        )
+
+        # Unauthorized channel
+        assert_that(
+            calling(self.calld_client.calls.answer_from_user).with_args('someone-else-channel-id'),
+            raises(CalldError).matching(has_properties(status_code=403))
+        )
+
+        # Channel device is not found on phoned
+        assert_that(
+            calling(self.calld_client.calls.answer_from_user).with_args('user-channel-id-no-device'),
+            raises(CalldError).matching(has_properties(status_code=503))
+        )
+
+        # Channel device has no plugin on phoned
+        assert_that(
+            calling(self.calld_client.calls.answer_from_user).with_args('user-channel-id-device-no-plugin'),
+            raises(CalldError).matching(has_properties(status_code=503))
+        )
+
+        # Answer
+        self.calld_client.calls.answer_from_user('user-channel-id')
+
+        assert_that(self.phoned.requests(), has_entry('requests', has_item(has_entries({
+            'method': 'PUT',
+            'path': '/0.1/endpoints/abcdef/answer',
         }))))
 
     def given_user_token(self, user_uuid):

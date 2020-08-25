@@ -1,4 +1,4 @@
-# Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -64,4 +64,18 @@ class TokenWithUserUUIDRequiredError(APIException):
             status_code=400,
             message='A valid token with a user UUID is required',
             error_id='token-with-user-uuid-required',
+        )
+
+
+class PhonedError(APIException):
+
+    def __init__(self, phoned_config, error):
+        super().__init__(
+            status_code=503,
+            message='Phoned internal error',
+            error_id='phoned-error',
+            details={
+                'phoned_config': phoned_config,
+                'original_error': str(error),
+            }
         )

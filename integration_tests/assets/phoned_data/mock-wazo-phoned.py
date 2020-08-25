@@ -57,11 +57,28 @@ def list_requests():
 
 @app.route("/0.1/endpoints/<endpoint>/hold/start", methods=['PUT'])
 def start_hold(endpoint):
+    if endpoint == 'not-found':
+        return '', 404
+    if endpoint == 'no-plugin':
+        return '', 400
     return '', 204
 
 
 @app.route("/0.1/endpoints/<endpoint>/hold/stop", methods=['PUT'])
 def stop_hold(endpoint):
+    if endpoint == 'not-found':
+        return '', 404
+    if endpoint == 'no-plugin':
+        return '', 400
+    return '', 204
+
+
+@app.route("/0.1/endpoints/<endpoint>/answer", methods=['PUT'])
+def answer(endpoint):
+    if endpoint == 'not-found':
+        return '', 404
+    if endpoint == 'no-plugin':
+        return '', 400
     return '', 204
 
 

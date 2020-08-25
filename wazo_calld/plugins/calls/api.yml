@@ -131,7 +131,6 @@ paths:
       description: '**Required ACL:** `calld.calls.{call_id}.hold.start.update`
 
 
-      All this route does is send an event on the bus.
       This works **only** if the phone brand has a corresponding phoned plugin
       to handle the event.
       '
@@ -154,7 +153,6 @@ paths:
       description: '**Required ACL:** `calld.calls.{call_id}.hold.stop.update`
 
 
-      All this route does is send an event on the bus.
       This works **only** if the phone brand has a corresponding phoned plugin
       to handle the event.
       '
@@ -165,6 +163,28 @@ paths:
       responses:
         '204':
           description: The call is now unheld
+        '404':
+          description: No such call
+          schema:
+            $ref: '#/definitions/Error'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+  /calls/{call_id}/answer:
+    put:
+      summary: Answer a call
+      description: '**Required ACL:** `calld.calls.{call_id}.answer.update`
+
+
+      This works **only** if the phone brand has a corresponding phoned plugin
+      to handle the event.
+      '
+      parameters:
+      - $ref: '#/parameters/CallID'
+      tags:
+      - calls
+      responses:
+        '204':
+          description: The call is now answered
         '404':
           description: No such call
           schema:
@@ -371,6 +391,27 @@ paths:
       responses:
         '204':
           description: The call is now unheld
+        '404':
+          description: No such call
+          schema:
+            $ref: '#/definitions/Error'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+  /users/me/calls/{call_id}/answer:
+    put:
+      summary: Answer a call from user
+      description: '**Required ACL:** `calld.users.me.calls.{call_id}.answer.update`
+
+
+        Only calls owned by the authenticated user may be answered.'
+      parameters:
+      - $ref: '#/parameters/CallID'
+      tags:
+      - calls
+      - users
+      responses:
+        '204':
+          description: The call is now answered
         '404':
           description: No such call
           schema:
