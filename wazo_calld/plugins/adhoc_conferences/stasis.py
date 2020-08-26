@@ -107,8 +107,7 @@ class AdhocConferencesStasis:
     def _set_host_connectedline(self, channel_id, adhoc_conference_id):
         try:
             host_caller_id_number = self.ari.channels.getChannelVar(channelId=channel_id, variable='CALLERID(number)')['value']
-            self.ari.channels.setChannelVar(channelId=channel_id, variable='CONNECTEDLINE(name)', value='Conference')
-            self.ari.channels.setChannelVar(channelId=channel_id, variable='CONNECTEDLINE(number)', value=host_caller_id_number)
+            self.ari.channels.setChannelVar(channelId=channel_id, variable='CONNECTEDLINE(all)', value=f'"Conference" <{host_caller_id_number}>')
         except ARINotFound:
             logger.error('adhoc conference %s: channel %s hungup too early or variable not found when setting connected line', adhoc_conference_id, channel_id)
             return
