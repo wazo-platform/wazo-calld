@@ -91,6 +91,9 @@ class AdhocConferencesStasis:
 
             self._notify_host_of_channels_already_present(adhoc_conference_id, event['bridge']['channels'], host_user_uuid)
 
+            logger.debug('adhoc conference %s: setting host connectedline', adhoc_conference_id)
+            self._set_host_connectedline(channel_id, adhoc_conference_id)
+
     def _notify_host_of_channels_already_present(self, adhoc_conference_id, channel_ids, host_user_uuid):
         for channel_id in channel_ids:
             try:
@@ -100,6 +103,14 @@ class AdhocConferencesStasis:
                 continue
             other_participant_call = CallsService.make_call_from_channel(self.ari, other_participant_channel)
             self._notifier.participant_joined(adhoc_conference_id, [host_user_uuid], other_participant_call)
+
+    def _set_host_connectedline(self, channel_id, adhoc_conference_id):
+        try:
+            host_caller_id_number = self.ari.channels.getChannelVar(channelId=channel_id, variable='CALLERID(number)')['value']
+            self.ari.channels.setChannelVar(channelId=channel_id, variable='CONNECTEDLINE(all)', value=f'"Conference" <{host_caller_id_number}>')
+        except ARINotFound:
+            logger.error('adhoc conference %s: channel %s hungup too early or variable not found when setting connected line', adhoc_conference_id, channel_id)
+            return
 
     def on_channel_left_bridge(self, channel, event):
         if event['application'] != ADHOC_CONFERENCE_STASIS_APP:
