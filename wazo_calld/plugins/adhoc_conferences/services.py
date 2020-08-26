@@ -139,6 +139,16 @@ class AdhocConferencesService:
             extra_exten='h'
         )
 
+    def delete_from_user(self, adhoc_conference_id, user_uuid):
+        bridge_helper = Bridge(adhoc_conference_id, self._ari)
+        if not bridge_helper.exists():
+            raise AdhocConferenceNotFound(adhoc_conference_id)
+
+        if bridge_helper.global_variables.get(variable='WAZO_HOST_USER_UUID') != user_uuid:
+            raise AdhocConferenceNotFound(adhoc_conference_id)
+
+        bridge_helper.hangup_all()
+
     def add_participant_from_user(self, adhoc_conference_id, participant_call_id, user_uuid):
         bridge_helper = Bridge(adhoc_conference_id, self._ari)
         if not bridge_helper.exists():

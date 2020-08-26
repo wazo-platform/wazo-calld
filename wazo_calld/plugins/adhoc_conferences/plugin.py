@@ -6,6 +6,7 @@ from wazo_amid_client import Client as AmidClient
 from xivo.pubsub import CallbackCollector
 
 from .http import (
+    UserAdhocConferenceResource,
     UserAdhocConferencesResource,
     UserAdhocConferenceParticipantResource,
 )
@@ -37,4 +38,5 @@ class Plugin:
         startup_callback_collector.subscribe(adhoc_conferences_stasis.initialize)
 
         api.add_resource(UserAdhocConferencesResource, '/users/me/conferences/adhoc', resource_class_args=[adhoc_conferences_service, auth_client])
+        api.add_resource(UserAdhocConferenceResource, '/users/me/conferences/adhoc/<adhoc_conference_id>', resource_class_args=[adhoc_conferences_service, auth_client])
         api.add_resource(UserAdhocConferenceParticipantResource, '/users/me/conferences/adhoc/<adhoc_conference_id>/participants/<call_id>', resource_class_args=[adhoc_conferences_service, auth_client])

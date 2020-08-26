@@ -21,6 +21,23 @@ paths:
           $ref: '#/responses/InvalidRequest'
         '503':
           $ref: '#/responses/AnotherServiceUnavailable'
+  /users/me/conferences/adhoc/{conference_id}:
+    delete:
+      summary: Delete an adhoc conference
+      description: '**Required ACL:** `calld.users.me.conferences.adhoc.delete`. All calls in the adhoc conference will be hungup.'
+      parameters:
+        - $ref: '#/parameters/AdhocConferenceID'
+      tags:
+        - adhoc_conferences
+      responses:
+        '204':
+          description: Conference adhoc has been deleted
+          schema:
+            $ref: '#/definitions/ConferenceAdhoc'
+        '404':
+          $ref: '#/responses/NoSuchAdhocConference'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
   /users/me/conferences/adhoc/{conference_id}/participants/{call_id}:
     put:
       summary: Add a participant into an adhoc conference
@@ -35,6 +52,8 @@ paths:
           description: Participant has been added to the adhoc conference
         '400':
           $ref: '#/responses/InvalidRequest'
+        '404':
+          $ref: '#/responses/NoSuchAdhocConference'
         '503':
           $ref: '#/responses/AnotherServiceUnavailable'
     delete:
@@ -50,6 +69,8 @@ paths:
           description: Participant has been removed from the adhoc conference
         '400':
           $ref: '#/responses/InvalidRequest'
+        '404':
+          $ref: '#/responses/NoSuchAdhocConference'
         '503':
           $ref: '#/responses/AnotherServiceUnavailable'
 definitions:
@@ -77,3 +98,8 @@ parameters:
     description: ID of the adhoc conference
     required: true
     type: string
+responses:
+  NoSuchAdhocConference:
+    description: The specified adhoc conference does not exist
+    schema:
+      $ref: '#/definitions/Error'

@@ -111,9 +111,14 @@ class AdhocConferencesStasis:
         logger.debug('adhoc conference %s: channel %s left', adhoc_conference_id, channel_id)
 
         bridge_helper = Bridge(adhoc_conference_id, self.ari)
+        try:
+            host_user_uuid = bridge_helper.global_variables.get('WAZO_HOST_USER_UUID')
+        except KeyError:
+            logger.error('adhoc conference %s: could not retrieve host user uuid when leaving', adhoc_conference_id)
+            return
 
         participant_call = CallsService.make_call_from_dead_channel(channel)
-        other_participant_uuids = bridge_helper.valid_user_uuids()
+        other_participant_uuids = bridge_helper.valid_user_uuids() | {host_user_uuid}
         self._notifier.participant_left(adhoc_conference_id, other_participant_uuids, participant_call)
 
         if bridge_helper.has_lone_channel():
@@ -159,7 +164,7 @@ class AdhocConferencesStasis:
         try:
             host_user_uuid = Bridge(bridge.id, self.ari).global_variables.get('WAZO_HOST_USER_UUID')
         except KeyError:
-            logger.error('adhoc conference %s: could not retrieve host user uuid', bridge.id)
+            logger.error('adhoc conference %s: could not retrieve host user uuid when destroying', bridge.id)
             return
 
         self._notifier.deleted(bridge.id, host_user_uuid)
