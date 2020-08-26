@@ -19,6 +19,8 @@ paths:
             $ref: '#/definitions/ConferenceAdhoc'
         '400':
           $ref: '#/responses/InvalidRequest'
+        '409':
+          $ref: '#/responses/HostAlreadyInConference'
         '503':
           $ref: '#/responses/AnotherServiceUnavailable'
   /users/me/conferences/adhoc/{conference_id}:
@@ -101,5 +103,9 @@ parameters:
 responses:
   NoSuchAdhocConference:
     description: The specified adhoc conference does not exist
+    schema:
+      $ref: '#/definitions/Error'
+  HostAlreadyInConference:
+    description: The host call is already in a conference
     schema:
       $ref: '#/definitions/Error'

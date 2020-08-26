@@ -79,7 +79,6 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
                 'talking_to': has_length(participant_count - 1)
             }))
         until.assert_(calls_are_bridged, timeout=10)
-        # todo: expect bus event
 
         return adhoc_conference['conference_id'], [host_call_id] + participant_call_ids
 
@@ -103,7 +102,10 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
                     })))
 
     def test_user_create_adhoc_conference_no_participant_call(self):
-        caller_call_id, callee_call_id = self.real_asterisk.given_bridged_call_stasis()
+        host_uuid = make_user_uuid()
+        token = self.make_user_token(host_uuid)
+        self.calld_client.set_token(token)
+        caller_call_id, callee_call_id = self.real_asterisk.given_bridged_call_stasis(caller_uuid=host_uuid)
 
         assert_that(calling(self.calld_client.adhoc_conferences.create_from_user)
                     .with_args(caller_call_id, SOME_CALL_ID),
@@ -207,25 +209,95 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
         until.assert_(bus_events_are_sent, timeout=10)
 
     def test_user_create_adhoc_conference_participant_in_conference_with_host(self):
-        pass
+        user_uuid = make_user_uuid()
+        token = self.make_user_token(user_uuid)
+        self.calld_client.set_token(token)
+        adhoc_conference_id, call_ids = self.given_adhoc_conference(user_uuid, participant_count=3)
+        host_call_id, participant_call_id, _ = call_ids
 
-    def test_user_create_adhoc_conference_participant_is_lone_channel(self):
-        # response should not be different than a non-existing call, to avoid malicious call discovery
-        pass
+        assert_that(calling(self.calld_client.adhoc_conferences.create_from_user)
+                    .with_args(host_call_id, participant_call_id),
+                    raises(CalldError).matching(has_properties({
+                        'status_code': 409,
+                        'error_id': 'host-already-in-conference',
+                    })))
 
     def test_user_create_adhoc_conference_participant_not_in_stasis(self):
-        pass
+        host_uuid = make_user_uuid()
+        participant1_uuid = make_user_uuid()
+        participant2_uuid = make_user_uuid()
+        token = self.make_user_token(host_uuid)
+        self.calld_client.set_token(token)
+
+        host_call1_id, participant1_call_id = self.real_asterisk.given_bridged_call_not_stasis(caller_uuid=host_uuid, callee_uuid=participant1_uuid)
+        host_call2_id, participant2_call_id = self.real_asterisk.given_bridged_call_not_stasis(caller_uuid=host_uuid, callee_uuid=participant2_uuid)
+
+        adhoc_conference = self.calld_client.adhoc_conferences.create_from_user(
+            host_call1_id,
+            participant1_call_id,
+            participant2_call_id,
+        )
+
+        assert_that(adhoc_conference, has_entries({
+            'conference_id': anything(),
+        }))
+
+        def calls_are_bridged():
+            host_call1 = self.calld_client.calls.get_call(host_call1_id)
+            assert_that(host_call1, has_entries({
+                'talking_to': has_entries({
+                    participant1_call_id: anything(),
+                    participant2_call_id: anything(),
+                })
+            }))
+            assert_that(host_call2_id, self.c.is_hungup())
+        until.assert_(calls_are_bridged, timeout=10)
 
     def test_user_create_adhoc_conference_participant_not_talking_to_host(self):
-        # response should not be different than a non-existing call, to avoid malicious call discovery
-        pass
+        host_uuid = make_user_uuid()
+        another_uuid = make_user_uuid()
+        token = self.make_user_token(host_uuid)
+        self.calld_client.set_token(token)
+        host_call_id, participant1_call_id = self.real_asterisk.given_bridged_call_stasis(caller_uuid=host_uuid)
+        _, participant2_call_id = self.real_asterisk.given_bridged_call_stasis(caller_uuid=another_uuid)
 
-    def test_user_create_adhoc_conference_participant_ringing(self):
-        pass
-
-    def test_user_create_adhoc_conference_host_not_talking_to_participant(self):
         # response should not be different than a non-existing call, to avoid malicious call discovery
-        pass
+        assert_that(calling(self.calld_client.adhoc_conferences.create_from_user)
+                    .with_args(host_call_id, participant1_call_id, participant2_call_id),
+                    raises(CalldError).matching(has_properties({
+                        'status_code': 400,
+                        'error_id': 'participant-call-not-found',
+                    })))
+
+    def test_user_create_adhoc_conference_with_host_lone_channel(self):
+        host_uuid = make_user_uuid()
+        token = self.make_user_token(host_uuid)
+        self.calld_client.set_token(token)
+        _, participant1_call_id = self.real_asterisk.given_bridged_call_stasis(caller_uuid=host_uuid)
+        lone_call_id = self.real_asterisk.stasis_channel().id
+
+        # response should not be different than a non-existing call, to avoid malicious call discovery
+        assert_that(calling(self.calld_client.adhoc_conferences.create_from_user)
+                    .with_args(lone_call_id, participant1_call_id),
+                    raises(CalldError).matching(has_properties({
+                        'status_code': 400,
+                        'error_id': 'host-call-not-found',
+                    })))
+
+    def test_user_create_adhoc_conference_with_participant_lone_channel(self):
+        host_uuid = make_user_uuid()
+        token = self.make_user_token(host_uuid)
+        self.calld_client.set_token(token)
+        host_call_id, participant1_call_id = self.real_asterisk.given_bridged_call_stasis(caller_uuid=host_uuid)
+        lone_call_id = self.real_asterisk.stasis_channel().id
+
+        # response should not be different than a non-existing call, to avoid malicious call discovery
+        assert_that(calling(self.calld_client.adhoc_conferences.create_from_user)
+                    .with_args(host_call_id, participant1_call_id, lone_call_id),
+                    raises(CalldError).matching(has_properties({
+                        'status_code': 400,
+                        'error_id': 'participant-call-not-found',
+                    })))
 
     def test_user_delete_adhoc_conference_no_auth(self):
         calld_no_auth = self.make_calld(token=INVALID_ACL_TOKEN)
@@ -506,19 +578,73 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
             ))
         until.assert_(bus_events_are_sent, timeout=10)
 
-    def test_user_add_participant_is_lone_channel(self):
-        # response should not be different than a non-existing call, to avoid malicious call discovery
-        pass
-
     def test_user_add_participant_not_in_stasis(self):
-        pass
+        host_uuid = make_user_uuid()
+        token = self.make_user_token(host_uuid)
+        self.calld_client.set_token(token)
+        adhoc_conference_id, call_ids = self.given_adhoc_conference(host_uuid, participant_count=2)
+        host_call1_id, participant1_call_id = call_ids
+        host_call2_id, participant2_call_id = self.real_asterisk.given_bridged_call_not_stasis(caller_uuid=host_uuid)
+
+        self.calld_client.adhoc_conferences.add_participant_from_user(adhoc_conference_id, participant2_call_id)
+
+        def calls_are_bridged():
+            host_call1 = self.calld_client.calls.get_call(host_call1_id)
+            assert_that(host_call1, has_entries({
+                'talking_to': has_entries({
+                    participant1_call_id: anything(),
+                    participant2_call_id: anything(),
+                })
+            }))
+            assert_that(host_call2_id, self.c.is_hungup())
+        until.assert_(calls_are_bridged, timeout=10)
+
+    def test_user_add_participant_lone_channel(self):
+        host_uuid = make_user_uuid()
+        token = self.make_user_token(host_uuid)
+        self.calld_client.set_token(token)
+        adhoc_conference_id, call_ids = self.given_adhoc_conference(host_uuid, participant_count=2)
+        host_call_id, participant_call_id = call_ids
+        lone_call_id = self.real_asterisk.stasis_channel().id
+
+        # response should not be different than a non-existing call, to avoid malicious call discovery
+        assert_that(calling(self.calld_client.adhoc_conferences.add_participant_from_user)
+                    .with_args(adhoc_conference_id, lone_call_id),
+                    raises(CalldError).matching(has_properties({
+                        'status_code': 400,
+                        'error_id': 'participant-call-not-found',
+                    })))
 
     def test_user_add_participant_not_talking_to_host(self):
-        # response should not be different than a non-existing call, to avoid malicious call discovery
-        pass
+        host_uuid = make_user_uuid()
+        another_uuid = make_user_uuid()
+        token = self.make_user_token(host_uuid)
+        self.calld_client.set_token(token)
+        adhoc_conference_id, call_ids = self.given_adhoc_conference(host_uuid, participant_count=2)
+        _, participant2_call_id = self.real_asterisk.given_bridged_call_stasis(caller_uuid=another_uuid)
 
-    def test_user_add_participant_ringing(self):
-        pass
+        # response should not be different than a non-existing call, to avoid malicious call discovery
+        assert_that(calling(self.calld_client.adhoc_conferences.add_participant_from_user)
+                    .with_args(adhoc_conference_id, participant2_call_id),
+                    raises(CalldError).matching(has_properties({
+                        'status_code': 400,
+                        'error_id': 'participant-call-not-found',
+                    })))
+
+    def test_user_add_participant_already_in_adhoc_conf(self):
+        host_uuid = make_user_uuid()
+        token = self.make_user_token(host_uuid)
+        self.calld_client.set_token(token)
+        adhoc_conference_id, call_ids = self.given_adhoc_conference(host_uuid, participant_count=3)
+        host_call_id, participant1_call_id, _ = call_ids
+
+        # response should not be different than a non-existing call, to avoid malicious call discovery
+        assert_that(calling(self.calld_client.adhoc_conferences.add_participant_from_user)
+                    .with_args(adhoc_conference_id, participant1_call_id),
+                    raises(CalldError).matching(has_properties({
+                        'status_code': 400,
+                        'error_id': 'participant-call-not-found',
+                    })))
 
     def test_user_remove_participant_no_auth(self):
         calld_no_auth = self.make_calld(token=INVALID_ACL_TOKEN)
