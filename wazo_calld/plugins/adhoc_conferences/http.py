@@ -36,7 +36,7 @@ class UserAdhocConferenceResource(AuthResource):
         self._adhoc_conference_service = adhoc_conference_service
         self._auth_client = auth_client
 
-    @required_acl('calld.users.me.conferences.adhoc.create')
+    @required_acl('calld.users.me.conferences.adhoc.delete')
     def delete(self, adhoc_conference_id):
         user_uuid = get_token_user_uuid_from_request(self._auth_client)
         self._adhoc_conference_service.delete_from_user(adhoc_conference_id, user_uuid)
