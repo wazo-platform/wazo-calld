@@ -631,12 +631,30 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
                         'error_id': 'participant-call-not-found',
                     })))
 
-    def test_user_add_participant_already_in_adhoc_conf(self):
+    def test_user_add_participant_already_in_same_adhoc_conf(self):
         host_uuid = make_user_uuid()
         token = self.make_user_token(host_uuid)
         self.calld_client.set_token(token)
         adhoc_conference_id, call_ids = self.given_adhoc_conference(host_uuid, participant_count=3)
         host_call_id, participant1_call_id, _ = call_ids
+
+        assert_that(calling(self.calld_client.adhoc_conferences.add_participant_from_user)
+                    .with_args(adhoc_conference_id, participant1_call_id),
+                    raises(CalldError).matching(has_properties({
+                        'status_code': 409,
+                        'error_id': 'participant-already-in-conference',
+                    })))
+
+    def test_user_add_participant_already_in_another_adhoc_conf(self):
+        another_uuid = make_user_uuid()
+        token = self.make_user_token(another_uuid)
+        self.calld_client.set_token(token)
+        _, call_ids = self.given_adhoc_conference(another_uuid, participant_count=3)
+        host_uuid = make_user_uuid()
+        token = self.make_user_token(host_uuid)
+        self.calld_client.set_token(token)
+        adhoc_conference_id, _ = self.given_adhoc_conference(host_uuid, participant_count=3)
+        _, participant1_call_id, __ = call_ids
 
         # response should not be different than a non-existing call, to avoid malicious call discovery
         assert_that(calling(self.calld_client.adhoc_conferences.add_participant_from_user)
