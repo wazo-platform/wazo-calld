@@ -144,7 +144,7 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
         participant2_uuid = make_user_uuid()
         token = self.make_user_token(host_uuid)
         self.calld_client.set_token(token)
-        host_events = self.bus.accumulator('adhoc_conferences.users.{}.#'.format(host_uuid))
+        host_events = self.bus.accumulator('conferences.users.{}.adhoc.#'.format(host_uuid))
 
         host_call1_id, participant1_call_id = self.real_asterisk.given_bridged_call_stasis(caller_uuid=host_uuid, callee_uuid=participant1_uuid)
         host_call2_id, participant2_call_id = self.real_asterisk.given_bridged_call_stasis(caller_uuid=host_uuid, callee_uuid=participant2_uuid)
@@ -180,29 +180,23 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
         def bus_events_are_sent():
             assert_that(host_events.accumulate(),
                         has_item(has_entries({
-                            'name': 'adhoc_conference_created',
+                            'name': 'conference_adhoc_created',
                             'data': {
                                 'conference_id': adhoc_conference['conference_id'],
                             }})))
             assert_that(host_events.accumulate(), has_items(
                 has_entries({
-                    'name': 'adhoc_conference_participant_joined',
+                    'name': 'conference_adhoc_participant_joined',
                     'data': has_entries({
                         'conference_id': adhoc_conference['conference_id'],
-                        'participant_call': has_entries({
-                            'call_id': participant1_call_id,
-                            'user_uuid': participant1_uuid,
-                        }),
+                        'call_id': participant1_call_id,
                     })
                 }),
                 has_entries({
-                    'name': 'adhoc_conference_participant_joined',
+                    'name': 'conference_adhoc_participant_joined',
                     'data': has_entries({
                         'conference_id': adhoc_conference['conference_id'],
-                        'participant_call': has_entries({
-                            'call_id': participant2_call_id,
-                            'user_uuid': participant2_uuid,
-                        }),
+                        'call_id': participant2_call_id,
                     })
                 }),
             ))
@@ -345,7 +339,7 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
         self.calld_client.set_token(token)
         adhoc_conference_id, call_ids = self.given_adhoc_conference(host_uuid, participant_uuid, participant_count=2)
         host_call_id, participant_call_id = call_ids
-        host_events = self.bus.accumulator('adhoc_conferences.users.{}.#'.format(host_uuid))
+        host_events = self.bus.accumulator('conferences.users.{}.adhoc.#'.format(host_uuid))
 
         self.calld_client.adhoc_conferences.delete_from_user(adhoc_conference_id)
 
@@ -357,29 +351,23 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
         def bus_events_are_sent():
             assert_that(host_events.accumulate(),
                         has_item(has_entries({
-                            'name': 'adhoc_conference_deleted',
+                            'name': 'conference_adhoc_deleted',
                             'data': {
                                 'conference_id': adhoc_conference_id,
                             }})))
             assert_that(host_events.accumulate(), has_items(
                 has_entries({
-                    'name': 'adhoc_conference_participant_left',
+                    'name': 'conference_adhoc_participant_left',
                     'data': has_entries({
                         'conference_id': adhoc_conference_id,
-                        'participant_call': has_entries({
-                            'call_id': participant_call_id,
-                            'user_uuid': participant_uuid,
-                        }),
+                        'call_id': participant_call_id,
                     })
                 }),
                 has_entries({
-                    'name': 'adhoc_conference_participant_left',
+                    'name': 'conference_adhoc_participant_left',
                     'data': has_entries({
                         'conference_id': adhoc_conference_id,
-                        'participant_call': has_entries({
-                            'call_id': host_call_id,
-                            'user_uuid': host_uuid,
-                        }),
+                        'call_id': host_call_id,
                     })
                 }),
             ))
@@ -393,8 +381,8 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
         self.calld_client.set_token(token)
         adhoc_conference_id, call_ids = self.given_adhoc_conference(host_uuid, participant1_uuid, participant2_uuid, participant_count=3)
         host_call_id, participant1_call_id, participant2_call_id = call_ids
-        host_events = self.bus.accumulator('adhoc_conferences.users.{}.#'.format(host_uuid))
-        participant1_events = self.bus.accumulator('adhoc_conferences.users.{}.#'.format(participant1_uuid))
+        host_events = self.bus.accumulator('conferences.users.{}.adhoc.#'.format(host_uuid))
+        participant1_events = self.bus.accumulator('conferences.users.{}.adhoc.#'.format(participant1_uuid))
 
         self.ari.channels.hangup(channelId=participant2_call_id)
 
@@ -411,23 +399,17 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
         def bus_events_are_sent():
             assert_that(host_events.accumulate(),
                         has_item(has_entries({
-                            'name': 'adhoc_conference_participant_left',
+                            'name': 'conference_adhoc_participant_left',
                             'data': has_entries({
                                 'conference_id': adhoc_conference_id,
-                                'participant_call': has_entries({
-                                    'call_id': participant2_call_id,
-                                    'user_uuid': participant2_uuid,
-                                }),
+                                'call_id': participant2_call_id,
                             })})))
             assert_that(participant1_events.accumulate(),
                         has_item(has_entries({
-                            'name': 'adhoc_conference_participant_left',
+                            'name': 'conference_adhoc_participant_left',
                             'data': has_entries({
                                 'conference_id': adhoc_conference_id,
-                                'participant_call': has_entries({
-                                    'call_id': participant2_call_id,
-                                    'user_uuid': participant2_uuid,
-                                }),
+                                'call_id': participant2_call_id,
                             })})))
         until.assert_(bus_events_are_sent, timeout=10)
 
@@ -437,7 +419,7 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
         self.calld_client.set_token(token)
         adhoc_conference_id, call_ids = self.given_adhoc_conference(user_uuid, participant_count=2)
         host_call_id, participant1_call_id = call_ids
-        host_events = self.bus.accumulator('adhoc_conferences.users.{}.#'.format(user_uuid))
+        host_events = self.bus.accumulator('conferences.users.{}.adhoc.#'.format(user_uuid))
 
         self.ari.channels.hangup(channelId=participant1_call_id)
 
@@ -449,7 +431,7 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
         def bus_events_are_sent():
             assert_that(host_events.accumulate(),
                         has_item(has_entries({
-                            'name': 'adhoc_conference_deleted',
+                            'name': 'conference_adhoc_deleted',
                             'data': {
                                 'conference_id': adhoc_conference_id,
                             }})))
@@ -461,7 +443,7 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
         self.calld_client.set_token(token)
         adhoc_conference_id, call_ids = self.given_adhoc_conference(user_uuid, participant_count=3)
         host_call_id, participant1_call_id, participant2_call_id = call_ids
-        host_events = self.bus.accumulator('adhoc_conferences.users.{}.#'.format(user_uuid))
+        host_events = self.bus.accumulator('conferences.users.{}.adhoc.#'.format(user_uuid))
 
         self.ari.channels.hangup(channelId=host_call_id)
 
@@ -474,7 +456,7 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
         def bus_events_are_sent():
             assert_that(host_events.accumulate(),
                         has_item(has_entries({
-                            'name': 'adhoc_conference_deleted',
+                            'name': 'conference_adhoc_deleted',
                             'data': {
                                 'conference_id': adhoc_conference_id,
                             }})))
@@ -542,7 +524,7 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
         host_call1_id, participant1_call_id = call_ids
         participant2_uuid = make_user_uuid()
         host_call2_id, participant2_call_id = self.real_asterisk.given_bridged_call_stasis(caller_uuid=host_uuid, callee_uuid=participant2_uuid)
-        host_events = self.bus.accumulator('adhoc_conferences.users.{}.#'.format(host_uuid))
+        host_events = self.bus.accumulator('conferences.users.{}.adhoc.#'.format(host_uuid))
         host_connected_line_before = self.ari.channels.getChannelVar(channelId=host_call1_id, variable='CONNECTEDLINE(all)')['value']
 
         self.calld_client.adhoc_conferences.add_participant_from_user(adhoc_conference_id, participant2_call_id)
@@ -566,13 +548,10 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
         def bus_events_are_sent():
             assert_that(host_events.accumulate(), has_items(
                 has_entries({
-                    'name': 'adhoc_conference_participant_joined',
+                    'name': 'conference_adhoc_participant_joined',
                     'data': has_entries({
                         'conference_id': adhoc_conference_id,
-                        'participant_call': has_entries({
-                            'call_id': participant2_call_id,
-                            'user_uuid': participant2_uuid,
-                        }),
+                        'call_id': participant2_call_id,
                     })
                 }),
             ))
@@ -723,8 +702,8 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
         self.calld_client.set_token(token)
         adhoc_conference_id, call_ids = self.given_adhoc_conference(host_uuid, participant1_uuid, participant2_uuid, participant_count=3)
         host_call_id, participant1_call_id, participant2_call_id = call_ids
-        host_events = self.bus.accumulator('adhoc_conferences.users.{}.#'.format(host_uuid))
-        participant1_events = self.bus.accumulator('adhoc_conferences.users.{}.#'.format(participant1_uuid))
+        host_events = self.bus.accumulator('conferences.users.{}.adhoc.#'.format(host_uuid))
+        participant1_events = self.bus.accumulator('conferences.users.{}.adhoc.#'.format(participant1_uuid))
 
         self.calld_client.adhoc_conferences.remove_participant_from_user(adhoc_conference_id, participant2_call_id)
 
@@ -741,22 +720,16 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
         def bus_events_are_sent():
             assert_that(host_events.accumulate(),
                         has_item(has_entries({
-                            'name': 'adhoc_conference_participant_left',
+                            'name': 'conference_adhoc_participant_left',
                             'data': has_entries({
                                 'conference_id': adhoc_conference_id,
-                                'participant_call': has_entries({
-                                    'call_id': participant2_call_id,
-                                    'user_uuid': participant2_uuid,
-                                }),
+                                'call_id': participant2_call_id,
                             })})))
             assert_that(participant1_events.accumulate(),
                         has_item(has_entries({
-                            'name': 'adhoc_conference_participant_left',
+                            'name': 'conference_adhoc_participant_left',
                             'data': has_entries({
                                 'conference_id': adhoc_conference_id,
-                                'participant_call': has_entries({
-                                    'call_id': participant2_call_id,
-                                    'user_uuid': participant2_uuid,
-                                }),
+                                'call_id': participant2_call_id,
                             })})))
         until.assert_(bus_events_are_sent, timeout=10)
