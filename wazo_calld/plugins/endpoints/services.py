@@ -217,8 +217,7 @@ class ConfdCache:
                 return
 
             trunks = self._confd.trunks.list(recurse=True)['items']
-            sip_endpoints = self._confd.endpoints_sip.list(recurse=True)['items']
-            self._update_trunk_cache(trunks, sip_endpoints)
+            self._update_trunk_cache(trunks)
 
             lines = self._confd.lines.list(recurse=True)['items']
             self._update_line_cache(lines)
@@ -244,22 +243,17 @@ class ConfdCache:
             sum(len(names) for names in self._lines.values()),
         )
 
-    def _update_trunk_cache(self, trunks, sip_endpoints):
-        sip_endpoints_by_name = {}
-        for endpoint in sip_endpoints:
-            sip_endpoints_by_name[endpoint['name']] = endpoint
-
+    def _update_trunk_cache(self, trunks):
         for trunk in trunks:
             if trunk.get('endpoint_sip'):
                 techno = 'sip'
                 name = trunk['endpoint_sip']['name']
-                endpoint = sip_endpoints_by_name.get(name)
-                username = None
-                if endpoint:
-                    for key, value in endpoint['auth_section_options']:
-                        if key == 'username':
-                            username = value
-                            break
+                for key, value in trunk['endpoint_sip']['auth_section_options']:
+                    if key == 'username':
+                        username = value
+                        break
+                else:
+                    username = None
             elif trunk.get('endpoint_iax'):
                 techno = 'iax'
                 name = trunk['endpoint_iax']['name']
