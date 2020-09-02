@@ -62,7 +62,7 @@ class AdhocConferencesStasis:
 
         channel_id = event['channel']['id']
         logger.debug('adhoc conference %s: bridging participant %s', adhoc_conference_id, channel_id)
-        bridge.addChannel(channel=channel_id)
+        bridge.addChannel(channel=channel_id, inhibitConnectedLineUpdates=True)
 
     def on_channel_entered_bridge(self, channel, event):
         if event['application'] != ADHOC_CONFERENCE_STASIS_APP:
