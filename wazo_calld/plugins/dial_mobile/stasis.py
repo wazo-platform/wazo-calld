@@ -1,4 +1,4 @@
-# Copyright 2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -35,6 +35,14 @@ class DialMobileStasis:
             future_bridge_uuid = args[1]
             self._service.join_bridge(channel_id, future_bridge_uuid)
 
+    def on_channel_left_bridge(self, channel, event):
+        if event['application'] != self._app_name:
+            return
+
+        bridge_id = event['bridge']['id']
+
+        self._service.clean_bridge(bridge_id)
+
     def _add_ari_application(self):
         self._core_ari.register_application(self._app_name)
         self._core_ari.reload()
@@ -44,6 +52,7 @@ class DialMobileStasis:
 
     def _subscribe(self):
         self._ari.on_channel_event('StasisStart', self.stasis_start)
+        self._ari.on_channel_event('ChannelLeftBridge', self.on_channel_left_bridge)
         self._ari.on_channel_event('ChannelDestroyed', self.channel_destroyed)
 
     def initialize(self):

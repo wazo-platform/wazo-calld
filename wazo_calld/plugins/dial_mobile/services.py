@@ -7,6 +7,7 @@ import threading
 import logging
 
 from ari.exceptions import ARINotFound
+from wazo_calld.plugin_helpers.ari_ import Bridge
 
 
 logger = logging.getLogger(__name__)
@@ -195,6 +196,18 @@ class DialMobileService:
 
         if to_remove:
             del self._contact_dialers[key]
+
+    def clean_bridge(self, bridge_id):
+        bridge_helper = Bridge(bridge_id, self._ari)
+        if bridge_helper.has_lone_channel():
+            logger.debug('dial_mobile: bridge %s: only one participant left, hanging up', bridge_id)
+            bridge_helper.hangup_all()
+        elif bridge_helper.is_empty():
+            logger.debug('dial_mobile bridge %s: bridge is empty, destroying', bridge_id)
+            try:
+                self._ari.bridges.destroy(bridgeId=bridge_id)
+            except ARINotFound:
+                pass
 
     def on_calld_stopping(self):
         for dialer in self._contact_dialers.values():
