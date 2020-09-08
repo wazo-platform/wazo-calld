@@ -1,4 +1,4 @@
-# Copyright 2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from unittest import TestCase
@@ -73,3 +73,14 @@ class TestStasisStart(TestCase):
 
         self.service.dial_all_contacts.assert_not_called()
         self.service.join_bridge.called_once_with(s.channel_id, s.bridge_uuid)
+
+    def channel_left(self):
+        self.stasis.on_channel_left_bridge(
+            Mock(),
+            {
+                'application': DialMobileStasis._app_name,
+                'bridge': {'id': s.bridge_uuid},
+            },
+        )
+
+        self.service.clean_bridge.assert_called_once_with(s.bridge_uuid)
