@@ -1,4 +1,4 @@
-# Copyright 2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -71,12 +71,19 @@ class EventHandler:
         with self._endpoint_status_cache.update(techno, trunk['name']) as endpoint:
             endpoint.registered = event['Status'] == 'Registered'
 
+    def _extract_sip_option(self, section, option):
+        for key, value in section:
+            if key == option:
+                return value
+
     def on_line_endpoint_sip_associated(self, event):
+        auth_section = event['endpoint_sip']['auth_section_options']
+        sip_username = self._extract_sip_option(auth_section, 'username')
         self._confd_cache.add_line(
             'sip',
             event['line']['id'],
             event['endpoint_sip']['name'],
-            event['endpoint_sip']['username'],
+            sip_username,
             event['line']['tenant_uuid'],
         )
 
@@ -102,11 +109,13 @@ class EventHandler:
         )
 
     def on_trunk_endpoint_sip_associated(self, event):
+        auth_section = event['endpoint_sip']['auth_section_options']
+        sip_username = self._extract_sip_option(auth_section, 'username')
         self._confd_cache.add_trunk(
             'sip',
             event['trunk']['id'],
             event['endpoint_sip']['name'],
-            event['endpoint_sip']['username'],
+            sip_username,
             event['trunk']['tenant_uuid'],
         )
 
@@ -152,13 +161,15 @@ class EventHandler:
     def on_endpoint_sip_updated(self, event):
         trunk = event['trunk']
         line = event['line']
+        auth_section = event['auth_section_options']
+        sip_username = self._extract_sip_option(auth_section, 'username')
 
         if trunk:
             self._confd_cache.update_trunk(
                 'sip',
                 event['trunk']['id'],
                 event['name'],
-                event['username'],
+                sip_username,
                 event['tenant_uuid'],
             )
 
@@ -167,7 +178,7 @@ class EventHandler:
                 'sip',
                 event['line']['id'],
                 event['name'],
-                event['username'],
+                sip_username,
                 event['tenant_uuid'],
             )
 

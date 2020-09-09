@@ -1,4 +1,4 @@
-# Copyright 2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from unittest import TestCase
@@ -145,7 +145,10 @@ class TestCachingConfdClient(TestCase):
                 'id': s.line_id,
                 'protocol': 'sip',
                 'name': s.name,
-                'endpoint_sip': {'name': s.name, 'username': s.username},
+                'endpoint_sip': {
+                    'name': s.name,
+                    'auth_section_options': [['username', s.username]],
+                },
                 'tenant_uuid': s.tenant_uuid,
             },
         ])
@@ -159,7 +162,10 @@ class TestCachingConfdClient(TestCase):
         self._set_cache(trunks=[
             {
                 'id': s.trunk_id,
-                'endpoint_sip': {'name': s.name, 'username': s.username},
+                'endpoint_sip': {
+                    'name': s.name,
+                    'auth_section_options': [['username', s.username]],
+                },
                 'tenant_uuid': s.tenant_uuid,
             },
         ])
@@ -178,7 +184,10 @@ class TestCachingConfdClient(TestCase):
                 'id': s.line_id,
                 'protocol': 'sip',
                 'name': s.name,
-                'endpoint_sip': {'name': s.name, 'username': s.username},
+                'endpoint_sip': {
+                    'name': s.name,
+                    'auth_section_options': [['username', s.username]],
+                },
                 'tenant_uuid': s.tenant_uuid,
             },
         ])
@@ -200,7 +209,10 @@ class TestCachingConfdClient(TestCase):
         self._set_cache(trunks=[
             {
                 'id': s.trunk_id,
-                'endpoint_sip': {'name': s.name, 'username': s.username},
+                'endpoint_sip': {
+                    'name': s.name,
+                    'auth_section_options': [['username', s.username]],
+                },
                 'tenant_uuid': s.tenant_uuid,
             },
         ])
@@ -283,7 +295,10 @@ class TestCachingConfdClient(TestCase):
         self._set_cache([
             {
                 'id': 1,
-                'endpoint_sip': {'name': s.name_1, 'username': s.username_1},
+                'endpoint_sip': {
+                    'name': s.name_1,
+                    'auth_section_options': [['username', s.username_1]],
+                },
                 'tenant_uuid': s.tenant_uuid,
             },
             {
@@ -298,7 +313,10 @@ class TestCachingConfdClient(TestCase):
             },
             {
                 'id': 4,
-                'endpoint_sip': {'name': s.ignored_name, 'username': s.ignored_username},
+                'endpoint_sip': {
+                    'name': s.ignored_name,
+                    'auth_section_options': [['username', s.ignored_username]],
+                },
                 'tenant_uuid': s.other_tenant_uuid,
             },
         ])
