@@ -14,6 +14,7 @@ from .exceptions import (
     AdhocConferenceNotFound,
     HostCallNotFound,
     HostCallAlreadyInConference,
+    ParticipantCallAlreadyInConference,
     ParticipantCallNotFound,
 )
 
@@ -180,6 +181,10 @@ class AdhocConferencesService:
 
         if bridge_helper.global_variables.get(variable='WAZO_HOST_USER_UUID') != user_uuid:
             raise AdhocConferenceNotFound(adhoc_conference_id)
+
+        current_participant_call_ids = self._ari.bridges.get(bridgeId=adhoc_conference_id).json['channels']
+        if participant_call_id in current_participant_call_ids:
+            raise ParticipantCallAlreadyInConference(participant_call_id)
 
         try:
             discarded_host_wazo_channel = self._find_peer_channel(participant_call_id)
