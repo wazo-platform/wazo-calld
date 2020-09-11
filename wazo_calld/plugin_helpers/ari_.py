@@ -246,6 +246,15 @@ class Channel:
         except ARINotFound:
             return
 
+    def line_id(self):
+        try:
+            return int(self._get_var('WAZO_LINE_ID'))
+        except ARINotFound:
+            return
+        except ValueError:
+            logger.error('Channel %s: Malformed WAZO_LINE_ID=%s', self.id, self._get_var('WAZO_LINE_ID'))
+            return
+
     def wait_until_in_stasis(self, retry=20, delay=0.1):
         for _ in range(retry):
             if self.is_in_stasis():
