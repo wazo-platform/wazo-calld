@@ -23,12 +23,15 @@ class TestPushMobile(RealAsteriskIntegrationTest):
             'data': {
                 'UserEvent': 'Pushmobile',
                 'Uniqueid': '1560784195.313',
-                'ChanVariable': {'XIVO_BASE_EXTEN': '8000',
-                                 'WAZO_DEREFERENCED_USERUUID': '',
-                                 'XIVO_USERUUID': 'eaa18a7f-3f49-419a-9abb-b445b8ba2e03'},
+                'ChanVariable': {
+                    'XIVO_BASE_EXTEN': '8000',
+                    'WAZO_DEREFERENCED_USERUUID': '',
+                    'XIVO_USERUUID': 'eaa18a7f-3f49-419a-9abb-b445b8ba2e03'
+                },
                 'CallerIDName': 'my name is 8001',
                 'Event': 'UserEvent',
                 'WAZO_DST_UUID': 'fb27eb93-d21c-483f-8068-e685c90b07e1',
+                'WAZO_VIDEO_ENABLED': '1',
                 'ConnectedLineName': 'bob 8000',
                 'Priority': '2',
                 'ChannelStateDesc': 'Ring',
@@ -55,6 +58,7 @@ class TestPushMobile(RealAsteriskIntegrationTest):
                         peer_caller_id_number='8001',
                         peer_caller_id_name='my name is 8001',
                         call_id='1560784195.313',
+                        video='True',
                     ),
                     required_acl='events.calls.fb27eb93-d21c-483f-8068-e685c90b07e1',
                 ),
