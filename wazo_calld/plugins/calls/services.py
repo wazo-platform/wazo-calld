@@ -277,6 +277,7 @@ class CallsService:
         call.is_caller = channel_helper.is_caller()
         call.dialed_extension = channel_helper.dialed_extension()
         call.sip_call_id = channel_helper.sip_call_id()
+        call.line_id = channel_helper.line_id()
 
         return call
 
@@ -294,6 +295,7 @@ class CallsService:
         call.bridges = []
         call.talking_to = {}
         call.sip_call_id = event_variables.get('WAZO_SIP_CALL_ID') or None
+        call.line_id = event_variables.get('WAZO_LINE_ID') or None
 
         return call
 
@@ -312,6 +314,7 @@ class CallsService:
         call.bridges = []
         call.talking_to = {}
         call.sip_call_id = event_variables.get('WAZO_SIP_CALL_ID') or None
+        call.line_id = event_variables.get('WAZO_LINE_ID') or None
 
         return call
 

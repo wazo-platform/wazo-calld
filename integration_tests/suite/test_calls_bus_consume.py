@@ -9,7 +9,7 @@ from xivo_test_helpers import until
 from .helpers.base import IntegrationTest
 from .helpers.ari_ import MockChannel
 from .helpers.calld import new_call_id
-from .helpers.constants import XIVO_UUID
+from .helpers.constants import SOME_LINE_ID, XIVO_UUID
 from .helpers.wait_strategy import CalldEverythingOkWaitStrategy
 
 
@@ -58,6 +58,26 @@ class TestBusConsume(IntegrationTest):
                     'call_id': call_id,
                     'dialed_extension': '*10',
                     'sip_call_id': sip_call_id,
+                })
+            })))
+
+        until.assert_(assert_function, tries=5)
+
+    def test_when_channel_ended_with_line_id_then_bus_event(self):
+        call_id = new_call_id()
+        events = self.bus.accumulator(routing_key='calls.call.ended')
+
+        line_id = SOME_LINE_ID
+        self.bus.send_ami_hangup_event(call_id, base_exten='*10', line_id=line_id)
+
+        def assert_function():
+            assert_that(events.accumulate(), has_item(has_entries({
+                'name': 'call_ended',
+                'origin_uuid': XIVO_UUID,
+                'data': has_entries({
+                    'call_id': call_id,
+                    'dialed_extension': '*10',
+                    'line_id': SOME_LINE_ID,
                 })
             })))
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## 20.13
+
+* New attribute for `calls` objects (API and events):
+
+  * `line_id`
+
 ## 20.12
 
 * New API to create adhoc conferences

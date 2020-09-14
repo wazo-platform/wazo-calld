@@ -19,3 +19,5 @@ class Call:
         self.muted = False
         self.is_caller = False
         self.dialed_extension = None
+        self.sip_call_id = None
+        self.line_id = None

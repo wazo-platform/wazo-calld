@@ -525,6 +525,10 @@ definitions:
         type: string
         description: Matches the `Call-ID` SIP header of the call. This value can be `null` when not using SIP
         readOnly: true
+      line_id:
+        type: integer
+        description: Line ID of the endpoint making the call
+        readOnly: true
   UserCallRequest:
     type: object
     properties:
