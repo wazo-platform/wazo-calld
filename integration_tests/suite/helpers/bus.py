@@ -85,7 +85,7 @@ class BusClient(bus_helper.BusClient):
             }
         }, 'ami.Unhold')
 
-    def send_ami_hangup_event(self, channel_id, base_exten=None, sip_call_id=None, channel=None):
+    def send_ami_hangup_event(self, channel_id, base_exten=None, sip_call_id=None, channel=None, line_id=None):
         self.send_event({
             'data': {
                 'Event': 'Hangup',
@@ -100,6 +100,7 @@ class BusClient(bus_helper.BusClient):
                     'XIVO_USERUUID': 'my-uuid',
                     'XIVO_BASE_EXTEN': base_exten if base_exten else '*10',
                     'WAZO_SIP_CALL_ID': sip_call_id,
+                    'WAZO_LINE_ID': line_id,
                 },
             }
         }, 'ami.Hangup')
