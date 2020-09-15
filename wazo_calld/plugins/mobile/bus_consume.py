@@ -23,11 +23,13 @@ class PushNotificationBusEventHandler(object):
             return
 
         user_uuid = event['WAZO_DST_UUID']
+        video_enabled = event['WAZO_VIDEO_ENABLED'] == '1'
 
         body = {
             'peer_caller_id_number': event["CallerIDNum"],
             'peer_caller_id_name': event["CallerIDName"],
             'call_id': event["Uniqueid"],
+            'video': video_enabled
         }
 
         bus_event = ArbitraryEvent(
