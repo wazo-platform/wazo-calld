@@ -58,7 +58,7 @@ class TestPushMobile(RealAsteriskIntegrationTest):
                         peer_caller_id_number='8001',
                         peer_caller_id_name='my name is 8001',
                         call_id='1560784195.313',
-                        video='True',
+                        video=True,
                     ),
                     required_acl='events.calls.fb27eb93-d21c-483f-8068-e685c90b07e1',
                 ),

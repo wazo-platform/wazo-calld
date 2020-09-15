@@ -29,7 +29,7 @@ class PushNotificationBusEventHandler(object):
             'peer_caller_id_number': event["CallerIDNum"],
             'peer_caller_id_name': event["CallerIDName"],
             'call_id': event["Uniqueid"],
-            'video': str(video_enabled)
+            'video': video_enabled
         }
 
         bus_event = ArbitraryEvent(
