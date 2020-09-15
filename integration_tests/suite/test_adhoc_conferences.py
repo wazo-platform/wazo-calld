@@ -49,7 +49,7 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
         return token_id
 
     def adhoc_conference_events_for_user(self, user_uuid):
-        return self.bus.accumulator('adhoc_conferences.users.{}.#'.format(user_uuid))
+        return self.bus.accumulator('conferences.users.{}.adhoc.#'.format(user_uuid))
 
     def given_adhoc_conference(self, *user_uuids, participant_count):
         participant_call_ids = []
@@ -632,11 +632,11 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
         another_uuid = make_user_uuid()
         token = self.make_user_token(another_uuid)
         self.calld_client.set_token(token)
-        _, call_ids = self.given_adhoc_conference(another_uuid, participant_count=3)
+        _, call_ids = self.given_adhoc_conference(another_uuid, participant_count=2)
         host_uuid = make_user_uuid()
         token = self.make_user_token(host_uuid)
         self.calld_client.set_token(token)
-        adhoc_conference_id, _ = self.given_adhoc_conference(host_uuid, participant_count=3)
+        adhoc_conference_id, _ = self.given_adhoc_conference(host_uuid, participant_count=2)
         _, participant1_call_id, __ = call_ids
 
         # response should not be different than a non-existing call, to avoid malicious call discovery
