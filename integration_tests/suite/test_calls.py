@@ -231,18 +231,14 @@ class TestUserListCalls(IntegrationTest):
         self.confd.reset()
 
     def test_given_no_calls_when_list_calls_then_empty_list(self):
-        token = 'my-token'
         user_uuid = 'user-uuid'
-        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
-        self.calld_client.set_token(token)
-        calls = self.calld_client.calls.list_calls_from_user()
+        calld_client = self.make_user_calld(user_uuid)
+        calls = calld_client.calls.list_calls_from_user()
 
         assert_that(calls, has_entry('items', contains()))
 
     def test_given_some_calls_with_user_id_when_list_my_calls_then_calls_are_filtered_by_user(self):
-        token = 'my-token'
         user_uuid = 'user-uuid'
-        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
         self.ari.set_channels(MockChannel(id='my-call'),
                               MockChannel(id='my-second-call'),
                               MockChannel(id='others-call'),
@@ -252,9 +248,9 @@ class TestUserListCalls(IntegrationTest):
                                        'others-call': {'XIVO_USERUUID': 'user2-uuid'}})
         self.confd.set_users(MockUser(uuid=user_uuid),
                              MockUser(uuid='user2-uuid'))
+        calld_client = self.make_user_calld(user_uuid)
 
-        self.calld_client.set_token(token)
-        calls = self.calld_client.calls.list_calls_from_user()
+        calls = calld_client.calls.list_calls_from_user()
 
         assert_that(calls, has_entry('items', contains_inanyorder(
             has_entries({'call_id': 'my-call',
@@ -263,9 +259,7 @@ class TestUserListCalls(IntegrationTest):
                          'user_uuid': user_uuid}))))
 
     def test_given_some_calls_when_list_calls_by_application_then_list_of_calls_is_filtered(self):
-        token = 'my-token'
         user_uuid = 'user-uuid'
-        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
         self.ari.set_channels(MockChannel(id='first-id'),
                               MockChannel(id='second-id'),
                               MockChannel(id='third-id'))
@@ -273,32 +267,28 @@ class TestUserListCalls(IntegrationTest):
         self.ari.set_channel_variable({'first-id': {'XIVO_USERUUID': user_uuid},
                                        'second-id': {'XIVO_USERUUID': user_uuid},
                                        'third-id': {'XIVO_USERUUID': user_uuid}})
+        calld_client = self.make_user_calld(user_uuid)
 
-        self.calld_client.set_token(token)
-        calls = self.calld_client.calls.list_calls_from_user(application='my-app')
+        calls = calld_client.calls.list_calls_from_user(application='my-app')
 
         assert_that(calls, has_entry('items', contains_inanyorder(
             has_entries({'call_id': 'first-id'}),
             has_entries({'call_id': 'third-id'}))))
 
     def test_given_some_calls_and_no_applications_when_list_calls_by_application_then_no_calls(self):
-        token = 'my-token'
         user_uuid = 'user-uuid'
-        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
         self.ari.set_channels(MockChannel(id='first-id'),
                               MockChannel(id='second-id'))
         self.ari.set_channel_variable({'first-id': {'XIVO_USERUUID': user_uuid},
                                        'second-id': {'XIVO_USERUUID': user_uuid}})
+        calld_client = self.make_user_calld(user_uuid)
 
-        self.calld_client.set_token(token)
-        calls = self.calld_client.calls.list_calls_from_user(application='my-app')
+        calls = calld_client.calls.list_calls_from_user(application='my-app')
 
         assert_that(calls, has_entry('items', empty()))
 
     def test_given_some_calls_when_list_calls_by_application_instance_then_list_of_calls_is_filtered(self):
-        token = 'my-token'
         user_uuid = 'user-uuid'
-        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
         self.ari.set_channels(MockChannel(id='first-id'),
                               MockChannel(id='second-id'),
                               MockChannel(id='third-id'),
@@ -317,9 +307,9 @@ class TestUserListCalls(IntegrationTest):
                                        'XIVO_CHANNELS_third-id': json.dumps({'app': 'my-app',
                                                                              'app_instance': 'appX',
                                                                              'state': 'talking'})})
+        calld_client = self.make_user_calld(user_uuid)
 
-        self.calld_client.set_token(token)
-        calls = self.calld_client.calls.list_calls_from_user(
+        calls = calld_client.calls.list_calls_from_user(
             application='my-app',
             application_instance='appX',
         )
@@ -329,16 +319,14 @@ class TestUserListCalls(IntegrationTest):
             has_entries({'call_id': 'third-id'}))))
 
     def test_given_local_channels_when_list_then_local_channels_are_ignored(self):
-        token = 'my-token'
         user_uuid = 'user-uuid'
-        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
         self.ari.set_channels(MockChannel(id='first-id'),
                               MockChannel(id='second-id', name=SOME_LOCAL_CHANNEL_NAME))
         self.ari.set_channel_variable({'first-id': {'XIVO_USERUUID': user_uuid},
                                        'second-id': {'XIVO_USERUUID': user_uuid}})
+        calld_client = self.make_user_calld(user_uuid)
 
-        self.calld_client.set_token(token)
-        calls = self.calld_client.calls.list_calls_from_user()
+        calls = calld_client.calls.list_calls_from_user()
 
         assert_that(calls, has_entry('items', contains_inanyorder(
             has_entries({'call_id': 'first-id'}))))

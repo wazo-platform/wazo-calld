@@ -19,7 +19,6 @@ from xivo_test_helpers import until
 from xivo_test_helpers.hamcrest.raises import raises
 from wazo_calld_client.exceptions import CalldError
 
-from .helpers.auth import MockUserToken
 from .helpers.real_asterisk import RealAsteriskIntegrationTest, RealAsterisk
 from .helpers.confd import MockUser
 from .helpers.confd import MockLine
@@ -49,10 +48,9 @@ class TestRelocates(RealAsteriskIntegrationTest):
         line_id = SOME_LINE_ID
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id], mobile='mobile-autoanswer'))
         self.confd.set_lines(MockLine(id=line_id, name=SOME_LINE_NAME, protocol='local', context='local'))
-        token = self.given_user_token(user_uuid)
-        self.calld_client.set_token(token)
+        calld_client = self.make_user_calld(user_uuid)
 
-        call = self.calld_client.calls.make_call_from_user(
+        call = calld_client.calls.make_call_from_user(
             extension='dial-autoanswer',
             from_mobile=True,
             variables={'CALLEE_XIVO_USERUUID': user_uuid}
@@ -71,23 +69,16 @@ class TestRelocates(RealAsteriskIntegrationTest):
 
         return call['call_id'], callee, user_uuid
 
-    def given_user_token(self, user_uuid):
-        token = 'my-token'
-        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
-
-        return token
-
     def given_ringing_user_relocate(self):
         user_uuid = str(uuid.uuid4())
         relocated_channel_id, initiator_channel_id = self.real_asterisk.given_bridged_call_stasis(callee_uuid=user_uuid)
         line_id = SOME_LINE_ID
-        token = self.given_user_token(user_uuid)
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
         self.confd.set_lines(MockLine(id=line_id, name='recipient@local', protocol='local', context=SOME_CONTEXT))
-        self.calld_client.set_token(token)
         destination = 'line'
         location = {'line_id': line_id}
-        relocate = self.calld_client.relocates.create_from_user(initiator_channel_id, destination, location)
+        calld_client = self.make_user_calld(user_uuid)
+        relocate = calld_client.relocates.create_from_user(initiator_channel_id, destination, location)
 
         return relocate, user_uuid, destination, location
 
@@ -95,13 +86,12 @@ class TestRelocates(RealAsteriskIntegrationTest):
         user_uuid = str(uuid.uuid4())
         relocated_channel_id, initiator_channel_id = self.real_asterisk.given_bridged_call_not_stasis(callee_uuid=user_uuid, caller_variables={'WAIT_BEFORE_STASIS': '60'})
         line_id = SOME_LINE_ID
-        token = self.given_user_token(user_uuid)
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
         self.confd.set_lines(MockLine(id=line_id, name='recipient_autoanswer@local', protocol='local', context=SOME_CONTEXT))
-        self.calld_client.set_token(token)
         destination = 'line'
         location = {'line_id': line_id}
-        relocate = self.calld_client.relocates.create_from_user(initiator_channel_id, destination, location)
+        calld_client = self.make_user_calld(user_uuid)
+        relocate = calld_client.relocates.create_from_user(initiator_channel_id, destination, location)
 
         def relocate_waiting_relocated():
             assert_that(relocated_channel_id, self.c.is_talking(), 'relocated channel not talking')
@@ -116,15 +106,14 @@ class TestRelocates(RealAsteriskIntegrationTest):
         user_uuid = SOME_USER_UUID
         relocated_channel_id, initiator_channel_id = self.real_asterisk.given_bridged_call_stasis(callee_uuid=user_uuid)
         line_id = SOME_LINE_ID
-        token = self.given_user_token(user_uuid)
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
         self.confd.set_lines(MockLine(id=line_id, name='recipient_autoanswer@local', protocol='local', context=SOME_CONTEXT))
-        self.calld_client.set_token(token)
         events = self.bus.accumulator('calls.relocate.*')
         destination = 'line'
         location = {'line_id': line_id}
         completions = ['api']
-        relocate = self.calld_client.relocates.create_from_user(initiator_channel_id, destination, location, completions)
+        calld_client = self.make_user_calld(user_uuid)
+        relocate = calld_client.relocates.create_from_user(initiator_channel_id, destination, location, completions)
 
         def all_talking():
             assert_that(relocate['relocated_call'], self.c.is_talking(), 'relocated channel not talking')
@@ -147,13 +136,12 @@ class TestRelocates(RealAsteriskIntegrationTest):
         user_uuid = SOME_USER_UUID
         relocated_channel_id, initiator_channel_id = self.real_asterisk.given_bridged_call_stasis(callee_uuid=user_uuid)
         line_id = SOME_LINE_ID
-        token = self.given_user_token(user_uuid)
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
         self.confd.set_lines(MockLine(id=line_id, name='recipient_autoanswer@local', protocol='local', context=SOME_CONTEXT))
-        self.calld_client.set_token(token)
         destination = 'line'
         location = {'line_id': line_id}
-        relocate = self.calld_client.relocates.create_from_user(initiator_channel_id, destination, location)
+        calld_client = self.make_user_calld(user_uuid)
+        relocate = calld_client.relocates.create_from_user(initiator_channel_id, destination, location)
 
         until.assert_(
             self.assert_relocate_is_completed,
@@ -192,20 +180,18 @@ class TestListUserRelocate(TestRelocates):
 
     def test_given_no_relocates_when_list_then_list_empty(self):
         user_uuid = SOME_USER_UUID
-        token = self.given_user_token(user_uuid)
-        self.calld_client.set_token(token)
+        calld_client = self.make_user_calld(user_uuid)
 
-        result = self.calld_client.relocates.list_from_user()
+        result = calld_client.relocates.list_from_user()
 
         assert_that(result['items'], empty())
 
     def test_given_one_relocate_when_list_then_all_fields_are_listed(self):
         user_uuid = SOME_USER_UUID
-        token = self.given_user_token(user_uuid)
         relocate, user_uuid, destination, location = self.given_ringing_user_relocate()
-        self.calld_client.set_token(token)
+        calld_client = self.make_user_calld(user_uuid)
 
-        result = self.calld_client.relocates.list_from_user()
+        result = calld_client.relocates.list_from_user()
 
         assert_that(result['items'], contains({
             'uuid': relocate['uuid'],
@@ -219,21 +205,19 @@ class TestListUserRelocate(TestRelocates):
 
     def test_given_one_completed_relocate_when_list_then_relocate_not_found(self):
         user_uuid = SOME_USER_UUID
-        token = self.given_user_token(user_uuid)
-        self.calld_client.set_token(token)
         relocate, user_uuid = self.given_completed_user_relocate()
+        calld_client = self.make_user_calld(user_uuid)
 
-        relocates = self.calld_client.relocates.list_from_user()
+        relocates = calld_client.relocates.list_from_user()
 
         assert_that(relocates['items'], not_(contains(has_entry('uuid', relocate['uuid']))))
 
     def test_given_two_relocates_when_list_then_relocates_are_filtered_by_user(self):
         relocate1, user_uuid1, _, __ = self.given_ringing_user_relocate()
         relocate2, user_uuid2, _, __ = self.given_ringing_user_relocate()
-        token = self.given_user_token(user_uuid2)
-        self.calld_client.set_token(token)
+        user2_calld_client = self.make_user_calld(user_uuid2)
 
-        result = self.calld_client.relocates.list_from_user()
+        result = user2_calld_client.relocates.list_from_user()
 
         assert_that(result['items'], contains(has_entries({
             'uuid': relocate2['uuid'],
@@ -243,21 +227,21 @@ class TestListUserRelocate(TestRelocates):
 class TestGetUserRelocate(TestRelocates):
 
     def test_given_no_relocate_when_get_then_error_404(self):
-        token = self.given_user_token(SOME_USER_UUID)
-        self.calld_client.set_token(token)
+        user_uuid = SOME_USER_UUID
+        calld_client = self.make_user_calld(user_uuid)
 
-        assert_that(calling(self.calld_client.relocates.get_from_user).with_args(relocate_uuid='not-found'),
+        assert_that(calling(calld_client.relocates.get_from_user).with_args(relocate_uuid='not-found'),
                     raises(CalldError).matching(has_properties({
                         'status_code': 404,
                         'error_id': 'no-such-relocate',
                     })))
 
     def test_given_other_relocate_when_get_then_404(self):
-        relocate, user_uuid, _, __ = self.given_ringing_user_relocate()
-        token = self.given_user_token(SOME_USER_UUID)
-        self.calld_client.set_token(token)
+        relocate, _, __, ___ = self.given_ringing_user_relocate()
+        user_uuid = SOME_USER_UUID
+        calld_client = self.make_user_calld(user_uuid)
 
-        assert_that(calling(self.calld_client.relocates.get_from_user).with_args(relocate['uuid']),
+        assert_that(calling(calld_client.relocates.get_from_user).with_args(relocate['uuid']),
                     raises(CalldError).matching(has_properties({
                         'status_code': 404,
                         'error_id': 'no-such-relocate',
@@ -265,10 +249,9 @@ class TestGetUserRelocate(TestRelocates):
 
     def test_given_relocate_when_get_then_result(self):
         relocate, user_uuid, _, __ = self.given_ringing_user_relocate()
-        token = self.given_user_token(user_uuid)
-        self.calld_client.set_token(token)
+        calld_client = self.make_user_calld(user_uuid)
 
-        result = self.calld_client.relocates.get_from_user(relocate['uuid'])
+        result = calld_client.relocates.get_from_user(relocate['uuid'])
 
         assert_that(result, has_entries({
             'uuid': relocate['uuid'],
@@ -289,22 +272,19 @@ class TestCreateUserRelocate(TestRelocates):
 
     def test_given_invalid_request_when_relocate_then_400(self):
         user_uuid = SOME_USER_UUID
-        token = self.given_user_token(user_uuid)
-        self.calld_client.set_token(token)
+        calld_client = self.make_user_calld(user_uuid)
 
-        assert_that(calling(self.calld_client.relocates.create_from_user).with_args(SOME_CALL_ID, 'wrong-destination'),
+        assert_that(calling(calld_client.relocates.create_from_user).with_args(SOME_CALL_ID, 'wrong-destination'),
                     raises(CalldError).matching(has_properties({
                         'status_code': 400,
                         'error_id': 'invalid-data',
                     })))
 
     def test_given_token_without_user_when_relocate_then_400(self):
-        token = 'some-token'
-        self.auth.set_token(MockUserToken(token, user_uuid=None))
-        self.calld_client.set_token(token)
+        calld_client = self.make_user_calld(None)
 
         assert_that(
-            calling(self.calld_client.relocates.create_from_user).with_args(
+            calling(calld_client.relocates.create_from_user).with_args(
                 SOME_CALL_ID,
                 'line',
                 {'line_id': SOME_LINE_ID}
@@ -316,11 +296,10 @@ class TestCreateUserRelocate(TestRelocates):
 
     def test_given_no_channel_when_relocate_then_403(self):
         user_uuid = SOME_USER_UUID
-        token = self.given_user_token(user_uuid)
-        self.calld_client.set_token(token)
+        calld_client = self.make_user_calld(user_uuid)
 
         assert_that(
-            calling(self.calld_client.relocates.create_from_user).with_args(
+            calling(calld_client.relocates.create_from_user).with_args(
                 SOME_CALL_ID,
                 'line',
                 {'line_id': SOME_LINE_ID}
@@ -333,12 +312,11 @@ class TestCreateUserRelocate(TestRelocates):
 
     def test_given_channel_does_not_belong_to_user_when_relocate_then_403(self):
         user_uuid = SOME_USER_UUID
-        token = self.given_user_token(user_uuid)
         relocated_channel_id, initiator_channel_id = self.real_asterisk.given_bridged_call_stasis()
-        self.calld_client.set_token(token)
+        calld_client = self.make_user_calld(user_uuid)
 
         assert_that(
-            calling(self.calld_client.relocates.create_from_user).with_args(
+            calling(calld_client.relocates.create_from_user).with_args(
                 initiator_channel_id,
                 'line',
                 {'line_id': SOME_LINE_ID}
@@ -352,12 +330,11 @@ class TestCreateUserRelocate(TestRelocates):
     def test_given_invalid_user_when_relocate_then_400(self):
         user_uuid = SOME_USER_UUID
         line_id = SOME_LINE_ID
-        token = self.given_user_token(user_uuid)
         relocated_channel_id, initiator_channel_id = self.real_asterisk.given_bridged_call_stasis(callee_uuid=user_uuid)
-        self.calld_client.set_token(token)
+        calld_client = self.make_user_calld(user_uuid)
 
         assert_that(
-            calling(self.calld_client.relocates.create_from_user).with_args(
+            calling(calld_client.relocates.create_from_user).with_args(
                 initiator_channel_id,
                 'line',
                 {'line_id': line_id}
@@ -371,13 +348,12 @@ class TestCreateUserRelocate(TestRelocates):
     def test_given_invalid_line_when_relocate_then_400(self):
         user_uuid = SOME_USER_UUID
         line_id = SOME_LINE_ID
-        token = self.given_user_token(user_uuid)
         relocated_channel_id, initiator_channel_id = self.real_asterisk.given_bridged_call_stasis(callee_uuid=user_uuid)
         self.confd.set_users(MockUser(uuid=user_uuid))
-        self.calld_client.set_token(token)
+        calld_client = self.make_user_calld(user_uuid)
 
         assert_that(
-            calling(self.calld_client.relocates.create_from_user).with_args(
+            calling(calld_client.relocates.create_from_user).with_args(
                 initiator_channel_id,
                 'line',
                 {'line_id': line_id}
@@ -391,15 +367,14 @@ class TestCreateUserRelocate(TestRelocates):
     def test_given_only_one_channel_when_relocate_then_400(self):
         user_uuid = SOME_USER_UUID
         line_id = SOME_LINE_ID
-        token = self.given_user_token(user_uuid)
         initiator_channel = self.real_asterisk.stasis_channel()
         initiator_channel.setChannelVar(variable='XIVO_USERUUID', value=user_uuid)
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
         self.confd.set_lines(MockLine(id=line_id, name='recipient_autoanswer@local', protocol='local', context=SOME_CONTEXT))
-        self.calld_client.set_token(token)
+        calld_client = self.make_user_calld(user_uuid)
 
         assert_that(
-            calling(self.calld_client.relocates.create_from_user).with_args(
+            calling(calld_client.relocates.create_from_user).with_args(
                 initiator_channel.id,
                 'line',
                 {'line_id': line_id}
@@ -411,11 +386,10 @@ class TestCreateUserRelocate(TestRelocates):
 
     def test_given_relocate_started_when_relocate_again_then_409(self):
         relocate, user_uuid, destination, location = self.given_ringing_user_relocate()
-        token = self.given_user_token(user_uuid)
-        self.calld_client.set_token(token)
+        calld_client = self.make_user_calld(user_uuid)
 
         assert_that(
-            calling(self.calld_client.relocates.create_from_user).with_args(
+            calling(calld_client.relocates.create_from_user).with_args(
                 relocate['initiator_call'],
                 destination,
                 location,
@@ -430,12 +404,11 @@ class TestCreateUserRelocate(TestRelocates):
         line_id = 12
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
         self.confd.set_lines(MockLine(id=line_id, name='recipient_autoanswer@local', protocol='local', context=SOME_CONTEXT))
-        token = self.given_user_token(user_uuid)
         relocated_channel_id, initiator_channel_id = self.real_asterisk.given_bridged_call_stasis(callee_uuid=user_uuid)
         events = self.bus.accumulator('calls.relocate.*')
-        self.calld_client.set_token(token)
+        calld_client = self.make_user_calld(user_uuid)
 
-        relocate = self.calld_client.relocates.create_from_user(initiator_channel_id, 'line', {'line_id': line_id})
+        relocate = calld_client.relocates.create_from_user(initiator_channel_id, 'line', {'line_id': line_id})
 
         until.assert_(
             self.assert_relocate_is_completed,
@@ -473,12 +446,11 @@ class TestCreateUserRelocate(TestRelocates):
         line_id = 12
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
         self.confd.set_lines(MockLine(id=line_id, name='recipient_autoanswer@local', protocol='local', context=SOME_CONTEXT))
-        token = self.given_user_token(user_uuid)
         relocated_channel_id, initiator_channel_id = self.real_asterisk.given_bridged_call_not_stasis(callee_uuid=user_uuid)
         events = self.bus.accumulator('calls.relocate.*')
-        self.calld_client.set_token(token)
+        calld_client = self.make_user_calld(user_uuid)
 
-        relocate = self.calld_client.relocates.create_from_user(initiator_channel_id, 'line', {'line_id': line_id})
+        relocate = calld_client.relocates.create_from_user(initiator_channel_id, 'line', {'line_id': line_id})
 
         until.assert_(
             self.assert_relocate_is_completed,
@@ -516,12 +488,11 @@ class TestCreateUserRelocate(TestRelocates):
         line_id = 12
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id], mobile=None))
         self.confd.set_lines(MockLine(id=line_id, context='local'))
-        token = self.given_user_token(user_uuid)
         relocated_channel_id, initiator_channel_id = self.real_asterisk.given_bridged_call_stasis(callee_uuid=user_uuid)
-        self.calld_client.set_token(token)
+        calld_client = self.make_user_calld(user_uuid)
 
         assert_that(
-            calling(self.calld_client.relocates.create_from_user).with_args(
+            calling(calld_client.relocates.create_from_user).with_args(
                 initiator_channel_id,
                 'mobile',
             ),
@@ -535,11 +506,10 @@ class TestCreateUserRelocate(TestRelocates):
         line_id = 12
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id], mobile='recipient_autoanswer'))
         self.confd.set_lines(MockLine(id=line_id, context='local'))
-        token = self.given_user_token(user_uuid)
         relocated_channel_id, initiator_channel_id = self.real_asterisk.given_bridged_call_stasis(callee_uuid=user_uuid)
-        self.calld_client.set_token(token)
+        calld_client = self.make_user_calld(user_uuid)
 
-        relocate = self.calld_client.relocates.create_from_user(initiator_channel_id, 'mobile')
+        relocate = calld_client.relocates.create_from_user(initiator_channel_id, 'mobile')
 
         until.assert_(
             self.assert_relocate_is_completed,
@@ -588,10 +558,9 @@ class TestCreateUserRelocate(TestRelocates):
 
     def test_given_relocate_ringing_when_api_cancel_then_relocate_cancelled(self):
         relocate, user_uuid, _, __ = self.given_ringing_user_relocate()
-        token = self.given_user_token(user_uuid)
-        self.calld_client.set_token(token)
+        calld_client = self.make_user_calld(user_uuid)
 
-        self.calld_client.relocates.cancel_from_user(relocate['uuid'])
+        calld_client.relocates.cancel_from_user(relocate['uuid'])
 
         def relocate_cancelled():
             assert_that(relocate['relocated_call'], self.c.is_talking(), 'relocated not talking')
@@ -626,11 +595,10 @@ class TestCreateUserRelocate(TestRelocates):
 
     def test_given_relocate_waiting_relocated_when_api_cancel_then_400(self):
         relocate, user_uuid = self.given_waiting_relocated_user_relocate()
-        token = self.given_user_token(user_uuid)
-        self.calld_client.set_token(token)
+        calld_client = self.make_user_calld(user_uuid)
 
         assert_that(
-            calling(self.calld_client.relocates.cancel_from_user).with_args(
+            calling(calld_client.relocates.cancel_from_user).with_args(
                 relocate['uuid'],
             ),
             raises(CalldError).matching(has_properties({
@@ -640,10 +608,9 @@ class TestCreateUserRelocate(TestRelocates):
 
     def test_given_relocate_completion_api_when_api_complete_then_relocate_completed(self):
         relocate, user_uuid = self.given_answered_user_relocate()
-        token = self.given_user_token(user_uuid)
-        self.calld_client.set_token(token)
+        calld_client = self.make_user_calld(user_uuid)
 
-        self.calld_client.relocates.complete_from_user(relocate['uuid'])
+        calld_client.relocates.complete_from_user(relocate['uuid'])
 
         until.assert_(
             self.assert_relocate_is_completed,
@@ -656,10 +623,9 @@ class TestCreateUserRelocate(TestRelocates):
 
     def test_given_relocate_waiting_completion_when_api_cancel_then_relocate_cancelled(self):
         relocate, user_uuid = self.given_answered_user_relocate()
-        token = self.given_user_token(user_uuid)
-        self.calld_client.set_token(token)
+        calld_client = self.make_user_calld(user_uuid)
 
-        self.calld_client.relocates.cancel_from_user(relocate['uuid'])
+        calld_client.relocates.cancel_from_user(relocate['uuid'])
 
         def relocate_cancelled():
             assert_that(relocate['relocated_call'], self.c.is_talking(), 'relocated not talking')
@@ -706,11 +672,10 @@ class TestCreateUserRelocate(TestRelocates):
 
     def test_given_ringing_relocate_when_api_complete_then_400(self):
         relocate, user_uuid, _, __ = self.given_ringing_user_relocate()
-        token = self.given_user_token(user_uuid)
-        self.calld_client.set_token(token)
+        calld_client = self.make_user_calld(user_uuid)
 
         assert_that(
-            calling(self.calld_client.relocates.complete_from_user).with_args(
+            calling(calld_client.relocates.complete_from_user).with_args(
                 relocate['uuid'],
             ),
             raises(CalldError).matching(has_properties({
@@ -720,15 +685,14 @@ class TestCreateUserRelocate(TestRelocates):
 
     def test_given_mobile_call_when_relocate_to_line_then_relocate_completed(self):
         mobile_channel, other_channel, mobile_user_uuid = self.given_mobile_call()
-        token = self.given_user_token(mobile_user_uuid)
         line_id = SOME_LINE_ID
-        self.calld_client.set_token(token)
         self.confd.set_users(MockUser(uuid=mobile_user_uuid, line_ids=[line_id]))
         self.confd.set_lines(MockLine(id=line_id, name='recipient_autoanswer@local', protocol='local', context=SOME_CONTEXT))
         destination = 'line'
         location = {'line_id': line_id}
+        calld_client = self.make_user_calld(mobile_user_uuid)
 
-        relocate = self.calld_client.relocates.create_from_user(mobile_channel, destination, location)
+        relocate = calld_client.relocates.create_from_user(mobile_channel, destination, location)
 
         until.assert_(
             self.assert_relocate_is_completed,
@@ -742,16 +706,15 @@ class TestCreateUserRelocate(TestRelocates):
     def test_given_call_when_relocate_to_mobile_and_relocate_to_line_then_relocate_completed(self):
         user_uuid = SOME_USER_UUID
         initiator_channel, callee_channel = self.real_asterisk.given_bridged_call_stasis(caller_uuid=user_uuid)
-        token = self.given_user_token(user_uuid)
         line_id = SOME_LINE_ID
-        self.calld_client.set_token(token)
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id], mobile='recipient_autoanswer'))
         self.confd.set_lines(MockLine(id=line_id, name='recipient_autoanswer@local', protocol='local', context='local'))
+        calld_client = self.make_user_calld(user_uuid)
 
-        relocate = self.calld_client.relocates.create_from_user(initiator_channel, destination='mobile')
+        relocate = calld_client.relocates.create_from_user(initiator_channel, destination='mobile')
 
         def relocate_finished(relocate):
-            assert_that(calling(self.calld_client.relocates.get_from_user).with_args(relocate['uuid']),
+            assert_that(calling(calld_client.relocates.get_from_user).with_args(relocate['uuid']),
                         raises(CalldError).matching(has_properties({
                             'status_code': 404,
                             'error_id': 'no-such-relocate',
@@ -767,7 +730,7 @@ class TestCreateUserRelocate(TestRelocates):
         destination = 'line'
         location = {'line_id': line_id}
 
-        relocate = self.calld_client.relocates.create_from_user(initiator_channel, destination, location)
+        relocate = calld_client.relocates.create_from_user(initiator_channel, destination, location)
 
         until.assert_(
             self.assert_relocate_is_completed,
@@ -783,17 +746,16 @@ class TestCreateUserRelocate(TestRelocates):
         line_id = 12
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
         self.confd.set_lines(MockLine(id=line_id, name='ring@local', protocol='local', context=SOME_CONTEXT))
-        token = self.given_user_token(user_uuid)
         relocated_channel_id, initiator_channel_id = self.real_asterisk.given_bridged_call_stasis(callee_uuid=user_uuid)
-        self.calld_client.set_token(token)
+        calld_client = self.make_user_calld(user_uuid)
 
-        relocate = self.calld_client.relocates.create_from_user(initiator_channel_id, 'line', {'line_id': line_id}, timeout=1)
+        relocate = calld_client.relocates.create_from_user(initiator_channel_id, 'line', {'line_id': line_id}, timeout=1)
 
         def relocate_cancelled():
             assert_that(relocate['relocated_call'], self.c.is_talking(), 'relocated not talking')
             assert_that(relocate['initiator_call'], self.c.is_talking(), 'initiator not talking')
             assert_that(relocate['recipient_call'], self.c.is_hungup(), 'recipient not hungup')
-            assert_that(calling(self.calld_client.relocates.get_from_user).with_args(relocate['uuid']),
+            assert_that(calling(calld_client.relocates.get_from_user).with_args(relocate['uuid']),
                         raises(CalldError).matching(has_properties({
                             'status_code': 404,
                             'error_id': 'no-such-relocate',

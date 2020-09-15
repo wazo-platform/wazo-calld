@@ -73,7 +73,7 @@ class AdhocConferencesService:
         logger.debug('adhoc conference %s: remaining participants %s', adhoc_conference_id, remaining_participant_call_ids)
         for participant_call_id in remaining_participant_call_ids:
             logger.debug('adhoc conference %s: looking for peer of participant %s', adhoc_conference_id, participant_call_id)
-            discarded_host_channel_id = self._find_call_peer(participant_call_id)
+            discarded_host_channel_id = self._find_peer_channel(participant_call_id).id
 
             logger.debug('adhoc conference %s: processing participant %s and peer %s', adhoc_conference_id, participant_call_id, discarded_host_channel_id)
             self._redirect_participant(participant_call_id, discarded_host_channel_id, adhoc_conference_id)
@@ -81,14 +81,6 @@ class AdhocConferencesService:
         return {
             'conference_id': adhoc_conference_id,
         }
-
-    def _find_call_peer(self, call_id):
-        try:
-            return Channel(call_id, self._ari).only_connected_channel().id
-        except NotEnoughChannels:
-            raise AdhocConferenceCreationError(f'could not determine peer of call {call_id}: call has no peers')
-        except TooManyChannels:
-            raise HostCallAlreadyInConference(call_id)
 
     def _find_peer_channel(self, call_id):
         return Channel(call_id, self._ari).only_connected_channel()

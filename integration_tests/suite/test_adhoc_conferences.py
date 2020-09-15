@@ -48,6 +48,9 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
         self.auth.set_token(MockUserToken(token_id, tenant_uuid=tenant_uuid, user_uuid=user_uuid))
         return token_id
 
+    def adhoc_conference_events_for_user(self, user_uuid):
+        return self.bus.accumulator('conferences.users.{}.adhoc.#'.format(user_uuid))
+
     def given_adhoc_conference(self, *user_uuids, participant_count):
         participant_call_ids = []
         user_uuids = list(user_uuids)
@@ -60,7 +63,7 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
         host_call_id, participant_call_id = self.real_asterisk.given_bridged_call_stasis(caller_uuid=host_uuid, callee_uuid=participant_uuid)
         participant_call_ids.append(participant_call_id)
 
-        for _ in range(participant_count - 2):
+        for _ in range(participant_count - 1):
             try:
                 participant_uuid = user_uuids.pop(0)
             except IndexError:
@@ -68,15 +71,16 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
             _, participant_call_id = self.real_asterisk.given_bridged_call_stasis(caller_uuid=host_uuid, callee_uuid=participant_uuid)
             participant_call_ids.append(participant_call_id)
 
-        adhoc_conference = self.calld_client.adhoc_conferences.create_from_user(
+        calld_client = self.make_user_calld(host_uuid)
+        adhoc_conference = calld_client.adhoc_conferences.create_from_user(
             host_call_id,
             *participant_call_ids
         )
 
         def calls_are_bridged():
-            host_call1 = self.calld_client.calls.get_call(host_call_id)
+            host_call1 = calld_client.calls.get_call(host_call_id)
             assert_that(host_call1, has_entries({
-                'talking_to': has_length(participant_count - 1)
+                'talking_to': has_length(participant_count)
             }))
         until.assert_(calls_are_bridged, timeout=10)
 
@@ -144,7 +148,7 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
         participant2_uuid = make_user_uuid()
         token = self.make_user_token(host_uuid)
         self.calld_client.set_token(token)
-        host_events = self.bus.accumulator('conferences.users.{}.adhoc.#'.format(host_uuid))
+        host_events = self.adhoc_conference_events_for_user(host_uuid)
 
         host_call1_id, participant1_call_id = self.real_asterisk.given_bridged_call_stasis(caller_uuid=host_uuid, callee_uuid=participant1_uuid)
         host_call2_id, participant2_call_id = self.real_asterisk.given_bridged_call_stasis(caller_uuid=host_uuid, callee_uuid=participant2_uuid)
@@ -206,7 +210,7 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
         user_uuid = make_user_uuid()
         token = self.make_user_token(user_uuid)
         self.calld_client.set_token(token)
-        adhoc_conference_id, call_ids = self.given_adhoc_conference(user_uuid, participant_count=3)
+        adhoc_conference_id, call_ids = self.given_adhoc_conference(user_uuid, participant_count=2)
         host_call_id, participant_call_id, _ = call_ids
 
         assert_that(calling(self.calld_client.adhoc_conferences.create_from_user)
@@ -318,7 +322,7 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
         user_uuid = make_user_uuid()
         token = self.make_user_token(user_uuid)
         self.calld_client.set_token(token)
-        adhoc_conference_id, _ = self.given_adhoc_conference(user_uuid, participant_count=2)
+        adhoc_conference_id, _ = self.given_adhoc_conference(user_uuid, participant_count=1)
         another_user_uuid = make_user_uuid()
         another_token = self.make_user_token(another_user_uuid)
         self.calld_client.set_token(another_token)
@@ -337,7 +341,7 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
         participant_uuid = make_user_uuid()
         token = self.make_user_token(host_uuid)
         self.calld_client.set_token(token)
-        adhoc_conference_id, call_ids = self.given_adhoc_conference(host_uuid, participant_uuid, participant_count=2)
+        adhoc_conference_id, call_ids = self.given_adhoc_conference(host_uuid, participant_uuid, participant_count=1)
         host_call_id, participant_call_id = call_ids
         host_events = self.bus.accumulator('conferences.users.{}.adhoc.#'.format(host_uuid))
 
@@ -379,10 +383,10 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
         participant2_uuid = make_user_uuid()
         token = self.make_user_token(host_uuid)
         self.calld_client.set_token(token)
-        adhoc_conference_id, call_ids = self.given_adhoc_conference(host_uuid, participant1_uuid, participant2_uuid, participant_count=3)
+        adhoc_conference_id, call_ids = self.given_adhoc_conference(host_uuid, participant1_uuid, participant2_uuid, participant_count=2)
         host_call_id, participant1_call_id, participant2_call_id = call_ids
-        host_events = self.bus.accumulator('conferences.users.{}.adhoc.#'.format(host_uuid))
-        participant1_events = self.bus.accumulator('conferences.users.{}.adhoc.#'.format(participant1_uuid))
+        host_events = self.adhoc_conference_events_for_user(host_uuid)
+        participant1_events = self.adhoc_conference_events_for_user(participant1_uuid)
 
         self.ari.channels.hangup(channelId=participant2_call_id)
 
@@ -417,9 +421,9 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
         user_uuid = make_user_uuid()
         token = self.make_user_token(user_uuid)
         self.calld_client.set_token(token)
-        adhoc_conference_id, call_ids = self.given_adhoc_conference(user_uuid, participant_count=2)
+        adhoc_conference_id, call_ids = self.given_adhoc_conference(user_uuid, participant_count=1)
         host_call_id, participant1_call_id = call_ids
-        host_events = self.bus.accumulator('conferences.users.{}.adhoc.#'.format(user_uuid))
+        host_events = self.adhoc_conference_events_for_user(user_uuid)
 
         self.ari.channels.hangup(channelId=participant1_call_id)
 
@@ -441,9 +445,9 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
         user_uuid = make_user_uuid()
         token = self.make_user_token(user_uuid)
         self.calld_client.set_token(token)
-        adhoc_conference_id, call_ids = self.given_adhoc_conference(user_uuid, participant_count=3)
+        adhoc_conference_id, call_ids = self.given_adhoc_conference(user_uuid, participant_count=2)
         host_call_id, participant1_call_id, participant2_call_id = call_ids
-        host_events = self.bus.accumulator('conferences.users.{}.adhoc.#'.format(user_uuid))
+        host_events = self.adhoc_conference_events_for_user(user_uuid)
 
         self.ari.channels.hangup(channelId=host_call_id)
 
@@ -488,7 +492,7 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
         user_uuid = make_user_uuid()
         token = self.make_user_token(user_uuid)
         self.calld_client.set_token(token)
-        adhoc_conference_id, call_ids = self.given_adhoc_conference(user_uuid, participant_count=2)
+        adhoc_conference_id, call_ids = self.given_adhoc_conference(user_uuid, participant_count=1)
 
         assert_that(calling(self.calld_client.adhoc_conferences.add_participant_from_user)
                     .with_args(adhoc_conference_id, SOME_CALL_ID),
@@ -501,7 +505,7 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
         user_uuid = make_user_uuid()
         token = self.make_user_token(user_uuid)
         self.calld_client.set_token(token)
-        adhoc_conference_id, _ = self.given_adhoc_conference(user_uuid, participant_count=2)
+        adhoc_conference_id, _ = self.given_adhoc_conference(user_uuid, participant_count=1)
         _, participant_call_id = self.real_asterisk.given_bridged_call_stasis(caller_uuid=user_uuid)
         another_user_uuid = make_user_uuid()
         another_token = self.make_user_token(another_user_uuid)
@@ -520,11 +524,11 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
         host_uuid = make_user_uuid()
         token = self.make_user_token(host_uuid)
         self.calld_client.set_token(token)
-        adhoc_conference_id, call_ids = self.given_adhoc_conference(host_uuid, participant_count=2)
+        adhoc_conference_id, call_ids = self.given_adhoc_conference(host_uuid, participant_count=1)
         host_call1_id, participant1_call_id = call_ids
         participant2_uuid = make_user_uuid()
         host_call2_id, participant2_call_id = self.real_asterisk.given_bridged_call_stasis(caller_uuid=host_uuid, callee_uuid=participant2_uuid)
-        host_events = self.bus.accumulator('conferences.users.{}.adhoc.#'.format(host_uuid))
+        host_events = self.adhoc_conference_events_for_user(host_uuid)
         host_connected_line_before = self.ari.channels.getChannelVar(channelId=host_call1_id, variable='CONNECTEDLINE(all)')['value']
 
         self.calld_client.adhoc_conferences.add_participant_from_user(adhoc_conference_id, participant2_call_id)
@@ -561,7 +565,7 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
         host_uuid = make_user_uuid()
         token = self.make_user_token(host_uuid)
         self.calld_client.set_token(token)
-        adhoc_conference_id, call_ids = self.given_adhoc_conference(host_uuid, participant_count=2)
+        adhoc_conference_id, call_ids = self.given_adhoc_conference(host_uuid, participant_count=1)
         host_call1_id, participant1_call_id = call_ids
         host_call2_id, participant2_call_id = self.real_asterisk.given_bridged_call_not_stasis(caller_uuid=host_uuid)
 
@@ -582,7 +586,7 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
         host_uuid = make_user_uuid()
         token = self.make_user_token(host_uuid)
         self.calld_client.set_token(token)
-        adhoc_conference_id, call_ids = self.given_adhoc_conference(host_uuid, participant_count=2)
+        adhoc_conference_id, call_ids = self.given_adhoc_conference(host_uuid, participant_count=1)
         host_call_id, participant_call_id = call_ids
         lone_call_id = self.real_asterisk.stasis_channel().id
 
@@ -599,7 +603,7 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
         another_uuid = make_user_uuid()
         token = self.make_user_token(host_uuid)
         self.calld_client.set_token(token)
-        adhoc_conference_id, call_ids = self.given_adhoc_conference(host_uuid, participant_count=2)
+        adhoc_conference_id, call_ids = self.given_adhoc_conference(host_uuid, participant_count=1)
         _, participant2_call_id = self.real_asterisk.given_bridged_call_stasis(caller_uuid=another_uuid)
 
         # response should not be different than a non-existing call, to avoid malicious call discovery
@@ -614,7 +618,7 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
         host_uuid = make_user_uuid()
         token = self.make_user_token(host_uuid)
         self.calld_client.set_token(token)
-        adhoc_conference_id, call_ids = self.given_adhoc_conference(host_uuid, participant_count=3)
+        adhoc_conference_id, call_ids = self.given_adhoc_conference(host_uuid, participant_count=2)
         host_call_id, participant1_call_id, _ = call_ids
 
         assert_that(calling(self.calld_client.adhoc_conferences.add_participant_from_user)
@@ -628,11 +632,11 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
         another_uuid = make_user_uuid()
         token = self.make_user_token(another_uuid)
         self.calld_client.set_token(token)
-        _, call_ids = self.given_adhoc_conference(another_uuid, participant_count=3)
+        _, call_ids = self.given_adhoc_conference(another_uuid, participant_count=2)
         host_uuid = make_user_uuid()
         token = self.make_user_token(host_uuid)
         self.calld_client.set_token(token)
-        adhoc_conference_id, _ = self.given_adhoc_conference(host_uuid, participant_count=3)
+        adhoc_conference_id, _ = self.given_adhoc_conference(host_uuid, participant_count=2)
         _, participant1_call_id, __ = call_ids
 
         # response should not be different than a non-existing call, to avoid malicious call discovery
@@ -669,7 +673,7 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
         user_uuid = make_user_uuid()
         token = self.make_user_token(user_uuid)
         self.calld_client.set_token(token)
-        adhoc_conference_id, call_ids = self.given_adhoc_conference(user_uuid, participant_count=2)
+        adhoc_conference_id, call_ids = self.given_adhoc_conference(user_uuid, participant_count=1)
 
         assert_that(calling(self.calld_client.adhoc_conferences.remove_participant_from_user)
                     .with_args(adhoc_conference_id, SOME_CALL_ID),
@@ -682,7 +686,7 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
         user_uuid = make_user_uuid()
         token = self.make_user_token(user_uuid)
         self.calld_client.set_token(token)
-        adhoc_conference_id, call_ids = self.given_adhoc_conference(user_uuid, participant_count=2)
+        adhoc_conference_id, call_ids = self.given_adhoc_conference(user_uuid, participant_count=1)
         host_call_id, participant_call_id = self.real_asterisk.given_bridged_call_stasis(caller_uuid=user_uuid)
 
         # response should not be different than a non-existing call, to avoid malicious call discovery
@@ -697,7 +701,7 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
         user_uuid = make_user_uuid()
         token = self.make_user_token(user_uuid)
         self.calld_client.set_token(token)
-        adhoc_conference_id, _ = self.given_adhoc_conference(user_uuid, participant_count=2)
+        adhoc_conference_id, _ = self.given_adhoc_conference(user_uuid, participant_count=1)
         _, participant_call_id = self.real_asterisk.given_bridged_call_stasis(caller_uuid=user_uuid)
         another_user_uuid = make_user_uuid()
         another_token = self.make_user_token(another_user_uuid)
@@ -718,10 +722,10 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
         participant2_uuid = make_user_uuid()
         token = self.make_user_token(host_uuid)
         self.calld_client.set_token(token)
-        adhoc_conference_id, call_ids = self.given_adhoc_conference(host_uuid, participant1_uuid, participant2_uuid, participant_count=3)
+        adhoc_conference_id, call_ids = self.given_adhoc_conference(host_uuid, participant1_uuid, participant2_uuid, participant_count=2)
         host_call_id, participant1_call_id, participant2_call_id = call_ids
-        host_events = self.bus.accumulator('conferences.users.{}.adhoc.#'.format(host_uuid))
-        participant1_events = self.bus.accumulator('conferences.users.{}.adhoc.#'.format(participant1_uuid))
+        host_events = self.adhoc_conference_events_for_user(host_uuid)
+        participant1_events = self.adhoc_conference_events_for_user(participant1_uuid)
 
         self.calld_client.adhoc_conferences.remove_participant_from_user(adhoc_conference_id, participant2_call_id)
 

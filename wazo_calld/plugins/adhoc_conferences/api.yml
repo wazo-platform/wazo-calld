@@ -9,14 +9,14 @@ paths:
         description: Parameters of the conference calls
         required: true
         schema:
-          $ref: '#/definitions/ConferenceAdhocCreation'
+          $ref: '#/definitions/AdhocConferenceCreation'
       tags:
       - adhoc_conferences
       responses:
         '201':
           description: Conference adhoc has been created
           schema:
-            $ref: '#/definitions/ConferenceAdhoc'
+            $ref: '#/definitions/AdhocConference'
         '400':
           $ref: '#/responses/InvalidRequest'
         '409':
@@ -35,7 +35,7 @@ paths:
         '204':
           description: Conference adhoc has been deleted
           schema:
-            $ref: '#/definitions/ConferenceAdhoc'
+            $ref: '#/definitions/AdhocConference'
         '404':
           $ref: '#/responses/NoSuchAdhocConference'
         '503':
@@ -76,7 +76,7 @@ paths:
         '503':
           $ref: '#/responses/AnotherServiceUnavailable'
 definitions:
-  ConferenceAdhocCreation:
+  AdhocConferenceCreation:
     type: object
     properties:
       host_call_id:
@@ -87,7 +87,7 @@ definitions:
         type: array
         items:
           type: string
-  ConferenceAdhoc:
+  AdhocConference:
     type: object
     properties:
       conference_id:

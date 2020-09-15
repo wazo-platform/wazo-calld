@@ -10,7 +10,7 @@ build-calld: egg-info
 build-ari:
 	test -d $(CHAN_TEST_DIR)
 	docker build -t ari-mock -f docker/Dockerfile-ari-mock .
-	docker build -t ari-real -f $(CHAN_TEST_DIR)/Dockerfile $(CHAN_TEST_DIR)
+	docker build -t ari-real --pull -f $(CHAN_TEST_DIR)/Dockerfile $(CHAN_TEST_DIR)
 
 clean:
 	docker rmi -f wazopbx/wazo-calld
