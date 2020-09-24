@@ -71,18 +71,17 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
             _, participant_call_id = self.real_asterisk.given_bridged_call_stasis(caller_uuid=host_uuid, callee_uuid=participant_uuid)
             participant_call_ids.append(participant_call_id)
 
+        host_events = self.bus.accumulator('conferences.users.{}.adhoc.#'.format(host_uuid))
         calld_client = self.make_user_calld(host_uuid)
         adhoc_conference = calld_client.adhoc_conferences.create_from_user(
             host_call_id,
             *participant_call_ids
         )
 
-        def calls_are_bridged():
-            host_call1 = calld_client.calls.get_call(host_call_id)
-            assert_that(host_call1, has_entries({
-                'talking_to': has_length(participant_count)
-            }))
-        until.assert_(calls_are_bridged, timeout=10)
+        def adhoc_conference_complete():
+            join_events = [event for event in host_events.accumulate() if event['name'] == 'conference_adhoc_participant_joined']
+            assert_that(join_events, has_length(participant_count + 2))
+        until.assert_(adhoc_conference_complete, timeout=10)
 
         return adhoc_conference['conference_id'], [host_call_id] + participant_call_ids
 
