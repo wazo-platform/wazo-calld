@@ -319,3 +319,12 @@ class Bridge:
         except ARINotFound:
             return False
         return True
+
+
+class BridgeSnapshot(Bridge):
+    def __init__(self, snapshot, ari):
+        self._snapshot = snapshot
+        super().__init__(snapshot['id'], ari)
+
+    def valid_user_uuids(self):
+        return set(Channel(channel_id, self._ari).user() for channel_id in self._snapshot['channels'])

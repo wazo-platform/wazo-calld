@@ -4,7 +4,7 @@
 import threading
 
 from ari.exceptions import ARINotFound
-from wazo_calld.plugin_helpers.ari_ import Bridge, Channel
+from wazo_calld.plugin_helpers.ari_ import Bridge, BridgeSnapshot, Channel
 from wazo_calld.plugins.calls.services import CallsService
 
 import logging
@@ -79,7 +79,7 @@ class AdhocConferencesStasis:
             logger.error('adhoc conference %s: channel %s hungup too early or variable not found', adhoc_conference_id, channel_id)
             return
 
-        bridge_helper = Bridge(adhoc_conference_id, self._ari)
+        bridge_helper = BridgeSnapshot(event['bridge'], self._ari)
 
         if is_adhoc_conference_host:
             bridge_helper.global_variables.set('WAZO_HOST_CHANNEL_ID', channel_id)
