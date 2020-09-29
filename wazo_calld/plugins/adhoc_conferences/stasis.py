@@ -4,7 +4,7 @@
 import threading
 
 from ari.exceptions import ARINotFound
-from wazo_calld.plugin_helpers.ari_ import Bridge, Channel
+from wazo_calld.plugin_helpers.ari_ import Bridge, BridgeSnapshot, Channel
 from wazo_calld.plugins.calls.services import CallsService
 
 import logging
@@ -79,10 +79,7 @@ class AdhocConferencesStasis:
             logger.error('adhoc conference %s: channel %s hungup too early or variable not found', adhoc_conference_id, channel_id)
             return
 
-        bridge_helper = Bridge(adhoc_conference_id, self._ari)
-        participant_call = CallsService.make_call_from_channel(self._ari, channel)
-        other_participant_uuids = bridge_helper.valid_user_uuids()
-        self._notifier.participant_joined(adhoc_conference_id, other_participant_uuids, participant_call)
+        bridge_helper = BridgeSnapshot(event['bridge'], self._ari)
 
         if is_adhoc_conference_host:
             bridge_helper.global_variables.set('WAZO_HOST_CHANNEL_ID', channel_id)
@@ -93,6 +90,10 @@ class AdhocConferencesStasis:
 
             logger.debug('adhoc conference %s: setting host connectedline', adhoc_conference_id)
             self._set_host_connectedline(channel_id, adhoc_conference_id)
+
+        participant_call = CallsService.make_call_from_channel(self._ari, channel)
+        other_participant_uuids = bridge_helper.valid_user_uuids()
+        self._notifier.participant_joined(adhoc_conference_id, other_participant_uuids, participant_call)
 
     def _notify_host_of_channels_already_present(self, adhoc_conference_id, channel_ids, host_user_uuid):
         for channel_id in channel_ids:
