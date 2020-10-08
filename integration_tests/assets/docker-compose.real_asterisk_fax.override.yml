@@ -12,7 +12,7 @@ services:
       TARGETS: "ari:5039 ari:5040 rabbitmq:5672 confd:9486 amid:9491 auth:9497 calld:9500"
 
   amid:
-    image: wazopbx/wazo-amid
+    image: wazoplatform/wazo-amid
     expose:
       - "9491"
     volumes:

@@ -1,7 +1,7 @@
 version: '3.7'
 services:
   sync:
-    image: wazopbx/wait
+    image: wazoplatform/wait
     environment:
       TIMEOUT: ${INTEGRATION_TEST_TIMEOUT}
 
@@ -25,12 +25,12 @@ services:
     command: gunicorn -b 0.0.0.0:5039 -k flask_sockets.worker mock_ari:app
 
   auth:
-    image: wazopbx/wazo-auth-mock
+    image: wazoplatform/wazo-auth-mock
     ports:
       - 9497
 
   confd:
-    image: wazopbx/wazo-confd-mock
+    image: wazoplatform/wazo-confd-mock
     ports:
       - 9486
 

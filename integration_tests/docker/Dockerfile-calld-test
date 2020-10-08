@@ -1,4 +1,4 @@
-FROM wazopbx/wazo-calld
+FROM wazoplatform/wazo-calld
 
 ENV PYTHONDONTWRITEBYTECODE='true'
 
