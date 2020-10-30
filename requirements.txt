@@ -11,7 +11,7 @@ flask==1.0.2
 flask-restful==0.3.7
 flask-cors==3.0.7
 iso8601==0.1.11
-kombu==4.2.1
+kombu==4.6.11
 marshmallow==3.0.0b14
 python-consul==0.7.1
 pyyaml==3.13  # from xivo-lib-python
