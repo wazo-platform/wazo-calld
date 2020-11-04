@@ -262,6 +262,11 @@ class ConfdCache:
                 techno = 'custom'
                 name = trunk['endpoint_custom']['interface']
                 username = name
+            else:
+                logger.info(
+                    'ignoring trunk %s which is not associated to an endpoint', trunk['id']
+                )
+                return
 
             value = {
                 'id': trunk['id'],
