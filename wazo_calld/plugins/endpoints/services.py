@@ -244,7 +244,7 @@ class ConfdCache:
         )
 
     def _update_trunk_cache(self, trunks):
-        for trunk in trunks:
+        def update(trunk):
             if trunk.get('endpoint_sip'):
                 techno = 'sip'
                 name = trunk['endpoint_sip']['name']
@@ -273,6 +273,9 @@ class ConfdCache:
             self._trunks.setdefault(techno, {'name': {}, 'username': {}})
             self._trunks[techno]['name'][name] = value
             self._trunks[techno]['username'][username] = value
+
+        for trunk in trunks:
+            update(trunk)
 
         logger.info(
             'trunk cache updated %s entries',
