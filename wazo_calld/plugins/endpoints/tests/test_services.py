@@ -319,6 +319,13 @@ class TestCachingConfdClient(TestCase):
                 },
                 'tenant_uuid': s.other_tenant_uuid,
             },
+            {
+                'id': 5,
+                'endpoint_sip': None,
+                'endpoint_iax': None,
+                'endpoint_custom': None,
+                'tenant_uuid': s.tenant_uuid,
+            },
         ])
 
         result = self.client.list_trunks(s.tenant_uuid)
