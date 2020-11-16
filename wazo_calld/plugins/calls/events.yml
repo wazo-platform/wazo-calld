@@ -12,6 +12,31 @@ events:
     required_acl: events.calls.{user_uuid}
     schema:
       '$ref': '#/definitions/Call'
+  call_answered:
+    summary: A call has been answered
+    description: Sent when a call is answered by another
+    routing_key: calls.call.answered
+    required_acl: events.calls.{user_uuid}
+    schema:
+      '$ref': '#/definitions/Call'
+  call_held:
+    summary: A call has been put on hold
+    routing_key: calls.hold.created
+    required_acl: events.calls.{user_uuid}
+    schema:
+      '$ref': '#/definitions/Call'
+  call_resumed:
+    summary: A call has been resumed
+    routing_key: calls.hold.deleted
+    required_acl: events.calls.{user_uuid}
+    schema:
+      '$ref': '#/definitions/Call'
+  call_dtmf_created:
+    summary: A DTMF has been sent to Wazo
+    routing_key: calls.dtmf.created
+    required_acl: events.calls.{user_uuid}
+    schema:
+      '$ref': '#/definitions/Call'
   call_ended:
     summary: A new call has been hung up
     routing_key: calls.call.ended
