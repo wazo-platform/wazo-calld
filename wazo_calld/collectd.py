@@ -1,4 +1,4 @@
-# Copyright (C) 2015-2016 Avencall
+# Copyright 2015-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -8,7 +8,7 @@ from kombu import Exchange
 from kombu import Producer
 
 from xivo_bus import CollectdMarshaler
-from xivo_bus import Publisher
+from xivo_bus import LongLivedPublisher
 from xivo_bus import PublishingQueue
 
 logger = logging.getLogger(__name__)
@@ -36,7 +36,7 @@ class CoreCollectd:
                                 **same_exchange_arguments_as_collectd)
         bus_producer = Producer(bus_connection, exchange=bus_exchange, auto_declare=True)
         bus_marshaler = CollectdMarshaler(self._uuid)
-        return Publisher(bus_producer, bus_marshaler)
+        return LongLivedPublisher(bus_producer, bus_marshaler)
 
     def publish(self, event):
         self._publisher.publish(event)
