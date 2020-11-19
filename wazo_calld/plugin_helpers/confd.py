@@ -130,20 +130,6 @@ class Conference:
                    confd_client)
 
 
-def get_user_voicemail(user_uuid, confd_client):
-    try:
-        voicemail = confd_client.users.get(user_uuid)['voicemail']
-        if not voicemail:
-            raise NoSuchUserVoicemail(user_uuid)
-        return voicemail
-    except HTTPError as e:
-        if not_found(e):
-            raise NoSuchUserVoicemail(user_uuid)
-        raise
-    except RequestException as e:
-        raise WazoConfdUnreachable(confd_client, e)
-
-
 def get_voicemail(voicemail_id, confd_client):
     try:
         return confd_client.voicemails.get(voicemail_id)
@@ -153,3 +139,18 @@ def get_voicemail(voicemail_id, confd_client):
         raise
     except RequestException as e:
         raise WazoConfdUnreachable(confd_client, e)
+
+
+def get_user_voicemail(user_uuid, confd_client):
+    try:
+        voicemail = confd_client.users(user_uuid).get_voicemail()
+        if not voicemail:
+            raise NoSuchUserVoicemail(user_uuid)
+    except HTTPError as e:
+        if not_found(e):
+            raise NoSuchUserVoicemail(user_uuid)
+        raise
+    except RequestException as e:
+        raise WazoConfdUnreachable(confd_client, e)
+
+    return voicemail
