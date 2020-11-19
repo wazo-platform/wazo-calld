@@ -71,13 +71,3 @@ services:
     volumes:
       - type: tmpfs
         target: /var/lib/rabbitmq
-
-  websocketd:
-    image: xivo-websocketd-mock
-    ports:
-      - 9502
-    volumes:
-      - ./websocketd_data:/usr/local/share/websocketd
-    environment:
-      PYTHONPATH: /usr/local/share/websocketd
-    command: gunicorn -b 0.0.0.0:9502 -k flask_sockets.worker mock_websocketd:app

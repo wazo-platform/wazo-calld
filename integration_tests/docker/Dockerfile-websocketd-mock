@@ -1,5 +1,0 @@
-FROM p0bailey/docker-flask
-
-RUN apt-get update -q && apt-get install -yq gunicorn
-RUN pip install -U pip
-RUN pip install flask-sockets

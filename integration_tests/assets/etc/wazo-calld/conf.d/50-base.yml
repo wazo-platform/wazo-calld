@@ -26,11 +26,6 @@ consul:
 phoned:
   host: phoned
 
-websocketd:
-  wss: false
-  host: websocketd
-  verify_certificate: false
-
 service_discovery:
   enabled: false
 
