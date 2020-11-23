@@ -19,10 +19,7 @@ from hamcrest import (
 from xivo_test_helpers.hamcrest.raises import raises
 from wazo_calld_client.exceptions import CalldError
 
-from .helpers.confd import (
-    MockUser,
-    MockVoicemail,
-)
+from .helpers.confd import MockVoicemail
 from .helpers.constants import ASSET_ROOT, VALID_TENANT
 from .helpers.hamcrest_ import HamcrestARIChannel
 from .helpers.real_asterisk import RealAsteriskIntegrationTest
@@ -50,12 +47,15 @@ class TestVoicemails(RealAsteriskIntegrationTest):
         self._voicemail_id = 1234
         self._user_uuid = str(uuid.uuid4())
 
-        self.confd.set_users(MockUser(uuid=self._user_uuid,
-                                      voicemail={'id': self._voicemail_id}))
-        self.confd.set_voicemails(
-            MockVoicemail(self._voicemail_id, "8000", "voicemail-name",
-                          "default", user_uuids=[self._user_uuid])
+        voicemail = MockVoicemail(
+            self._voicemail_id,
+            "8000",
+            "voicemail-name",
+            "default",
+            user_uuids=[self._user_uuid],
         )
+        self.confd.set_user_voicemails({self._user_uuid: [voicemail]})
+        self.confd.set_voicemails(voicemail)
         self.calld_client = self.make_user_calld(self._user_uuid, tenant_uuid=VALID_TENANT)
 
     def test_voicemail_head_greeting_invalid_voicemail(self):
@@ -267,7 +267,7 @@ class TestVoicemails(RealAsteriskIntegrationTest):
         )
 
     def test_voicemail_user_has_no_voicemail(self):
-        self.confd.set_users(MockUser(uuid=self._user_uuid, voicemail=None))
+        self.confd.set_user_voicemails({self._user_uuid: []})
         assert_that(
             calling(self.calld_client.voicemails.get_voicemail_from_user),
             raises(CalldError).matching(has_properties(

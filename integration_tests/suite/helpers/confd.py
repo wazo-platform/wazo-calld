@@ -54,6 +54,16 @@ class ConfdClient:
                 'content': content}
         requests.post(url, json=body)
 
+    def set_user_voicemails(self, set_user_voicemails):
+        content = {}
+        for user, voicemails in set_user_voicemails.items():
+            content[user] = [voicemail.to_dict() for voicemail in voicemails]
+
+        url = self.url('_set_response')
+        body = {'response': 'user_voicemails',
+                'content': content}
+        requests.post(url, json=body)
+
     def set_switchboards(self, *mock_switchboards):
         url = self.url('_set_response')
         body = {'response': 'switchboards',
