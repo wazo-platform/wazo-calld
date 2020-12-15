@@ -79,3 +79,9 @@ definitions:
       sip_call_id:
         type: string
         description: The value of the `Call-ID` header of `SIP` calls. Will be `null` for calls that are not `SIP`
+      recording_status:
+        type: string
+        enum:
+        - active
+        - inactive
+        - muted

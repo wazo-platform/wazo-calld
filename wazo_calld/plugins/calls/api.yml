@@ -91,6 +91,74 @@ paths:
             $ref: '#/definitions/Error'
         '503':
           $ref: '#/responses/AnotherServiceUnavailable'
+  /calls/{call_id}/recordings/start:
+    put:
+      summary: Record a call
+      description: '**Required ACL:** `calld.calls.{call_id}.recordings.start.update`'
+      parameters:
+      - $ref: '#/parameters/CallID'
+      tags:
+      - calls
+      responses:
+        '204':
+          description: The call is now recorded
+        '404':
+          description: No such call
+          schema:
+            $ref: '#/definitions/Error'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+  /calls/{call_id}/recordings/stop:
+    put:
+      summary: Stop call recording
+      description: '**Required ACL:** `calld.calls.{call_id}.recordings.stop.update`'
+      parameters:
+      - $ref: '#/parameters/CallID'
+      tags:
+      - calls
+      responses:
+        '204':
+          description: The call is no more recorded
+        '404':
+          description: No such call
+          schema:
+            $ref: '#/definitions/Error'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+  /calls/{call_id}/recordings/mute/start:
+    put:
+      summary: Mute a call recording
+      description: '**Required ACL:** `calld.calls.{call_id}.recordings.mute.start.update`'
+      parameters:
+      - $ref: '#/parameters/CallID'
+      tags:
+      - calls
+      responses:
+        '204':
+          description: The call recording is now muted
+        '404':
+          description: No such call
+          schema:
+            $ref: '#/definitions/Error'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+  /calls/{call_id}/recordings/mute/stop:
+    put:
+      summary: Unmute a call recording
+      description: '**Required ACL:** `calld.calls.{call_id}.recordings.mute.stop.update`'
+      parameters:
+      - $ref: '#/parameters/CallID'
+      tags:
+      - calls
+      responses:
+        '204':
+          description: The call recording is unmuted
+        '404':
+          description: No such call
+          schema:
+            $ref: '#/definitions/Error'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
   /calls/{call_id}/mute/start:
     put:
       summary: Mute a call
@@ -313,6 +381,90 @@ paths:
             $ref: '#/definitions/Error'
         '503':
           $ref: '#/responses/AnotherServiceUnavailable'
+  /users/me/calls/{call_id}/recordings/start:
+    put:
+      summary: Start call recording from user
+      description: '**Required ACL:** `calld.users.me.calls.{call_id}.recordings.start.update`
+
+
+        Only calls owned by the authenticated user may be recorded.'
+      parameters:
+      - $ref: '#/parameters/CallID'
+      tags:
+      - calls
+      - users
+      responses:
+        '204':
+          description: The call is now recorded
+        '404':
+          description: No such call
+          schema:
+            $ref: '#/definitions/Error'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+  /users/me/calls/{call_id}/recordings/stop:
+    put:
+      summary: Stop call recording from user
+      description: '**Required ACL:** `calld.users.me.calls.{call_id}.recordings.stop.update`
+
+
+        Only calls owned by the authenticated user may be stopped .'
+      parameters:
+      - $ref: '#/parameters/CallID'
+      tags:
+      - calls
+      - users
+      responses:
+        '204':
+          description: The call is no more recorded
+        '404':
+          description: No such call
+          schema:
+            $ref: '#/definitions/Error'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+  /users/me/calls/{call_id}/recordings/mute/start:
+    put:
+      summary: Mute a call recording from user
+      description: '**Required ACL:** `calld.users.me.calls.{call_id}.recordings.mute.start.update`
+
+
+        Only call recordings owned by the authenticated user may be muted.'
+      parameters:
+      - $ref: '#/parameters/CallID'
+      tags:
+      - calls
+      - users
+      responses:
+        '204':
+          description: The call recording is now muted
+        '404':
+          description: No such call
+          schema:
+            $ref: '#/definitions/Error'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+  /users/me/calls/{call_id}/recordings/mute/stop:
+    put:
+      summary: Unmute a call recording from user
+      description: '**Required ACL:** `calld.users.me.calls.{call_id}.recordings.mute.stop.update`
+
+
+        Only call recordings owned by the authenticated user may be unmuted.'
+      parameters:
+      - $ref: '#/parameters/CallID'
+      tags:
+      - calls
+      - users
+      responses:
+        '204':
+          description: The call recording is unmuted
+        '404':
+          description: No such call
+          schema:
+            $ref: '#/definitions/Error'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
   /users/me/calls/{call_id}/mute/start:
     put:
       summary: Mute a call from user
@@ -529,6 +681,12 @@ definitions:
         type: integer
         description: Line ID of the endpoint making the call
         readOnly: true
+      recording_status:
+        type: string
+        enum:
+        - active
+        - inactive
+        - muted
   UserCallRequest:
     type: object
     properties:
