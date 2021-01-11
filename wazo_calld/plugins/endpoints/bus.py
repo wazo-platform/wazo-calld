@@ -71,8 +71,13 @@ class EventHandler:
                 return
 
         trunk = self._confd_cache.get_trunk_by_username(techno, username)
+        registered = event['Status'] == 'Registered'
+        if not trunk and not registered:
+            # The trunk as already been dissociated from the trunk
+            return
+
         with self._endpoint_status_cache.update(techno, trunk['name']) as endpoint:
-            endpoint.registered = event['Status'] == 'Registered'
+            endpoint.registered = registered
 
     def _extract_sip_option(self, section, option):
         for key, value in section:
