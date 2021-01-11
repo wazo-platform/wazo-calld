@@ -1,4 +1,4 @@
-# Copyright 2019-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from hamcrest import assert_that
@@ -39,7 +39,7 @@ class TestTrunkBusConsume(IntegrationTest):
                 trunk_id,
                 endpoint_sip={
                     'name': name,
-                    'auth_section_options': [['username', 'the-username']],
+                    'registration_section_options': [['client_uri', 'sip:the-username@hostname']],
                 },
                 tenant_uuid=tenant_uuid,
             )
@@ -79,7 +79,7 @@ class TestTrunkBusConsume(IntegrationTest):
                 trunk_id,
                 endpoint_sip={
                     'name': name,
-                    'auth_section_options': [['username', 'the-username']],
+                    'registration_section_options': [['client_uri', 'the-username']],
                 },
                 tenant_uuid=tenant_uuid,
             )
@@ -119,7 +119,7 @@ class TestTrunkBusConsume(IntegrationTest):
                 trunk_id,
                 endpoint_sip={
                     'name': name,
-                    'auth_section_options': [['username', 'the-username']],
+                    'registration_section_options': [['client_uri', 'the-username']],
                 },
                 tenant_uuid=tenant_uuid,
             )
@@ -166,7 +166,7 @@ class TestTrunkBusConsume(IntegrationTest):
         trunk_id = 42
         tenant_uuid = 'the_tenant_uuid'
         name = 'abcdef'
-        username = 'the-username'
+        client_uri = 'sip:the-username@hostname'
 
         self.ari.set_endpoints(
             MockEndpoint('PJSIP', name, 'offline'),
@@ -176,7 +176,7 @@ class TestTrunkBusConsume(IntegrationTest):
                 trunk_id,
                 endpoint_sip={
                     'name': name,
-                    'auth_section_options': [['username', username]],
+                    'registration_section_options': [['client_uri', client_uri]],
                 },
                 tenant_uuid=tenant_uuid,
             )
@@ -188,7 +188,7 @@ class TestTrunkBusConsume(IntegrationTest):
         self.reset_clients()
         self.wait_strategy.wait(self)
         self.bus.send_ami_registry_event(
-            'PJSIP', 'sip:here', 'Registered', 'sip:{}@here'.format(username),
+            'PJSIP', 'sip:here', 'Registered', client_uri,
         )
 
         def assert_function():
@@ -206,7 +206,7 @@ class TestTrunkBusConsume(IntegrationTest):
         until.assert_(assert_function, tries=5)
 
         self.bus.send_ami_registry_event(
-            'PJSIP', 'sip:here', 'Unregistered', 'sip:{}@here'.format(username),
+            'PJSIP', 'sip:here', 'Unregistered', client_uri,
         )
 
         def assert_function():
@@ -227,7 +227,7 @@ class TestTrunkBusConsume(IntegrationTest):
         trunk_id = 42
         tenant_uuid = 'the_tenant_uuid'
         name = 'abcdef'
-        username = 'the-username'
+        client_uri = 'sip:the-username@hostname'
 
         self.ari.set_endpoints(
             MockEndpoint('PJSIP', name, 'offline', channel_ids=[]),
@@ -246,7 +246,7 @@ class TestTrunkBusConsume(IntegrationTest):
                 trunk_id,
                 endpoint_sip={
                     'name': name,
-                    'auth_section_options': [['username', username]],
+                    'registration_section_options': [['client_uri', client_uri]],
                 },
                 tenant_uuid=tenant_uuid,
             )
@@ -254,7 +254,7 @@ class TestTrunkBusConsume(IntegrationTest):
         self.bus.send_trunk_endpoint_associated_event(trunk_id, endpoint_id=3)
 
         self.bus.send_ami_registry_event(
-            'PJSIP', 'sip:here', 'Registered', 'sip:{}@here'.format(username),
+            'PJSIP', 'sip:here', 'Registered', client_uri,
         )
 
         def assert_function():
