@@ -1,4 +1,4 @@
-# Copyright 2019-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -248,8 +248,8 @@ class ConfdCache:
             if trunk.get('endpoint_sip'):
                 techno = 'sip'
                 name = trunk['endpoint_sip']['name']
-                for key, value in trunk['endpoint_sip']['auth_section_options']:
-                    if key == 'username':
+                for key, value in trunk['endpoint_sip']['registration_section_options']:
+                    if key == 'client_uri':
                         username = value
                         break
                 else:

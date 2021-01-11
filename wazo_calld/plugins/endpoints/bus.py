@@ -1,4 +1,4 @@
-# Copyright 2019-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -61,15 +61,23 @@ class EventHandler:
 
     def on_registry(self, event):
         techno = event['ChannelType']
-        try:
-            begin, _ = event['Username'].split('@', 1)
-            _, username = begin.split(':', 1)
-        except ValueError:
-            return
+        if techno == 'PJSIP':
+            username = event['Username']
+        else:
+            try:
+                begin, _ = event['Username'].split('@', 1)
+                _, username = begin.split(':', 1)
+            except ValueError:
+                return
 
         trunk = self._confd_cache.get_trunk_by_username(techno, username)
+        registered = event['Status'] == 'Registered'
+        if not trunk and not registered:
+            # The trunk as already been dissociated from the trunk
+            return
+
         with self._endpoint_status_cache.update(techno, trunk['name']) as endpoint:
-            endpoint.registered = event['Status'] == 'Registered'
+            endpoint.registered = registered
 
     def _extract_sip_option(self, section, option):
         for key, value in section:
@@ -109,8 +117,8 @@ class EventHandler:
         )
 
     def on_trunk_endpoint_sip_associated(self, event):
-        auth_section = event['endpoint_sip']['auth_section_options']
-        sip_username = self._extract_sip_option(auth_section, 'username')
+        registration_section = event['endpoint_sip']['registration_section_options']
+        sip_username = self._extract_sip_option(registration_section, 'client_uri')
         self._confd_cache.add_trunk(
             'sip',
             event['trunk']['id'],
@@ -161,10 +169,10 @@ class EventHandler:
     def on_endpoint_sip_updated(self, event):
         trunk = event['trunk']
         line = event['line']
-        auth_section = event['auth_section_options']
-        sip_username = self._extract_sip_option(auth_section, 'username')
 
         if trunk:
+            registration_section = event['registration_section_options']
+            sip_username = self._extract_sip_option(registration_section, 'client_uri')
             self._confd_cache.update_trunk(
                 'sip',
                 event['trunk']['id'],
@@ -174,6 +182,8 @@ class EventHandler:
             )
 
         if line:
+            auth_section = event['auth_section_options']
+            sip_username = self._extract_sip_option(auth_section, 'username')
             self._confd_cache.update_line(
                 'sip',
                 event['line']['id'],

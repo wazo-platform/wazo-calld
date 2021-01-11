@@ -1,4 +1,4 @@
-# Copyright 2019-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from unittest import TestCase
@@ -164,7 +164,7 @@ class TestCachingConfdClient(TestCase):
                 'id': s.trunk_id,
                 'endpoint_sip': {
                     'name': s.name,
-                    'auth_section_options': [['username', s.username]],
+                    'registration_section_options': [['client_uri', s.username]],
                 },
                 'tenant_uuid': s.tenant_uuid,
             },
@@ -211,7 +211,7 @@ class TestCachingConfdClient(TestCase):
                 'id': s.trunk_id,
                 'endpoint_sip': {
                     'name': s.name,
-                    'auth_section_options': [['username', s.username]],
+                    'registration_section_options': [['client_uri', s.username]],
                 },
                 'tenant_uuid': s.tenant_uuid,
             },
@@ -297,7 +297,7 @@ class TestCachingConfdClient(TestCase):
                 'id': 1,
                 'endpoint_sip': {
                     'name': s.name_1,
-                    'auth_section_options': [['username', s.username_1]],
+                    'registration_section_options': [['client_uri', s.username_1]],
                 },
                 'tenant_uuid': s.tenant_uuid,
             },
@@ -315,7 +315,9 @@ class TestCachingConfdClient(TestCase):
                 'id': 4,
                 'endpoint_sip': {
                     'name': s.ignored_name,
-                    'auth_section_options': [['username', s.ignored_username]],
+                    'registration_section_options': [
+                        ['client_uri', s.ignored_username]
+                    ],
                 },
                 'tenant_uuid': s.other_tenant_uuid,
             },
@@ -346,7 +348,11 @@ class TestCachingConfdClient(TestCase):
                     "tenant_uuid": s.tenant_uuid,
                     "name": s.name_1,
                     "protocol": "sip",
-                    "endpoint_sip": {"id": 18, "username": "5h8osw24", "name": s.name_1},
+                    "endpoint_sip": {
+                        "id": 18,
+                        "name": s.name_1,
+                        'auth_section_options': [['username', '5h8osw24']],
+                    },
                     "endpoint_sccp": None,
                     "endpoint_custom": None,
                 },

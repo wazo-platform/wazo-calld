@@ -1,10 +1,10 @@
-# Copyright 2019-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from contextlib import contextmanager
 from unittest import TestCase
 from unittest.mock import Mock, sentinel as s
-from hamcrest import assert_that, has_properties
+from hamcrest import assert_that, calling, raises, has_properties, not_
 
 from ..bus import EventHandler
 from ..services import Endpoint, ConfdCache
@@ -74,6 +74,22 @@ class TestBusEvent(TestCase):
         assert_that(
             self.updated_endpoint,
             has_properties(techno='PJSIP', name='foobar', registered=False),
+        )
+
+    def test_on_trunk_dissociated_deregistering(self):
+        self.confd_cache.get_trunk_by_username.return_value = None
+        event = {
+            'ChannelType': 'PJSIP',
+            'Domain': 'sip:wazo-dev-gateway.lan.wazo.io',
+            'Event': 'Registry',
+            'Privilege': 'system,all',
+            'Status': 'Unregistered',
+            'Username': 'sip:dev_370@wazo-dev-gateway.lan.wazo.io',
+        }
+
+        assert_that(
+            calling(self.handler.on_registry).with_args(event),
+            not_(raises(Exception)),
         )
 
     def test_on_peer_status_pjsip_registering(self):
@@ -207,7 +223,7 @@ class TestBusEvent(TestCase):
                 'id': 45,
                 'name': name,
                 'tenant_uuid': tenant_uuid,
-                'auth_section_options': [['username', username]],
+                'registration_section_options': [['client_uri', username]],
             },
             'trunk': {
                 'id': trunk_id,
@@ -423,7 +439,7 @@ class TestBusEvent(TestCase):
             'id': s.endpoint_id,
             'name': s.name,
             'tenant_uuid': s.tenant_uuid,
-            'auth_section_options': [['username', s.username]],
+            'registration_section_options': [['client_uri', s.username]],
             'trunk': {'id': s.trunk_id},
             'line': None,
         }
