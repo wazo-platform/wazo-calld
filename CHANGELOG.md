@@ -6,6 +6,11 @@
 
   * `recorded`
 
+* New API to start recording calls
+
+  * `PUT /calls/{call_id}/record/start`
+  * `PUT /users/me/calls/{call_id}/record/start`
+
 * New API to stop recording calls
 
   * `PUT /calls/{call_id}/record/stop`

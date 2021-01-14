@@ -226,6 +226,17 @@ class MyCallUnholdResource(AuthResource):
         return '', 204
 
 
+class CallRecordStartResource(AuthResource):
+
+    def __init__(self, calls_service):
+        self.calls_service = calls_service
+
+    @required_acl('calld.calls.{call_id}.record.start.update')
+    def put(self, call_id):
+        self.calls_service.record_start(call_id)
+        return '', 204
+
+
 class CallRecordStopResource(AuthResource):
 
     def __init__(self, calls_service):
@@ -247,6 +258,19 @@ class MyCallRecordStopResource(AuthResource):
     def put(self, call_id):
         user_uuid = get_token_user_uuid_from_request(self.auth_client)
         self.calls_service.record_stop_user(call_id, user_uuid)
+        return '', 204
+
+
+class MyCallRecordStartResource(AuthResource):
+
+    def __init__(self, auth_client, calls_service):
+        self.auth_client = auth_client
+        self.calls_service = calls_service
+
+    @required_acl('calld.users.me.calls.{call_id}.record.start.update')
+    def put(self, call_id):
+        user_uuid = get_token_user_uuid_from_request(self.auth_client)
+        self.calls_service.record_start_user(call_id, user_uuid)
         return '', 204
 
 

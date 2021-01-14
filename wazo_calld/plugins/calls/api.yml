@@ -169,6 +169,23 @@ paths:
             $ref: '#/definitions/Error'
         '503':
           $ref: '#/responses/AnotherServiceUnavailable'
+  /calls/{call_id}/record/start:
+    put:
+      summary: Start recording a call
+      description: '**Required ACL:** `calld.calls.{call_id}.record.start.update`'
+      parameters:
+      - $ref: '#/parameters/CallID'
+      tags:
+      - calls
+      responses:
+        '204':
+          description: Recording has started for the call
+        '404':
+          description: No such call
+          schema:
+            $ref: '#/definitions/Error'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
   /calls/{call_id}/record/stop:
     put:
       summary: Stop recording a call
@@ -408,6 +425,23 @@ paths:
       responses:
         '204':
           description: The call is now unheld
+        '404':
+          description: No such call
+          schema:
+            $ref: '#/definitions/Error'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+  /users/me/calls/{call_id}/record/start:
+    put:
+      summary: Start recording a call
+      description: '**Required ACL:** `calld.calls.{call_id}.record.start.update`'
+      parameters:
+      - $ref: '#/parameters/CallID'
+      tags:
+      - calls
+      responses:
+        '204':
+          description: Recording has started for the call
         '404':
           description: No such call
           schema:
