@@ -1,4 +1,4 @@
-# Copyright 2015-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 
@@ -17,6 +17,7 @@ class Call:
         self.peer_caller_id_number = ''
         self.on_hold = False
         self.muted = False
+        self.recorded = False
         self.is_caller = False
         self.dialed_extension = None
         self.sip_call_id = None

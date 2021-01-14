@@ -2,6 +2,10 @@
 
 ## 21.01
 
+* New attribute for `calls` objects (API and events):
+
+  * `recorded`
+
 * New API to stop recording calls
 
   * `PUT /calls/{call_id}/record/stop`

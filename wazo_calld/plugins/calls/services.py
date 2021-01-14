@@ -271,6 +271,7 @@ class CallsService:
         call.user_uuid = channel_helper.user()
         call.on_hold = channel_helper.on_hold()
         call.muted = channel_helper.muted()
+        call.recorded = channel_helper.recorded()
         call.bridges = [bridge.id for bridge in ari.bridges.list() if channel.id in bridge.json['channels']]
         call.talking_to = {connected_channel.id: connected_channel.user()
                            for connected_channel in channel_helper.connected_channels()}

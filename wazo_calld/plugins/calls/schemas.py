@@ -1,4 +1,4 @@
-# Copyright 2016-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from marshmallow import EXCLUDE, Schema, fields, post_dump
@@ -64,6 +64,7 @@ class CallSchema(CallBaseSchema):
     status = fields.String()
     on_hold = fields.Boolean()
     muted = fields.Boolean()
+    recorded = fields.Boolean()
     talking_to = StrictDict(key_field=fields.String(), value_field=fields.String())
     user_uuid = fields.String()
     is_caller = fields.Boolean()

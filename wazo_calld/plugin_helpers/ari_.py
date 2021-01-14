@@ -1,4 +1,4 @@
-# Copyright 2015-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -227,6 +227,13 @@ class Channel:
         try:
             muted = self._get_var('WAZO_CALL_MUTED')
             return muted == '1'
+        except ARINotFound:
+            return False
+
+    def recorded(self):
+        try:
+            recorded = self._get_var('WAZO_CALL_RECORD_ACTIVE')
+            return recorded == '1'
         except ARINotFound:
             return False
 
