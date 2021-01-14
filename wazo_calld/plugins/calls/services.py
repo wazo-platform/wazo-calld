@@ -1,4 +1,4 @@
-# Copyright 2015-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -357,6 +357,23 @@ class CallsService:
     def unhold_user(self, call_id, user_uuid):
         self._verify_user(call_id, user_uuid)
         self.unhold(call_id)
+
+    def record_stop(self, call_id):
+        try:
+            channel = self._ari.channels.get(channelId=call_id)
+        except ARINotFound:
+            raise NoSuchCall(call_id)
+
+        ami.record_stop(self._ami, call_id)
+
+        # NOTE(afournier): asterisk should send back an event instead of
+        # wrongly pretend that the channel has stopped recording
+        call = self.make_call_from_channel(self._ari, channel)
+        self._notifier.call_updated(call)
+
+    def record_stop_user(self, call_id, user_uuid):
+        self._verify_user(call_id, user_uuid)
+        self.record_stop(call_id)
 
     def answer(self, call_id):
         try:

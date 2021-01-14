@@ -1,5 +1,12 @@
 # Changelog
 
+## 21.01
+
+* New API to stop recording calls
+
+  * `PUT /calls/{call_id}/record/stop`
+  * `PUT /users/me/calls/{call_id}/record/stop`
+
 ## 20.13
 
 * New attribute for `calls` objects (API and events):
@@ -14,7 +21,7 @@
   * `DELETE /users/me/conferences/adhoc`
   * `PUT /users/me/conferences/adhoc/{adhoc_conference_id}/participants/{call_id}`
   * `DELETE /users/me/conferences/adhoc/{adhoc_conference_id}/participants/{call_id}`
-  
+
 * New events for adhoc conferences:
 
   * `adhoc_conference_created`

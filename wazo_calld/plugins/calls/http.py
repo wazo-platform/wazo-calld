@@ -1,4 +1,4 @@
-# Copyright 2015-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from flask import request
@@ -223,6 +223,30 @@ class MyCallUnholdResource(AuthResource):
     def put(self, call_id):
         user_uuid = get_token_user_uuid_from_request(self.auth_client)
         self.calls_service.unhold_user(call_id, user_uuid)
+        return '', 204
+
+
+class CallRecordStopResource(AuthResource):
+
+    def __init__(self, calls_service):
+        self.calls_service = calls_service
+
+    @required_acl('calld.calls.{call_id}.record.stop.update')
+    def put(self, call_id):
+        self.calls_service.record_stop(call_id)
+        return '', 204
+
+
+class MyCallRecordStopResource(AuthResource):
+
+    def __init__(self, auth_client, calls_service):
+        self.auth_client = auth_client
+        self.calls_service = calls_service
+
+    @required_acl('calld.users.me.calls.{call_id}.record.stop.update')
+    def put(self, call_id):
+        user_uuid = get_token_user_uuid_from_request(self.auth_client)
+        self.calls_service.record_stop_user(call_id, user_uuid)
         return '', 204
 
 
