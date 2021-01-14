@@ -27,6 +27,20 @@ def unset_variable_ami(amid, channel_id, variable):
     set_variable_ami(amid, channel_id, variable, '')
 
 
+def get_variable_ami(amid, channel_id, variable):
+    try:
+        parameters = {'Channel': channel_id,
+                      'Variable': variable}
+        response = amid.action('Getvar', parameters)
+    except RequestException as e:
+        raise WazoAmidError(amid, e)
+
+    for ami_response in response:
+        if ami_response['Variable'] == variable:
+            return ami_response['Value']
+    return None
+
+
 def extension_exists(amid, context, exten, priority=1):
     try:
         response = amid.action('ShowDialplan', {'Context': context,
@@ -105,6 +119,18 @@ def dtmf(amid, channel, digit):
         amid.action('PlayDTMF', destination)
     except RequestException as e:
         raise WazoAmidError(amid, e)
+
+
+def record_start(amid, channel):
+    destination = {
+        'Channel': channel,
+        'File': get_variable_ami(amid, channel, 'XIVO_CALLRECORDFILE'),
+    }
+    try:
+        amid.action('MixMonitor', destination)
+    except RequestException as e:
+        raise WazoAmidError(amid, e)
+    set_variable_ami(amid, channel, 'WAZO_CALL_RECORD_ACTIVE', '1')
 
 
 def record_stop(amid, channel):
