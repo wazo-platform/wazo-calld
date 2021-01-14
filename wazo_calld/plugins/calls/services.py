@@ -365,7 +365,8 @@ class CallsService:
         except ARINotFound:
             raise NoSuchCall(call_id)
 
-        ami.record_start(self._ami, call_id)
+        filename = ami.get_variable_ami(self._ami, call_id, 'XIVO_CALLRECORDFILE')
+        ami.record_start(self._ami, call_id, filename)
 
         # NOTE(afournier): asterisk should send back an event instead of
         # wrongly pretend that the channel has started recording

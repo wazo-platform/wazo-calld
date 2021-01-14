@@ -121,10 +121,10 @@ def dtmf(amid, channel, digit):
         raise WazoAmidError(amid, e)
 
 
-def record_start(amid, channel):
+def record_start(amid, channel, filename):
     destination = {
         'Channel': channel,
-        'File': get_variable_ami(amid, channel, 'XIVO_CALLRECORDFILE'),
+        'File': filename,
     }
     try:
         amid.action('MixMonitor', destination)
