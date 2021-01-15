@@ -1988,6 +1988,12 @@ class TestCallRecord(RealAsteriskIntegrationTest):
             has_items(has_entries(call_id=channel_id, record_state='active'))
         )
 
+        # Only possible to record the same call once
+        assert_that(
+            calling(self.calld_client.calls.start_record).with_args(channel_id),
+            raises(CalldError).matching(has_properties(status_code=400))
+        )
+
     def test_put_record_start_from_user(self):
         user_uuid = str(uuid.uuid4())
         token = self.given_user_token(user_uuid)
@@ -2024,6 +2030,12 @@ class TestCallRecord(RealAsteriskIntegrationTest):
         assert_that(
             self.calld_client.calls.list_calls_from_user()['items'],
             has_items(has_entries(call_id=channel_id, record_state='active'))
+        )
+
+        # Only possible to record the same call once
+        assert_that(
+            calling(self.calld_client.calls.start_record_from_user).with_args(channel_id),
+            raises(CalldError).matching(has_properties(status_code=400))
         )
 
     def test_put_record_stop(self):

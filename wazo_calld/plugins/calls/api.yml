@@ -180,6 +180,10 @@ paths:
       responses:
         '204':
           description: Recording has started for the call
+        '400':
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/Error'
         '404':
           description: No such call
           schema:
@@ -442,6 +446,10 @@ paths:
       responses:
         '204':
           description: Recording has started for the call
+        '400':
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/Error'
         '404':
           description: No such call
           schema:

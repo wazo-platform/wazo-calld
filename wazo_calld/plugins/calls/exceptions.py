@@ -1,4 +1,4 @@
-# Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from wazo_calld.exceptions import APIException
@@ -36,6 +36,19 @@ class CallConnectError(APIException):
             status_code=400,
             message='Could not connect call: call has no application instance',
             error_id='call-connect-error',
+            details={
+                'call_id': call_id
+            }
+        )
+
+
+class CallAlreadyRecordedError(APIException):
+
+    def __init__(self, call_id):
+        super().__init__(
+            status_code=400,
+            message='Could not start recording: call is already being recorded',
+            error_id='call-record-error',
             details={
                 'call_id': call_id
             }

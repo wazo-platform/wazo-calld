@@ -15,6 +15,7 @@ from wazo_calld.plugin_helpers.exceptions import (
 from xivo.asterisk.protocol_interface import protocol_interface_from_channel
 
 from .call import Call
+from .exceptions import CallAlreadyRecordedError
 from .exceptions import CallConnectError
 from .exceptions import CallCreationError
 from .exceptions import NoSuchCall
@@ -364,6 +365,10 @@ class CallsService:
             channel = self._ari.channels.get(channelId=call_id)
         except ARINotFound:
             raise NoSuchCall(call_id)
+
+        channel_helper = Channel(channel.id, self._ari)
+        if channel_helper.is_recorded():
+            raise CallAlreadyRecordedError(call_id)
 
         filename = channel.json['channelvars'].get('XIVO_CALLRECORDFILE')
         ami.record_start(self._ami, call_id, filename)
