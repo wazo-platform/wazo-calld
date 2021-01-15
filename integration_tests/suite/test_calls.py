@@ -1976,7 +1976,7 @@ class TestCallRecord(RealAsteriskIntegrationTest):
                 events,
                 has_items(has_entries(
                     name='call_updated',
-                    data=has_entries(call_id=channel_id, recorded=False)
+                    data=has_entries(call_id=channel_id, record_state='inactive')
                 ))
             )
 
@@ -1984,7 +1984,7 @@ class TestCallRecord(RealAsteriskIntegrationTest):
 
         assert_that(
             self.calld_client.calls.list_calls()['items'],
-            has_items(has_entries(call_id=channel_id, recorded=False)),
+            has_items(has_entries(call_id=channel_id, record_state='inactive')),
         )
 
     def test_put_record_stop_from_user(self):
@@ -2014,7 +2014,7 @@ class TestCallRecord(RealAsteriskIntegrationTest):
                 events,
                 has_items(has_entries(
                     name='call_updated',
-                    data=has_entries(call_id=channel_id, recorded=False)
+                    data=has_entries(call_id=channel_id, record_state='inactive')
                 ))
             )
 
@@ -2022,7 +2022,7 @@ class TestCallRecord(RealAsteriskIntegrationTest):
 
         assert_that(
             self.calld_client.calls.list_calls_from_user()['items'],
-            has_items(has_entries(call_id=channel_id, recorded=False))
+            has_items(has_entries(call_id=channel_id, record_state='inactive'))
         )
 
     def given_call_not_stasis(self, user_uuid=None):

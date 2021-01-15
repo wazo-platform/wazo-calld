@@ -230,7 +230,7 @@ class Channel:
         except ARINotFound:
             return False
 
-    def recorded(self):
+    def is_recorded(self):
         try:
             recorded = self._get_var('WAZO_CALL_RECORD_ACTIVE')
             return recorded == '1'

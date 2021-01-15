@@ -17,7 +17,7 @@ class Call:
         self.peer_caller_id_number = ''
         self.on_hold = False
         self.muted = False
-        self.recorded = False
+        self.record_state = 'inactive'
         self.is_caller = False
         self.dialed_extension = None
         self.sip_call_id = None

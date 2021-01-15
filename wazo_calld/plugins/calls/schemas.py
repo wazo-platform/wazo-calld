@@ -64,7 +64,7 @@ class CallSchema(CallBaseSchema):
     status = fields.String()
     on_hold = fields.Boolean()
     muted = fields.Boolean()
-    recorded = fields.Boolean()
+    record_state = fields.String()
     talking_to = StrictDict(key_field=fields.String(), value_field=fields.String())
     user_uuid = fields.String()
     is_caller = fields.Boolean()
