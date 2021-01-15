@@ -597,7 +597,7 @@ definitions:
         type: integer
         description: Line ID of the endpoint making the call
         readOnly: true
-      record_status:
+      record_state:
         type: string
         enum:
           - active
