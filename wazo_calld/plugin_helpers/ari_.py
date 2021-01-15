@@ -230,13 +230,6 @@ class Channel:
         except ARINotFound:
             return False
 
-    def is_recorded(self):
-        try:
-            recorded = self._get_var('WAZO_CALL_RECORD_ACTIVE')
-            return recorded == '1'
-        except ARINotFound:
-            return False
-
     def is_progress(self):
         try:
             progress = self._get_var('WAZO_CALL_PROGRESS')

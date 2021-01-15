@@ -261,6 +261,7 @@ class CallsService:
 
     @staticmethod
     def make_call_from_channel(ari, channel):
+        channel_variables = channel.json['channelvars']
         channel_helper = Channel(channel.id, ari)
         call = Call(channel.id)
         call.creation_time = channel.json['creationtime']
@@ -272,7 +273,7 @@ class CallsService:
         call.user_uuid = channel_helper.user()
         call.on_hold = channel_helper.on_hold()
         call.muted = channel_helper.muted()
-        call.record_state = 'active' if channel_helper.is_recorded() else 'inactive'
+        call.record_state = 'active' if channel_variables.get('WAZO_CALL_RECORD_ACTIVE') == '1' else 'inactive'
         call.bridges = [bridge.id for bridge in ari.bridges.list() if channel.id in bridge.json['channels']]
         call.talking_to = {connected_channel.id: connected_channel.user()
                            for connected_channel in channel_helper.connected_channels()}
@@ -366,11 +367,12 @@ class CallsService:
         except ARINotFound:
             raise NoSuchCall(call_id)
 
-        channel_helper = Channel(channel.id, self._ari)
-        if channel_helper.is_recorded():
+        channel_variables = channel.json['channelvars']
+
+        if channel_variables.get('WAZO_CALL_RECORD_ACTIVE') == '1':
             raise CallAlreadyRecordedError(call_id)
 
-        filename = channel.json['channelvars'].get('XIVO_CALLRECORDFILE')
+        filename = channel_variables.get('XIVO_CALLRECORDFILE')
         ami.record_start(self._ami, call_id, filename)
 
         # NOTE(afournier): asterisk should send back an event instead of
