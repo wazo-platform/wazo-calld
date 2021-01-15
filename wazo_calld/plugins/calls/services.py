@@ -15,7 +15,6 @@ from wazo_calld.plugin_helpers.exceptions import (
 from xivo.asterisk.protocol_interface import protocol_interface_from_channel
 
 from .call import Call
-from .exceptions import CallAlreadyRecordedError
 from .exceptions import CallConnectError
 from .exceptions import CallCreationError
 from .exceptions import NoSuchCall
@@ -370,7 +369,7 @@ class CallsService:
         channel_variables = channel.json['channelvars']
 
         if channel_variables.get('WAZO_CALL_RECORD_ACTIVE') == '1':
-            raise CallAlreadyRecordedError(call_id)
+            return
 
         filename = channel_variables.get('XIVO_CALLRECORDFILE')
         ami.record_start(self._ami, call_id, filename)

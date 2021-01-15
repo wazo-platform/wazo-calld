@@ -42,19 +42,6 @@ class CallConnectError(APIException):
         )
 
 
-class CallAlreadyRecordedError(APIException):
-
-    def __init__(self, call_id):
-        super().__init__(
-            status_code=400,
-            message='Could not start recording: call is already being recorded',
-            error_id='call-record-error',
-            details={
-                'call_id': call_id
-            }
-        )
-
-
 class InvalidCallEvent(RuntimeError):
     pass
 

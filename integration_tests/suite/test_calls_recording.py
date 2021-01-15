@@ -9,6 +9,7 @@ from hamcrest import (
     has_entries,
     has_items,
     has_properties,
+    not_,
 )
 from wazo_calld_client.exceptions import CalldError
 from xivo_test_helpers import until
@@ -55,10 +56,10 @@ class TestCallRecord(RealAsteriskIntegrationTest):
             has_items(has_entries(call_id=channel_id, record_state='active'))
         )
 
-        # Only possible to record the same call once
+        # Should not raise an error on second record start
         assert_that(
             calling(self.calld_client.calls.start_record).with_args(channel_id),
-            raises(CalldError).matching(has_properties(status_code=400))
+            not_(raises(CalldError))
         )
 
     def test_put_record_start_from_user(self):
@@ -99,10 +100,10 @@ class TestCallRecord(RealAsteriskIntegrationTest):
             has_items(has_entries(call_id=channel_id, record_state='active'))
         )
 
-        # Only possible to record the same call once
+        # Should not raise an error on second record start
         assert_that(
             calling(self.calld_client.calls.start_record_from_user).with_args(channel_id),
-            raises(CalldError).matching(has_properties(status_code=400))
+            not_(raises(CalldError))
         )
 
     def test_put_record_stop(self):
@@ -132,6 +133,12 @@ class TestCallRecord(RealAsteriskIntegrationTest):
         assert_that(
             self.calld_client.calls.list_calls()['items'],
             has_items(has_entries(call_id=channel_id, record_state='inactive')),
+        )
+
+        # Should not raise an error on second record stop
+        assert_that(
+            calling(self.calld_client.calls.stop_record).with_args(channel_id),
+            not_(raises(CalldError))
         )
 
     def test_put_record_stop_from_user(self):
@@ -170,6 +177,12 @@ class TestCallRecord(RealAsteriskIntegrationTest):
         assert_that(
             self.calld_client.calls.list_calls_from_user()['items'],
             has_items(has_entries(call_id=channel_id, record_state='inactive'))
+        )
+
+        # Should not raise an error on second record stop
+        assert_that(
+            calling(self.calld_client.calls.stop_record_from_user).with_args(channel_id),
+            not_(raises(CalldError))
         )
 
     def given_call_not_stasis(self, user_uuid=None):
