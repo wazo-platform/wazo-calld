@@ -4,7 +4,7 @@
 
 * New attribute for `calls` objects (API and events):
 
-  * `recorded`
+  * `record_state`
 
 * New API to start recording calls
 
