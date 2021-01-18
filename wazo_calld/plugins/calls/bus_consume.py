@@ -1,4 +1,4 @@
-# Copyright 2016-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -46,6 +46,8 @@ class CallsBusEventHandler:
         bus_consumer.on_ami_event('DTMFEnd', self._relay_dtmf)
         bus_consumer.on_ami_event('BridgeEnter', self._relay_channel_entered_bridge)
         bus_consumer.on_ami_event('BridgeLeave', self._relay_channel_left_bridge)
+        bus_consumer.on_ami_event('MixMonitorStart', self._relay_channel_updated)
+        bus_consumer.on_ami_event('MixMonitorStop', self._relay_channel_updated)
 
     def _add_sip_call_id(self, event):
         channel_id = event['Uniqueid']
