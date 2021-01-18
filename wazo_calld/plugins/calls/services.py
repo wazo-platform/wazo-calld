@@ -260,7 +260,7 @@ class CallsService:
 
     @staticmethod
     def make_call_from_channel(ari, channel):
-        channel_variables = channel.json['channelvars']
+        channel_variables = channel.json.get('channelvars', {})
         channel_helper = Channel(channel.id, ari)
         call = Call(channel.id)
         call.creation_time = channel.json['creationtime']
