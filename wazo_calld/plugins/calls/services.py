@@ -1,4 +1,4 @@
-# Copyright 2015-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -260,6 +260,7 @@ class CallsService:
 
     @staticmethod
     def make_call_from_channel(ari, channel):
+        channel_variables = channel.json.get('channelvars', {})
         channel_helper = Channel(channel.id, ari)
         call = Call(channel.id)
         call.creation_time = channel.json['creationtime']
@@ -271,6 +272,7 @@ class CallsService:
         call.user_uuid = channel_helper.user()
         call.on_hold = channel_helper.on_hold()
         call.muted = channel_helper.muted()
+        call.record_state = 'active' if channel_variables.get('WAZO_CALL_RECORD_ACTIVE') == '1' else 'inactive'
         call.bridges = [bridge.id for bridge in ari.bridges.list() if channel.id in bridge.json['channels']]
         call.talking_to = {connected_channel.id: connected_channel.user()
                            for connected_channel in channel_helper.connected_channels()}
@@ -357,6 +359,46 @@ class CallsService:
     def unhold_user(self, call_id, user_uuid):
         self._verify_user(call_id, user_uuid)
         self.unhold(call_id)
+
+    def record_start(self, call_id):
+        try:
+            channel = self._ari.channels.get(channelId=call_id)
+        except ARINotFound:
+            raise NoSuchCall(call_id)
+
+        channel_variables = channel.json['channelvars']
+
+        if channel_variables.get('WAZO_CALL_RECORD_ACTIVE') == '1':
+            return
+
+        filename = channel_variables.get('XIVO_CALLRECORDFILE')
+        ami.record_start(self._ami, call_id, filename)
+
+        # NOTE(afournier): asterisk should send back an event instead of
+        # wrongly pretend that the channel has started recording
+        call = self.make_call_from_channel(self._ari, channel)
+        self._notifier.call_updated(call)
+
+    def record_start_user(self, call_id, user_uuid):
+        self._verify_user(call_id, user_uuid)
+        self.record_start(call_id)
+
+    def record_stop(self, call_id):
+        try:
+            channel = self._ari.channels.get(channelId=call_id)
+        except ARINotFound:
+            raise NoSuchCall(call_id)
+
+        ami.record_stop(self._ami, call_id)
+
+        # NOTE(afournier): asterisk should send back an event instead of
+        # wrongly pretend that the channel has stopped recording
+        call = self.make_call_from_channel(self._ari, channel)
+        self._notifier.call_updated(call)
+
+    def record_stop_user(self, call_id, user_uuid):
+        self._verify_user(call_id, user_uuid)
+        self.record_stop(call_id)
 
     def answer(self, call_id):
         try:

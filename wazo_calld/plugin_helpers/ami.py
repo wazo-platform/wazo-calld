@@ -1,4 +1,4 @@
-# Copyright 2016-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -105,3 +105,26 @@ def dtmf(amid, channel, digit):
         amid.action('PlayDTMF', destination)
     except RequestException as e:
         raise WazoAmidError(amid, e)
+
+
+def record_start(amid, channel, filename):
+    destination = {
+        'Channel': channel,
+        'File': filename,
+    }
+    try:
+        amid.action('MixMonitor', destination)
+    except RequestException as e:
+        raise WazoAmidError(amid, e)
+    set_variable_ami(amid, channel, 'WAZO_CALL_RECORD_ACTIVE', '1')
+
+
+def record_stop(amid, channel):
+    destination = {
+        'Channel': channel,
+    }
+    try:
+        amid.action('StopMixMonitor', destination)
+    except RequestException as e:
+        raise WazoAmidError(amid, e)
+    set_variable_ami(amid, channel, 'WAZO_CALL_RECORD_ACTIVE', '0')

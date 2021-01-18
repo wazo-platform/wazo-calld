@@ -69,6 +69,11 @@ definitions:
         type: boolean
       muted:
         type: boolean
+      record_state:
+        type: string
+        enum:
+          - active
+          - inactive
       talking_to:
         type: object
       user_uuid:

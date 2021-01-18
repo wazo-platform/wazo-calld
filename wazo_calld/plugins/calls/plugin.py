@@ -1,4 +1,4 @@
-# Copyright 2015-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from wazo_auth_client import Client as AuthClient
@@ -17,6 +17,8 @@ from .http import (
     CallDtmfResource,
     CallHoldResource,
     CallUnholdResource,
+    CallRecordStartResource,
+    CallRecordStopResource,
     CallsResource,
     CallAnswerResource,
     ConnectCallToUserResource,
@@ -27,6 +29,8 @@ from .http import (
     MyCallDtmfResource,
     MyCallHoldResource,
     MyCallUnholdResource,
+    MyCallRecordStartResource,
+    MyCallRecordStopResource,
     MyCallAnswerResource,
 )
 from .services import CallsService
@@ -85,6 +89,8 @@ class Plugin:
         api.add_resource(CallDtmfResource, '/calls/<call_id>/dtmf', resource_class_args=[calls_service])
         api.add_resource(CallHoldResource, '/calls/<call_id>/hold/start', resource_class_args=[calls_service])
         api.add_resource(CallUnholdResource, '/calls/<call_id>/hold/stop', resource_class_args=[calls_service])
+        api.add_resource(CallRecordStartResource, '/calls/<call_id>/record/start', resource_class_args=[calls_service])
+        api.add_resource(CallRecordStopResource, '/calls/<call_id>/record/stop', resource_class_args=[calls_service])
         api.add_resource(CallAnswerResource, '/calls/<call_id>/answer', resource_class_args=[calls_service])
         api.add_resource(MyCallResource, '/users/me/calls/<call_id>', resource_class_args=[auth_client, calls_service])
         api.add_resource(MyCallMuteStartResource, '/users/me/calls/<call_id>/mute/start', resource_class_args=[auth_client, calls_service])
@@ -92,5 +98,7 @@ class Plugin:
         api.add_resource(MyCallDtmfResource, '/users/me/calls/<call_id>/dtmf', resource_class_args=[auth_client, calls_service])
         api.add_resource(MyCallHoldResource, '/users/me/calls/<call_id>/hold/start', resource_class_args=[auth_client, calls_service])
         api.add_resource(MyCallUnholdResource, '/users/me/calls/<call_id>/hold/stop', resource_class_args=[auth_client, calls_service])
+        api.add_resource(MyCallRecordStartResource, '/users/me/calls/<call_id>/record/start', resource_class_args=[auth_client, calls_service])
+        api.add_resource(MyCallRecordStopResource, '/users/me/calls/<call_id>/record/stop', resource_class_args=[auth_client, calls_service])
         api.add_resource(MyCallAnswerResource, '/users/me/calls/<call_id>/answer', resource_class_args=[auth_client, calls_service])
         api.add_resource(ConnectCallToUserResource, '/calls/<call_id>/user/<user_uuid>', resource_class_args=[calls_service])
