@@ -374,11 +374,6 @@ class CallsService:
         filename = channel_variables.get('XIVO_CALLRECORDFILE')
         ami.record_start(self._ami, call_id, filename)
 
-        # NOTE(afournier): asterisk should send back an event instead of
-        # wrongly pretend that the channel has started recording
-        call = self.make_call_from_channel(self._ari, channel)
-        self._notifier.call_updated(call)
-
     def record_start_user(self, call_id, user_uuid):
         self._verify_user(call_id, user_uuid)
         self.record_start(call_id)
@@ -394,11 +389,6 @@ class CallsService:
             return
 
         ami.record_stop(self._ami, call_id)
-
-        # NOTE(afournier): asterisk should send back an event instead of
-        # wrongly pretend that the channel has stopped recording
-        call = self.make_call_from_channel(self._ari, channel)
-        self._notifier.call_updated(call)
 
     def record_stop_user(self, call_id, user_uuid):
         self._verify_user(call_id, user_uuid)
