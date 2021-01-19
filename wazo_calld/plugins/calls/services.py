@@ -17,6 +17,7 @@ from xivo.asterisk.protocol_interface import protocol_interface_from_channel
 from .call import Call
 from .exceptions import CallConnectError
 from .exceptions import CallCreationError
+from .exceptions import CallRecordStartFileError
 from .exceptions import NoSuchCall
 from .state_persistor import ReadOnlyStatePersistor
 from .dial_echo import DialEchoTimeout
@@ -372,6 +373,8 @@ class CallsService:
             return
 
         filename = channel_variables.get('XIVO_CALLRECORDFILE')
+        if not filename:
+            raise CallRecordStartFileError(channel.id)
         ami.record_start(self._ami, call_id, filename)
 
     def record_start_user(self, call_id, user_uuid):

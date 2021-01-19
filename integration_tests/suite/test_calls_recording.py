@@ -29,11 +29,6 @@ class TestCallRecord(RealAsteriskIntegrationTest):
     def test_put_record_start(self):
         channel_id = self.given_call_not_stasis()
 
-        assert_that(
-            calling(self.calld_client.calls.start_record).with_args(UNKNOWN_UUID),
-            raises(CalldError).matching(has_properties(status_code=404))
-        )
-
         routing_key = 'calls.*.updated'
         event_accumulator = self.bus.accumulator(routing_key)
 
@@ -62,21 +57,25 @@ class TestCallRecord(RealAsteriskIntegrationTest):
             not_(raises(CalldError))
         )
 
+    def test_put_record_start_errors(self):
+        assert_that(
+            calling(self.calld_client.calls.start_record).with_args(UNKNOWN_UUID),
+            raises(CalldError).matching(has_properties(status_code=404))
+        )
+
+        variables = {'XIVO_CALLRECORDFILE': ''}
+        channel_id = self.given_call_not_stasis(variables=variables)
+
+        assert_that(
+            calling(self.calld_client.calls.start_record).with_args(channel_id),
+            raises(CalldError).matching(has_properties(status_code=500))
+        )
+
     def test_put_record_start_from_user(self):
         user_uuid = str(uuid.uuid4())
         token = self.given_user_token(user_uuid)
         self.calld_client.set_token(token)
         channel_id = self.given_call_not_stasis(user_uuid=user_uuid)
-        other_channel_id = self.given_call_not_stasis()
-
-        assert_that(
-            calling(self.calld_client.calls.start_record_from_user).with_args(UNKNOWN_UUID),
-            raises(CalldError).matching(has_properties(status_code=404))
-        )
-        assert_that(
-            calling(self.calld_client.calls.start_record_from_user).with_args(other_channel_id),
-            raises(CalldError).matching(has_properties(status_code=403))
-        )
 
         routing_key = 'calls.*.updated'
         event_accumulator = self.bus.accumulator(routing_key)
@@ -104,6 +103,28 @@ class TestCallRecord(RealAsteriskIntegrationTest):
         assert_that(
             calling(self.calld_client.calls.start_record_from_user).with_args(channel_id),
             not_(raises(CalldError))
+        )
+
+    def test_put_record_start_from_user_errors(self):
+        user_uuid = str(uuid.uuid4())
+        token = self.given_user_token(user_uuid)
+        self.calld_client.set_token(token)
+        other_channel_id = self.given_call_not_stasis()
+        assert_that(
+            calling(self.calld_client.calls.start_record_from_user).with_args(UNKNOWN_UUID),
+            raises(CalldError).matching(has_properties(status_code=404))
+        )
+        assert_that(
+            calling(self.calld_client.calls.start_record_from_user).with_args(other_channel_id),
+            raises(CalldError).matching(has_properties(status_code=403))
+        )
+
+        variables = {'XIVO_CALLRECORDFILE': ''}
+        channel_id = self.given_call_not_stasis(user_uuid=user_uuid, variables=variables)
+
+        assert_that(
+            calling(self.calld_client.calls.start_record_from_user).with_args(channel_id),
+            raises(CalldError).matching(has_properties(status_code=500))
         )
 
     def test_put_record_stop(self):
@@ -185,13 +206,16 @@ class TestCallRecord(RealAsteriskIntegrationTest):
             not_(raises(CalldError))
         )
 
-    def given_call_not_stasis(self, user_uuid=None):
+    def given_call_not_stasis(self, user_uuid=None, variables=None):
         user_uuid = user_uuid or str(uuid.uuid4())
+        variables = variables or {}
+        variables.setdefault('XIVO_USERUUID', user_uuid)
+        variables.setdefault('XIVO_CALLRECORDFILE', 'not-empty')
         call = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             context='local',
             extension='dial-autoanswer',
-            variables={'variables': {'XIVO_USERUUID': user_uuid, 'XIVO_CALLRECORDFILE': 'not-empty'}}
+            variables={'variables': variables},
         )
         return call.id
 
