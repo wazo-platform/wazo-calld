@@ -389,6 +389,9 @@ class CallsService:
         except ARINotFound:
             raise NoSuchCall(call_id)
 
+        if channel.json['channelvars'].get('WAZO_CALL_RECORD_ACTIVE') == '0':
+            return
+
         ami.record_stop(self._ami, call_id)
 
         # NOTE(afournier): asterisk should send back an event instead of
