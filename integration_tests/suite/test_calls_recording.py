@@ -191,7 +191,7 @@ class TestCallRecord(RealAsteriskIntegrationTest):
             endpoint=ENDPOINT_AUTOANSWER,
             context='local',
             extension='dial-autoanswer',
-            variables={'variables': {'XIVO_USERUUID': user_uuid}}
+            variables={'variables': {'XIVO_USERUUID': user_uuid, 'XIVO_CALLRECORDFILE': 'not-empty'}}
         )
         return call.id
 
