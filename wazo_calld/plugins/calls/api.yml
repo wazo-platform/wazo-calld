@@ -439,6 +439,7 @@ paths:
       - $ref: '#/parameters/CallID'
       tags:
       - calls
+      - users
       responses:
         '204':
           description: Recording has started for the call
@@ -456,6 +457,7 @@ paths:
       - $ref: '#/parameters/CallID'
       tags:
       - calls
+      - users
       responses:
         '204':
           description: Recording has stopped for the call
