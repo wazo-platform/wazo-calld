@@ -119,7 +119,6 @@ def record_start(amid, channel, filename):
         amid.action('MixMonitor', destination)
     except RequestException as e:
         raise WazoAmidError(amid, e)
-    set_variable_ami(amid, channel, 'WAZO_CALL_RECORD_ACTIVE', '1')
 
 
 def record_stop(amid, channel):
@@ -130,4 +129,3 @@ def record_stop(amid, channel):
         amid.action('StopMixMonitor', destination)
     except RequestException as e:
         raise WazoAmidError(amid, e)
-    set_variable_ami(amid, channel, 'WAZO_CALL_RECORD_ACTIVE', '0')

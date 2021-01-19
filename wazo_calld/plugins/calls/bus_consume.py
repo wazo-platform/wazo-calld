@@ -12,7 +12,7 @@ from xivo_bus.resources.calls.dtmf import CallDTMFEvent
 from xivo_bus.resources.common.event import ArbitraryEvent
 
 from wazo_calld.plugin_helpers import ami
-from wazo_calld.plugin_helpers.ari_ import Channel
+from wazo_calld.plugin_helpers.ari_ import Channel, set_channel_id_var_sync
 
 from .schemas import call_schema
 
@@ -46,8 +46,8 @@ class CallsBusEventHandler:
         bus_consumer.on_ami_event('DTMFEnd', self._relay_dtmf)
         bus_consumer.on_ami_event('BridgeEnter', self._relay_channel_entered_bridge)
         bus_consumer.on_ami_event('BridgeLeave', self._relay_channel_left_bridge)
-        bus_consumer.on_ami_event('MixMonitorStart', self._relay_channel_updated)
-        bus_consumer.on_ami_event('MixMonitorStop', self._relay_channel_updated)
+        bus_consumer.on_ami_event('MixMonitorStart', self._mix_monitor_start)
+        bus_consumer.on_ami_event('MixMonitorStop', self._mix_monitor_stop)
 
     def _add_sip_call_id(self, event):
         channel_id = event['Uniqueid']
@@ -214,3 +214,33 @@ class CallsBusEventHandler:
 
             call = self.services.make_call_from_channel(self.ari, channel)
             self.notifier.call_updated(call)
+
+    def _mix_monitor_start(self, event):
+        channel_id = event['Uniqueid']
+        try:
+            set_channel_id_var_sync(
+                self.ari,
+                channel_id,
+                'WAZO_CALL_RECORD_ACTIVE',
+                '1',
+                bypass_stasis=True,
+            )
+        except ARINotFound:
+            logger.debug('channel %s not found', channel_id)
+            return
+        self._relay_channel_updated(event)
+
+    def _mix_monitor_stop(self, event):
+        channel_id = event['Uniqueid']
+        try:
+            set_channel_id_var_sync(
+                self.ari,
+                channel_id,
+                'WAZO_CALL_RECORD_ACTIVE',
+                '0',
+                bypass_stasis=True,
+            )
+        except ARINotFound:
+            logger.debug('channel %s not found', channel_id)
+            return
+        self._relay_channel_updated(event)

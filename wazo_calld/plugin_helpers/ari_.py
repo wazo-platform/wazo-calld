@@ -48,6 +48,32 @@ def set_channel_var_sync(channel, var, value, bypass_stasis=False):
     raise Exception('failed to set channel variable {}={}'.format(var, value))
 
 
+def set_channel_id_var_sync(ari, channel_id, var, value, bypass_stasis=False):
+    # TODO remove this when Asterisk gets fixed to set var synchronously
+    def get_value():
+        try:
+            return ari.channels.getChannelVar(channelId=channel_id, variable=var)['value']
+        except ARINotFound as e:
+            if e.original_error.response.reason == 'Variable Not Found':
+                return None
+            raise
+
+    ari.channels.setChannelVar(
+        channelId=channel_id,
+        variable=var,
+        value=value,
+        bypassStasis=bypass_stasis,
+    )
+    for _ in range(20):
+        if get_value() == value:
+            return
+
+        logger.debug('waiting for a setvar to complete')
+        time.sleep(0.01)
+
+    raise Exception('failed to set channel variable {}={}'.format(var, value))
+
+
 class GlobalVariableAdapter:
 
     def __init__(self, ari_client):
