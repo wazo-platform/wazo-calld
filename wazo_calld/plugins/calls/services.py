@@ -389,7 +389,8 @@ class CallsService:
         except ARINotFound:
             raise NoSuchCall(call_id)
 
-        if channel.json['channelvars'].get('WAZO_CALL_RECORD_ACTIVE') == '0':
+        call_record_active = channel.json['channelvars'].get('WAZO_CALL_RECORD_ACTIVE')
+        if not call_record_active or call_record_active == '0':
             return
 
         ami.record_stop(self._ami, call_id)
