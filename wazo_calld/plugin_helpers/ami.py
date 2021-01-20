@@ -5,6 +5,7 @@ import logging
 import re
 
 from requests import RequestException
+from wazo_amid_client.exceptions import AmidProtocolError
 
 from .exceptions import WazoAmidError
 
@@ -31,6 +32,8 @@ def extension_exists(amid, context, exten, priority=1):
     try:
         response = amid.action('ShowDialplan', {'Context': context,
                                                 'Extension': exten})
+    except AmidProtocolError:
+        return False
     except RequestException as e:
         raise WazoAmidError(amid, e)
 
