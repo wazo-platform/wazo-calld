@@ -1,5 +1,16 @@
 # Changelog
 
+## 21.02
+
+* The following endpoints now filter out whitespace in the requested extension:
+
+  * `POST /applications/{application_uuid}/calls`
+  * `POST /applications/{application_uuid}/nodes/{node_uuid}/calls`
+  * `POST /faxes/create`
+  * `POST /users/me/faxes/create`
+  * `POST /transfers`
+  * `POST /users/me/transfers`
+
 ## 21.01
 
 * New attribute for `calls` objects (API and events):
