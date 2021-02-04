@@ -1,4 +1,4 @@
-# Copyright 2016-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
@@ -553,6 +553,19 @@ class TestCreateTransfer(TestTransfers):
 
         assert_that(response.status_code, equal_to(201))
 
+    def test_given_whitespace_in_extension_when_create_then_ok(self):
+        transferred_channel_id, initiator_channel_id = self.real_asterisk.given_bridged_call_stasis()
+        body = {
+            'transferred_call': transferred_channel_id,
+            'initiator_call': initiator_channel_id,
+            'context': RECIPIENT['context'],
+            'exten': 'r ec\nip\rie\tnt'
+        }
+
+        response = self.calld.post_transfer_result(body=body, token=VALID_TOKEN)
+
+        assert_that(response.status_code, equal_to(201))
+
     def test_that_variables_are_applied_to_the_recipient_channel(self):
         transferred_channel_id, initiator_channel_id = self.real_asterisk.given_bridged_call_stasis()
         self.ari.channels.setChannelVar(channelId=initiator_channel_id,
@@ -837,6 +850,19 @@ class TestUserCreateTransfer(TestTransfers):
 
         with self.calld.send_no_content_type():
             response = self.calld.post_user_transfer_result(body=body, token=token)
+
+        assert_that(response.status_code, equal_to(201))
+
+    def test_given_whitespace_in_extension_when_create_then_ok(self):
+        user_uuid = self.given_user_with_line(RECIPIENT['context'])
+        token = self.given_user_token(user_uuid)
+        transferred_channel_id, initiator_channel_id = self.real_asterisk.given_bridged_call_stasis(callee_uuid=user_uuid)
+        body = {
+            'initiator_call': initiator_channel_id,
+            'exten': 'r ec\nip\rie\tnt'
+        }
+
+        response = self.calld.post_user_transfer_result(body=body, token=token)
 
         assert_that(response.status_code, equal_to(201))
 

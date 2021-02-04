@@ -513,6 +513,38 @@ class TestCreateCall(IntegrationTest):
             'path': '/ari/channels',
         }))))
 
+    def test_create_call_with_extension_containing_whitespace(self):
+        user_uuid = 'user-uuid'
+        priority = 1
+        self.confd.set_users(MockUser(uuid='user-uuid', line_ids=['line-id']))
+        self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL))
+        self.ari.set_originates(MockChannel(id='new-call-id', connected_line_number=''))
+        self.amid.set_valid_exten('my-context', '123456', priority)
+        self.ari.set_channel_variable({'new-call-id': {'CHANNEL(channeltype)': 'PJSIP',
+                                                       'CHANNEL(pjsip,call-id)': 'a-sip-call-id',
+                                                       'WAZO_LINE_ID': str(SOME_LINE_ID)}})
+        call_args = {
+            'source': {'user': user_uuid},
+            'destination': {
+                'priority': priority,
+                'extension': '12 3\n4\t5\r6',
+                'context': 'my-context',
+            }
+        }
+        result = self.calld_client.calls.make_call(call_args)
+
+        assert_that(result, has_entries({
+            'call_id': 'new-call-id',
+            'dialed_extension': '123456',
+            'peer_caller_id_number': '123456',
+            'sip_call_id': 'a-sip-call-id',
+            'line_id': SOME_LINE_ID,
+        }))
+        assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
+            'method': 'POST',
+            'path': '/ari/channels',
+        }))))
+
     def test_when_create_call_then_ari_arguments_are_correct(self):
         user_uuid = 'user-uuid'
         priority = 1
@@ -1090,6 +1122,27 @@ class TestUserCreateCall(IntegrationTest):
             'call_id': 'new-call-id',
             'dialed_extension': 'my-extension',
             'peer_caller_id_number': 'my-extension',
+        }))
+        assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
+            'method': 'POST',
+            'path': '/ari/channels',
+        }))))
+
+    def test_create_call_with_extension_containing_whitespace(self):
+        user_uuid = 'user-uuid'
+        token = 'my-token'
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
+        self.confd.set_users(MockUser(uuid=user_uuid, line_ids=['line-id']))
+        self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL, context='my-context'))
+        self.ari.set_originates(MockChannel(id='new-call-id', connected_line_number=''))
+        self.amid.set_valid_exten('my-context', '123456')
+
+        result = self.calld.originate_me(extension='12 3\n4\t5\r6', token=token)
+
+        assert_that(result, has_entries({
+            'call_id': 'new-call-id',
+            'dialed_extension': '123456',
+            'peer_caller_id_number': '123456',
         }))
         assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
             'method': 'POST',
