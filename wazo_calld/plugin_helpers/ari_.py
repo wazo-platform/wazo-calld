@@ -266,7 +266,10 @@ class Channel:
     def sip_call_id(self):
         if not self.is_sip():
             return
+        return self.sip_call_id_unsafe()
 
+    def sip_call_id_unsafe(self):
+        '''This method expects a SIP channel'''
         try:
             return self._get_var('CHANNEL(pjsip,call-id)')
         except ARINotFound:

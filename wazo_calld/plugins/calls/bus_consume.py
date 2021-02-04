@@ -50,9 +50,11 @@ class CallsBusEventHandler:
         bus_consumer.on_ami_event('MixMonitorStop', self._mix_monitor_stop)
 
     def _add_sip_call_id(self, event):
+        if not event['Channel'].startswith('PJSIP/'):
+            return
         channel_id = event['Uniqueid']
         channel = Channel(channel_id, self.ari)
-        sip_call_id = channel.sip_call_id()
+        sip_call_id = channel.sip_call_id_unsafe()
         if not sip_call_id:
             return
 
