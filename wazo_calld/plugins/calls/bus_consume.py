@@ -70,6 +70,9 @@ class CallsBusEventHandler:
 
     def _relay_channel_created(self, event):
         channel_id = event['Uniqueid']
+        if event['Channel'].startswith('Local/'):
+            logger.debug('Ignoring local channel creation: %s', channel_id)
+            return
         logger.debug('Relaying to bus: channel %s created', channel_id)
         try:
             channel = self.ari.channels.get(channelId=channel_id)
@@ -92,6 +95,9 @@ class CallsBusEventHandler:
 
     def _relay_channel_updated(self, event):
         channel_id = event['Uniqueid']
+        if event['Channel'].startswith('Local/'):
+            logger.debug('Ignoring local channel update: %s', channel_id)
+            return
         logger.debug('Relaying to bus: channel %s updated', channel_id)
         try:
             channel = self.ari.channels.get(channelId=channel_id)
@@ -104,8 +110,11 @@ class CallsBusEventHandler:
     def _relay_channel_answered(self, event):
         if event['ChannelStateDesc'] != 'Up':
             return
-
         channel_id = event['Uniqueid']
+        if event['Channel'].startswith('Local/'):
+            logger.debug('Ignoring local channel answer: %s', channel_id)
+            return
+
         logger.debug('Relaying to bus: channel %s answered', channel_id)
         try:
             channel = self.ari.channels.get(channelId=channel_id)
@@ -117,6 +126,9 @@ class CallsBusEventHandler:
 
     def _relay_channel_hung_up(self, event):
         channel_id = event['Uniqueid']
+        if event['Channel'].startswith('Local/'):
+            logger.debug('Ignoring local channel hangup: %s', channel_id)
+            return
         logger.debug('Relaying to bus: channel %s ended', channel_id)
         call = self.services.make_call_from_ami_event(event)
         bus_event = ArbitraryEvent(
