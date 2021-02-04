@@ -1,5 +1,7 @@
-# Copyright 2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
+
+from marshmallow import post_load
 
 from xivo.mallow import fields
 from xivo.mallow_helpers import Schema
@@ -10,10 +12,20 @@ class FaxCreationRequestSchema(Schema):
     extension = fields.String(required=True)
     caller_id = fields.String(missing='Wazo Fax')
 
+    @post_load
+    def remove_extension_whitespace(self, call_request):
+        call_request['extension'] = ''.join(call_request['extension'].split())
+        return call_request
+
 
 class UserFaxCreationRequestSchema(Schema):
     extension = fields.String(required=True)
     caller_id = fields.String(missing='Wazo Fax')
+
+    @post_load
+    def remove_extension_whitespace(self, call_request):
+        call_request['extension'] = ''.join(call_request['extension'].split())
+        return call_request
 
 
 class FaxSchema(Schema):
