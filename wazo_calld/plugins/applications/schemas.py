@@ -1,4 +1,4 @@
-# Copyright 2018-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from marshmallow import (
@@ -6,6 +6,7 @@ from marshmallow import (
     Schema,
     fields,
     pre_load,
+    post_load,
 )
 from xivo.mallow.validate import (
     Length,
@@ -38,6 +39,11 @@ class ApplicationCallRequestSchema(BaseSchema):
     variables = fields.Dict(validate=validate_string_dict, missing={})
     displayed_caller_id_name = fields.String(missing='', validate=Length(max=256))
     displayed_caller_id_number = fields.String(missing='', validate=Length(max=256))
+
+    @post_load
+    def remove_extension_whitespace(self, call_request):
+        call_request['exten'] = ''.join(call_request['exten'].split())
+        return call_request
 
 
 class ApplicationCallUserRequestSchema(BaseSchema):

@@ -1,4 +1,4 @@
-# Copyright 2018-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from hamcrest import (
@@ -566,6 +566,63 @@ class TestApplication(BaseApplicationTestCase):
             ),
         )
 
+    def test_post_call_extension_containing_whitespace(self):
+        context, exten = 'local', 'rec ipi\rent_\nauto\tanswer'
+
+        routing_key = 'applications.{uuid}.#'.format(uuid=self.no_node_app_uuid)
+        event_accumulator = self.bus.accumulator(routing_key)
+
+        call_args = {
+            'context': context,
+            'exten': exten,
+            'displayed_caller_id_name': 'Foo Bar',
+            'displayed_caller_id_number': '5555555555',
+            'variables': {'X_WAZO_FOO': 'BAR'}
+        }
+        call = self.calld_client.applications.make_call(self.no_node_app_uuid, call_args)
+
+        channel = self.ari.channels.get(channelId=call['id']).json
+        assert_that(
+            channel,
+            has_entries(connected=has_entries(name='Foo Bar', number='5555555555')),
+        )
+
+        def event_received():
+            events = event_accumulator.accumulate()
+            assert_that(
+                events,
+                has_items(
+                    has_entries(
+                        name='application_call_initiated',
+                        data=has_entries(
+                            application_uuid=self.no_node_app_uuid,
+                            call=has_entries(
+                                id=call['id'],
+                                is_caller=False,
+                                status='Up',
+                                on_hold=False,
+                                muted=False,
+                                node_uuid=None,
+                                variables={'FOO': 'BAR'},
+                            )
+                        )
+                    )
+                )
+            )
+
+        until.assert_(event_received, tries=3)
+
+        calls = self.calld_client.applications.list_calls(self.no_node_app_uuid)['items']
+        assert_that(
+            calls,
+            has_items(
+                has_entries(
+                    id=call['id'],
+                    variables={'FOO': 'BAR'},
+                ),
+            ),
+        )
+
     def test_post_node_call(self):
         context, exten = 'local', 'recipient_autoanswer'
 
@@ -597,6 +654,82 @@ class TestApplication(BaseApplicationTestCase):
                 calling(self.calld_client.applications.make_call_to_node).with_args(*args),
                 raises(CalldError).matching(has_properties(status_code=status_code))
             )
+
+        routing_key = 'applications.{uuid}.#'.format(uuid=self.node_app_uuid)
+        event_accumulator = self.bus.accumulator(routing_key)
+
+        call_args = {
+            'context': context,
+            'exten': exten,
+            'displayed_caller_id_name': 'Foo Bar',
+            'displayed_caller_id_number': '1234',
+            'variables': {'X_WAZO_FOO': 'BAR'},
+        }
+        call = self.calld_client.applications.make_call_to_node(
+            self.node_app_uuid,
+            self.node_app_uuid,
+            call_args,
+        )
+
+        assert_that(call, has_entries(variables={'FOO': 'BAR'}))
+
+        channel = self.ari.channels.get(channelId=call['id']).json
+        assert_that(
+            channel, has_entries(connected=has_entries(name='Foo Bar', number='1234'))
+        )
+
+        def event_received():
+            events = event_accumulator.accumulate()
+            assert_that(
+                events,
+                has_items(
+                    has_entries(
+                        name='application_call_initiated',
+                        data=has_entries(
+                            application_uuid=self.node_app_uuid,
+                            call=has_entries(
+                                id=call['id'],
+                                is_caller=False,
+                                status='Up',
+                                on_hold=False,
+                                node_uuid=None,
+                                variables={'FOO': 'BAR'},
+                            )
+                        )
+                    ),
+                    has_entries(
+                        name='application_node_updated',
+                        data=has_entries(
+                            application_uuid=self.node_app_uuid,
+                            node=has_entries(
+                                uuid=self.node_app_uuid,
+                                calls=contains(has_entries(id=call['id']))
+                            )
+                        )
+                    ),
+                    has_entries(
+                        name='application_call_updated',
+                        data=has_entries(
+                            application_uuid=self.node_app_uuid,
+                            call=has_entries(
+                                id=call['id'],
+                                node_uuid=self.node_app_uuid,
+                            )
+                        )
+                    )
+                )
+            )
+
+        until.assert_(event_received, tries=3)
+
+        calls = self.calld_client.applications.list_calls(self.node_app_uuid)['items']
+        assert_that(calls, has_items(has_entries(id=call['id'])))
+
+        node = self.calld_client.applications.get_node(self.node_app_uuid, self.node_app_uuid)
+        assert_that(node, has_entries(calls=has_items(has_entries(id=call['id']))))
+
+    def test_post_node_call_extension_containing_whitespace(self):
+        context, exten = 'local', 'rec ipi\rent_\nauto\tanswer'
 
         routing_key = 'applications.{uuid}.#'.format(uuid=self.node_app_uuid)
         event_accumulator = self.bus.accumulator(routing_key)
