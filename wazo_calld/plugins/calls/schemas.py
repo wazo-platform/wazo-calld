@@ -1,7 +1,7 @@
 # Copyright 2016-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from marshmallow import EXCLUDE, Schema, fields, post_dump
+from marshmallow import EXCLUDE, Schema, fields, post_dump, post_load
 from marshmallow.validate import Length
 from marshmallow.validate import Range
 from marshmallow.validate import Regexp
@@ -27,6 +27,11 @@ class CallRequestDestinationSchema(CallBaseSchema):
     extension = fields.String(validate=Length(min=1), required=True)
     priority = fields.Integer(validate=Range(min=1), required=True)
 
+    @post_load
+    def remove_extension_whitespace(self, call_request):
+        call_request['extension'] = ''.join(call_request['extension'].split())
+        return call_request
+
 
 class CallRequestSchema(CallBaseSchema):
     source = fields.Nested('CallRequestSourceSchema', required=True,
@@ -47,6 +52,11 @@ class UserCallRequestSchema(CallBaseSchema):
                            value_field=fields.String(required=True, validate=Length(min=1)),
                            missing=dict)
     auto_answer_caller = fields.Boolean(missing=False)
+
+    @post_load
+    def remove_extension_whitespace(self, call_request):
+        call_request['extension'] = ''.join(call_request['extension'].split())
+        return call_request
 
 
 class CallDtmfSchema(CallBaseSchema):
