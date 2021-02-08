@@ -375,7 +375,15 @@ class CallsService:
         filename = channel_variables.get('XIVO_CALLRECORDFILE')
         if not filename:
             raise CallRecordStartFileError(channel.id)
-        ami.record_start(self._ami, call_id, filename)
+
+        new_filename = self._bump_filename(filename)
+        self._ari.channels.setChannelVar(
+            channelId=call_id,
+            variable='__XIVO_CALLRECORDFILE',
+            value=new_filename,
+            bypassStasis=True,
+        )
+        ami.record_start(self._ami, call_id, new_filename)
 
     def record_start_user(self, call_id, user_uuid):
         self._verify_user(call_id, user_uuid)
@@ -418,3 +426,21 @@ class CallsService:
 
         if channel.user() != user_uuid:
             raise UserPermissionDenied(user_uuid, {'call': call_id})
+
+    @staticmethod
+    def _bump_filename(old):
+        filename, extension = old, ''
+        if '.' in old:
+            filename, extension = old.rsplit('.', 1)
+
+        if '.' in filename:
+            begin, end = filename.rsplit('.', 1)
+            try:
+                n = int(end) + 1
+                filename = f'{begin}.{n}'
+            except ValueError:
+                filename = f'{begin}.{end}.1'
+        else:
+            filename = f'{filename}.1'
+
+        return f'{filename}.{extension}' if extension else filename
