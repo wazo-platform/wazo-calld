@@ -233,14 +233,13 @@ class Channel:
 
     def dialed_extension(self):
         try:
-            channel = self._ari.channels.get(channelId=self.id)
+            return self._ari.channels.getChannelVar(channelId=self.id, variable='XIVO_BASE_EXTEN')['value']
         except ARINotFound:
-            return
-
-        try:
-            return channel.getChannelVar(variable='XIVO_BASE_EXTEN')['value']
-        except ARINotFound:
-            return channel.json['dialplan']['exten']
+            try:
+                channel = self._ari.channels.get(channelId=self.id)
+                return channel.json['dialplan']['exten']
+            except ARINotFound:
+                return
 
     def on_hold(self):
         try:
@@ -266,7 +265,10 @@ class Channel:
     def sip_call_id(self):
         if not self.is_sip():
             return
+        return self.sip_call_id_unsafe()
 
+    def sip_call_id_unsafe(self):
+        '''This method expects a SIP channel'''
         try:
             return self._get_var('CHANNEL(pjsip,call-id)')
         except ARINotFound:
