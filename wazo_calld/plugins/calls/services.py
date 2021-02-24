@@ -421,7 +421,7 @@ class CallsService:
             filename = ''
 
         if not filename:
-            raise CallRecordStartFileError(channel.id)
+            raise CallRecordStartFileError(channel.id, recording_filename_variable)
 
         new_filename = self._bump_filename(filename)
         channel.setChannelVar(

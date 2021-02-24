@@ -44,10 +44,10 @@ class CallConnectError(APIException):
 
 class CallRecordStartFileError(APIException):
 
-    def __init__(self, call_id):
+    def __init__(self, call_id, variable):
         super().__init__(
             status_code=500,
-            message='Could not start to record call: variable XIVO_CALLRECORDFILE is not set',
+            message='Could not start to record call: variable {} is not set'.format(variable),
             error_id='call-record-start-file-error',
             details={
                 'call_id': call_id
