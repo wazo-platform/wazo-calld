@@ -361,44 +361,58 @@ class CallsService:
         self._verify_user(call_id, user_uuid)
         self.unhold(call_id)
 
-    def record_start(self, call_id):
+    def _find_channel_to_record(self, call_id):
         try:
             channel = self._ari.channels.get(channelId=call_id)
         except ARINotFound:
             raise NoSuchCall(call_id)
 
-        if channel.json['name'].startswith('Local/') and channel.json['name'].endswith(';1'):
-            try:
-                need_shenanigan = 'agentcallback' in channel.json['name'] or channel.getChannelVar(variable='WAZO_RECORD_GROUP_CALLEE')['value'] == '1'
-            except ARINotFound:
-                pass
-            else:
-                local_chan_uuid = channel.getChannelVar(variable='WAZO_LOCAL_CHAN_MATCH_UUID')['value']
-                channels = self._ari.channels.list()
-                # TODO(pc-m): add some of these variables to ari.conf to avoid doing 2 GETs in a loop
-                for potential_channel in channels:
-                    if potential_channel.json['name'].startswith('Local'):
-                        continue
-                    if potential_channel.getChannelVar(variable='WAZO_LOCAL_CHAN_MATCH_UUID')['value'] != local_chan_uuid:
-                        continue
-                    try:
-                        if potential_channel.getChannelVar(variable='WAZO_CALL_RECORD_SIDE')['value'] == 'caller':
-                            continue
-                    except ARINotFound:
-                        pass  # It's the callee
-                    channel = potential_channel
-                    logger.debug('we are going to record the "real" channel instead of the local channel %s', channel.json['name'])
-                    break
-
-        channel_variables = channel.json['channelvars']
-
-        if channel_variables.get('WAZO_CALL_RECORD_ACTIVE') == '1':
-            return
+        channel_name = channel.json['name']
+        is_side_1_of_local = channel_name.startswith('Local/') and channel_name.endswith(';1')
+        if not is_side_1_of_local:
+            return channel
 
         try:
-            is_caller = channel.getChannelVar(variable='WAZO_CALL_RECORD_SIDE')['value'] == 'caller'
-            recording_filename_variable = 'WAZO_CALL_RECORD_FILE_CALLER'
+            is_group_callee = channel.getChannelVar(variable='WAZO_RECORD_GROUP_CALLEE')['value'] == '1'
         except ARINotFound:
+            is_group_callee = False
+
+        is_agent_callback = 'agentcallback' in channel_name
+
+        if not (is_group_callee or is_agent_callback):
+            return channel
+
+        local_chan_uuid = channel.json['channelvars']['WAZO_LOCAL_CHAN_MATCH_UUID']
+        if not local_chan_uuid:
+            return channel
+
+        for potential_channel in self._ari.channels.list():
+            if potential_channel.json['name'].startswith('Local'):
+                continue
+            if potential_channel.json['channelvars']['WAZO_LOCAL_CHAN_MATCH_UUID'] != local_chan_uuid:
+                continue
+            if potential_channel.json['channelvars']['WAZO_CALL_RECORD_SIDE'] == 'caller':
+                continue
+
+            logger.debug(
+                'we are going to record the "real" channel instead of the local channel %s',
+                channel.json['name']
+            )
+            return potential_channel
+
+        return channel
+
+    def record_start(self, call_id):
+        channel = self._find_channel_to_record(call_id)
+        channel_variables = channel.json['channelvars']
+
+        if channel_variables['WAZO_CALL_RECORD_ACTIVE'] == '1':
+            return
+
+        is_caller = channel_variables['WAZO_CALL_RECORD_SIDE'] == 'caller'
+        if is_caller:
+            recording_filename_variable = 'WAZO_CALL_RECORD_FILE_CALLER'
+        else:
             recording_filename_variable = 'WAZO_CALL_RECORD_FILE_CALLEE'
 
         try:
