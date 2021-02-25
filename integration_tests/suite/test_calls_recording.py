@@ -63,7 +63,7 @@ class TestCallRecord(RealAsteriskIntegrationTest):
             raises(CalldError).matching(has_properties(status_code=404))
         )
 
-        variables = {'XIVO_CALLRECORDFILE': ''}
+        variables = {'WAZO_CALL_RECORD_FILE_CALLER': '', 'WAZO_CALL_RECORD_SIDE': 'caller'}
         channel_id = self.given_call_not_stasis(variables=variables)
 
         assert_that(
@@ -119,7 +119,7 @@ class TestCallRecord(RealAsteriskIntegrationTest):
             raises(CalldError).matching(has_properties(status_code=403))
         )
 
-        variables = {'XIVO_CALLRECORDFILE': ''}
+        variables = {'WAZO_CALL_RECORD_FILE_CALLER': '', 'WAZO_CALL_RECORD_SIDE': 'caller'}
         channel_id = self.given_call_not_stasis(user_uuid=user_uuid, variables=variables)
 
         assert_that(
@@ -210,7 +210,8 @@ class TestCallRecord(RealAsteriskIntegrationTest):
         user_uuid = user_uuid or str(uuid.uuid4())
         variables = variables or {}
         variables.setdefault('XIVO_USERUUID', user_uuid)
-        variables.setdefault('XIVO_CALLRECORDFILE', 'not-empty')
+        variables.setdefault('WAZO_CALL_RECORD_FILE_CALLER', 'not-empty')
+        variables.setdefault('WAZO_CALL_RECORD_SIDE', 'caller')
         call = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             context='local',

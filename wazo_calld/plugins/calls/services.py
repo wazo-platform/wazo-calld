@@ -361,29 +361,75 @@ class CallsService:
         self._verify_user(call_id, user_uuid)
         self.unhold(call_id)
 
-    def record_start(self, call_id):
+    def _find_channel_to_record(self, call_id):
         try:
             channel = self._ari.channels.get(channelId=call_id)
         except ARINotFound:
             raise NoSuchCall(call_id)
 
+        channel_name = channel.json['name']
+        is_side_1_of_local = channel_name.startswith('Local/') and channel_name.endswith(';1')
+        if not is_side_1_of_local:
+            return channel
+
+        try:
+            is_group_callee = channel.getChannelVar(variable='WAZO_RECORD_GROUP_CALLEE')['value'] == '1'
+        except ARINotFound:
+            is_group_callee = False
+
+        is_agent_callback = 'agentcallback' in channel_name
+
+        if not (is_group_callee or is_agent_callback):
+            return channel
+
+        local_chan_uuid = channel.json['channelvars']['WAZO_LOCAL_CHAN_MATCH_UUID']
+        if not local_chan_uuid:
+            return channel
+
+        for potential_channel in self._ari.channels.list():
+            if potential_channel.json['name'].startswith('Local'):
+                continue
+            if potential_channel.json['channelvars']['WAZO_LOCAL_CHAN_MATCH_UUID'] != local_chan_uuid:
+                continue
+            if potential_channel.json['channelvars']['WAZO_CALL_RECORD_SIDE'] == 'caller':
+                continue
+
+            logger.debug(
+                'we are going to record the "real" channel instead of the local channel %s',
+                channel.json['name']
+            )
+            return potential_channel
+
+        return channel
+
+    def record_start(self, call_id):
+        channel = self._find_channel_to_record(call_id)
         channel_variables = channel.json['channelvars']
 
-        if channel_variables.get('WAZO_CALL_RECORD_ACTIVE') == '1':
+        if channel_variables['WAZO_CALL_RECORD_ACTIVE'] == '1':
             return
 
-        filename = channel_variables.get('XIVO_CALLRECORDFILE')
+        is_caller = channel_variables['WAZO_CALL_RECORD_SIDE'] == 'caller'
+        if is_caller:
+            recording_filename_variable = 'WAZO_CALL_RECORD_FILE_CALLER'
+        else:
+            recording_filename_variable = 'WAZO_CALL_RECORD_FILE_CALLEE'
+
+        try:
+            filename = channel.getChannelVar(variable=recording_filename_variable)['value']
+        except ARINotFound:
+            filename = ''
+
         if not filename:
-            raise CallRecordStartFileError(channel.id)
+            raise CallRecordStartFileError(channel.id, recording_filename_variable)
 
         new_filename = self._bump_filename(filename)
-        self._ari.channels.setChannelVar(
-            channelId=call_id,
-            variable='__XIVO_CALLRECORDFILE',
+        channel.setChannelVar(
+            variable=recording_filename_variable,
             value=new_filename,
             bypassStasis=True,
         )
-        ami.record_start(self._ami, call_id, new_filename)
+        ami.record_start(self._ami, channel.id, new_filename)
 
     def record_start_user(self, call_id, user_uuid):
         self._verify_user(call_id, user_uuid)
