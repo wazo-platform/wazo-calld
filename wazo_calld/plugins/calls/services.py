@@ -294,7 +294,7 @@ class CallsService:
         call.peer_caller_id_name = event['ConnectedLineName']
         call.peer_caller_id_number = event['ConnectedLineNum']
         call.user_uuid = event_variables.get('WAZO_DEREFERENCED_USERUUID') or event_variables.get('XIVO_USERUUID') or None
-        call.dialed_extension = event_variables.get('XIVO_BASE_EXTEN') or None
+        call.dialed_extension = event_variables.get('WAZO_ENTRY_EXTEN') or None
         call.bridges = []
         call.talking_to = {}
         call.sip_call_id = event_variables.get('WAZO_SIP_CALL_ID') or None
@@ -313,7 +313,7 @@ class CallsService:
         call.peer_caller_id_name = channel.json['connected']['name']
         call.peer_caller_id_number = channel.json['connected']['number']
         call.user_uuid = event_variables.get('WAZO_DEREFERENCED_USERUUID') or event_variables.get('XIVO_USERUUID') or None
-        call.dialed_extension = event_variables.get('XIVO_BASE_EXTEN') or None
+        call.dialed_extension = event_variables.get('WAZO_ENTRY_EXTEN') or None
         call.bridges = []
         call.talking_to = {}
         call.sip_call_id = event_variables.get('WAZO_SIP_CALL_ID') or None

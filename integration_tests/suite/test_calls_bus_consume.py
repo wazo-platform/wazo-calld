@@ -1,4 +1,4 @@
-# Copyright 2016-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from hamcrest import assert_that
@@ -28,7 +28,7 @@ class TestBusConsume(IntegrationTest):
         call_id = new_call_id()
         events = self.bus.accumulator(routing_key='calls.call.ended')
 
-        self.bus.send_ami_hangup_event(call_id, base_exten='*10')
+        self.bus.send_ami_hangup_event(call_id, entry_exten='*10')
 
         def assert_function():
             assert_that(events.accumulate(), has_item(has_entries({
@@ -48,7 +48,7 @@ class TestBusConsume(IntegrationTest):
         sip_call_id = 'foobar'
         events = self.bus.accumulator(routing_key='calls.call.ended')
 
-        self.bus.send_ami_hangup_event(call_id, base_exten='*10', sip_call_id=sip_call_id)
+        self.bus.send_ami_hangup_event(call_id, entry_exten='*10', sip_call_id=sip_call_id)
 
         def assert_function():
             assert_that(events.accumulate(), has_item(has_entries({
@@ -68,7 +68,7 @@ class TestBusConsume(IntegrationTest):
         events = self.bus.accumulator(routing_key='calls.call.ended')
 
         line_id = SOME_LINE_ID
-        self.bus.send_ami_hangup_event(call_id, base_exten='*10', line_id=line_id)
+        self.bus.send_ami_hangup_event(call_id, entry_exten='*10', line_id=line_id)
 
         def assert_function():
             assert_that(events.accumulate(), has_item(has_entries({
@@ -88,7 +88,7 @@ class TestBusConsume(IntegrationTest):
         self.ari.set_channels(MockChannel(id=call_id, connected_line_number=''))
         self.ari.set_channel_variable({
             call_id: {
-                'XIVO_BASE_EXTEN': '*10',
+                'WAZO_ENTRY_EXTEN': '*10',
                 'CHANNEL(channeltype)': 'PJSIP',
                 'CHANNEL(pjsip,call-id)': 'a-sip-call-id',
             },

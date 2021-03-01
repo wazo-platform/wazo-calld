@@ -233,7 +233,7 @@ class Channel:
 
     def dialed_extension(self):
         try:
-            return self._ari.channels.getChannelVar(channelId=self.id, variable='XIVO_BASE_EXTEN')['value']
+            return self._ari.channels.getChannelVar(channelId=self.id, variable='WAZO_ENTRY_EXTEN')['value']
         except ARINotFound:
             try:
                 channel = self._ari.channels.get(channelId=self.id)
