@@ -294,6 +294,9 @@ class Channel:
     def _get_var(self, var):
         return self._ari.channels.getChannelVar(channelId=self.id, variable=var)['value']
 
+    def _set_var(self, var, value):
+        return self._ari.channels.setChannelVar(channelId=self.id, variable=var, value=value, bypassStasis=True)
+
 
 class Bridge:
 

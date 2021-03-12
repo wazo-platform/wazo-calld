@@ -165,6 +165,7 @@ class RelocatesService:
         if not initiator_channel.exists():
             details = {'initiator_call': initiator_call}
             raise RelocateCreationError('initiator call not found', details)
+        relocated_channel._set_var('CALLERID(num)', initiator_channel._get_var('CONNECTEDLINE(num)'))
 
         try:
             destination = self.destination_factory.from_type(
