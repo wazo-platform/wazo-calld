@@ -110,11 +110,13 @@ def dtmf(amid, channel, digit):
         raise WazoAmidError(amid, e)
 
 
-def record_start(amid, channel, filename):
+def record_start(amid, channel, filename, options=None):
     destination = {
         'Channel': channel,
         'File': filename,
     }
+    if options:
+        destination['options'] = options
     try:
         amid.action('MixMonitor', destination)
     except RequestException as e:
