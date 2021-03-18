@@ -43,6 +43,12 @@ events:
     required_acl: events.calls.{user_uuid}
     schema:
       '$ref': '#/definitions/Call'
+  call_missed:
+    summary: A call tried to contact the user but did not make the phone ring
+    routing_key: calls.missed
+    required_acl: events.calls.{user_uuid}
+    schema:
+      '$ref': '#/definitions/UserMissedCall'
 definitions:
   Call:
     type: object
@@ -84,3 +90,18 @@ definitions:
       sip_call_id:
         type: string
         description: The value of the `Call-ID` header of `SIP` calls. Will be `null` for calls that are not `SIP`
+  UserMissedCall:
+    type: object
+    properties:
+      user_uuid:
+        type: string
+      caller_user_uuid:
+        type: string
+      caller_id_name:
+        type: string
+      caller_id_number:
+        type: string
+      dialed_extension:
+        type: string
+      reason:
+        type: string

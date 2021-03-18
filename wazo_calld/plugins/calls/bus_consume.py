@@ -6,9 +6,10 @@ import logging
 from ari.exceptions import ARINotFound
 from xivo_bus.collectd.channels import ChannelCreatedCollectdEvent
 from xivo_bus.collectd.channels import ChannelEndedCollectdEvent
+from xivo_bus.resources.calls.dtmf import CallDTMFEvent
 from xivo_bus.resources.calls.hold import CallOnHoldEvent
 from xivo_bus.resources.calls.hold import CallResumeEvent
-from xivo_bus.resources.calls.dtmf import CallDTMFEvent
+from xivo_bus.resources.calls.missed import UserMissedCall
 from xivo_bus.resources.common.event import ArbitraryEvent
 
 from wazo_calld.plugin_helpers import ami
@@ -42,6 +43,7 @@ class CallsBusEventHandler:
         bus_consumer.on_ami_event('Unhold', self._channel_unhold)
         bus_consumer.on_ami_event('Hangup', self._relay_channel_hung_up)
         bus_consumer.on_ami_event('Hangup', self._collectd_channel_ended)
+        bus_consumer.on_ami_event('UserEvent', self._relay_user_missed_call)
         bus_consumer.on_ami_event('UserEvent', self._set_dial_echo_result)
         bus_consumer.on_ami_event('DTMFEnd', self._relay_dtmf)
         bus_consumer.on_ami_event('BridgeEnter', self._relay_channel_entered_bridge)
@@ -161,6 +163,29 @@ class CallsBusEventHandler:
         user_uuid = Channel(channel_id, self.ari).user()
         bus_msg = CallResumeEvent(channel_id, user_uuid)
         self.bus_publisher.publish(bus_msg, headers={'user_uuid:{uuid}'.format(uuid=user_uuid): True})
+
+    def _relay_user_missed_call(self, event):
+        if event['UserEvent'] != 'user_missed_call':
+            return
+
+        logger.debug('Got UserEvent user_missed_call: %s', event)
+
+        user_uuid = event['destination_user_uuid']
+        reason = event['reason']
+
+        # hangup_cause 3: no route to destination
+        if reason == 'channel-unavailable' and event['hangup_cause'] == '3':
+            reason = 'phone-unreachable'
+
+        bus_msg = UserMissedCall({
+            'user_uuid': user_uuid,
+            'caller_user_uuid': event['caller_user_uuid'] or None,
+            'caller_id_name': event['caller_id_name'],
+            'caller_id_number': event['caller_id_number'],
+            'dialed_extension': event['entry_exten'],
+            'reason': reason,
+        })
+        self.bus_publisher.publish(bus_msg, headers={f'user_uuid:{user_uuid}': True})
 
     def _set_dial_echo_result(self, event):
         if event['UserEvent'] != 'dial_echo':

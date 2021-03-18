@@ -1,6 +1,8 @@
 # Copyright 2016-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+import uuid
+
 from hamcrest import assert_that
 from hamcrest import has_entries
 from hamcrest import has_item
@@ -207,6 +209,28 @@ class TestBusConsume(IntegrationTest):
                 'name': 'call_dtmf_created',
                 'origin_uuid': XIVO_UUID,
                 'data': has_entries({'call_id': call_id, 'digit': '1'})
+            })))
+
+        until.assert_(assert_function, tries=5)
+
+    def test_missed_call_event(self):
+        user_uuid = str(uuid.uuid4())
+        events = self.bus.accumulator(routing_key='calls.missed')
+
+        self.bus.send_user_missed_call_userevent(
+            user_uuid,
+            reason='channel-unavailable',
+            hangup_cause='3',
+        )
+
+        def assert_function():
+            assert_that(events.accumulate(), has_item(has_entries({
+                'name': 'user_missed_call',
+                'origin_uuid': XIVO_UUID,
+                'data': has_entries({
+                    'user_uuid': user_uuid,
+                    'reason': 'phone-unreachable'
+                })
             })))
 
         until.assert_(assert_function, tries=5)
