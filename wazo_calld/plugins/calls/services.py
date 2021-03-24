@@ -423,13 +423,18 @@ class CallsService:
         if not filename:
             raise CallRecordStartFileError(channel.id, recording_filename_variable)
 
+        try:
+            mix_monitor_options = channel.getChannelVar(variable='WAZO_MIXMONITOR_OPTIONS')['value']
+        except ARINotFound:
+            mix_monitor_options = None
+
         new_filename = self._bump_filename(filename)
         channel.setChannelVar(
             variable=recording_filename_variable,
             value=new_filename,
             bypassStasis=True,
         )
-        ami.record_start(self._ami, channel.id, new_filename)
+        ami.record_start(self._ami, channel.id, new_filename, mix_monitor_options or None)
 
     def record_start_user(self, call_id, user_uuid):
         self._verify_user(call_id, user_uuid)
