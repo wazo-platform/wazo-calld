@@ -264,6 +264,7 @@ class CallsService:
         channel_variables = channel.json.get('channelvars', {})
         channel_helper = Channel(channel.id, ari)
         call = Call(channel.id)
+        call.conversation_id = channel_helper.conversation_id()
         call.creation_time = channel.json['creationtime']
         call.status = channel.json['state']
         call.caller_id_name = channel.json['caller']['name']
@@ -288,6 +289,7 @@ class CallsService:
     def make_call_from_ami_event(event):
         event_variables = event['ChanVariable']
         call = Call(event['Uniqueid'])
+        call.conversation_id = event_variables.get('CHANNEL(linkedid)') or None
         call.status = event['ChannelStateDesc']
         call.caller_id_name = event['CallerIDName']
         call.caller_id_number = event['CallerIDNum']
@@ -306,6 +308,7 @@ class CallsService:
     def make_call_from_dead_channel(channel):
         event_variables = channel.json['channelvars']
         call = Call(channel.id)
+        call.conversation_id = event_variables.get('CHANNEL(linkedid)') or None
         call.creation_time = channel.json['creationtime']
         call.status = channel.json['state']
         call.caller_id_name = channel.json['caller']['name']

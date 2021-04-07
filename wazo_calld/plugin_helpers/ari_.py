@@ -164,6 +164,13 @@ class Channel:
             pass
         return {Channel(channel_id, self._ari) for channel_id in channel_ids}
 
+    def conversation_id(self):
+        try:
+            linkedid = self._get_var('CHANNEL(linkedid)')
+        except ARINotFound:
+            return None
+        return linkedid
+
     def only_connected_channel(self):
         connected_channels = self.connected_channels()
         if len(connected_channels) > 1:
