@@ -561,6 +561,8 @@ definitions:
     properties:
       call_id:
         type: string
+      conversation_id:
+        type: string
       user_uuid:
         type: string
       status:

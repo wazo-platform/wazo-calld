@@ -68,6 +68,7 @@ class CallSchema(CallBaseSchema):
     call_id = fields.String(attribute='id_')
     caller_id_name = fields.String()
     caller_id_number = fields.String()
+    conversation_id = fields.String()
     peer_caller_id_name = fields.String()
     peer_caller_id_number = fields.String()
     creation_time = fields.String()

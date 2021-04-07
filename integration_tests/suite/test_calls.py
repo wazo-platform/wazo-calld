@@ -75,12 +75,14 @@ class TestListCalls(IntegrationTest):
         self.ari.set_channel_variable({'first-id': {'XIVO_USERUUID': 'user1-uuid',
                                                     'WAZO_CHANNEL_DIRECTION': 'to-wazo',
                                                     'CHANNEL(channeltype)': 'other',
-                                                    'WAZO_LINE_ID': str(SOME_LINE_ID)},
+                                                    'WAZO_LINE_ID': str(SOME_LINE_ID),
+                                                    'CHANNEL(linkedid)': 'first-conversation-id'},
                                        'second-id': {'XIVO_USERUUID': 'user2-uuid',
                                                      'WAZO_CHANNEL_DIRECTION': 'from-wazo',
                                                      'CHANNEL(channeltype)': 'PJSIP',
                                                      'CHANNEL(pjsip,call-id)': 'a-sip-call-id',
-                                                     'WAZO_LINE_ID': '1235'}})
+                                                     'WAZO_LINE_ID': '1235',
+                                                     'CHANNEL(linkedid)': 'first-conversation-id'}})
         self.ari.set_bridges(MockBridge(id='bridge-id', channels=['first-id', 'second-id']))
         self.confd.set_users(MockUser(uuid='user1-uuid'),
                              MockUser(uuid='user2-uuid'))
@@ -89,6 +91,7 @@ class TestListCalls(IntegrationTest):
 
         assert_that(calls, has_entry('items', contains_inanyorder(
             has_entries({'call_id': 'first-id',
+                         'conversation_id': 'first-conversation-id',
                          'user_uuid': 'user1-uuid',
                          'status': 'Up',
                          'bridges': ['bridge-id'],
@@ -102,6 +105,7 @@ class TestListCalls(IntegrationTest):
                          'line_id': SOME_LINE_ID,
                          'is_caller': True}),
             has_entries({'call_id': 'second-id',
+                         'conversation_id': 'first-conversation-id',
                          'user_uuid': 'user2-uuid',
                          'status': 'Ringing',
                          'bridges': ['bridge-id'],

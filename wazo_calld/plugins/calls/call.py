@@ -6,6 +6,7 @@ class Call:
 
     def __init__(self, id_):
         self.id_ = id_
+        self.conversation_id = None
         self.creation_time = None
         self.bridges = []
         self.status = 'Down'
