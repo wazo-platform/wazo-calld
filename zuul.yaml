@@ -13,8 +13,8 @@
     check:
       jobs:
         - calld-tox-integration:
-            nodeset: debian10-vm
+            nodeset: vm-debian-10-m1s
     gate:
       jobs:
         - calld-tox-integration:
-            nodeset: debian10-vm
+            nodeset: vm-debian-10-m1s
