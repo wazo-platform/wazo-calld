@@ -12,9 +12,7 @@
       - wazo-tox-py37
     check:
       jobs:
-        - calld-tox-integration:
-            nodeset: vm-debian-10-m1s
+        - calld-tox-integration
     gate:
       jobs:
-        - calld-tox-integration:
-            nodeset: vm-debian-10-m1s
+        - calld-tox-integration
