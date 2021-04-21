@@ -63,14 +63,6 @@ class TestCallRecord(RealAsteriskIntegrationTest):
             raises(CalldError).matching(has_properties(status_code=404))
         )
 
-        variables = {'WAZO_CALL_RECORD_FILE_CALLER': '', 'WAZO_CALL_RECORD_SIDE': 'caller'}
-        channel_id = self.given_call_not_stasis(variables=variables)
-
-        assert_that(
-            calling(self.calld_client.calls.start_record).with_args(channel_id),
-            raises(CalldError).matching(has_properties(status_code=500))
-        )
-
     def test_put_record_start_from_user(self):
         user_uuid = str(uuid.uuid4())
         token = self.given_user_token(user_uuid)
@@ -117,14 +109,6 @@ class TestCallRecord(RealAsteriskIntegrationTest):
         assert_that(
             calling(self.calld_client.calls.start_record_from_user).with_args(other_channel_id),
             raises(CalldError).matching(has_properties(status_code=403))
-        )
-
-        variables = {'WAZO_CALL_RECORD_FILE_CALLER': '', 'WAZO_CALL_RECORD_SIDE': 'caller'}
-        channel_id = self.given_call_not_stasis(user_uuid=user_uuid, variables=variables)
-
-        assert_that(
-            calling(self.calld_client.calls.start_record_from_user).with_args(channel_id),
-            raises(CalldError).matching(has_properties(status_code=500))
         )
 
     def test_put_record_stop(self):
@@ -210,7 +194,6 @@ class TestCallRecord(RealAsteriskIntegrationTest):
         user_uuid = user_uuid or str(uuid.uuid4())
         variables = variables or {}
         variables.setdefault('XIVO_USERUUID', user_uuid)
-        variables.setdefault('WAZO_CALL_RECORD_FILE_CALLER', 'not-empty')
         variables.setdefault('WAZO_CALL_RECORD_SIDE', 'caller')
         call = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,

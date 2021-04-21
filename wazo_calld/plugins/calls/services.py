@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
+import uuid
 
 from ari.exceptions import ARINotFound
 from wazo_calld.ari_ import DEFAULT_APPLICATION_NAME
@@ -17,12 +18,13 @@ from xivo.asterisk.protocol_interface import protocol_interface_from_channel
 from .call import Call
 from .exceptions import CallConnectError
 from .exceptions import CallCreationError
-from .exceptions import CallRecordStartFileError
 from .exceptions import NoSuchCall
 from .state_persistor import ReadOnlyStatePersistor
 from .dial_echo import DialEchoTimeout
 
 logger = logging.getLogger(__name__)
+
+CALL_RECORDING_FILENAME_TEMPLATE = '/var/lib/wazo/sounds/tenants/{tenant_uuid}/monitor/{recording_uuid}.wav'
 
 
 class CallsService:
@@ -412,32 +414,17 @@ class CallsService:
         if channel_variables['WAZO_CALL_RECORD_ACTIVE'] == '1':
             return
 
-        is_caller = channel_variables['WAZO_CALL_RECORD_SIDE'] == 'caller'
-        if is_caller:
-            recording_filename_variable = 'WAZO_CALL_RECORD_FILE_CALLER'
-        else:
-            recording_filename_variable = 'WAZO_CALL_RECORD_FILE_CALLEE'
-
-        try:
-            filename = channel.getChannelVar(variable=recording_filename_variable)['value']
-        except ARINotFound:
-            filename = ''
-
-        if not filename:
-            raise CallRecordStartFileError(channel.id, recording_filename_variable)
+        filename = CALL_RECORDING_FILENAME_TEMPLATE.format(
+            tenant_uuid=channel_variables['WAZO_TENANT_UUID'],
+            recording_uuid=str(uuid.uuid4()),
+        )
 
         try:
             mix_monitor_options = channel.getChannelVar(variable='WAZO_MIXMONITOR_OPTIONS')['value']
         except ARINotFound:
             mix_monitor_options = None
 
-        new_filename = self._bump_filename(filename)
-        channel.setChannelVar(
-            variable=recording_filename_variable,
-            value=new_filename,
-            bypassStasis=True,
-        )
-        ami.record_start(self._ami, channel.id, new_filename, mix_monitor_options or None)
+        ami.record_start(self._ami, channel.id, filename, mix_monitor_options or None)
 
     def record_start_user(self, call_id, user_uuid):
         self._verify_user(call_id, user_uuid)
@@ -480,21 +467,3 @@ class CallsService:
 
         if channel.user() != user_uuid:
             raise UserPermissionDenied(user_uuid, {'call': call_id})
-
-    @staticmethod
-    def _bump_filename(old):
-        filename, extension = old, ''
-        if '.' in old:
-            filename, extension = old.rsplit('.', 1)
-
-        if '.' in filename:
-            begin, end = filename.rsplit('.', 1)
-            try:
-                n = int(end) + 1
-                filename = f'{begin}.{n}'
-            except ValueError:
-                filename = f'{begin}.{end}.1'
-        else:
-            filename = f'{filename}.1'
-
-        return f'{filename}.{extension}' if extension else filename

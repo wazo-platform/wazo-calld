@@ -2,11 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from collections import defaultdict
-from hamcrest import (
-    assert_that,
-    equal_to,
-    has_properties,
-)
+from hamcrest import assert_that, has_properties
 from mock import Mock
 from unittest import TestCase
 
@@ -17,22 +13,6 @@ class TestServices(TestCase):
 
     def setUp(self):
         self.services = CallsService(Mock(), Mock(), Mock(), Mock(), Mock(), Mock(), Mock())
-
-    def test_bump_filename(self):
-        new_filename = self.services._bump_filename('/tmp/user-1011-1014-1612550462.wav')
-        assert_that(new_filename, equal_to(
-            '/tmp/user-1011-1014-1612550462.1.wav'
-        ))
-
-        new_filename = self.services._bump_filename('/tmp/user-1011-1014-1612550462.1.wav')
-        assert_that(new_filename, equal_to(
-            '/tmp/user-1011-1014-1612550462.2.wav'
-        ))
-
-        new_filename = self.services._bump_filename('/tmp/user-1011-1014-1612550462.9.wav')
-        assert_that(new_filename, equal_to(
-            '/tmp/user-1011-1014-1612550462.10.wav'
-        ))
 
     def test_given_no_chan_variables_when_make_call_from_ami_event_then_call_has_none_values(self):
         event = defaultdict(str)
