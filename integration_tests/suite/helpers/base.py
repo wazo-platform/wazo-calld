@@ -1,4 +1,4 @@
-# Copyright 2015-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import os
@@ -68,27 +68,27 @@ class IntegrationTest(AssetLaunchingTestCase):
     @classmethod
     def reset_clients(cls):
         try:
-            cls.amid = AmidClient('localhost', cls.service_port(9491, 'amid'))
+            cls.amid = AmidClient('127.0.0.1', cls.service_port(9491, 'amid'))
         except (NoSuchService, NoSuchPort) as e:
             logger.debug(e)
             cls.amid = WrongClient('amid')
         try:
-            cls.ari = ARIClient('localhost', cls.service_port(5039, 'ari'))
+            cls.ari = ARIClient('127.0.0.1', cls.service_port(5039, 'ari'))
         except (NoSuchService, NoSuchPort) as e:
             logger.debug(e)
             cls.ari = WrongClient('ari')
         try:
-            cls.auth = AuthClient('localhost', cls.service_port(9497, 'auth'))
+            cls.auth = AuthClient('127.0.0.1', cls.service_port(9497, 'auth'))
         except (NoSuchService, NoSuchPort) as e:
             logger.debug(e)
             cls.auth = WrongClient('auth')
         try:
-            cls.confd = ConfdClient('localhost', cls.service_port(9486, 'confd'))
+            cls.confd = ConfdClient('127.0.0.1', cls.service_port(9486, 'confd'))
         except (NoSuchService, NoSuchPort) as e:
             logger.debug(e)
             cls.confd = WrongClient('confd')
         try:
-            cls.calld = LegacyCalldClient('localhost', cls.service_port(9500, 'calld'))
+            cls.calld = LegacyCalldClient('127.0.0.1', cls.service_port(9500, 'calld'))
         except (NoSuchService, NoSuchPort) as e:
             logger.debug(e)
             cls.calld = WrongClient('calld')
@@ -98,12 +98,12 @@ class IntegrationTest(AssetLaunchingTestCase):
             logger.debug(e)
             cls.calld_client = WrongClient('calld-client')
         try:
-            cls.phoned = PhonedClient('localhost', cls.service_port(9498, 'phoned'))
+            cls.phoned = PhonedClient('127.0.0.1', cls.service_port(9498, 'phoned'))
         except (NoSuchService, NoSuchPort) as e:
             logger.debug(e)
             cls.phoned = WrongClient('phoned')
         try:
-            cls.stasis = StasisClient('localhost', cls.service_port(5039, 'ari'))
+            cls.stasis = StasisClient('127.0.0.1', cls.service_port(5039, 'ari'))
         except (NoSuchService, NoSuchPort) as e:
             logger.debug(e)
             cls.stasis = WrongClient('stasis')
@@ -117,14 +117,14 @@ class IntegrationTest(AssetLaunchingTestCase):
 
         '''
         try:
-            cls.bus = BusClient.from_connection_fields(host='localhost', port=cls.service_port(5672, 'rabbitmq'))
+            cls.bus = BusClient.from_connection_fields(host='127.0.0.1', port=cls.service_port(5672, 'rabbitmq'))
         except (NoSuchService, NoSuchPort) as e:
             logger.debug(e)
             cls.bus = WrongClient('bus')
 
     @classmethod
     def make_calld(cls, token=VALID_TOKEN):
-        return CalldClient('localhost', cls.service_port(9500, 'calld'), prefix=None, https=False, token=token)
+        return CalldClient('127.0.0.1', cls.service_port(9500, 'calld'), prefix=None, https=False, token=token)
 
     @classmethod
     def make_user_calld(cls, user_uuid, tenant_uuid=None):
@@ -187,7 +187,7 @@ class IntegrationTest(AssetLaunchingTestCase):
             cls.start_service('ari')
 
             def ari_is_up():
-                return ARIClient('localhost', cls.service_port(5039, 'ari'))
+                return ARIClient('127.0.0.1', cls.service_port(5039, 'ari'))
 
             until.return_(ari_is_up, timeout=5, message='ari did not restart')
             cls.reset_clients()
