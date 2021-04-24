@@ -1,4 +1,4 @@
-# Copyright 2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2020-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import ari
@@ -27,7 +27,7 @@ class RealAsteriskIntegrationTest(IntegrationTest):
     @classmethod
     def ari_config(cls):
         return {
-            'base_url': 'http://localhost:{port}'.format(port=cls.service_port(5039, 'ari')),
+            'base_url': 'http://127.0.0.1:{port}'.format(port=cls.service_port(5039, 'ari')),
             'username': 'xivo',
             'password': 'xivo',
         }
