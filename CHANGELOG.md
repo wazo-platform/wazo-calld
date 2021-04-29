@@ -1,5 +1,11 @@
 # Changelog
 
+## 21.05
+
+* New attribute for `calls` objects (API and events):
+
+  * `conversation_id`
+
 ## 21.02
 
 * The following endpoints now filter out whitespace in the requested extension:
