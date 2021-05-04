@@ -1,4 +1,4 @@
-# Copyright 2019-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -28,7 +28,10 @@ class ConferencesBusEventHandler:
         bus_consumer.on_ami_event('ConfbridgeTalking', self._notify_participant_talking)
 
     def _notify_participant_joined(self, event):
-        conference_id = int(event['Conference'])
+        conference_id = self._extract_conference_id(event['Conference'])
+        if not conference_id:
+            return
+
         try:
             conference = Conference.from_id(conference_id, self._confd)
         except NoSuchConferenceID:
@@ -56,7 +59,10 @@ class ConferencesBusEventHandler:
         self._notifier.participant_joined(conference.tenant_uuid, conference_id, participant, participants_already_present)
 
     def _notify_participant_left(self, event):
-        conference_id = int(event['Conference'])
+        conference_id = self._extract_conference_id(event['Conference'])
+        if not conference_id:
+            return
+
         try:
             conference = Conference.from_id(conference_id, self._confd)
         except NoSuchConferenceID:
@@ -84,7 +90,10 @@ class ConferencesBusEventHandler:
         self._notifier.participant_left(conference.tenant_uuid, conference_id, participant, participants_already_present)
 
     def _notify_participant_muted(self, event):
-        conference_id = int(event['Conference'])
+        conference_id = self._extract_conference_id(event['Conference'])
+        if not conference_id:
+            return
+
         logger.debug('Participant in conference %s was muted', conference_id)
         raw_participant = {
             'id': event['Uniqueid'],
@@ -103,7 +112,10 @@ class ConferencesBusEventHandler:
         self._notifier.participant_muted(conference_id, participant)
 
     def _notify_participant_unmuted(self, event):
-        conference_id = int(event['Conference'])
+        conference_id = self._extract_conference_id(event['Conference'])
+        if not conference_id:
+            return
+
         logger.debug('Participant in conference %s was unmuted', conference_id)
         raw_participant = {
             'id': event['Uniqueid'],
@@ -122,19 +134,28 @@ class ConferencesBusEventHandler:
         self._notifier.participant_unmuted(conference_id, participant)
 
     def _notify_record_started(self, event):
-        conference_id = int(event['Conference'])
+        conference_id = self._extract_conference_id(event['Conference'])
+        if not conference_id:
+            return
+
         logger.debug('Conference %s is being recorded', conference_id)
 
         self._notifier.conference_record_started(conference_id)
 
     def _notify_record_stopped(self, event):
-        conference_id = int(event['Conference'])
+        conference_id = self._extract_conference_id(event['Conference'])
+        if not conference_id:
+            return
+
         logger.debug('Conference %s is not being recorded', conference_id)
 
         self._notifier.conference_record_stopped(conference_id)
 
     def _notify_participant_talking(self, event):
-        conference_id = int(event['Conference'])
+        conference_id = self._extract_conference_id(event['Conference'])
+        if not conference_id:
+            return
+
         talking = event['TalkingStatus'] == 'on'
         logger.debug('Participant in conference %s is talking: %s', conference_id, talking)
 
@@ -161,3 +182,9 @@ class ConferencesBusEventHandler:
             self._notifier.participant_talk_started(conference_id, participant, participants)
         else:
             self._notifier.participant_talk_stopped(conference_id, participant, participants)
+
+    def _extract_conference_id(self, conference_name):
+        try:
+            return int(conference_name.rsplit('-', 1)[1])
+        except Exception:
+            return
