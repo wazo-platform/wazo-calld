@@ -1,5 +1,7 @@
-# Copyright 2016-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
+
+from functools import lru_cache
 
 from requests import HTTPError
 from requests import RequestException
@@ -119,15 +121,25 @@ class Conference:
 
     @classmethod
     def from_id(cls, conference_id, confd_client):
+        conference = cls._get_by_id_or_none(conference_id, confd_client)
+        if not conference:
+            raise NoSuchConferenceID(conference_id)
+
+        return cls(conference['tenant_uuid'], conference['id'], confd_client)
+
+    @classmethod
+    def reset_cache(cls, _):
+        cls._get_by_id_or_none.cache_clear()
+
+    @classmethod
+    @lru_cache(maxsize=128)
+    def _get_by_id_or_none(cls, conference_id, confd_client):
         try:
-            conference = confd_client.conferences.get(conference_id)
+            return confd_client.conferences.get(conference_id)
         except HTTPError as e:
-            if e.response is not None and e.response.status_code == 404:
-                raise NoSuchConferenceID(conference_id)
+            if not_found(e):
+                return None
             raise
-        return cls(conference['tenant_uuid'],
-                   conference['id'],
-                   confd_client)
 
 
 def get_voicemail(voicemail_id, confd_client):

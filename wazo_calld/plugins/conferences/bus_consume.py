@@ -1,4 +1,4 @@
-# Copyright 2019-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -26,6 +26,10 @@ class ConferencesBusEventHandler:
         bus_consumer.on_ami_event('ConfbridgeRecord', self._notify_record_started)
         bus_consumer.on_ami_event('ConfbridgeStopRecord', self._notify_record_stopped)
         bus_consumer.on_ami_event('ConfbridgeTalking', self._notify_participant_talking)
+
+        bus_consumer.on_event('conference_edited', Conference.reset_cache)
+        bus_consumer.on_event('conference_created', Conference.reset_cache)
+        bus_consumer.on_event('conference_deleted', Conference.reset_cache)
 
     def _notify_participant_joined(self, event):
         conference_id = int(event['Conference'])

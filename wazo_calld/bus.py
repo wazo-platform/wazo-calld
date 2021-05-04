@@ -1,4 +1,4 @@
-# Copyright 2015-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import kombu
@@ -18,6 +18,9 @@ from xivo_bus import PublishingQueue
 logger = logging.getLogger(__name__)
 
 ROUTING_KEY_MAPPING = {
+    'conference_edited': 'config.conferences.edited',
+    'conference_created': 'config.conferences.created',
+    'conference_deleted': 'config.conferences.deleted',
     'line_endpoint_sip_associated': 'config.lines.*.endpoints.sip.*.updated',
     'line_endpoint_sip_dissociated': 'config.lines.*.endpoints.sip.*.deleted',
     'line_endpoint_sccp_associated': 'config.lines.*.endpoints.sccp.*.updated',
