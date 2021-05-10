@@ -15,8 +15,14 @@ class TestBusEvent(TestCase):
         endpoint = self.updated_endpoint = Mock(Endpoint)
 
         class StatusCacheMock:
+            call_count = 0
+
+            def assert_not_called(self):
+                assert self.call_count == 0
+
             @contextmanager
             def update(self, techno, name):
+                self.call_count += 1
                 endpoint.techno = techno
                 endpoint.name = name
                 yield endpoint
@@ -157,6 +163,38 @@ class TestBusEvent(TestCase):
         self.updated_endpoint.remove_call.assert_called_once_with('1574445784.4')
         assert_that(self.updated_endpoint, has_properties(techno='PJSIP', name='dev_370'))
 
+    def test_on_hangup_ignores_local_channels(self):
+        event = {
+            'AccountCode': '',
+            'CallerIDName': 'Alice',
+            'CallerIDNum': '1001',
+            'Cause': '16',
+            'Cause-txt': 'Normal Clearing',
+            'ChanVariable': {
+                'WAZO_DEREFERENCED_USERUUID': '',
+                'WAZO_SIP_CALL_ID': '779ffe58-7bf0-456f-8475-6195b88b6655',
+                'XIVO_BASE_EXTEN': '2000',
+                'XIVO_USERUUID': '',
+            },
+            'Channel': 'Local/1234@usersharedlines-0001',
+            'ChannelState': '6',
+            'ChannelStateDesc': 'Up',
+            'ConnectedLineName': '<unknown>',
+            'ConnectedLineNum': '<unknown>',
+            'Context': 'wazo-application',
+            'Event': 'Hangup',
+            'Exten': 's',
+            'Language': 'en_US',
+            'Linkedid': '1574445784.4',
+            'Priority': '3',
+            'Privilege': 'call,all',
+            'Uniqueid': '1574445784.4',
+        }
+
+        self.handler.on_hangup(event)
+
+        self.endpoint_status_cache.assert_not_called()
+
     def test_on_new_channel(self):
         event = {
             'AccountCode': '',
@@ -187,6 +225,36 @@ class TestBusEvent(TestCase):
 
         self.updated_endpoint.add_call.assert_called_once_with('1574445784.4')
         assert_that(self.updated_endpoint, has_properties(techno='PJSIP', name='dev_370'))
+
+    def test_on_new_channel_ignore_local_channels(self):
+        event = {
+            'AccountCode': '',
+            'CallerIDName': 'Alice',
+            'CallerIDNum': '1001',
+            'ChanVariable': {
+                'WAZO_DEREFERENCED_USERUUID': '',
+                'WAZO_SIP_CALL_ID': '',
+                'XIVO_BASE_EXTEN': '',
+                'XIVO_USERUUID': '',
+            },
+            'Channel': 'Local/1234@usersharedlines-0001',
+            'ChannelState': '4',
+            'ChannelStateDesc': 'Ring',
+            'ConnectedLineName': '<unknown>',
+            'ConnectedLineNum': '<unknown>',
+            'Context': 'from-extern',
+            'Event': 'Newchannel',
+            'Exten': '2000',
+            'Language': 'en',
+            'Linkedid': '1574445784.4',
+            'Priority': '1',
+            'Privilege': 'call,all',
+            'Uniqueid': '1574445784.4',
+        }
+
+        self.handler.on_new_channel(event)
+
+        self.endpoint_status_cache.assert_not_called()
 
     def test_on_line_endpoint_sip_associated(self):
         line_id = 42

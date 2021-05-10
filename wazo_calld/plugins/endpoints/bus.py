@@ -37,6 +37,9 @@ class EventHandler:
 
     def on_hangup(self, event):
         techno, name = self._techno_name_from_channel(event['Channel'])
+        if techno == 'Local':
+            return
+
         unique_id = event['Uniqueid']
 
         with self._endpoint_status_cache.update(techno, name) as endpoint:
@@ -44,6 +47,9 @@ class EventHandler:
 
     def on_new_channel(self, event):
         techno, name = self._techno_name_from_channel(event['Channel'])
+        if techno == 'Local':
+            return
+
         unique_id = event['Uniqueid']
 
         with self._endpoint_status_cache.update(techno, name) as endpoint:
