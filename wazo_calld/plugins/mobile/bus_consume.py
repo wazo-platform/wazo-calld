@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2018-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
@@ -24,6 +24,11 @@ class PushNotificationBusEventHandler(object):
 
         user_uuid = event['WAZO_DST_UUID']
         video_enabled = event['WAZO_VIDEO_ENABLED'] == '1'
+
+        logger.info(
+            'Received push notification request for user %s from %s <%s>',
+            user_uuid, event["CallerIDName"], event["CallerIDNum"],
+        )
 
         body = {
             'peer_caller_id_number': event["CallerIDNum"],
