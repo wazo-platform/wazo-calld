@@ -1,4 +1,4 @@
-# Copyright 2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from ari.exceptions import (
@@ -29,9 +29,9 @@ def handle_ari_exception(func):
         try:
             return func(*args, **kwargs)
         except ARIHTTPError as e:
-            raise AsteriskARIError({'base_url': e.client.base_url}, e.original_error)
+            raise AsteriskARIError({'base_url': e.client.base_url}, e.original_error, e.original_message)
         except ARIException as e:
-            raise AsteriskARIUnreachable({'base_url': e.client.base_url}, e.original_error)
+            raise AsteriskARIUnreachable({'base_url': e.client.base_url}, e.original_error, e.original_message)
     return wrapper
 
 
