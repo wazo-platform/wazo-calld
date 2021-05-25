@@ -1,0 +1,54 @@
+paths:
+  /config:
+    get:
+      produces:
+        - application/json
+      summary: Show the current configuration
+      description: '**Required ACL:** `calld.config.read`'
+      operationId: getConfig
+      tags:
+        - config
+      responses:
+        '200':
+          'description': The configuration of the service
+    patch:
+      produces:
+        - application/json
+      summary: Update the current configuration.
+      description: |
+        **Required ACL:** `calld.config.update`
+
+        Changes are not persistent across service restart.
+      operationId: patchConfig
+      tags:
+        - config
+      parameters:
+        - $ref: "#/parameters/ConfigPatch"
+      responses:
+        '200':
+          description: The updated configuration of the service
+        '400':
+          description: The given confiuration is invalid
+parameters:
+  ConfigPatch:
+    name: ConfigPatch
+    in: body
+    required: true
+    description: See https://en.wikipedia.org/wiki/JSON_Patch.
+    schema:
+      type: array
+      items:
+        $ref: '#/definitions/ConfigPatchItem'
+
+definitions:
+  ConfigPatchItem:
+    properties:
+      op:
+        type: string
+        description: "Patch operation. Supported operations: `replace`."
+      path:
+        type: string
+        description: "JSON path to operate on. Supported paths: `/debug`."
+      value:
+        type: object
+        description: "The new value for the operation. Type of value is dependent of `path`"
