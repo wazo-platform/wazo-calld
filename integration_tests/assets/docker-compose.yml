@@ -61,6 +61,7 @@ services:
       # - "${LOCAL_GIT_REPOS}/wazo-confd-client/wazo_confd_client:/opt/venv/lib/python3.7/site-packages/wazo_confd_client"
       # - "${LOCAL_GIT_REPOS}/xivo-bus/xivo_bus:/opt/venv/lib/python3.7/site-packages/xivo_bus"
       # - "${LOCAL_GIT_REPOS}/xivo-lib-python/xivo:/opt/venv/lib/python3.7/site-packages/xivo"
+      # - "${LOCAL_GIT_REPOS}/ari-py/ari:/opt/venv/lib/python3.7/site-packages/ari"
     ports:
       - 9500
     environment:
