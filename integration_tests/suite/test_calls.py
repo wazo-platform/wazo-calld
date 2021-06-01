@@ -1377,8 +1377,9 @@ class TestFailingARI(IntegrationTest):
     def test_given_no_ari_when_originate_then_503(self):
         self.confd.set_users(MockUser(uuid='user-uuid', line_ids=['line-id']))
         self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL))
+        self.amid.set_valid_exten('context', 'extension')
         call_args = {
-            'source': {'user': 'userr-uuid'},
+            'source': {'user': 'user-uuid'},
             'destination': {
                 'priority': SOME_PRIORITY,
                 'extension': 'extension',
@@ -1389,7 +1390,7 @@ class TestFailingARI(IntegrationTest):
             calling(self.calld_client.calls.make_call).with_args(call_args),
             raises(CalldError).matching(has_properties(
                 status_code=503,
-                error_id='wazo-amid-error',
+                error_id='asterisk-ari-error',
             ))
         )
 
