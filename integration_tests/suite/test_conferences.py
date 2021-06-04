@@ -1,4 +1,4 @@
-# Copyright 2018-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import uuid
@@ -719,7 +719,7 @@ class TestConferenceParticipants(TestConferences):
                 'name': 'ConfbridgeTalking',
                 'data': {
                     'Event': 'ConfbridgeTalking',
-                    'Conference': conference_id,
+                    'Conference': f'wazo-conference-{conference_id}',
                     'CallerIDNum': talking_participant['caller_id_number'],
                     'CallerIDName': talking_participant['caller_id_name'],
                     'Admin': 'No',
