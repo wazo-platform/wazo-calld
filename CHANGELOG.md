@@ -1,5 +1,9 @@
 # Changelog
+## 21.08
 
+* The event `call_missed` now contains a `conference_id` whenever a call is missed 
+or refused.
+  
 ## 21.05
 
 * New attribute for `calls` objects (API and events):
