@@ -211,7 +211,7 @@ class BusClient(bus_helper.BusClient):
         }
         self.send_event(payload, 'config.trunks.endpoints.updated')
 
-    def send_user_missed_call_userevent(self, user_uuid, reason, hangup_cause):
+    def send_user_missed_call_userevent(self, user_uuid, reason, hangup_cause, conversation_id):
         self.send_event({
             'data': {
                 'Event': 'UserEvent',
@@ -223,5 +223,6 @@ class BusClient(bus_helper.BusClient):
                 'caller_id_name': '',
                 'caller_id_number': '',
                 'entry_exten': '',
+                'conversation_id': conversation_id,
             },
         }, 'ami.UserEvent')
