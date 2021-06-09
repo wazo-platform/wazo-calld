@@ -1,4 +1,4 @@
-# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -66,7 +66,11 @@ class SwitchboardsService:
             bridge = self._ari.bridges.createWithId(type='holding', bridgeId=bridge_id)
 
         if len(bridge.json['channels']) == 0:
-            bridge.startMoh()
+            moh_class = Switchboard(tenant_uuid, switchboard_uuid, self._confd).queue_moh()
+            if moh_class:
+                bridge.startMoh(mohClass=moh_class)
+            else:
+                bridge.startMoh()
 
         channel = self._ari.channels.get(channelId=channel_id)
         channel.setChannelVar(variable='WAZO_SWITCHBOARD_QUEUE', value=switchboard_uuid)
@@ -132,7 +136,11 @@ class SwitchboardsService:
             hold_bridge = self._ari.bridges.createWithId(type='holding', bridgeId=hold_bridge_id)
 
         if len(hold_bridge.json['channels']) == 0:
-            hold_bridge.startMoh()
+            moh_class = Switchboard(tenant_uuid, switchboard_uuid, self._confd).hold_moh()
+            if moh_class:
+                hold_bridge.startMoh(mohClass=moh_class)
+            else:
+                hold_bridge.startMoh()
 
         hold_bridge.addChannel(channel=channel_to_hold.id)
         channel_to_hold.setChannelVar(variable='WAZO_SWITCHBOARD_HOLD', value=switchboard_uuid)
