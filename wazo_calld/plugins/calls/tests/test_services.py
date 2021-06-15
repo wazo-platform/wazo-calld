@@ -1,8 +1,7 @@
 # Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from collections import defaultdict
-from hamcrest import assert_that, has_properties
+from hamcrest import assert_that, equal_to
 from mock import Mock
 from unittest import TestCase
 
@@ -13,39 +12,52 @@ class TestServices(TestCase):
 
     def setUp(self):
         self.services = CallsService(Mock(), Mock(), Mock(), Mock(), Mock(), Mock(), Mock())
+        self.example = {'type': 'ChannelDestroyed', 'timestamp': '2021-06-15T11:06:46.331-0400', 'cause': 3,
+                        'cause_txt': 'No route to destination', 'channel': {'id': '1623769434.135',
+                        'name': 'PJSIP/HwnelF4k-00000075', 'state': 'Up',
+                        'caller': {'name': 'Oxynor', 'number': '9000'},
+                        'connected': {'name': 'Xelanir', 'number': '9001'}, 'accountcode': '',
+                        'dialplan': {'context': 'pickup', 'exten': 'my_pickup', 'priority': 3, 'app_name': '', 'app_data': ''},
+                        'creationtime': '2021-06-15T11:06:45.465-0400', 'language': 'en_US',
+                        'channelvars': {'CHANNEL(linkedid)': '1623743605.135', 'WAZO_CALL_RECORD_ACTIVE': '',
+                        'WAZO_DEREFERENCED_USERUUID': '', 'WAZO_ENTRY_CONTEXT': 'default-key-2354-internal',
+                        'WAZO_ENTRY_EXTEN': '9001', 'WAZO_LINE_ID': '2', 'WAZO_SIP_CALL_ID': 'coNsbzfk_Tcq2cffBi9g7Q..',
+                        'WAZO_SWITCHBOARD_QUEUE': '', 'WAZO_SWITCHBOARD_HOLD': '',
+                        'WAZO_TENANT_UUID': '6345gd34-9ac7-4337-818d-d04e606d9f74', 'XIVO_BASE_EXTEN': '9001',
+                        'XIVO_ON_HOLD': '', 'XIVO_USERUUID': '76f7fmfh-a547-4324-a521-e2e04843cfee', 'WAZO_LOCAL_CHAN_MATCH_UUID': '',
+                        'WAZO_CALL_RECORD_SIDE': 'caller'}}, 'asterisk_id': '52:54:00:2a:da:g5', 'application': 'callcontrol'}
 
-    def test_given_no_chan_variables_when_make_call_from_ami_event_then_call_has_none_values(self):
-        event = defaultdict(str)
-        event['ChanVariable'] = {}
+    def test_given_no_chan_variables_when_make_call_from_stasis_event_then_call_has_none_values(self):
+        event = self.example
+        event['channel']['channelvars'] = {}
 
-        call = self.services.make_call_from_ami_event(event)
+        call = self.services.make_call_from_stasis_event(event)
 
-        assert_that(call, has_properties({
-            'user_uuid': None,
-            'dialed_extension': None,
-        }))
+        assert_that(call.user_uuid, equal_to(None))
+        assert_that(call.dialed_extension, equal_to(None))
 
-    def test_given_xivo_useruuid_when_make_call_from_ami_event_then_call_has_useruuid(self):
-        event = defaultdict(str)
-        event['ChanVariable'] = {
-            'XIVO_USERUUID': 'my-user-uuid',
-        }
+    def test_given_xivo_useruuid_when_make_call_from_stasis_event_then_call_has_useruuid(self):
+        event = self.example
+        event['channel']['channelvars'] = {'XIVO_USERUUID' : 'new_useruuid'}
 
-        call = self.services.make_call_from_ami_event(event)
+        call = self.services.make_call_from_stasis_event(event)
 
-        assert_that(call, has_properties({
-            'user_uuid': 'my-user-uuid',
-        }))
+        assert_that(call.user_uuid, equal_to('new_useruuid'))
 
-    def test_given_wazo_dereferenced_useruuid_when_make_call_from_ami_event_then_override_xivo_useruuid(self):
-        event = defaultdict(str)
-        event['ChanVariable'] = {
+    def test_given_wazo_dereferenced_useruuid_when_make_call_from_stasis_event_then_override_xivo_useruuid(self):
+        event = self.example
+        event['channel']['channelvars'] = {
             'XIVO_USERUUID': 'my-user-uuid',
             'WAZO_DEREFERENCED_USERUUID': 'new-user-uuid',
         }
 
-        call = self.services.make_call_from_ami_event(event)
+        call = self.services.make_call_from_stasis_event(event)
 
-        assert_that(call, has_properties({
-            'user_uuid': 'new-user-uuid',
-        }))
+        assert_that(call.user_uuid, equal_to('new-user-uuid'))
+
+    def test_creationtime_to_call_on_channel_creation_on_hungup(self):
+        event = self.example
+
+        call = self.services.make_call_from_stasis_event(event)
+
+        assert_that(call.creation_time, equal_to(event['channel']['creationtime']))

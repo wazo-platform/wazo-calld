@@ -41,7 +41,6 @@ class CallsBusEventHandler:
         bus_consumer.on_ami_event('NewConnectedLine', self._relay_channel_updated)
         bus_consumer.on_ami_event('Hold', self._channel_hold)
         bus_consumer.on_ami_event('Unhold', self._channel_unhold)
-        bus_consumer.on_ami_event('Hangup', self._relay_channel_hung_up)
         bus_consumer.on_ami_event('Hangup', self._collectd_channel_ended)
         bus_consumer.on_ami_event('UserEvent', self._relay_user_missed_call)
         bus_consumer.on_ami_event('UserEvent', self._set_dial_echo_result)
@@ -125,21 +124,6 @@ class CallsBusEventHandler:
             return
         call = self.services.make_call_from_channel(self.ari, channel)
         self.notifier.call_answered(call)
-
-    def _relay_channel_hung_up(self, event):
-        channel_id = event['Uniqueid']
-        if event['Channel'].startswith('Local/'):
-            logger.debug('Ignoring local channel hangup: %s', channel_id)
-            return
-        logger.debug('Relaying to bus: channel %s ended', channel_id)
-        call = self.services.make_call_from_ami_event(event)
-        bus_event = ArbitraryEvent(
-            name='call_ended',
-            body=call_schema.dump(call),
-            required_acl='events.calls.{}'.format(call.user_uuid)
-        )
-        bus_event.routing_key = 'calls.call.ended'
-        self.bus_publisher.publish(bus_event, headers={'user_uuid:{uuid}'.format(uuid=call.user_uuid): True})
 
     def _collectd_channel_ended(self, event):
         channel_id = event['Uniqueid']
