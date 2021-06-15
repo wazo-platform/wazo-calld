@@ -3,7 +3,7 @@
 
 import json
 
-from hamcrest import assert_that
+from hamcrest import assert_that, has_item
 from hamcrest import has_entries
 from hamcrest import has_entry
 from hamcrest import has_items
@@ -11,11 +11,13 @@ from xivo_test_helpers import until
 
 from .helpers.ari_ import MockChannel
 from .helpers.base import IntegrationTest
-from .helpers.constants import SOME_STASIS_APP
+from .helpers.constants import SOME_STASIS_APP, XIVO_UUID
 from .helpers.constants import SOME_STASIS_APP_INSTANCE
 from .helpers.calld import new_call_id
 from .helpers.confd import MockLine
 from .helpers.confd import MockUser
+
+STASIS_APP = 'callcontrol'
 
 
 class TestDialedFrom(IntegrationTest):
@@ -87,5 +89,29 @@ class TestDialedFrom(IntegrationTest):
                 'method': 'DELETE',
                 'path': '/ari/channels/{call_id}'.format(call_id=new_call_id),
             }))))
+
+        until.assert_(assert_function, tries=5)
+
+    def test_when_stasis_channel_destroyed(self):
+        call_id = new_call_id()
+        events = self.bus.accumulator(routing_key='calls.call.ended')
+
+        self.stasis.event_channel_destroyed(
+            channel_id=call_id,
+            stasis_app=STASIS_APP,
+            line_id=2,
+            sip_call_id='foobar',
+            creation_time='2016-02-01T15:00:00.000-0500',
+        )
+
+        def assert_function():
+            assert_that(events.accumulate(), has_item(has_entries({
+                'name': 'call_ended',
+                'origin_uuid': XIVO_UUID,
+                'data': has_entries({
+                    'creation_time': '2016-02-01T15:00:00.000-0500',
+                    'sip_call_id': 'foobar',
+                    'line_id': 2,
+                })})))
 
         until.assert_(assert_function, tries=5)
