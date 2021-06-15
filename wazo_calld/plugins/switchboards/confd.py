@@ -17,19 +17,19 @@ class Switchboard:
 
     def exists(self):
         try:
-            self._get_queue()
+            self._get()
         except NoSuchSwitchboard:
             return False
         else:
             return True
 
     def hold_moh(self):
-        return self._get_queue()['waiting_room_music_on_hold']
+        return self._get()['waiting_room_music_on_hold']
 
     def queue_moh(self):
-        return self._get_queue()['queue_music_on_hold']
+        return self._get()['queue_music_on_hold']
 
-    def _get_queue(self):
+    def _get(self):
         try:
             return self._confd.switchboards.get(self.uuid, tenant_uuid=self.tenant_uuid)
         except HTTPError as e:
