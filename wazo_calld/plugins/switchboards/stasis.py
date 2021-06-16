@@ -1,4 +1,4 @@
-# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -48,13 +48,18 @@ class SwitchboardsStasis:
     def stasis_start(self, event_objects, event):
         if len(event['args']) < 2:
             return
-        # app_instance = event['args'][0]
-        if event['args'][1] == 'switchboard_queue':
-            self._stasis_start_queue(event_objects, event)
-        elif event['args'][1] == 'switchboard_answer':
-            self._stasis_start_answer(event_objects, event)
-        elif event['args'][1] == 'switchboard_unhold':
-            self._stasis_start_answer_held(event_objects, event)
+
+        try:
+            # app_instance = event['args'][0]
+            if event['args'][1] == 'switchboard_queue':
+                self._stasis_start_queue(event_objects, event)
+            elif event['args'][1] == 'switchboard_answer':
+                self._stasis_start_answer(event_objects, event)
+            elif event['args'][1] == 'switchboard_unhold':
+                self._stasis_start_answer_held(event_objects, event)
+        except Exception:
+            logger.exception('failed handle a stasis_start %s', event)
+            self._ari.channels.continueInDialplan(channelId=event_objects['channel'].id)
 
     def _stasis_start_queue(self, event_objects, event):
         try:

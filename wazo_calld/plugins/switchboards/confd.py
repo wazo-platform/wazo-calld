@@ -1,6 +1,7 @@
-# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+from wazo_calld.plugins.switchboards.exceptions import NoSuchSwitchboard
 from requests import HTTPError
 from requests import RequestException
 
@@ -16,12 +17,24 @@ class Switchboard:
 
     def exists(self):
         try:
-            self._confd.switchboards.get(self.uuid, tenant_uuid=self.tenant_uuid)
+            self._get()
+        except NoSuchSwitchboard:
+            return False
+        else:
+            return True
+
+    def hold_moh(self):
+        return self._get()['waiting_room_music_on_hold']
+
+    def queue_moh(self):
+        return self._get()['queue_music_on_hold']
+
+    def _get(self):
+        try:
+            return self._confd.switchboards.get(self.uuid, tenant_uuid=self.tenant_uuid)
         except HTTPError as e:
             if not_found(e):
-                return False
+                raise NoSuchSwitchboard(self.uuid)
             raise
         except RequestException as e:
             raise WazoConfdUnreachable(self._confd, e)
-        else:
-            return True

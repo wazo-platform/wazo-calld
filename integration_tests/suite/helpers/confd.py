@@ -1,4 +1,4 @@
-# Copyright 2015-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import requests
@@ -222,7 +222,9 @@ class MockSwitchboard:
         return {
             'uuid': self._uuid,
             'tenant_uuid': self._tenant_uuid,
-            'name': self._name
+            'name': self._name,
+            'waiting_room_music_on_hold': None,
+            'queue_music_on_hold': None,
         }
 
 
