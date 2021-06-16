@@ -128,8 +128,11 @@ class SwitchboardsService:
 
         previous_bridges = [bridge for bridge in self._ari.bridges.list()
                             if channel_to_hold.id in bridge.json['channels']]
-
         hold_bridge_id = BRIDGE_HOLD_ID.format(uuid=switchboard_uuid)
+        if hold_bridge_id in [bridge.id for bridge in previous_bridges]:
+            logger.debug('call %s already on hold in switchboard %s, nothing to do', call_id, switchboard_uuid)
+            return
+
         try:
             hold_bridge = self._ari.bridges.get(bridgeId=hold_bridge_id)
         except ARINotFound:
