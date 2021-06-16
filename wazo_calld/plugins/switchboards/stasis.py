@@ -46,10 +46,10 @@ class SwitchboardsStasis:
             self._notifier.held_calls(switchboard['tenant_uuid'], switchboard['uuid'], held_calls)
 
     def stasis_start(self, event_objects, event):
-        try:
-            if len(event['args']) < 2:
-                raise Exception('not enough arguments')
+        if len(event['args']) < 2:
+            return
 
+        try:
             # app_instance = event['args'][0]
             if event['args'][1] == 'switchboard_queue':
                 self._stasis_start_queue(event_objects, event)
