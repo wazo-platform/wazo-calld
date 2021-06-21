@@ -44,7 +44,7 @@ events:
     schema:
       '$ref': '#/definitions/Call'
   call_missed:
-    summary: A call tried to contact the user but did not make the phone ring
+    summary: A call tried to contact the user but the user hung up or did not answer
     routing_key: calls.missed
     required_acl: events.calls.{user_uuid}
     schema:
@@ -90,6 +90,9 @@ definitions:
       sip_call_id:
         type: string
         description: The value of the `Call-ID` header of `SIP` calls. Will be `null` for calls that are not `SIP`
+      conversation_id:
+        type: string
+        description: The ID shared by all calls in the same conversation
   UserMissedCall:
     type: object
     properties:
@@ -105,3 +108,6 @@ definitions:
         type: string
       reason:
         type: string
+      conversation_id:
+        type: string
+        description: The ID shared by all calls in the same conversation

@@ -183,6 +183,7 @@ class CallsBusEventHandler:
             'caller_id_name': event['caller_id_name'],
             'caller_id_number': event['caller_id_number'],
             'dialed_extension': event['entry_exten'],
+            'conversation_id': event['conversation_id'],
             'reason': reason,
         })
         self.bus_publisher.publish(bus_msg, headers={f'user_uuid:{user_uuid}': True})

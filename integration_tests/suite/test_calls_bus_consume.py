@@ -215,12 +215,14 @@ class TestBusConsume(IntegrationTest):
 
     def test_missed_call_event(self):
         user_uuid = str(uuid.uuid4())
+        conversation_id = '16666244.24'
         events = self.bus.accumulator(routing_key='calls.missed')
 
         self.bus.send_user_missed_call_userevent(
             user_uuid,
             reason='channel-unavailable',
             hangup_cause='3',
+            conversation_id=conversation_id,
         )
 
         def assert_function():
@@ -229,7 +231,8 @@ class TestBusConsume(IntegrationTest):
                 'origin_uuid': XIVO_UUID,
                 'data': has_entries({
                     'user_uuid': user_uuid,
-                    'reason': 'phone-unreachable'
+                    'reason': 'phone-unreachable',
+                    'conversation_id': conversation_id,
                 })
             })))
 
