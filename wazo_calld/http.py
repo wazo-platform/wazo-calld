@@ -42,4 +42,9 @@ class ErrorCatchingResource(Resource):
 
 
 class AuthResource(ErrorCatchingResource):
-    method_decorators = [auth_verifier.verify_token] + ErrorCatchingResource.method_decorators
+    method_decorators = (
+        [
+            auth_verifier.verify_token,
+            auth_verifier.verify_tenant,
+        ] + ErrorCatchingResource.method_decorators
+    )

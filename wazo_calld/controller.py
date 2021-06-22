@@ -1,4 +1,4 @@
-# Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -14,6 +14,7 @@ from xivo.status import StatusAggregator, TokenStatus
 from xivo.token_renewer import TokenRenewer
 
 from .ari_ import CoreARI
+from .auth import init_master_tenant
 from .bus import CoreBusConsumer
 from .bus import CoreBusPublisher
 from .collectd import CoreCollectd
@@ -60,6 +61,11 @@ class Controller:
                 'next_token_changed_subscribe': self.token_renewer.subscribe_to_next_token_change,
             }
         )
+
+        if not config['auth'].get('master_tenant_uuid'):
+            self.token_renewer.subscribe_to_next_token_details_change(
+                init_master_tenant
+            )
 
     def run(self):
         logger.info('wazo-calld starting...')

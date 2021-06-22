@@ -1,4 +1,4 @@
-# Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -6,8 +6,11 @@ import logging
 from flask import request
 from requests import HTTPError
 from xivo import auth_verifier
+from xivo.auth_verifier import required_tenant
+from werkzeug.local import LocalProxy as Proxy
 
-from wazo_calld.exceptions import TokenWithUserUUIDRequiredError
+from wazo_calld.exceptions import TokenWithUserUUIDRequiredError, MasterTenantNotInitialized
+from wazo_calld.http_server import app
 
 logger = logging.getLogger(__name__)
 required_acl = auth_verifier.required_acl
@@ -27,3 +30,26 @@ def get_token_user_uuid_from_request(auth_client, token=None):
     if not user_uuid:
         raise TokenWithUserUUIDRequiredError()
     return user_uuid
+
+
+def required_master_tenant():
+    return required_tenant(master_tenant_uuid)
+
+
+def init_master_tenant(token):
+    tenant_uuid = token['metadata']['tenant_uuid']
+    app.config['auth']['master_tenant_uuid'] = tenant_uuid
+    logger.debug('Initiated master tenant UUID: %s', tenant_uuid)
+
+
+def get_master_tenant_uuid():
+    if not app:
+        raise Exception('Flask application not configured')
+
+    tenant_uuid = app.config['auth'].get('master_tenant_uuid')
+    if not tenant_uuid:
+        raise MasterTenantNotInitialized()
+    return tenant_uuid
+
+
+master_tenant_uuid = Proxy(get_master_tenant_uuid)
