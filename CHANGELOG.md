@@ -1,5 +1,10 @@
 # Changelog
 
+## 21.09
+
+* The event `call_missed` is now sent when the caller himself hangs up the call he made before the recipient could answer.
+
+
 ## 21.08
 
 * The event `call_missed` now contains a `conversation_id` whenever a call is missed or refused.
