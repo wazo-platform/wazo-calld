@@ -38,6 +38,7 @@ class CallsBusEventHandler:
         bus_consumer.on_ami_event('Newchannel', self._collectd_channel_created)
         bus_consumer.on_ami_event('Newstate', self._relay_channel_updated)
         bus_consumer.on_ami_event('Newstate', self._relay_channel_answered)
+        bus_consumer.on_ami_event('Newstate', self._relay_new_call_is_ringing)
         bus_consumer.on_ami_event('NewConnectedLine', self._relay_channel_updated)
         bus_consumer.on_ami_event('Hold', self._channel_hold)
         bus_consumer.on_ami_event('Unhold', self._channel_unhold)
@@ -95,6 +96,8 @@ class CallsBusEventHandler:
         self.collectd.publish(ChannelCreatedCollectdEvent())
 
     def _relay_channel_updated(self, event):
+        if event['ChannelStateDesc'] == 'ringing':
+            return
         channel_id = event['Uniqueid']
         if event['Channel'].startswith('Local/'):
             logger.debug('Ignoring local channel update: %s', channel_id)
@@ -268,3 +271,19 @@ class CallsBusEventHandler:
             logger.debug('channel %s not found', channel_id)
             return
         self._relay_channel_updated(event)
+
+    def _relay_new_call_is_ringing(self, event):
+        if event['ChannelStateDesc'] != 'Ringing':
+            return
+        channel_id = event['Uniqueid']
+        if event['Channel'].startswith('Local/'):
+            logger.debug('Ignoring local channel update: %s', channel_id)
+            return
+        logger.debug('Relaying to bus: channel %s updated', channel_id)
+        try:
+            channel = self.ari.channels.get(channelId=channel_id)
+        except ARINotFound:
+            logger.debug('channel %s not found', channel_id)
+            return
+        call = self.services.make_call_from_channel(self.ari, channel)
+        self.notifier.call_updated(call)
