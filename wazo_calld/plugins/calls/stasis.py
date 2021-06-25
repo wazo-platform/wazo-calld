@@ -4,6 +4,7 @@
 import logging
 
 from wazo_calld.ari_ import DEFAULT_APPLICATION_NAME
+from xivo_bus.resources.common.event import ArbitraryEvent
 
 from .event import (
     CallEvent,
@@ -11,6 +12,7 @@ from .event import (
     StartCallEvent,
 )
 from .exceptions import InvalidConnectCallEvent
+from .schemas import call_schema
 from .stat_sender import StatSender
 from .state import (
     CallStateOnHook,
@@ -46,6 +48,7 @@ class CallsStasis:
     def _subscribe(self):
         self.ari.on_channel_event('StasisStart', self.stasis_start)
         self.ari.on_channel_event('ChannelDestroyed', self.channel_destroyed)
+        self.ari.on_channel_event('ChannelDestroyed', self.relay_channel_hung_up)
         self.ari.on_application_registered(DEFAULT_APPLICATION_NAME, self.subscribe_to_all_channel_events)
         self.ari.on_application_deregistered(DEFAULT_APPLICATION_NAME, self.unsubscribe_from_all_channel_events)
 
@@ -96,3 +99,20 @@ class CallsStasis:
         state.hangup(CallEvent(channel, event, self.state_persistor))
 
         self.state_persistor.remove(channel.id)
+
+    def relay_channel_hung_up(self, channel, event):
+        channel_id = channel.id
+        channel_info = event['channel']
+        name = channel_info.get('name')
+        if name.startswith('Local/'):
+            logger.debug('Ignoring local channel hangup: %s', channel_id)
+            return
+        logger.debug('Relaying to bus: channel %s ended', channel_id)
+        call = self.services.make_call_from_stasis_event(event)
+        bus_event = ArbitraryEvent(
+            name='call_ended',
+            body=call_schema.dump(call),
+            required_acl='events.calls.{}'.format(call.user_uuid),
+        )
+        bus_event.routing_key = 'calls.call.ended'
+        self.bus_publisher.publish(bus_event, headers={'user_uuid:{uuid}'.format(uuid=call.user_uuid): True})

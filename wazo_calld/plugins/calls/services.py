@@ -288,21 +288,27 @@ class CallsService:
         return call
 
     @staticmethod
-    def make_call_from_ami_event(event):
-        event_variables = event['ChanVariable']
-        call = Call(event['Uniqueid'])
-        call.conversation_id = event_variables.get('CHANNEL(linkedid)') or None
-        call.status = event['ChannelStateDesc']
-        call.caller_id_name = event['CallerIDName']
-        call.caller_id_number = event['CallerIDNum']
-        call.peer_caller_id_name = event['ConnectedLineName']
-        call.peer_caller_id_number = event['ConnectedLineNum']
-        call.user_uuid = event_variables.get('WAZO_DEREFERENCED_USERUUID') or event_variables.get('XIVO_USERUUID') or None
-        call.dialed_extension = event_variables.get('WAZO_ENTRY_EXTEN') or None
+    def make_call_from_stasis_event(event):
+        channel = event['channel']
+        channel_id = channel.get('id')
+        channel_variables = event['channel']['channelvars']
+        conversation_id = channel_variables.get('CHANNEL(linkedid)')
+        connected = channel.get('connected')
+        caller = channel.get('caller')
+        call = Call(channel_id)
+        call.conversation_id = conversation_id
+        call.status = event['channel']['state']
+        call.caller_id_name = connected.get('name')
+        call.caller_id_number = connected.get('number')
+        call.peer_caller_id_name = caller.get('name')
+        call.peer_caller_id_number = caller.get('number')
+        call.user_uuid = channel_variables.get('WAZO_DEREFERENCED_USERUUID') or channel_variables.get('XIVO_USERUUID') or None
+        call.dialed_extension = channel_variables.get('WAZO_ENTRY_EXTEN') or None
         call.bridges = []
         call.talking_to = {}
-        call.sip_call_id = event_variables.get('WAZO_SIP_CALL_ID') or None
-        call.line_id = event_variables.get('WAZO_LINE_ID') or None
+        call.sip_call_id = channel_variables.get('WAZO_SIP_CALL_ID')
+        call.line_id = channel_variables.get('WAZO_LINE_ID')
+        call.creation_time = channel.get('creationtime')
 
         return call
 
