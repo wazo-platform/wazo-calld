@@ -79,3 +79,9 @@ class PhonedError(APIException):
                 'original_error': str(error),
             }
         )
+
+
+class MasterTenantNotInitialized(APIException):
+    def __init__(self):
+        msg = 'wazo-calld master tenant is not initialized'
+        super().__init__(503, msg, 'master-tenant-not-initialized')

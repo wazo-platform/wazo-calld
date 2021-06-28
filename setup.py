@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Copyright 2015-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from setuptools import setup
@@ -26,10 +26,11 @@ setup(
             'adhoc_conferences = wazo_calld.plugins.adhoc_conferences.plugin:Plugin',
             'api = wazo_calld.plugins.api.plugin:Plugin',
             'applications = wazo_calld.plugins.applications.plugin:Plugin',
-            'endpoints = wazo_calld.plugins.endpoints.plugin:Plugin',
             'calls = wazo_calld.plugins.calls.plugin:Plugin',
             'conferences = wazo_calld.plugins.conferences.plugin:Plugin',
+            'config = wazo_calld.plugins.config.plugin:Plugin',
             'dial_mobile = wazo_calld.plugins.dial_mobile.plugin:Plugin',
+            'endpoints = wazo_calld.plugins.endpoints.plugin:Plugin',
             'faxes = wazo_calld.plugins.faxes.plugin:Plugin',
             'relocates = wazo_calld.plugins.relocates.plugin:Plugin',
             'status = wazo_calld.plugins.status.plugin:Plugin',
