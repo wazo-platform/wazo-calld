@@ -309,6 +309,8 @@ class CallsService:
         call.sip_call_id = channel_variables.get('WAZO_SIP_CALL_ID')
         call.line_id = channel_variables.get('WAZO_LINE_ID') or None
         call.creation_time = channel.get('creationtime')
+        direction = channel_variables.get('WAZO_CHANNEL_DIRECTION')
+        call.is_caller = True if direction == 'to-wazo' else False
 
         return call
 

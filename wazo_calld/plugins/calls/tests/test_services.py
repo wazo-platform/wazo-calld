@@ -1,6 +1,5 @@
 # Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
-
 from hamcrest import assert_that, equal_to
 from mock import Mock
 from unittest import TestCase
@@ -57,7 +56,10 @@ class TestServices(TestCase):
                     'XIVO_ON_HOLD': '',
                     'XIVO_USERUUID': '76f7fmfh-a547-4324-a521-e2e04843cfee',
                     'WAZO_LOCAL_CHAN_MATCH_UUID': '',
-                    'WAZO_CALL_RECORD_SIDE': 'caller'}},
+                    'WAZO_CALL_RECORD_SIDE': 'caller',
+                    'WAZO_CHANNEL_DIRECTION': 'to-wazo',
+                }
+            },
             'asterisk_id': '52:54:00:2a:da:g5',
             'application': 'callcontrol'
         }
@@ -96,3 +98,9 @@ class TestServices(TestCase):
         call = self.services.channel_destroyed_event(event)
 
         assert_that(call.creation_time, equal_to(creation_time))
+
+    def test_direction_of_call_to_who_is_caller(self):
+        event = self.example_to_fit
+        call = self.services.channel_destroyed_event(event)
+
+        assert_that(call.is_caller, equal_to(True))
