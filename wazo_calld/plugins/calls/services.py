@@ -288,7 +288,7 @@ class CallsService:
         return call
 
     @staticmethod
-    def make_call_from_stasis_event(event):
+    def channel_destroyed_event(event):
         channel = event['channel']
         channel_id = channel.get('id')
         channel_variables = event['channel']['channelvars']

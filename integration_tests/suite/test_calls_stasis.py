@@ -103,6 +103,7 @@ class TestDialedFrom(IntegrationTest):
             line_id=2,
             sip_call_id='foobar',
             creation_time='2016-02-01T15:00:00.000-0500',
+            cause=0
         )
 
         def assert_function():
@@ -113,6 +114,7 @@ class TestDialedFrom(IntegrationTest):
                     'creation_time': '2016-02-01T15:00:00.000-0500',
                     'sip_call_id': 'foobar',
                     'line_id': 2,
+                    'reason_code': 0,
                 })})))
 
         until.assert_(assert_function, tries=5)

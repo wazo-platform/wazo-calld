@@ -66,7 +66,7 @@ class TestServices(TestCase):
         event = self.example_to_fit
         event['channel']['channelvars'] = {}
 
-        call = self.services.make_call_from_stasis_event(event)
+        call = self.services.channel_destroyed_event(event)
 
         assert_that(call.user_uuid, equal_to(None))
         assert_that(call.dialed_extension, equal_to(None))
@@ -75,7 +75,7 @@ class TestServices(TestCase):
         event = self.example_to_fit
         event['channel']['channelvars'] = {'XIVO_USERUUID': 'new_useruuid'}
 
-        call = self.services.make_call_from_stasis_event(event)
+        call = self.services.channel_destroyed_event(event)
 
         assert_that(call.user_uuid, equal_to('new_useruuid'))
 
@@ -86,13 +86,13 @@ class TestServices(TestCase):
             'WAZO_DEREFERENCED_USERUUID': 'new-user-uuid',
         }
 
-        call = self.services.make_call_from_stasis_event(event)
+        call = self.services.channel_destroyed_event(event)
 
         assert_that(call.user_uuid, equal_to('new-user-uuid'))
 
     def test_creation_time_from_channel_creation_to_call_on_hungup(self):
         event = self.example_to_fit
         creation_time = event['channel']['creationtime']
-        call = self.services.make_call_from_stasis_event(event)
+        call = self.services.channel_destroyed_event(event)
 
         assert_that(call.creation_time, equal_to(creation_time))

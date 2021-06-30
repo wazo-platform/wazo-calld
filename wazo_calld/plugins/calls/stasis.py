@@ -108,10 +108,14 @@ class CallsStasis:
             logger.debug('Ignoring local channel hangup: %s', channel_id)
             return
         logger.debug('Relaying to bus: channel %s ended', channel_id)
-        call = self.services.make_call_from_stasis_event(event)
+        call = self.services.channel_destroyed_event(event)
+
+        body = call_schema.dump(call)
+        body['reason_code'] = event['cause']
+
         bus_event = ArbitraryEvent(
             name='call_ended',
-            body=call_schema.dump(call),
+            body=body,
             required_acl='events.calls.{}'.format(call.user_uuid),
         )
         bus_event.routing_key = 'calls.call.ended'
