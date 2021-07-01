@@ -1,8 +1,9 @@
 # Changelog
+
 ## 21.08
 
 * The event `call_missed` now contains a `conversation_id` whenever a call is missed or refused.
-  
+
 ## 21.05
 
 * New attribute for `calls` objects (API and events):
@@ -130,7 +131,6 @@
 * The following endpoint has been added to list the status of lines
 
   * `GET /1.0/lines`
-
 
 ## 19.17
 
