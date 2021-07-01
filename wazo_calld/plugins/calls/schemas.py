@@ -82,6 +82,8 @@ class CallSchema(CallBaseSchema):
     dialed_extension = fields.String()
     sip_call_id = fields.String()
     line_id = fields.Integer()
+    reason_code = fields.Integer()
+    reason = fields.String()
 
     @post_dump()
     def default_peer_caller_id_number(self, call):

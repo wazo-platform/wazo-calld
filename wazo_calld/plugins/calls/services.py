@@ -27,6 +27,23 @@ logger = logging.getLogger(__name__)
 CALL_RECORDING_FILENAME_TEMPLATE = '/var/lib/wazo/sounds/tenants/{tenant_uuid}/monitor/{recording_uuid}.wav'
 
 
+def reason_call_ended(code):
+    reason = 'unknown'
+    dict_reason = {
+        0:  'unknown',
+        3:  'no route found to recipient',
+        16: 'call cleared normally',
+        17: 'do not disturb',
+        19: 'recipient refused call',
+    }
+
+    for key in dict_reason.keys():
+        if key == code:
+            reason = dict_reason.get(key)
+
+    return reason
+
+
 class CallsService:
 
     def __init__(self, amid_client, ari_config, ari, confd_client, dial_echo_manager, phoned_client, notifier):
@@ -309,6 +326,10 @@ class CallsService:
         call.sip_call_id = channel_variables.get('WAZO_SIP_CALL_ID')
         call.line_id = channel_variables.get('WAZO_LINE_ID')
         call.creation_time = channel.get('creationtime')
+        call.is_caller = channel_variables.get('WAZO_CHANNEL_DIRECTION')
+        call.reason_code = event['cause']
+        reason = reason_call_ended(call.reason_code)
+        call.reason = reason
 
         return call
 
