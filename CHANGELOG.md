@@ -1,5 +1,13 @@
 # Changelog
 
+## 21.09
+
+* New endpoint to get and update configuration of `wazo-calld`:
+
+  * `GET /config`
+  * `PATCH /config`
+    * Only the `debug` attribute may be modified.
+
 ## 21.08
 
 * The event `call_missed` now contains a `conversation_id` whenever a call is missed or refused.
