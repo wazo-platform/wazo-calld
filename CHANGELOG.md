@@ -1,5 +1,9 @@
 # Changelog
 
+## 21.10
+
+* The event `call_ended` now send `reason_code` to know why a call was ended`.
+
 ## 21.09
 
 * New endpoint to get and update configuration of `wazo-calld`:

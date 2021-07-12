@@ -122,13 +122,13 @@ class StasisClient:
         response = requests.post(url, json=body)
         assert_that(response.status_code, equal_to(201))
 
-    def event_channel_destroyed(self, channel_id, stasis_app, line_id=None, sip_call_id=None, creation_time=None, timestamp=None, connected_number=''):
+    def event_channel_destroyed(self, channel_id, stasis_app, line_id=None, cause=0, sip_call_id=None, creation_time=None, timestamp=None, connected_number=''):
         url = self.url('_send_ws_event')
         creation_time = creation_time or "2016-02-04T15:10:21.225-0500"
         timestamp = timestamp or "2016-02-04T15:10:22.548-0500"
         body = {
             "application": stasis_app,
-            "cause": 0,
+            "cause": cause,
             "cause_txt": "Unknown",
             "channel": {
                 "accountcode": "code",
