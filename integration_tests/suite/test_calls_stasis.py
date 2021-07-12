@@ -116,3 +116,27 @@ class TestDialedFrom(IntegrationTest):
                 })})))
 
         until.assert_(assert_function, tries=5)
+
+    def test_when_stasis_channel_destroyed_when_empty_values(self):
+        call_id = new_call_id()
+        events = self.bus.accumulator(routing_key='calls.call.ended')
+
+        self.stasis.event_channel_destroyed(
+            channel_id=call_id,
+            stasis_app=STASIS_APP,
+            line_id='',
+            sip_call_id='',
+            creation_time='2016-02-01T15:00:00.000-0500',
+        )
+
+        def assert_function():
+            assert_that(events.accumulate(), has_item(has_entries({
+                'name': 'call_ended',
+                'origin_uuid': XIVO_UUID,
+                'data': has_entries({
+                    'creation_time': '2016-02-01T15:00:00.000-0500',
+                    'sip_call_id': '',
+                    'line_id': None,
+                })})))
+
+        until.assert_(assert_function, tries=5)
