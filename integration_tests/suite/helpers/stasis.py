@@ -1,4 +1,4 @@
-# Copyright 2015-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import requests
@@ -122,7 +122,18 @@ class StasisClient:
         response = requests.post(url, json=body)
         assert_that(response.status_code, equal_to(201))
 
-    def event_channel_destroyed(self, channel_id, stasis_app, line_id=None, cause=0, is_caller=False, sip_call_id=None, creation_time=None, timestamp=None, connected_number=''):
+    def event_channel_destroyed(
+        self,
+        channel_id,
+        stasis_app,
+        line_id=None,
+        cause=0,
+        channel_direction='from-wazo',
+        sip_call_id=None,
+        creation_time=None,
+        timestamp=None,
+        connected_number=''
+    ):
         url = self.url('_send_ws_event')
         creation_time = creation_time or "2016-02-04T15:10:21.225-0500"
         timestamp = timestamp or "2016-02-04T15:10:22.548-0500"
@@ -143,7 +154,7 @@ class StasisClient:
                 "channelvars": {
                     "WAZO_LINE_ID": line_id,
                     'WAZO_SIP_CALL_ID': sip_call_id,
-                    'WAZO_CHANNEL_DIRECTION': is_caller,
+                    'WAZO_CHANNEL_DIRECTION': channel_direction,
                 },
                 "creationtime": creation_time,
                 "dialplan": {
