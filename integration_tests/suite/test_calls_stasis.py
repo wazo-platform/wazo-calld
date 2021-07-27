@@ -103,7 +103,8 @@ class TestDialedFrom(IntegrationTest):
             line_id=2,
             sip_call_id='foobar',
             creation_time='2016-02-01T15:00:00.000-0500',
-            cause=0
+            cause=0,
+            channel_direction='to-wazo',
         )
 
         def assert_function():
@@ -115,6 +116,35 @@ class TestDialedFrom(IntegrationTest):
                     'sip_call_id': 'foobar',
                     'line_id': 2,
                     'reason_code': 0,
+                    'is_caller': True,
+                })})))
+
+        until.assert_(assert_function, tries=5)
+
+    def test_when_stasis_channel_destroyed_callee(self):
+        call_id = new_call_id()
+        events = self.bus.accumulator(routing_key='calls.call.ended')
+
+        self.stasis.event_channel_destroyed(
+            channel_id=call_id,
+            stasis_app=STASIS_APP,
+            line_id=2,
+            sip_call_id='foobar',
+            creation_time='2016-02-01T15:00:00.000-0500',
+            cause=0,
+            channel_direction='from-wazo',
+        )
+
+        def assert_function():
+            assert_that(events.accumulate(), has_item(has_entries({
+                'name': 'call_ended',
+                'origin_uuid': XIVO_UUID,
+                'data': has_entries({
+                    'creation_time': '2016-02-01T15:00:00.000-0500',
+                    'sip_call_id': 'foobar',
+                    'line_id': 2,
+                    'reason_code': 0,
+                    'is_caller': False,
                 })})))
 
         until.assert_(assert_function, tries=5)

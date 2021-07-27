@@ -3,6 +3,7 @@
 ## 21.10
 
 * The event `call_ended` now send `reason_code` to know why a call was ended`.
+* The event `call_ended` now contains the `is_caller` field of the call.
 
 ## 21.09
 
