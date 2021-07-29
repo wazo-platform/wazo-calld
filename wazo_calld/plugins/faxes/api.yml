@@ -26,6 +26,14 @@ paths:
           description: 'Caller ID that will be presented to the recipient of the fax. Example: "my-name <+15551112222>"'
           type: string
           default: 'Wazo Fax'
+        - name: ivr_extension
+          in: query
+          description: 'Extension compose before sending fax. Useful for Fax in IVR'
+          type: string
+        - name: wait_time
+          in: query
+          description: 'Time waiting before sending Fax when destination have answered'
+          type: string
       tags:
       - faxes
       consumes:

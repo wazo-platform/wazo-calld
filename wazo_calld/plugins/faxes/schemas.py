@@ -34,6 +34,8 @@ class FaxSchema(Schema):
     context = fields.String(required=True)
     extension = fields.String(required=True)
     caller_id = fields.String(missing='Wazo Fax')
+    ivr_extension = fields.String()
+    wait_time = fields.String()
     user_uuid = fields.String(dump_only=True)
     tenant_uuid = fields.String(dump_only=True)
 
