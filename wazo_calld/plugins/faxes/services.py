@@ -54,6 +54,8 @@ class FaxesService:
         originate_variables = {
             'WAZO_FAX_DESTINATION_CONTEXT': fax_infos['context'],
             'WAZO_FAX_DESTINATION_EXTENSION': fax_infos['extension'],
+            'WAZO_FAX_DESTINATION_IVR_EXTENSION': fax_infos['ivr_extension'],
+            'WAZO_FAX_DESTINATION_WAIT_TIME': fax_infos['wait_time'],
             'WAZO_TENANT_UUID': tenant_uuid,
             'XIVO_FAX_PATH': tif_path,
             'XIVO_USERUUID': user_uuid or '',
@@ -71,6 +73,8 @@ class FaxesService:
             'extension': fax_infos['extension'],
             'context': fax_infos['context'],
             'caller_id': fax_infos['caller_id'],
+            'ivr_extension': fax_infos['ivr_extension'],
+            'wait_time': fax_infos['wait_time'],
             'user_uuid': user_uuid,
             'tenant_uuid': tenant_uuid,
         }
