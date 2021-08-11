@@ -2,10 +2,13 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
+import threading
 
 from ari.exceptions import ARINotFound
 
+from xivo import dialaction
 from xivo.caller_id import assemble_caller_id
+from xivo.mallow.switchboard import SwitchboardFallbackSchema
 from wazo_calld.ari_ import DEFAULT_APPLICATION_NAME
 from wazo_calld.plugin_helpers.ari_ import AUTO_ANSWER_VARIABLES
 from wazo_calld.plugin_helpers.confd import User
@@ -26,6 +29,7 @@ BRIDGE_QUEUE_ID = 'switchboard-{uuid}-queue'
 BRIDGE_HOLD_ID = 'switchboard-{uuid}-hold'
 
 logger = logging.getLogger(__name__)
+switchboard_fallback_schema = SwitchboardFallbackSchema()
 
 
 class SwitchboardsService:
@@ -80,6 +84,66 @@ class SwitchboardsService:
 
         calls = self.queued_calls(tenant_uuid, switchboard_uuid)
         self._notifier.queued_calls(tenant_uuid, switchboard_uuid, calls)
+
+        noanswer_timeout = Switchboard(tenant_uuid, switchboard_uuid, self._confd).timeout()
+        if not noanswer_timeout:
+            logger.debug('Switchboard %s: ignoring no answer timeout = %s', switchboard_uuid, noanswer_timeout)
+            return
+
+        noanswer_fallback = self._confd.switchboards.relations(switchboard_uuid).list_fallbacks()['noanswer_destination']
+        if not noanswer_fallback:
+            logger.debug('Switchboard %s: ignoring no answer timeout because there is no fallback', switchboard_uuid)
+            return
+
+        logger.debug('Switchboard %s: starting no answer timeout for call %s after %s seconds', switchboard_uuid, channel_id, noanswer_timeout)
+        timer = threading.Timer(noanswer_timeout, self.on_queued_call_noanswer_timeout, args=(tenant_uuid, switchboard_uuid, channel_id))
+        timer.start()
+
+    def on_queued_call_noanswer_timeout(self, tenant_uuid, switchboard_uuid, call_id):
+        logger.debug('Switchboard %s: triggered no answer timeout for call %s', switchboard_uuid, call_id)
+
+        fallbacks_confd = self._confd.switchboards.relations(switchboard_uuid).list_fallbacks()
+        noanswer_destination_dialplan = switchboard_fallback_schema.load(fallbacks_confd)['noanswer']
+        action = dialaction.action(
+            noanswer_destination_dialplan['type'],
+            noanswer_destination_dialplan['subtype']
+        )
+        try:
+            self._ari.channels.setChannelVar(
+                channelId=call_id,
+                variable='XIVO_FWD_TYPE',
+                value='SWITCHBOARD_NOANSWER'
+            )
+            self._ari.channels.setChannelVar(
+                channelId=call_id,
+                variable='XIVO_FWD_SWITCHBOARD_NOANSWER_ACTION',
+                value=action
+            )
+            if noanswer_destination_dialplan.get('actionarg1'):
+                self._ari.channels.setChannelVar(
+                    channelId=call_id,
+                    variable='XIVO_FWD_SWITCHBOARD_NOANSWER_ACTIONARG1',
+                    value=noanswer_destination_dialplan['actionarg1']
+                )
+            if noanswer_destination_dialplan.get('actionarg2'):
+                self._ari.channels.setChannelVar(
+                    channelId=call_id,
+                    variable='XIVO_FWD_SWITCHBOARD_NOANSWER_ACTIONARG2',
+                    value=noanswer_destination_dialplan['actionarg2']
+                )
+            self._ari.channels.continueInDialplan(
+                channelId=call_id,
+                context='switchboard',
+                extension='forward',
+                priority='1'
+            )
+        except ARINotFound:
+            logger.debug('%s: no such queued call in switchboard %s', call_id, switchboard_uuid)
+        except Exception as e:
+            logger.exception(
+                'switcboard %s: Unexpected error on no answer timeout for call %s: %s',
+                switchboard_uuid, call_id, e
+            )
 
     def answer_queued_call(self, tenant_uuid, switchboard_uuid, queued_call_id,
                            user_uuid, line_id=None):
