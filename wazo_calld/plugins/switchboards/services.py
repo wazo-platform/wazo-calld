@@ -40,6 +40,7 @@ class SwitchboardsService:
         self._notifier = notifier
 
     def queued_calls(self, tenant_uuid, switchboard_uuid):
+        logger.debug('Listing_queued calls in tenant %s for switchboard %s', tenant_uuid, switchboard_uuid)
         if not Switchboard(tenant_uuid, switchboard_uuid, self._confd).exists():
             raise NoSuchSwitchboard(switchboard_uuid)
 
@@ -63,6 +64,7 @@ class SwitchboardsService:
         return result
 
     def new_queued_call(self, tenant_uuid, switchboard_uuid, channel_id):
+        logger.debug('New_queued_call: %s, %s, %s', tenant_uuid, switchboard_uuid, channel_id)
         bridge_id = BRIDGE_QUEUE_ID.format(uuid=switchboard_uuid)
         try:
             bridge = self._ari.bridges.get(bridgeId=bridge_id)
@@ -147,6 +149,14 @@ class SwitchboardsService:
 
     def answer_queued_call(self, tenant_uuid, switchboard_uuid, queued_call_id,
                            user_uuid, line_id=None):
+        logger.debug(
+            'Answering queued call %s in tenant %s for switchboard %s with user %s line %s',
+            queued_call_id,
+            tenant_uuid,
+            switchboard_uuid,
+            user_uuid,
+            line_id
+        )
         if not Switchboard(tenant_uuid, switchboard_uuid, self._confd).exists():
             raise NoSuchSwitchboard(switchboard_uuid)
 
@@ -182,6 +192,12 @@ class SwitchboardsService:
         return channel.id
 
     def hold_call(self, tenant_uuid, switchboard_uuid, call_id):
+        logger.debug(
+            'Holding call %s in tenant %s for switchboard %s',
+            call_id,
+            tenant_uuid,
+            switchboard_uuid,
+        )
         if not Switchboard(tenant_uuid, switchboard_uuid, self._confd).exists():
             raise NoSuchSwitchboard(switchboard_uuid)
 
@@ -231,6 +247,11 @@ class SwitchboardsService:
                         pass
 
     def held_calls(self, tenant_uuid, switchboard_uuid):
+        logger.debug(
+            'Listing held calls in tenant %s for switchboard %s',
+            tenant_uuid,
+            switchboard_uuid,
+        )
         if not Switchboard(tenant_uuid, switchboard_uuid, self._confd).exists():
             raise NoSuchSwitchboard(switchboard_uuid)
 
