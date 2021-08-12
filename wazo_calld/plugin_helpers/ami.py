@@ -131,3 +131,25 @@ def record_stop(amid, channel):
         amid.action('StopMixMonitor', destination)
     except RequestException as e:
         raise WazoAmidError(amid, e)
+
+
+def pause_queue_member(amid, interface):
+    destination = {
+        'Interface': interface,
+        'Paused': True,
+    }
+    try:
+        amid.action('QueuePause', destination)
+    except RequestException as e:
+        raise WazoAmidError(amid, e)
+
+
+def unpause_queue_member(amid, interface):
+    destination = {
+        'Interface': interface,
+        'Paused': False,
+    }
+    try:
+        amid.action('QueuePause', destination)
+    except RequestException as e:
+        raise WazoAmidError(amid, e)

@@ -226,3 +226,12 @@ class BusClient(bus_helper.BusClient):
                 'conversation_id': conversation_id,
             },
         }, 'ami.UserEvent')
+
+    def send_user_dnd_update(self, user_id, enabled):
+        self.send_event(
+            {
+                'name': 'users_services_dnd_updated',
+                'data': {'user_id': user_id, 'user_uuid': user_id, 'enabled': enabled},
+            },
+            f'config.users.{user_id}.services.dnd.updated'
+        )

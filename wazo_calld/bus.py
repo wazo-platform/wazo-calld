@@ -1,4 +1,4 @@
-# Copyright 2015-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import kombu
@@ -47,6 +47,7 @@ ROUTING_KEY_MAPPING = {
     'user_edited': 'config.user.edited',
     'user_line_associated': 'config.users.*.lines.*.updated',
     'user_line_dissociated': 'config.users.*.lines.*.deleted',
+    'users_services_dnd_updated': 'config.users.*.services.dnd.updated',
 }
 
 
