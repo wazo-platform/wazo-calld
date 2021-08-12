@@ -6,3 +6,6 @@ export PYBUILD_DISABLE=test
 
 %:
 	dh $@ --with python3,systemd --buildsystem=pybuild
+
+override_dh_installinit:
+	dh_installinit --noscripts
