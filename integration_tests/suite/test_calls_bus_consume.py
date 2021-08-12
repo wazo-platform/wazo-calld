@@ -2,9 +2,11 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 import uuid
 
-from hamcrest import assert_that
-from hamcrest import has_entries
-from hamcrest import has_item
+from hamcrest import (
+    assert_that,
+    has_entries,
+    has_item,
+)
 from xivo_test_helpers import until
 
 from .helpers.base import IntegrationTest
