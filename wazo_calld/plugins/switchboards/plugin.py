@@ -1,4 +1,4 @@
-# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from wazo_confd_client import Client as ConfdClient
@@ -23,7 +23,6 @@ from .stasis import SwitchboardsStasis
 
 
 class Plugin:
-
     def load(self, dependencies):
         api = dependencies['api']
         ari = dependencies['ari']
@@ -34,20 +33,32 @@ class Plugin:
         next_token_changed_subscribe = dependencies['next_token_changed_subscribe']
 
         confd_client = ConfdClient(**config['confd'])
-        switchboard_get_cache = ConfdClientGetUUIDCacheDecorator(confd_client.switchboards.get, resource_name='switchboard')
+        switchboard_get_cache = ConfdClientGetUUIDCacheDecorator(
+            confd_client.switchboards.get, resource_name='switchboard'
+        )
         confd_client.switchboards.get = switchboard_get_cache
-        line_get_cache = ConfdClientGetIDCacheDecorator(confd_client.lines.get, resource_name='line')
+        line_get_cache = ConfdClientGetIDCacheDecorator(
+            confd_client.lines.get, resource_name='line'
+        )
         confd_client.lines.get = line_get_cache
-        user_line_get_cache = ConfdClientUserLineGetCacheDecorator(confd_client.users.get, resource_name='user')
+        user_line_get_cache = ConfdClientUserLineGetCacheDecorator(
+            confd_client.users.get, resource_name='user'
+        )
         confd_client.users.get = user_line_get_cache
 
         token_changed_subscribe(confd_client.set_token)
 
         switchboards_notifier = SwitchboardsNotifier(bus_publisher)
-        switchboards_service = SwitchboardsService(ari.client, confd_client, switchboards_notifier)
+        switchboards_service = SwitchboardsService(
+            ari.client, confd_client, switchboards_notifier
+        )
 
-        switchboards_stasis = SwitchboardsStasis(ari, confd_client, switchboards_notifier, switchboards_service)
-        switchboard_get_cache.subscribe(bus_consumer, events=['switchboard_edited', 'switchboard_deleted'])
+        switchboards_stasis = SwitchboardsStasis(
+            ari, confd_client, switchboards_notifier, switchboards_service
+        )
+        switchboard_get_cache.subscribe(
+            bus_consumer, events=['switchboard_edited', 'switchboard_deleted']
+        )
         # line-endpoint association emits line_edited too
         line_get_cache.subscribe(bus_consumer, events=['line_edited', 'line_deleted'])
         user_line_get_cache.subscribe(bus_consumer)

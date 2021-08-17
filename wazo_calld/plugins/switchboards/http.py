@@ -1,4 +1,4 @@
-# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from xivo.tenant_flask_helpers import Tenant, token
@@ -16,7 +16,6 @@ from .schemas import (
 
 
 class SwitchboardCallsQueuedResource(AuthResource):
-
     def __init__(self, switchboards_service):
         self._service = switchboards_service
 
@@ -29,11 +28,12 @@ class SwitchboardCallsQueuedResource(AuthResource):
 
 
 class SwitchboardCallQueuedAnswerResource(AuthResource):
-
     def __init__(self, switchboards_service):
         self._service = switchboards_service
 
-    @required_acl('calld.switchboards.{switchboard_uuid}.calls.queued.{call_id}.answer.update')
+    @required_acl(
+        'calld.switchboards.{switchboard_uuid}.calls.queued.{call_id}.answer.update'
+    )
     def put(self, switchboard_uuid, call_id):
         tenant = Tenant.autodetect()
         user_uuid = token.user_uuid
@@ -48,7 +48,6 @@ class SwitchboardCallQueuedAnswerResource(AuthResource):
 
 
 class SwitchboardCallHeldResource(AuthResource):
-
     def __init__(self, switchboards_service):
         self._service = switchboards_service
 
@@ -60,7 +59,6 @@ class SwitchboardCallHeldResource(AuthResource):
 
 
 class SwitchboardCallsHeldResource(AuthResource):
-
     def __init__(self, switchboards_service):
         self._service = switchboards_service
 
@@ -73,18 +71,20 @@ class SwitchboardCallsHeldResource(AuthResource):
 
 
 class SwitchboardCallHeldAnswerResource(AuthResource):
-
     def __init__(self, switchboards_service):
         self._service = switchboards_service
 
-    @required_acl('calld.switchboards.{switchboard_uuid}.calls.held.{call_id}.answer.update')
+    @required_acl(
+        'calld.switchboards.{switchboard_uuid}.calls.held.{call_id}.answer.update'
+    )
     def put(self, switchboard_uuid, call_id):
         tenant = Tenant.autodetect()
         user_uuid = token.user_uuid
 
         line_id = answer_call_schema.load(request.args).get('line_id')
 
-        call_id = self._service.answer_held_call(tenant.uuid, switchboard_uuid,
-                                                 call_id, user_uuid, line_id)
+        call_id = self._service.answer_held_call(
+            tenant.uuid, switchboard_uuid, call_id, user_uuid, line_id
+        )
 
         return {'call_id': call_id}, 200

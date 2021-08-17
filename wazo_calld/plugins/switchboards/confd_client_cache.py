@@ -1,4 +1,4 @@
-# Copyright 2019-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -10,7 +10,6 @@ hashed_args_kwargs_mark = object()  # sentinel for separating args from kwargs
 
 
 class ConfdClientGetUUIDCacheDecorator:
-
     def __init__(self, decorated_get, resource_name):
         self._decorated_get = decorated_get
         self._resource_name = resource_name
@@ -58,14 +57,12 @@ class ConfdClientGetUUIDCacheDecorator:
 
 
 class ConfdClientGetIDCacheDecorator(ConfdClientGetUUIDCacheDecorator):
-
     def _on_entry_changed(self, event_body):
         id = event_body['id']
         self.invalidate_cache_entry(id)
 
 
 class ConfdClientUserLineGetCacheDecorator(ConfdClientGetUUIDCacheDecorator):
-
     def subscribe(self, bus_consumer):
         for event in ('user_edited', 'user_deleted'):
             bus_consumer.on_event(event, self._on_user_changed)

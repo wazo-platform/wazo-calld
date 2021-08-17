@@ -34,7 +34,9 @@ class TestSwitchboardService(TestCase):
         bridge.startMoh.assert_called_once_with()
 
     def test_moh_on_hold_call_when_defined(self):
-        self.confd.switchboards.get.return_value = {'waiting_room_music_on_hold': s.moh_class}
+        self.confd.switchboards.get.return_value = {
+            'waiting_room_music_on_hold': s.moh_class
+        }
         bridge = self.ari.bridges.get.return_value
         self.ari.bridges.list.return_value = [bridge]
         bridge.json = {'channels': []}
