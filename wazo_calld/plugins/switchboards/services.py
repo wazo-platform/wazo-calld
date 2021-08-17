@@ -100,6 +100,14 @@ class SwitchboardsService:
     def on_queued_call_noanswer_timeout(self, tenant_uuid, switchboard_uuid, call_id):
         logger.debug('Switchboard %s: triggered no answer timeout for call %s', switchboard_uuid, call_id)
 
+        if not SwitchboardARI(switchboard_uuid, self._ari).has_queued_call(call_id):
+            logger.debug(
+                'Switchboard %s: no answer timeout for call %s cancelled: call is not queued',
+                switchboard_uuid,
+                call_id
+            )
+            return
+
         fallbacks_confd = self._confd.switchboards.relations(switchboard_uuid).list_fallbacks()
         noanswer_destination_dialplan = switchboard_fallback_schema.load(fallbacks_confd)['noanswer']
         action = dialaction.action(

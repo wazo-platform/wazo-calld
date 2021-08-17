@@ -20,3 +20,6 @@ class Switchboard:
 
         channel_ids = bridge.json['channels']
         return channel_ids
+
+    def has_queued_call(self, call_id):
+        return call_id in self.queued_call_ids()
