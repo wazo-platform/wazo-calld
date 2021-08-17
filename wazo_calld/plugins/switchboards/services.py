@@ -14,19 +14,21 @@ from wazo_calld.plugin_helpers.ari_ import AUTO_ANSWER_VARIABLES
 from wazo_calld.plugin_helpers.confd import User
 from wazo_calld.plugin_helpers.exceptions import InvalidUserUUID
 
+from .ari_helpers import Switchboard as SwitchboardARI
 from .call import (
     HeldCall,
     QueuedCall,
 )
-from .confd import Switchboard
+from .confd import Switchboard as SwitchboardConfd
+from .constants import (
+    BRIDGE_QUEUE_ID,
+    BRIDGE_HOLD_ID,
+)
 from .exceptions import (
     NoSuchCall,
     NoSuchSwitchboard,
     NoSuchConfdUser,
 )
-
-BRIDGE_QUEUE_ID = 'switchboard-{uuid}-queue'
-BRIDGE_HOLD_ID = 'switchboard-{uuid}-hold'
 
 logger = logging.getLogger(__name__)
 switchboard_fallback_schema = SwitchboardFallbackSchema()
@@ -41,22 +43,16 @@ class SwitchboardsService:
 
     def queued_calls(self, tenant_uuid, switchboard_uuid):
         logger.debug('Listing_queued calls in tenant %s for switchboard %s', tenant_uuid, switchboard_uuid)
-        if not Switchboard(tenant_uuid, switchboard_uuid, self._confd).exists():
+        if not SwitchboardConfd(tenant_uuid, switchboard_uuid, self._confd).exists():
             raise NoSuchSwitchboard(switchboard_uuid)
 
-        bridge_id = BRIDGE_QUEUE_ID.format(uuid=switchboard_uuid)
-        try:
-            bridge = self._ari.bridges.get(bridgeId=bridge_id)
-        except ARINotFound:
-            return []
-
-        channel_ids = bridge.json.get('channels', None)
+        call_ids = SwitchboardARI(switchboard_uuid, self._ari).queued_call_ids()
 
         result = []
-        for channel_id in channel_ids:
-            channel = self._ari.channels.get(channelId=channel_id)
+        for call_id in call_ids:
+            channel = self._ari.channels.get(channelId=call_id)
 
-            call = QueuedCall(channel.id)
+            call = QueuedCall(call_id)
             call.caller_id_name = channel.json['caller']['name']
             call.caller_id_number = channel.json['caller']['number']
 
@@ -72,7 +68,7 @@ class SwitchboardsService:
             bridge = self._ari.bridges.createWithId(type='holding', bridgeId=bridge_id)
 
         if len(bridge.json['channels']) == 0:
-            moh_class = Switchboard(tenant_uuid, switchboard_uuid, self._confd).queue_moh()
+            moh_class = SwitchboardConfd(tenant_uuid, switchboard_uuid, self._confd).queue_moh()
             if moh_class:
                 bridge.startMoh(mohClass=moh_class)
             else:
@@ -87,7 +83,7 @@ class SwitchboardsService:
         calls = self.queued_calls(tenant_uuid, switchboard_uuid)
         self._notifier.queued_calls(tenant_uuid, switchboard_uuid, calls)
 
-        noanswer_timeout = Switchboard(tenant_uuid, switchboard_uuid, self._confd).timeout()
+        noanswer_timeout = SwitchboardConfd(tenant_uuid, switchboard_uuid, self._confd).timeout()
         if not noanswer_timeout:
             logger.debug('Switchboard %s: ignoring no answer timeout = %s', switchboard_uuid, noanswer_timeout)
             return
@@ -157,7 +153,7 @@ class SwitchboardsService:
             user_uuid,
             line_id
         )
-        if not Switchboard(tenant_uuid, switchboard_uuid, self._confd).exists():
+        if not SwitchboardConfd(tenant_uuid, switchboard_uuid, self._confd).exists():
             raise NoSuchSwitchboard(switchboard_uuid)
 
         try:
@@ -198,7 +194,7 @@ class SwitchboardsService:
             tenant_uuid,
             switchboard_uuid,
         )
-        if not Switchboard(tenant_uuid, switchboard_uuid, self._confd).exists():
+        if not SwitchboardConfd(tenant_uuid, switchboard_uuid, self._confd).exists():
             raise NoSuchSwitchboard(switchboard_uuid)
 
         try:
@@ -219,7 +215,7 @@ class SwitchboardsService:
             hold_bridge = self._ari.bridges.createWithId(type='holding', bridgeId=hold_bridge_id)
 
         if len(hold_bridge.json['channels']) == 0:
-            moh_class = Switchboard(tenant_uuid, switchboard_uuid, self._confd).hold_moh()
+            moh_class = SwitchboardConfd(tenant_uuid, switchboard_uuid, self._confd).hold_moh()
             if moh_class:
                 hold_bridge.startMoh(mohClass=moh_class)
             else:
@@ -252,7 +248,7 @@ class SwitchboardsService:
             tenant_uuid,
             switchboard_uuid,
         )
-        if not Switchboard(tenant_uuid, switchboard_uuid, self._confd).exists():
+        if not SwitchboardConfd(tenant_uuid, switchboard_uuid, self._confd).exists():
             raise NoSuchSwitchboard(switchboard_uuid)
 
         bridge_id = BRIDGE_HOLD_ID.format(uuid=switchboard_uuid)
@@ -276,7 +272,7 @@ class SwitchboardsService:
 
     def answer_held_call(self, tenant_uuid, switchboard_uuid, held_call_id,
                          user_uuid, line_id=None):
-        if not Switchboard(tenant_uuid, switchboard_uuid, self._confd).exists():
+        if not SwitchboardConfd(tenant_uuid, switchboard_uuid, self._confd).exists():
             raise NoSuchSwitchboard(switchboard_uuid)
 
         try:
