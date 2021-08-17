@@ -33,6 +33,8 @@ from .http import (
     MyCallRecordStopResource,
     MyCallAnswerResource,
 )
+from .initiator import Initiator
+from .initiator_thread import InitiatorThread
 from .services import CallsService
 from .stasis import CallsStasis
 
@@ -47,6 +49,7 @@ class Plugin:
         collectd = dependencies['collectd']
         token_changed_subscribe = dependencies['token_changed_subscribe']
         config = dependencies['config']
+        thread_manager = dependencies['thread_manager']
 
         amid_client = AmidClient(**config['amid'])
         token_changed_subscribe(amid_client.set_token)
@@ -80,6 +83,9 @@ class Plugin:
             notifier,
         )
         calls_bus_event_handler.subscribe(bus_consumer)
+        initiator = Initiator(auth_client, amid_client, confd_client)
+        initiator_thread = InitiatorThread(initiator)
+        thread_manager.manage(initiator_thread)
 
         api.add_resource(CallsResource, '/calls', resource_class_args=[calls_service])
         api.add_resource(MyCallsResource, '/users/me/calls', resource_class_args=[auth_client, calls_service])

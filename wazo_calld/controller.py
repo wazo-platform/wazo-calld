@@ -20,6 +20,7 @@ from .bus import CoreBusPublisher
 from .collectd import CoreCollectd
 from .http_server import api, HTTPServer
 from .service_discovery import self_check
+from .thread_manager import ThreadManager
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +38,7 @@ class Controller:
         self.status_aggregator = StatusAggregator()
         self.token_renewer = TokenRenewer(auth_client)
         self.token_status = TokenStatus()
+        self.thread_manager = ThreadManager()
         self._service_registration_params = ['wazo-calld',
                                              xivo_uuid,
                                              config['consul'],
@@ -59,6 +61,7 @@ class Controller:
                 'pubsub': self._pubsub,
                 'token_changed_subscribe': self.token_renewer.subscribe_to_token_change,
                 'next_token_changed_subscribe': self.token_renewer.subscribe_to_next_token_change,
+                'thread_manager': self.thread_manager,
             }
         )
 
@@ -82,9 +85,10 @@ class Controller:
         ari_thread = Thread(target=self.ari.run, name='ari_thread')
         ari_thread.start()
         try:
-            with self.token_renewer:
-                with ServiceCatalogRegistration(*self._service_registration_params):
-                    self.http_server.run()
+            with self.thread_manager:
+                with self.token_renewer:
+                    with ServiceCatalogRegistration(*self._service_registration_params):
+                        self.http_server.run()
         finally:
             logger.info('wazo-calld stopping...')
             self._pubsub.publish('stopping', None)

@@ -4,6 +4,7 @@ import uuid
 
 from hamcrest import (
     assert_that,
+    empty,
     has_entries,
     has_item,
 )
@@ -12,6 +13,7 @@ from xivo_test_helpers import until
 from .helpers.base import IntegrationTest
 from .helpers.ari_ import MockChannel
 from .helpers.calld import new_call_id
+from .helpers.confd import MockUser
 from .helpers.constants import XIVO_UUID
 from .helpers.wait_strategy import CalldEverythingOkWaitStrategy
 

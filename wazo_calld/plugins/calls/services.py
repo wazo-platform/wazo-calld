@@ -12,6 +12,7 @@ from wazo_calld.plugin_helpers.confd import User
 from wazo_calld.plugin_helpers.exceptions import (
     InvalidExtension,
     UserPermissionDenied,
+    WazoAmidError,
 )
 from xivo.asterisk.protocol_interface import protocol_interface_from_channel
 
