@@ -2,9 +2,11 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 import uuid
 
-from hamcrest import assert_that
-from hamcrest import has_entries
-from hamcrest import has_item
+from hamcrest import (
+    assert_that,
+    has_entries,
+    has_item,
+)
 from xivo_test_helpers import until
 
 from .helpers.base import IntegrationTest
@@ -177,3 +179,51 @@ class TestBusConsume(IntegrationTest):
             })))
 
         until.assert_(assert_function, tries=5)
+
+    def test_when_dnd_enable_event_then_pause_queue_member(self):
+        self.bus.send_user_dnd_update('123', True)
+
+        def assert_amid_request():
+            assert_that(
+                self.amid.requests()['requests'],
+                has_item(
+                    has_entries(
+                        {
+                            'method': 'POST',
+                            'path': '/1.0/action/QueuePause',
+                            'json': has_entries(
+                                {
+                                    'Interface': 'Local/123@usersharedlines',
+                                    'Paused': True,
+                                }
+                            ),
+                        }
+                    ),
+                ),
+            )
+
+        until.assert_(assert_amid_request, tries=5)
+
+    def test_when_dnd_disable_event_then_unpause_queue_member(self):
+        self.bus.send_user_dnd_update('123', False)
+
+        def assert_amid_request():
+            assert_that(
+                self.amid.requests()['requests'],
+                has_item(
+                    has_entries(
+                        {
+                            'method': 'POST',
+                            'path': '/1.0/action/QueuePause',
+                            'json': has_entries(
+                                {
+                                    'Interface': 'Local/123@usersharedlines',
+                                    'Paused': False,
+                                }
+                            ),
+                        }
+                    ),
+                ),
+            )
+
+        until.assert_(assert_amid_request, tries=5)

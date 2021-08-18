@@ -50,6 +50,10 @@ class CallsBusEventHandler:
         bus_consumer.on_ami_event('MixMonitorStart', self._mix_monitor_start)
         bus_consumer.on_ami_event('MixMonitorStop', self._mix_monitor_stop)
 
+        bus_consumer.on_event(
+            'users_services_dnd_updated', self._users_services_dnd_updated
+        )
+
     def _add_sip_call_id(self, event):
         if not event['Channel'].startswith('PJSIP/'):
             return
@@ -268,3 +272,12 @@ class CallsBusEventHandler:
             logger.debug('channel %s not found', channel_id)
             return
         self._relay_channel_updated(event)
+
+    def _users_services_dnd_updated(self, event):
+        user_uuid = event['user_uuid']
+        enabled = event['enabled']
+        interface = f'Local/{user_uuid}@usersharedlines'
+        if enabled:
+            ami.pause_queue_member(self.ami, interface)
+        else:
+            ami.unpause_queue_member(self.ami, interface)

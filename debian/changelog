@@ -1,3 +1,9 @@
+wazo-calld (21.11~20210812) wazo-dev-buster; urgency=medium
+
+  * Fix packaging
+
+ -- Wazo Maintainers <dev@wazo.community>  Thu, 12 Aug 2021 16:56:33 -0400
+
 wazo-calld (19.07) wazo-dev-stretch; urgency=medium
 
   * Rename xivo-ctid-ng to wazo-calld
