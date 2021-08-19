@@ -83,7 +83,12 @@ class Plugin:
             notifier,
         )
         calls_bus_event_handler.subscribe(bus_consumer)
-        initiator = Initiator(auth_client, amid_client, confd_client)
+
+        initiator_amid_client = AmidClient(**config['amid'])
+        initiator_confd_client = ConfdClient(**config['confd'])
+        initiator = Initiator(
+            auth_client, initiator_amid_client, initiator_confd_client,
+        )
         initiator_thread = InitiatorThread(initiator)
         thread_manager.manage(initiator_thread)
 
