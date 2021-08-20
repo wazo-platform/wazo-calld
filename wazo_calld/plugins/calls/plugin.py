@@ -55,7 +55,7 @@ class Plugin:
         token_changed_subscribe(amid_client.set_token)
 
         auth_client = AuthClient(**config['auth'])
-        confd_client = ConfdClient(timeout=90, **config['confd'])
+        confd_client = ConfdClient(**config['confd'])
         phoned_client = PhonedClient(**config['phoned'])
 
         token_changed_subscribe(confd_client.set_token)
