@@ -6,11 +6,12 @@ import threading
 
 from ari.exceptions import ARINotFound
 
-from xivo import dialaction
 from xivo.caller_id import assemble_caller_id
-from xivo.mallow.switchboard import SwitchboardFallbackSchema
 from wazo_calld.ari_ import DEFAULT_APPLICATION_NAME
-from wazo_calld.plugin_helpers.ari_ import AUTO_ANSWER_VARIABLES
+from wazo_calld.plugin_helpers.ari_ import (
+    AUTO_ANSWER_VARIABLES,
+    Channel,
+)
 from wazo_calld.plugin_helpers.confd import User
 from wazo_calld.plugin_helpers.exceptions import InvalidUserUUID
 
@@ -31,7 +32,6 @@ from .exceptions import (
 )
 
 logger = logging.getLogger(__name__)
-switchboard_fallback_schema = SwitchboardFallbackSchema()
 
 
 class SwitchboardsService:
@@ -90,9 +90,7 @@ class SwitchboardsService:
         calls = self.queued_calls(tenant_uuid, switchboard_uuid)
         self._notifier.queued_calls(tenant_uuid, switchboard_uuid, calls)
 
-        noanswer_timeout = SwitchboardConfd(
-            tenant_uuid, switchboard_uuid, self._confd
-        ).timeout()
+        noanswer_timeout = Channel(channel_id, self._ari).switchboard_timeout()
         if not noanswer_timeout:
             logger.debug(
                 'Switchboard %s: ignoring no answer timeout = %s',
@@ -101,10 +99,8 @@ class SwitchboardsService:
             )
             return
 
-        noanswer_fallback = self._confd.switchboards.relations(
-            switchboard_uuid
-        ).list_fallbacks()['noanswer_destination']
-        if not noanswer_fallback:
+        noanswer_fallback_action = Channel(channel_id, self._ari).switchboard_noanswer_fallback_action()
+        if not noanswer_fallback_action:
             logger.debug(
                 'Switchboard %s: ignoring no answer timeout because there is no fallback',
                 switchboard_uuid,
@@ -139,43 +135,12 @@ class SwitchboardsService:
             )
             return
 
-        fallbacks_confd = self._confd.switchboards.relations(
-            switchboard_uuid
-        ).list_fallbacks()
-        noanswer_destination_dialplan = switchboard_fallback_schema.load(
-            fallbacks_confd
-        )['noanswer']
-        action = dialaction.action(
-            noanswer_destination_dialplan['type'],
-            noanswer_destination_dialplan['subtype'],
-        )
         try:
-            self._ari.channels.setChannelVar(
-                channelId=call_id,
-                variable='XIVO_FWD_TYPE',
-                value='SWITCHBOARD_NOANSWER',
-            )
-            self._ari.channels.setChannelVar(
-                channelId=call_id,
-                variable='XIVO_FWD_SWITCHBOARD_NOANSWER_ACTION',
-                value=action,
-            )
-            if noanswer_destination_dialplan.get('actionarg1'):
-                self._ari.channels.setChannelVar(
-                    channelId=call_id,
-                    variable='XIVO_FWD_SWITCHBOARD_NOANSWER_ACTIONARG1',
-                    value=noanswer_destination_dialplan['actionarg1'],
-                )
-            if noanswer_destination_dialplan.get('actionarg2'):
-                self._ari.channels.setChannelVar(
-                    channelId=call_id,
-                    variable='XIVO_FWD_SWITCHBOARD_NOANSWER_ACTIONARG2',
-                    value=noanswer_destination_dialplan['actionarg2'],
-                )
+            # destination is already set by AGI switchboard_set_features
             self._ari.channels.continueInDialplan(
                 channelId=call_id,
                 context='switchboard',
-                extension='forward',
+                extension='noanswer',
                 priority='1',
             )
         except ARINotFound:

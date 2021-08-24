@@ -31,7 +31,6 @@ from .helpers.real_asterisk import RealAsteriskIntegrationTest
 from .helpers.constants import ENDPOINT_AUTOANSWER, VALID_TOKEN, VALID_TENANT
 from .helpers.confd import (
     MockSwitchboard,
-    MockSwitchboardFallback,
     MockLine,
     MockUser,
 )
@@ -294,11 +293,16 @@ class TestSwitchboardCallsQueued(TestSwitchboards):
         routing_key = 'switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid)
         bus_events = self.bus.accumulator(routing_key)
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid, timeout=2))
-        self.confd.set_switchboard_fallbacks(MockSwitchboardFallback(uuid=switchboard_uuid, noanswer_destination={'type': 'hangup', 'cause': 'busy'}))
         self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app=STASIS_APP,
             appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, VALID_TENANT, switchboard_uuid],
+            variables={
+                'variables': {
+                    'WAZO_SWITCHBOARD_FALLBACK_NOANSWER_ACTION': 'endcall:hangup',
+                    'WAZO_SWITCHBOARD_TIMEOUT': '2',
+                }
+            }
         )
 
         # synchronize with queued call event

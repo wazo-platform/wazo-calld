@@ -240,21 +240,6 @@ class MockSwitchboard:
         }
 
 
-class MockSwitchboardFallback:
-
-    def __init__(self, uuid, noanswer_destination=None):
-        self._uuid = uuid
-        self._noanswer_destination = noanswer_destination
-
-    def uuid(self):
-        return self._uuid
-
-    def to_dict(self):
-        return {
-            'noanswer_destination': self._noanswer_destination,
-        }
-
-
 class MockConference:
 
     def __init__(self, id, name=None, extension=None, context=None, tenant_uuid=None):

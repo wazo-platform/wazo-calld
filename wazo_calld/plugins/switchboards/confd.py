@@ -29,9 +29,6 @@ class Switchboard:
     def queue_moh(self):
         return self._get()['queue_music_on_hold']
 
-    def timeout(self):
-        return self._get()['timeout']
-
     def _get(self):
         try:
             return self._confd.switchboards.get(self.uuid, tenant_uuid=self.tenant_uuid)
