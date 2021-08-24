@@ -5,7 +5,10 @@ import random
 import unittest
 import uuid
 
-from ari.exceptions import ARINotInStasis
+from ari.exceptions import (
+    ARINotInStasis,
+    ARINotFound,
+)
 from hamcrest import (
     any_of,
     assert_that,
@@ -293,7 +296,7 @@ class TestSwitchboardCallsQueued(TestSwitchboards):
         routing_key = 'switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid)
         bus_events = self.bus.accumulator(routing_key)
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid, timeout=2))
-        self.ari.channels.originate(
+        queued_channel = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app=STASIS_APP,
             appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, VALID_TENANT, switchboard_uuid],
@@ -306,32 +309,18 @@ class TestSwitchboardCallsQueued(TestSwitchboards):
         )
 
         # synchronize with queued call event
-        until.true(bus_events.accumulate, tries=3)
+        until.true(bus_events.accumulate, timeout=3)
 
-        # wait for timeout
+        # noanswer timeout will expire during the next until.assert_
 
-        def event_received():
-            assert_that(
-                bus_events.accumulate(),
-                has_items(
-                    has_entries({
-                        'name': 'switchboard_queued_calls_updated',
-                        'data': has_entries({
-                            'switchboard_uuid': switchboard_uuid,
-                            'items': is_not(empty()),
-                        })
-                    }),
-                    has_entries({
-                        'name': 'switchboard_queued_calls_updated',
-                        'data': has_entries({
-                            'switchboard_uuid': switchboard_uuid,
-                            'items': empty(),
-                        })
-                    })
-                )
-            )
-        until.assert_(event_received, tries=4)
+        def call_was_forwarded():
+            try:
+                result = queued_channel.getChannelVar(variable='CHANNEL_WAS_FORWARDED')
+            except ARINotFound:
+                raise AssertionError('Variable CHANNEL_WAS_FORWARDED on channel {queued_channel.id} not found')
 
+            assert_that(result, has_entry('value', 'yes'))
+        until.assert_(call_was_forwarded, timeout=4)
 
     @unittest.skip
     def test_given_one_call_queued_answered_held_when_unhold_then_no_queued_calls_updated_bus_event(self):
