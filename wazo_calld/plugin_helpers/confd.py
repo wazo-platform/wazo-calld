@@ -1,4 +1,4 @@
-# Copyright 2016-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from requests import HTTPError
@@ -92,7 +92,6 @@ class Line:
 
     def interface(self):
         line = self._get()
-        # TODO PJSIP clean after migration
         protocol = line['protocol'].replace('sip', 'pjsip')
         return "{}/{}".format(protocol, line['name'])
 
