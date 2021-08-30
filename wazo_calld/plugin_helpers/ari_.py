@@ -303,6 +303,8 @@ class Channel:
             timeout_str = self._get_var('WAZO_SWITCHBOARD_TIMEOUT')
         except ARINotFound:
             return
+        if not timeout_str:
+            return
         try:
             return int(timeout_str)
         except ValueError:
