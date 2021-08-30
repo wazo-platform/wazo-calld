@@ -317,7 +317,7 @@ class TestSwitchboardCallsQueued(TestSwitchboards):
             try:
                 result = queued_channel.getChannelVar(variable='CHANNEL_WAS_FORWARDED')
             except ARINotFound:
-                raise AssertionError('Variable CHANNEL_WAS_FORWARDED on channel {queued_channel.id} not found')
+                raise AssertionError(f'Variable CHANNEL_WAS_FORWARDED on channel {queued_channel.id} not found')
 
             assert_that(result, has_entry('value', 'yes'))
         until.assert_(call_was_forwarded, timeout=4)
