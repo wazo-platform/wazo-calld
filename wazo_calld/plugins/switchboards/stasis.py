@@ -12,7 +12,6 @@ logger = logging.getLogger(__name__)
 
 
 class SwitchboardsStasis:
-
     def __init__(self, ari, confd, switchboard_notifier, switchboard_service):
         self._ari = ari.client
         self._core_ari = ari
@@ -37,13 +36,21 @@ class SwitchboardsStasis:
 
     def notify_all_switchboard_queued(self):
         for switchboard in self._confd.switchboards.list(recurse=True)['items']:
-            queued_calls = self._service.queued_calls(switchboard['tenant_uuid'], switchboard['uuid'])
-            self._notifier.queued_calls(switchboard['tenant_uuid'], switchboard['uuid'], queued_calls)
+            queued_calls = self._service.queued_calls(
+                switchboard['tenant_uuid'], switchboard['uuid']
+            )
+            self._notifier.queued_calls(
+                switchboard['tenant_uuid'], switchboard['uuid'], queued_calls
+            )
 
     def notify_all_switchboard_held(self):
         for switchboard in self._confd.switchboards.list(recurse=True)['items']:
-            held_calls = self._service.held_calls(switchboard['tenant_uuid'], switchboard['uuid'])
-            self._notifier.held_calls(switchboard['tenant_uuid'], switchboard['uuid'], held_calls)
+            held_calls = self._service.held_calls(
+                switchboard['tenant_uuid'], switchboard['uuid']
+            )
+            self._notifier.held_calls(
+                switchboard['tenant_uuid'], switchboard['uuid'], held_calls
+            )
 
     def stasis_start(self, event_objects, event):
         if len(event['args']) < 2:
@@ -84,9 +91,11 @@ class SwitchboardsStasis:
         try:
             self._ari.channels.get(channelId=queued_channel_id)
         except ARINotFound:
-            logger.warning('queued call %s hung up, cancelling answer from switchboard %s',
-                           queued_channel_id,
-                           switchboard_uuid)
+            logger.warning(
+                'queued call %s hung up, cancelling answer from switchboard %s',
+                queued_channel_id,
+                switchboard_uuid,
+            )
             operator_channel.hangup()
             return
 
@@ -122,9 +131,11 @@ class SwitchboardsStasis:
         try:
             self._ari.channels.get(channelId=held_channel_id)
         except ARINotFound:
-            logger.warning('held call %s hung up, cancelling answer from switchboard %s',
-                           held_channel_id,
-                           switchboard_uuid)
+            logger.warning(
+                'held call %s hung up, cancelling answer from switchboard %s',
+                held_channel_id,
+                switchboard_uuid,
+            )
             operator_channel.hangup()
             return
 

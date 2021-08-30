@@ -18,6 +18,7 @@ class TestSwitchboardService(TestCase):
     def test_moh_on_new_queued_call_when_defined(self):
         self.confd.switchboards.get.return_value = {'queue_music_on_hold': s.moh_class}
         bridge = self.ari.bridges.get.return_value
+        self.ari.channels.getChannelVar.return_value = {'value': 'mock'}
         bridge.json = {'channels': []}
 
         self.service.new_queued_call(self, s.tenant_uuid, s.switchboard_uuid)
@@ -27,6 +28,7 @@ class TestSwitchboardService(TestCase):
     def test_moh_on_new_queued_call_when_not_defined(self):
         self.confd.switchboards.get.return_value = {'queue_music_on_hold': None}
         bridge = self.ari.bridges.get.return_value
+        self.ari.channels.getChannelVar.return_value = {'value': 'mock'}
         bridge.json = {'channels': []}
 
         self.service.new_queued_call(self, s.tenant_uuid, s.switchboard_uuid)
@@ -34,7 +36,9 @@ class TestSwitchboardService(TestCase):
         bridge.startMoh.assert_called_once_with()
 
     def test_moh_on_hold_call_when_defined(self):
-        self.confd.switchboards.get.return_value = {'waiting_room_music_on_hold': s.moh_class}
+        self.confd.switchboards.get.return_value = {
+            'waiting_room_music_on_hold': s.moh_class
+        }
         bridge = self.ari.bridges.get.return_value
         self.ari.bridges.list.return_value = [bridge]
         bridge.json = {'channels': []}

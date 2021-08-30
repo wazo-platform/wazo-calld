@@ -71,6 +71,16 @@ class ConfdClient:
 
         requests.post(url, json=body)
 
+    def set_switchboard_fallbacks(self, *mock_switchboard_fallbacks):
+        url = self.url('_set_response')
+        body = {'response': 'switchboard_fallbacks',
+                'content': {
+                    switchboard_fallback.uuid(): switchboard_fallback.to_dict()
+                    for switchboard_fallback in mock_switchboard_fallbacks
+                }}
+
+        requests.post(url, json=body)
+
     def set_conferences(self, *mock_conferences):
         url = self.url('_set_response')
         body = {'response': 'conferences',
@@ -210,10 +220,11 @@ class MockLine:
 
 class MockSwitchboard:
 
-    def __init__(self, uuid, tenant_uuid=None, name=None):
+    def __init__(self, uuid, tenant_uuid=None, name=None, timeout=None):
         self._uuid = uuid
         self._tenant_uuid = tenant_uuid
         self._name = name
+        self._timeout = timeout
 
     def uuid(self):
         return self._uuid
@@ -223,6 +234,7 @@ class MockSwitchboard:
             'uuid': self._uuid,
             'tenant_uuid': self._tenant_uuid,
             'name': self._name,
+            'timeout': self._timeout,
             'waiting_room_music_on_hold': None,
             'queue_music_on_hold': None,
         }

@@ -298,6 +298,25 @@ class Channel:
 
         raise Exception('call failed to enter stasis')
 
+    def switchboard_timeout(self):
+        try:
+            timeout_str = self._get_var('WAZO_SWITCHBOARD_TIMEOUT')
+        except ARINotFound:
+            return
+        if not timeout_str:
+            return
+        try:
+            return int(timeout_str)
+        except ValueError:
+            logger.error('Ignoring invalid switchboard timeout "%s"', timeout_str)
+            return
+
+    def switchboard_noanswer_fallback_action(self):
+        try:
+            return self._get_var('WAZO_SWITCHBOARD_FALLBACK_NOANSWER_ACTION')
+        except ARINotFound:
+            return
+
     def _get_var(self, var):
         return self._ari.channels.getChannelVar(channelId=self.id, variable=var)['value']
 

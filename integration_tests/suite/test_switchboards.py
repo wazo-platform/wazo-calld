@@ -1,11 +1,14 @@
-# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import random
 import unittest
 import uuid
 
-from ari.exceptions import ARINotInStasis
+from ari.exceptions import (
+    ARINotInStasis,
+    ARINotFound,
+)
 from hamcrest import (
     any_of,
     assert_that,
@@ -287,6 +290,37 @@ class TestSwitchboardCallsQueued(TestSwitchboards):
                 )
             )
         until.assert_(event_received, tries=3)
+
+    def test_call_queued_reaches_timeout(self):
+        switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
+        routing_key = 'switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid)
+        bus_events = self.bus.accumulator(routing_key)
+        self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid, timeout=2))
+        queued_channel = self.ari.channels.originate(
+            endpoint=ENDPOINT_AUTOANSWER,
+            app=STASIS_APP,
+            appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, VALID_TENANT, switchboard_uuid],
+            variables={
+                'variables': {
+                    'WAZO_SWITCHBOARD_FALLBACK_NOANSWER_ACTION': 'endcall:hangup',
+                    'WAZO_SWITCHBOARD_TIMEOUT': '2',
+                }
+            }
+        )
+
+        # synchronize with queued call event
+        until.true(bus_events.accumulate, timeout=3)
+
+        # noanswer timeout will expire during the next until.assert_
+
+        def call_was_forwarded():
+            try:
+                result = queued_channel.getChannelVar(variable='CHANNEL_WAS_FORWARDED')
+            except ARINotFound:
+                raise AssertionError('Variable CHANNEL_WAS_FORWARDED on channel {queued_channel.id} not found')
+
+            assert_that(result, has_entry('value', 'yes'))
+        until.assert_(call_was_forwarded, timeout=4)
 
     @unittest.skip
     def test_given_one_call_queued_answered_held_when_unhold_then_no_queued_calls_updated_bus_event(self):
