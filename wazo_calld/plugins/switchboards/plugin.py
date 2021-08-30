@@ -26,6 +26,7 @@ class Plugin:
     def load(self, dependencies):
         api = dependencies['api']
         ari = dependencies['ari']
+        asyncio = dependencies['asyncio']
         bus_publisher = dependencies['bus_publisher']
         bus_consumer = dependencies['bus_consumer']
         config = dependencies['config']
@@ -50,7 +51,7 @@ class Plugin:
 
         switchboards_notifier = SwitchboardsNotifier(bus_publisher)
         switchboards_service = SwitchboardsService(
-            ari.client, confd_client, switchboards_notifier
+            ari.client, asyncio, confd_client, switchboards_notifier
         )
 
         switchboards_stasis = SwitchboardsStasis(

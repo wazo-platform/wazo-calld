@@ -10,10 +10,11 @@ from wazo_calld.plugins.switchboards.services import SwitchboardsService
 class TestSwitchboardService(TestCase):
     def setUp(self):
         self.ari = Mock()
+        self.asyncio = Mock()
         self.confd = Mock()
         self.notifier = Mock()
 
-        self.service = SwitchboardsService(self.ari, self.confd, self.notifier)
+        self.service = SwitchboardsService(self.ari, self.asyncio, self.confd, self.notifier)
 
     def test_moh_on_new_queued_call_when_defined(self):
         self.confd.switchboards.get.return_value = {'queue_music_on_hold': s.moh_class}

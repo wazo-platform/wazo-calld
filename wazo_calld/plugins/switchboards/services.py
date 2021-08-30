@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
-import threading
 
 from ari.exceptions import ARINotFound
 
@@ -35,8 +34,9 @@ logger = logging.getLogger(__name__)
 
 
 class SwitchboardsService:
-    def __init__(self, ari, confd, notifier):
+    def __init__(self, ari, asyncio, confd, notifier):
         self._ari = ari
+        self._asyncio = asyncio
         self._confd = confd
         self._notifier = notifier
 
@@ -113,12 +113,13 @@ class SwitchboardsService:
             channel_id,
             noanswer_timeout,
         )
-        timer = threading.Timer(
+        self._asyncio.call_later(
             noanswer_timeout,
             self.on_queued_call_noanswer_timeout,
-            args=(tenant_uuid, switchboard_uuid, channel_id),
+            tenant_uuid,
+            switchboard_uuid,
+            channel_id,
         )
-        timer.start()
 
     def on_queued_call_noanswer_timeout(self, tenant_uuid, switchboard_uuid, call_id):
         logger.debug(
