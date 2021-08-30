@@ -25,9 +25,4 @@ class CoreAsyncio:
         self._loop.call_soon_threadsafe(delay_wrapper)
 
     def stop(self):
-        if not self._loop:
-            return
-
-        self._loop.stop()
-        self._loop.close()
-        self._loop = asyncio.new_event_loop()
+        self._loop.call_soon_threadsafe(self._loop.stop)
