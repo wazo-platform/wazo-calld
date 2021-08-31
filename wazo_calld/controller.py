@@ -14,6 +14,7 @@ from xivo.status import StatusAggregator, TokenStatus
 from xivo.token_renewer import TokenRenewer
 
 from .ari_ import CoreARI
+from .asyncio_ import CoreAsyncio
 from .auth import init_master_tenant
 from .bus import CoreBusConsumer
 from .bus import CoreBusPublisher
@@ -30,6 +31,7 @@ class Controller:
         xivo_uuid = get_xivo_uuid(logger)
         auth_client = AuthClient(**config['auth'])
         self.ari = CoreARI(config['ari'])
+        self.asyncio = CoreAsyncio()
         self.bus_publisher = CoreBusPublisher(config)
         self.bus_consumer = CoreBusConsumer(config)
         self.collectd = CoreCollectd(config)
@@ -51,6 +53,7 @@ class Controller:
             dependencies={
                 'api': api,
                 'ari': self.ari,
+                'asyncio': self.asyncio,
                 'bus_publisher': self.bus_publisher,
                 'bus_consumer': self.bus_consumer,
                 'collectd': self.collectd,
@@ -81,6 +84,8 @@ class Controller:
         bus_consumer_thread.start()
         ari_thread = Thread(target=self.ari.run, name='ari_thread')
         ari_thread.start()
+        asyncio_thread = Thread(target=self.asyncio.run, name='asyncio_thread')
+        asyncio_thread.start()
         try:
             with self.token_renewer:
                 with ServiceCatalogRegistration(*self._service_registration_params):
@@ -88,10 +93,13 @@ class Controller:
         finally:
             logger.info('wazo-calld stopping...')
             self._pubsub.publish('stopping', None)
+            self.asyncio.stop()
             self.ari.stop()
             self.bus_consumer.should_stop = True
             self.collectd.stop()
             self.bus_publisher.stop()
+            logger.debug('joining asyncio thread')
+            asyncio_thread.join()
             logger.debug('joining ari thread')
             ari_thread.join()
             logger.debug('joining bus consumer thread')
