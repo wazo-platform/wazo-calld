@@ -127,6 +127,11 @@ paths:
       parameters:
       - $ref: '#/parameters/VoicemailID'
       - $ref: '#/parameters/VoicemailGreeting'
+      - name: body
+        in: body
+        required: true
+        schema:
+          format: binary
       consumes:
       - audio/wav
       tags:
@@ -182,6 +187,11 @@ paths:
       parameters:
       - $ref: '#/parameters/VoicemailID'
       - $ref: '#/parameters/VoicemailGreeting'
+      - name: body
+        in: body
+        required: true
+        schema:
+          format: binary
       consumes:
       - audio/wav
       tags:
@@ -361,6 +371,11 @@ paths:
       description: '**Required ACL:** `calld.users.me.voicemails.greetings.{greeting}.create`'
       parameters:
       - $ref: '#/parameters/VoicemailGreeting'
+      - name: body
+        in: body
+        required: true
+        schema:
+          format: binary
       consumes:
       - audio/wav
       tags:
@@ -416,6 +431,11 @@ paths:
       description: '**Required ACL:** `calld.users.me.voicemails.greetings.{greeting}.update`'
       parameters:
       - $ref: '#/parameters/VoicemailGreeting'
+      - name: body
+        in: body
+        required: true
+        schema:
+          format: binary
       consumes:
       - audio/wav
       tags:
