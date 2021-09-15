@@ -1,4 +1,4 @@
-# Copyright 2015-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from wazo_calld.exceptions import APIException
@@ -27,6 +27,12 @@ class NoSuchConferenceID(Exception):
     def __init__(self, conference_id):
         self.conference_id = conference_id
         super().__init__('No such conference ID "{}"'.format(conference_id))
+
+
+class NoSuchMeeting(Exception):
+    def __init__(self, meeting_uuid):
+        self.meeting_uuid = meeting_uuid
+        super().__init__('No such meeting: UUID "{}"'.format(meeting_uuid))
 
 
 class UserMissingMainLine(APIException):

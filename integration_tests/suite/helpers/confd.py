@@ -88,6 +88,13 @@ class ConfdClient:
 
         requests.post(url, json=body)
 
+    def set_meetings(self, *mock_meetings):
+        url = self.url('_set_response')
+        body = {'response': 'meetings',
+                'content': {meeting.uuid(): meeting.to_dict() for meeting in mock_meetings}}
+
+        requests.post(url, json=body)
+
     def set_moh(self, *mock_mohs):
         url = self.url('_set_response')
         body = {'response': 'moh',
@@ -265,6 +272,24 @@ class MockConference:
             'id': self._id,
             'name': self._name,
             'extensions': extensions,
+            'tenant_uuid': self._tenant_uuid,
+        }
+
+
+class MockMeeting:
+
+    def __init__(self, uuid, name=None, tenant_uuid=None):
+        self._uuid = uuid
+        self._name = name
+        self._tenant_uuid = tenant_uuid
+
+    def uuid(self):
+        return self._uuid
+
+    def to_dict(self):
+        return {
+            'uuid': self._uuid,
+            'name': self._name,
             'tenant_uuid': self._tenant_uuid,
         }
 

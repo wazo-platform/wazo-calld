@@ -1,0 +1,59 @@
+asyncapi: '2.0.0-rc1'
+id: 'urn:wazo:wazo-calld'
+info:
+  title: wazo-calld events
+  version: '1.0.0'
+channels:
+  calld.meetings.{meeting_id}.participants.joined:
+    publish:
+      message:
+        $ref: '#/components/messages/meeting_participant_joined'
+  calld.meetings.users.{user_uuid}.participants.joined:
+    publish:
+      message:
+        $ref: '#/components/messages/meeting_user_participant_joined'
+  calld.meetings.{meeting_id}.participants.left:
+    publish:
+      message:
+        $ref: '#/components/messages/meeting_participant_left'
+  calld.meetings.users.{user_uuid}.participants.left:
+    publish:
+      message:
+        $ref: '#/components/messages/meeting_user_participant_left'
+components:
+  messages:
+    meeting_participant_joined:
+      description: A new participant joined a meeting
+      payload:
+        $ref: '#/components/schemas/meeting-participant'
+    meeting_user_participant_joined:
+      description: A new participant joined a meeting. This event is accessible to users.
+      payload:
+        $ref: '#/components/schemas/meeting-participant'
+    meeting_participant_left:
+      description: A participant left a meeting
+      payload:
+        $ref: '#/components/schemas/meeting-participant'
+    meeting_user_participant_left:
+      description: A participant left a meeting. This event is accessible to users.
+      payload:
+        $ref: '#/components/schemas/meeting-participant'
+  schemas:
+    meeting-participant:
+      type: object
+      properties:
+        meeting_uuid:
+          type: string
+          description: The meeting UUID
+        caller_id_name:
+          type: string
+          description: The participant Caller ID name
+        caller_id_number:
+          type: string
+          description: The participant Caller ID number
+        call_id:
+          type: string
+          description: The participant call ID
+        user_uuid:
+          type: string
+          description: The participant user UUID. Null if the participant is not a user.

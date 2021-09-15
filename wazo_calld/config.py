@@ -97,6 +97,7 @@ _DEFAULT_CONFIG = {
         'dial_mobile': True,
         'endpoints': True,
         'faxes': True,
+        'meetings': True,
         'mobile': True,
         'relocates': True,
         'status': True,
