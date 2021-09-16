@@ -9,7 +9,6 @@ from xivo.mallow import fields
 
 
 class ParticipantSchema(Schema):
-
     class Meta:
         ordered = True
         unknown = EXCLUDE

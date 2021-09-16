@@ -12,7 +12,6 @@ logger = logging.getLogger(__name__)
 
 
 class MeetingsBusEventHandler:
-
     def __init__(self, confd, notifier, service):
         self._confd = confd
         self._notifier = notifier
@@ -30,7 +29,9 @@ class MeetingsBusEventHandler:
         try:
             meeting = Meeting.from_uuid(meeting_uuid, self._confd)
         except NoSuchMeeting:
-            logger.debug('Ignored participant joining meeting %s: no such meeting', meeting_uuid)
+            logger.debug(
+                'Ignored participant joining meeting %s: no such meeting', meeting_uuid
+            )
             return
 
         logger.debug('Participant joined meeting %s', meeting_uuid)
@@ -48,10 +49,13 @@ class MeetingsBusEventHandler:
 
         participant = participant_schema.load(raw_participant)
 
-        participants_already_present = self._service.list_participants(meeting.tenant_uuid,
-                                                                       meeting_uuid)
+        participants_already_present = self._service.list_participants(
+            meeting.tenant_uuid, meeting_uuid
+        )
 
-        self._notifier.participant_joined(meeting.tenant_uuid, meeting_uuid, participant, participants_already_present)
+        self._notifier.participant_joined(
+            meeting.tenant_uuid, meeting_uuid, participant, participants_already_present
+        )
 
     def _notify_participant_left(self, event):
         meeting_uuid = self._extract_meeting_uuid(event['Conference'])
@@ -61,7 +65,9 @@ class MeetingsBusEventHandler:
         try:
             meeting = Meeting.from_uuid(meeting_uuid, self._confd)
         except NoSuchMeeting:
-            logger.debug('Ignored participant joining meeting %s: no such meeting', meeting_uuid)
+            logger.debug(
+                'Ignored participant joining meeting %s: no such meeting', meeting_uuid
+            )
             return
 
         logger.debug('Participant left meeting %s', meeting_uuid)
@@ -79,10 +85,13 @@ class MeetingsBusEventHandler:
 
         participant = participant_schema.load(raw_participant)
 
-        participants_already_present = self._service.list_participants(meeting.tenant_uuid,
-                                                                       meeting_uuid)
+        participants_already_present = self._service.list_participants(
+            meeting.tenant_uuid, meeting_uuid
+        )
 
-        self._notifier.participant_left(meeting.tenant_uuid, meeting_uuid, participant, participants_already_present)
+        self._notifier.participant_left(
+            meeting.tenant_uuid, meeting_uuid, participant, participants_already_present
+        )
 
     def _extract_meeting_uuid(self, meeting_name):
         try:

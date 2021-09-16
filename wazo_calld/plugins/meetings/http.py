@@ -11,7 +11,6 @@ from .schemas import participant_schema
 
 
 class MeetingParticipantsResource(AuthResource):
-
     def __init__(self, meetings_service):
         self._service = meetings_service
 
@@ -27,7 +26,6 @@ class MeetingParticipantsResource(AuthResource):
 
 
 class MeetingParticipantsUserResource(AuthResource):
-
     def __init__(self, auth_client, meetings_service):
         self._auth_client = auth_client
         self._service = meetings_service
@@ -36,7 +34,9 @@ class MeetingParticipantsUserResource(AuthResource):
     def get(self, meeting_uuid):
         tenant = Tenant.autodetect()
         user_uuid = get_token_user_uuid_from_request(self._auth_client)
-        participants = self._service.user_list_participants(tenant.uuid, user_uuid, meeting_uuid)
+        participants = self._service.user_list_participants(
+            tenant.uuid, user_uuid, meeting_uuid
+        )
         items = {
             'items': participant_schema.dump(participants, many=True),
             'total': len(participants),

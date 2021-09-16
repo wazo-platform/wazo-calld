@@ -23,14 +23,17 @@ class Participants:
 
 
 class MeetingsNotifier:
-
     def __init__(self, bus_producer):
         self._bus_producer = bus_producer
 
-    def participant_joined(self, tenant_uuid, meeting_uuid, participant, participants_already_present):
+    def participant_joined(
+        self, tenant_uuid, meeting_uuid, participant, participants_already_present
+    ):
         participants = Participants(participant, *participants_already_present)
         for user_uuid_concerned in participants.valid_user_uuids():
-            user_event = UserParticipantJoinedMeetingEvent(meeting_uuid, participant, user_uuid_concerned)
+            user_event = UserParticipantJoinedMeetingEvent(
+                meeting_uuid, participant, user_uuid_concerned
+            )
             self._bus_producer.publish(user_event)
 
         headers = {
@@ -43,10 +46,14 @@ class MeetingsNotifier:
         meeting_event = ParticipantJoinedMeetingEvent(meeting_uuid, participant)
         self._bus_producer.publish(meeting_event, headers=headers)
 
-    def participant_left(self, tenant_uuid, meeting_uuid, participant, participants_already_present):
+    def participant_left(
+        self, tenant_uuid, meeting_uuid, participant, participants_already_present
+    ):
         participants = Participants(participant, *participants_already_present)
         for user_uuid_concerned in participants.valid_user_uuids():
-            user_event = UserParticipantLeftMeetingEvent(meeting_uuid, participant, user_uuid_concerned)
+            user_event = UserParticipantLeftMeetingEvent(
+                meeting_uuid, participant, user_uuid_concerned
+            )
             self._bus_producer.publish(user_event)
 
         headers = {

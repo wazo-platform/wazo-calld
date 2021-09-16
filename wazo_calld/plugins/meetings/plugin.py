@@ -37,5 +37,13 @@ class Plugin:
         )
         bus_event_handler.subscribe(bus_consumer)
 
-        api.add_resource(MeetingParticipantsResource, '/meetings/<meeting_uuid>/participants', resource_class_args=[meetings_service])
-        api.add_resource(MeetingParticipantsUserResource, '/users/me/meetings/<meeting_uuid>/participants', resource_class_args=[auth_client, meetings_service])
+        api.add_resource(
+            MeetingParticipantsResource,
+            '/meetings/<meeting_uuid>/participants',
+            resource_class_args=[meetings_service],
+        )
+        api.add_resource(
+            MeetingParticipantsUserResource,
+            '/users/me/meetings/<meeting_uuid>/participants',
+            resource_class_args=[auth_client, meetings_service],
+        )

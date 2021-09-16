@@ -23,7 +23,6 @@ logger = logging.getLogger(__name__)
 
 
 class MeetingsService:
-
     def __init__(self, amid, ari, confd):
         self._amid = amid
         self._ari = ari
@@ -34,7 +33,10 @@ class MeetingsService:
             raise NoSuchMeeting(tenant_uuid, meeting_uuid)
 
         try:
-            participant_list = self._amid.action('ConfBridgeList', {'Conference': f'wazo-meeting-{meeting_uuid}-confbridge'})
+            participant_list = self._amid.action(
+                'ConfBridgeList',
+                {'Conference': f'wazo-meeting-{meeting_uuid}-confbridge'},
+            )
         except AmidProtocolError as e:
             if e.message == 'No active conferences.':
                 return []
@@ -58,22 +60,25 @@ class MeetingsService:
                 'caller_id_name': participant_list_item['CallerIDName'],
                 'caller_id_number': participant_list_item['CallerIDNum'],
                 'call_id': participant_list_item['Uniqueid'],
-                'user_uuid': Channel(participant_list_item['Uniqueid'], self._ari).user(),
+                'user_uuid': Channel(
+                    participant_list_item['Uniqueid'], self._ari
+                ).user(),
             }
             try:
                 participant = participant_schema.load(raw_participant)
             except ValidationError as e:
-                raise MeetingParticipantError(tenant_uuid,
-                                              meeting_uuid,
-                                              participant_id=None,
-                                              message=str(e))
+                raise MeetingParticipantError(
+                    tenant_uuid, meeting_uuid, participant_id=None, message=str(e)
+                )
             result.append(participant)
 
         return result
 
     def user_list_participants(self, tenant_uuid, user_uuid, conference_id):
         participants = self.list_participants(tenant_uuid, conference_id)
-        user_is_participant = any(participant['user_uuid'] == user_uuid for participant in participants)
+        user_is_participant = any(
+            participant['user_uuid'] == user_uuid for participant in participants
+        )
         if not user_is_participant:
             raise UserNotParticipant(tenant_uuid, user_uuid, conference_id)
         return participants

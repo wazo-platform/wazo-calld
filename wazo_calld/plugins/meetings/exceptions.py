@@ -8,7 +8,9 @@ class MeetingParticipantError(APIException):
     def __init__(self, tenant_uuid, meeting_uuid, participant_id, message):
         super().__init__(
             status_code=500,
-            message='Error while operating on participants of meeting "{}": "{}"'.format(meeting_uuid, message),
+            message='Error while operating on participants of meeting "{}": "{}"'.format(
+                meeting_uuid, message
+            ),
             error_id='meeting-participant-error',
             resource='meeting-participant',
             details={
@@ -16,7 +18,7 @@ class MeetingParticipantError(APIException):
                 'tenant_uuid': tenant_uuid,
                 'original_message': message,
                 'participant_id': participant_id,
-            }
+            },
         )
 
 
@@ -38,12 +40,14 @@ class UserNotParticipant(APIException):
     def __init__(self, tenant_uuid, user_uuid, meeting_uuid):
         super().__init__(
             status_code=403,
-            message='User "{}" is not a participant of the meeting "{}"'.format(user_uuid, meeting_uuid),
+            message='User "{}" is not a participant of the meeting "{}"'.format(
+                user_uuid, meeting_uuid
+            ),
             error_id='user-not-participant',
             resource='meeting-participant',
             details={
                 'meeting_uuid': meeting_uuid,
                 'tenant_uuid': tenant_uuid,
                 'user_uuid': user_uuid,
-            }
+            },
         )
