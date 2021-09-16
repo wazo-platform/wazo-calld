@@ -15,6 +15,7 @@ from wazo_calld.plugin_helpers.exceptions import (
 from .exceptions import (
     MeetingParticipantError,
     NoSuchMeeting,
+    UserNotParticipant,
 )
 from .schemas import participant_schema
 
@@ -69,3 +70,10 @@ class MeetingsService:
             result.append(participant)
 
         return result
+
+    def user_list_participants(self, tenant_uuid, user_uuid, conference_id):
+        participants = self.list_participants(tenant_uuid, conference_id)
+        user_is_participant = any(participant['user_uuid'] == user_uuid for participant in participants)
+        if not user_is_participant:
+            raise UserNotParticipant(tenant_uuid, user_uuid, conference_id)
+        return participants

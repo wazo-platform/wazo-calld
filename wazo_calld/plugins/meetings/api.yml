@@ -1,0 +1,80 @@
+paths:
+  /meetings/{meeting_uuid}/participants:
+    get:
+      summary: List participants of a meeting
+      description: '**Required ACL:** `calld.meetings.{meeting_uuid}.participants.read`'
+      parameters:
+        - $ref: '#/parameters/MeetingUUID'
+      tags:
+        - meetings
+      responses:
+        '200':
+          description: The list of participant is returned
+          schema:
+            $ref: '#/definitions/ParticipantList'
+        '404':
+          $ref: '#/responses/NoSuchMeeting'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+  /users/me/meetings/{meeting_uuid}/participants:
+    get:
+      summary: List participants of a meeting as a user
+      description: '**Required ACL:** `calld.users.me.meetings.{meeting_uuid}.participants.read`'
+      parameters:
+        - $ref: '#/parameters/MeetingUUID'
+      tags:
+        - meetings
+        - users
+      responses:
+        '200':
+          description: The list of participant is returned
+          schema:
+            $ref: '#/definitions/ParticipantList'
+        '404':
+          $ref: '#/responses/NoSuchMeeting'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+responses:
+  NoSuchMeeting:
+    description: The specified meeting does not exist
+    schema:
+      $ref: '#/definitions/Error'
+parameters:
+  MeetingUUID:
+    name: meeting_uuid
+    in: path
+    description: Unique identifier of the meeting
+    required: true
+    type: string
+  ParticipantID:
+    name: participant_id
+    in: path
+    description: Unique identifier of the participant
+    required: true
+    type: string
+definitions:
+  ParticipantList:
+    type: object
+    properties:
+      items:
+        type: array
+        items:
+          $ref: '#/definitions/Participant'
+  Participant:
+    type: object
+    properties:
+      id:
+        description: The participant's ID
+        type: string
+      caller_id_name:
+        description: The participant's name
+        type: string
+      caller_id_num:
+        description: The participant's number
+        type: string
+      call_id:
+        description: The ID of the participant's call
+        type: string
+      user_uuid:
+        description: The UUID of the participant's user. `null` when there is no user.
+        type: string

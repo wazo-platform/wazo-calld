@@ -30,7 +30,20 @@ class NoSuchMeeting(APIException):
             details={
                 'meeting_id': meeting_id,
                 'tenant_uuid': tenant_uuid,
-            }
+            },
         )
 
 
+class UserNotParticipant(APIException):
+    def __init__(self, tenant_uuid, user_uuid, meeting_uuid):
+        super().__init__(
+            status_code=403,
+            message='User "{}" is not a participant of the meeting "{}"'.format(user_uuid, meeting_uuid),
+            error_id='user-not-participant',
+            resource='meeting-participant',
+            details={
+                'meeting_uuid': meeting_uuid,
+                'tenant_uuid': tenant_uuid,
+                'user_uuid': user_uuid,
+            }
+        )

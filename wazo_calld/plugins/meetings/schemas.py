@@ -14,7 +14,7 @@ class ParticipantSchema(Schema):
         ordered = True
         unknown = EXCLUDE
 
-    uuid = fields.String()
+    id = fields.String()
     caller_id_name = fields.String()
     caller_id_number = fields.String()
     call_id = fields.String()

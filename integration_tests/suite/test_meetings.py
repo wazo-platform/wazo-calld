@@ -69,7 +69,6 @@ class TestMeetingParticipants(TestMeetings):
         until.assert_(channel_is_in_meeting, channel, timeout=10)
         return channel.id
 
-    @unittest.skip
     def test_list_participants_with_no_confd(self):
         wrong_id = 14
 
@@ -80,7 +79,6 @@ class TestMeetingParticipants(TestMeetings):
                             'error_id': 'wazo-confd-unreachable',
                         })))
 
-    @unittest.skip
     def test_list_participants_with_no_amid(self):
         meeting_uuid = MEETING1_UUID
         self.confd.set_meetings(
@@ -94,7 +92,6 @@ class TestMeetingParticipants(TestMeetings):
                             'error_id': 'wazo-amid-error',
                         })))
 
-    @unittest.skip
     def test_list_participants_with_no_meetings(self):
         wrong_id = 14
 
@@ -103,7 +100,6 @@ class TestMeetingParticipants(TestMeetings):
                         'status_code': 404,
                     })))
 
-    @unittest.skip
     def test_list_participants_with_no_participants(self):
         meeting_uuid = MEETING1_UUID
         self.confd.set_meetings(
@@ -117,7 +113,6 @@ class TestMeetingParticipants(TestMeetings):
             'items': empty(),
         }))
 
-    @unittest.skip
     def test_user_list_participants_when_user_is_not_participant(self):
         user_uuid = 'user-uuid'
         meeting_uuid = MEETING1_UUID
@@ -132,7 +127,6 @@ class TestMeetingParticipants(TestMeetings):
                         'error_id': 'user-not-participant',
                     })))
 
-    @unittest.skip
     def test_user_list_participants_when_user_is_participant(self):
         user_uuid = 'user-uuid'
         meeting_uuid = MEETING1_UUID
@@ -153,7 +147,6 @@ class TestMeetingParticipants(TestMeetings):
             )
         }))
 
-    @unittest.skip
     def test_list_participants_with_two_participants(self):
         meeting_uuid = MEETING1_UUID
         self.confd.set_meetings(
