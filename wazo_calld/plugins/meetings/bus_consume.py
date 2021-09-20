@@ -11,6 +11,12 @@ from .schemas import participant_schema
 logger = logging.getLogger(__name__)
 
 
+EVENT_PREFIX = 'wazo-meeting-'
+EVENT_SUFFIX = '-confbridge'
+EVENT_PREFIX_LENGTH = len(EVENT_PREFIX)
+EVENT_SUFFIX_LENGTH = len(EVENT_SUFFIX)
+
+
 class MeetingsBusEventHandler:
     def __init__(self, confd, notifier, service):
         self._confd = confd
@@ -93,8 +99,12 @@ class MeetingsBusEventHandler:
             meeting.tenant_uuid, meeting_uuid, participant, participants_already_present
         )
 
-    def _extract_meeting_uuid(self, meeting_name):
+    @staticmethod
+    def _extract_meeting_uuid(meeting_name):
+        if not meeting_name.startswith(EVENT_PREFIX) or not meeting_name.endswith(EVENT_SUFFIX):
+            return
+
         try:
-            return meeting_name[len('wazo-meeting-'):-len('-confbridge')]
+            return meeting_name[EVENT_PREFIX_LENGTH:-EVENT_SUFFIX_LENGTH]
         except Exception:
             return
