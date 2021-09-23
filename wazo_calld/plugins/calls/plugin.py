@@ -1,7 +1,6 @@
 # Copyright 2015-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from wazo_auth_client import Client as AuthClient
 from wazo_confd_client import Client as ConfdClient
 from wazo_amid_client import Client as AmidClient
 from xivo.pubsub import CallbackCollector
@@ -51,7 +50,6 @@ class Plugin:
         amid_client = AmidClient(**config['amid'])
         token_changed_subscribe(amid_client.set_token)
 
-        auth_client = AuthClient(**config['auth'])
         confd_client = ConfdClient(**config['confd'])
         phoned_client = PhonedClient(**config['phoned'])
 
@@ -81,24 +79,25 @@ class Plugin:
         )
         calls_bus_event_handler.subscribe(bus_consumer)
 
-        api.add_resource(CallsResource, '/calls', resource_class_args=[calls_service])
-        api.add_resource(MyCallsResource, '/users/me/calls', resource_class_args=[auth_client, calls_service])
-        api.add_resource(CallResource, '/calls/<call_id>', resource_class_args=[calls_service])
-        api.add_resource(CallMuteStartResource, '/calls/<call_id>/mute/start', resource_class_args=[calls_service])
-        api.add_resource(CallMuteStopResource, '/calls/<call_id>/mute/stop', resource_class_args=[calls_service])
-        api.add_resource(CallDtmfResource, '/calls/<call_id>/dtmf', resource_class_args=[calls_service])
-        api.add_resource(CallHoldResource, '/calls/<call_id>/hold/start', resource_class_args=[calls_service])
-        api.add_resource(CallUnholdResource, '/calls/<call_id>/hold/stop', resource_class_args=[calls_service])
-        api.add_resource(CallRecordStartResource, '/calls/<call_id>/record/start', resource_class_args=[calls_service])
-        api.add_resource(CallRecordStopResource, '/calls/<call_id>/record/stop', resource_class_args=[calls_service])
-        api.add_resource(CallAnswerResource, '/calls/<call_id>/answer', resource_class_args=[calls_service])
-        api.add_resource(MyCallResource, '/users/me/calls/<call_id>', resource_class_args=[auth_client, calls_service])
-        api.add_resource(MyCallMuteStartResource, '/users/me/calls/<call_id>/mute/start', resource_class_args=[auth_client, calls_service])
-        api.add_resource(MyCallMuteStopResource, '/users/me/calls/<call_id>/mute/stop', resource_class_args=[auth_client, calls_service])
-        api.add_resource(MyCallDtmfResource, '/users/me/calls/<call_id>/dtmf', resource_class_args=[auth_client, calls_service])
-        api.add_resource(MyCallHoldResource, '/users/me/calls/<call_id>/hold/start', resource_class_args=[auth_client, calls_service])
-        api.add_resource(MyCallUnholdResource, '/users/me/calls/<call_id>/hold/stop', resource_class_args=[auth_client, calls_service])
-        api.add_resource(MyCallRecordStartResource, '/users/me/calls/<call_id>/record/start', resource_class_args=[auth_client, calls_service])
-        api.add_resource(MyCallRecordStopResource, '/users/me/calls/<call_id>/record/stop', resource_class_args=[auth_client, calls_service])
-        api.add_resource(MyCallAnswerResource, '/users/me/calls/<call_id>/answer', resource_class_args=[auth_client, calls_service])
-        api.add_resource(ConnectCallToUserResource, '/calls/<call_id>/user/<user_uuid>', resource_class_args=[calls_service])
+        kwargs = {'resource_class_args': [calls_service]}
+        api.add_resource(CallsResource, '/calls', **kwargs)
+        api.add_resource(MyCallsResource, '/users/me/calls', **kwargs)
+        api.add_resource(CallResource, '/calls/<call_id>', **kwargs)
+        api.add_resource(CallMuteStartResource, '/calls/<call_id>/mute/start', **kwargs)
+        api.add_resource(CallMuteStopResource, '/calls/<call_id>/mute/stop', **kwargs)
+        api.add_resource(CallDtmfResource, '/calls/<call_id>/dtmf', **kwargs)
+        api.add_resource(CallHoldResource, '/calls/<call_id>/hold/start', **kwargs)
+        api.add_resource(CallUnholdResource, '/calls/<call_id>/hold/stop', **kwargs)
+        api.add_resource(CallRecordStartResource, '/calls/<call_id>/record/start', **kwargs)
+        api.add_resource(CallRecordStopResource, '/calls/<call_id>/record/stop', **kwargs)
+        api.add_resource(CallAnswerResource, '/calls/<call_id>/answer', **kwargs)
+        api.add_resource(MyCallResource, '/users/me/calls/<call_id>', **kwargs)
+        api.add_resource(MyCallMuteStartResource, '/users/me/calls/<call_id>/mute/start', **kwargs)
+        api.add_resource(MyCallMuteStopResource, '/users/me/calls/<call_id>/mute/stop', **kwargs)
+        api.add_resource(MyCallDtmfResource, '/users/me/calls/<call_id>/dtmf', **kwargs)
+        api.add_resource(MyCallHoldResource, '/users/me/calls/<call_id>/hold/start', **kwargs)
+        api.add_resource(MyCallUnholdResource, '/users/me/calls/<call_id>/hold/stop', **kwargs)
+        api.add_resource(MyCallRecordStartResource, '/users/me/calls/<call_id>/record/start', **kwargs)
+        api.add_resource(MyCallRecordStopResource, '/users/me/calls/<call_id>/record/stop', **kwargs)
+        api.add_resource(MyCallAnswerResource, '/users/me/calls/<call_id>/answer', **kwargs)
+        api.add_resource(ConnectCallToUserResource, '/calls/<call_id>/user/<user_uuid>', **kwargs)

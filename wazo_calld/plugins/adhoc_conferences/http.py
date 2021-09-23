@@ -1,4 +1,4 @@
-# Copyright 2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2020-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from flask import request
@@ -12,13 +12,12 @@ from .schemas import adhoc_conference_creation_schema
 
 class UserAdhocConferencesResource(AuthResource):
 
-    def __init__(self, adhoc_conference_service, auth_client):
+    def __init__(self, adhoc_conference_service):
         self._adhoc_conference_service = adhoc_conference_service
-        self._auth_client = auth_client
 
     @required_acl('calld.users.me.conferences.adhoc.create')
     def post(self):
-        user_uuid = get_token_user_uuid_from_request(self._auth_client)
+        user_uuid = get_token_user_uuid_from_request()
         request_body = adhoc_conference_creation_schema.load(request.get_json(force=True))
 
         adhoc_conference = self._adhoc_conference_service.create_from_user(
@@ -32,13 +31,12 @@ class UserAdhocConferencesResource(AuthResource):
 
 class UserAdhocConferenceResource(AuthResource):
 
-    def __init__(self, adhoc_conference_service, auth_client):
+    def __init__(self, adhoc_conference_service):
         self._adhoc_conference_service = adhoc_conference_service
-        self._auth_client = auth_client
 
     @required_acl('calld.users.me.conferences.adhoc.delete')
     def delete(self, adhoc_conference_id):
-        user_uuid = get_token_user_uuid_from_request(self._auth_client)
+        user_uuid = get_token_user_uuid_from_request()
         self._adhoc_conference_service.delete_from_user(adhoc_conference_id, user_uuid)
 
         return '', 204
@@ -46,13 +44,12 @@ class UserAdhocConferenceResource(AuthResource):
 
 class UserAdhocConferenceParticipantResource(AuthResource):
 
-    def __init__(self, adhoc_conference_service, auth_client):
+    def __init__(self, adhoc_conference_service):
         self._adhoc_conference_service = adhoc_conference_service
-        self._auth_client = auth_client
 
     @required_acl('calld.users.me.conferences.adhoc.participants.update')
     def put(self, adhoc_conference_id, call_id):
-        user_uuid = get_token_user_uuid_from_request(self._auth_client)
+        user_uuid = get_token_user_uuid_from_request()
         self._adhoc_conference_service.add_participant_from_user(
             adhoc_conference_id,
             call_id,
@@ -62,7 +59,7 @@ class UserAdhocConferenceParticipantResource(AuthResource):
 
     @required_acl('calld.users.me.conferences.adhoc.participants.delete')
     def delete(self, adhoc_conference_id, call_id):
-        user_uuid = get_token_user_uuid_from_request(self._auth_client)
+        user_uuid = get_token_user_uuid_from_request()
         self._adhoc_conference_service.remove_participant_from_user(
             adhoc_conference_id,
             call_id,

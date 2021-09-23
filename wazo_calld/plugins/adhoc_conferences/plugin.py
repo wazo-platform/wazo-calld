@@ -1,7 +1,6 @@
-# Copyright 2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2020-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from wazo_auth_client import Client as AuthClient
 from wazo_amid_client import Client as AmidClient
 from xivo.pubsub import CallbackCollector
 
@@ -25,7 +24,6 @@ class Plugin:
         token_changed_subscribe = dependencies['token_changed_subscribe']
 
         amid_client = AmidClient(**config['amid'])
-        auth_client = AuthClient(**config['auth'])
 
         token_changed_subscribe(amid_client.set_token)
 
@@ -37,6 +35,18 @@ class Plugin:
         ari.client_initialized_subscribe(startup_callback_collector.new_source())
         startup_callback_collector.subscribe(adhoc_conferences_stasis.initialize)
 
-        api.add_resource(UserAdhocConferencesResource, '/users/me/conferences/adhoc', resource_class_args=[adhoc_conferences_service, auth_client])
-        api.add_resource(UserAdhocConferenceResource, '/users/me/conferences/adhoc/<adhoc_conference_id>', resource_class_args=[adhoc_conferences_service, auth_client])
-        api.add_resource(UserAdhocConferenceParticipantResource, '/users/me/conferences/adhoc/<adhoc_conference_id>/participants/<call_id>', resource_class_args=[adhoc_conferences_service, auth_client])
+        api.add_resource(
+            UserAdhocConferencesResource,
+            '/users/me/conferences/adhoc',
+            resource_class_args=[adhoc_conferences_service],
+        )
+        api.add_resource(
+            UserAdhocConferenceResource,
+            '/users/me/conferences/adhoc/<adhoc_conference_id>',
+            resource_class_args=[adhoc_conferences_service],
+        )
+        api.add_resource(
+            UserAdhocConferenceParticipantResource,
+            '/users/me/conferences/adhoc/<adhoc_conference_id>/participants/<call_id>',
+            resource_class_args=[adhoc_conferences_service],
+        )

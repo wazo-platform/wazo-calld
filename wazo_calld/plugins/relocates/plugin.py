@@ -1,7 +1,6 @@
-# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from wazo_auth_client import Client as AuthClient
 from wazo_confd_client import Client as ConfdClient
 from wazo_amid_client import Client as AmidClient
 from xivo.pubsub import CallbackCollector
@@ -29,7 +28,6 @@ class Plugin:
         token_changed_subscribe = dependencies['token_changed_subscribe']
 
         amid_client = AmidClient(**config['amid'])
-        auth_client = AuthClient(**config['auth'])
         confd_client = ConfdClient(**config['confd'])
 
         token_changed_subscribe(amid_client.set_token)
@@ -47,7 +45,8 @@ class Plugin:
         ari.client_initialized_subscribe(startup_callback_collector.new_source())
         startup_callback_collector.subscribe(relocates_stasis.initialize)
 
-        api.add_resource(UserRelocatesResource, '/users/me/relocates', resource_class_args=[auth_client, relocates_service])
-        api.add_resource(UserRelocateResource, '/users/me/relocates/<relocate_uuid>', resource_class_args=[auth_client, relocates_service])
-        api.add_resource(UserRelocateCompleteResource, '/users/me/relocates/<relocate_uuid>/complete', resource_class_args=[auth_client, relocates_service])
-        api.add_resource(UserRelocateCancelResource, '/users/me/relocates/<relocate_uuid>/cancel', resource_class_args=[auth_client, relocates_service])
+        kwargs = {'resource_class_args': [relocates_service]}
+        api.add_resource(UserRelocatesResource, '/users/me/relocates', **kwargs)
+        api.add_resource(UserRelocateResource, '/users/me/relocates/<relocate_uuid>', **kwargs)
+        api.add_resource(UserRelocateCompleteResource, '/users/me/relocates/<relocate_uuid>/complete', **kwargs)
+        api.add_resource(UserRelocateCancelResource, '/users/me/relocates/<relocate_uuid>/cancel', **kwargs)

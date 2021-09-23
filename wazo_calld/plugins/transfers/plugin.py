@@ -1,7 +1,6 @@
-# Copyright 2016-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from wazo_auth_client import Client as AuthClient
 from wazo_confd_client import Client as ConfdClient
 from wazo_amid_client import Client as AmidClient
 
@@ -33,7 +32,6 @@ class Plugin:
         token_changed_subscribe = dependencies['token_changed_subscribe']
 
         amid_client = AmidClient(**config['amid'])
-        auth_client = AuthClient(**config['auth'])
         confd_client = ConfdClient(**config['confd'])
 
         token_changed_subscribe(amid_client.set_token)
@@ -54,9 +52,10 @@ class Plugin:
 
         state_factory.set_dependencies(amid_client, ari.client, notifier, transfers_service, state_persistor, transfer_lock)
 
-        api.add_resource(TransfersResource, '/transfers', resource_class_args=[transfers_service])
-        api.add_resource(TransferResource, '/transfers/<transfer_id>', resource_class_args=[transfers_service])
-        api.add_resource(TransferCompleteResource, '/transfers/<transfer_id>/complete', resource_class_args=[transfers_service])
-        api.add_resource(UserTransfersResource, '/users/me/transfers', resource_class_args=[auth_client, transfers_service])
-        api.add_resource(UserTransferResource, '/users/me/transfers/<transfer_id>', resource_class_args=[auth_client, transfers_service])
-        api.add_resource(UserTransferCompleteResource, '/users/me/transfers/<transfer_id>/complete', resource_class_args=[auth_client, transfers_service])
+        kwargs = {'resource_class_args': [transfers_service]}
+        api.add_resource(TransfersResource, '/transfers', **kwargs)
+        api.add_resource(TransferResource, '/transfers/<transfer_id>', **kwargs)
+        api.add_resource(TransferCompleteResource, '/transfers/<transfer_id>/complete', **kwargs)
+        api.add_resource(UserTransfersResource, '/users/me/transfers', **kwargs)
+        api.add_resource(UserTransferResource, '/users/me/transfers/<transfer_id>', **kwargs)
+        api.add_resource(UserTransferCompleteResource, '/users/me/transfers/<transfer_id>/complete', **kwargs)

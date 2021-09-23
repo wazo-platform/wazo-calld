@@ -45,15 +45,14 @@ class CallsResource(AuthResource):
 
 class MyCallsResource(AuthResource):
 
-    def __init__(self, auth_client, calls_service):
-        self.auth_client = auth_client
+    def __init__(self, calls_service):
         self.calls_service = calls_service
 
     @required_acl('calld.users.me.calls.read')
     def get(self):
         application_filter = request.args.get('application')
         application_instance_filter = request.args.get('application_instance')
-        user_uuid = get_token_user_uuid_from_request(self.auth_client)
+        user_uuid = get_token_user_uuid_from_request()
 
         calls = self.calls_service.list_calls_user(user_uuid, application_filter, application_instance_filter)
 
@@ -65,7 +64,7 @@ class MyCallsResource(AuthResource):
     def post(self):
         request_body = user_call_request_schema.load(request.get_json(force=True))
 
-        user_uuid = get_token_user_uuid_from_request(self.auth_client)
+        user_uuid = get_token_user_uuid_from_request()
 
         call = self.calls_service.originate_user(request_body, user_uuid)
 
@@ -114,39 +113,36 @@ class CallMuteStopResource(AuthResource):
 
 class MyCallMuteStartResource(AuthResource):
 
-    def __init__(self, auth_client, calls_service):
-        self.auth_client = auth_client
+    def __init__(self, calls_service):
         self.calls_service = calls_service
 
     @required_acl('calld.users.me.calls.{call_id}.mute.start.update')
     def put(self, call_id):
-        user_uuid = get_token_user_uuid_from_request(self.auth_client)
+        user_uuid = get_token_user_uuid_from_request()
         self.calls_service.mute_user(call_id, user_uuid)
         return '', 204
 
 
 class MyCallMuteStopResource(AuthResource):
 
-    def __init__(self, auth_client, calls_service):
-        self.auth_client = auth_client
+    def __init__(self, calls_service):
         self.calls_service = calls_service
 
     @required_acl('calld.users.me.calls.{call_id}.mute.stop.update')
     def put(self, call_id):
-        user_uuid = get_token_user_uuid_from_request(self.auth_client)
+        user_uuid = get_token_user_uuid_from_request()
         self.calls_service.unmute_user(call_id, user_uuid)
         return '', 204
 
 
 class MyCallResource(AuthResource):
 
-    def __init__(self, auth_client, calls_service):
-        self.auth_client = auth_client
+    def __init__(self, calls_service):
         self.calls_service = calls_service
 
     @required_acl('calld.users.me.calls.{call_id}.delete')
     def delete(self, call_id):
-        user_uuid = get_token_user_uuid_from_request(self.auth_client)
+        user_uuid = get_token_user_uuid_from_request()
         self.calls_service.hangup_user(call_id, user_uuid)
 
         return None, 204
@@ -166,14 +162,13 @@ class CallDtmfResource(AuthResource):
 
 class MyCallDtmfResource(AuthResource):
 
-    def __init__(self, auth_client, calls_service):
-        self.auth_client = auth_client
+    def __init__(self, calls_service):
         self.calls_service = calls_service
 
     @required_acl('calld.users.me.calls.{call_id}.dtmf.update')
     def put(self, call_id):
         request_args = call_dtmf_schema.load(request.args)
-        user_uuid = get_token_user_uuid_from_request(self.auth_client)
+        user_uuid = get_token_user_uuid_from_request()
         self.calls_service.send_dtmf_user(call_id, user_uuid, request_args['digits'])
         return '', 204
 
@@ -202,26 +197,24 @@ class CallUnholdResource(AuthResource):
 
 class MyCallHoldResource(AuthResource):
 
-    def __init__(self, auth_client, calls_service):
-        self.auth_client = auth_client
+    def __init__(self, calls_service):
         self.calls_service = calls_service
 
     @required_acl('calld.users.me.calls.{call_id}.hold.start.update')
     def put(self, call_id):
-        user_uuid = get_token_user_uuid_from_request(self.auth_client)
+        user_uuid = get_token_user_uuid_from_request()
         self.calls_service.hold_user(call_id, user_uuid)
         return '', 204
 
 
 class MyCallUnholdResource(AuthResource):
 
-    def __init__(self, auth_client, calls_service):
-        self.auth_client = auth_client
+    def __init__(self, calls_service):
         self.calls_service = calls_service
 
     @required_acl('calld.users.me.calls.{call_id}.hold.stop.update')
     def put(self, call_id):
-        user_uuid = get_token_user_uuid_from_request(self.auth_client)
+        user_uuid = get_token_user_uuid_from_request()
         self.calls_service.unhold_user(call_id, user_uuid)
         return '', 204
 
@@ -250,26 +243,24 @@ class CallRecordStopResource(AuthResource):
 
 class MyCallRecordStopResource(AuthResource):
 
-    def __init__(self, auth_client, calls_service):
-        self.auth_client = auth_client
+    def __init__(self, calls_service):
         self.calls_service = calls_service
 
     @required_acl('calld.users.me.calls.{call_id}.record.stop.update')
     def put(self, call_id):
-        user_uuid = get_token_user_uuid_from_request(self.auth_client)
+        user_uuid = get_token_user_uuid_from_request()
         self.calls_service.record_stop_user(call_id, user_uuid)
         return '', 204
 
 
 class MyCallRecordStartResource(AuthResource):
 
-    def __init__(self, auth_client, calls_service):
-        self.auth_client = auth_client
+    def __init__(self, calls_service):
         self.calls_service = calls_service
 
     @required_acl('calld.users.me.calls.{call_id}.record.start.update')
     def put(self, call_id):
-        user_uuid = get_token_user_uuid_from_request(self.auth_client)
+        user_uuid = get_token_user_uuid_from_request()
         self.calls_service.record_start_user(call_id, user_uuid)
         return '', 204
 
@@ -287,13 +278,12 @@ class CallAnswerResource(AuthResource):
 
 class MyCallAnswerResource(AuthResource):
 
-    def __init__(self, auth_client, calls_service):
-        self.auth_client = auth_client
+    def __init__(self, calls_service):
         self.calls_service = calls_service
 
     @required_acl('calld.users.me.calls.{call_id}.answer.update')
     def put(self, call_id):
-        user_uuid = get_token_user_uuid_from_request(self.auth_client)
+        user_uuid = get_token_user_uuid_from_request()
         self.calls_service.answer_user(call_id, user_uuid)
         return '', 204
 

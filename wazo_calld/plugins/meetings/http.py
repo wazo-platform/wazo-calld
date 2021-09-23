@@ -26,14 +26,13 @@ class MeetingParticipantsResource(AuthResource):
 
 
 class MeetingParticipantsUserResource(AuthResource):
-    def __init__(self, auth_client, meetings_service):
-        self._auth_client = auth_client
+    def __init__(self, meetings_service):
         self._service = meetings_service
 
     @required_acl('calld.users.me.meetings.{meeting_uuid}.participants.read')
     def get(self, meeting_uuid):
         tenant = Tenant.autodetect()
-        user_uuid = get_token_user_uuid_from_request(self._auth_client)
+        user_uuid = get_token_user_uuid_from_request()
         participants = self._service.user_list_participants(
             tenant.uuid, user_uuid, meeting_uuid
         )

@@ -1,4 +1,4 @@
-# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from flask import request
@@ -15,13 +15,12 @@ from .schemas import (
 
 class UserRelocatesResource(AuthResource):
 
-    def __init__(self, auth_client, relocates_service):
-        self._auth_client = auth_client
+    def __init__(self, relocates_service):
         self._relocates_service = relocates_service
 
     @required_acl('calld.users.me.relocates.read')
     def get(self):
-        user_uuid = get_token_user_uuid_from_request(self._auth_client)
+        user_uuid = get_token_user_uuid_from_request()
         relocates = self._relocates_service.list_from_user(user_uuid)
 
         return {
@@ -31,7 +30,7 @@ class UserRelocatesResource(AuthResource):
     @required_acl('calld.users.me.relocates.create')
     def post(self):
         request_body = user_relocate_request_schema.load(request.get_json(force=True))
-        user_uuid = get_token_user_uuid_from_request(self._auth_client)
+        user_uuid = get_token_user_uuid_from_request()
         relocate = self._relocates_service.create_from_user(request_body['initiator_call'],
                                                             request_body['destination'],
                                                             request_body['location'],
@@ -45,13 +44,12 @@ class UserRelocatesResource(AuthResource):
 
 class UserRelocateResource(AuthResource):
 
-    def __init__(self, auth_client, relocates_service):
-        self._auth_client = auth_client
+    def __init__(self, relocates_service):
         self._relocates_service = relocates_service
 
     @required_acl('calld.users.me.relocates.{relocate_uuid}.read')
     def get(self, relocate_uuid):
-        user_uuid = get_token_user_uuid_from_request(self._auth_client)
+        user_uuid = get_token_user_uuid_from_request()
         relocate = self._relocates_service.get_from_user(relocate_uuid, user_uuid)
 
         result = relocate_schema.dump(relocate)
@@ -60,25 +58,23 @@ class UserRelocateResource(AuthResource):
 
 class UserRelocateCompleteResource(AuthResource):
 
-    def __init__(self, auth_client, relocates_service):
-        self._auth_client = auth_client
+    def __init__(self, relocates_service):
         self._relocates_service = relocates_service
 
     @required_acl('calld.users.me.relocates.{relocate_uuid}.complete.update')
     def put(self, relocate_uuid):
-        user_uuid = get_token_user_uuid_from_request(self._auth_client)
+        user_uuid = get_token_user_uuid_from_request()
         self._relocates_service.complete_from_user(relocate_uuid, user_uuid)
         return '', 204
 
 
 class UserRelocateCancelResource(AuthResource):
 
-    def __init__(self, auth_client, relocates_service):
-        self._auth_client = auth_client
+    def __init__(self, relocates_service):
         self._relocates_service = relocates_service
 
     @required_acl('calld.users.me.relocates.{relocate_uuid}.cancel.update')
     def put(self, relocate_uuid):
-        user_uuid = get_token_user_uuid_from_request(self._auth_client)
+        user_uuid = get_token_user_uuid_from_request()
         self._relocates_service.cancel_from_user(relocate_uuid, user_uuid)
         return '', 204

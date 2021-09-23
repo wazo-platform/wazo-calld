@@ -1,4 +1,4 @@
-# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from xivo.tenant_flask_helpers import Tenant
@@ -28,14 +28,13 @@ class ParticipantsResource(AuthResource):
 
 class ParticipantsUserResource(AuthResource):
 
-    def __init__(self, auth_client, conferences_service):
-        self._auth_client = auth_client
+    def __init__(self, conferences_service):
         self._service = conferences_service
 
     @required_acl('calld.users.me.conferences.{conference_id}.participants.read')
     def get(self, conference_id):
         tenant = Tenant.autodetect()
-        user_uuid = get_token_user_uuid_from_request(self._auth_client)
+        user_uuid = get_token_user_uuid_from_request()
         participants = self._service.user_list_participants(tenant.uuid, user_uuid, conference_id)
         items = {
             'items': participant_schema.dump(participants, many=True),

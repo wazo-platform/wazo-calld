@@ -18,15 +18,13 @@ extract_token_id_from_query_or_header = auth_verifier.extract_token_id_from_quer
 Unauthorized = auth_verifier.Unauthorized
 
 
-def get_token_user_uuid_from_request(auth_client, token=None):
-    if not token:
-        token = request.headers.get('X-Auth-Token') or request.args.get('token')
+def get_token_user_uuid_from_request():
     try:
-        token_infos = auth_client.token.get(token)
+        user_uuid = request.user_uuid
     except HTTPError as e:
         logger.warning('HTTP error from wazo-auth while getting token: %s', e)
         raise TokenWithUserUUIDRequiredError()
-    user_uuid = token_infos['metadata']['pbx_user_uuid']
+
     if not user_uuid:
         raise TokenWithUserUUIDRequiredError()
     return user_uuid

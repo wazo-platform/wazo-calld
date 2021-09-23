@@ -1,9 +1,8 @@
-# Copyright 2016-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
 
-from wazo_auth_client import Client as AuthClient
 from wazo_confd_client import Client as ConfdClient
 
 from .bus_consume import VoicemailsBusEventHandler
@@ -41,7 +40,6 @@ class Plugin:
         status_aggregator = dependencies['status_aggregator']
         token_changed_subscribe = dependencies['token_changed_subscribe']
 
-        auth_client = AuthClient(**config['auth'])
         confd_client = ConfdClient(**config['confd'])
 
         token_changed_subscribe(confd_client.set_token)
@@ -80,22 +78,22 @@ class Plugin:
 
         api.add_resource(UserVoicemailResource,
                          '/users/me/voicemails',
-                         resource_class_args=[auth_client, voicemails_service])
+                         resource_class_args=[voicemails_service])
         api.add_resource(UserVoicemailFolderResource,
                          '/users/me/voicemails/folders/<folder_id>',
-                         resource_class_args=[auth_client, voicemails_service])
+                         resource_class_args=[voicemails_service])
         api.add_resource(UserVoicemailGreetingResource,
                          '/users/me/voicemails/greetings/<greeting>',
-                         resource_class_args=[auth_client, voicemails_service])
+                         resource_class_args=[voicemails_service])
         api.add_resource(UserVoicemailGreetingCopyResource,
                          '/users/me/voicemails/greetings/<greeting>/copy',
-                         resource_class_args=[auth_client, voicemails_service])
+                         resource_class_args=[voicemails_service])
         api.add_resource(UserVoicemailMessageResource,
                          '/users/me/voicemails/messages/<message_id>',
-                         resource_class_args=[auth_client, voicemails_service])
+                         resource_class_args=[voicemails_service])
         api.add_resource(UserVoicemailRecordingResource,
                          '/users/me/voicemails/messages/<message_id>/recording',
-                         resource_class_args=[auth_client, voicemails_service])
+                         resource_class_args=[voicemails_service])
 
     def _provide_status(self, status):
         status['plugins']['voicemails']['cache_items'] = len(self._voicemail_cache)
