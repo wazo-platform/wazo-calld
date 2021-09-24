@@ -39,6 +39,7 @@ ROUTING_KEY_MAPPING = {
     'application_edited': 'config.applications.edited',
     'line_deleted': 'config.line.deleted',
     'line_edited': 'config.line.edited',
+    'meeting_deleted': 'config.meetings.deleted',
     'moh_created': 'config.moh.created',
     'moh_deleted': 'config.moh.deleted',
     'switchboard_deleted': 'config.switchboards.*.deleted',

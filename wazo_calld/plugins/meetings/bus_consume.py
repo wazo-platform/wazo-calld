@@ -26,6 +26,7 @@ class MeetingsBusEventHandler:
     def subscribe(self, bus_consumer):
         bus_consumer.on_ami_event('ConfbridgeJoin', self._notify_participant_joined)
         bus_consumer.on_ami_event('ConfbridgeLeave', self._notify_participant_left)
+        bus_consumer.on_event('meeting_deleted', self._on_meeting_deleted)
 
     def _notify_participant_joined(self, event):
         meeting_uuid = self._extract_meeting_uuid(event['Conference'])
@@ -98,6 +99,10 @@ class MeetingsBusEventHandler:
         self._notifier.participant_left(
             meeting.tenant_uuid, meeting_uuid, participant, participants_already_present
         )
+
+    def _on_meeting_deleted(self, event):
+        meeting_uuid = event['uuid']
+        self._service.kick_all_participants(meeting_uuid)
 
     @staticmethod
     def _extract_meeting_uuid(meeting_name):

@@ -82,3 +82,18 @@ class MeetingsService:
         if not user_is_participant:
             raise UserNotParticipant(tenant_uuid, user_uuid, conference_id)
         return participants
+
+    def kick_all_participants(self, meeting_uuid):
+        try:
+            self._amid.action(
+                'ConfbridgeKick',
+                {
+                    'Conference': f'wazo-meeting-{meeting_uuid}-confbridge',
+                    'Channel': 'all',
+                },
+            )
+        except AmidProtocolError as e:
+            if e.message == 'No Conference by that name found.':
+                logger.debug('No participants found to kick out of meeting %s', meeting_uuid)
+                return
+            raise
