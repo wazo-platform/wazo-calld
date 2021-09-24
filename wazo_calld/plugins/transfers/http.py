@@ -1,4 +1,4 @@
-# Copyright 2016-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from flask import request
@@ -33,13 +33,12 @@ class TransfersResource(AuthResource):
 
 class UserTransfersResource(AuthResource):
 
-    def __init__(self, auth_client, transfers_service):
-        self._auth_client = auth_client
+    def __init__(self, transfers_service):
         self._transfers_service = transfers_service
 
     @required_acl('calld.users.me.transfers.read')
     def get(self):
-        user_uuid = get_token_user_uuid_from_request(self._auth_client)
+        user_uuid = get_token_user_uuid_from_request()
         transfers = self._transfers_service.list_from_user(user_uuid)
 
         return {
@@ -49,7 +48,7 @@ class UserTransfersResource(AuthResource):
     @required_acl('calld.users.me.transfers.create')
     def post(self):
         request_body = user_transfer_request_schema.load(request.get_json(force=True))
-        user_uuid = get_token_user_uuid_from_request(self._auth_client)
+        user_uuid = get_token_user_uuid_from_request()
         transfer = self._transfers_service.create_from_user(request_body['initiator_call'],
                                                             request_body['exten'],
                                                             request_body['flow'],
@@ -76,13 +75,12 @@ class TransferResource(AuthResource):
 
 class UserTransferResource(AuthResource):
 
-    def __init__(self, auth_client, transfers_service):
-        self._auth_client = auth_client
+    def __init__(self, transfers_service):
         self._transfers_service = transfers_service
 
     @required_acl('calld.users.me.transfers.{transfer_id}.delete')
     def delete(self, transfer_id):
-        user_uuid = get_token_user_uuid_from_request(self._auth_client)
+        user_uuid = get_token_user_uuid_from_request()
         self._transfers_service.cancel_from_user(transfer_id, user_uuid)
         return '', 204
 
@@ -100,12 +98,11 @@ class TransferCompleteResource(AuthResource):
 
 class UserTransferCompleteResource(AuthResource):
 
-    def __init__(self, auth_client, transfers_service):
-        self._auth_client = auth_client
+    def __init__(self, transfers_service):
         self._transfers_service = transfers_service
 
     @required_acl('calld.users.me.transfers.{transfer_id}.complete.update')
     def put(self, transfer_id):
-        user_uuid = get_token_user_uuid_from_request(self._auth_client)
+        user_uuid = get_token_user_uuid_from_request()
         self._transfers_service.complete_from_user(transfer_id, user_uuid)
         return '', 204
