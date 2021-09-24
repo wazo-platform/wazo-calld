@@ -8,6 +8,7 @@ from .exceptions import (
     InvalidUserUUID,
     InvalidUserLine,
     NoSuchConferenceID,
+    NoSuchMeeting,
     NoSuchUserVoicemail,
     NoSuchVoicemail,
     UserMissingMainLine,
@@ -17,6 +18,38 @@ from .exceptions import (
 
 def not_found(error):
     return error.response is not None and error.response.status_code == 404
+
+
+class Meeting:
+
+    def __init__(self, tenant_uuid, meeting_uuid, confd_client):
+        self.tenant_uuid = tenant_uuid
+        self.meeting_uuid = meeting_uuid
+        self._confd = confd_client
+
+    def exists(self):
+        try:
+            self._confd.meetings.get(self.meeting_uuid)
+        except HTTPError as e:
+            if e.response is not None and e.response.status_code == 404:
+                return False
+            raise
+        except RequestException as e:
+            raise WazoConfdUnreachable(self._confd, e)
+        else:
+            return True
+
+    @classmethod
+    def from_uuid(cls, meeting_uuid, confd_client):
+        try:
+            meeting = confd_client.meetings.get(meeting_uuid)
+        except HTTPError as e:
+            if e.response is not None and e.response.status_code == 404:
+                raise NoSuchMeeting(meeting_uuid)
+            raise
+        return cls(meeting['tenant_uuid'],
+                   meeting['uuid'],
+                   confd_client)
 
 
 class User:
