@@ -106,7 +106,9 @@ class MeetingsBusEventHandler:
 
     @staticmethod
     def _extract_meeting_uuid(meeting_name):
-        if not meeting_name.startswith(EVENT_PREFIX) or not meeting_name.endswith(EVENT_SUFFIX):
+        if not meeting_name.startswith(EVENT_PREFIX) or not meeting_name.endswith(
+            EVENT_SUFFIX
+        ):
             return
 
         try:

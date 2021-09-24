@@ -9,7 +9,6 @@ from ..bus_consume import MeetingsBusEventHandler
 
 
 class TestBusConsume(TestCase):
-
     @patch('wazo_calld.plugins.meetings.bus_consume.Meeting')
     def test_that_paging_events_are_ignored(self, MeetingMock):
         MeetingMock.from_uuid.side_effect = AssertionError('Should not get called')

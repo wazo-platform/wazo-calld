@@ -94,6 +94,8 @@ class MeetingsService:
             )
         except AmidProtocolError as e:
             if e.message == 'No Conference by that name found.':
-                logger.debug('No participants found to kick out of meeting %s', meeting_uuid)
+                logger.debug(
+                    'No participants found to kick out of meeting %s', meeting_uuid
+                )
                 return
             raise
