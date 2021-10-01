@@ -1,5 +1,12 @@
 # Changelog
 
+## 21.13
+
+* New API to get participants in a meeting:
+
+* `GET /meetings/{meeting_uuid}/participants`
+* `GET /users/me/meetings/{meeting_uuid}/participants`
+
 ## 21.10
 
 * The event `call_ended` now send `reason_code` to know why a call was ended`.
