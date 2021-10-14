@@ -792,7 +792,7 @@ class TestCreateCall(IntegrationTest):
             }
         }
 
-        with self.calld_client.send_no_content_type():
+        with self.calld_client.calls_send_no_content_type():
             self.calld_client.calls.make_call(call_args)
 
     def test_create_call_with_explicit_line_not_found(self):
@@ -1276,7 +1276,7 @@ class TestUserCreateCall(IntegrationTest):
         self.amid.set_valid_exten('my-context', 'my-extension')
         self.calld_client.set_token(token)
 
-        with self.calld_client.send_no_content_type():
+        with self.calld_client.calls_send_no_content_type():
             self.calld_client.calls.make_call_from_user(extension='my-extension')
 
     def test_create_call_with_explicit_line(self):
