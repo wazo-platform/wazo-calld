@@ -1,4 +1,4 @@
-# Copyright 2015-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
@@ -25,11 +25,20 @@ class CalldClient(Client):
         return True
 
     @contextmanager
-    def send_no_content_type(self):
-        old_content_type = self.calls.headers.get('Content-Type')
-        self.calls.headers['Content-Type'] = ''
+    def calls_send_no_content_type(self):
+        def no_json(decorated):
+            def decorator(*args, **kwargs):
+                kwargs['data'] = json.dumps(kwargs.pop('json'))
+                return decorated(*args, **kwargs)
+            return decorator
+
+        old_post = self.calls.session.post
+        old_put = self.calls.session.put
+        self.calls.session.post = no_json(self.calls.session.post)
+        self.calls.session.put = no_json(self.calls.session.put)
         yield
-        self.calls.headers['Content-Type'] = old_content_type
+        self.calls.session.post = old_post
+        self.calls.session.put = old_put
 
 
 class LegacyCalldClient:
