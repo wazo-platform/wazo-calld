@@ -6,15 +6,13 @@ import logging
 from wazo_calld.plugin_helpers.confd import Meeting
 from wazo_calld.plugin_helpers.exceptions import NoSuchMeeting
 
+from .meeting import (
+    AsteriskMeeting,
+    InvalidMeetingConfbridgeName,
+)
 from .schemas import participant_schema
 
 logger = logging.getLogger(__name__)
-
-
-EVENT_PREFIX = 'wazo-meeting-'
-EVENT_SUFFIX = '-confbridge'
-EVENT_PREFIX_LENGTH = len(EVENT_PREFIX)
-EVENT_SUFFIX_LENGTH = len(EVENT_SUFFIX)
 
 
 class MeetingsBusEventHandler:
@@ -26,10 +24,12 @@ class MeetingsBusEventHandler:
     def subscribe(self, bus_consumer):
         bus_consumer.on_ami_event('ConfbridgeJoin', self._notify_participant_joined)
         bus_consumer.on_ami_event('ConfbridgeLeave', self._notify_participant_left)
+        bus_consumer.on_event('meeting_deleted', self._on_meeting_deleted)
 
     def _notify_participant_joined(self, event):
-        meeting_uuid = self._extract_meeting_uuid(event['Conference'])
-        if not meeting_uuid:
+        try:
+            meeting_uuid = AsteriskMeeting.from_confbridge_name(event['Conference']).uuid
+        except InvalidMeetingConfbridgeName:
             return
 
         try:
@@ -64,8 +64,9 @@ class MeetingsBusEventHandler:
         )
 
     def _notify_participant_left(self, event):
-        meeting_uuid = self._extract_meeting_uuid(event['Conference'])
-        if not meeting_uuid:
+        try:
+            meeting_uuid = AsteriskMeeting.from_confbridge_name(event['Conference']).uuid
+        except InvalidMeetingConfbridgeName:
             return
 
         try:
@@ -99,12 +100,6 @@ class MeetingsBusEventHandler:
             meeting.tenant_uuid, meeting_uuid, participant, participants_already_present
         )
 
-    @staticmethod
-    def _extract_meeting_uuid(meeting_name):
-        if not meeting_name.startswith(EVENT_PREFIX) or not meeting_name.endswith(EVENT_SUFFIX):
-            return
-
-        try:
-            return meeting_name[EVENT_PREFIX_LENGTH:-EVENT_SUFFIX_LENGTH]
-        except Exception:
-            return
+    def _on_meeting_deleted(self, event):
+        meeting_uuid = event['uuid']
+        self._service.kick_all_participants(meeting_uuid)

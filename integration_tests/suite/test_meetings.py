@@ -17,6 +17,7 @@ from hamcrest import (
     has_items,
     has_properties,
     is_,
+    is_not,
     less_than,
 )
 from xivo_test_helpers import until
@@ -297,6 +298,25 @@ class TestMeetingParticipants(TestMeetings):
         self.ari.channels.hangup(channelId=channel_id)
 
         until.assert_(user_participant_left_event_received, user_uuid, timeout=10)
+
+    def test_meeting_deleted_ends_confbridge(self):
+        meeting_uuid = MEETING1_UUID
+        tenant_uuid = MEETING1_TENANT_UUID
+        user_uuid = make_user_uuid()
+        other_user_uuid = 'another-uuid'
+        self.confd.set_meetings(
+            MockMeeting(uuid=meeting_uuid, name='meeting', tenant_uuid=tenant_uuid),
+        )
+        channel_id = self.given_call_in_meeting(MEETING1_EXTENSION, user_uuid=user_uuid)
+        other_channel_id = self.given_call_in_meeting(MEETING1_EXTENSION, user_uuid=other_user_uuid)
+
+        self.bus.send_meeting_deleted_event(meeting_uuid)
+
+        def channels_left_meeting(*channel_ids):
+            for channel_id in channel_ids:
+                assert_that(channel_id, is_not(self.c.is_in_bridge()), 'Channel is still in meeting')
+
+        until.assert_(channels_left_meeting, channel_id, other_channel_id, timeout=5)
 
     @unittest.skip
     def test_kick_participant_with_no_confd(self):

@@ -235,3 +235,13 @@ class BusClient(bus_helper.BusClient):
             },
             f'config.users.{user_id}.services.dnd.updated'
         )
+
+    def send_meeting_deleted_event(self, meeting_uuid):
+        payload = {
+            'data': {
+                'uuid': meeting_uuid,
+                'name': 'test-meeting-name',
+            },
+            'name': 'meeting_deleted',
+        }
+        self.send_event(payload, 'config.meetings.deleted')
