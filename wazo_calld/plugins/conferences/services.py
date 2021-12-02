@@ -42,7 +42,11 @@ class ConferencesService:
         try:
             participant_list = self._amid.action('ConfBridgeList', {'conference': f'wazo-conference-{conference_id}'})
         except AmidProtocolError as e:
-            if e.message == 'No active conferences.':
+            no_conf_msg = [
+                'No active conferences.',  # No conferences are taking place at this time.
+                'No Conference by that name found.',  # This conference is not running at this time.
+            ]
+            if e.message in no_conf_msg:
                 return []
             raise ConferenceParticipantError(
                 tenant_uuid,
