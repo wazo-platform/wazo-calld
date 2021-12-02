@@ -3,6 +3,7 @@
 
 import logging
 import re
+import json
 
 from requests import RequestException
 from wazo_amid_client.exceptions import AmidProtocolError
@@ -21,7 +22,7 @@ def set_variable_ami(amid, channel_id, variable, value):
                       'Value': value}
         amid.action('Setvar', parameters)
     except RequestException as e:
-        raise WazoAmidError(amid, e)
+        raise WazoAmidError(amid, '{} {}'.format(e, json.dumps(parameters)))
 
 
 def unset_variable_ami(amid, channel_id, variable):
