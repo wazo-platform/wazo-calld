@@ -14,6 +14,7 @@ from xivo_bus.resources.common.event import ArbitraryEvent
 
 from wazo_calld.plugin_helpers import ami
 from wazo_calld.plugin_helpers.ari_ import Channel, set_channel_id_var_sync
+from wazo_calld.plugin_helpers.exceptions import WazoAmidError
 
 from .schemas import call_schema
 
@@ -277,7 +278,13 @@ class CallsBusEventHandler:
         user_uuid = event['user_uuid']
         enabled = event['enabled']
         interface = f'Local/{user_uuid}@usersharedlines'
-        if enabled:
-            ami.pause_queue_member(self.ami, interface)
-        else:
-            ami.unpause_queue_member(self.ami, interface)
+        try:
+            if enabled:
+                ami.pause_queue_member(self.ami, interface)
+            else:
+                ami.unpause_queue_member(self.ami, interface)
+        except WazoAmidError as e:
+            if e.details['original_error'] == 'Interface not found':
+                logger.debug('%s is not a member of any group. Not changing pause status', interface)
+                return
+            raise
