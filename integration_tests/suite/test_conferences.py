@@ -99,6 +99,28 @@ class TestConferenceParticipants(TestConferences):
                         'status_code': 404,
                     })))
 
+    def test_list_participants_with_no_conference_with_that_id(self):
+        user_uuid = 'user-uuid'
+        conference_id = CONFERENCE1_ID
+        other_conference_id = 42
+        self.confd.set_conferences(
+            MockConference(id=conference_id, name='conference'),
+            MockConference(id=other_conference_id, name='empty'),
+        )
+        self.given_call_in_conference(
+            CONFERENCE1_EXTENSION,
+            caller_id_name='participant1',
+            user_uuid=user_uuid,
+        )
+        self.given_call_in_conference(
+            CONFERENCE1_EXTENSION,
+            caller_id_name='participant2',
+        )
+
+        participants = self.calld_client.conferences.list_participants(other_conference_id)
+
+        assert_that(participants, has_entries(total=0, items=empty()))
+
     def test_list_participants_with_no_participants(self):
         conference_id = CONFERENCE1_ID
         self.confd.set_conferences(
