@@ -1,4 +1,4 @@
-https://github.com/wazo-platform/xivo-test-helpers/archive/master.zip
+https://github.com/wazo-platform/wazo-test-helpers/archive/master.zip
 mock
 pyhamcrest<1.10 # Version 1.10 is broken
 pytest

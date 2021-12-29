@@ -12,8 +12,8 @@ from hamcrest import (
     not_,
 )
 from wazo_calld_client.exceptions import CalldError
-from xivo_test_helpers import until
-from xivo_test_helpers.hamcrest.raises import raises
+from wazo_test_helpers import until
+from wazo_test_helpers.hamcrest.raises import raises
 
 from .helpers.auth import MockUserToken
 from .helpers.constants import ENDPOINT_AUTOANSWER

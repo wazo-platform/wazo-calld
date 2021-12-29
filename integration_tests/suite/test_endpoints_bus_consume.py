@@ -4,7 +4,7 @@
 from hamcrest import assert_that
 from hamcrest import has_entries
 from hamcrest import has_item
-from xivo_test_helpers import until
+from wazo_test_helpers import until
 
 from .helpers.base import IntegrationTest
 from .helpers.calld import new_call_id

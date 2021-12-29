@@ -4,7 +4,7 @@
 import ari
 from ari.exceptions import ARINotFound
 from ari.exceptions import ARINotInStasis
-from xivo_test_helpers import until
+from wazo_test_helpers import until
 
 from .base import IntegrationTest, make_user_uuid
 from .chan_test import ChanTest

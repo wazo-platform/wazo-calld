@@ -1,4 +1,4 @@
-# Copyright 2016-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import requests
@@ -9,8 +9,8 @@ from hamcrest import (
     contains_string,
     has_properties
 )
-from xivo_test_helpers import until
-from xivo_test_helpers.hamcrest.raises import raises
+from wazo_test_helpers import until
+from wazo_test_helpers.hamcrest.raises import raises
 from wazo_calld_client.exceptions import CalldError
 
 from .helpers.base import IntegrationTest

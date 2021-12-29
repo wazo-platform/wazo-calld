@@ -21,7 +21,7 @@ from hamcrest import instance_of
 from hamcrest import not_
 from hamcrest import not_none
 from hamcrest import raises
-from xivo_test_helpers import until
+from wazo_test_helpers import until
 
 from .helpers.base import IntegrationTest
 from .helpers.real_asterisk import RealAsteriskIntegrationTest, RealAsterisk

@@ -10,7 +10,7 @@ from hamcrest import (
     has_item,
     has_items,
 )
-from xivo_test_helpers import until
+from wazo_test_helpers import until
 
 from .helpers.ari_ import MockChannel
 from .helpers.base import IntegrationTest
