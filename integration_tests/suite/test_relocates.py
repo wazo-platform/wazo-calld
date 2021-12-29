@@ -1,5 +1,5 @@
 
-# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import uuid
@@ -15,8 +15,8 @@ from hamcrest import has_item
 from hamcrest import has_properties
 from hamcrest import has_property
 from hamcrest import not_
-from xivo_test_helpers import until
-from xivo_test_helpers.hamcrest.raises import raises
+from wazo_test_helpers import until
+from wazo_test_helpers.hamcrest.raises import raises
 from wazo_calld_client.exceptions import CalldError
 
 from .helpers.real_asterisk import RealAsteriskIntegrationTest, RealAsterisk

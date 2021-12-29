@@ -8,10 +8,10 @@ import uuid
 
 from contextlib import contextmanager
 from requests.packages import urllib3
-from xivo_test_helpers import until
-from xivo_test_helpers.asset_launching_test_case import AssetLaunchingTestCase
-from xivo_test_helpers.asset_launching_test_case import NoSuchService
-from xivo_test_helpers.asset_launching_test_case import NoSuchPort
+from wazo_test_helpers import until
+from wazo_test_helpers.asset_launching_test_case import AssetLaunchingTestCase
+from wazo_test_helpers.asset_launching_test_case import NoSuchService
+from wazo_test_helpers.asset_launching_test_case import NoSuchPort
 
 from .amid import AmidClient
 from .ari_ import ARIClient

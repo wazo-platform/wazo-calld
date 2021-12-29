@@ -13,8 +13,8 @@ from hamcrest import (
     has_properties,
     is_not,
 )
-from xivo_test_helpers import until
-from xivo_test_helpers.hamcrest.raises import raises
+from wazo_test_helpers import until
+from wazo_test_helpers.hamcrest.raises import raises
 from wazo_calld_client.exceptions import CalldError
 
 from .helpers.confd import (

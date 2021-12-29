@@ -8,7 +8,7 @@ from kombu import Consumer
 from kombu import Producer
 from kombu import Queue
 from kombu.exceptions import TimeoutError
-from xivo_test_helpers import bus as bus_helper
+from wazo_test_helpers import bus as bus_helper
 
 from .constants import BUS_QUEUE_NAME
 from .constants import BUS_EXCHANGE_XIVO

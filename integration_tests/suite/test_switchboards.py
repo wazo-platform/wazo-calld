@@ -25,7 +25,7 @@ from hamcrest import (
     starts_with,
 )
 from operator import attrgetter
-from xivo_test_helpers import until
+from wazo_test_helpers import until
 
 from .helpers.ari_ import MockChannel
 from .helpers.auth import MockUserToken

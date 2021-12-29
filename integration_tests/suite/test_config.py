@@ -13,7 +13,7 @@ from hamcrest import (
 )
 
 from wazo_calld_client.exceptions import CalldError
-from xivo_test_helpers.hamcrest.raises import raises
+from wazo_test_helpers.hamcrest.raises import raises
 
 from .helpers.base import IntegrationTest
 from .helpers.constants import VALID_TOKEN_MULTITENANT
