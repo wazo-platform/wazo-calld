@@ -1,4 +1,4 @@
-# Copyright 2020-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2020-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import ari
@@ -32,8 +32,12 @@ class RealAsteriskIntegrationTest(IntegrationTest):
             'password': 'xivo',
         }
 
+    def ari_is_up(self):
+        return ari.connect(**self.ari_config())
+
     def setUp(self):
         super().setUp()
+        until.return_(self.ari_is_up, timeout=5)
         self.ari = ari.connect(**self.ari_config())
         self.reset_ari()
 
