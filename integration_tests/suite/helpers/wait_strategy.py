@@ -1,6 +1,7 @@
-# Copyright 2016-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+import requests
 from hamcrest import (
     assert_that,
     has_entries,
@@ -30,26 +31,41 @@ class CalldUpWaitStrategy(WaitStrategy):
 class CalldConnectionsOkWaitStrategy(WaitStrategy):
 
     def wait(self, integration_test):
+        def is_ready():
+            try:
+                status = integration_test.calld.status()
+            except requests.RequestException:
+                status = {}
+            assert_that(
+                status,
+                has_entries(
+                    {
+                        'ari': has_entry('status', 'ok'),
+                        'bus_consumer': has_entry('status', 'ok')
+                    }
+                ),
+            )
 
-        def calld_is_ready():
-            status = integration_test.calld.status()
-            assert_that(status, has_entries({
-                'ari': has_entry('status', 'ok'),
-                'bus_consumer': has_entry('status', 'ok')
-            }))
-
-        until.assert_(calld_is_ready, tries=10)
+        until.assert_(is_ready, tries=10)
 
 
 class CalldEverythingOkWaitStrategy(WaitStrategy):
 
     def wait(self, integration_test):
-        def calld_is_ready():
-            status = integration_test.calld.status()
-            assert_that(status, has_entries({
-                'ari': has_entry('status', 'ok'),
-                'bus_consumer': has_entry('status', 'ok'),
-                'service_token': has_entry('status', 'ok'),
-            }))
+        def is_ready():
+            try:
+                status = integration_test.calld.status()
+            except requests.RequestException:
+                status = {}
+            assert_that(
+                status,
+                has_entries(
+                    {
+                        'ari': has_entry('status', 'ok'),
+                        'bus_consumer': has_entry('status', 'ok'),
+                        'service_token': has_entry('status', 'ok'),
+                    }
+                ),
+            )
 
-        until.assert_(calld_is_ready, tries=60)
+        until.assert_(is_ready, tries=60)
