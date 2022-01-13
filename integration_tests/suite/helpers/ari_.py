@@ -1,4 +1,4 @@
-# Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import requests
@@ -14,6 +14,14 @@ class ARIClient:
         return 'http://{host}:{port}/{path}'.format(host=self.host,
                                                     port=self.port,
                                                     path='/'.join(parts))
+
+    def is_up(self):
+        url = self.url()
+        try:
+            response = requests.get(url)
+            return response.status_code == 404
+        except requests.RequestException:
+            return False
 
     def set_applications(self, *mock_applications):
         url = self.url('_set_response')

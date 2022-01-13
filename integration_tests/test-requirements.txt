@@ -3,7 +3,6 @@ https://github.com/wazo-platform/ari-py/archive/0.4.0.zip
 https://github.com/wazo-platform/wazo-lib-rest-client/archive/master.zip
 https://github.com/wazo-platform/wazo-calld-client/archive/master.zip
 https://github.com/wazo-platform/wazo-test-helpers/archive/master.zip
-docker-compose
 kombu
 openapi-spec-validator
 psycopg2-binary

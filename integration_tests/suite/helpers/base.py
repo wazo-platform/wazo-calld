@@ -1,4 +1,4 @@
-# Copyright 2015-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import os
@@ -185,12 +185,8 @@ class IntegrationTest(AssetLaunchingTestCase):
             yield
         finally:
             cls.start_service('ari')
-
-            def ari_is_up():
-                return ARIClient('127.0.0.1', cls.service_port(5039, 'ari'))
-
-            until.return_(ari_is_up, timeout=5, message='ari did not restart')
             cls.reset_clients()
+            until.true(cls.ari.is_up, tries=5)
 
     def setUp(self):
         super().setUp()
