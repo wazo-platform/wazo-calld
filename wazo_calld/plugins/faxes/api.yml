@@ -109,6 +109,12 @@ definitions:
       caller_id:
         type: string
         description: The Caller ID that was presented to the fax recipient
+      ivr_extension:
+        type: string
+        description: Extension compose before sending fax. Useful for Fax in IVR
+      wait_time:
+        type: string
+        description: Time waiting before sending Fax when destination have answered
       user_uuid:
         type: string
         description: The UUID of the user that sent the fax. May be null if the fax was sent by another service.
