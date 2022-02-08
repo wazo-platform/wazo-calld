@@ -112,6 +112,22 @@ class TestMeetingStatus(TestMeetings):
 
         assert_that(status, has_entries(full=False))
 
+    def test_get_with_max_participants(self):
+        meeting_uuid = MEETING1_UUID
+        self.confd.set_meetings(
+            MockMeeting(uuid=meeting_uuid, name='meeting'),
+        )
+
+        # The max number of participants is in the overloaded configuration file
+        self.given_call_in_meeting(MEETING1_EXTENSION, caller_id_name='participant1')
+        self.given_call_in_meeting(MEETING1_EXTENSION, caller_id_name='participant2')
+        self.given_call_in_meeting(MEETING1_EXTENSION, caller_id_name='participant3')
+        self.given_call_in_meeting(MEETING1_EXTENSION, caller_id_name='participant4')
+
+        status = self.calld_client.meetings.guest_status(meeting_uuid)
+
+        assert_that(status, has_entries(full=True))
+
     def test_get_with_no_participant(self):
         meeting_uuid = MEETING1_UUID
         self.confd.set_meetings(
@@ -130,6 +146,9 @@ class TestMeetingStatus(TestMeetings):
             MockMeeting(uuid=other_meeting_uuid, name='other meeting'),
         )
         self.given_call_in_meeting(MEETING1_EXTENSION, caller_id_name='participant1')
+        self.given_call_in_meeting(MEETING1_EXTENSION, caller_id_name='participant2')
+        self.given_call_in_meeting(MEETING1_EXTENSION, caller_id_name='participant3')
+        self.given_call_in_meeting(MEETING1_EXTENSION, caller_id_name='participant4')
 
         status = self.calld_client.meetings.guest_status(meeting_uuid)
 

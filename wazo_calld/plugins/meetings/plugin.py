@@ -29,7 +29,7 @@ class Plugin:
         token_changed_subscribe(amid_client.set_token)
         token_changed_subscribe(confd_client.set_token)
 
-        meetings_service = MeetingsService(amid_client, ari.client, confd_client)
+        meetings_service = MeetingsService(amid_client, ari.client, confd_client, config)
         notifier = MeetingsNotifier(bus_publisher)
         bus_event_handler = MeetingsBusEventHandler(
             confd_client, notifier, meetings_service

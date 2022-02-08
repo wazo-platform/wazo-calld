@@ -21,14 +21,13 @@ from .schemas import participant_schema
 
 logger = logging.getLogger(__name__)
 
-MAX_PARTICIPANTS = 25
-
 
 class MeetingsService:
-    def __init__(self, amid, ari, confd):
+    def __init__(self, amid, ari, confd, config):
         self._amid = amid
         self._ari = ari
         self._confd = confd
+        self._max_participants = config['max_meeting_participants']
 
     def get_status(self, meeting_uuid):
         tenant_uuid = None
@@ -59,7 +58,7 @@ class MeetingsService:
         except RequestException as e:
             raise WazoAmidError(self._amid, e)
 
-        return {'full': participant_count >= MAX_PARTICIPANTS}
+        return {'full': participant_count >= self._max_participants}
 
     def list_participants(self, tenant_uuid, meeting_uuid):
         meeting = Meeting(tenant_uuid, meeting_uuid, self._confd)
