@@ -1,4 +1,4 @@
-# Copyright 2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2021-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from marshmallow import (
@@ -20,4 +20,13 @@ class ParticipantSchema(Schema):
     user_uuid = fields.String(allow_none=True)
 
 
+class StatusSchema(Schema):
+    class Meta:
+        ordered = True
+        unknown = EXCLUDE
+
+    full = fields.Boolean()
+
+
 participant_schema = ParticipantSchema()
+status_schema = StatusSchema()

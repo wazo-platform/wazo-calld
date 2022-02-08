@@ -1,4 +1,4 @@
-# Copyright 2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2021-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -21,12 +21,44 @@ from .schemas import participant_schema
 
 logger = logging.getLogger(__name__)
 
+MAX_PARTICIPANTS = 25
+
 
 class MeetingsService:
     def __init__(self, amid, ari, confd):
         self._amid = amid
         self._ari = ari
         self._confd = confd
+
+    def get_status(self, meeting_uuid):
+        tenant_uuid = None
+
+        if not Meeting(tenant_uuid, meeting_uuid, self._confd).exists():
+            raise NoSuchMeeting(tenant_uuid, meeting_uuid)
+
+        try:
+            participant_list = self._amid.action(
+                'ConfBridgeList',
+                {'Conference': f'wazo-meeting-{meeting_uuid}-confbridge'},
+            )
+            participant_count = len(participant_list) - 2  # 1 event for the success and on for the list complete
+        except AmidProtocolError as e:
+            if e.message in [
+                'No active conferences.',
+                'No Conference by that name found.'
+            ]:
+                participant_count = 0
+            else:
+                raise MeetingParticipantError(
+                    tenant_uuid,
+                    meeting_uuid,
+                    participant_id=None,
+                    message=e.message,
+                )
+        except RequestException as e:
+            raise WazoAmidError(self._amid, e)
+
+        return {'full': participant_count >= MAX_PARTICIPANTS}
 
     def list_participants(self, tenant_uuid, meeting_uuid):
         if not Meeting(tenant_uuid, meeting_uuid, self._confd).exists():

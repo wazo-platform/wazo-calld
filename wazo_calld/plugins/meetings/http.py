@@ -1,13 +1,13 @@
-# Copyright 2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2021-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from xivo.tenant_flask_helpers import Tenant
 
 from wazo_calld.auth import get_token_user_uuid_from_request
 from wazo_calld.auth import required_acl
-from wazo_calld.http import AuthResource
+from wazo_calld.http import AuthResource, ErrorCatchingResource
 
-from .schemas import participant_schema
+from .schemas import participant_schema, status_schema
 
 
 class MeetingParticipantsResource(AuthResource):
@@ -41,3 +41,12 @@ class MeetingParticipantsUserResource(AuthResource):
             'total': len(participants),
         }
         return items, 200
+
+
+class MeetingStatusGuestResource(ErrorCatchingResource):
+    def __init__(self, meetings_service):
+        self._service = meetings_service
+
+    def get(self, meeting_uuid):
+        status = self._service.get_status(meeting_uuid)
+        return status_schema.dump(status)
