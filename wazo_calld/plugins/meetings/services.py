@@ -72,7 +72,10 @@ class MeetingsService:
                 {'Conference': meeting.asterisk_name()},
             )
         except AmidProtocolError as e:
-            if e.message == 'No active conferences.':
+            if e.message in [
+                'No active conferences.',
+                'No Conference by that name found.',
+            ]:
                 return []
             raise MeetingParticipantError(
                 tenant_uuid,

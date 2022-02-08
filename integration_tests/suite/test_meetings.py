@@ -201,6 +201,22 @@ class TestMeetingParticipants(TestMeetings):
             'items': empty(),
         }))
 
+    def test_list_participants_with_participants_on_other_only(self):
+        meeting_uuid = 'a58471f5-3d4d-4b85-b6bd-a388fef42a0e'
+        other_meeting_uuid = MEETING1_UUID
+        self.confd.set_meetings(
+            MockMeeting(uuid=meeting_uuid, name='meeting'),
+            MockMeeting(uuid=other_meeting_uuid, name='other meeting'),
+        )
+        self.given_call_in_meeting(MEETING1_EXTENSION, caller_id_name='participant1')
+
+        participants = self.calld_client.meetings.list_participants(meeting_uuid)
+
+        assert_that(participants, has_entries({
+            'total': 0,
+            'items': empty(),
+        }))
+
     def test_user_list_participants_when_user_is_not_participant(self):
         user_uuid = 'user-uuid'
         meeting_uuid = MEETING1_UUID
