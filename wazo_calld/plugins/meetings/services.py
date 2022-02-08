@@ -32,14 +32,15 @@ class MeetingsService:
 
     def get_status(self, meeting_uuid):
         tenant_uuid = None
+        meeting = Meeting(tenant_uuid, meeting_uuid, self._confd)
 
-        if not Meeting(tenant_uuid, meeting_uuid, self._confd).exists():
+        if not meeting.exists():
             raise NoSuchMeeting(tenant_uuid, meeting_uuid)
 
         try:
             participant_list = self._amid.action(
                 'ConfBridgeList',
-                {'Conference': f'wazo-meeting-{meeting_uuid}-confbridge'},
+                {'Conference': meeting.asterisk_name()},
             )
             participant_count = len(participant_list) - 2  # 1 event for the success and on for the list complete
         except AmidProtocolError as e:
@@ -61,13 +62,15 @@ class MeetingsService:
         return {'full': participant_count >= MAX_PARTICIPANTS}
 
     def list_participants(self, tenant_uuid, meeting_uuid):
-        if not Meeting(tenant_uuid, meeting_uuid, self._confd).exists():
+        meeting = Meeting(tenant_uuid, meeting_uuid, self._confd)
+
+        if not meeting.exists():
             raise NoSuchMeeting(tenant_uuid, meeting_uuid)
 
         try:
             participant_list = self._amid.action(
                 'ConfBridgeList',
-                {'Conference': f'wazo-meeting-{meeting_uuid}-confbridge'},
+                {'Conference': meeting.asterisk_name()},
             )
         except AmidProtocolError as e:
             if e.message == 'No active conferences.':
@@ -116,11 +119,12 @@ class MeetingsService:
         return participants
 
     def kick_all_participants(self, meeting_uuid):
+        meeting = Meeting(meeting_uuid=meeting_uuid)
         try:
             self._amid.action(
                 'ConfbridgeKick',
                 {
-                    'Conference': f'wazo-meeting-{meeting_uuid}-confbridge',
+                    'Conference': meeting.asterisk_name(),
                     'Channel': 'all',
                 },
             )
