@@ -1,5 +1,11 @@
 # Changelog
 
+## 22.03
+
+* New API to get the status of a meeting:
+
+* `GET /guests/me/meetings/{meeting_uuid}/status`
+
 ## 21.13
 
 * New API to get participants in a meeting:

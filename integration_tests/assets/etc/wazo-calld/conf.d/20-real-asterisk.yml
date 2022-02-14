@@ -2,3 +2,4 @@ ari:
   connection:
     username: xivo
     password: xivo
+max_meeting_participants: 4

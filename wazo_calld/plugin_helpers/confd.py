@@ -1,4 +1,4 @@
-# Copyright 2016-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from requests import HTTPError
@@ -22,10 +22,13 @@ def not_found(error):
 
 class Meeting:
 
-    def __init__(self, tenant_uuid, meeting_uuid, confd_client):
+    def __init__(self, tenant_uuid=None, meeting_uuid=None, confd_client=None):
         self.tenant_uuid = tenant_uuid
         self.meeting_uuid = meeting_uuid
         self._confd = confd_client
+
+    def asterisk_name(self):
+        return 'wazo-meeting-{meeting_uuid}-confbridge'.format(meeting_uuid=self.meeting_uuid)
 
     def exists(self):
         try:

@@ -1,4 +1,4 @@
-# Copyright 2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2021-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -23,22 +23,59 @@ logger = logging.getLogger(__name__)
 
 
 class MeetingsService:
-    def __init__(self, amid, ari, confd):
+    def __init__(self, amid, ari, confd, config):
         self._amid = amid
         self._ari = ari
         self._confd = confd
+        self._max_participants = config['max_meeting_participants']
 
-    def list_participants(self, tenant_uuid, meeting_uuid):
-        if not Meeting(tenant_uuid, meeting_uuid, self._confd).exists():
+    def get_status(self, meeting_uuid):
+        tenant_uuid = None
+        meeting = Meeting(tenant_uuid, meeting_uuid, self._confd)
+
+        if not meeting.exists():
             raise NoSuchMeeting(tenant_uuid, meeting_uuid)
 
         try:
             participant_list = self._amid.action(
                 'ConfBridgeList',
-                {'Conference': f'wazo-meeting-{meeting_uuid}-confbridge'},
+                {'Conference': meeting.asterisk_name()},
+            )
+            participant_count = len(participant_list) - 2  # 1 event for the success and on for the list complete
+        except AmidProtocolError as e:
+            if e.message in [
+                'No active conferences.',
+                'No Conference by that name found.'
+            ]:
+                participant_count = 0
+            else:
+                raise MeetingParticipantError(
+                    tenant_uuid,
+                    meeting_uuid,
+                    participant_id=None,
+                    message=e.message,
+                )
+        except RequestException as e:
+            raise WazoAmidError(self._amid, e)
+
+        return {'full': participant_count >= self._max_participants}
+
+    def list_participants(self, tenant_uuid, meeting_uuid):
+        meeting = Meeting(tenant_uuid, meeting_uuid, self._confd)
+
+        if not meeting.exists():
+            raise NoSuchMeeting(tenant_uuid, meeting_uuid)
+
+        try:
+            participant_list = self._amid.action(
+                'ConfBridgeList',
+                {'Conference': meeting.asterisk_name()},
             )
         except AmidProtocolError as e:
-            if e.message == 'No active conferences.':
+            if e.message in [
+                'No active conferences.',
+                'No Conference by that name found.',
+            ]:
                 return []
             raise MeetingParticipantError(
                 tenant_uuid,
@@ -84,11 +121,12 @@ class MeetingsService:
         return participants
 
     def kick_all_participants(self, meeting_uuid):
+        meeting = Meeting(meeting_uuid=meeting_uuid)
         try:
             self._amid.action(
                 'ConfbridgeKick',
                 {
-                    'Conference': f'wazo-meeting-{meeting_uuid}-confbridge',
+                    'Conference': meeting.asterisk_name(),
                     'Channel': 'all',
                 },
             )

@@ -1,4 +1,4 @@
-# Copyright 2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2021-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import os
@@ -44,12 +44,6 @@ class TestMeetings(RealAsteriskIntegrationTest):
     def setUp(self):
         super().setUp()
         self.confd.reset()
-
-
-class TestMeetingParticipants(TestMeetings):
-
-    def setUp(self):
-        super().setUp()
         self.c = HamcrestARIChannel(self.ari)
 
     def given_call_in_meeting(self, meeting_extension, caller_id_name=None, user_uuid=None):
@@ -69,6 +63,99 @@ class TestMeetingParticipants(TestMeetings):
 
         until.assert_(channel_is_in_meeting, channel, timeout=10)
         return channel.id
+
+
+class TestMeetingStatus(TestMeetings):
+
+    def test_get_no_confd(self):
+        with self.confd_stopped():
+            assert_that(
+                calling(self.calld_client.meetings.guest_status).with_args(MEETING1_UUID),
+                raises(CalldError).matching(has_properties(
+                    status_code=503,
+                    error_id='wazo-confd-unreachable',
+                ))
+            )
+
+    def test_get_no_amid(self):
+        meeting_uuid = MEETING1_UUID
+        self.confd.set_meetings(
+            MockMeeting(uuid=meeting_uuid, name='meeting'),
+        )
+
+        with self.amid_stopped():
+            assert_that(
+                calling(self.calld_client.meetings.guest_status).with_args(meeting_uuid),
+                raises(CalldError).matching(has_properties(
+                    status_code=503,
+                    error_id='wazo-amid-error',
+                ))
+            )
+
+    def test_get_no_meetings(self):
+        wrong_id = '00000000-0000-0000-0000-000000000000'
+
+        assert_that(
+            calling(self.calld_client.meetings.guest_status).with_args(wrong_id),
+            raises(CalldError).matching(has_properties(status_code=404))
+        )
+
+    def test_get_with_some_participants(self):
+        meeting_uuid = MEETING1_UUID
+        self.confd.set_meetings(
+            MockMeeting(uuid=meeting_uuid, name='meeting'),
+        )
+        self.given_call_in_meeting(MEETING1_EXTENSION, caller_id_name='participant1')
+        self.given_call_in_meeting(MEETING1_EXTENSION, caller_id_name='participant2')
+
+        status = self.calld_client.meetings.guest_status(meeting_uuid)
+
+        assert_that(status, has_entries(full=False))
+
+    def test_get_with_max_participants(self):
+        meeting_uuid = MEETING1_UUID
+        self.confd.set_meetings(
+            MockMeeting(uuid=meeting_uuid, name='meeting'),
+        )
+
+        # The max number of participants is in the overloaded configuration file
+        self.given_call_in_meeting(MEETING1_EXTENSION, caller_id_name='participant1')
+        self.given_call_in_meeting(MEETING1_EXTENSION, caller_id_name='participant2')
+        self.given_call_in_meeting(MEETING1_EXTENSION, caller_id_name='participant3')
+        self.given_call_in_meeting(MEETING1_EXTENSION, caller_id_name='participant4')
+
+        status = self.calld_client.meetings.guest_status(meeting_uuid)
+
+        assert_that(status, has_entries(full=True))
+
+    def test_get_with_no_participant(self):
+        meeting_uuid = MEETING1_UUID
+        self.confd.set_meetings(
+            MockMeeting(uuid=meeting_uuid, name='meeting'),
+        )
+
+        status = self.calld_client.meetings.guest_status(meeting_uuid)
+
+        assert_that(status, has_entries(full=False))
+
+    def test_get_with_participants_in_other_meeting(self):
+        meeting_uuid = 'a58471f5-3d4d-4b85-b6bd-a388fef42a0e'
+        other_meeting_uuid = MEETING1_UUID
+        self.confd.set_meetings(
+            MockMeeting(uuid=meeting_uuid, name='meeting'),
+            MockMeeting(uuid=other_meeting_uuid, name='other meeting'),
+        )
+        self.given_call_in_meeting(MEETING1_EXTENSION, caller_id_name='participant1')
+        self.given_call_in_meeting(MEETING1_EXTENSION, caller_id_name='participant2')
+        self.given_call_in_meeting(MEETING1_EXTENSION, caller_id_name='participant3')
+        self.given_call_in_meeting(MEETING1_EXTENSION, caller_id_name='participant4')
+
+        status = self.calld_client.meetings.guest_status(meeting_uuid)
+
+        assert_that(status, has_entries(full=False))
+
+
+class TestMeetingParticipants(TestMeetings):
 
     def test_list_participants_with_no_confd(self):
         wrong_id = 14
@@ -106,6 +193,22 @@ class TestMeetingParticipants(TestMeetings):
         self.confd.set_meetings(
             MockMeeting(uuid=meeting_uuid, name='meeting'),
         )
+
+        participants = self.calld_client.meetings.list_participants(meeting_uuid)
+
+        assert_that(participants, has_entries({
+            'total': 0,
+            'items': empty(),
+        }))
+
+    def test_list_participants_with_participants_on_other_only(self):
+        meeting_uuid = 'a58471f5-3d4d-4b85-b6bd-a388fef42a0e'
+        other_meeting_uuid = MEETING1_UUID
+        self.confd.set_meetings(
+            MockMeeting(uuid=meeting_uuid, name='meeting'),
+            MockMeeting(uuid=other_meeting_uuid, name='other meeting'),
+        )
+        self.given_call_in_meeting(MEETING1_EXTENSION, caller_id_name='participant1')
 
         participants = self.calld_client.meetings.list_participants(meeting_uuid)
 

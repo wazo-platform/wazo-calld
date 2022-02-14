@@ -1,4 +1,21 @@
 paths:
+  /guests/me/meetings/{meeting_uuid}/status:
+    get:
+      summary: Get the status of a meeting
+      description: Returns the status of a meeting that should be visible to a guest.
+      parameters:
+        - $ref: '#/parameters/MeetingUUID'
+      tags:
+        - meetings
+      responses:
+        '200':
+          description: The status of a meeting is returned
+          schema:
+            $ref: '#/definitions/MeetingStatus'
+        '404':
+          $ref: '#/responses/NoSuchMeeting'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
   /meetings/{meeting_uuid}/participants:
     get:
       summary: List participants of a meeting
@@ -53,6 +70,12 @@ parameters:
     required: true
     type: string
 definitions:
+  MeetingStatus:
+    type: object
+    properties:
+      full:
+        description: Wether the meeting is full of not
+        type: boolean
   ParticipantList:
     type: object
     properties:
