@@ -1,4 +1,4 @@
-# Copyright 2015-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -268,6 +268,14 @@ class Channel:
             return progress == '1'
         except ARINotFound:
             return False
+
+    def is_video(self):
+        try:
+            video_native_format = self._get_var('CHANNEL(videonativeformat)')
+        except ARINotFound:
+            return False
+
+        return video_native_format != '(nothing)'
 
     def sip_call_id(self):
         if not self.is_sip():
