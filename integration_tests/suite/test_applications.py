@@ -8,6 +8,7 @@ from hamcrest import (
     contains_inanyorder,
     empty,
     equal_to,
+    has_entry,
     has_entries,
     has_item,
     has_items,
@@ -24,6 +25,7 @@ from .helpers.confd import MockApplication, MockUser, MockMoh
 from .helpers.constants import ENDPOINT_AUTOANSWER
 from .helpers.real_asterisk import RealAsteriskIntegrationTest
 from .helpers.wait_strategy import CalldEverythingOkWaitStrategy, NoWaitStrategy
+from .helpers.constants import VALID_TENANT
 
 
 class BaseApplicationTestCase(RealAsteriskIntegrationTest):
@@ -39,6 +41,7 @@ class BaseApplicationTestCase(RealAsteriskIntegrationTest):
         self.node_app_uuid = 'f569ce99-45bf-46b9-a5db-946071dda71f'
         node_app = MockApplication(
             uuid=self.node_app_uuid,
+            tenant_uuid=VALID_TENANT,
             name='name',
             destination='node',
             type_='holding',
@@ -48,6 +51,7 @@ class BaseApplicationTestCase(RealAsteriskIntegrationTest):
         self.no_node_app_uuid = 'b00857f4-cb62-4773-adf7-ca870fa65c8d'
         no_node_app = MockApplication(
             uuid=self.no_node_app_uuid,
+            tenant_uuid=VALID_TENANT,
             name='name',
             destination=None,
         )
@@ -129,23 +133,26 @@ class TestStasisTriggers(BaseApplicationTestCase):
         channel_id = self.call_from_user(app_uuid, exten)
 
         def event_received():
-            events = event_accumulator.accumulate()
+            events = event_accumulator.accumulate(with_headers=True)
             assert_that(
                 events,
-                contains(
+                has_item(
                     has_entries(
-                        name='application_user_outgoing_call_created',
-                        data=has_entries(
-                            application_uuid=app_uuid,
-                            call=has_entries(
-                                dialed_extension=exten,
-                                id=channel_id,
-                                is_caller=True,
-                                status='Ring',
-                                on_hold=False,
-                                node_uuid=None,
+                        message=has_entries(
+                            name='application_user_outgoing_call_created',
+                            data=has_entries(
+                                application_uuid=app_uuid,
+                                call=has_entries(
+                                    dialed_extension=exten,
+                                    id=channel_id,
+                                    is_caller=True,
+                                    status='Ring',
+                                    on_hold=False,
+                                    node_uuid=None,
+                                )
                             )
-                        )
+                        ),
+                        headers=has_entry('tenant_uuid', VALID_TENANT),
                     )
                 )
             )
@@ -161,22 +168,25 @@ class TestStasisTriggers(BaseApplicationTestCase):
         channel = self.call_app(app_uuid)
 
         def event_received():
-            events = event_accumulator.accumulate()
+            events = event_accumulator.accumulate(with_headers=True)
             assert_that(
                 events,
-                has_items(
+                has_item(
                     has_entries(
-                        name='application_call_entered',
-                        data=has_entries(
-                            application_uuid=app_uuid,
-                            call=has_entries(
-                                id=channel.id,
-                                is_caller=True,
-                                status='Up',
-                                on_hold=False,
-                                node_uuid=None,
+                        message=has_entries(
+                            name='application_call_entered',
+                            data=has_entries(
+                                application_uuid=app_uuid,
+                                call=has_entries(
+                                    id=channel.id,
+                                    is_caller=True,
+                                    status='Up',
+                                    on_hold=False,
+                                    node_uuid=None,
+                                )
                             )
-                        )
+                        ),
+                        headers=has_entry('tenant_uuid', VALID_TENANT),
                     )
                 )
             )
@@ -192,44 +202,53 @@ class TestStasisTriggers(BaseApplicationTestCase):
         channel = self.call_app(app_uuid)
 
         def event_received():
-            events = event_accumulator.accumulate()
+            events = event_accumulator.accumulate(with_headers=True)
             assert_that(
                 events,
                 has_items(
                     has_entries(
-                        name='application_call_entered',
-                        data=has_entries(
-                            call=has_entries(
-                                id=channel.id,
-                                is_caller=True,
-                                status='Up',
-                                on_hold=False,
-                                node_uuid=None,
+                        message=has_entries(
+                            name='application_call_entered',
+                            data=has_entries(
+                                call=has_entries(
+                                    id=channel.id,
+                                    is_caller=True,
+                                    status='Up',
+                                    on_hold=False,
+                                    node_uuid=None,
+                                )
                             )
-                        )
+                        ),
+                        headers=has_entry('tenant_uuid', VALID_TENANT),
                     ),
                     has_entries(
-                        name='application_node_updated',
-                        data=has_entries(
-                            application_uuid=app_uuid,
-                            node=has_entries(
-                                uuid=app_uuid,
-                                calls=contains(has_entries(id=channel.id)),
+                        message=has_entries(
+                            name='application_node_updated',
+                            data=has_entries(
+                                application_uuid=app_uuid,
+                                node=has_entries(
+                                    uuid=app_uuid,
+                                    calls=contains(has_entries(id=channel.id)),
+                                )
                             )
-                        )
+                        ),
+                        headers=has_entry('tenant_uuid', VALID_TENANT),
                     ),
                     has_entries(
-                        name='application_call_updated',
-                        data=has_entries(
-                            application_uuid=app_uuid,
-                            call=has_entries(
-                                id=channel.id,
-                                status='Up',
-                                node_uuid=app_uuid,
-                                is_caller=True,
-                                on_hold=False,
+                        message=has_entries(
+                            name='application_call_updated',
+                            data=has_entries(
+                                application_uuid=app_uuid,
+                                call=has_entries(
+                                    id=channel.id,
+                                    status='Up',
+                                    node_uuid=app_uuid,
+                                    is_caller=True,
+                                    on_hold=False,
+                                )
                             )
-                        )
+                        ),
+                        headers=has_entry('tenant_uuid', VALID_TENANT)
                     )
                 )
             )
@@ -249,20 +268,23 @@ class TestStasisTriggers(BaseApplicationTestCase):
         CalldEverythingOkWaitStrategy().wait(self)
 
         def event_received():
-            events = event_accumulator.accumulate()
+            events = event_accumulator.accumulate(with_headers=True)
             assert_that(
                 events,
-                has_items(
+                has_item(
                     has_entries(
-                        name='application_destination_node_created',
-                        data=has_entries(
-                            application_uuid=self.node_app_uuid,
-                            node=has_entries(
-                                uuid=self.node_app_uuid,
-                                calls=empty(),
+                        message=has_entries(
+                            name='application_destination_node_created',
+                            data=has_entries(
+                                application_uuid=self.node_app_uuid,
+                                node=has_entries(
+                                    uuid=self.node_app_uuid,
+                                    calls=empty(),
+                                )
                             )
-                        )
-                    ),
+                        ),
+                        headers=has_entry('tenant_uuid', VALID_TENANT),
+                    )
                 )
             )
 
@@ -274,8 +296,16 @@ class TestStasisTriggers(BaseApplicationTestCase):
         CalldEverythingOkWaitStrategy().wait(self)
 
         def event_received():
-            events = event_accumulator.accumulate()
-            assert_that(events, has_items(has_entries(name='application_destination_node_created')))
+            events = event_accumulator.accumulate(with_headers=True)
+            assert_that(
+                events,
+                has_item(
+                    has_entries(
+                        message=has_entries(name='application_destination_node_created'),
+                        headers=has_entry('tenant_uuid', VALID_TENANT),
+                    ),
+                )
+            )
 
         until.assert_(event_received, tries=5)
 
@@ -285,9 +315,18 @@ class TestStasisTriggers(BaseApplicationTestCase):
         self.bus.send_application_created_event(app_uuid, destination='node')
 
         def event_received():
-            events = event_accumulator.accumulate()
-            assert_that(events, contains(has_entries(name='application_destination_node_created')))
-        until.assert_(event_received, tries=5)
+            events = event_accumulator.accumulate(with_headers=True)
+            assert_that(
+                events,
+                has_item(
+                    has_entries(
+                        message=has_entry('name', 'application_destination_node_created'),
+                        headers=has_entry('tenant_uuid', VALID_TENANT),
+                    )
+                )
+            )
+
+        until.assert_(event_received, tries=3)
 
         routing_key = 'applications.{uuid}.calls.created'.format(uuid=self.no_node_app_uuid)
         event_accumulator = self.bus.accumulator(routing_key)
@@ -307,9 +346,17 @@ class TestStasisTriggers(BaseApplicationTestCase):
         self.bus.send_application_created_event(app_uuid, destination='node')
 
         def event_received():
-            events = event_accumulator.accumulate()
-            assert_that(events, has_items(has_entries(name='application_destination_node_created')))
-        until.assert_(event_received, tries=5)
+            events = event_accumulator.accumulate(with_headers=True)
+            assert_that(
+                events,
+                has_item(
+                    has_entries(
+                        message=has_entries(name='application_destination_node_created'),
+                        headers=has_entry('tenant_uuid', VALID_TENANT),
+                    )
+                )
+            )
+        until.assert_(event_received, tries=3)
 
     def test_confd_application_edited_event_then_destination_node_created(self):
         event_accumulator = self.bus.accumulator('applications.#')
@@ -317,9 +364,17 @@ class TestStasisTriggers(BaseApplicationTestCase):
         self.bus.send_application_edited_event(self.no_node_app_uuid, destination='node')
 
         def event_received():
-            events = event_accumulator.accumulate()
-            assert_that(events, has_items(has_entries(name='application_destination_node_created')))
-        until.assert_(event_received, tries=5)
+            events = event_accumulator.accumulate(with_headers=True)
+            assert_that(
+                events,
+                has_item(
+                    has_entries(
+                        message=has_entries(name='application_destination_node_created'),
+                        headers=has_entry('tenant_uuid', VALID_TENANT),
+                    )
+                )
+            )
+        until.assert_(event_received, tries=3)
 
     def test_confd_application_edited_event_then_destination_node_deleted(self):
         event_accumulator = self.bus.accumulator('applications.#')
@@ -327,9 +382,17 @@ class TestStasisTriggers(BaseApplicationTestCase):
         self.bus.send_application_edited_event(self.node_app_uuid, destination=None)
 
         def event_received():
-            events = event_accumulator.accumulate()
-            assert_that(events, has_items(has_entries(name='application_node_deleted')))
-        until.assert_(event_received, tries=5)
+            events = event_accumulator.accumulate(with_headers=True)
+            assert_that(
+                events,
+                has_item(
+                    has_entries(
+                        message=has_entries(name='application_node_deleted'),
+                        headers=has_entry('tenant_uuid', VALID_TENANT),
+                    )
+                )
+            )
+        until.assert_(event_received, tries=3)
 
     def test_confd_application_deleted_event_then_stasis_reconnect(self):
         self.ari.bridges.destroy(bridgeId=self.node_app_uuid)
@@ -338,9 +401,17 @@ class TestStasisTriggers(BaseApplicationTestCase):
         self.bus.send_application_deleted_event(self.no_node_app_uuid)
 
         def event_received():
-            events = event_accumulator.accumulate()
-            assert_that(events, has_items(has_entries(name='application_destination_node_created')))
-        until.assert_(event_received, tries=5)
+            events = event_accumulator.accumulate(with_headers=True)
+            assert_that(
+                events,
+                has_item(
+                    has_entries(
+                        message=has_entries(name='application_destination_node_created'),
+                        headers=has_entry('tenant_uuid', VALID_TENANT),
+                    )
+                )
+            )
+        until.assert_(event_received, tries=3)
 
 
 class TestApplication(BaseApplicationTestCase):
@@ -428,28 +499,34 @@ class TestApplication(BaseApplicationTestCase):
         self.calld_client.applications.hangup_call(self.node_app_uuid, channel.id)
 
         def event_received():
-            events = event_accumulator.accumulate()
+            events = event_accumulator.accumulate(with_headers=True)
             assert_that(
                 events,
                 has_items(
                     has_entries(
-                        name='application_call_updated',
-                        data=has_entries(
-                            application_uuid=self.node_app_uuid,
-                            call=has_entries(
-                                id=channel.id,
-                            )
+                        message=has_entries(
+                            name='application_call_updated',
+                            data=has_entries(
+                                application_uuid=self.node_app_uuid,
+                                call=has_entries(
+                                    id=channel.id,
+                                )
+                            ),
                         ),
+                        headers=has_entry('tenant_uuid', VALID_TENANT),
                     ),
                     has_entries(
-                        name='application_call_deleted',
-                        data=has_entries(
-                            application_uuid=self.node_app_uuid,
-                            call=has_entries(
-                                id=channel.id,
+                        message=has_entries(
+                            name='application_call_deleted',
+                            data=has_entries(
+                                application_uuid=self.node_app_uuid,
+                                call=has_entries(
+                                    id=channel.id,
+                                )
                             )
-                        )
-                    ),
+                        ),
+                        headers=has_entry('tenant_uuid', VALID_TENANT),
+                    )
                 )
             )
 
@@ -531,24 +608,27 @@ class TestApplication(BaseApplicationTestCase):
         )
 
         def event_received():
-            events = event_accumulator.accumulate()
+            events = event_accumulator.accumulate(with_headers=True)
             assert_that(
                 events,
                 has_items(
                     has_entries(
-                        name='application_call_initiated',
-                        data=has_entries(
-                            application_uuid=self.no_node_app_uuid,
-                            call=has_entries(
-                                id=call['id'],
-                                is_caller=False,
-                                status='Up',
-                                on_hold=False,
-                                muted=False,
-                                node_uuid=None,
-                                variables={'FOO': 'BAR'},
+                        message=has_entries(
+                            name='application_call_initiated',
+                            data=has_entries(
+                                application_uuid=self.no_node_app_uuid,
+                                call=has_entries(
+                                    id=call['id'],
+                                    is_caller=False,
+                                    status='Up',
+                                    on_hold=False,
+                                    muted=False,
+                                    node_uuid=None,
+                                    variables={'FOO': 'BAR'},
+                                )
                             )
-                        )
+                        ),
+                        headers=has_entry('tenant_uuid', VALID_TENANT),
                     )
                 )
             )
@@ -588,24 +668,27 @@ class TestApplication(BaseApplicationTestCase):
         )
 
         def event_received():
-            events = event_accumulator.accumulate()
+            events = event_accumulator.accumulate(with_headers=True)
             assert_that(
                 events,
                 has_items(
                     has_entries(
-                        name='application_call_initiated',
-                        data=has_entries(
-                            application_uuid=self.no_node_app_uuid,
-                            call=has_entries(
-                                id=call['id'],
-                                is_caller=False,
-                                status='Up',
-                                on_hold=False,
-                                muted=False,
-                                node_uuid=None,
-                                variables={'FOO': 'BAR'},
+                        message=has_entries(
+                            name='application_call_initiated',
+                            data=has_entries(
+                                application_uuid=self.no_node_app_uuid,
+                                call=has_entries(
+                                    id=call['id'],
+                                    is_caller=False,
+                                    status='Up',
+                                    on_hold=False,
+                                    muted=False,
+                                    node_uuid=None,
+                                    variables={'FOO': 'BAR'},
+                                )
                             )
-                        )
+                        ),
+                        headers=has_entry('tenant_uuid', VALID_TENANT),
                     )
                 )
             )
@@ -679,43 +762,52 @@ class TestApplication(BaseApplicationTestCase):
         )
 
         def event_received():
-            events = event_accumulator.accumulate()
+            events = event_accumulator.accumulate(with_headers=True)
             assert_that(
                 events,
                 has_items(
                     has_entries(
-                        name='application_call_initiated',
-                        data=has_entries(
-                            application_uuid=self.node_app_uuid,
-                            call=has_entries(
-                                id=call['id'],
-                                is_caller=False,
-                                status='Up',
-                                on_hold=False,
-                                node_uuid=None,
-                                variables={'FOO': 'BAR'},
+                        message=has_entries(
+                            name='application_call_initiated',
+                            data=has_entries(
+                                application_uuid=self.node_app_uuid,
+                                call=has_entries(
+                                    id=call['id'],
+                                    is_caller=False,
+                                    status='Up',
+                                    on_hold=False,
+                                    node_uuid=None,
+                                    variables={'FOO': 'BAR'},
+                                )
                             )
-                        )
+                        ),
+                        headers=has_entry('tenant_uuid', VALID_TENANT),
                     ),
                     has_entries(
-                        name='application_node_updated',
-                        data=has_entries(
-                            application_uuid=self.node_app_uuid,
-                            node=has_entries(
-                                uuid=self.node_app_uuid,
-                                calls=contains(has_entries(id=call['id']))
+                        message=has_entries(
+                            name='application_node_updated',
+                            data=has_entries(
+                                application_uuid=self.node_app_uuid,
+                                node=has_entries(
+                                    uuid=self.node_app_uuid,
+                                    calls=contains(has_entries(id=call['id']))
+                                )
                             )
-                        )
+                        ),
+                        headers=has_entry('tenant_uuid', VALID_TENANT),
                     ),
                     has_entries(
-                        name='application_call_updated',
-                        data=has_entries(
-                            application_uuid=self.node_app_uuid,
-                            call=has_entries(
-                                id=call['id'],
-                                node_uuid=self.node_app_uuid,
+                        message=has_entries(
+                            name='application_call_updated',
+                            data=has_entries(
+                                application_uuid=self.node_app_uuid,
+                                call=has_entries(
+                                    id=call['id'],
+                                    node_uuid=self.node_app_uuid,
+                                )
                             )
-                        )
+                        ),
+                        headers=has_entry('tenant_uuid', VALID_TENANT),
                     )
                 )
             )
@@ -755,44 +847,53 @@ class TestApplication(BaseApplicationTestCase):
         )
 
         def event_received():
-            events = event_accumulator.accumulate()
+            events = event_accumulator.accumulate(with_headers=True)
             assert_that(
                 events,
                 has_items(
                     has_entries(
-                        name='application_call_initiated',
-                        data=has_entries(
-                            application_uuid=self.node_app_uuid,
-                            call=has_entries(
-                                id=call['id'],
-                                is_caller=False,
-                                status='Up',
-                                on_hold=False,
-                                node_uuid=None,
-                                variables={'FOO': 'BAR'},
+                        message=has_entries(
+                            name='application_call_initiated',
+                            data=has_entries(
+                                application_uuid=self.node_app_uuid,
+                                call=has_entries(
+                                    id=call['id'],
+                                    is_caller=False,
+                                    status='Up',
+                                    on_hold=False,
+                                    node_uuid=None,
+                                    variables={'FOO': 'BAR'},
+                                )
                             )
-                        )
+                        ),
+                        headers=has_entry('tenant_uuid', VALID_TENANT),
                     ),
                     has_entries(
-                        name='application_node_updated',
-                        data=has_entries(
-                            application_uuid=self.node_app_uuid,
-                            node=has_entries(
-                                uuid=self.node_app_uuid,
-                                calls=contains(has_entries(id=call['id']))
+                        message=has_entries(
+                            name='application_node_updated',
+                            data=has_entries(
+                                application_uuid=self.node_app_uuid,
+                                node=has_entries(
+                                    uuid=self.node_app_uuid,
+                                    calls=contains(has_entries(id=call['id']))
+                                )
                             )
-                        )
+                        ),
+                        headers=has_entry('tenant_uuid', VALID_TENANT),
                     ),
                     has_entries(
-                        name='application_call_updated',
-                        data=has_entries(
-                            application_uuid=self.node_app_uuid,
-                            call=has_entries(
-                                id=call['id'],
-                                node_uuid=self.node_app_uuid,
+                        message=has_entries(
+                            name='application_call_updated',
+                            data=has_entries(
+                                application_uuid=self.node_app_uuid,
+                                call=has_entries(
+                                    id=call['id'],
+                                    node_uuid=self.node_app_uuid,
+                                )
                             )
-                        )
-                    )
+                        ),
+                        headers=has_entry('tenant_uuid', VALID_TENANT),
+                    ),
                 )
             )
 
@@ -846,43 +947,52 @@ class TestApplication(BaseApplicationTestCase):
         )
 
         def event_received():
-            events = event_accumulator.accumulate()
+            events = event_accumulator.accumulate(with_headers=True)
             assert_that(
                 events,
                 has_items(
                     has_entries(
-                        name='application_call_initiated',
-                        data=has_entries(
-                            application_uuid=self.node_app_uuid,
-                            call=has_entries(
-                                id=call['id'],
-                                is_caller=False,
-                                status='Up',
-                                on_hold=False,
-                                node_uuid=None,
-                                variables={'FOO': 'BAR'},
+                        message=has_entries(
+                            name='application_call_initiated',
+                            data=has_entries(
+                                application_uuid=self.node_app_uuid,
+                                call=has_entries(
+                                    id=call['id'],
+                                    is_caller=False,
+                                    status='Up',
+                                    on_hold=False,
+                                    node_uuid=None,
+                                    variables={'FOO': 'BAR'},
+                                )
                             )
-                        )
+                        ),
+                        headers=has_entry('tenant_uuid', VALID_TENANT),
                     ),
                     has_entries(
-                        name='application_node_updated',
-                        data=has_entries(
-                            application_uuid=self.node_app_uuid,
-                            node=has_entries(
-                                uuid=self.node_app_uuid,
-                                calls=contains(has_entries(id=call['id']))
+                        message=has_entries(
+                            name='application_node_updated',
+                            data=has_entries(
+                                application_uuid=self.node_app_uuid,
+                                node=has_entries(
+                                    uuid=self.node_app_uuid,
+                                    calls=contains(has_entries(id=call['id']))
+                                )
                             )
-                        )
+                        ),
+                        headers=has_entry('tenant_uuid', VALID_TENANT),
                     ),
                     has_entries(
-                        name='application_call_updated',
-                        data=has_entries(
-                            application_uuid=self.node_app_uuid,
-                            call=has_entries(
-                                id=call['id'],
-                                node_uuid=self.node_app_uuid,
+                        message=has_entries(
+                            name='application_call_updated',
+                            data=has_entries(
+                                application_uuid=self.node_app_uuid,
+                                call=has_entries(
+                                    id=call['id'],
+                                    node_uuid=self.node_app_uuid,
+                                )
                             )
-                        )
+                        ),
+                        headers=has_entry('tenant_uuid', VALID_TENANT),
                     )
                 )
             )
@@ -972,19 +1082,22 @@ class TestApplicationMute(BaseApplicationTestCase):
         self.calld_client.applications.start_mute(app_uuid, channel.id)
 
         def event_received():
-            events = event_accumulator.accumulate()
+            events = event_accumulator.accumulate(with_headers=True)
             assert_that(
                 events,
-                has_items(
+                contains(
                     has_entries(
-                        name='application_call_updated',
-                        data=has_entries(
-                            application_uuid=app_uuid,
-                            call=has_entries(
-                                id=channel.id,
-                                muted=True,
+                        message=has_entries(
+                            name='application_call_updated',
+                            data=has_entries(
+                                application_uuid=app_uuid,
+                                call=has_entries(
+                                    id=channel.id,
+                                    muted=True,
+                                )
                             )
-                        )
+                        ),
+                        headers=has_entry('tenant_uuid', VALID_TENANT),
                     )
                 )
             )
@@ -1024,19 +1137,22 @@ class TestApplicationMute(BaseApplicationTestCase):
         self.calld_client.applications.stop_mute(app_uuid, channel.id)
 
         def event_received():
-            events = event_accumulator.accumulate()
+            events = event_accumulator.accumulate(with_headers=True)
             assert_that(
                 events,
                 has_items(
                     has_entries(
-                        name='application_call_updated',
-                        data=has_entries(
-                            application_uuid=app_uuid,
-                            call=has_entries(
-                                id=channel.id,
-                                muted=False,
+                        message=has_entries(
+                            name='application_call_updated',
+                            data=has_entries(
+                                application_uuid=app_uuid,
+                                call=has_entries(
+                                    id=channel.id,
+                                    muted=False,
+                                )
                             )
-                        )
+                        ),
+                        headers=has_entry('tenant_uuid', VALID_TENANT),
                     )
                 )
             )
@@ -1081,19 +1197,22 @@ class TestApplicationHold(BaseApplicationTestCase):
         self.calld_client.applications.start_hold(app_uuid, channel.id)
 
         def event_received():
-            events = event_accumulator.accumulate()
+            events = event_accumulator.accumulate(with_headers=True)
             assert_that(
                 events,
                 has_items(
                     has_entries(
-                        name='application_call_updated',
-                        data=has_entries(
-                            application_uuid=app_uuid,
-                            call=has_entries(
-                                id=channel.id,
-                                on_hold=True,
+                        message=has_entries(
+                            name='application_call_updated',
+                            data=has_entries(
+                                application_uuid=app_uuid,
+                                call=has_entries(
+                                    id=channel.id,
+                                    on_hold=True,
+                                )
                             )
-                        )
+                        ),
+                        headers=has_entry('tenant_uuid', VALID_TENANT),
                     )
                 )
             )
@@ -1142,19 +1261,22 @@ class TestApplicationHold(BaseApplicationTestCase):
         self.calld_client.applications.stop_hold(app_uuid, channel.id)
 
         def event_received():
-            events = event_accumulator.accumulate()
+            events = event_accumulator.accumulate(with_headers=True)
             assert_that(
                 events,
                 has_items(
                     has_entries(
-                        name='application_call_updated',
-                        data=has_entries(
-                            application_uuid=app_uuid,
-                            call=has_entries(
-                                id=channel.id,
-                                on_hold=False,
+                        message=has_entries(
+                            name='application_call_updated',
+                            data=has_entries(
+                                application_uuid=app_uuid,
+                                call=has_entries(
+                                    id=channel.id,
+                                    on_hold=False,
+                                )
                             )
-                        )
+                        ),
+                        headers=has_entry('tenant_uuid', VALID_TENANT),
                     )
                 )
             )
@@ -1199,21 +1321,24 @@ class TestApplicationSnoop(BaseApplicationTestCase):
         )
 
         def event_received():
-            events = event_accumulator.accumulate()
+            events = event_accumulator.accumulate(with_headers=True)
             assert_that(
                 events,
                 has_items(
                     has_entries(
-                        name='application_snoop_created',
-                        data=has_entries(
-                            application_uuid=self.app_uuid,
-                            snoop=has_entries(
-                                uuid=snoop['uuid'],
-                                snooped_call_id=self.caller_channel.id,
-                                snooping_call_id=supervisor_channel['id'],
-                                whisper_mode=snoop_args['whisper_mode'],
+                        message=has_entries(
+                            name='application_snoop_created',
+                            data=has_entries(
+                                application_uuid=self.app_uuid,
+                                snoop=has_entries(
+                                    uuid=snoop['uuid'],
+                                    snooped_call_id=self.caller_channel.id,
+                                    snooping_call_id=supervisor_channel['id'],
+                                    whisper_mode=snoop_args['whisper_mode'],
+                                )
                             )
-                        )
+                        ),
+                        headers=has_entry('tenant_uuid', VALID_TENANT),
                     )
                 )
             )
@@ -1239,16 +1364,19 @@ class TestApplicationSnoop(BaseApplicationTestCase):
         self.calld_client.applications.delete_snoop(self.app_uuid, snoop['uuid'])
 
         def event_received():
-            events = event_accumulator.accumulate()
+            events = event_accumulator.accumulate(with_headers=True)
             assert_that(
                 events,
                 has_items(
                     has_entries(
-                        name='application_snoop_deleted',
-                        data=has_entries(
-                            application_uuid=self.app_uuid,
-                            snoop=has_entries(uuid=snoop['uuid']),
-                        )
+                        message=has_entries(
+                            name='application_snoop_deleted',
+                            data=has_entries(
+                                application_uuid=self.app_uuid,
+                                snoop=has_entries(uuid=snoop['uuid']),
+                            )
+                        ),
+                        headers=has_entry('tenant_uuid', VALID_TENANT),
                     )
                 )
             )
@@ -1279,21 +1407,24 @@ class TestApplicationSnoop(BaseApplicationTestCase):
         )
 
         def event_received():
-            events = event_accumulator.accumulate()
+            events = event_accumulator.accumulate(with_headers=True)
             assert_that(
                 events,
                 has_items(
                     has_entries(
-                        name='application_snoop_updated',
-                        data=has_entries(
-                            application_uuid=self.app_uuid,
-                            snoop=has_entries(
-                                uuid=snoop['uuid'],
-                                snooped_call_id=self.caller_channel.id,
-                                snooping_call_id=supervisor_channel['id'],
-                                whisper_mode=snoop_args['whisper_mode'],
+                        message=has_entries(
+                            name='application_snoop_updated',
+                            data=has_entries(
+                                application_uuid=self.app_uuid,
+                                snoop=has_entries(
+                                    uuid=snoop['uuid'],
+                                    snooped_call_id=self.caller_channel.id,
+                                    snooping_call_id=supervisor_channel['id'],
+                                    whisper_mode=snoop_args['whisper_mode'],
+                                )
                             )
-                        )
+                        ),
+                        headers=has_entry('tenant_uuid', VALID_TENANT),
                     )
                 )
             )
@@ -1619,19 +1750,22 @@ class TestApplicationMoh(BaseApplicationTestCase):
         self.calld_client.applications.start_moh(app_uuid, channel.id, self.moh_uuid)
 
         def music_on_hold_started_event_received():
-            events = event_accumulator.accumulate()
+            events = event_accumulator.accumulate(with_headers=True)
             assert_that(
                 events,
                 has_items(
                     has_entries(
-                        name='application_call_updated',
-                        data=has_entries(
-                            application_uuid=app_uuid,
-                            call=has_entries(
-                                id=channel.id,
-                                moh_uuid=self.moh_uuid,
+                        message=has_entries(
+                            name='application_call_updated',
+                            data=has_entries(
+                                application_uuid=app_uuid,
+                                call=has_entries(
+                                    id=channel.id,
+                                    moh_uuid=self.moh_uuid,
+                                )
                             )
-                        )
+                        ),
+                        headers=has_entry('tenant_uuid', VALID_TENANT),
                     )
                 )
             )
@@ -1654,29 +1788,35 @@ class TestApplicationMoh(BaseApplicationTestCase):
         self.calld_client.applications.stop_moh(app_uuid, channel.id)
 
         def call_updated_event_received():
-            events = event_accumulator.accumulate()
+            events = event_accumulator.accumulate(with_headers=True)
             assert_that(
                 events,
                 has_items(
                     has_entries(
-                        name='application_call_updated',
-                        data=has_entries(
-                            application_uuid=app_uuid,
-                            call=has_entries(
-                                id=channel.id,
-                                moh_uuid=self.moh_uuid,
+                        message=has_entries(
+                            name='application_call_updated',
+                            data=has_entries(
+                                application_uuid=app_uuid,
+                                call=has_entries(
+                                    id=channel.id,
+                                    moh_uuid=self.moh_uuid,
+                                )
                             )
-                        )
+                        ),
+                        headers=has_entry('tenant_uuid', VALID_TENANT),
                     ),
                     has_entries(
-                        name='application_call_updated',
-                        data=has_entries(
-                            application_uuid=app_uuid,
-                            call=has_entries(
-                                id=channel.id,
-                                moh_uuid=None,
+                        message=has_entries(
+                            name='application_call_updated',
+                            data=has_entries(
+                                application_uuid=app_uuid,
+                                call=has_entries(
+                                    id=channel.id,
+                                    moh_uuid=None,
+                                )
                             )
-                        )
+                        ),
+                        headers=has_entry('tenant_uuid', VALID_TENANT),
                     )
                 )
             )
@@ -1783,20 +1923,23 @@ class TestApplicationPlayback(BaseApplicationTestCase):
         playback = self.calld_client.applications.send_playback(app_uuid, channel.id, body)
 
         def event_received():
-            events = event_accumulator.accumulate()
+            events = event_accumulator.accumulate(with_headers=True)
             assert_that(
                 events,
                 has_items(
                     has_entries(
-                        name='application_playback_created',
-                        data=has_entries(
-                            application_uuid=app_uuid,
-                            playback=has_entries(
-                                uuid=playback['uuid'],
-                                language='en',
-                                uri='sound:tt-weasels',
+                        message=has_entries(
+                            name='application_playback_created',
+                            data=has_entries(
+                                application_uuid=app_uuid,
+                                playback=has_entries(
+                                    uuid=playback['uuid'],
+                                    language='en',
+                                    uri='sound:tt-weasels',
+                                )
                             )
-                        )
+                        ),
+                        headers=has_entry('tenant_uuid', VALID_TENANT),
                     )
                 )
             )
@@ -1834,20 +1977,23 @@ class TestApplicationPlayback(BaseApplicationTestCase):
         event_accumulator = self.bus.accumulator(routing_key)
 
         def event_received():
-            events = event_accumulator.accumulate()
+            events = event_accumulator.accumulate(with_headers=True)
             assert_that(
                 events,
                 has_items(
                     has_entries(
-                        name='application_playback_deleted',
-                        data=has_entries(
-                            application_uuid=app_uuid,
-                            playback=has_entries(
-                                uuid=playback['uuid'],
-                                language='en',
-                                uri='sound:tt-weasels',
+                        message=has_entries(
+                            name='application_playback_deleted',
+                            data=has_entries(
+                                application_uuid=app_uuid,
+                                playback=has_entries(
+                                    uuid=playback['uuid'],
+                                    language='en',
+                                    uri='sound:tt-weasels',
+                                )
                             )
-                        )
+                        ),
+                        headers=has_entry('tenant_uuid', VALID_TENANT),
                     )
                 )
             )
@@ -1867,20 +2013,23 @@ class TestApplicationPlayback(BaseApplicationTestCase):
         self.calld_client.applications.delete_playback(app_uuid, playback['uuid'])
 
         def event_received():
-            events = event_accumulator.accumulate()
+            events = event_accumulator.accumulate(with_headers=True)
             assert_that(
                 events,
                 has_items(
                     has_entries(
-                        name='application_playback_deleted',
-                        data=has_entries(
-                            application_uuid=app_uuid,
-                            playback=has_entries(
-                                uuid=playback['uuid'],
-                                language='en',
-                                uri='sound:tt-weasels',
+                        message=has_entries(
+                            name='application_playback_deleted',
+                            data=has_entries(
+                                application_uuid=app_uuid,
+                                playback=has_entries(
+                                    uuid=playback['uuid'],
+                                    language='en',
+                                    uri='sound:tt-weasels',
+                                )
                             )
-                        )
+                        ),
+                        headers=has_entry('tenant_uuid', VALID_TENANT),
                     )
                 )
             )
@@ -1918,19 +2067,22 @@ class TestApplicationAnswer(BaseApplicationTestCase):
         self.calld_client.applications.answer_call(self.node_app_uuid, channel.id)
 
         def event_received():
-            events = event_accumulator.accumulate()
+            events = event_accumulator.accumulate(with_headers=True)
             assert_that(
                 events,
                 has_items(
                     has_entries(
-                        name='application_call_answered',
-                        data=has_entries(
-                            application_uuid=self.node_app_uuid,
-                            call=has_entries(
-                                id=channel.id,
-                                status='Up',
+                        message=has_entries(
+                            name='application_call_answered',
+                            data=has_entries(
+                                application_uuid=self.node_app_uuid,
+                                call=has_entries(
+                                    id=channel.id,
+                                    status='Up',
+                                )
                             )
-                        )
+                        ),
+                        headers=has_entry('tenant_uuid', VALID_TENANT),
                     )
                 )
             )
@@ -1973,19 +2125,22 @@ class TestApplicationProgress(BaseApplicationTestCase):
         self.calld_client.applications.start_progress(self.node_app_uuid, channel.id)
 
         def event_received():
-            events = event_accumulator.accumulate()
+            events = event_accumulator.accumulate(with_headers=True)
             assert_that(
                 events,
                 has_items(
                     has_entries(
-                        name='application_progress_started',
-                        data=has_entries(
-                            application_uuid=self.node_app_uuid,
-                            call=has_entries(
-                                id=channel.id,
-                                status='Progress',
+                        message=has_entries(
+                            name='application_progress_started',
+                            data=has_entries(
+                                application_uuid=self.node_app_uuid,
+                                call=has_entries(
+                                    id=channel.id,
+                                    status='Progress',
+                                )
                             )
-                        )
+                        ),
+                        headers=has_entry('tenant_uuid', VALID_TENANT),
                     )
                 )
             )
@@ -2025,19 +2180,22 @@ class TestApplicationProgress(BaseApplicationTestCase):
         self.calld_client.applications.stop_progress(self.node_app_uuid, channel.id)
 
         def event_received():
-            events = event_accumulator.accumulate()
+            events = event_accumulator.accumulate(with_headers=True)
             assert_that(
                 events,
                 has_items(
                     has_entries(
-                        name='application_progress_stopped',
-                        data=has_entries(
-                            application_uuid=self.node_app_uuid,
-                            call=has_entries(
-                                id=channel.id,
-                                status='Ring',
+                        message=has_entries(
+                            name='application_progress_stopped',
+                            data=has_entries(
+                                application_uuid=self.node_app_uuid,
+                                call=has_entries(
+                                    id=channel.id,
+                                    status='Ring',
+                                )
                             )
-                        )
+                        ),
+                        headers=has_entry('tenant_uuid', VALID_TENANT),
                     )
                 )
             )
@@ -2087,44 +2245,53 @@ class TestApplicationNode(BaseApplicationTestCase):
         )
 
         def event_received():
-            events = event_accumulator.accumulate()
+            events = event_accumulator.accumulate(with_headers=True)
             assert_that(
                 events,
                 has_items(
                     has_entries(
-                        name='application_node_created',
-                        data=has_entries(
-                            application_uuid=self.no_node_app_uuid,
-                            node=has_entries(
-                                uuid=node['uuid'],
-                                calls=empty(),
+                        message=has_entries(
+                            name='application_node_created',
+                            data=has_entries(
+                                application_uuid=self.no_node_app_uuid,
+                                node=has_entries(
+                                    uuid=node['uuid'],
+                                    calls=empty(),
+                                )
                             )
-                        )
+                        ),
+                        headers=has_entry('tenant_uuid', VALID_TENANT),
                     ),
                     has_entries(
-                        name='application_node_updated',
-                        data=has_entries(
-                            application_uuid=self.no_node_app_uuid,
-                            node=has_entries(
-                                uuid=node['uuid'],
-                                calls=contains(has_entries(id=channel.id)),
+                        message=has_entries(
+                            name='application_node_updated',
+                            data=has_entries(
+                                application_uuid=self.no_node_app_uuid,
+                                node=has_entries(
+                                    uuid=node['uuid'],
+                                    calls=contains(has_entries(id=channel.id)),
+                                )
                             )
-                        )
+                        ),
+                        headers=has_entry('tenant_uuid', VALID_TENANT),
                     ),
                     has_entries(
-                        name='application_call_updated',
-                        data=has_entries(
-                            application_uuid=self.no_node_app_uuid,
-                            call=has_entries(
-                                id=channel.id,
-                                caller_id_name='Alice',
-                                caller_id_number='555',
-                                is_caller=True,
-                                node_uuid=node['uuid'],
-                                on_hold=False,
-                                status='Up',
+                        message=has_entries(
+                            name='application_call_updated',
+                            data=has_entries(
+                                application_uuid=self.no_node_app_uuid,
+                                call=has_entries(
+                                    id=channel.id,
+                                    caller_id_name='Alice',
+                                    caller_id_number='555',
+                                    is_caller=True,
+                                    node_uuid=node['uuid'],
+                                    on_hold=False,
+                                    status='Up',
+                                )
                             )
-                        )
+                        ),
+                        headers=has_entry('tenant_uuid', VALID_TENANT),
                     ),
                 )
             )
@@ -2160,42 +2327,57 @@ class TestApplicationNode(BaseApplicationTestCase):
         )
 
         def event_received():
-            events = event_accumulator.accumulate()
+            events = event_accumulator.accumulate(with_headers=True)
             assert_that(
                 events,
                 has_items(
                     has_entries(
-                        name='application_node_created',
-                        data=has_entries(
-                            node=has_entries(uuid=node['uuid']),
-                        ),
-                    ),
-                    has_entries(
-                        name='application_node_updated',
-                        data=has_entries(
-                            node=has_entries(uuid=self.node_app_uuid, calls=empty()),
-                        )
-                    ),
-                    has_entries(
-                        name='application_call_updated',
-                    ),
-                    has_entries(
-                        name='application_node_updated',
-                        data=has_entries(
-                            node=has_entries(
-                                uuid=node['uuid'],
-                                calls=contains(has_entries(id=channel.id)),
-                            ),
-                        ),
-                    ),
-                    has_entries(
-                        name='application_call_updated',
-                        data=has_entries(
-                            call=has_entries(
-                                id=channel.id,
-                                node_uuid=node['uuid'],
+                        message=has_entries(
+                            name='application_node_created',
+                            data=has_entries(
+                                node=has_entries(uuid=node['uuid']),
                             )
                         ),
+                        headers=has_entry('tenant_uuid', VALID_TENANT),
+                    ),
+                    has_entries(
+                        message=has_entries(
+                            name='application_node_updated',
+                            data=has_entries(
+                                node=has_entries(uuid=self.node_app_uuid, calls=empty()),
+                            )
+                        ),
+                        headers=has_entry('tenant_uuid', VALID_TENANT),
+                    ),
+                    has_entries(
+                        message=has_entries(
+                            name='application_call_updated',
+                        ),
+                        headers=has_entry('tenant_uuid', VALID_TENANT),
+                    ),
+                    has_entries(
+                        message=has_entries(
+                            name='application_node_updated',
+                            data=has_entries(
+                                node=has_entries(
+                                    uuid=node['uuid'],
+                                    calls=contains(has_entries(id=channel.id)),
+                                ),
+                            ),
+                        ),
+                        headers=has_entry('tenant_uuid', VALID_TENANT),
+                    ),
+                    has_entries(
+                        message=has_entries(
+                            name='application_call_updated',
+                            data=has_entries(
+                                call=has_entries(
+                                    id=channel.id,
+                                    node_uuid=node['uuid'],
+                                )
+                            )
+                        ),
+                        headers=has_entry('tenant_uuid', VALID_TENANT),
                     ),
                 )
             )
@@ -2221,8 +2403,18 @@ class TestApplicationNode(BaseApplicationTestCase):
         node = self.calld_client.applications.create_node(self.no_node_app_uuid, [channel.id])
 
         def event_received():
-            events = event_accumulator.accumulate()
-            assert_that(events, has_items(has_entries(name='application_node_created')))
+            events = event_accumulator.accumulate(with_headers=True)
+            assert_that(
+                events,
+                has_items(
+                    has_entries(
+                        message=has_entries(
+                            name='application_node_created'
+                        ),
+                        headers=has_entry('tenant_uuid', VALID_TENANT),
+                    )
+                )
+            )
 
         until.assert_(event_received, tries=5)
 
@@ -2248,8 +2440,18 @@ class TestApplicationNode(BaseApplicationTestCase):
         node = self.calld_client.applications.create_node(self.no_node_app_uuid, [channel.id])
 
         def event_received():
-            events = event_accumulator.accumulate()
-            assert_that(events, has_items(has_entries(name='application_node_created')))
+            events = event_accumulator.accumulate(with_headers=True)
+            assert_that(
+                events,
+                has_items(
+                    has_entries(
+                        message=has_entries(
+                            name='application_node_created'
+                        ),
+                        headers=has_entry('tenant_uuid', VALID_TENANT),
+                    )
+                )
+            )
 
         until.assert_(event_received, tries=5)
         event_accumulator.reset()
@@ -2257,51 +2459,63 @@ class TestApplicationNode(BaseApplicationTestCase):
         self.calld_client.applications.delete_node(self.no_node_app_uuid, node['uuid'])
 
         def event_received():
-            events = event_accumulator.accumulate()
+            events = event_accumulator.accumulate(with_headers=True)
             assert_that(
                 events,
                 has_items(
                     has_entries(
-                        name='application_node_updated',
-                        data=has_entries(
-                            application_uuid=self.no_node_app_uuid,
-                            node=has_entries(
-                                uuid=node['uuid'],
-                                calls=empty(),
+                        message=has_entries(
+                            name='application_node_updated',
+                            data=has_entries(
+                                application_uuid=self.no_node_app_uuid,
+                                node=has_entries(
+                                    uuid=node['uuid'],
+                                    calls=empty(),
+                                )
                             )
-                        )
+                        ),
+                        headers=has_entry('tenant_uuid', VALID_TENANT),
                     ),
                     has_entries(
-                        name='application_call_updated',
-                        data=has_entries(
-                            application_uuid=self.no_node_app_uuid,
-                            call=has_entries(
-                                id=channel.id,
-                                caller_id_name='Alice',
-                                caller_id_number='555',
-                                status='Up',
+                        message=has_entries(
+                            name='application_call_updated',
+                            data=has_entries(
+                                application_uuid=self.no_node_app_uuid,
+                                call=has_entries(
+                                    id=channel.id,
+                                    caller_id_name='Alice',
+                                    caller_id_number='555',
+                                    status='Up',
+                                )
                             )
-                        )
+                        ),
+                        headers=has_entry('tenant_uuid', VALID_TENANT),
                     ),
                     has_entries(
-                        name='application_call_deleted',
-                        data=has_entries(
-                            application_uuid=self.no_node_app_uuid,
-                            call=has_entries(
-                                id=channel.id,
+                        message=has_entries(
+                            name='application_call_deleted',
+                            data=has_entries(
+                                application_uuid=self.no_node_app_uuid,
+                                call=has_entries(
+                                    id=channel.id,
+                                )
                             )
-                        )
+                        ),
+                        headers=has_entry('tenant_uuid', VALID_TENANT),
                     ),
                     has_entries(
-                        name='application_node_deleted',
-                        data=has_entries(
-                            application_uuid=self.no_node_app_uuid,
-                            node=has_entries(
-                                uuid=node['uuid'],
-                                calls=empty(),
+                        message=has_entries(
+                            name='application_node_deleted',
+                            data=has_entries(
+                                application_uuid=self.no_node_app_uuid,
+                                node=has_entries(
+                                    uuid=node['uuid'],
+                                    calls=empty(),
+                                )
                             )
-                        )
-                    ),
+                        ),
+                        headers=has_entry('tenant_uuid', VALID_TENANT),
+                    )
                 )
             )
 
@@ -2341,31 +2555,37 @@ class TestApplicationNodeCall(BaseApplicationTestCase):
         )
 
         def event_received():
-            events = event_accumulator.accumulate()
+            events = event_accumulator.accumulate(with_headers=True)
             assert_that(
                 events,
                 has_items(
                     has_entries(
-                        name='application_node_updated',
-                        data=has_entries(
-                            application_uuid=self.node_app_uuid,
-                            node=has_entries(
-                                uuid=self.node_app_uuid,
-                                calls=empty(),
+                        message=has_entries(
+                            name='application_node_updated',
+                            data=has_entries(
+                                application_uuid=self.node_app_uuid,
+                                node=has_entries(
+                                    uuid=self.node_app_uuid,
+                                    calls=empty(),
+                                )
                             )
-                        )
+                        ),
+                        headers=has_entry('tenant_uuid', VALID_TENANT),
                     ),
                     has_entries(
-                        name='application_call_updated',
-                        data=has_entries(
-                            application_uuid=self.node_app_uuid,
-                            call=has_entries(
-                                id=channel.id,
-                                caller_id_name='Alice',
-                                caller_id_number='555',
-                                status='Up',
+                        message=has_entries(
+                            name='application_call_updated',
+                            data=has_entries(
+                                application_uuid=self.node_app_uuid,
+                                call=has_entries(
+                                    id=channel.id,
+                                    caller_id_name='Alice',
+                                    caller_id_number='555',
+                                    status='Up',
+                                )
                             )
-                        )
+                        ),
+                        headers=has_entry('tenant_uuid', VALID_TENANT),
                     ),
                 )
             )
@@ -2431,31 +2651,37 @@ class TestApplicationNodeCall(BaseApplicationTestCase):
         )
 
         def event_received():
-            events = event_accumulator.accumulate()
+            events = event_accumulator.accumulate(with_headers=True)
             assert_that(
                 events,
                 has_items(
                     has_entries(
-                        name='application_node_updated',
-                        data=has_entries(
-                            application_uuid=self.no_node_app_uuid,
-                            node=has_entries(
-                                uuid=node_1['uuid'],
-                                calls=contains(
-                                    has_entries(id=channel_1.id),
-                                    has_entries(id=channel_3.id),
+                        message=has_entries(
+                            name='application_node_updated',
+                            data=has_entries(
+                                application_uuid=self.no_node_app_uuid,
+                                node=has_entries(
+                                    uuid=node_1['uuid'],
+                                    calls=contains(
+                                        has_entries(id=channel_1.id),
+                                        has_entries(id=channel_3.id),
+                                    )
                                 )
                             )
                         ),
+                        headers=has_entry('tenant_uuid', VALID_TENANT),
                     ),
                     has_entries(
-                        name='application_call_updated',
-                        data=has_entries(
-                            application_uuid=self.no_node_app_uuid,
-                            call=has_entries(
-                                id=channel_3.id,
+                        message=has_entries(
+                            name='application_call_updated',
+                            data=has_entries(
+                                application_uuid=self.no_node_app_uuid,
+                                call=has_entries(
+                                    id=channel_3.id,
+                                )
                             )
                         ),
+                        headers=has_entry('tenant_uuid', VALID_TENANT),
                     ),
                 )
             )
@@ -2482,17 +2708,20 @@ class TestDTMFEvents(BaseApplicationTestCase):
         self.chan_test.send_dtmf(channel.id, '1')
 
         def event_received():
-            events = event_accumulator.accumulate()
+            events = event_accumulator.accumulate(with_headers=True)
             assert_that(
                 events,
                 has_items(
                     has_entries(
-                        name='application_call_dtmf_received',
-                        data=has_entries(
-                            application_uuid=self.node_app_uuid,
-                            call_id=channel.id,
-                            dtmf='1',
-                        )
+                        message=has_entries(
+                            name='application_call_dtmf_received',
+                            data=has_entries(
+                                application_uuid=self.node_app_uuid,
+                                call_id=channel.id,
+                                dtmf='1',
+                            )
+                        ),
+                        headers=has_entry('tenant_uuid', VALID_TENANT),
                     )
                 )
             )
