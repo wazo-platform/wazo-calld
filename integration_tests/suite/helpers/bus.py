@@ -1,4 +1,4 @@
-# Copyright 2015-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
@@ -12,6 +12,7 @@ from wazo_test_helpers import bus as bus_helper
 
 from .constants import BUS_QUEUE_NAME
 from .constants import BUS_EXCHANGE_XIVO
+from .constants import VALID_TENANT
 
 
 class BusClient(bus_helper.BusClient):
@@ -160,6 +161,7 @@ class BusClient(bus_helper.BusClient):
         payload = {
             'data': {
                 'uuid': application_uuid,
+                'tenant_uuid': VALID_TENANT,
                 'name': 'test-app-name',
                 'destination': destination,
                 'destination_options': {},
@@ -178,6 +180,7 @@ class BusClient(bus_helper.BusClient):
         payload = {
             'data': {
                 'uuid': application_uuid,
+                'tenant_uuid': VALID_TENANT,
                 'name': 'test-app-name',
                 'destination': destination,
                 'destination_options': {},
@@ -196,6 +199,7 @@ class BusClient(bus_helper.BusClient):
         payload = {
             'data': {
                 'uuid': application_uuid,
+                'tenant_uuid': VALID_TENANT,
                 'name': 'test-app-name',
                 'destination': None,
                 'destination_options': {},
