@@ -1,4 +1,4 @@
-# Copyright 2015-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import requests
@@ -128,8 +128,9 @@ class ConfdClient:
 
 class MockApplication:
 
-    def __init__(self, uuid, name, destination=None, type_=None, moh=None, answer=None):
+    def __init__(self, uuid, name, tenant_uuid=None, destination=None, type_=None, moh=None, answer=None):
         self._uuid = uuid
+        self._tenant_uuid = tenant_uuid
         self._name = name
         self._destination = destination
         self._destination_options = {}
@@ -146,6 +147,7 @@ class MockApplication:
     def to_dict(self):
         return {
             'uuid': self._uuid,
+            'tenant_uuid': self._tenant_uuid,
             'name': self._name,
             'destination': self._destination,
             'destination_options': self._destination_options,
