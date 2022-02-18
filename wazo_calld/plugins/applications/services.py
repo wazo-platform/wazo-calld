@@ -1,4 +1,4 @@
-# Copyright 2018-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -49,7 +49,7 @@ class ApplicationService:
 
         formatter = CallFormatter(application, self._ari)
         call = formatter.from_channel(channel)
-        self._notifier.call_updated(application['uuid'], call)
+        self._notifier.call_updated(application, call)
 
     def call_unmute(self, application, call_id):
         try:
@@ -61,7 +61,7 @@ class ApplicationService:
 
         formatter = CallFormatter(application, self._ari)
         call = formatter.from_channel(channel)
-        self._notifier.call_updated(application['uuid'], call)
+        self._notifier.call_updated(application, call)
 
     def call_answer(self, application, call_id):
         try:
@@ -76,7 +76,7 @@ class ApplicationService:
         variables = self.get_channel_variables(channel)
         formatter = CallFormatter(application, self._ari)
         call = formatter.from_channel(channel, variables=variables)
-        self._notifier.user_outgoing_call_created(application['uuid'], call)
+        self._notifier.user_outgoing_call_created(application, call)
 
     def update_destination_node(self, old_app, new_app):
         if not old_app or not new_app:
@@ -135,22 +135,22 @@ class ApplicationService:
                 eventSource='bridge:{}'.format(bridge.id),
             )
             node = make_node_from_bridge(bridge)
-            self._notifier.destination_node_created(application['uuid'], node)
+            self._notifier.destination_node_created(application, node)
 
-    def create_node_with_calls(self, application_uuid, call_ids):
+    def create_node_with_calls(self, application, call_ids):
         bridges = self._ari.bridges.list()
-        self.validate_call_not_in_node(application_uuid, bridges, call_ids)
+        self.validate_call_not_in_node(application['uuid'], bridges, call_ids)
 
-        stasis_app = AppNameHelper.to_name(application_uuid)
-        bridge = self._ari.bridges.create(name=application_uuid, type='mixing')
+        stasis_app = AppNameHelper.to_name(application['uuid'])
+        bridge = self._ari.bridges.create(name=application['uuid'], type='mixing')
         self._ari.applications.subscribe(
             applicationName=stasis_app,
             eventSource='bridge:{}'.format(bridge.id),
         )
         node = make_node_from_bridge(bridge)
-        self._notifier.node_created(application_uuid, node)
+        self._notifier.node_created(application, node)
 
-        self.join_node(application_uuid, bridge.id, call_ids)
+        self.join_node(application['uuid'], bridge.id, call_ids)
         node = make_node_from_bridge(bridge.get())
         return node
 
@@ -167,6 +167,7 @@ class ApplicationService:
 
         application['destination_node_uuid'] = node_uuid
         application['uuid'] = application_uuid
+        application['tenant_uuid'] = confd_app['tenant_uuid']
         return application
 
     def get_call_id(self, application, call_id, status_code=404):
@@ -376,7 +377,7 @@ class ApplicationService:
         variables = self.get_channel_variables(channel)
         formatter = CallFormatter(application, self._ari)
         call = formatter.from_channel(channel, variables=variables)
-        self._notifier.call_initiated(application['uuid'], call)
+        self._notifier.call_initiated(application, call)
 
     def snoop_create(self, application, snooped_call_id, snooping_call_id, whisper_mode):
         if not Channel(snooping_call_id, self._ari).is_in_stasis():
@@ -391,7 +392,7 @@ class ApplicationService:
             snooping_call_id,
             whisper_mode,
         )
-        self._notifier.snoop_created(application['uuid'], snoop)
+        self._notifier.snoop_created(application, snoop)
         return snoop
 
     def snoop_delete(self, application, snoop_uuid):
