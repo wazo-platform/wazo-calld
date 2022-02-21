@@ -7,10 +7,11 @@ https://github.com/wazo-platform/wazo-confd-client/archive/master.zip
 https://github.com/wazo-platform/xivo-bus/archive/master.zip
 https://github.com/wazo-platform/xivo-lib-python/archive/master.zip
 cheroot==6.5.4
-flask==1.0.2
-flask-restful==0.3.7
 flask-cors==3.0.7
+flask-restful==0.3.7
+flask==1.0.2
 iso8601==0.1.11
+itsdangerous==0.24  # from flask
 jsonpatch==1.21
 kombu==4.6.11
 marshmallow==3.0.0b14
