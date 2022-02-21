@@ -269,14 +269,6 @@ class Channel:
         except ARINotFound:
             return False
 
-    def is_video(self):
-        try:
-            video_native_format = self._get_var('CHANNEL(videonativeformat)')
-        except ARINotFound:
-            return False
-
-        return video_native_format != '(nothing)'
-
     def sip_call_id(self):
         if not self.is_sip():
             return

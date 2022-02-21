@@ -1,5 +1,13 @@
 # Changelog
 
+## 22.04
+
+* The `is_video` field has been added to the following resources:
+
+  * GET `/calls`
+  * GET `/calls/<call-id>`
+  * GET `/users/me/calls`
+
 ## 22.03
 
 * New API to get the status of a meeting:

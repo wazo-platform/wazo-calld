@@ -104,7 +104,8 @@ class MockChannel:
                  caller_id_number='somewhere',
                  connected_line_name='someone else',
                  connected_line_number='somewhere else',
-                 name='something'):
+                 name='something',
+                 channelvars=None):
         self._id = id
         self._state = state
         self._creation_time = creation_time
@@ -113,6 +114,7 @@ class MockChannel:
         self._connected_line_name = connected_line_name
         self._connected_line_number = connected_line_number
         self._name = name
+        self._channel_vars = channelvars
 
     def id_(self):
         return self._id
@@ -138,6 +140,7 @@ class MockChannel:
                 'app_name': None,
                 'app_data': None,
             },
+            'channelvars': self._channel_vars or {},
         }
 
 

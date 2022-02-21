@@ -1,4 +1,4 @@
-# Copyright 2015-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import uuid
@@ -63,14 +63,16 @@ class TestListCalls(IntegrationTest):
                                           connected_line_name='Denis',
                                           connected_line_number='4185557777',
                                           creation_time='first-time',
-                                          state='Up'),
+                                          state='Up',
+                                          channelvars={'CHANNEL(videonativeformat)': '(vp8|vp9)'}),
                               MockChannel(id='second-id',
                                           caller_id_name='Denis',
                                           caller_id_number='4185557777',
                                           connected_line_name='Weber',
                                           connected_line_number='4185556666',
                                           creation_time='second-time',
-                                          state='Ringing'))
+                                          state='Ringing',
+                                          channelvars={'CHANNEL(videonativeformat)': '(nothing)'}))
         self.ari.set_channel_variable({'first-id': {'XIVO_USERUUID': 'user1-uuid',
                                                     'WAZO_CHANNEL_DIRECTION': 'to-wazo',
                                                     'CHANNEL(channeltype)': 'other',
@@ -102,7 +104,8 @@ class TestListCalls(IntegrationTest):
                          'peer_caller_id_name': 'Denis',
                          'sip_call_id': None,
                          'line_id': SOME_LINE_ID,
-                         'is_caller': True}),
+                         'is_caller': True,
+                         'is_video': True}),
             has_entries({'call_id': 'second-id',
                          'conversation_id': 'first-conversation-id',
                          'user_uuid': 'user2-uuid',
@@ -116,7 +119,8 @@ class TestListCalls(IntegrationTest):
                          'peer_caller_id_name': 'Weber',
                          'sip_call_id': 'a-sip-call-id',
                          'line_id': 1235,
-                         'is_caller': False}))))
+                         'is_caller': False,
+                         'is_video': False}))))
 
     def test_given_some_calls_and_no_user_id_when_list_calls_then_list_calls_with_no_user_uuid(self):
         self.ari.set_channels(MockChannel(id='first-id'),
@@ -334,6 +338,34 @@ class TestUserListCalls(IntegrationTest):
         assert_that(calls, has_entry('items', contains_inanyorder(
             has_entries({'call_id': 'first-id'}))))
 
+    def test_extra_fields_on_user_calls(self):
+        user_uuid = 'user-uuid'
+        self.ari.set_channels(
+            MockChannel(
+                id='my-call',
+                channelvars={'CHANNEL(videonativeformat)': '(vp8|vp9)'},
+            ),
+            MockChannel(
+                id='my-second-call',
+                channelvars={'CHANNEL(videonativeformat)': '(nothing)'},
+            ),
+        )
+        self.ari.set_channel_variable({'my-call': {'XIVO_USERUUID': user_uuid},
+                                       'my-second-call': {'XIVO_USERUUID': user_uuid}})
+        self.confd.set_users(MockUser(uuid=user_uuid), MockUser(uuid='user2-uuid'))
+        calld_client = self.make_user_calld(user_uuid)
+
+        calls = calld_client.calls.list_calls_from_user()
+
+        assert_that(calls, has_entry('items', contains_inanyorder(
+            has_entries({'call_id': 'my-call',
+                         'user_uuid': user_uuid,
+                         'is_video': True}),
+            has_entries({'call_id': 'my-second-call',
+                         'user_uuid': user_uuid,
+                         'is_video': False})
+        )))
+
 
 class TestGetCall(IntegrationTest):
 
@@ -358,6 +390,7 @@ class TestGetCall(IntegrationTest):
             'first-id': {'XIVO_USERUUID': 'user1-uuid',
                          'CHANNEL(channeltype)': 'PJSIP',
                          'CHANNEL(pjsip,call-id)': 'a-sip-call-id',
+                         'CHANNEL(videonativeformat)': '(vp8|vp9)',
                          'WAZO_LINE_ID': str(SOME_LINE_ID)},
             'second-id': {'XIVO_USERUUID': 'user2-uuid'},
         })
@@ -379,6 +412,7 @@ class TestGetCall(IntegrationTest):
             'caller_id_number': '4185559999',
             'sip_call_id': 'a-sip-call-id',
             'line_id': SOME_LINE_ID,
+            'is_video': True,
         }))
 
 
