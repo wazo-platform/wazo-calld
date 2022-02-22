@@ -15,7 +15,12 @@ from wazo_test_helpers import until
 
 from .helpers.ari_ import MockChannel
 from .helpers.base import IntegrationTest
-from .helpers.constants import SOME_STASIS_APP, SOME_STASIS_APP_INSTANCE, XIVO_UUID
+from .helpers.constants import (
+    SOME_STASIS_APP,
+    SOME_STASIS_APP_INSTANCE,
+    XIVO_UUID,
+    VALID_TENANT
+)
 from .helpers.calld import new_call_id
 from .helpers.confd import MockLine, MockUser
 from .helpers.hamcrest_ import a_timestamp
@@ -111,18 +116,30 @@ class TestDialedFrom(IntegrationTest):
         )
 
         def assert_function():
-            assert_that(events.accumulate(), has_item(has_entries({
-                'name': 'call_ended',
-                'origin_uuid': XIVO_UUID,
-                'data': has_entries({
-                    'creation_time': '2016-02-01T15:00:00.000-05:00',
-                    'sip_call_id': 'foobar',
-                    'line_id': 2,
-                    'reason_code': 0,
-                    'is_caller': True,
-                    'answer_time': is_(a_timestamp()),
-                    'hangup_time': is_(a_timestamp()),
-                })})))
+            assert_that(
+                events.accumulate(with_headers=True),
+                has_item(
+                    has_entries(
+                        message=has_entries({
+                            'name': 'call_ended',
+                            'origin_uuid': XIVO_UUID,
+                            'data': has_entries({
+                                'creation_time': '2016-02-01T15:00:00.000-0500',
+                                'sip_call_id': 'foobar',
+                                'line_id': 2,
+                                'reason_code': 0,
+                                'is_caller': True,
+                                'answer_time': is_(a_timestamp()),
+                                'hangup_time': is_(a_timestamp()),
+                            })
+                        }),
+                        headers=has_entries(
+                            name='call_ended',
+                            tenant_uuid=VALID_TENANT,
+                        )
+                    )
+                )
+            )
 
         until.assert_(assert_function, tries=5)
 
@@ -141,17 +158,29 @@ class TestDialedFrom(IntegrationTest):
         )
 
         def assert_function():
-            assert_that(events.accumulate(), has_item(has_entries({
-                'name': 'call_ended',
-                'origin_uuid': XIVO_UUID,
-                'data': has_entries({
-                    'creation_time': '2016-02-01T15:00:00.000-0500',
-                    'sip_call_id': 'foobar',
-                    'line_id': 2,
-                    'reason_code': 0,
-                    'is_caller': False,
-                    'hangup_time': is_(a_timestamp()),
-                })})))
+            assert_that(
+                events.accumulate(with_headers=True),
+                has_item(
+                    has_entries(
+                        message=has_entries({
+                            'name': 'call_ended',
+                            'origin_uuid': XIVO_UUID,
+                            'data': has_entries({
+                                'creation_time': '2016-02-01T15:00:00.000-0500',
+                                'sip_call_id': 'foobar',
+                                'line_id': 2,
+                                'reason_code': 0,
+                                'is_caller': False,
+                                'hangup_time': is_(a_timestamp()),
+                            })
+                        }),
+                        headers=has_entries(
+                            name='call_ended',
+                            tenant_uuid=VALID_TENANT,
+                        )
+                    )
+                )
+            )
 
         until.assert_(assert_function, tries=5)
 
@@ -168,14 +197,26 @@ class TestDialedFrom(IntegrationTest):
         )
 
         def assert_function():
-            assert_that(events.accumulate(), has_item(has_entries({
-                'name': 'call_ended',
-                'origin_uuid': XIVO_UUID,
-                'data': has_entries({
-                    'creation_time': '2016-02-01T15:00:00.000-0500',
-                    'sip_call_id': '',
-                    'line_id': None,
-                    'hangup_time': is_(a_timestamp()),
-                })})))
+            assert_that(
+                events.accumulate(with_headers=True),
+                has_item(
+                    has_entries(
+                        message=has_entries({
+                            'name': 'call_ended',
+                            'origin_uuid': XIVO_UUID,
+                            'data': has_entries({
+                                'creation_time': '2016-02-01T15:00:00.000-0500',
+                                'sip_call_id': '',
+                                'line_id': None,
+                                'hangup_time': is_(a_timestamp()),
+                            })
+                        }),
+                        headers=has_entries(
+                            name='call_ended',
+                            tenant_uuid=VALID_TENANT,
+                        )
+                    )
+                )
+            )
 
         until.assert_(assert_function, tries=5)
