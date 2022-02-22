@@ -1,4 +1,4 @@
-# Copyright 2016-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import iso8601
@@ -66,6 +66,38 @@ class ConnectCallEvent(StartCallEvent):
         if len(event['args']) < 3:
             raise InvalidConnectCallEvent()
         return event['args'][2]
+
+
+class CallCreated:
+
+    name = 'call_created'
+    routing_key = 'calls.call.created'
+    required_acl = 'events.calls.{user_uuid}'
+
+    def __init__(self, call):
+        self.required_acl = self.required_acl.format(
+            user_uuid=call['user_uuid']
+        )
+        self._body = call
+
+    def marshal(self):
+        return self._body
+
+
+class CallEnded:
+
+    name = 'call_ended'
+    routing_key = 'calls.call.ended'
+    required_acl = 'events.calls.{user_uuid}'
+
+    def __init__(self, call):
+        self.required_acl = self.required_acl.format(
+            user_uuid=call['user_uuid']
+        )
+        self._body = call
+
+    def marshal(self):
+        return self._body
 
 
 class CallUpdated:

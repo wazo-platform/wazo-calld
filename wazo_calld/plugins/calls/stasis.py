@@ -1,10 +1,9 @@
-# Copyright 2016-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
 
 from wazo_calld.ari_ import DEFAULT_APPLICATION_NAME
-from xivo_bus.resources.common.event import ArbitraryEvent
 
 from .event import (
     CallEvent,
@@ -12,7 +11,6 @@ from .event import (
     StartCallEvent,
 )
 from .exceptions import InvalidConnectCallEvent
-from .schemas import call_schema
 from .stat_sender import StatSender
 from .state import (
     CallStateOnHook,
@@ -28,12 +26,13 @@ logger = logging.getLogger(__name__)
 
 class CallsStasis:
 
-    def __init__(self, ari, collectd, bus_publisher, services, xivo_uuid, amid_client):
+    def __init__(self, ari, collectd, bus_publisher, services, notifier, xivo_uuid, amid_client):
         self.ari = ari.client
         self._core_ari = ari
         self.bus_publisher = bus_publisher
         self.collectd = collectd
         self.services = services
+        self.notifier = notifier
         self.stat_sender = StatSender(collectd)
         self.state_factory = state_factory
         self.state_factory.set_dependencies(self.ari, self.stat_sender)
@@ -109,14 +108,4 @@ class CallsStasis:
             return
         logger.debug('Relaying to bus: channel %s ended', channel_id)
         call = self.services.channel_destroyed_event(event)
-
-        body = call_schema.dump(call)
-        body['reason_code'] = event['cause']
-
-        bus_event = ArbitraryEvent(
-            name='call_ended',
-            body=body,
-            required_acl='events.calls.{}'.format(call.user_uuid),
-        )
-        bus_event.routing_key = 'calls.call.ended'
-        self.bus_publisher.publish(bus_event, headers={'user_uuid:{uuid}'.format(uuid=call.user_uuid): True})
+        self.notifier.call_ended(call, event['cause'])
