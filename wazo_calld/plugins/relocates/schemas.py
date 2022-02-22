@@ -28,7 +28,7 @@ class LocationField(fields.Field):
         unknown = EXCLUDE
 
     locations = {
-        'line': fields.Nested(LineLocationSchema, unknown=EXCLUDE),
+        'line': fields.Nested(LineLocationSchema),
         'mobile': None,
     }
 

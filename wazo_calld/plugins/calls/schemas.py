@@ -34,10 +34,8 @@ class CallRequestDestinationSchema(CallBaseSchema):
 
 
 class CallRequestSchema(CallBaseSchema):
-    source = fields.Nested('CallRequestSourceSchema', required=True,
-                           unknown=EXCLUDE)
-    destination = fields.Nested('CallRequestDestinationSchema', required=True,
-                                unknown=EXCLUDE)
+    source = fields.Nested('CallRequestSourceSchema', required=True)
+    destination = fields.Nested('CallRequestDestinationSchema', required=True)
     variables = StrictDict(key_field=fields.String(required=True, validate=Length(min=1)),
                            value_field=fields.String(required=True, validate=Length(min=1)),
                            missing=dict)
