@@ -1,4 +1,4 @@
-# Copyright 2019-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import os
@@ -133,7 +133,7 @@ class TestFax(RealAsteriskIntegrationTest):
         def one_fax_channel():
             assert_that(self._fax_channels(), has_length(1))
 
-        until.assert_(one_fax_channel, timeout=3)
+        until.assert_(one_fax_channel, timeout=10)
 
     def test_send_fax_events_success(self):
         with open(os.path.join(ASSET_ROOT, 'fax', 'fax.pdf'), 'rb') as fax_file:
@@ -167,7 +167,7 @@ class TestFax(RealAsteriskIntegrationTest):
                 }),
             ))
 
-        until.assert_(bus_events_received, timeout=3)
+        until.assert_(bus_events_received, timeout=10)
 
     def test_send_fax_events_success_when_extension_contains_whitespace(self):
         with open(os.path.join(ASSET_ROOT, 'fax', 'fax.pdf'), 'rb') as fax_file:
@@ -201,7 +201,7 @@ class TestFax(RealAsteriskIntegrationTest):
                 }),
             ))
 
-        until.assert_(bus_events_received, timeout=3)
+        until.assert_(bus_events_received, timeout=10)
 
     def test_send_fax_events_failure(self):
         with open(os.path.join(ASSET_ROOT, 'fax', 'fax.pdf'), 'rb') as fax_file:
@@ -236,7 +236,7 @@ class TestFax(RealAsteriskIntegrationTest):
                 }),
             ))
 
-        until.assert_(bus_events_received, timeout=3)
+        until.assert_(bus_events_received, timeout=10)
 
     def test_send_fax_from_user_unknown(self):
         user_uuid = 'some-user-id'
@@ -338,7 +338,7 @@ class TestFax(RealAsteriskIntegrationTest):
                 }),
             ))
 
-        until.assert_(bus_events_received, timeout=3)
+        until.assert_(bus_events_received, timeout=10)
 
     def test_send_fax_from_user_events_success_when_extension_contains_whitespace(self):
         user_uuid = 'some-user-id'
@@ -381,4 +381,4 @@ class TestFax(RealAsteriskIntegrationTest):
                 }),
             ))
 
-        until.assert_(bus_events_received, timeout=3)
+        until.assert_(bus_events_received, timeout=10)
