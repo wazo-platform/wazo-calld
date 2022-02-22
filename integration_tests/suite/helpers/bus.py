@@ -228,6 +228,9 @@ class BusClient(bus_helper.BusClient):
                 'caller_id_number': '',
                 'entry_exten': '',
                 'conversation_id': conversation_id,
+                'ChanVariable': {
+                    'WAZO_TENANT_UUID': VALID_TENANT,
+                },
             },
         }, 'ami.UserEvent')
 
