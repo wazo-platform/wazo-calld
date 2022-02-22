@@ -1,4 +1,4 @@
-# Copyright 2016-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 import uuid
 
@@ -29,7 +29,7 @@ class TestBusConsume(IntegrationTest):
 
     def test_when_channel_created_then_bus_event(self):
         call_id = new_call_id()
-        self.ari.set_channels(MockChannel(id=call_id, connected_line_number=''))
+        self.ari.set_channels(MockChannel(id=call_id, connected_line_number='', channelvars={'CHANNEL(videonativeformat)': '(vp8)'}))
         self.ari.set_channel_variable({
             call_id: {
                 'WAZO_ENTRY_EXTEN': '*10',
@@ -50,6 +50,7 @@ class TestBusConsume(IntegrationTest):
                     'dialed_extension': '*10',
                     'peer_caller_id_number': '*10',
                     'sip_call_id': 'a-sip-call-id',
+                    'is_video': True,
                 })
             })))
 
@@ -57,7 +58,7 @@ class TestBusConsume(IntegrationTest):
 
     def test_when_channel_updated_then_bus_event(self):
         call_id = new_call_id()
-        self.ari.set_channels(MockChannel(id=call_id, state='Up'))
+        self.ari.set_channels(MockChannel(id=call_id, state='Up', channelvars={'CHANNEL(videonativeformat)': '(vp8)'}))
         events = self.bus.accumulator(routing_key='calls.call.updated')
 
         self.bus.send_ami_newstate_event(call_id)
@@ -66,7 +67,7 @@ class TestBusConsume(IntegrationTest):
             assert_that(events.accumulate(), has_item(has_entries({
                 'name': 'call_updated',
                 'origin_uuid': XIVO_UUID,
-                'data': has_entries({'call_id': call_id, 'status': 'Up'})
+                'data': has_entries({'call_id': call_id, 'status': 'Up', 'is_video': True})
             })))
 
         until.assert_(assert_function, tries=5)

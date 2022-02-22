@@ -1,4 +1,4 @@
-# Copyright 2015-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import uuid
@@ -13,7 +13,6 @@ from hamcrest import (
     empty,
     equal_to,
     has_entries,
-    has_entry,
     has_item,
     has_items,
     has_properties,
@@ -54,7 +53,7 @@ class TestListCalls(IntegrationTest):
     def test_given_no_calls_when_list_calls_then_empty_list(self):
         calls = self.calld_client.calls.list_calls()
 
-        assert_that(calls, has_entry('items', contains()))
+        assert_that(calls, has_entries(items=contains()))
 
     def test_given_some_calls_with_user_id_when_list_calls_then_calls_are_complete(self):
         self.ari.set_channels(MockChannel(id='first-id',
@@ -63,14 +62,16 @@ class TestListCalls(IntegrationTest):
                                           connected_line_name='Denis',
                                           connected_line_number='4185557777',
                                           creation_time='first-time',
-                                          state='Up'),
+                                          state='Up',
+                                          channelvars={'CHANNEL(videonativeformat)': '(vp8|vp9)'}),
                               MockChannel(id='second-id',
                                           caller_id_name='Denis',
                                           caller_id_number='4185557777',
                                           connected_line_name='Weber',
                                           connected_line_number='4185556666',
                                           creation_time='second-time',
-                                          state='Ringing'))
+                                          state='Ringing',
+                                          channelvars={'CHANNEL(videonativeformat)': '(nothing)'}))
         self.ari.set_channel_variable({'first-id': {'XIVO_USERUUID': 'user1-uuid',
                                                     'WAZO_CHANNEL_DIRECTION': 'to-wazo',
                                                     'CHANNEL(channeltype)': 'other',
@@ -88,35 +89,42 @@ class TestListCalls(IntegrationTest):
 
         calls = self.calld_client.calls.list_calls()
 
-        assert_that(calls, has_entry('items', contains_inanyorder(
-            has_entries({'call_id': 'first-id',
-                         'conversation_id': 'first-conversation-id',
-                         'user_uuid': 'user1-uuid',
-                         'status': 'Up',
-                         'bridges': ['bridge-id'],
-                         'talking_to': {'second-id': 'user2-uuid'},
-                         'creation_time': 'first-time',
-                         'caller_id_number': '4185556666',
-                         'caller_id_name': 'Weber',
-                         'peer_caller_id_number': '4185557777',
-                         'peer_caller_id_name': 'Denis',
-                         'sip_call_id': None,
-                         'line_id': SOME_LINE_ID,
-                         'is_caller': True}),
-            has_entries({'call_id': 'second-id',
-                         'conversation_id': 'first-conversation-id',
-                         'user_uuid': 'user2-uuid',
-                         'status': 'Ringing',
-                         'bridges': ['bridge-id'],
-                         'talking_to': {'first-id': 'user1-uuid'},
-                         'creation_time': 'second-time',
-                         'caller_id_number': '4185557777',
-                         'caller_id_name': 'Denis',
-                         'peer_caller_id_number': '4185556666',
-                         'peer_caller_id_name': 'Weber',
-                         'sip_call_id': 'a-sip-call-id',
-                         'line_id': 1235,
-                         'is_caller': False}))))
+        assert_that(calls, has_entries(items=contains_inanyorder(
+            has_entries(
+                call_id='first-id',
+                conversation_id='first-conversation-id',
+                user_uuid='user1-uuid',
+                status='Up',
+                bridges=['bridge-id'],
+                talking_to={'second-id': 'user2-uuid'},
+                creation_time='first-time',
+                caller_id_number='4185556666',
+                caller_id_name='Weber',
+                peer_caller_id_number='4185557777',
+                peer_caller_id_name='Denis',
+                sip_call_id=None,
+                line_id=SOME_LINE_ID,
+                is_caller=True,
+                is_video=True,
+            ),
+            has_entries(
+                call_id='second-id',
+                conversation_id='first-conversation-id',
+                user_uuid='user2-uuid',
+                status='Ringing',
+                bridges=['bridge-id'],
+                talking_to={'first-id': 'user1-uuid'},
+                creation_time='second-time',
+                caller_id_number='4185557777',
+                caller_id_name='Denis',
+                peer_caller_id_number='4185556666',
+                peer_caller_id_name='Weber',
+                sip_call_id='a-sip-call-id',
+                line_id=1235,
+                is_caller=False,
+                is_video=False,
+            )
+        )))
 
     def test_given_some_calls_and_no_user_id_when_list_calls_then_list_calls_with_no_user_uuid(self):
         self.ari.set_channels(MockChannel(id='first-id'),
@@ -124,11 +132,10 @@ class TestListCalls(IntegrationTest):
 
         calls = self.calld_client.calls.list_calls()
 
-        assert_that(calls, has_entry('items', contains_inanyorder(
-            has_entries({'call_id': 'first-id',
-                         'user_uuid': None}),
-            has_entries({'call_id': 'second-id',
-                         'user_uuid': None}))))
+        assert_that(calls, has_entries(items=contains_inanyorder(
+            has_entries(call_id='first-id', user_uuid=None),
+            has_entries(call_id='second-id', user_uuid=None),
+        )))
 
     def test_given_some_calls_when_list_calls_by_application_then_list_of_calls_is_filtered(self):
         self.ari.set_channels(MockChannel(id='first-id'),
@@ -138,9 +145,10 @@ class TestListCalls(IntegrationTest):
 
         calls = self.calld_client.calls.list_calls(application='my-app')
 
-        assert_that(calls, has_entry('items', contains_inanyorder(
-            has_entries({'call_id': 'first-id'}),
-            has_entries({'call_id': 'third-id'}))))
+        assert_that(calls, has_entries(items=contains_inanyorder(
+            has_entries(call_id='first-id'),
+            has_entries(call_id='third-id'),
+        )))
 
     def test_given_some_calls_and_no_applications_when_list_calls_by_application_then_no_calls(self):
         self.ari.set_channels(MockChannel(id='first-id'),
@@ -148,7 +156,7 @@ class TestListCalls(IntegrationTest):
 
         calls = self.calld_client.calls.list_calls(application='my-app')
 
-        assert_that(calls, has_entry('items', empty()))
+        assert_that(calls, has_entries(items=empty()))
 
     def test_given_some_calls_when_list_calls_by_application_instance_then_list_of_calls_is_filtered(self):
         self.ari.set_channels(MockChannel(id='first-id'),
@@ -171,9 +179,10 @@ class TestListCalls(IntegrationTest):
             application_instance='appX',
         )
 
-        assert_that(calls, has_entry('items', contains_inanyorder(
-            has_entries({'call_id': 'first-id'}),
-            has_entries({'call_id': 'third-id'}))))
+        assert_that(calls, has_entries(items=contains_inanyorder(
+            has_entries(call_id='first-id'),
+            has_entries(call_id='third-id'),
+        )))
 
     def test_given_some_calls_and_application_bound_to_all_channels_when_list_calls_by_application_then_all_calls(self):
         self.ari.set_channels(MockChannel(id='first-id'),
@@ -182,10 +191,10 @@ class TestListCalls(IntegrationTest):
 
         calls = self.calld_client.calls.list_calls(application='my-app')
 
-        assert_that(calls,
-                    has_entry('items', contains_inanyorder(
-                        has_entries({'call_id': 'first-id'}),
-                        has_entries({'call_id': 'second-id'}))))
+        assert_that(calls, has_entries(items=contains_inanyorder(
+            has_entries(call_id='first-id'),
+            has_entries(call_id='second-id'),
+        )))
 
     def test_given_some_calls_and_application_bound_to_all_channels_when_list_calls_by_application_instance_then_calls_are_still_filtered_by_application(self):
         self.ari.set_channels(MockChannel(id='first-id'),
@@ -203,8 +212,9 @@ class TestListCalls(IntegrationTest):
             application_instance='appX',
         )
 
-        assert_that(calls, has_entry('items', contains(
-            has_entries({'call_id': 'first-id'}))))
+        assert_that(calls, has_entries(items=contains(
+            has_entries(call_id='first-id'),
+        )))
 
     def test_given_local_channels_when_list_then_talking_to_is_none(self):
         self.ari.set_channels(MockChannel(id='first-id'),
@@ -217,11 +227,10 @@ class TestListCalls(IntegrationTest):
 
         calls = self.calld_client.calls.list_calls()
 
-        assert_that(calls, has_entry('items', contains_inanyorder(
-            has_entries({'call_id': 'first-id',
-                         'talking_to': {'second-id': None}}),
-            has_entries({'call_id': 'second-id',
-                         'talking_to': {'first-id': 'user1-uuid'}}))))
+        assert_that(calls, has_entries(items=contains_inanyorder(
+            has_entries(call_id='first-id', talking_to={'second-id': None}),
+            has_entries(call_id='second-id', talking_to={'first-id': 'user1-uuid'}),
+        )))
 
 
 class TestUserListCalls(IntegrationTest):
@@ -238,7 +247,7 @@ class TestUserListCalls(IntegrationTest):
         calld_client = self.make_user_calld(user_uuid)
         calls = calld_client.calls.list_calls_from_user()
 
-        assert_that(calls, has_entry('items', contains()))
+        assert_that(calls, has_entries(items=contains()))
 
     def test_given_some_calls_with_user_id_when_list_my_calls_then_calls_are_filtered_by_user(self):
         user_uuid = 'user-uuid'
@@ -255,11 +264,10 @@ class TestUserListCalls(IntegrationTest):
 
         calls = calld_client.calls.list_calls_from_user()
 
-        assert_that(calls, has_entry('items', contains_inanyorder(
-            has_entries({'call_id': 'my-call',
-                         'user_uuid': user_uuid}),
-            has_entries({'call_id': 'my-second-call',
-                         'user_uuid': user_uuid}))))
+        assert_that(calls, has_entries(items=contains_inanyorder(
+            has_entries(call_id='my-call', user_uuid=user_uuid),
+            has_entries(call_id='my-second-call', user_uuid=user_uuid),
+        )))
 
     def test_given_some_calls_when_list_calls_by_application_then_list_of_calls_is_filtered(self):
         user_uuid = 'user-uuid'
@@ -274,9 +282,10 @@ class TestUserListCalls(IntegrationTest):
 
         calls = calld_client.calls.list_calls_from_user(application='my-app')
 
-        assert_that(calls, has_entry('items', contains_inanyorder(
-            has_entries({'call_id': 'first-id'}),
-            has_entries({'call_id': 'third-id'}))))
+        assert_that(calls, has_entries(items=contains_inanyorder(
+            has_entries(call_id='first-id'),
+            has_entries(call_id='third-id'),
+        )))
 
     def test_given_some_calls_and_no_applications_when_list_calls_by_application_then_no_calls(self):
         user_uuid = 'user-uuid'
@@ -288,7 +297,7 @@ class TestUserListCalls(IntegrationTest):
 
         calls = calld_client.calls.list_calls_from_user(application='my-app')
 
-        assert_that(calls, has_entry('items', empty()))
+        assert_that(calls, has_entries(items=empty()))
 
     def test_given_some_calls_when_list_calls_by_application_instance_then_list_of_calls_is_filtered(self):
         user_uuid = 'user-uuid'
@@ -317,9 +326,10 @@ class TestUserListCalls(IntegrationTest):
             application_instance='appX',
         )
 
-        assert_that(calls, has_entry('items', contains_inanyorder(
-            has_entries({'call_id': 'first-id'}),
-            has_entries({'call_id': 'third-id'}))))
+        assert_that(calls, has_entries(items=contains_inanyorder(
+            has_entries(call_id='first-id'),
+            has_entries(call_id='third-id'),
+        )))
 
     def test_given_local_channels_when_list_then_local_channels_are_ignored(self):
         user_uuid = 'user-uuid'
@@ -331,8 +341,33 @@ class TestUserListCalls(IntegrationTest):
 
         calls = calld_client.calls.list_calls_from_user()
 
-        assert_that(calls, has_entry('items', contains_inanyorder(
-            has_entries({'call_id': 'first-id'}))))
+        assert_that(calls, has_entries(items=contains_inanyorder(
+            has_entries(call_id='first-id'),
+        )))
+
+    def test_extra_fields_on_user_calls(self):
+        user_uuid = 'user-uuid'
+        self.ari.set_channels(
+            MockChannel(
+                id='my-call',
+                channelvars={'CHANNEL(videonativeformat)': '(vp8|vp9)'},
+            ),
+            MockChannel(
+                id='my-second-call',
+                channelvars={'CHANNEL(videonativeformat)': '(nothing)'},
+            ),
+        )
+        self.ari.set_channel_variable({'my-call': {'XIVO_USERUUID': user_uuid},
+                                       'my-second-call': {'XIVO_USERUUID': user_uuid}})
+        self.confd.set_users(MockUser(uuid=user_uuid), MockUser(uuid='user2-uuid'))
+        calld_client = self.make_user_calld(user_uuid)
+
+        calls = calld_client.calls.list_calls_from_user()
+
+        assert_that(calls, has_entries(items=contains_inanyorder(
+            has_entries(call_id='my-call', user_uuid=user_uuid, is_video=True),
+            has_entries(call_id='my-second-call', user_uuid=user_uuid, is_video=False),
+        )))
 
 
 class TestGetCall(IntegrationTest):
@@ -358,6 +393,7 @@ class TestGetCall(IntegrationTest):
             'first-id': {'XIVO_USERUUID': 'user1-uuid',
                          'CHANNEL(channeltype)': 'PJSIP',
                          'CHANNEL(pjsip,call-id)': 'a-sip-call-id',
+                         'CHANNEL(videonativeformat)': '(vp8|vp9)',
                          'WAZO_LINE_ID': str(SOME_LINE_ID)},
             'second-id': {'XIVO_USERUUID': 'user2-uuid'},
         })
@@ -366,20 +402,19 @@ class TestGetCall(IntegrationTest):
 
         call = self.calld_client.calls.get_call('first-id')
 
-        assert_that(call, has_entries({
-            'call_id': 'first-id',
-            'user_uuid': 'user1-uuid',
-            'status': 'Up',
-            'talking_to': {
-                'second-id': 'user2-uuid'
-            },
-            'bridges': contains('bridge-id'),
-            'creation_time': 'first-time',
-            'caller_id_name': 'Weber',
-            'caller_id_number': '4185559999',
-            'sip_call_id': 'a-sip-call-id',
-            'line_id': SOME_LINE_ID,
-        }))
+        assert_that(call, has_entries(
+            call_id='first-id',
+            user_uuid='user1-uuid',
+            status='Up',
+            talking_to={'second-id': 'user2-uuid'},
+            bridges=contains('bridge-id'),
+            creation_time='first-time',
+            caller_id_name='Weber',
+            caller_id_number='4185559999',
+            sip_call_id='a-sip-call-id',
+            line_id=SOME_LINE_ID,
+            is_video=True,
+        ))
 
 
 class TestDeleteCall(IntegrationTest):
@@ -404,10 +439,10 @@ class TestDeleteCall(IntegrationTest):
 
         self.calld.hangup_call(call_id)
 
-        assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
-            'method': 'DELETE',
-            'path': '/ari/channels/call-id',
-        }))))
+        assert_that(self.ari.requests(), has_entries(requests=has_item(has_entries(
+            method='DELETE',
+            path='/ari/channels/call-id',
+        ))))
 
 
 class TestUserDeleteCall(IntegrationTest):
@@ -442,7 +477,7 @@ class TestUserDeleteCall(IntegrationTest):
         result = self.calld.delete_user_me_call_result(call_id, token=token)
 
         assert_that(result.status_code, equal_to(403))
-        assert_that(result.json(), has_entry('message', contains_string('user')))
+        assert_that(result.json(), has_entries(message=contains_string('user')))
 
     def test_given_my_call_when_delete_call_then_call_hungup(self):
         call_id = 'call-id'
@@ -455,10 +490,10 @@ class TestUserDeleteCall(IntegrationTest):
 
         self.calld.hangup_my_call(call_id, token)
 
-        assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
-            'method': 'DELETE',
-            'path': '/ari/channels/call-id',
-        }))))
+        assert_that(self.ari.requests(), has_entries(requests=has_item(has_entries(
+            method='DELETE',
+            path='/ari/channels/call-id',
+        ))))
 
     def test_local_channel_when_delete_call_then_call_hungup(self):
         call_id = 'call-id'
@@ -504,17 +539,17 @@ class TestCreateCall(IntegrationTest):
         }
         result = self.calld_client.calls.make_call(call_args)
 
-        assert_that(result, has_entries({
-            'call_id': 'new-call-id',
-            'dialed_extension': 'my-extension',
-            'peer_caller_id_number': 'my-extension',
-            'sip_call_id': 'a-sip-call-id',
-            'line_id': SOME_LINE_ID,
-        }))
-        assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
-            'method': 'POST',
-            'path': '/ari/channels',
-        }))))
+        assert_that(result, has_entries(
+            call_id='new-call-id',
+            dialed_extension='my-extension',
+            peer_caller_id_number='my-extension',
+            sip_call_id='a-sip-call-id',
+            line_id=SOME_LINE_ID,
+        ))
+        assert_that(self.ari.requests(), has_entries(requests=has_item(has_entries(
+            method='POST',
+            path='/ari/channels',
+        ))))
 
     def test_create_call_with_extension_containing_whitespace(self):
         user_uuid = 'user-uuid'
@@ -536,17 +571,17 @@ class TestCreateCall(IntegrationTest):
         }
         result = self.calld_client.calls.make_call(call_args)
 
-        assert_that(result, has_entries({
-            'call_id': 'new-call-id',
-            'dialed_extension': '123456',
-            'peer_caller_id_number': '123456',
-            'sip_call_id': 'a-sip-call-id',
-            'line_id': SOME_LINE_ID,
-        }))
-        assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
-            'method': 'POST',
-            'path': '/ari/channels',
-        }))))
+        assert_that(result, has_entries(
+            call_id='new-call-id',
+            dialed_extension='123456',
+            peer_caller_id_number='123456',
+            sip_call_id='a-sip-call-id',
+            line_id=SOME_LINE_ID,
+        ))
+        assert_that(self.ari.requests(), has_entries(requests=has_item(has_entries(
+            method='POST',
+            path='/ari/channels',
+        ))))
 
     def test_when_create_call_then_ari_arguments_are_correct(self):
         user_uuid = 'user-uuid'
@@ -571,22 +606,26 @@ class TestCreateCall(IntegrationTest):
         }
         self.calld_client.calls.make_call(call_args)
 
-        assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
-            'method': 'POST',
-            'path': '/ari/channels',
-            'query': has_items(['priority', str(priority)],
-                               ['extension', 'my-extension'],
-                               ['context', 'my-context'],
-                               ['endpoint', 'pjsip/line-name']),
-            'json': has_entries({'variables': has_entries({'MY_VARIABLE': 'my-value',
-                                                           'SECOND_VARIABLE': 'my-second-value',
-                                                           'CALLERID(name)': 'my-extension',
-                                                           'CALLERID(num)': 'my-extension',
-                                                           'CONNECTEDLINE(name)': 'my-connected-line',
-                                                           'CONNECTEDLINE(num)': 'my-extension',
-                                                           'XIVO_FIX_CALLERID': '1',
-                                                           'WAZO_CHANNEL_DIRECTION': 'to-wazo'})}),
-        }))))
+        assert_that(self.ari.requests(), has_entries(requests=has_item(has_entries(
+            method='POST',
+            path='/ari/channels',
+            query=has_items(
+                ['priority', str(priority)],
+                ['extension', 'my-extension'],
+                ['context', 'my-context'],
+                ['endpoint', 'pjsip/line-name'],
+            ),
+            json=has_entries(variables=has_entries({
+                'MY_VARIABLE': 'my-value',
+                'SECOND_VARIABLE': 'my-second-value',
+                'CALLERID(name)': 'my-extension',
+                'CALLERID(num)': 'my-extension',
+                'CONNECTEDLINE(name)': 'my-connected-line',
+                'CONNECTEDLINE(num)': 'my-extension',
+                'XIVO_FIX_CALLERID': '1',
+                'WAZO_CHANNEL_DIRECTION': 'to-wazo'
+            })),
+        ))))
 
     def test_when_create_call_with_no_variables_then_default_variables_are_set(self):
         user_uuid = 'user-uuid'
@@ -605,17 +644,19 @@ class TestCreateCall(IntegrationTest):
         }
         self.calld_client.calls.make_call(call_args)
 
-        assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
-            'method': 'POST',
-            'path': '/ari/channels',
-            'json': has_entries({'variables': {'WAZO_USERUUID': 'user-uuid',
-                                               'CONNECTEDLINE(num)': 'my-extension',
-                                               'CONNECTEDLINE(name)': 'my-extension',
-                                               'CALLERID(name)': 'my-extension',
-                                               'CALLERID(num)': 'my-extension',
-                                               'XIVO_FIX_CALLERID': '1',
-                                               'WAZO_CHANNEL_DIRECTION': 'to-wazo'}}),
-        }))))
+        assert_that(self.ari.requests(), has_entries(requests=has_item(has_entries(
+            method='POST',
+            path='/ari/channels',
+            json=has_entries(variables={
+                'WAZO_USERUUID': 'user-uuid',
+                'CONNECTEDLINE(num)': 'my-extension',
+                'CONNECTEDLINE(name)': 'my-extension',
+                'CALLERID(name)': 'my-extension',
+                'CALLERID(num)': 'my-extension',
+                'XIVO_FIX_CALLERID': '1',
+                'WAZO_CHANNEL_DIRECTION': 'to-wazo',
+            }),
+        ))))
 
     def test_when_create_call_with_pound_exten_then_connected_line_num_is_empty(self):
         '''
@@ -639,14 +680,16 @@ class TestCreateCall(IntegrationTest):
         }
         self.calld_client.calls.make_call(call_args)
 
-        assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
-            'method': 'POST',
-            'path': '/ari/channels',
-            'json': has_entries({'variables': has_entries({'CONNECTEDLINE(num)': '',
-                                                           'CONNECTEDLINE(name)': '#pound',
-                                                           'CALLERID(name)': '#pound',
-                                                           'CALLERID(num)': '#pound'})}),
-        }))))
+        assert_that(self.ari.requests(), has_entries(requests=has_item(has_entries(
+            method='POST',
+            path='/ari/channels',
+            json=has_entries(variables=has_entries({
+                'CONNECTEDLINE(num)': '',
+                'CONNECTEDLINE(name)': '#pound',
+                'CALLERID(name)': '#pound',
+                'CALLERID(num)': '#pound',
+            })),
+        ))))
 
     def test_create_call_with_multiple_lines(self):
         user_uuid = 'user-uuid'
@@ -665,11 +708,11 @@ class TestCreateCall(IntegrationTest):
         }
         result = self.calld_client.calls.make_call(call_args)
 
-        assert_that(result, has_entry('call_id', 'new-call-id'))
-        assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
-            'method': 'POST',
-            'path': '/ari/channels',
-        }))))
+        assert_that(result, has_entries(call_id='new-call-id'))
+        assert_that(self.ari.requests(), has_entries(requests=has_item(has_entries(
+            method='POST',
+            path='/ari/channels',
+        ))))
 
     def test_create_call_when_no_confd_then_503(self):
         priority = 1
@@ -866,13 +909,16 @@ class TestCreateCall(IntegrationTest):
         }
         self.calld_client.calls.make_call(call_args)
 
-        assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
-            'method': 'POST',
-            'path': '/ari/channels',
-            'query': has_items(['priority', str(priority)],
-                               ['extension', 'my-extension'],
-                               ['context', 'my-context'],
-                               ['endpoint', 'pjsip/second-line-name'])}))))
+        assert_that(self.ari.requests(), has_entries(requests=has_item(has_entries(
+            method='POST',
+            path='/ari/channels',
+            query=has_items(
+                ['priority', str(priority)],
+                ['extension', 'my-extension'],
+                ['context', 'my-context'],
+                ['endpoint', 'pjsip/second-line-name'],
+            ),
+        ))))
 
     def test_create_call_all_lines(self):
         user_uuid = 'user-uuid'
@@ -894,13 +940,16 @@ class TestCreateCall(IntegrationTest):
         }
         self.calld_client.calls.make_call(call_args)
 
-        assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
-            'method': 'POST',
-            'path': '/ari/channels',
-            'query': has_items(['priority', str(priority)],
-                               ['extension', 'my-extension'],
-                               ['context', 'my-context'],
-                               ['endpoint', 'local/user-uuid@usersharedlines'])}))))
+        assert_that(self.ari.requests(), has_entries(requests=has_item(has_entries(
+            method='POST',
+            path='/ari/channels',
+            query=has_items(
+                ['priority', str(priority)],
+                ['extension', 'my-extension'],
+                ['context', 'my-context'],
+                ['endpoint', 'local/user-uuid@usersharedlines'],
+            ),
+        ))))
 
     def test_create_call_all_lines_with_no_line(self):
         user_uuid = 'user-uuid'
@@ -1042,17 +1091,17 @@ class TestCreateCall(IntegrationTest):
         }
         self.calld_client.calls.make_call(call_args)
 
-        assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
-            'method': 'POST',
-            'path': '/ari/channels',
-            'json': has_entries({'variables': has_entries({
+        assert_that(self.ari.requests(), has_entries(requests=has_item(has_entries(
+            method='POST',
+            path='/ari/channels',
+            json=has_entries(variables=has_entries({
                 'PJSIP_HEADER(add,Alert-Info)': '<http://wazo.community>;info=alert-autoanswer;delay=0;xivo-autoanswer',
                 'PJSIP_HEADER(add,Answer-After)': '0',
                 'PJSIP_HEADER(add,Answer-Mode)': 'Auto',
                 'PJSIP_HEADER(add,Call-Info)': ';answer-after=0',
                 'PJSIP_HEADER(add,P-Auto-answer)': 'normal',
-            })}),
-        }))))
+            })),
+        ))))
 
 
 class TestUserCreateCall(IntegrationTest):
@@ -1082,8 +1131,10 @@ class TestUserCreateCall(IntegrationTest):
             response = self.calld.post_user_me_call_result(invalid_body, VALID_TOKEN)
 
             assert_that(response.status_code, equal_to(400))
-            assert_that(response.json(), has_entries({'message': contains_string('invalid'),
-                                                      'error_id': equal_to('invalid-data')}))
+            assert_that(response.json(), has_entries(
+                message=contains_string('invalid'),
+                error_id=equal_to('invalid-data'),
+            ))
 
     def invalid_call_requests(self):
         valid_call_request = {
@@ -1121,15 +1172,15 @@ class TestUserCreateCall(IntegrationTest):
 
         result = self.calld.originate_me(extension='my-extension', token=token)
 
-        assert_that(result, has_entries({
-            'call_id': 'new-call-id',
-            'dialed_extension': 'my-extension',
-            'peer_caller_id_number': 'my-extension',
-        }))
-        assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
-            'method': 'POST',
-            'path': '/ari/channels',
-        }))))
+        assert_that(result, has_entries(
+            call_id='new-call-id',
+            dialed_extension='my-extension',
+            peer_caller_id_number='my-extension',
+        ))
+        assert_that(self.ari.requests(), has_entries(requests=has_item(has_entries(
+            method='POST',
+            path='/ari/channels',
+        ))))
 
     def test_create_call_with_extension_containing_whitespace(self):
         user_uuid = 'user-uuid'
@@ -1142,15 +1193,15 @@ class TestUserCreateCall(IntegrationTest):
 
         result = self.calld.originate_me(extension='12 3\n4\t5\r6', token=token)
 
-        assert_that(result, has_entries({
-            'call_id': 'new-call-id',
-            'dialed_extension': '123456',
-            'peer_caller_id_number': '123456',
-        }))
-        assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
-            'method': 'POST',
-            'path': '/ari/channels',
-        }))))
+        assert_that(result, has_entries(
+            call_id='new-call-id',
+            dialed_extension='123456',
+            peer_caller_id_number='123456',
+        ))
+        assert_that(self.ari.requests(), has_entries(requests=has_item(has_entries(
+            method='POST',
+            path='/ari/channels',
+        ))))
 
     def test_when_create_call_then_ari_arguments_are_correct(self):
         user_uuid = 'user-uuid'
@@ -1168,22 +1219,26 @@ class TestUserCreateCall(IntegrationTest):
                                            'XIVO_FIX_CALLERID': '1'},
                                 token=token)
 
-        assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
-            'method': 'POST',
-            'path': '/ari/channels',
-            'query': has_items(['priority', '1'],
-                               ['extension', 'my-extension'],
-                               ['context', 'my-context'],
-                               ['endpoint', 'pjsip/line-name']),
-            'json': has_entries({'variables': has_entries({'MY_VARIABLE': 'my-value',
-                                                           'SECOND_VARIABLE': 'my-second-value',
-                                                           'CONNECTEDLINE(name)': 'my-connected-line',
-                                                           'CONNECTEDLINE(num)': 'my-extension',
-                                                           'CALLERID(name)': 'my-extension',
-                                                           'CALLERID(num)': 'my-extension',
-                                                           'XIVO_FIX_CALLERID': '1',
-                                                           'WAZO_CHANNEL_DIRECTION': 'to-wazo'})}),
-        }))))
+        assert_that(self.ari.requests(), has_entries(requests=has_item(has_entries(
+            method='POST',
+            path='/ari/channels',
+            query=has_items(
+                ['priority', '1'],
+                ['extension', 'my-extension'],
+                ['context', 'my-context'],
+                ['endpoint', 'pjsip/line-name'],
+            ),
+            json=has_entries(variables=has_entries({
+                'MY_VARIABLE': 'my-value',
+                'SECOND_VARIABLE': 'my-second-value',
+                'CONNECTEDLINE(name)': 'my-connected-line',
+                'CONNECTEDLINE(num)': 'my-extension',
+                'CALLERID(name)': 'my-extension',
+                'CALLERID(num)': 'my-extension',
+                'XIVO_FIX_CALLERID': '1',
+                'WAZO_CHANNEL_DIRECTION': 'to-wazo',
+            })),
+        ))))
 
     def test_when_create_call_with_no_variables_then_default_variables_are_set(self):
         user_uuid = 'user-uuid'
@@ -1196,17 +1251,19 @@ class TestUserCreateCall(IntegrationTest):
 
         self.calld.originate_me(extension='my-extension', token=token)
 
-        assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
-            'method': 'POST',
-            'path': '/ari/channels',
-            'json': has_entries({'variables': {'WAZO_USERUUID': 'user-uuid',
-                                               'CONNECTEDLINE(name)': 'my-extension',
-                                               'CONNECTEDLINE(num)': 'my-extension',
-                                               'CALLERID(name)': 'my-extension',
-                                               'CALLERID(num)': 'my-extension',
-                                               'XIVO_FIX_CALLERID': '1',
-                                               'WAZO_CHANNEL_DIRECTION': 'to-wazo'}}),
-        }))))
+        assert_that(self.ari.requests(), has_entries(requests=has_item(has_entries(
+            method='POST',
+            path='/ari/channels',
+            json=has_entries(variables={
+                'WAZO_USERUUID': 'user-uuid',
+                'CONNECTEDLINE(name)': 'my-extension',
+                'CONNECTEDLINE(num)': 'my-extension',
+                'CALLERID(name)': 'my-extension',
+                'CALLERID(num)': 'my-extension',
+                'XIVO_FIX_CALLERID': '1',
+                'WAZO_CHANNEL_DIRECTION': 'to-wazo',
+            }),
+        ))))
 
     def test_create_call_with_multiple_lines(self):
         user_uuid = 'user-uuid'
@@ -1219,11 +1276,11 @@ class TestUserCreateCall(IntegrationTest):
 
         result = self.calld.originate_me(extension='my-extension', token=token)
 
-        assert_that(result, has_entry('call_id', 'new-call-id'))
-        assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
-            'method': 'POST',
-            'path': '/ari/channels',
-        }))))
+        assert_that(result, has_entries(call_id='new-call-id'))
+        assert_that(self.ari.requests(), has_entries(requests=has_item(has_entries(
+            method='POST',
+            path='/ari/channels',
+        ))))
 
     def test_create_call_with_no_lines(self):
         user_uuid = 'user-uuid'
@@ -1292,13 +1349,16 @@ class TestUserCreateCall(IntegrationTest):
 
         self.calld.originate_me('my-extension', line_id=second_line_id, token=token)
 
-        assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
-            'method': 'POST',
-            'path': '/ari/channels',
-            'query': has_items(['priority', '1'],
-                               ['extension', 'my-extension'],
-                               ['context', 'second-context'],
-                               ['endpoint', 'pjsip/second-line-name'])}))))
+        assert_that(self.ari.requests(), has_entries(requests=has_item(has_entries(
+            method='POST',
+            path='/ari/channels',
+            query=has_items(
+                ['priority', '1'],
+                ['extension', 'my-extension'],
+                ['context', 'second-context'],
+                ['endpoint', 'pjsip/second-line-name'],
+            ),
+        ))))
 
     def test_create_call_all_lines(self):
         user_uuid = 'user-uuid'
@@ -1313,13 +1373,16 @@ class TestUserCreateCall(IntegrationTest):
 
         self.calld.originate_me('my-extension', all_lines=True, token=token)
 
-        assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
-            'method': 'POST',
-            'path': '/ari/channels',
-            'query': has_items(['priority', '1'],
-                               ['extension', 'my-extension'],
-                               ['context', 'first-context'],
-                               ['endpoint', 'local/user-uuid@usersharedlines'])}))))
+        assert_that(self.ari.requests(), has_entries(requests=has_item(has_entries(
+            method='POST',
+            path='/ari/channels',
+            query=has_items(
+                ['priority', '1'],
+                ['extension', 'my-extension'],
+                ['context', 'first-context'],
+                ['endpoint', 'local/user-uuid@usersharedlines'],
+            ),
+        ))))
 
     def test_create_call_auto_answer(self):
         user_uuid = 'user-uuid'
@@ -1333,17 +1396,17 @@ class TestUserCreateCall(IntegrationTest):
 
         self.calld.originate_me('my-extension', token=token, auto_answer_caller=True)
 
-        assert_that(self.ari.requests(), has_entry('requests', has_item(has_entries({
-            'method': 'POST',
-            'path': '/ari/channels',
-            'json': has_entries({'variables': has_entries({
+        assert_that(self.ari.requests(), has_entries(requests=has_item(has_entries(
+            method='POST',
+            path='/ari/channels',
+            json=has_entries(variables=has_entries({
                 'PJSIP_HEADER(add,Alert-Info)': '<http://wazo.community>;info=alert-autoanswer;delay=0;xivo-autoanswer',
                 'PJSIP_HEADER(add,Answer-After)': '0',
                 'PJSIP_HEADER(add,Answer-Mode)': 'Auto',
                 'PJSIP_HEADER(add,Call-Info)': ';answer-after=0',
                 'PJSIP_HEADER(add,P-Auto-answer)': 'normal',
-            })}),
-        }))))
+            })),
+        ))))
 
 
 class TestFailingARI(IntegrationTest):
@@ -1428,15 +1491,15 @@ class TestConnectUser(IntegrationTest):
         assert_that(new_call, has_entries({
             'call_id': 'new-call-id'
         }))
-        assert_that(self.ari.requests(), has_entry('requests', has_items(has_entries({
-            'method': 'POST',
-            'path': '/ari/channels',
-            'query': contains_inanyorder(
+        assert_that(self.ari.requests(), has_entries(requests=has_items(has_entries(
+            method='POST',
+            path='/ari/channels',
+            query=contains_inanyorder(
                 ['app', 'callcontrol'],
                 ['endpoint', 'pjsip/line-name'],
                 ['appArgs', 'sw1,dialed_from,call-id'],
                 ['originator', 'call-id']),
-        }))))
+        ))))
 
     def test_given_no_confd_when_connect_user_then_503(self):
         with self.confd_stopped():
@@ -1855,10 +1918,10 @@ class TestCallHold(IntegrationTest):
         # Hold
         self.calld_client.calls.start_hold('first-id')
 
-        assert_that(self.phoned.requests(), has_entry('requests', has_item(has_entries({
-            'method': 'PUT',
-            'path': '/0.1/endpoints/abcdef/hold/start',
-        }))))
+        assert_that(self.phoned.requests(), has_entries(requests=has_item(has_entries(
+            method='PUT',
+            path='/0.1/endpoints/abcdef/hold/start',
+        ))))
 
     def test_unhold(self):
         self.ari.set_channels(MockChannel(id='first-id',
@@ -1892,10 +1955,10 @@ class TestCallHold(IntegrationTest):
         # Unhold
         self.calld_client.calls.stop_hold('first-id')
 
-        assert_that(self.phoned.requests(), has_entry('requests', has_item(has_entries({
-            'method': 'PUT',
-            'path': '/0.1/endpoints/abcdef/hold/stop',
-        }))))
+        assert_that(self.phoned.requests(), has_entries(requests=has_item(has_entries(
+            method='PUT',
+            path='/0.1/endpoints/abcdef/hold/stop',
+        ))))
 
     def test_user_hold(self):
         user_uuid = str(uuid.uuid4())
@@ -1946,10 +2009,10 @@ class TestCallHold(IntegrationTest):
         # Hold
         self.calld_client.calls.start_hold_from_user('user-channel-id')
 
-        assert_that(self.phoned.requests(), has_entry('requests', has_item(has_entries({
-            'method': 'PUT',
-            'path': '/0.1/endpoints/abcdef/hold/start',
-        }))))
+        assert_that(self.phoned.requests(), has_entries(requests=has_item(has_entries(
+            method='PUT',
+            path='/0.1/endpoints/abcdef/hold/start',
+        ))))
 
     def test_user_unhold(self):
         user_uuid = str(uuid.uuid4())
@@ -2000,10 +2063,10 @@ class TestCallHold(IntegrationTest):
         # Unhold
         self.calld_client.calls.stop_hold_from_user('user-channel-id')
 
-        assert_that(self.phoned.requests(), has_entry('requests', has_item(has_entries({
-            'method': 'PUT',
-            'path': '/0.1/endpoints/abcdef/hold/stop',
-        }))))
+        assert_that(self.phoned.requests(), has_entries(requests=has_item(has_entries(
+            method='PUT',
+            path='/0.1/endpoints/abcdef/hold/stop',
+        ))))
 
     def given_user_token(self, user_uuid):
         token = 'my-token'
@@ -2052,10 +2115,10 @@ class TestCallAnswer(IntegrationTest):
         # Answer
         self.calld_client.calls.answer('first-id')
 
-        assert_that(self.phoned.requests(), has_entry('requests', has_item(has_entries({
-            'method': 'PUT',
-            'path': '/0.1/endpoints/abcdef/answer',
-        }))))
+        assert_that(self.phoned.requests(), has_entries(requests=has_item(has_entries(
+            method='PUT',
+            path='/0.1/endpoints/abcdef/answer',
+        ))))
 
     def test_user_answer(self):
         user_uuid = str(uuid.uuid4())
@@ -2106,10 +2169,10 @@ class TestCallAnswer(IntegrationTest):
         # Answer
         self.calld_client.calls.answer_from_user('user-channel-id')
 
-        assert_that(self.phoned.requests(), has_entry('requests', has_item(has_entries({
-            'method': 'PUT',
-            'path': '/0.1/endpoints/abcdef/answer',
-        }))))
+        assert_that(self.phoned.requests(), has_entries(requests=has_item(has_entries(
+            method='PUT',
+            path='/0.1/endpoints/abcdef/answer',
+        ))))
 
     def given_user_token(self, user_uuid):
         token = 'my-token'

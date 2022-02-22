@@ -1,4 +1,4 @@
-# Copyright 2015-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -281,6 +281,7 @@ class CallsService:
         call.talking_to = {connected_channel.id: connected_channel.user()
                            for connected_channel in channel_helper.connected_channels()}
         call.is_caller = channel_helper.is_caller()
+        call.is_video = channel_variables.get('CHANNEL(videonativeformat)') != '(nothing)'
         call.dialed_extension = channel_helper.dialed_extension()
         call.sip_call_id = channel_helper.sip_call_id()
         call.line_id = channel_helper.line_id()
@@ -309,6 +310,7 @@ class CallsService:
         call.sip_call_id = channel_variables.get('WAZO_SIP_CALL_ID')
         call.line_id = channel_variables.get('WAZO_LINE_ID') or None
         call.creation_time = channel.get('creationtime')
+        call.is_video = channel_variables.get('CHANNEL(videonativeformat)') != '(nothing)'
         direction = channel_variables.get('WAZO_CHANNEL_DIRECTION')
         call.is_caller = True if direction == 'to-wazo' else False
 
@@ -319,6 +321,7 @@ class CallsService:
         event_variables = channel.json['channelvars']
         call = Call(channel.id)
         call.conversation_id = event_variables.get('CHANNEL(linkedid)') or None
+        call.is_video = event_variables.get('CHANNEL(videonativeformat)') != '(nothing)'
         call.creation_time = channel.json['creationtime']
         call.status = channel.json['state']
         call.caller_id_name = channel.json['caller']['name']
