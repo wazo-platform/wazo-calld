@@ -14,7 +14,7 @@ iso8601==0.1.11
 itsdangerous==0.24  # from flask
 jsonpatch==1.21
 kombu==4.6.11
-marshmallow==3.0.0b14
+marshmallow==3.10.0
 python-consul==0.7.1
 pyyaml==3.13  # from xivo-lib-python
 requests==2.21.0
