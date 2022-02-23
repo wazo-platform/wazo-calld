@@ -1816,7 +1816,7 @@ class TestCallSendDTMF(RealAsteriskIntegrationTest):
                     ))
                 )
 
-        until.assert_(amid_dtmf_events_received, tries=3)
+        until.assert_(amid_dtmf_events_received, tries=10)
 
     def test_put_dtmf_from_user(self):
         user_uuid = str(uuid.uuid4())
@@ -1859,7 +1859,7 @@ class TestCallSendDTMF(RealAsteriskIntegrationTest):
                     ))
                 )
 
-        until.assert_(amid_dtmf_events_received, tries=3)
+        until.assert_(amid_dtmf_events_received, tries=10)
 
     def given_call_not_stasis(self, user_uuid=None):
         user_uuid = user_uuid or str(uuid.uuid4())
