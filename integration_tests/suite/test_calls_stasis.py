@@ -124,7 +124,7 @@ class TestDialedFrom(IntegrationTest):
                             'name': 'call_ended',
                             'origin_uuid': XIVO_UUID,
                             'data': has_entries({
-                                'creation_time': '2016-02-01T15:00:00.000-0500',
+                                'creation_time': '2016-02-01T15:00:00.000-05:00',
                                 'sip_call_id': 'foobar',
                                 'line_id': 2,
                                 'reason_code': 0,

@@ -79,10 +79,14 @@ class TestBusConsume(IntegrationTest):
                 channelvars={
                     'CHANNEL(videonativeformat)': '(vp8)',
                     'WAZO_ANSWER_TIME': '2022-03-08T03:49:00+00:00',
-                    'WAZO_TENANT_UUID': VALID_TENANT,
                 },
             )
         )
+        self.ari.set_channel_variable({
+            call_id: {
+                'WAZO_TENANT_UUID': VALID_TENANT,
+            },
+        })
         events = self.bus.accumulator(routing_key='calls.call.updated')
 
         self.bus.send_ami_newstate_event(call_id)
@@ -121,10 +125,14 @@ class TestBusConsume(IntegrationTest):
                 state='Up',
                 channelvars={
                     'WAZO_ANSWER_TIME': '2022-03-08T03:48:00+00:00',
-                    'WAZO_TENANT_UUID': VALID_TENANT,
                 }
             )
         )
+        self.ari.set_channel_variable({
+            call_id: {
+                'WAZO_TENANT_UUID': VALID_TENANT,
+            },
+        })
         events = self.bus.accumulator(routing_key='calls.call.answered')
 
         self.bus.send_ami_newstate_event(call_id, state='Up')

@@ -12,6 +12,7 @@ class Call:
         self.status = 'Down'
         self.talking_to = {}
         self.user_uuid = None
+        self.tenant_uuid = None
         self.caller_id_name = ''
         self.caller_id_number = ''
         self.peer_caller_id_name = ''
