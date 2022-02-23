@@ -1,4 +1,4 @@
-# Copyright 2020-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2020-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 
@@ -25,6 +25,7 @@ from .helpers.constants import (
     SOME_CALL_ID,
     INVALID_ACL_TOKEN,
     VALID_TOKEN,
+    VALID_TENANT,
 )
 from .helpers.hamcrest_ import HamcrestARIChannel
 from .helpers.real_asterisk import RealAsterisk
@@ -181,28 +182,55 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
         until.assert_(callerid_are_correct, timeout=10)
 
         def bus_events_are_sent():
-            assert_that(host_events.accumulate(),
-                        has_item(has_entries({
+            assert_that(
+                host_events.accumulate(with_headers=True),
+                has_item(
+                    has_entries(
+                        message=has_entries({
                             'name': 'conference_adhoc_created',
                             'data': {
                                 'conference_id': adhoc_conference['conference_id'],
-                            }})))
-            assert_that(host_events.accumulate(), has_items(
-                has_entries({
-                    'name': 'conference_adhoc_participant_joined',
-                    'data': has_entries({
-                        'conference_id': adhoc_conference['conference_id'],
-                        'call_id': participant1_call_id,
-                    })
-                }),
-                has_entries({
-                    'name': 'conference_adhoc_participant_joined',
-                    'data': has_entries({
-                        'conference_id': adhoc_conference['conference_id'],
-                        'call_id': participant2_call_id,
-                    })
-                }),
-            ))
+                            }
+                        }),
+                        headers=has_entries(
+                            name='conference_adhoc_created',
+                            tenant_uuid=VALID_TENANT,
+                        )
+                    )
+                )
+            )
+            assert_that(
+                host_events.accumulate(with_headers=True),
+                has_items(
+                    has_entries(
+                        message=has_entries({
+                            'name': 'conference_adhoc_participant_joined',
+                            'data': has_entries({
+                                'conference_id': adhoc_conference['conference_id'],
+                                'call_id': participant1_call_id,
+                            })
+                        }),
+                        headers=has_entries(
+                            name='conference_adhoc_participant_joined',
+                            tenant_uuid=VALID_TENANT,
+                        )
+                    ),
+                    has_entries(
+                        message=has_entries({
+                            'name': 'conference_adhoc_participant_joined',
+                            'data': has_entries({
+                                'conference_id': adhoc_conference['conference_id'],
+                                'call_id': participant2_call_id,
+                            })
+                        }),
+                        headers=has_entries(
+                            name='conference_adhoc_participant_joined',
+                            tenant_uuid=VALID_TENANT,
+                        )
+                    ),
+                )
+            )
+
         until.assert_(bus_events_are_sent, timeout=10)
 
     def test_user_create_adhoc_conference_participant_in_conference_with_host(self):
@@ -352,28 +380,50 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
         until.assert_(calls_are_hungup, timeout=10)
 
         def bus_events_are_sent():
-            assert_that(host_events.accumulate(),
-                        has_item(has_entries({
+            assert_that(
+                host_events.accumulate(with_headers=True),
+                has_items(
+                    has_entries(
+                        message=has_entries({
                             'name': 'conference_adhoc_deleted',
                             'data': {
                                 'conference_id': adhoc_conference_id,
-                            }})))
-            assert_that(host_events.accumulate(), has_items(
-                has_entries({
-                    'name': 'conference_adhoc_participant_left',
-                    'data': has_entries({
-                        'conference_id': adhoc_conference_id,
-                        'call_id': participant_call_id,
-                    })
-                }),
-                has_entries({
-                    'name': 'conference_adhoc_participant_left',
-                    'data': has_entries({
-                        'conference_id': adhoc_conference_id,
-                        'call_id': host_call_id,
-                    })
-                }),
-            ))
+                            }
+                        }),
+                        headers=has_entries(
+                            name='conference_adhoc_deleted',
+                            tenant_uuid=VALID_TENANT,
+                        )
+                    ),
+                    has_entries(
+                        message=has_entries({
+                            'name': 'conference_adhoc_participant_left',
+                            'data': has_entries({
+                                'conference_id': adhoc_conference_id,
+                                'call_id': participant_call_id,
+                            })
+                        }),
+                        headers=has_entries(
+                            name='conference_adhoc_participant_left',
+                            tenant_uuid=VALID_TENANT,
+                        )
+                    ),
+                    has_entries(
+                        message=has_entries({
+                            'name': 'conference_adhoc_participant_left',
+                            'data': has_entries({
+                                'conference_id': adhoc_conference_id,
+                                'call_id': host_call_id,
+                            })
+                        }),
+                        headers=has_entries(
+                            name='conference_adhoc_participant_left',
+                            tenant_uuid=VALID_TENANT,
+                        )
+                    )
+                )
+            )
+
         until.assert_(bus_events_are_sent, timeout=10)
 
     def test_extra_participant_hangup(self):
@@ -400,20 +450,43 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
         until.assert_(calls_are_still_bridged, timeout=10)
 
         def bus_events_are_sent():
-            assert_that(host_events.accumulate(),
-                        has_item(has_entries({
+            assert_that(
+                host_events.accumulate(with_headers=True),
+                has_item(
+                    has_entries(
+                        message=has_entries({
                             'name': 'conference_adhoc_participant_left',
                             'data': has_entries({
                                 'conference_id': adhoc_conference_id,
                                 'call_id': participant2_call_id,
-                            })})))
-            assert_that(participant1_events.accumulate(),
-                        has_item(has_entries({
+                            })
+                        }),
+                        headers=has_entries(
+                            name='conference_adhoc_participant_left',
+                            tenant_uuid=VALID_TENANT,
+                        )
+                    )
+                )
+            )
+            assert_that(
+                participant1_events.accumulate(with_headers=True),
+                has_item(
+                    has_entries(
+                        message=has_entries({
                             'name': 'conference_adhoc_participant_left',
                             'data': has_entries({
                                 'conference_id': adhoc_conference_id,
                                 'call_id': participant2_call_id,
-                            })})))
+                            })
+                        }),
+                        headers=has_entries(
+                            name='conference_adhoc_participant_left',
+                            tenant_uuid=VALID_TENANT,
+                        )
+                    )
+                )
+            )
+
         until.assert_(bus_events_are_sent, timeout=10)
 
     def test_last_participant_hangup(self):
@@ -432,12 +505,24 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
         until.assert_(calls_are_hungup, timeout=10)
 
         def bus_events_are_sent():
-            assert_that(host_events.accumulate(),
-                        has_item(has_entries({
+            assert_that(
+                host_events.accumulate(with_headers=True),
+                has_item(
+                    has_entries(
+                        message=has_entries({
                             'name': 'conference_adhoc_deleted',
                             'data': {
                                 'conference_id': adhoc_conference_id,
-                            }})))
+                            }
+                        }),
+                        headers=has_entries(
+                            name='conference_adhoc_deleted',
+                            tenant_uuid=VALID_TENANT,
+                        )
+                    )
+                )
+            )
+
         until.assert_(bus_events_are_sent, timeout=10)
 
     def test_host_hangup(self):
@@ -457,12 +542,24 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
         until.assert_(calls_are_hungup, timeout=10)
 
         def bus_events_are_sent():
-            assert_that(host_events.accumulate(),
-                        has_item(has_entries({
+            assert_that(
+                host_events.accumulate(with_headers=True),
+                has_item(
+                    has_entries(
+                        message=has_entries({
                             'name': 'conference_adhoc_deleted',
                             'data': {
                                 'conference_id': adhoc_conference_id,
-                            }})))
+                            }
+                        }),
+                        headers=has_entries(
+                            name='conference_adhoc_deleted',
+                            tenant_uuid=VALID_TENANT,
+                        )
+                    )
+                )
+            )
+
         until.assert_(bus_events_are_sent, timeout=10)
 
     def test_user_add_participant_no_auth(self):
@@ -549,15 +646,25 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
         until.assert_(callerid_are_correct, timeout=10)
 
         def bus_events_are_sent():
-            assert_that(host_events.accumulate(), has_items(
-                has_entries({
-                    'name': 'conference_adhoc_participant_joined',
-                    'data': has_entries({
-                        'conference_id': adhoc_conference_id,
-                        'call_id': participant2_call_id,
-                    })
-                }),
-            ))
+            assert_that(
+                host_events.accumulate(with_headers=True),
+                has_items(
+                    has_entries(
+                        message=has_entries({
+                            'name': 'conference_adhoc_participant_joined',
+                            'data': has_entries({
+                                'conference_id': adhoc_conference_id,
+                                'call_id': participant2_call_id,
+                            })
+                        }),
+                        headers=has_entries(
+                            name='conference_adhoc_participant_joined',
+                            tenant_uuid=VALID_TENANT,
+                        )
+                    )
+                )
+            )
+
         until.assert_(bus_events_are_sent, timeout=10)
 
     def test_user_add_participant_not_in_stasis(self):
@@ -739,18 +846,41 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
         until.assert_(calls_are_still_bridged, timeout=10)
 
         def bus_events_are_sent():
-            assert_that(host_events.accumulate(),
-                        has_item(has_entries({
+            assert_that(
+                host_events.accumulate(with_headers=True),
+                has_item(
+                    has_entries(
+                        message=has_entries({
                             'name': 'conference_adhoc_participant_left',
                             'data': has_entries({
                                 'conference_id': adhoc_conference_id,
                                 'call_id': participant2_call_id,
-                            })})))
-            assert_that(participant1_events.accumulate(),
-                        has_item(has_entries({
+                            })
+                        }),
+                        headers=has_entries(
+                            name='conference_adhoc_participant_left',
+                            tenant_uuid=VALID_TENANT,
+                        )
+                    )
+                )
+            )
+            assert_that(
+                participant1_events.accumulate(with_headers=True),
+                has_item(
+                    has_entries(
+                        message=has_entries({
                             'name': 'conference_adhoc_participant_left',
                             'data': has_entries({
                                 'conference_id': adhoc_conference_id,
                                 'call_id': participant2_call_id,
-                            })})))
+                            })
+                        }),
+                        headers=has_entries(
+                            name='conference_adhoc_participant_left',
+                            tenant_uuid=VALID_TENANT,
+                        )
+                    )
+                )
+            )
+
         until.assert_(bus_events_are_sent, timeout=10)
