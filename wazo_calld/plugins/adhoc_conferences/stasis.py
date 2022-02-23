@@ -1,4 +1,4 @@
-# Copyright 2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2020-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import threading
@@ -82,9 +82,12 @@ class AdhocConferencesStasis:
         bridge_helper = BridgeSnapshot(event['bridge'], self._ari)
 
         if is_adhoc_conference_host:
+            host_channel = Channel(channel_id, self._ari)
+            host_user_uuid = host_channel.user()
+            host_tenant_uuid = host_channel.tenant_uuid()
             bridge_helper.global_variables.set('WAZO_HOST_CHANNEL_ID', channel_id)
-            host_user_uuid = Channel(channel_id, self._ari).user()
             bridge_helper.global_variables.set('WAZO_HOST_USER_UUID', host_user_uuid)
+            bridge_helper.global_variables.set('WAZO_HOST_TENANT_UUID', host_tenant_uuid)
 
             self._notify_host_of_channels_already_present(adhoc_conference_id, event['bridge']['channels'], host_user_uuid)
 
@@ -172,15 +175,21 @@ class AdhocConferencesStasis:
             return
 
         logger.debug('adhoc conference %s: bridge was destroyed', bridge.id)
+        bridge_helper = Bridge(bridge.id, self._ari)
 
         try:
-            host_user_uuid = Bridge(bridge.id, self._ari).global_variables.get('WAZO_HOST_USER_UUID')
+            host_user_uuid = bridge_helper.global_variables.get('WAZO_HOST_USER_UUID')
         except KeyError:
             logger.error('adhoc conference %s: could not retrieve host user uuid when destroying', bridge.id)
             return
 
-        self._notifier.deleted(bridge.id, host_user_uuid)
+        try:
+            host_tenant_uuid = bridge_helper.global_variables.get('WAZO_HOST_TENANT_UUID')
+        except KeyError:
+            logger.error('adhoc conference %s: could not retrieve host tenant uuid when destroying', bridge.id)
+            return
 
-        bridge_helper = Bridge(bridge.id, self._ari)
-        bridge_helper.global_variables.unset('WAZO_HOST_USER_UUID')
+        self._notifier.deleted(bridge.id, host_tenant_uuid, host_user_uuid)
         bridge_helper.global_variables.unset('WAZO_HOST_CHANNEL_ID')
+        bridge_helper.global_variables.unset('WAZO_HOST_USER_UUID')
+        bridge_helper.global_variables.unset('WAZO_HOST_TENANT_UUID')

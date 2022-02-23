@@ -1,4 +1,4 @@
-# Copyright 2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2020-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import uuid
@@ -64,8 +64,9 @@ class AdhocConferencesService:
                 raise ParticipantCallNotFound(participant_call_id)
 
         adhoc_conference_id = str(uuid.uuid4())
+        tenant_uuid = host_channel.tenant_uuid()
         logger.debug('creating adhoc conference %s', adhoc_conference_id)
-        self._notifier.created(adhoc_conference_id, user_uuid)
+        self._notifier.created(adhoc_conference_id, tenant_uuid, user_uuid)
 
         self._redirect_host(host_call_id, host_peer_wazo_channel.id, adhoc_conference_id)
 
