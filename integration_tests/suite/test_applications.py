@@ -1,4 +1,4 @@
-# Copyright 2018-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from hamcrest import (
@@ -71,7 +71,7 @@ class BaseApplicationTestCase(RealAsteriskIntegrationTest):
             assert_that(app1, not_(None))
             assert_that(app2, not_(None))
 
-        until.assert_(applications_created, tries=3)
+        until.assert_(applications_created, tries=5)
 
     def call_app(self, app_uuid, variables=None):
         kwargs = {
@@ -150,7 +150,7 @@ class TestStasisTriggers(BaseApplicationTestCase):
                 )
             )
 
-        until.assert_(event_received, tries=3)
+        until.assert_(event_received, tries=5)
 
         calls = self.calld_client.applications.list_calls(app_uuid)['items']
         assert_that(calls, has_items(has_entries(id=channel_id)))
@@ -181,7 +181,7 @@ class TestStasisTriggers(BaseApplicationTestCase):
                 )
             )
 
-        until.assert_(event_received, tries=3)
+        until.assert_(event_received, tries=5)
 
         calls = self.calld_client.applications.list_calls(app_uuid)['items']
         assert_that(calls, has_items(has_entries(id=channel.id)))
@@ -234,7 +234,7 @@ class TestStasisTriggers(BaseApplicationTestCase):
                 )
             )
 
-        until.assert_(event_received, tries=3)
+        until.assert_(event_received, tries=5)
 
         calls = self.calld_client.applications.list_calls(app_uuid)['items']
         assert_that(calls, has_items(has_entries(id=channel.id)))
@@ -277,7 +277,7 @@ class TestStasisTriggers(BaseApplicationTestCase):
             events = event_accumulator.accumulate()
             assert_that(events, has_items(has_entries(name='application_destination_node_created')))
 
-        until.assert_(event_received, tries=3)
+        until.assert_(event_received, tries=5)
 
     def test_confd_application_event_then_ari_client_is_reset(self):
         app_uuid = '00000000-0000-0000-0000-000000000001'
@@ -287,7 +287,7 @@ class TestStasisTriggers(BaseApplicationTestCase):
         def event_received():
             events = event_accumulator.accumulate()
             assert_that(events, contains(has_entries(name='application_destination_node_created')))
-        until.assert_(event_received, tries=3)
+        until.assert_(event_received, tries=5)
 
         routing_key = 'applications.{uuid}.calls.created'.format(uuid=self.no_node_app_uuid)
         event_accumulator = self.bus.accumulator(routing_key)
@@ -298,7 +298,7 @@ class TestStasisTriggers(BaseApplicationTestCase):
             events = event_accumulator.accumulate()
             assert_that(events, has_length(1))
 
-        until.assert_(event_received, tries=3)
+        until.assert_(event_received, tries=5)
 
     def test_confd_application_created_event_then_stasis_reconnect(self):
         app_uuid = '00000000-0000-0000-0000-000000000001'
@@ -309,7 +309,7 @@ class TestStasisTriggers(BaseApplicationTestCase):
         def event_received():
             events = event_accumulator.accumulate()
             assert_that(events, has_items(has_entries(name='application_destination_node_created')))
-        until.assert_(event_received, tries=3)
+        until.assert_(event_received, tries=5)
 
     def test_confd_application_edited_event_then_destination_node_created(self):
         event_accumulator = self.bus.accumulator('applications.#')
@@ -319,7 +319,7 @@ class TestStasisTriggers(BaseApplicationTestCase):
         def event_received():
             events = event_accumulator.accumulate()
             assert_that(events, has_items(has_entries(name='application_destination_node_created')))
-        until.assert_(event_received, tries=3)
+        until.assert_(event_received, tries=5)
 
     def test_confd_application_edited_event_then_destination_node_deleted(self):
         event_accumulator = self.bus.accumulator('applications.#')
@@ -329,7 +329,7 @@ class TestStasisTriggers(BaseApplicationTestCase):
         def event_received():
             events = event_accumulator.accumulate()
             assert_that(events, has_items(has_entries(name='application_node_deleted')))
-        until.assert_(event_received, tries=3)
+        until.assert_(event_received, tries=5)
 
     def test_confd_application_deleted_event_then_stasis_reconnect(self):
         self.ari.bridges.destroy(bridgeId=self.node_app_uuid)
@@ -340,7 +340,7 @@ class TestStasisTriggers(BaseApplicationTestCase):
         def event_received():
             events = event_accumulator.accumulate()
             assert_that(events, has_items(has_entries(name='application_destination_node_created')))
-        until.assert_(event_received, tries=3)
+        until.assert_(event_received, tries=5)
 
 
 class TestApplication(BaseApplicationTestCase):
@@ -374,7 +374,7 @@ class TestApplication(BaseApplicationTestCase):
                 application = None
             assert_that(application, has_entries(destination_node_uuid=None))
 
-        until.assert_(application_created, tries=3)
+        until.assert_(application_created, tries=5)
 
     def test_confd_application_edited_event_update_cache(self):
         self.bus.send_application_edited_event(self.no_node_app_uuid, destination='node')
@@ -386,7 +386,7 @@ class TestApplication(BaseApplicationTestCase):
                 application = None
             assert_that(application, has_entries(destination_node_uuid=uuid_()))
 
-        until.assert_(application_updated, tries=3)
+        until.assert_(application_updated, tries=5)
 
     def test_confd_application_deleted_event_update_cache(self):
         self.bus.send_application_deleted_event(self.no_node_app_uuid)
@@ -397,7 +397,7 @@ class TestApplication(BaseApplicationTestCase):
                 raises(CalldError).matching(has_properties(status_code=404))
             )
 
-        until.assert_(application_deleted, tries=3)
+        until.assert_(application_deleted, tries=5)
 
     def test_given_no_confd_when_node_app_then_return_503(self):
         with self.confd_stopped():
@@ -453,7 +453,7 @@ class TestApplication(BaseApplicationTestCase):
                 )
             )
 
-        until.assert_(event_received, tries=3)
+        until.assert_(event_received, tries=5)
 
         assert_that(
             calling(self.calld_client.applications.hangup_call).with_args(
@@ -553,7 +553,7 @@ class TestApplication(BaseApplicationTestCase):
                 )
             )
 
-        until.assert_(event_received, tries=3)
+        until.assert_(event_received, tries=5)
 
         calls = self.calld_client.applications.list_calls(self.no_node_app_uuid)['items']
         assert_that(
@@ -610,7 +610,7 @@ class TestApplication(BaseApplicationTestCase):
                 )
             )
 
-        until.assert_(event_received, tries=3)
+        until.assert_(event_received, tries=5)
 
         calls = self.calld_client.applications.list_calls(self.no_node_app_uuid)['items']
         assert_that(
@@ -720,7 +720,7 @@ class TestApplication(BaseApplicationTestCase):
                 )
             )
 
-        until.assert_(event_received, tries=3)
+        until.assert_(event_received, tries=5)
 
         calls = self.calld_client.applications.list_calls(self.node_app_uuid)['items']
         assert_that(calls, has_items(has_entries(id=call['id'])))
@@ -796,7 +796,7 @@ class TestApplication(BaseApplicationTestCase):
                 )
             )
 
-        until.assert_(event_received, tries=3)
+        until.assert_(event_received, tries=5)
 
         calls = self.calld_client.applications.list_calls(self.node_app_uuid)['items']
         assert_that(calls, has_items(has_entries(id=call['id'])))
@@ -887,7 +887,7 @@ class TestApplication(BaseApplicationTestCase):
                 )
             )
 
-        until.assert_(event_received, tries=3)
+        until.assert_(event_received, tries=5)
 
         calls = self.calld_client.applications.list_calls(self.node_app_uuid)['items']
         assert_that(
@@ -943,7 +943,7 @@ class TestApplication(BaseApplicationTestCase):
                 )
             )
 
-        until.assert_(call_entered_node, tries=3)
+        until.assert_(call_entered_node, tries=5)
 
 
 class TestApplicationMute(BaseApplicationTestCase):
@@ -989,7 +989,7 @@ class TestApplicationMute(BaseApplicationTestCase):
                 )
             )
 
-        until.assert_(event_received, tries=3)
+        until.assert_(event_received, tries=5)
 
         assert_that(
             self.calld_client.applications.list_calls(app_uuid)['items'],
@@ -1041,7 +1041,7 @@ class TestApplicationMute(BaseApplicationTestCase):
                 )
             )
 
-        until.assert_(event_received, tries=3)
+        until.assert_(event_received, tries=5)
 
         assert_that(
             self.calld_client.applications.list_calls(app_uuid)['items'],
@@ -1098,7 +1098,7 @@ class TestApplicationHold(BaseApplicationTestCase):
                 )
             )
 
-        until.assert_(event_received, tries=3)
+        until.assert_(event_received, tries=5)
 
         assert_that(
             self.calld_client.applications.list_calls(app_uuid)['items'],
@@ -1159,7 +1159,7 @@ class TestApplicationHold(BaseApplicationTestCase):
                 )
             )
 
-        until.assert_(event_received, tries=3)
+        until.assert_(event_received, tries=5)
 
         assert_that(
             self.calld_client.applications.list_calls(app_uuid)['items'],
@@ -1218,7 +1218,7 @@ class TestApplicationSnoop(BaseApplicationTestCase):
                 )
             )
 
-        until.assert_(event_received, tries=3)
+        until.assert_(event_received, tries=5)
 
     def test_snoop_deleted_event(self):
         supervisor_channel = self.calld_client.applications.make_call(
@@ -1253,7 +1253,7 @@ class TestApplicationSnoop(BaseApplicationTestCase):
                 )
             )
 
-        until.assert_(event_received, tries=3)
+        until.assert_(event_received, tries=5)
 
     def test_snoop_updated_event(self):
         supervisor_channel = self.calld_client.applications.make_call(
@@ -1298,7 +1298,7 @@ class TestApplicationSnoop(BaseApplicationTestCase):
                 )
             )
 
-        until.assert_(event_received, tries=3)
+        until.assert_(event_received, tries=5)
 
     def test_list(self):
         snoop = self.calld_client.applications.list_snoops(self.app_uuid)
@@ -1636,7 +1636,7 @@ class TestApplicationMoh(BaseApplicationTestCase):
                 )
             )
 
-        until.assert_(music_on_hold_started_event_received, tries=3)
+        until.assert_(music_on_hold_started_event_received, tries=5)
 
         assert_that(
             self.calld_client.applications.list_calls(app_uuid)['items'],
@@ -1681,7 +1681,7 @@ class TestApplicationMoh(BaseApplicationTestCase):
                 )
             )
 
-        until.assert_(call_updated_event_received, tries=3)
+        until.assert_(call_updated_event_received, tries=5)
 
         assert_that(
             self.calld_client.applications.list_calls(app_uuid)['items'],
@@ -1705,7 +1705,7 @@ class TestApplicationMoh(BaseApplicationTestCase):
             events = event_accumulator.accumulate()
             assert_that(events, contains(has_entries(name='application_call_updated')))
 
-        until.assert_(music_on_hold_started_event_received, tries=3)
+        until.assert_(music_on_hold_started_event_received, tries=5)
 
         calls = self.calld_client.applications.list_calls(app_uuid)['items']
         assert_that(calls, contains(has_entries(id=channel.id, moh_uuid=moh_uuid)))
@@ -1801,7 +1801,7 @@ class TestApplicationPlayback(BaseApplicationTestCase):
                 )
             )
 
-        until.assert_(event_received, tries=3)
+        until.assert_(event_received, tries=5)
 
     def test_delete(self):
         body = {'uri': 'sound:tt-weasels'}
@@ -1852,7 +1852,7 @@ class TestApplicationPlayback(BaseApplicationTestCase):
                 )
             )
 
-        until.assert_(event_received, tries=30)
+        until.assert_(event_received, tries=50)
 
     def test_playback_deleted_event_on_stop(self):
         app_uuid = self.node_app_uuid
@@ -1885,7 +1885,7 @@ class TestApplicationPlayback(BaseApplicationTestCase):
                 )
             )
 
-        until.assert_(event_received, tries=3)
+        until.assert_(event_received, tries=5)
 
 
 class TestApplicationAnswer(BaseApplicationTestCase):
@@ -2129,7 +2129,7 @@ class TestApplicationNode(BaseApplicationTestCase):
                 )
             )
 
-        until.assert_(event_received, tries=3)
+        until.assert_(event_received, tries=5)
 
     def test_post_bridged(self):
         channel = self.call_app(self.no_node_app_uuid)
@@ -2200,7 +2200,7 @@ class TestApplicationNode(BaseApplicationTestCase):
                 )
             )
 
-        until.assert_(event_received, tries=3)
+        until.assert_(event_received, tries=5)
 
     def test_post_while_hanging_up(self):
         channel = self.call_app(self.node_app_uuid)
@@ -2224,7 +2224,7 @@ class TestApplicationNode(BaseApplicationTestCase):
             events = event_accumulator.accumulate()
             assert_that(events, has_items(has_entries(name='application_node_created')))
 
-        until.assert_(event_received, tries=3)
+        until.assert_(event_received, tries=5)
 
         assert_that(
             calling(self.calld_client.applications.delete_node).with_args(
@@ -2251,7 +2251,7 @@ class TestApplicationNode(BaseApplicationTestCase):
             events = event_accumulator.accumulate()
             assert_that(events, has_items(has_entries(name='application_node_created')))
 
-        until.assert_(event_received, tries=3)
+        until.assert_(event_received, tries=5)
         event_accumulator.reset()
 
         self.calld_client.applications.delete_node(self.no_node_app_uuid, node['uuid'])
@@ -2305,7 +2305,7 @@ class TestApplicationNode(BaseApplicationTestCase):
                 )
             )
 
-        until.assert_(event_received, tries=3)
+        until.assert_(event_received, tries=5)
 
 
 class TestApplicationNodeCall(BaseApplicationTestCase):
@@ -2370,7 +2370,7 @@ class TestApplicationNodeCall(BaseApplicationTestCase):
                 )
             )
 
-        until.assert_(event_received, tries=3)
+        until.assert_(event_received, tries=5)
 
         assert_that(
             calling(self.calld_client.applications.delete_call_from_node).with_args(
@@ -2460,7 +2460,7 @@ class TestApplicationNodeCall(BaseApplicationTestCase):
                 )
             )
 
-        until.assert_(event_received, tries=3)
+        until.assert_(event_received, tries=5)
 
         channel_3.hangup()
 
@@ -2497,7 +2497,7 @@ class TestDTMFEvents(BaseApplicationTestCase):
                 )
             )
 
-        until.assert_(event_received, tries=3)
+        until.assert_(event_received, tries=5)
 
 
 class TestApplicationSendDTMF(BaseApplicationTestCase):
@@ -2552,4 +2552,4 @@ class TestApplicationSendDTMF(BaseApplicationTestCase):
                     ))
                 )
 
-        until.assert_(amid_dtmf_events_received, tries=3)
+        until.assert_(amid_dtmf_events_received, tries=5)
