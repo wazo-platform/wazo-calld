@@ -6,9 +6,9 @@ import os
 from hamcrest import (
     assert_that,
     calling,
-    contains,
     empty,
     has_entries,
+    has_items,
     has_length,
     has_properties,
     is_not,
@@ -21,7 +21,7 @@ from .helpers.confd import (
     MockLine,
     MockUser,
 )
-from .helpers.constants import ASSET_ROOT, VALID_TOKEN
+from .helpers.constants import ASSET_ROOT, VALID_TOKEN, VALID_TENANT
 from .helpers.real_asterisk import RealAsteriskIntegrationTest
 
 
@@ -152,24 +152,39 @@ class TestFax(RealAsteriskIntegrationTest):
         fax_id = result['id']
 
         def bus_events_received():
-            assert_that(events.accumulate(), contains(
-                has_entries({
-                    'name': 'fax_outbound_created',
-                    'data': has_entries({
-                        'id': fax_id,
-                        'context': 'recipient',
-                        'extension': 'recipient-fax',
-                    }),
-                }),
-                has_entries({
-                    'name': 'fax_outbound_succeeded',
-                    'data': has_entries({
-                        'id': fax_id,
-                        'context': 'recipient',
-                        'extension': 'recipient-fax',
-                    }),
-                }),
-            ))
+            assert_that(
+                events.accumulate(with_headers=True),
+                has_items(
+                    has_entries(
+                        message=has_entries({
+                            'name': 'fax_outbound_created',
+                            'data': has_entries({
+                                'id': fax_id,
+                                'context': 'recipient',
+                                'extension': 'recipient-fax',
+                            }),
+                        }),
+                        headers=has_entries({
+                            'name': 'fax_outbound_created',
+                            'tenant_uuid': VALID_TENANT,
+                        })
+                    ),
+                    has_entries(
+                        message=has_entries({
+                            'name': 'fax_outbound_succeeded',
+                            'data': has_entries({
+                                'id': fax_id,
+                                'context': 'recipient',
+                                'extension': 'recipient-fax',
+                            }),
+                        }),
+                        headers=has_entries({
+                            'name': 'fax_outbound_succeeded',
+                            'tenant_uuid': VALID_TENANT,
+                        })
+                    )
+                )
+            )
 
         until.assert_(bus_events_received, timeout=10)
 
@@ -186,24 +201,39 @@ class TestFax(RealAsteriskIntegrationTest):
         fax_id = result['id']
 
         def bus_events_received():
-            assert_that(events.accumulate(), contains(
-                has_entries({
-                    'name': 'fax_outbound_created',
-                    'data': has_entries({
-                        'id': fax_id,
-                        'context': 'recipient',
-                        'extension': 'recipient-fax',
-                    }),
-                }),
-                has_entries({
-                    'name': 'fax_outbound_succeeded',
-                    'data': has_entries({
-                        'id': fax_id,
-                        'context': 'recipient',
-                        'extension': 'recipient-fax',
-                    }),
-                }),
-            ))
+            assert_that(
+                events.accumulate(with_headers=True),
+                has_items(
+                    has_entries(
+                        message=has_entries({
+                            'name': 'fax_outbound_created',
+                            'data': has_entries({
+                                'id': fax_id,
+                                'context': 'recipient',
+                                'extension': 'recipient-fax',
+                            }),
+                        }),
+                        headers=has_entries({
+                            'name': 'fax_outbound_created',
+                            'tenant_uuid': VALID_TENANT,
+                        })
+                    ),
+                    has_entries(
+                        message=has_entries({
+                            'name': 'fax_outbound_succeeded',
+                            'data': has_entries({
+                                'id': fax_id,
+                                'context': 'recipient',
+                                'extension': 'recipient-fax',
+                            }),
+                        }),
+                        headers=has_entries({
+                            'name': 'fax_outbound_succeeded',
+                            'tenant_uuid': VALID_TENANT,
+                        })
+                    )
+                )
+            )
 
         until.assert_(bus_events_received, timeout=10)
 
@@ -220,25 +250,40 @@ class TestFax(RealAsteriskIntegrationTest):
         fax_id = result['id']
 
         def bus_events_received():
-            assert_that(events.accumulate(), contains(
-                has_entries({
-                    'name': 'fax_outbound_created',
-                    'data': has_entries({
-                        'id': fax_id,
-                        'context': 'recipient',
-                        'extension': 'recipient-fax',
-                    }),
-                }),
-                has_entries({
-                    'name': 'fax_outbound_failed',
-                    'data': has_entries({
-                        'id': fax_id,
-                        'context': 'recipient',
-                        'extension': 'recipient-fax',
-                        'error': 'error explanation',
-                    }),
-                }),
-            ))
+            assert_that(
+                events.accumulate(with_headers=True),
+                has_items(
+                    has_entries(
+                        message=has_entries({
+                            'name': 'fax_outbound_created',
+                            'data': has_entries({
+                                'id': fax_id,
+                                'context': 'recipient',
+                                'extension': 'recipient-fax',
+                            }),
+                        }),
+                        headers=has_entries({
+                            'name': 'fax_outbound_created',
+                            'tenant_uuid': VALID_TENANT,
+                        })
+                    ),
+                    has_entries(
+                        message=has_entries({
+                            'name': 'fax_outbound_failed',
+                            'data': has_entries({
+                                'id': fax_id,
+                                'context': 'recipient',
+                                'extension': 'recipient-fax',
+                                'error': 'error explanation',
+                            }),
+                        }),
+                        headers=has_entries({
+                            'name': 'fax_outbound_failed',
+                            'tenant_uuid': VALID_TENANT,
+                        })
+                    )
+                )
+            )
 
         until.assert_(bus_events_received, timeout=10)
 
@@ -330,28 +375,43 @@ class TestFax(RealAsteriskIntegrationTest):
         fax_id = result['id']
 
         def bus_events_received():
-            assert_that(events.accumulate(), contains(
-                has_entries({
-                    'name': 'fax_outbound_user_created',
-                    'data': has_entries({
-                        'id': fax_id,
-                        'context': 'user-context',
-                        'extension': 'recipient-fax',
-                        'user_uuid': 'some-user-id',
-                        'tenant_uuid': 'my-tenant',
-                    }),
-                }),
-                has_entries({
-                    'name': 'fax_outbound_user_succeeded',
-                    'data': has_entries({
-                        'id': fax_id,
-                        'context': 'user-context',
-                        'extension': 'recipient-fax',
-                        'user_uuid': 'some-user-id',
-                        'tenant_uuid': 'my-tenant',
-                    }),
-                }),
-            ))
+            assert_that(
+                events.accumulate(with_headers=True),
+                has_items(
+                    has_entries(
+                        message=has_entries({
+                            'name': 'fax_outbound_user_created',
+                            'data': has_entries({
+                                'id': fax_id,
+                                'context': 'user-context',
+                                'extension': 'recipient-fax',
+                                'user_uuid': 'some-user-id',
+                                'tenant_uuid': 'my-tenant',
+                            }),
+                        }),
+                        headers=has_entries({
+                            'name': 'fax_outbound_user_created',
+                            'tenant_uuid': 'my-tenant',
+                        })
+                    ),
+                    has_entries(
+                        message=has_entries({
+                            'name': 'fax_outbound_user_succeeded',
+                            'data': has_entries({
+                                'id': fax_id,
+                                'context': 'user-context',
+                                'extension': 'recipient-fax',
+                                'user_uuid': 'some-user-id',
+                                'tenant_uuid': 'my-tenant',
+                            }),
+                        }),
+                        headers=has_entries({
+                            'name': 'fax_outbound_user_succeeded',
+                            'tenant_uuid': 'my-tenant',
+                        })
+                    )
+                )
+            )
 
         until.assert_(bus_events_received, timeout=10)
 
@@ -373,27 +433,42 @@ class TestFax(RealAsteriskIntegrationTest):
         fax_id = result['id']
 
         def bus_events_received():
-            assert_that(events.accumulate(), contains(
-                has_entries({
-                    'name': 'fax_outbound_user_created',
-                    'data': has_entries({
-                        'id': fax_id,
-                        'context': 'user-context',
-                        'extension': 'recipient-fax',
-                        'user_uuid': 'some-user-id',
-                        'tenant_uuid': 'my-tenant',
-                    }),
-                }),
-                has_entries({
-                    'name': 'fax_outbound_user_succeeded',
-                    'data': has_entries({
-                        'id': fax_id,
-                        'context': 'user-context',
-                        'extension': 'recipient-fax',
-                        'user_uuid': 'some-user-id',
-                        'tenant_uuid': 'my-tenant',
-                    }),
-                }),
-            ))
+            assert_that(
+                events.accumulate(with_headers=True),
+                has_items(
+                    has_entries(
+                        message=has_entries({
+                            'name': 'fax_outbound_user_created',
+                            'data': has_entries({
+                                'id': fax_id,
+                                'context': 'user-context',
+                                'extension': 'recipient-fax',
+                                'user_uuid': 'some-user-id',
+                                'tenant_uuid': 'my-tenant',
+                            }),
+                        }),
+                        headers=has_entries({
+                            'name': 'fax_outbound_user_created',
+                            'tenant_uuid': 'my-tenant',
+                        })
+                    ),
+                    has_entries(
+                        message=has_entries({
+                            'name': 'fax_outbound_user_succeeded',
+                            'data': has_entries({
+                                'id': fax_id,
+                                'context': 'user-context',
+                                'extension': 'recipient-fax',
+                                'user_uuid': 'some-user-id',
+                                'tenant_uuid': 'my-tenant',
+                            }),
+                        }),
+                        headers=has_entries({
+                            'name': 'fax_outbound_user_succeeded',
+                            'tenant_uuid': 'my-tenant',
+                        })
+                    )
+                )
+            )
 
         until.assert_(bus_events_received, timeout=10)
