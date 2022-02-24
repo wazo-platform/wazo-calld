@@ -1569,7 +1569,7 @@ class TestCallerID(RealAsteriskIntegrationTest):
 
             return expected_peer_caller_id in peer_caller_ids
 
-        until.true(originator_has_correct_connected_line, recipient_caller_id_name, recipient_caller_id_number, tries=3)
+        until.true(originator_has_correct_connected_line, recipient_caller_id_name, recipient_caller_id_number, tries=10)
 
 
 class TestUserCreateCallFromMobile(RealAsteriskIntegrationTest):
