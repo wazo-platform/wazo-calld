@@ -1,4 +1,4 @@
-# Copyright 2016-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -25,6 +25,7 @@ from .storage import (
     new_cache,
     new_filesystem_storage,
 )
+from .notifier import VoicemailsNotifier
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +43,8 @@ class Plugin:
 
         confd_client = ConfdClient(**config['confd'])
 
+        notifier = VoicemailsNotifier(bus_publisher)
+
         token_changed_subscribe(confd_client.set_token)
 
         voicemail_storage = new_filesystem_storage()
@@ -52,7 +55,7 @@ class Plugin:
             logger.exception('fail to refresh voicemail cache')
         voicemails_service = VoicemailsService(ari.client, confd_client, voicemail_storage)
 
-        voicemails_bus_event_handler = VoicemailsBusEventHandler(confd_client, bus_publisher, self._voicemail_cache)
+        voicemails_bus_event_handler = VoicemailsBusEventHandler(confd_client, notifier, self._voicemail_cache)
         voicemails_bus_event_handler.subscribe(bus_consumer)
 
         status_aggregator.add_provider(self._provide_status)
