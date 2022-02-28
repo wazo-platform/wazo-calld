@@ -1,4 +1,4 @@
-# Copyright 2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2021-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import uuid
@@ -44,7 +44,7 @@ class TestCallRecord(RealAsteriskIntegrationTest):
                 ))
             )
 
-        until.assert_(event_received, tries=3)
+        until.assert_(event_received, tries=10)
 
         assert_that(
             self.calld_client.calls.list_calls()['items'],
@@ -84,7 +84,7 @@ class TestCallRecord(RealAsteriskIntegrationTest):
                 ))
             )
 
-        until.assert_(event_received, tries=3)
+        until.assert_(event_received, tries=10)
 
         assert_that(
             self.calld_client.calls.list_calls_from_user()['items'],
@@ -133,7 +133,7 @@ class TestCallRecord(RealAsteriskIntegrationTest):
                 ))
             )
 
-        until.assert_(event_received, tries=3)
+        until.assert_(event_received, tries=10)
 
         assert_that(
             self.calld_client.calls.list_calls()['items'],
@@ -177,7 +177,7 @@ class TestCallRecord(RealAsteriskIntegrationTest):
                 ))
             )
 
-        until.assert_(event_received, tries=3)
+        until.assert_(event_received, tries=10)
 
         assert_that(
             self.calld_client.calls.list_calls_from_user()['items'],
