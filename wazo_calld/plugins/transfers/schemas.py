@@ -1,4 +1,4 @@
-# Copyright 2016-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from marshmallow import Schema, fields, post_load
@@ -19,7 +19,7 @@ class TransferRequestSchema(Schema):
     timeout = fields.Integer(missing=None, min=1, allow_none=True)
 
     @post_load
-    def remove_extension_whitespace(self, call_request):
+    def remove_extension_whitespace(self, call_request, **kwargs):
         call_request['exten'] = ''.join(call_request['exten'].split())
         return call_request
 
@@ -34,7 +34,7 @@ class UserTransferRequestSchema(Schema):
     timeout = fields.Integer(missing=None, min=1, allow_none=True)
 
     @post_load
-    def remove_extension_whitespace(self, call_request):
+    def remove_extension_whitespace(self, call_request, **kwargs):
         call_request['exten'] = ''.join(call_request['exten'].split())
         return call_request
 

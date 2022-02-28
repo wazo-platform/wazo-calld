@@ -28,16 +28,14 @@ class CallRequestDestinationSchema(CallBaseSchema):
     priority = fields.Integer(validate=Range(min=1), required=True)
 
     @post_load
-    def remove_extension_whitespace(self, call_request):
+    def remove_extension_whitespace(self, call_request, **kwargs):
         call_request['extension'] = ''.join(call_request['extension'].split())
         return call_request
 
 
 class CallRequestSchema(CallBaseSchema):
-    source = fields.Nested('CallRequestSourceSchema', required=True,
-                           unknown=EXCLUDE)
-    destination = fields.Nested('CallRequestDestinationSchema', required=True,
-                                unknown=EXCLUDE)
+    source = fields.Nested('CallRequestSourceSchema', required=True)
+    destination = fields.Nested('CallRequestDestinationSchema', required=True)
     variables = StrictDict(key_field=fields.String(required=True, validate=Length(min=1)),
                            value_field=fields.String(required=True, validate=Length(min=1)),
                            missing=dict)
@@ -54,7 +52,7 @@ class UserCallRequestSchema(CallBaseSchema):
     auto_answer_caller = fields.Boolean(missing=False)
 
     @post_load
-    def remove_extension_whitespace(self, call_request):
+    def remove_extension_whitespace(self, call_request, **kwargs):
         call_request['extension'] = ''.join(call_request['extension'].split())
         return call_request
 
@@ -85,7 +83,7 @@ class CallSchema(CallBaseSchema):
     line_id = fields.Integer()
 
     @post_dump()
-    def default_peer_caller_id_number(self, call):
+    def default_peer_caller_id_number(self, call, **kwargs):
         if call['peer_caller_id_number'] == '':
             call['peer_caller_id_number'] = call['dialed_extension']
         return call

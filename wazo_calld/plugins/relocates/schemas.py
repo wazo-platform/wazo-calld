@@ -1,4 +1,4 @@
-# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from marshmallow import (
@@ -28,11 +28,11 @@ class LocationField(fields.Field):
         unknown = EXCLUDE
 
     locations = {
-        'line': fields.Nested(LineLocationSchema, unknown=EXCLUDE),
+        'line': fields.Nested(LineLocationSchema),
         'mobile': None,
     }
 
-    def _deserialize(self, value, attr, data):
+    def _deserialize(self, value, attr, data, **kwargs):
         destination = data.get('destination')
         try:
             concrete_location = self.locations.get(destination)
