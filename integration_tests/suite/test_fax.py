@@ -286,11 +286,18 @@ class TestFax(RealAsteriskIntegrationTest):
             fax_content = fax_file.read()
 
         try:
-            calld_client.faxes.send_from_user(fax_content,
-                                              extension='recipient-fax',
-                                              caller_id='fax wait')
+            fax = calld_client.faxes.send_from_user(fax_content,
+                                                    extension='recipient-fax',
+                                                    caller_id='fax wait')
         except Exception as e:
             raise AssertionError('Sending fax raised an exception: {}'.format(e))
+
+        assert_that(fax, has_entries({
+            'id': is_not(empty()),
+            'context': context,
+            'extension': 'recipient-fax',
+            'caller_id': 'fax wait',
+        }))
 
         def one_fax_channel():
             assert_that(self._fax_channels(), has_length(1))
