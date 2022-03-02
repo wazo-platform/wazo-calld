@@ -123,7 +123,7 @@ class TestFax(RealAsteriskIntegrationTest):
                                            extension='recipient-fax',
                                            caller_id='fax wait',
                                            ivr_extension='12',
-                                           wait_time='42')
+                                           wait_time=42)
 
         assert_that(fax, has_entries({
             'id': is_not(empty()),
@@ -131,7 +131,7 @@ class TestFax(RealAsteriskIntegrationTest):
             'extension': 'recipient-fax',
             'caller_id': 'fax wait',
             'ivr_extension': '12',
-            'wait_time': '42',
+            'wait_time': 42,
         }))
 
         def one_fax_channel():
@@ -294,7 +294,7 @@ class TestFax(RealAsteriskIntegrationTest):
                                                     extension='recipient-fax',
                                                     caller_id='fax wait',
                                                     ivr_extension='12',
-                                                    wait_time='42')
+                                                    wait_time=42)
         except Exception as e:
             raise AssertionError('Sending fax raised an exception: {}'.format(e))
 
@@ -304,7 +304,7 @@ class TestFax(RealAsteriskIntegrationTest):
             'extension': 'recipient-fax',
             'caller_id': 'fax wait',
             'ivr_extension': '12',
-            'wait_time': '42',
+            'wait_time': 42,
         }))
 
         def one_fax_channel():

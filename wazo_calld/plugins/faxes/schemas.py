@@ -11,8 +11,8 @@ class FaxCreationRequestSchema(Schema):
     context = fields.String(required=True)
     extension = fields.String(required=True)
     caller_id = fields.String(missing='Wazo Fax')
-    ivr_extension = fields.String(missing='')
-    wait_time = fields.String(missing='')
+    ivr_extension = fields.String(missing=None)
+    wait_time = fields.Integer(missing=None)
 
     @post_load
     def remove_extension_whitespace(self, call_request, **kwargs):
@@ -23,8 +23,8 @@ class FaxCreationRequestSchema(Schema):
 class UserFaxCreationRequestSchema(Schema):
     extension = fields.String(required=True)
     caller_id = fields.String(missing='Wazo Fax')
-    ivr_extension = fields.String(missing='')
-    wait_time = fields.String(missing='')
+    ivr_extension = fields.String(missing=None)
+    wait_time = fields.Integer(missing=None)
 
     @post_load
     def remove_extension_whitespace(self, call_request, **kwargs):
@@ -38,8 +38,8 @@ class FaxSchema(Schema):
     context = fields.String(required=True)
     extension = fields.String(required=True)
     caller_id = fields.String(missing='Wazo Fax')
-    ivr_extension = fields.String(missing='')
-    wait_time = fields.String(missing='')
+    ivr_extension = fields.String(missing=None)
+    wait_time = fields.Integer(missing=None)
     user_uuid = fields.String(dump_only=True)
     tenant_uuid = fields.String(dump_only=True)
 

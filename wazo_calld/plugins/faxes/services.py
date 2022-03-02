@@ -1,4 +1,4 @@
-# Copyright 2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -51,11 +51,12 @@ class FaxesService:
             logger.error('wazo-pdf2fax: no output file "%s"', tif_path)
             raise FaxFailure(message='Conversion from PDF to TIFF format failed: output file not found')
 
+        wait_time_str = '' if fax_infos['wait_time'] is None else str(fax_infos['wait_time'])
         originate_variables = {
             'WAZO_FAX_DESTINATION_CONTEXT': fax_infos['context'],
             'WAZO_FAX_DESTINATION_EXTENSION': fax_infos['extension'],
-            'WAZO_FAX_DESTINATION_IVR_EXTENSION': fax_infos['ivr_extension'],
-            'WAZO_FAX_DESTINATION_WAIT_TIME': fax_infos['wait_time'],
+            'WAZO_FAX_DESTINATION_IVR_EXTENSION': fax_infos['ivr_extension'] or '',
+            'WAZO_FAX_DESTINATION_WAIT_TIME': wait_time_str,
             'WAZO_TENANT_UUID': tenant_uuid,
             'XIVO_FAX_PATH': tif_path,
             'XIVO_USERUUID': user_uuid or '',
