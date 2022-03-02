@@ -1,4 +1,4 @@
-# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import re
@@ -196,20 +196,26 @@ class RelocatesService:
         return relocate
 
     def create_from_user(self, initiator_call, destination, location, completions, timeout, auto_answer, user_uuid):
-        if Channel(initiator_call, self.ari).user() != user_uuid:
+        initiator_channel = Channel(initiator_call, self.ari)
+        user = User(user_uuid, self.confd_client)
+        variables = {}
+
+        if initiator_channel.user() != user_uuid:
             raise UserPermissionDenied(user_uuid, {'call': initiator_call})
+
+        tenant_uuid = initiator_channel.tenant_uuid()
+        if tenant_uuid:
+            variables['WAZO_TENANT_UUID'] = tenant_uuid
 
         if destination == 'line':
             try:
-                destination_interface = User(user_uuid, self.confd_client).line(location['line_id']).interface()
+                destination_interface = user.line(location['line_id']).interface()
             except (InvalidUserUUID, InvalidUserLine):
                 raise RelocateCreationError('invalid line for user', details={'user_uuid': user_uuid, 'line_id': location['line_id']})
             destination = 'interface'
             location['interface'] = destination_interface
-            variables = {}
         elif destination == 'mobile':
             try:
-                user = User(user_uuid, self.confd_client)
                 mobile = user.mobile_phone_number()
                 line_context = user.main_line().context()
             except (InvalidUserUUID, InvalidUserLine):
@@ -218,7 +224,7 @@ class RelocatesService:
             destination = 'extension'
             location = {'exten': mobile,
                         'context': line_context}
-            variables = {'WAZO_DEREFERENCED_USERUUID': user_uuid}
+            variables['WAZO_DEREFERENCED_USERUUID'] = user_uuid
 
         if auto_answer:
             variables.update(AUTO_ANSWER_VARIABLES)
