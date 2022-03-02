@@ -128,7 +128,7 @@ class RealAsterisk:
         variables = {
             'XIVO_USERUUID': caller_uuid,
             '__CALLEE_XIVO_USERUUID': callee_uuid,
-            'WAZO_TENANT_UUID': VALID_TENANT,
+            '__WAZO_TENANT_UUID': VALID_TENANT,
         }
         variables.update(caller_variables or {})
         caller = self.ari.channels.originate(endpoint=ENDPOINT_AUTOANSWER,
