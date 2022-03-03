@@ -1,4 +1,4 @@
-# Copyright 2016-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
@@ -16,6 +16,7 @@ from hamcrest import empty
 from hamcrest import has_entry
 from hamcrest import has_entries
 from hamcrest import has_item
+from hamcrest import has_items
 from hamcrest import has_key
 from hamcrest import instance_of
 from hamcrest import not_
@@ -27,7 +28,8 @@ from .helpers.base import IntegrationTest
 from .helpers.real_asterisk import RealAsteriskIntegrationTest, RealAsterisk
 from .helpers.constants import (
     SOME_CHANNEL_ID,
-    VALID_TOKEN
+    VALID_TOKEN,
+    VALID_TENANT,
 )
 from .helpers.confd import MockUser
 from .helpers.confd import MockLine
@@ -182,7 +184,19 @@ class TestTransfers(RealAsteriskIntegrationTest):
         assert_that(recipient_channel_id, self.c.has_variable('XIVO_TRANSFER_ID', transfer_id), 'variable not set')
         assert_that(recipient_channel_id, self.c.has_variable('XIVO_TRANSFER_ROLE', 'recipient'), 'variable not set')
 
-        assert_that(events.accumulate(), has_item(has_entry('name', 'transfer_answered')))
+        assert_that(
+            events.accumulate(with_headers=True),
+            has_item(
+                has_entries(
+                    message=has_entry('name', 'transfer_answered'),
+                    headers=has_entries({
+                        'name': 'transfer_answered',
+                        'tenant_uuid': VALID_TENANT,
+                        f"user_uuid:{transfer['initiator_uuid']}": True,
+                    })
+                )
+            )
+        )
 
     def assert_transfer_is_cancelled(self, transfer_id, transferred_channel_id, initiator_channel_id, recipient_channel_id, events):
         transfer_bridge = self.ari.bridges.get(bridgeId=transfer_id)
@@ -205,9 +219,25 @@ class TestTransfers(RealAsteriskIntegrationTest):
         result = self.calld.get_transfer_result(transfer_id, token=VALID_TOKEN)
         assert_that(result.status_code, equal_to(404), 'transfer not removed')
 
-        events = events.accumulate()
-        assert_that(events, has_item(has_entry('name', 'transfer_cancelled')))
-        assert_that(events, has_item(has_entry('name', 'transfer_ended')))
+        assert_that(
+            events.accumulate(with_headers=True),
+            has_items(
+                has_entries(
+                    message=has_entry('name', 'transfer_cancelled'),
+                    headers=has_entries({
+                        'name': 'transfer_cancelled',
+                        'tenant_uuid': VALID_TENANT,
+                    })
+                ),
+                has_entries(
+                    message=has_entry('name', 'transfer_ended'),
+                    headers=has_entries({
+                        'name': 'transfer_ended',
+                        'tenant_uuid': VALID_TENANT,
+                    })
+                )
+            )
+        )
 
     def assert_transfer_is_completed(self, transfer_id, transferred_channel_id, initiator_channel_id, recipient_channel_id, events):
         transfer_bridge = self.ari.bridges.get(bridgeId=transfer_id)
@@ -230,10 +260,32 @@ class TestTransfers(RealAsteriskIntegrationTest):
         result = self.calld.get_transfer_result(transfer_id, token=VALID_TOKEN)
         assert_that(result.status_code, equal_to(404))
 
-        events = events.accumulate()
-        assert_that(events, has_item(has_entry('name', 'transfer_answered')))
-        assert_that(events, has_item(has_entry('name', 'transfer_completed')))
-        assert_that(events, has_item(has_entry('name', 'transfer_ended')))
+        assert_that(
+            events.accumulate(with_headers=True),
+            has_items(
+                has_entries(
+                    message=has_entry('name', 'transfer_answered'),
+                    headers=has_entries({
+                        'name': 'transfer_answered',
+                        'tenant_uuid': VALID_TENANT,
+                    })
+                ),
+                has_entries(
+                    message=has_entry('name', 'transfer_completed'),
+                    headers=has_entries({
+                        'name': 'transfer_completed',
+                        'tenant_uuid': VALID_TENANT,
+                    })
+                ),
+                has_entries(
+                    message=has_entry('name', 'transfer_ended'),
+                    headers=has_entries({
+                        'name': 'transfer_ended',
+                        'tenant_uuid': VALID_TENANT,
+                    })
+                ),
+            )
+        )
 
     def assert_transfer_is_blind_transferred(self, transfer_id, transferred_channel_id, initiator_channel_id, recipient_channel_id=None):
         transfer = self.calld.get_transfer(transfer_id)
@@ -284,9 +336,25 @@ class TestTransfers(RealAsteriskIntegrationTest):
         result = self.calld.get_transfer_result(transfer_id, token=VALID_TOKEN)
         assert_that(result.status_code, equal_to(404))
 
-        events = events.accumulate()
-        assert_that(events, has_item(has_entry('name', 'transfer_abandoned')))
-        assert_that(events, has_item(has_entry('name', 'transfer_ended')))
+        assert_that(
+            events.accumulate(with_headers=True),
+            has_items(
+                has_entries(
+                    message=has_entry('name', 'transfer_abandoned'),
+                    headers=has_entries({
+                        'name': 'transfer_abandoned',
+                        'tenant_uuid': VALID_TENANT,
+                    })
+                ),
+                has_entries(
+                    message=has_entry('name', 'transfer_ended'),
+                    headers=has_entries({
+                        'name': 'transfer_ended',
+                        'tenant_uuid': VALID_TENANT,
+                    })
+                ),
+            )
+        )
 
     def assert_transfer_is_hungup(self, transfer_id, transferred_channel_id, initiator_channel_id, recipient_channel_id, events):
         assert_that(transfer_id, not_(self.b.is_found()), 'transfer still exists')
@@ -298,7 +366,18 @@ class TestTransfers(RealAsteriskIntegrationTest):
         result = self.calld.get_transfer_result(transfer_id, token=VALID_TOKEN)
         assert_that(result.status_code, equal_to(404))
 
-        assert_that(events.accumulate(), has_item(has_entry('name', 'transfer_ended')))
+        assert_that(
+            events.accumulate(with_headers=True),
+            has_item(
+                has_entries(
+                    message=has_entry('name', 'transfer_ended'),
+                    headers=has_entries({
+                        'name': 'transfer_ended',
+                        'tenant_uuid': VALID_TENANT,
+                    })
+                )
+            )
+        )
 
     def assert_everyone_hungup(self, transferred_channel_id, initiator_channel_id, recipient_channel_id):
         assert_that(transferred_channel_id, self.c.is_hungup(), 'transferred channel is still talking')
@@ -342,6 +421,7 @@ class TestUserListTransfers(TestTransfers):
         assert_that(result['items'], contains({
             'id': transfer_id,
             'initiator_uuid': user_uuid,
+            'initiator_tenant_uuid': VALID_TENANT,
             'transferred_call': transferred_channel_id,
             'initiator_call': initiator_channel_id,
             'recipient_call': recipient_channel_id,
@@ -463,12 +543,25 @@ class TestCreateTransfer(TestTransfers):
         transferred_channel_id, initiator_channel_id = self.real_asterisk.given_bridged_call_stasis()
 
         events = self.bus.accumulator('calls.transfer.created')
-        self.calld.create_transfer(transferred_channel_id,
-                                   initiator_channel_id,
-                                   **RECIPIENT)
+        self.calld.create_transfer(
+            transferred_channel_id,
+            initiator_channel_id,
+            **RECIPIENT
+        )
 
         def event_is_sent():
-            assert_that(events.accumulate(), has_item(has_entry('name', 'transfer_created')))
+            assert_that(
+                events.accumulate(with_headers=True),
+                has_item(
+                    has_entries(
+                        message=has_entry('name', 'transfer_created'),
+                        headers=has_entries({
+                            'name': 'transfer_created',
+                            'tenant_uuid': VALID_TENANT,
+                        })
+                    ),
+                )
+            )
 
         until.assert_(event_is_sent, tries=5)
 
@@ -476,12 +569,25 @@ class TestCreateTransfer(TestTransfers):
         transferred_channel_id, initiator_channel_id = self.real_asterisk.given_bridged_call_not_stasis()
 
         events = self.bus.accumulator('calls.transfer.created')
-        self.calld.create_transfer(transferred_channel_id,
-                                   initiator_channel_id,
-                                   **RECIPIENT)
+        self.calld.create_transfer(
+            transferred_channel_id,
+            initiator_channel_id,
+            **RECIPIENT
+        )
 
         def event_is_sent():
-            assert_that(events.accumulate(), has_item(has_entry('name', 'transfer_created')))
+            assert_that(
+                events.accumulate(with_headers=True),
+                has_item(
+                    has_entries(
+                        message=has_entry('name', 'transfer_created'),
+                        headers=has_entries({
+                            'name': 'transfer_created',
+                            'tenant_uuid': VALID_TENANT,
+                        })
+                    ),
+                )
+            )
 
         until.assert_(event_is_sent, tries=5)
 
@@ -1332,13 +1438,21 @@ class TestTransferFromNonStasis(TestTransfers):
         transfer_id = response['id']
 
         def transfer_was_updated(events):
-            events = events.accumulate()
-            assert_that(events, has_item(has_entries({
-                'name': 'transfer_updated',
-                'data': has_entries({
-                    'recipient_call': not_none(),
-                }),
-            })))
+            assert_that(
+                events.accumulate(with_headers=True),
+                has_item(
+                    has_entries(
+                        message=has_entries({
+                            'name': 'transfer_updated',
+                            'data': has_entry('recipient_call', not_none()),
+                        }),
+                        headers=has_entries({
+                            'name': 'transfer_updated',
+                            'tenant_uuid': VALID_TENANT,
+                        })
+                    ),
+                )
+            )
 
         until.assert_(transfer_was_updated, events, timeout=30)
 
@@ -1435,7 +1549,7 @@ class TestInitialisation(TestTransfers):
         (transferred_channel_id,
          initiator_channel_id,
          recipient_channel_id,
-         transfer_id) = self.given_answered_transfer()
+         transfer_id) = self.given_answered_transfer(variables={'WAZO_TENANT_UUID': VALID_TENANT})
 
         self._restart_calld()
 
