@@ -121,13 +121,17 @@ class TestFax(RealAsteriskIntegrationTest):
         fax = self.calld_client.faxes.send(fax_content,
                                            context='recipient',
                                            extension='recipient-fax',
-                                           caller_id='fax wait')
+                                           caller_id='fax wait',
+                                           ivr_extension='12',
+                                           wait_time=42)
 
         assert_that(fax, has_entries({
             'id': is_not(empty()),
             'context': 'recipient',
             'extension': 'recipient-fax',
             'caller_id': 'fax wait',
+            'ivr_extension': '12',
+            'wait_time': 42,
         }))
 
         def one_fax_channel():
@@ -286,11 +290,22 @@ class TestFax(RealAsteriskIntegrationTest):
             fax_content = fax_file.read()
 
         try:
-            calld_client.faxes.send_from_user(fax_content,
-                                              extension='recipient-fax',
-                                              caller_id='fax wait')
+            fax = calld_client.faxes.send_from_user(fax_content,
+                                                    extension='recipient-fax',
+                                                    caller_id='fax wait',
+                                                    ivr_extension='12',
+                                                    wait_time=42)
         except Exception as e:
             raise AssertionError('Sending fax raised an exception: {}'.format(e))
+
+        assert_that(fax, has_entries({
+            'id': is_not(empty()),
+            'context': context,
+            'extension': 'recipient-fax',
+            'caller_id': 'fax wait',
+            'ivr_extension': '12',
+            'wait_time': 42,
+        }))
 
         def one_fax_channel():
             assert_that(self._fax_channels(), has_length(1))
