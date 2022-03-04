@@ -32,6 +32,10 @@
   * GET `/calls/<call-id>`
   * GET `/users/me/calls`
 
+* New attribute for `Transfer` objects:
+
+  * `initiator_tenant_uuid`
+
 ## 22.03
 
 * New API to get the status of a meeting:
