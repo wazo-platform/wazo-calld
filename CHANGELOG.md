@@ -2,6 +2,11 @@
 
 ## 22.04
 
+* The `ivr_extension` and `wait_time` fields have been added to the following resources:
+
+  * POST `/faxes`
+  * POST `/users/me/faxes`
+
 * The `is_video` field has been added to the following resources:
 
   * GET `/calls`
