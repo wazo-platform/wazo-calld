@@ -24,13 +24,13 @@ events:
     routing_key: calls.hold.created
     required_acl: events.calls.{user_uuid}
     schema:
-      '$ref': '#/definitions/Call'
+      '$ref': '#/definitions/CallHeld'
   call_resumed:
     summary: A call has been resumed
     routing_key: calls.hold.deleted
     required_acl: events.calls.{user_uuid}
     schema:
-      '$ref': '#/definitions/Call'
+      '$ref': '#/definitions/CallHeld'
   call_dtmf_created:
     summary: A DTMF has been sent to Wazo
     routing_key: calls.dtmf.created
@@ -119,3 +119,10 @@ definitions:
       conversation_id:
         type: string
         description: The ID shared by all calls in the same conversation
+  CallHeld:
+    type: object
+    properties:
+        call_id:
+          type: string
+        user_uuid:
+          type: string
