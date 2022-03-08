@@ -1,4 +1,4 @@
-# Copyright 2016-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -170,7 +170,9 @@ class TransferStateReady(TransferState):
 
     @transition
     def create(self, transferred_channel, initiator_channel, context, exten, flow, variables, timeout):
-        initiator_uuid = Channel(initiator_channel.id, self._ari).user()
+        channel = Channel(initiator_channel.id, self._ari)
+        initiator_uuid = channel.user()
+        initiator_tenant_uuid = channel.tenant_uuid()
         if initiator_uuid is None:
             raise TransferCreationError('initiator has no user UUID')
 
@@ -198,7 +200,7 @@ class TransferStateReady(TransferState):
 
         recipient_call = self._services.originate_recipient(initiator_channel.id, context, exten, transfer_id, variables, timeout)
 
-        self.transfer = Transfer(transfer_id, initiator_uuid)
+        self.transfer = Transfer(transfer_id, initiator_uuid, initiator_tenant_uuid)
         self.transfer.transferred_call = transferred_channel.id
         self.transfer.initiator_call = initiator_channel.id
         self.transfer.recipient_call = recipient_call
@@ -219,7 +221,9 @@ class TransferStateReadyNonStasis(TransferState):
 
     @transition
     def create(self, transferred_channel, initiator_channel, context, exten, flow, variables, timeout):
-        initiator_uuid = Channel(initiator_channel.id, self._ari).user()
+        channel = Channel(initiator_channel.id, self._ari)
+        initiator_uuid = channel.user()
+        initiator_tenant_uuid = channel.tenant_uuid()
         if initiator_uuid is None:
             raise TransferCreationError('initiator has no user UUID')
 
@@ -236,7 +240,7 @@ class TransferStateReadyNonStasis(TransferState):
                                                    timeout)
         except ARINotFound:
             raise TransferCreationError('channel not found')
-        self.transfer = Transfer(transfer_id, initiator_uuid)
+        self.transfer = Transfer(transfer_id, initiator_uuid, initiator_tenant_uuid)
         self.transfer.initiator_call = initiator_channel.id
         self.transfer.transferred_call = transferred_channel.id
         self.transfer.status = self.name

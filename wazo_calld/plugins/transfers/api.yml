@@ -223,6 +223,9 @@ definitions:
       initiator_uuid:
         description: UUID of the user who initiated the transfer
         type: string
+      initiator_tenant_uuid:
+        description: Tenant UUID of the user who initiated the transfer
+        type: string
       transferred_call:
         description: Call ID of the call being transferred to someone else
         type: string

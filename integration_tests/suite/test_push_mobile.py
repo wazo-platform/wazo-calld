@@ -1,9 +1,9 @@
-# Copyright 2019-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from hamcrest import (
     assert_that,
-    contains,
+    has_item,
     has_entries,
 )
 
@@ -26,7 +26,8 @@ class TestPushMobile(RealAsteriskIntegrationTest):
                 'ChanVariable': {
                     'XIVO_BASE_EXTEN': '8000',
                     'WAZO_DEREFERENCED_USERUUID': '',
-                    'XIVO_USERUUID': 'eaa18a7f-3f49-419a-9abb-b445b8ba2e03'
+                    'XIVO_USERUUID': 'eaa18a7f-3f49-419a-9abb-b445b8ba2e03',
+                    'WAZO_TENANT_UUID': 'some-tenant-uuid',
                 },
                 'CallerIDName': 'my name is 8001',
                 'Event': 'UserEvent',
@@ -51,17 +52,27 @@ class TestPushMobile(RealAsteriskIntegrationTest):
         self.bus.publish(push_mobile_event, routing_key='ami.UserEvent')
 
         def bus_events_received():
-            assert_that(events.accumulate(), contains(
-                has_entries(
-                    name='call_push_notification',
-                    data=has_entries(
-                        peer_caller_id_number='8001',
-                        peer_caller_id_name='my name is 8001',
-                        call_id='1560784195.313',
-                        video=True,
-                    ),
-                    required_acl='events.calls.fb27eb93-d21c-483f-8068-e685c90b07e1',
-                ),
-            ))
+            assert_that(
+                events.accumulate(with_headers=True),
+                has_item(
+                    has_entries(
+                        message=has_entries(
+                            name='call_push_notification',
+                            data=has_entries(
+                                peer_caller_id_number='8001',
+                                peer_caller_id_name='my name is 8001',
+                                call_id='1560784195.313',
+                                video=True,
+                            ),
+                            required_acl='events.calls.fb27eb93-d21c-483f-8068-e685c90b07e1',
+                        ),
+                        headers=has_entries({
+                            'name': 'call_push_notification',
+                            'tenant_uuid': 'some-tenant-uuid',
+                            'user_uuid:fb27eb93-d21c-483f-8068-e685c90b07e1': True,
+                        })
+                    )
+                )
+            )
 
-        until.assert_(bus_events_received, timeout=3)
+        until.assert_(bus_events_received, timeout=10)

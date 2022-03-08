@@ -1,4 +1,4 @@
-# Copyright 2018-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from flask import request
@@ -280,10 +280,10 @@ class ApplicationNodeList(_BaseResource):
 
     @required_acl('calld.applications.{application_uuid}.nodes.create')
     def post(self, application_uuid):
-        self._service.get_application(application_uuid)
+        application = self._service.get_application(application_uuid)
         form = application_node_schema.load(request.get_json())
         call_ids = [call['id_'] for call in form.get('calls', [])]
-        node = self._service.create_node_with_calls(application_uuid, call_ids)
+        node = self._service.create_node_with_calls(application, call_ids)
         return application_node_schema.dump(node), 201
 
 

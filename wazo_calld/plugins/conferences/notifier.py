@@ -1,4 +1,4 @@
-# Copyright 2019-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from xivo_bus.resources.conference.event import (
@@ -35,68 +35,125 @@ class ConferencesNotifier:
     def __init__(self, bus_producer):
         self._bus_producer = bus_producer
 
-    def participant_joined(self, tenant_uuid, conference_id, participant, participants_already_present):
-        participants = Participants(participant, *participants_already_present)
-        for user_uuid_concerned in participants.valid_user_uuids():
-            user_event = UserParticipantJoinedConferenceEvent(conference_id, participant, user_uuid_concerned)
-            self._bus_producer.publish(user_event)
+    @staticmethod
+    def _build_headers(user_uuids=None, **kwargs):
+        headers = {}
+        for uuid in user_uuids or []:
+            headers[f'user_uuid:{uuid}'] = True
 
-        headers = {
-            'name': 'conference_participant_joined',
-            'tenant_uuid': tenant_uuid,
-            'conference_id': conference_id,
-            'acl': 'event.conference_participants_joined',
-        }
-        for user_uuid_concerned in participants.valid_user_uuids():
-            headers['user_uuid:{}'.format(user_uuid_concerned)] = True
+        for key, value in kwargs.items():
+            if value is not None:
+                headers[key] = value
+        return headers
+
+    def participant_joined(self, tenant_uuid, conference_id, participant, participants_already_present):
+        participants_uuids = list(Participants(participant, *participants_already_present).valid_user_uuids())
+
+        for user_uuid_concerned in participants_uuids:
+            user_event = UserParticipantJoinedConferenceEvent(conference_id, participant, user_uuid_concerned)
+            headers = self._build_headers(
+                user_uuids=[user_uuid_concerned],
+                conference_id=conference_id,
+                tenant_uuid=tenant_uuid,
+            )
+            self._bus_producer.publish(user_event, headers=headers)
+
+        headers = self._build_headers(
+            conference_id=conference_id,
+            tenant_uuid=tenant_uuid,
+            user_uuids=participants_uuids,
+        )
         conference_event = ParticipantJoinedConferenceEvent(conference_id, participant)
         self._bus_producer.publish(conference_event, headers=headers)
 
     def participant_left(self, tenant_uuid, conference_id, participant, participants_already_present):
-        participants = Participants(participant, *participants_already_present)
-        for user_uuid_concerned in participants.valid_user_uuids():
-            user_event = UserParticipantLeftConferenceEvent(conference_id, participant, user_uuid_concerned)
-            self._bus_producer.publish(user_event)
+        participants_uuids = list(Participants(participant, *participants_already_present).valid_user_uuids())
 
-        headers = {
-            'name': 'conference_participant_left',
-            'tenant_uuid': tenant_uuid,
-            'conference_id': conference_id,
-            'acl': 'event.conference_participants_left',
-        }
-        for user_uuid_concerned in participants.valid_user_uuids():
-            headers['user_uuid:{}'.format(user_uuid_concerned)] = True
+        for user_uuid_concerned in participants_uuids:
+            user_event = UserParticipantLeftConferenceEvent(conference_id, participant, user_uuid_concerned)
+            headers = self._build_headers(
+                user_uuids=[user_uuid_concerned],
+                conference_id=conference_id,
+                tenant_uuid=tenant_uuid,
+            )
+            self._bus_producer.publish(user_event, headers=headers)
+
+        headers = self._build_headers(
+            conference_id=conference_id,
+            tenant_uuid=tenant_uuid,
+            user_uuids=participants_uuids,
+        )
         conference_event = ParticipantLeftConferenceEvent(conference_id, participant)
         self._bus_producer.publish(conference_event, headers=headers)
 
-    def participant_muted(self, conference_id, participant):
+    def participant_muted(self, conference_id, tenant_uuid, participant):
         event = ParticipantMutedConferenceEvent(conference_id, participant)
-        self._bus_producer.publish(event)
+        headers = self._build_headers(
+            conference_id=conference_id,
+            tenant_uuid=tenant_uuid,
+        )
+        self._bus_producer.publish(event, headers=headers)
 
-    def participant_unmuted(self, conference_id, participant):
+    def participant_unmuted(self, conference_id, tenant_uuid, participant):
         event = ParticipantUnmutedConferenceEvent(conference_id, participant)
-        self._bus_producer.publish(event)
+        headers = self._build_headers(
+            conference_id=conference_id,
+            tenant_uuid=tenant_uuid,
+        )
+        self._bus_producer.publish(event, headers=headers)
 
-    def conference_record_started(self, conference_id):
+    def conference_record_started(self, conference_id, tenant_uuid):
         event = RecordStartedConferenceEvent(conference_id)
-        self._bus_producer.publish(event)
+        headers = self._build_headers(
+            conference_id=conference_id,
+            tenant_uuid=tenant_uuid,
+        )
+        self._bus_producer.publish(event, headers=headers)
 
-    def conference_record_stopped(self, conference_id):
+    def conference_record_stopped(self, conference_id, tenant_uuid):
         event = RecordStoppedConferenceEvent(conference_id)
-        self._bus_producer.publish(event)
+        headers = self._build_headers(
+            conference_id=conference_id,
+            tenant_uuid=tenant_uuid,
+        )
+        self._bus_producer.publish(event, headers=headers)
 
-    def participant_talk_started(self, conference_id, participant, participants):
-        for user_uuid_concerned in Participants(*participants).valid_user_uuids():
+    def participant_talk_started(self, conference_id, tenant_uuid, participant, participants):
+        participants_uuids = list(Participants(*participants).valid_user_uuids())
+
+        for user_uuid_concerned in participants_uuids:
             user_event = UserParticipantTalkStartedConferenceEvent(conference_id, participant, user_uuid_concerned)
-            self._bus_producer.publish(user_event)
+            headers = self._build_headers(
+                conference_id=conference_id,
+                user_uuids=[user_uuid_concerned],
+                tenant_uuid=tenant_uuid,
+            )
+            self._bus_producer.publish(user_event, headers=headers)
 
         event = ParticipantTalkStartedConferenceEvent(conference_id, participant)
-        self._bus_producer.publish(event)
+        headers = self._build_headers(
+            conference_id=conference_id,
+            tenant_uuid=tenant_uuid,
+            user_uuids=participants_uuids,
+        )
+        self._bus_producer.publish(event, headers=headers)
 
-    def participant_talk_stopped(self, conference_id, participant, participants):
-        for user_uuid_concerned in Participants(*participants).valid_user_uuids():
+    def participant_talk_stopped(self, conference_id, tenant_uuid, participant, participants):
+        participants_uuids = list(Participants(*participants).valid_user_uuids())
+
+        for user_uuid_concerned in participants_uuids:
             user_event = UserParticipantTalkStoppedConferenceEvent(conference_id, participant, user_uuid_concerned)
-            self._bus_producer.publish(user_event)
+            headers = self._build_headers(
+                conference_id=conference_id,
+                user_uuids=[user_uuid_concerned],
+                tenant_uuid=tenant_uuid,
+            )
+            self._bus_producer.publish(user_event, headers=headers)
 
         event = ParticipantTalkStoppedConferenceEvent(conference_id, participant)
-        self._bus_producer.publish(event)
+        headers = self._build_headers(
+            conference_id=conference_id,
+            tenant_uuid=tenant_uuid,
+            user_uuids=participants_uuids,
+        )
+        self._bus_producer.publish(event, headers=headers)

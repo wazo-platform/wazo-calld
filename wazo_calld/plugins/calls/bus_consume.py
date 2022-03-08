@@ -6,17 +6,11 @@ import logging
 from ari.exceptions import ARINotFound
 from xivo_bus.collectd.channels import ChannelCreatedCollectdEvent
 from xivo_bus.collectd.channels import ChannelEndedCollectdEvent
-from xivo_bus.resources.calls.dtmf import CallDTMFEvent
-from xivo_bus.resources.calls.hold import CallOnHoldEvent
-from xivo_bus.resources.calls.hold import CallResumeEvent
-from xivo_bus.resources.calls.missed import UserMissedCall
-from xivo_bus.resources.common.event import ArbitraryEvent
 
 from wazo_calld.plugin_helpers import ami
 from wazo_calld.plugin_helpers.ari_ import Channel, set_channel_id_var_sync
 from wazo_calld.plugin_helpers.exceptions import WazoAmidError
-
-from .schemas import call_schema
+from .call import Call
 
 logger = logging.getLogger(__name__)
 
@@ -86,13 +80,7 @@ class CallsBusEventHandler:
             logger.debug('channel %s not found', channel_id)
             return
         call = self.services.make_call_from_channel(self.ari, channel)
-        bus_event = ArbitraryEvent(
-            name='call_created',
-            body=call_schema.dump(call),
-            required_acl='events.calls.{}'.format(call.user_uuid)
-        )
-        bus_event.routing_key = 'calls.call.created'
-        self.bus_publisher.publish(bus_event, headers={'user_uuid:{uuid}'.format(uuid=call.user_uuid): True})
+        self.notifier.call_created(call)
 
     def _collectd_channel_created(self, event):
         channel_id = event['Uniqueid']
@@ -136,23 +124,28 @@ class CallsBusEventHandler:
         logger.debug('sending stat for channel ended %s', channel_id)
         self.collectd.publish(ChannelEndedCollectdEvent())
 
+    def _partial_call_from_channel_id(self, channel_id):
+        channel = Channel(channel_id, self.ari)
+        call = Call(channel.id)
+        call.user_uuid = channel.user()
+        call.tenant_uuid = channel.tenant_uuid()
+        return call
+
     def _channel_hold(self, event):
         channel_id = event['Uniqueid']
         logger.debug('marking channel %s on hold', channel_id)
         ami.set_variable_ami(self.ami, channel_id, 'XIVO_ON_HOLD', '1')
 
-        user_uuid = Channel(channel_id, self.ari).user()
-        bus_msg = CallOnHoldEvent(channel_id, user_uuid)
-        self.bus_publisher.publish(bus_msg, headers={'user_uuid:{uuid}'.format(uuid=user_uuid): True})
+        call = self._partial_call_from_channel_id(channel_id)
+        self.notifier.call_hold(call)
 
     def _channel_unhold(self, event):
         channel_id = event['Uniqueid']
         logger.debug('marking channel %s not on hold', channel_id)
         ami.unset_variable_ami(self.ami, channel_id, 'XIVO_ON_HOLD')
 
-        user_uuid = Channel(channel_id, self.ari).user()
-        bus_msg = CallResumeEvent(channel_id, user_uuid)
-        self.bus_publisher.publish(bus_msg, headers={'user_uuid:{uuid}'.format(uuid=user_uuid): True})
+        call = self._partial_call_from_channel_id(channel_id)
+        self.notifier.call_resume(call)
 
     def _relay_user_missed_call(self, event):
         if event['UserEvent'] != 'user_missed_call':
@@ -161,22 +154,24 @@ class CallsBusEventHandler:
         logger.debug('Got UserEvent user_missed_call: %s', event)
 
         user_uuid = event['destination_user_uuid']
+        tenant_uuid = event['ChanVariable']['WAZO_TENANT_UUID']
         reason = event['reason']
 
         # hangup_cause 3: no route to destination
         if reason == 'channel-unavailable' and event['hangup_cause'] == '3':
             reason = 'phone-unreachable'
 
-        bus_msg = UserMissedCall({
+        payload = {
             'user_uuid': user_uuid,
+            'tenant_uuid': tenant_uuid,
             'caller_user_uuid': event['caller_user_uuid'] or None,
             'caller_id_name': event['caller_id_name'],
             'caller_id_number': event['caller_id_number'],
             'dialed_extension': event['entry_exten'],
             'conversation_id': event['conversation_id'],
             'reason': reason,
-        })
-        self.bus_publisher.publish(bus_msg, headers={f'user_uuid:{user_uuid}': True})
+        }
+        self.notifier.user_missed_call(payload)
 
     def _set_dial_echo_result(self, event):
         if event['UserEvent'] != 'dial_echo':
@@ -192,9 +187,8 @@ class CallsBusEventHandler:
         channel_id = event['Uniqueid']
         digit = event['Digit']
         logger.debug('Relaying to bus: channel %s DTMF digit %s', channel_id, digit)
-        user_uuid = Channel(channel_id, self.ari).user()
-        bus_msg = CallDTMFEvent(channel_id, digit, user_uuid)
-        self.bus_publisher.publish(bus_msg, headers={'user_uuid:{uuid}'.format(uuid=user_uuid): True})
+        call = self._partial_call_from_channel_id(channel_id)
+        self.notifier.call_dtmf(call, digit)
 
     def _relay_channel_entered_bridge(self, event):
         channel_id = event['Uniqueid']

@@ -1,5 +1,5 @@
 
-# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import uuid
@@ -25,6 +25,7 @@ from .helpers.confd import MockLine
 from .helpers.constants import (
     SOME_CALL_ID,
     INVALID_ACL_TOKEN,
+    VALID_TENANT,
 )
 from .helpers.hamcrest_ import HamcrestARIChannel
 
@@ -119,14 +120,24 @@ class TestRelocates(RealAsteriskIntegrationTest):
             assert_that(relocate['relocated_call'], self.c.is_talking(), 'relocated channel not talking')
             assert_that(relocate['initiator_call'], self.c.is_talking(), 'initiator channel not talking')
             assert_that(relocate['recipient_call'], self.c.is_talking(), 'recipient channel not talking')
-            assert_that(events.accumulate(), has_item(
-                has_entries({
-                    'name': 'relocate_answered',
-                    'data': has_entries({
-                        'uuid': relocate['uuid']
-                    }),
-                }),
-            ))
+            assert_that(
+                events.accumulate(with_headers=True),
+                has_item(
+                    has_entries(
+                        message=has_entries({
+                            'name': 'relocate_answered',
+                            'data': has_entries({
+                                'uuid': relocate['uuid']
+                            }),
+                        }),
+                        headers=has_entries({
+                            'name': 'relocate_answered',
+                            'tenant_uuid': VALID_TENANT,
+                            f'user_uuid:{user_uuid}': True,
+                        })
+                    )
+                )
+            )
 
         until.assert_(all_talking, timeout=5)
 
@@ -420,24 +431,55 @@ class TestCreateUserRelocate(TestRelocates):
         )
 
         def relocate_events_received():
-            assert_that(events.accumulate(), contains(
-                has_entries({
-                    'name': 'relocate_initiated',
-                    'data': relocate,
-                }),
-                has_entries({
-                    'name': 'relocate_answered',
-                    'data': relocate,
-                }),
-                has_entries({
-                    'name': 'relocate_completed',
-                    'data': relocate,
-                }),
-                has_entries({
-                    'name': 'relocate_ended',
-                    'data': relocate,
-                }),
-            ))
+            assert_that(
+                events.accumulate(with_headers=True),
+                contains(
+                    has_entries(
+                        message=has_entries({
+                            'name': 'relocate_initiated',
+                            'data': relocate,
+                        }),
+                        headers=has_entries({
+                            'name': 'relocate_initiated',
+                            'tenant_uuid': VALID_TENANT,
+                            f'user_uuid:{user_uuid}': True
+                        })
+                    ),
+                    has_entries(
+                        message=has_entries({
+                            'name': 'relocate_answered',
+                            'data': relocate,
+                        }),
+                        headers=has_entries({
+                            'name': 'relocate_answered',
+                            'tenant_uuid': VALID_TENANT,
+                            f'user_uuid:{user_uuid}': True
+                        })
+                    ),
+                    has_entries(
+                        message=has_entries({
+                            'name': 'relocate_completed',
+                            'data': relocate,
+                        }),
+                        headers=has_entries({
+                            'name': 'relocate_completed',
+                            'tenant_uuid': VALID_TENANT,
+                            f'user_uuid:{user_uuid}': True
+                        })
+                    ),
+                    has_entries(
+                        message=has_entries({
+                            'name': 'relocate_ended',
+                            'data': relocate,
+                        }),
+                        headers=has_entries({
+                            'name': 'relocate_ended',
+                            'tenant_uuid': VALID_TENANT,
+                            f'user_uuid:{user_uuid}': True
+                        })
+                    )
+                )
+            )
 
         until.assert_(relocate_events_received)
 
@@ -462,24 +504,55 @@ class TestCreateUserRelocate(TestRelocates):
         )
 
         def relocate_events_received():
-            assert_that(events.accumulate(), contains(
-                has_entries({
-                    'name': 'relocate_initiated',
-                    'data': relocate,
-                }),
-                has_entries({
-                    'name': 'relocate_answered',
-                    'data': relocate,
-                }),
-                has_entries({
-                    'name': 'relocate_completed',
-                    'data': relocate,
-                }),
-                has_entries({
-                    'name': 'relocate_ended',
-                    'data': relocate,
-                }),
-            ))
+            assert_that(
+                events.accumulate(with_headers=True),
+                contains(
+                    has_entries(
+                        message=has_entries({
+                            'name': 'relocate_initiated',
+                            'data': relocate,
+                        }),
+                        headers=has_entries({
+                            'name': 'relocate_initiated',
+                            'tenant_uuid': VALID_TENANT,
+                            f'user_uuid:{user_uuid}': True,
+                        })
+                    ),
+                    has_entries(
+                        message=has_entries({
+                            'name': 'relocate_answered',
+                            'data': relocate,
+                        }),
+                        headers=has_entries({
+                            'name': 'relocate_answered',
+                            'tenant_uuid': VALID_TENANT,
+                            f'user_uuid:{user_uuid}': True,
+                        })
+                    ),
+                    has_entries(
+                        message=has_entries({
+                            'name': 'relocate_completed',
+                            'data': relocate,
+                        }),
+                        headers=has_entries({
+                            'name': 'relocate_completed',
+                            'tenant_uuid': VALID_TENANT,
+                            f'user_uuid:{user_uuid}': True,
+                        })
+                    ),
+                    has_entries(
+                        message=has_entries({
+                            'name': 'relocate_ended',
+                            'data': relocate,
+                        }),
+                        headers=has_entries({
+                            'name': 'relocate_ended',
+                            'tenant_uuid': VALID_TENANT,
+                            f'user_uuid:{user_uuid}': True,
+                        })
+                    ),
+                )
+            )
 
         until.assert_(relocate_events_received)
 

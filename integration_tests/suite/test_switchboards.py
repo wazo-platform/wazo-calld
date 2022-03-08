@@ -1,4 +1,4 @@
-# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import random
@@ -201,16 +201,24 @@ class TestSwitchboardCallsQueued(TestSwitchboards):
 
         def event_received():
             assert_that(
-                bus_events.accumulate(),
-                contains(has_entries({
-                    'name': 'switchboard_queued_calls_updated',
-                    'data': has_entries({
-                        'switchboard_uuid': switchboard_uuid,
-                        'items': contains(has_entry(
-                            'id', new_channel.id,
-                        )),
-                    })
-                }))
+                bus_events.accumulate(with_headers=True),
+                has_item(
+                    has_entries(
+                        message=has_entries({
+                            'name': 'switchboard_queued_calls_updated',
+                            'data': has_entries({
+                                'switchboard_uuid': switchboard_uuid,
+                                'items': contains(has_entry(
+                                    'id', new_channel.id,
+                                )),
+                            })
+                        }),
+                        headers=has_entries({
+                            'name': 'switchboard_queued_calls_updated',
+                            'tenant_uuid': VALID_TENANT,
+                        })
+                    )
+                )
             )
 
         until.assert_(event_received, tries=3)
@@ -232,22 +240,34 @@ class TestSwitchboardCallsQueued(TestSwitchboards):
 
         def event_received():
             assert_that(
-                bus_events.accumulate(),
+                bus_events.accumulate(with_headers=True),
                 contains(
-                    has_entries({
-                        'name': 'switchboard_queued_calls_updated',
-                        'data': has_entries({
-                            'switchboard_uuid': switchboard_uuid,
-                            'items': is_not(empty()),
-                        })
-                    }),
-                    has_entries({
-                        'name': 'switchboard_queued_calls_updated',
-                        'data': has_entries({
-                            'switchboard_uuid': switchboard_uuid,
-                            'items': empty(),
-                        })
-                    })
+                    has_entries(
+                        message=has_entries({
+                            'name': 'switchboard_queued_calls_updated',
+                            'data': has_entries({
+                                'switchboard_uuid': switchboard_uuid,
+                                'items': is_not(empty()),
+                            })
+                        }),
+                        headers=has_entries(
+                            name='switchboard_queued_calls_updated',
+                            tenant_uuid=VALID_TENANT,
+                        )
+                    ),
+                    has_entries(
+                        message=has_entries({
+                            'name': 'switchboard_queued_calls_updated',
+                            'data': has_entries({
+                                'switchboard_uuid': switchboard_uuid,
+                                'items': empty(),
+                            })
+                        }),
+                        headers=has_entries(
+                            name='switchboard_queued_calls_updated',
+                            tenant_uuid=VALID_TENANT,
+                        )
+                    )
                 )
             )
 
@@ -257,7 +277,9 @@ class TestSwitchboardCallsQueued(TestSwitchboards):
         switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         routing_key = 'switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid)
         bus_events = self.bus.accumulator(routing_key)
-        self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
+        self.confd.set_switchboards(
+            MockSwitchboard(uuid=switchboard_uuid, tenant_uuid=VALID_TENANT)
+        )
         new_channel = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app=STASIS_APP,
@@ -271,24 +293,37 @@ class TestSwitchboardCallsQueued(TestSwitchboards):
 
         def event_received():
             assert_that(
-                bus_events.accumulate(),
+                bus_events.accumulate(with_headers=True),
                 has_items(
-                    has_entries({
-                        'name': 'switchboard_queued_calls_updated',
-                        'data': has_entries({
-                            'switchboard_uuid': switchboard_uuid,
-                            'items': is_not(empty()),
-                        })
-                    }),
-                    has_entries({
-                        'name': 'switchboard_queued_calls_updated',
-                        'data': has_entries({
-                            'switchboard_uuid': switchboard_uuid,
-                            'items': empty(),
-                        })
-                    })
+                    has_entries(
+                        message=has_entries({
+                            'name': 'switchboard_queued_calls_updated',
+                            'data': has_entries({
+                                'switchboard_uuid': switchboard_uuid,
+                                'items': is_not(empty()),
+                            })
+                        }),
+                        headers=has_entries(
+                            name='switchboard_queued_calls_updated',
+                            tenant_uuid=VALID_TENANT,
+                        )
+                    ),
+                    has_entries(
+                        message=has_entries({
+                            'name': 'switchboard_queued_calls_updated',
+                            'data': has_entries({
+                                'switchboard_uuid': switchboard_uuid,
+                                'items': empty(),
+                            })
+                        }),
+                        headers=has_entries(
+                            name='switchboard_queued_calls_updated',
+                            tenant_uuid=VALID_TENANT,
+                        )
+                    )
                 )
             )
+
         until.assert_(event_received, tries=3)
 
     def test_call_queued_reaches_timeout(self):
@@ -471,14 +506,25 @@ class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
         result = self.calld.switchboard_answer_queued_call(switchboard_uuid, queued_call_id, token)
 
         def answered_event_received():
-            assert_that(answered_bus_events.accumulate(), has_item(has_entries({
-                'name': 'switchboard_queued_call_answered',
-                'data': has_entries({
-                    'switchboard_uuid': switchboard_uuid,
-                    'operator_call_id': result['call_id'],
-                    'queued_call_id': queued_call_id
-                })
-            })))
+            assert_that(
+                answered_bus_events.accumulate(with_headers=True),
+                has_item(
+                    has_entries(
+                        message=has_entries({
+                            'name': 'switchboard_queued_call_answered',
+                            'data': has_entries({
+                                'switchboard_uuid': switchboard_uuid,
+                                'operator_call_id': result['call_id'],
+                                'queued_call_id': queued_call_id
+                            })
+                        }),
+                        headers=has_entries(
+                            name='switchboard_queued_call_answered',
+                            tenant_uuid=VALID_TENANT,
+                        )
+                    )
+                )
+            )
 
         until.assert_(answered_event_received, tries=3)
 
@@ -521,14 +567,25 @@ class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
                                                            token, second_line_id)
 
         def answered_event_received():
-            assert_that(answered_bus_events.accumulate(), has_item(has_entries({
-                'name': 'switchboard_queued_call_answered',
-                'data': has_entries({
-                    'switchboard_uuid': switchboard_uuid,
-                    'operator_call_id': result['call_id'],
-                    'queued_call_id': queued_call_id
-                })
-            })))
+            assert_that(
+                answered_bus_events.accumulate(with_headers=True),
+                has_item(
+                    has_entries(
+                        message=has_entries({
+                            'name': 'switchboard_queued_call_answered',
+                            'data': has_entries({
+                                'switchboard_uuid': switchboard_uuid,
+                                'operator_call_id': result['call_id'],
+                                'queued_call_id': queued_call_id
+                            })
+                        }),
+                        headers=has_entries(
+                            name='switchboard_queued_call_answered',
+                            tenant_uuid=VALID_TENANT,
+                        )
+                    )
+                )
+            )
 
         until.assert_(answered_event_received, tries=3)
 
@@ -831,16 +888,24 @@ class TestSwitchboardHoldCall(TestSwitchboards):
 
         def event_received():
             assert_that(
-                held_bus_events.accumulate(),
-                contains(has_entries({
-                    'name': 'switchboard_held_calls_updated',
-                    'data': has_entries({
-                        'switchboard_uuid': switchboard_uuid,
-                        'items': contains(
-                            has_entry('id', queued_call_id)
-                        ),
-                    })
-                }))
+                held_bus_events.accumulate(with_headers=True),
+                contains(
+                    has_entries(
+                        message=has_entries({
+                            'name': 'switchboard_held_calls_updated',
+                            'data': has_entries({
+                                'switchboard_uuid': switchboard_uuid,
+                                'items': contains(
+                                    has_entry('id', queued_call_id)
+                                ),
+                            })
+                        }),
+                        headers=has_entries(
+                            name='switchboard_held_calls_updated',
+                            tenant_uuid=VALID_TENANT,
+                        )
+                    )
+                )
             )
 
         until.assert_(event_received, tries=3)
@@ -1020,22 +1085,34 @@ class TestSwitchboardCallsHeld(TestSwitchboards):
 
         def event_received():
             assert_that(
-                held_bus_events.accumulate(),
+                held_bus_events.accumulate(with_headers=True),
                 contains(
-                    has_entries({
-                        'name': 'switchboard_held_calls_updated',
-                        'data': has_entries({
-                            'switchboard_uuid': switchboard_uuid,
-                            'items': is_not(empty())
-                        })
-                    }),
-                    has_entries({
-                        'name': 'switchboard_held_calls_updated',
-                        'data': has_entries({
-                            'switchboard_uuid': switchboard_uuid,
-                            'items': empty()
-                        })
-                    })
+                    has_entries(
+                        message=has_entries({
+                            'name': 'switchboard_held_calls_updated',
+                            'data': has_entries({
+                                'switchboard_uuid': switchboard_uuid,
+                                'items': is_not(empty())
+                            })
+                        }),
+                        headers=has_entries(
+                            name='switchboard_held_calls_updated',
+                            tenant_uuid=VALID_TENANT,
+                        )
+                    ),
+                    has_entries(
+                        message=has_entries({
+                            'name': 'switchboard_held_calls_updated',
+                            'data': has_entries({
+                                'switchboard_uuid': switchboard_uuid,
+                                'items': empty()
+                            })
+                        }),
+                        headers=has_entries(
+                            name='switchboard_held_calls_updated',
+                            tenant_uuid=VALID_TENANT,
+                        )
+                    )
                 )
             )
 
@@ -1045,7 +1122,9 @@ class TestSwitchboardCallsHeld(TestSwitchboards):
         switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         routing_key = 'switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid)
         queued_bus_events = self.bus.accumulator(routing_key)
-        self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
+        self.confd.set_switchboards(
+            MockSwitchboard(uuid=switchboard_uuid, tenant_uuid=VALID_TENANT)
+        )
         new_channel = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app=STASIS_APP,
@@ -1063,22 +1142,34 @@ class TestSwitchboardCallsHeld(TestSwitchboards):
 
         def event_received():
             assert_that(
-                held_bus_events.accumulate(),
+                held_bus_events.accumulate(with_headers=True),
                 has_items(
-                    has_entries({
-                        'name': 'switchboard_held_calls_updated',
-                        'data': has_entries({
-                            'switchboard_uuid': switchboard_uuid,
-                            'items': is_not(empty())
-                        })
-                    }),
-                    has_entries({
-                        'name': 'switchboard_held_calls_updated',
-                        'data': has_entries({
-                            'switchboard_uuid': switchboard_uuid,
-                            'items': empty()
-                        })
-                    })
+                    has_entries(
+                        message=has_entries({
+                            'name': 'switchboard_held_calls_updated',
+                            'data': has_entries({
+                                'switchboard_uuid': switchboard_uuid,
+                                'items': is_not(empty())
+                            })
+                        }),
+                        headers=has_entries(
+                            name='switchboard_held_calls_updated',
+                            tenant_uuid=VALID_TENANT,
+                        )
+                    ),
+                    has_entries(
+                        message=has_entries({
+                            'name': 'switchboard_held_calls_updated',
+                            'data': has_entries({
+                                'switchboard_uuid': switchboard_uuid,
+                                'items': empty()
+                            })
+                        }),
+                        headers=has_entries(
+                            name='switchboard_held_calls_updated',
+                            tenant_uuid=VALID_TENANT,
+                        )
+                    )
                 )
             )
 
@@ -1221,32 +1312,43 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
             MockLine(id=first_line_id, name='switchboard-first-line/autoanswer', protocol='test'),
             MockLine(id=second_line_id, name='switchboard-second-line/autoanswer', protocol='test')
         )
-        routing_key = 'switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid)
-        queued_bus_events = self.bus.accumulator(routing_key)
+        queued_bus_events = self.bus.accumulator('switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid))
+        held_bus_events = self.bus.accumulator('switchboards.{uuid}.calls.held.updated'.format(uuid=switchboard_uuid))
+        answered_bus_events = self.bus.accumulator('switchboards.{uuid}.calls.held.*.answer.updated'.format(uuid=switchboard_uuid))
+
         new_channel = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app=STASIS_APP,
             appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, VALID_TENANT, switchboard_uuid],
         )
         until.true(queued_bus_events.accumulate, tries=3)
-        held_bus_events = self.bus.accumulator('switchboards.{uuid}.calls.held.updated'.format(uuid=switchboard_uuid))
-        self.calld.switchboard_hold_call(switchboard_uuid, new_channel.id)
-        until.true(held_bus_events.accumulate, tries=3)
-        held_call_id = new_channel.id
-        routing_key = 'switchboards.{uuid}.calls.held.*.answer.updated'.format(uuid=switchboard_uuid)
-        answered_bus_events = self.bus.accumulator(routing_key)
 
+        self.calld.switchboard_hold_call(switchboard_uuid, new_channel.id)
+        until.true(held_bus_events.accumulate, tries=10)
+
+        held_call_id = new_channel.id
         result = self.calld.switchboard_answer_held_call(switchboard_uuid, held_call_id, token)
 
         def answered_event_received():
-            assert_that(answered_bus_events.accumulate(), has_item(has_entries({
-                'name': 'switchboard_held_call_answered',
-                'data': has_entries({
-                    'switchboard_uuid': switchboard_uuid,
-                    'operator_call_id': result['call_id'],
-                    'held_call_id': held_call_id
-                })
-            })))
+            assert_that(
+                answered_bus_events.accumulate(with_headers=True),
+                has_item(
+                    has_entries(
+                        message=has_entries({
+                            'name': 'switchboard_held_call_answered',
+                            'data': has_entries({
+                                'switchboard_uuid': switchboard_uuid,
+                                'operator_call_id': result['call_id'],
+                                'held_call_id': held_call_id
+                            })
+                        }),
+                        headers=has_entries(
+                            name='switchboard_held_call_answered',
+                            tenant_uuid=VALID_TENANT,
+                        )
+                    )
+                )
+            )
 
         until.assert_(answered_event_received, tries=3)
 
@@ -1292,14 +1394,25 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
                                                          second_line_id)
 
         def answered_event_received():
-            assert_that(answered_bus_events.accumulate(), has_item(has_entries({
-                'name': 'switchboard_held_call_answered',
-                'data': has_entries({
-                    'switchboard_uuid': switchboard_uuid,
-                    'operator_call_id': result['call_id'],
-                    'held_call_id': held_call_id,
-                })
-            })))
+            assert_that(
+                answered_bus_events.accumulate(with_headers=True),
+                has_item(
+                    has_entries(
+                        message=has_entries({
+                            'name': 'switchboard_held_call_answered',
+                            'data': has_entries({
+                                'switchboard_uuid': switchboard_uuid,
+                                'operator_call_id': result['call_id'],
+                                'held_call_id': held_call_id,
+                            })
+                        }),
+                        headers=has_entries(
+                            name='switchboard_held_call_answered',
+                            tenant_uuid=VALID_TENANT,
+                        )
+                    )
+                )
+            )
 
         until.assert_(answered_event_received, tries=3)
 

@@ -1,4 +1,4 @@
-# Copyright 2018-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -47,8 +47,9 @@ class ApplicationStasis:
         application_uuid = AppNameHelper.to_uuid(event.get('application'))
         if not application_uuid:
             return
+        application = self._service.get_application(application_uuid)
 
-        self._notifier.dtmf_received(application_uuid, channel.id, event['digit'])
+        self._notifier.dtmf_received(application, channel.id, event['digit'])
 
     def channel_entered_bridge(self, channel, event):
         application_uuid = AppNameHelper.to_uuid(event.get('application'))
@@ -67,9 +68,9 @@ class ApplicationStasis:
             snoop_uuid = event['bridge']['id']
             try:
                 snoop = self._service.snoop_get(application, snoop_uuid)
-                self._notifier.snoop_updated(application_uuid, snoop)
+                self._notifier.snoop_updated(application, snoop)
             except NoSuchSnoop:
-                self._notifier.snoop_deleted(application_uuid, snoop_uuid)
+                self._notifier.snoop_deleted(application, snoop_uuid)
 
         self._channel_update_bridge(application_uuid, channel, event)
 
@@ -77,11 +78,11 @@ class ApplicationStasis:
         application = self._service.get_application(application_uuid)
 
         node = make_node_from_bridge_event(event.get('bridge'))
-        self._notifier.node_updated(application_uuid, node)
+        self._notifier.node_updated(application, node)
 
         formatter = CallFormatter(application, self._ari)
         call = formatter.from_channel(channel)
-        self._notifier.call_updated(application_uuid, call)
+        self._notifier.call_updated(application, call)
 
     def initialize(self):
         applications = self._confd_apps.list()
@@ -132,15 +133,16 @@ class ApplicationStasis:
         application = self._service.get_application(application_uuid)
         formatter = CallFormatter(application, self._ari)
         call = formatter.from_channel(channel)
-        self._notifier.call_deleted(application_uuid, call)
+        self._notifier.call_deleted(application, call)
 
     def bridge_destroyed(self, bridge, event):
         application_uuid = AppNameHelper.to_uuid(event.get('application'))
         if not application_uuid:
             return
+        application = self._service.get_application(application_uuid)
 
         node = make_node_from_bridge(bridge)
-        self._notifier.node_deleted(application_uuid, node)
+        self._notifier.node_deleted(application, node)
 
     def channel_moh_started(self, channel, event):
         application_uuid = AppNameHelper.to_uuid(event.get('application'))
@@ -155,7 +157,7 @@ class ApplicationStasis:
 
         formatter = CallFormatter(application, self._ari)
         call = formatter.from_channel(channel)
-        self._notifier.call_updated(application_uuid, call)
+        self._notifier.call_updated(application, call)
 
     def channel_moh_stopped(self, channel, event):
         application_uuid = AppNameHelper.to_uuid(event.get('application'))
@@ -167,7 +169,7 @@ class ApplicationStasis:
         set_channel_var_sync(channel, 'WAZO_MOH_UUID', '')
         formatter = CallFormatter(application, self._ari)
         call = formatter.from_channel(channel)
-        self._notifier.call_updated(application_uuid, call)
+        self._notifier.call_updated(application, call)
 
     def channel_state_change(self, channel, event):
         application_uuid = AppNameHelper.to_uuid(event.get('application'))
@@ -180,7 +182,7 @@ class ApplicationStasis:
         call = formatter.from_channel(channel)
 
         if channel.json['state'] == 'Up':
-            self._notifier.call_answered(application_uuid, call)
+            self._notifier.call_answered(application, call)
 
     def channel_variable_set(self, channel, event):
         if event['variable'] == 'WAZO_CALL_PROGRESS':
@@ -194,23 +196,25 @@ class ApplicationStasis:
             call = formatter.from_channel(channel)
 
             if event['value'] == '1':
-                self._notifier.call_progress_started(application_uuid, call)
+                self._notifier.call_progress_started(application, call)
             else:
-                self._notifier.call_progress_stopped(application_uuid, call)
+                self._notifier.call_progress_stopped(application, call)
 
     def playback_finished(self, playback, event):
         application_uuid = AppNameHelper.to_uuid(event.get('application'))
         if not application_uuid:
             return
+        application = self._service.get_application(application_uuid)
 
-        self._notifier.playback_deleted(application_uuid, playback.json)
+        self._notifier.playback_deleted(application, playback.json)
 
     def playback_started(self, playback, event):
         application_uuid = AppNameHelper.to_uuid(event.get('application'))
         if not application_uuid:
             return
+        application = self._service.get_application(application_uuid)
 
-        self._notifier.playback_created(application_uuid, playback.json)
+        self._notifier.playback_created(application, playback.json)
 
     def _subscribe(self, applications):
         self._ari.on_playback_event('PlaybackStarted', self.playback_started)
@@ -247,7 +251,7 @@ class ApplicationStasis:
         variables = self._service.get_channel_variables(channel)
         formatter = CallFormatter(application, self._ari)
         call = formatter.from_channel(channel, variables=variables)
-        self._notifier.call_entered(application['uuid'], call)
+        self._notifier.call_entered(application, call)
 
         confd_application = self._confd_apps.get(application_uuid)
         if confd_application['destination'] == 'node':

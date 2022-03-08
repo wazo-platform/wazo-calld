@@ -1,12 +1,13 @@
-# Copyright 2016 by Avencall
+# Copyright 2016-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 
 class Transfer:
 
-    def __init__(self, id_, initiator_uuid):
+    def __init__(self, id_, initiator_uuid, initiator_tenant_uuid):
         self.id = id_
         self.initiator_uuid = initiator_uuid
+        self.initiator_tenant_uuid = initiator_tenant_uuid
         self.transferred_call = None
         self.initiator_call = None
         self.recipient_call = None
@@ -17,6 +18,7 @@ class Transfer:
         return {
             'id': self.id,
             'initiator_uuid': self.initiator_uuid,
+            'initiator_tenant_uuid': self.initiator_tenant_uuid,
             'transferred_call': self.transferred_call,
             'initiator_call': self.initiator_call,
             'recipient_call': self.recipient_call,
@@ -26,7 +28,11 @@ class Transfer:
 
     @classmethod
     def from_dict(cls, dict_):
-        transfer = cls(dict_['id'], dict_['initiator_uuid'])
+        transfer = cls(
+            dict_['id'],
+            dict_['initiator_uuid'],
+            dict_['initiator_tenant_uuid'],
+        )
         transfer.transferred_call = dict_['transferred_call']
         transfer.initiator_call = dict_['initiator_call']
         transfer.recipient_call = dict_['recipient_call']

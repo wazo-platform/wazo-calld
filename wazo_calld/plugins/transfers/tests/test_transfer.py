@@ -1,4 +1,4 @@
-# Copyright 2016 by Avencall
+# Copyright 2016-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from hamcrest import assert_that
@@ -19,7 +19,7 @@ class Testclassname(TestCase):
         pass
 
     def test_transfer_role(self):
-        transfer = Transfer('id', 'initiator_uuid')
+        transfer = Transfer('id', 'initiator_uuid', 'initiator_tenant_uuid')
         transfer.transferred_call = 'transferred'
         transfer.initiator_call = 'initiator'
         transfer.recipient_call = 'recipient'

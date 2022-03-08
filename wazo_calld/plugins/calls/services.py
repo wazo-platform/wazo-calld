@@ -277,6 +277,7 @@ class CallsService:
         call.peer_caller_id_name = channel.json['connected']['name']
         call.peer_caller_id_number = channel.json['connected']['number']
         call.user_uuid = channel_helper.user()
+        call.tenant_uuid = channel_helper.tenant_uuid()
         call.on_hold = channel_helper.on_hold()
         call.muted = channel_helper.muted()
         call.record_state = 'active' if channel_variables.get('WAZO_CALL_RECORD_ACTIVE') == '1' else 'inactive'
@@ -307,6 +308,7 @@ class CallsService:
         call.peer_caller_id_name = caller.get('name')
         call.peer_caller_id_number = caller.get('number')
         call.user_uuid = channel_variables.get('WAZO_DEREFERENCED_USERUUID') or channel_variables.get('XIVO_USERUUID') or None
+        call.tenant_uuid = channel_variables.get('WAZO_TENANT_UUID') or None
         call.dialed_extension = channel_variables.get('WAZO_ENTRY_EXTEN') or None
         call.bridges = []
         call.talking_to = {}
@@ -334,6 +336,7 @@ class CallsService:
         call.peer_caller_id_name = channel.json['connected']['name']
         call.peer_caller_id_number = channel.json['connected']['number']
         call.user_uuid = event_variables.get('WAZO_DEREFERENCED_USERUUID') or event_variables.get('XIVO_USERUUID') or None
+        call.tenant_uuid = event_variables.get('WAZO_TENANT_UUID') or None
         call.dialed_extension = event_variables.get('WAZO_ENTRY_EXTEN') or None
         call.bridges = []
         call.talking_to = {}

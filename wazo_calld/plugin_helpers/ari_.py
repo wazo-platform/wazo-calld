@@ -195,6 +195,13 @@ class Channel:
         except ARINotFound:
             return default
 
+    def tenant_uuid(self, default=None):
+        try:
+            tenant_uuid = self._get_var('WAZO_TENANT_UUID')
+        except ARINotFound:
+            return default
+        return tenant_uuid
+
     def exists(self):
         try:
             self._ari.channels.get(channelId=self.id)

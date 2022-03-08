@@ -1,4 +1,4 @@
-# Copyright 2015-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from wazo_confd_client import Client as ConfdClient
@@ -61,7 +61,7 @@ class Plugin:
         notifier = CallNotifier(bus_publisher)
         calls_service = CallsService(amid_client, config['ari']['connection'], ari.client, confd_client, dial_echo_manager, phoned_client, notifier)
 
-        calls_stasis = CallsStasis(ari, collectd, bus_publisher, calls_service, config['uuid'], amid_client)
+        calls_stasis = CallsStasis(ari, collectd, bus_publisher, calls_service, notifier, config['uuid'], amid_client)
 
         startup_callback_collector = CallbackCollector()
         ari.client_initialized_subscribe(startup_callback_collector.new_source())

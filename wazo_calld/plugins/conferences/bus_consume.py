@@ -1,4 +1,4 @@
-# Copyright 2019-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -107,9 +107,9 @@ class ConferencesBusEventHandler:
             'user_uuid': event.get('ChanVariable', {}).get('XIVO_USERUUID'),
         }
 
+        tenant_uuid = event.get('ChanVariable', {}).get('WAZO_TENANT_UUID')
         participant = participant_schema.load(raw_participant)
-
-        self._notifier.participant_muted(conference_id, participant)
+        self._notifier.participant_muted(conference_id, tenant_uuid, participant)
 
     def _notify_participant_unmuted(self, event):
         conference_id = self._extract_conference_id(event['Conference'])
@@ -129,9 +129,9 @@ class ConferencesBusEventHandler:
             'user_uuid': event.get('ChanVariable', {}).get('XIVO_USERUUID'),
         }
 
+        tenant_uuid = event.get('ChanVariable', {}).get('WAZO_TENANT_UUID')
         participant = participant_schema.load(raw_participant)
-
-        self._notifier.participant_unmuted(conference_id, participant)
+        self._notifier.participant_unmuted(conference_id, tenant_uuid, participant)
 
     def _notify_record_started(self, event):
         conference_id = self._extract_conference_id(event['Conference'])
@@ -139,8 +139,13 @@ class ConferencesBusEventHandler:
             return
 
         logger.debug('Conference %s is being recorded', conference_id)
+        try:
+            conference = Conference.from_id(conference_id, self._confd)
+        except NoSuchConferenceID:
+            logger.error('Could not start recording for conference %s: no such conference ID', conference_id)
+            return
 
-        self._notifier.conference_record_started(conference_id)
+        self._notifier.conference_record_started(conference_id, conference.tenant_uuid)
 
     def _notify_record_stopped(self, event):
         conference_id = self._extract_conference_id(event['Conference'])
@@ -148,8 +153,13 @@ class ConferencesBusEventHandler:
             return
 
         logger.debug('Conference %s is not being recorded', conference_id)
+        try:
+            conference = Conference.from_id(conference_id, self._confd)
+        except NoSuchConferenceID:
+            logger.error('Could not stop recording for conference %s: no such conference ID', conference_id)
+            return
 
-        self._notifier.conference_record_stopped(conference_id)
+        self._notifier.conference_record_stopped(conference_id, conference.tenant_uuid)
 
     def _notify_participant_talking(self, event):
         conference_id = self._extract_conference_id(event['Conference'])
@@ -179,9 +189,13 @@ class ConferencesBusEventHandler:
                                                        conference_id)
 
         if talking:
-            self._notifier.participant_talk_started(conference_id, participant, participants)
+            self._notifier.participant_talk_started(
+                conference_id, conference.tenant_uuid, participant, participants
+            )
         else:
-            self._notifier.participant_talk_stopped(conference_id, participant, participants)
+            self._notifier.participant_talk_stopped(
+                conference_id, conference.tenant_uuid, participant, participants
+            )
 
     def _extract_conference_id(self, conference_name):
         try:

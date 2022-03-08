@@ -13,6 +13,7 @@ from .constants import (
     SOME_STASIS_APP,
     SOME_STASIS_APP_INSTANCE,
     VALID_TOKEN,
+    VALID_TENANT,
 )
 
 
@@ -101,11 +102,13 @@ class RealAsterisk:
         caller = self.stasis_channel()
         caller_uuid = caller_uuid or make_user_uuid()
         caller.setChannelVar(variable='XIVO_USERUUID', value=caller_uuid)
+        caller.setChannelVar(variable='WAZO_TENANT_UUID', value=VALID_TENANT)
         bridge.addChannel(channel=caller.id)
 
         callee = self.stasis_channel()
         callee_uuid = callee_uuid or make_user_uuid()
         callee.setChannelVar(variable='XIVO_USERUUID', value=callee_uuid)
+        callee.setChannelVar(variable='WAZO_TENANT_UUID', value=VALID_TENANT)
         bridge.addChannel(channel=callee.id)
 
         self.calld_client.set_token(VALID_TOKEN)
@@ -122,8 +125,11 @@ class RealAsterisk:
     def given_bridged_call_not_stasis(self, caller_uuid=None, callee_uuid=None, caller_variables=None):
         caller_uuid = caller_uuid or make_user_uuid()
         callee_uuid = callee_uuid or make_user_uuid()
-        variables = {'XIVO_USERUUID': caller_uuid,
-                     '__CALLEE_XIVO_USERUUID': callee_uuid}
+        variables = {
+            'XIVO_USERUUID': caller_uuid,
+            '__CALLEE_XIVO_USERUUID': callee_uuid,
+            '__WAZO_TENANT_UUID': VALID_TENANT,
+        }
         variables.update(caller_variables or {})
         caller = self.ari.channels.originate(endpoint=ENDPOINT_AUTOANSWER,
                                              context='local',

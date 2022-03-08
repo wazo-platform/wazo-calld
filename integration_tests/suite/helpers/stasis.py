@@ -5,7 +5,7 @@ import requests
 
 from hamcrest import assert_that, equal_to
 
-from .constants import SOME_STASIS_APP
+from .constants import SOME_STASIS_APP, VALID_TENANT
 
 
 class StasisClient:
@@ -157,6 +157,7 @@ class StasisClient:
                     'WAZO_CHANNEL_DIRECTION': channel_direction,
                     "WAZO_LINE_ID": line_id,
                     'WAZO_SIP_CALL_ID': sip_call_id,
+                    'WAZO_TENANT_UUID': VALID_TENANT,
                 },
                 "creationtime": creation_time,
                 "dialplan": {

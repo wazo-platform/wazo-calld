@@ -16,7 +16,7 @@ from wazo_test_helpers import until
 from wazo_test_helpers.hamcrest.raises import raises
 
 from .helpers.auth import MockUserToken
-from .helpers.constants import ENDPOINT_AUTOANSWER
+from .helpers.constants import ENDPOINT_AUTOANSWER, VALID_TENANT
 from .helpers.real_asterisk import RealAsteriskIntegrationTest
 
 UNKNOWN_UUID = '00000000-0000-0000-0000-000000000000'
@@ -35,13 +35,20 @@ class TestCallRecord(RealAsteriskIntegrationTest):
         self.calld_client.calls.start_record(channel_id)
 
         def event_received():
-            events = event_accumulator.accumulate()
             assert_that(
-                events,
-                has_items(has_entries(
-                    name='call_updated',
-                    data=has_entries(call_id=channel_id, record_state='active')
-                ))
+                event_accumulator.accumulate(with_headers=True),
+                has_items(
+                    has_entries(
+                        message=has_entries(
+                            name='call_updated',
+                            data=has_entries(call_id=channel_id, record_state='active'),
+                        ),
+                        headers=has_entries(
+                            name='call_updated',
+                            tenant_uuid=VALID_TENANT,
+                        ),
+                    )
+                )
             )
 
         until.assert_(event_received, tries=10)
@@ -75,13 +82,23 @@ class TestCallRecord(RealAsteriskIntegrationTest):
         self.calld_client.calls.start_record_from_user(channel_id)
 
         def event_received():
-            events = event_accumulator.accumulate()
             assert_that(
-                events,
-                has_items(has_entries(
-                    name='call_updated',
-                    data=has_entries(call_id=channel_id, record_state='active')
-                ))
+                event_accumulator.accumulate(with_headers=True),
+                has_items(
+                    has_entries(
+                        message=has_entries(
+                            name='call_updated',
+                            data=has_entries(
+                                call_id=channel_id,
+                                record_state='active'
+                            ),
+                        ),
+                        headers=has_entries(
+                            name='call_updated',
+                            tenant_uuid=VALID_TENANT,
+                        ),
+                    )
+                )
             )
 
         until.assert_(event_received, tries=10)
@@ -124,13 +141,23 @@ class TestCallRecord(RealAsteriskIntegrationTest):
         self.calld_client.calls.stop_record(channel_id)
 
         def event_received():
-            events = event_accumulator.accumulate()
             assert_that(
-                events,
-                has_items(has_entries(
-                    name='call_updated',
-                    data=has_entries(call_id=channel_id, record_state='inactive')
-                ))
+                event_accumulator.accumulate(with_headers=True),
+                has_items(
+                    has_entries(
+                        message=has_entries(
+                            name='call_updated',
+                            data=has_entries(
+                                call_id=channel_id,
+                                record_state='inactive'
+                            )
+                        ),
+                        headers=has_entries(
+                            name='call_updated',
+                            tenant_uuid=VALID_TENANT,
+                        ),
+                    )
+                )
             )
 
         until.assert_(event_received, tries=10)
@@ -168,13 +195,23 @@ class TestCallRecord(RealAsteriskIntegrationTest):
         self.calld_client.calls.stop_record_from_user(channel_id)
 
         def event_received():
-            events = event_accumulator.accumulate()
             assert_that(
-                events,
-                has_items(has_entries(
-                    name='call_updated',
-                    data=has_entries(call_id=channel_id, record_state='inactive')
-                ))
+                event_accumulator.accumulate(with_headers=True),
+                has_items(
+                    has_entries(
+                        message=has_entries(
+                            name='call_updated',
+                            data=has_entries(
+                                call_id=channel_id,
+                                record_state='inactive'
+                            )
+                        ),
+                        headers=has_entries(
+                            name='call_updated',
+                            tenant_uuid=VALID_TENANT,
+                        )
+                    )
+                )
             )
 
         until.assert_(event_received, tries=10)
@@ -194,6 +231,7 @@ class TestCallRecord(RealAsteriskIntegrationTest):
         user_uuid = user_uuid or str(uuid.uuid4())
         variables = variables or {}
         variables.setdefault('XIVO_USERUUID', user_uuid)
+        variables.setdefault('WAZO_TENANT_UUID', VALID_TENANT)
         variables.setdefault('WAZO_CALL_RECORD_SIDE', 'caller')
         call = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,

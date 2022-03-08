@@ -30,7 +30,12 @@ from .helpers.auth import MockUserToken
 from .helpers.base import IntegrationTest
 from .helpers.confd import MockLine
 from .helpers.confd import MockUser
-from .helpers.constants import ENDPOINT_AUTOANSWER, SOME_LINE_ID, VALID_TOKEN
+from .helpers.constants import (
+    ENDPOINT_AUTOANSWER,
+    SOME_LINE_ID,
+    VALID_TOKEN,
+    VALID_TENANT,
+)
 from .helpers.real_asterisk import RealAsteriskIntegrationTest
 from .helpers.wait_strategy import CalldUpWaitStrategy
 
@@ -1637,13 +1642,23 @@ class TestCallMute(RealAsteriskIntegrationTest):
         self.calld_client.calls.start_mute(channel_id)
 
         def event_received():
-            events = event_accumulator.accumulate()
             assert_that(
-                events,
-                has_items(has_entries(
-                    name='call_updated',
-                    data=has_entries(call_id=channel_id, muted=True)
-                ))
+                event_accumulator.accumulate(with_headers=True),
+                has_items(
+                    has_entries(
+                        message=has_entries(
+                            name='call_updated',
+                            data=has_entries(
+                                call_id=channel_id,
+                                muted=True,
+                            )
+                        ),
+                        headers=has_entries(
+                            name='call_updated',
+                            tenant_uuid=VALID_TENANT,
+                        )
+                    )
+                )
             )
 
         until.assert_(event_received, tries=3)
@@ -1675,13 +1690,23 @@ class TestCallMute(RealAsteriskIntegrationTest):
         self.calld_client.calls.start_mute_from_user(channel_id)
 
         def event_received():
-            events = event_accumulator.accumulate()
             assert_that(
-                events,
-                has_items(has_entries(
-                    name='call_updated',
-                    data=has_entries(call_id=channel_id, muted=True)
-                ))
+                event_accumulator.accumulate(with_headers=True),
+                has_items(
+                    has_entries(
+                        message=has_entries(
+                            name='call_updated',
+                            data=has_entries(
+                                call_id=channel_id,
+                                muted=True,
+                            )
+                        ),
+                        headers=has_entries(
+                            name='call_updated',
+                            tenant_uuid=VALID_TENANT,
+                        )
+                    )
+                )
             )
 
         until.assert_(event_received, tries=3)
@@ -1704,13 +1729,23 @@ class TestCallMute(RealAsteriskIntegrationTest):
         self.calld_client.calls.stop_mute(channel_id)
 
         def event_received():
-            events = event_accumulator.accumulate()
             assert_that(
-                events,
-                has_items(has_entries(
-                    name='call_updated',
-                    data=has_entries(call_id=channel_id, muted=False)
-                ))
+                event_accumulator.accumulate(with_headers=True),
+                has_items(
+                    has_entries(
+                        message=has_entries(
+                            name='call_updated',
+                            data=has_entries(
+                                call_id=channel_id,
+                                muted=False,
+                            )
+                        ),
+                        headers=has_entries(
+                            name='call_updated',
+                            tenant_uuid=VALID_TENANT,
+                        )
+                    )
+                )
             )
 
         until.assert_(event_received, tries=3)
@@ -1742,13 +1777,23 @@ class TestCallMute(RealAsteriskIntegrationTest):
         self.calld_client.calls.stop_mute_from_user(channel_id)
 
         def event_received():
-            events = event_accumulator.accumulate()
             assert_that(
-                events,
-                has_items(has_entries(
-                    name='call_updated',
-                    data=has_entries(call_id=channel_id, muted=False)
-                ))
+                event_accumulator.accumulate(with_headers=True),
+                has_items(
+                    has_entries(
+                        message=has_entries(
+                            name='call_updated',
+                            data=has_entries(
+                                call_id=channel_id,
+                                muted=False,
+                            )
+                        ),
+                        headers=has_entries(
+                            name='call_updated',
+                            tenant_uuid=VALID_TENANT,
+                        )
+                    )
+                )
             )
 
         until.assert_(event_received, tries=3)
@@ -1764,7 +1809,12 @@ class TestCallMute(RealAsteriskIntegrationTest):
             endpoint=ENDPOINT_AUTOANSWER,
             context='local',
             extension='dial-autoanswer',
-            variables={'variables': {'XIVO_USERUUID': user_uuid}}
+            variables={
+                'variables': {
+                    'XIVO_USERUUID': user_uuid,
+                    'WAZO_TENANT_UUID': VALID_TENANT,
+                }
+            }
         )
         return call.id
 
@@ -1802,18 +1852,25 @@ class TestCallSendDTMF(RealAsteriskIntegrationTest):
         self.calld_client.calls.send_dtmf_digits(channel_id, test_str)
 
         def amid_dtmf_events_received():
-            events = event_accumulator.accumulate()
+            events = event_accumulator.accumulate(with_headers=True)
             for expected_digit in test_str:
                 assert_that(
                     events,
-                    has_item(has_entries(
-                        name='DTMFEnd',
-                        data=has_entries(
-                            Direction='Received',
-                            Digit=expected_digit,
-                            Uniqueid=channel_id,
-                        ),
-                    ))
+                    has_item(
+                        has_entries(
+                            message=has_entries(
+                                name='DTMFEnd',
+                                data=has_entries(
+                                    Direction='Received',
+                                    Digit=expected_digit,
+                                    Uniqueid=channel_id,
+                                ),
+                            ),
+                            headers=has_entries(
+                                name='DTMFEnd',
+                            )
+                        )
+                    )
                 )
 
         until.assert_(amid_dtmf_events_received, tries=10)
@@ -1845,18 +1902,25 @@ class TestCallSendDTMF(RealAsteriskIntegrationTest):
         self.calld_client.calls.send_dtmf_digits(channel_id, test_str)
 
         def amid_dtmf_events_received():
-            events = event_accumulator.accumulate()
+            events = event_accumulator.accumulate(with_headers=True)
             for expected_digit in test_str:
                 assert_that(
                     events,
-                    has_item(has_entries(
-                        name='DTMFEnd',
-                        data=has_entries(
-                            Direction='Received',
-                            Digit=expected_digit,
-                            Uniqueid=channel_id,
-                        ),
-                    ))
+                    has_item(
+                        has_entries(
+                            message=has_entries(
+                                name='DTMFEnd',
+                                data=has_entries(
+                                    Direction='Received',
+                                    Digit=expected_digit,
+                                    Uniqueid=channel_id,
+                                ),
+                            ),
+                            headers=has_entries(
+                                name='DTMFEnd',
+                            )
+                        )
+                    )
                 )
 
         until.assert_(amid_dtmf_events_received, tries=10)

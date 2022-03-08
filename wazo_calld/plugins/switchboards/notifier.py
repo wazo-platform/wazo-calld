@@ -1,11 +1,14 @@
-# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
 
-from xivo.permission import escape as escape_permission
-from xivo_bus.resources.common.routing_key import escape as escape_routing_key
-from xivo_bus.resources.common.event import ArbitraryEvent
+from xivo_bus.resources.switchboard.event import (
+    SwitchboardQueuedCallsUpdatedEvent,
+    SwitchboardQueuedCallAnsweredEvent,
+    SwitchboardHeldCallsUpdatedEvent,
+    SwitchboardHeldCallAnsweredEvent
+)
 from .http import (
     held_call_schema,
     queued_call_schema,
@@ -18,6 +21,10 @@ class SwitchboardsNotifier:
     def __init__(self, bus):
         self._bus = bus
 
+    @staticmethod
+    def _build_headers(tenant_uuid):
+        return {'tenant_uuid': tenant_uuid}
+
     def queued_calls(self, tenant_uuid, switchboard_uuid, calls):
         body = {
             'switchboard_uuid': switchboard_uuid,
@@ -28,17 +35,9 @@ class SwitchboardsNotifier:
             switchboard_uuid,
             len(calls),
         )
-        event = ArbitraryEvent(
-            name='switchboard_queued_calls_updated',
-            body=body,
-            required_acl='events.switchboards.{uuid}.calls.queued.updated'.format(
-                uuid=switchboard_uuid,
-            ),
-        )
-        event.routing_key = 'switchboards.{uuid}.calls.queued.updated'.format(
-            uuid=switchboard_uuid
-        )
-        headers = {'tenant_uuid': tenant_uuid}
+
+        event = SwitchboardQueuedCallsUpdatedEvent(body)
+        headers = self._build_headers(tenant_uuid)
         self._bus.publish(event, headers=headers)
 
     def queued_call_answered(
@@ -55,48 +54,24 @@ class SwitchboardsNotifier:
             'operator_call_id': operator_call_id,
             'queued_call_id': queued_call_id,
         }
-        required_acl = (
-            'events.switchboards.{uuid}.calls.queued.{call_id}.answer.updated'.format(
-                uuid=switchboard_uuid,
-                call_id=escape_permission(queued_call_id),
-            )
-        )
-        routing_key = (
-            'switchboards.{uuid}.calls.queued.{call_id}.answer.updated'.format(
-                uuid=switchboard_uuid,
-                call_id=escape_routing_key(queued_call_id),
-            )
-        )
-        event = ArbitraryEvent(
-            name='switchboard_queued_call_answered',
-            body=body,
-            required_acl=required_acl,
-        )
-        event.routing_key = routing_key
-        headers = {'tenant_uuid': tenant_uuid}
+
+        event = SwitchboardQueuedCallAnsweredEvent(body)
+        headers = self._build_headers(tenant_uuid)
         self._bus.publish(event, headers=headers)
 
     def held_calls(self, tenant_uuid, switchboard_uuid, calls):
-        body = {
-            'switchboard_uuid': switchboard_uuid,
-            'items': held_call_schema.dump(calls, many=True),
-        }
         logger.debug(
             'Notifying updated held calls for switchboard %s: %s calls',
             switchboard_uuid,
             len(calls),
         )
-        event = ArbitraryEvent(
-            name='switchboard_held_calls_updated',
-            body=body,
-            required_acl='events.switchboards.{uuid}.calls.held.updated'.format(
-                uuid=switchboard_uuid,
-            ),
-        )
-        event.routing_key = 'switchboards.{uuid}.calls.held.updated'.format(
-            uuid=switchboard_uuid
-        )
-        headers = {'tenant_uuid': tenant_uuid}
+
+        body = {
+            'switchboard_uuid': switchboard_uuid,
+            'items': held_call_schema.dump(calls, many=True),
+        }
+        event = SwitchboardHeldCallsUpdatedEvent(body)
+        headers = self._build_headers(tenant_uuid)
         self._bus.publish(event, headers=headers)
 
     def held_call_answered(
@@ -108,26 +83,12 @@ class SwitchboardsNotifier:
             switchboard_uuid,
             operator_call_id,
         )
+
         body = {
             'switchboard_uuid': switchboard_uuid,
             'operator_call_id': operator_call_id,
             'held_call_id': held_call_id,
         }
-        required_acl = (
-            'events.switchboards.{uuid}.calls.held.{call_id}.answer.updated'.format(
-                uuid=switchboard_uuid,
-                call_id=escape_permission(held_call_id),
-            )
-        )
-        routing_key = 'switchboards.{uuid}.calls.held.{call_id}.answer.updated'.format(
-            uuid=switchboard_uuid,
-            call_id=escape_routing_key(held_call_id),
-        )
-        event = ArbitraryEvent(
-            name='switchboard_held_call_answered',
-            body=body,
-            required_acl=required_acl,
-        )
-        event.routing_key = routing_key
-        headers = {'tenant_uuid': tenant_uuid}
+        event = SwitchboardHeldCallAnsweredEvent(body)
+        headers = self._build_headers(tenant_uuid)
         self._bus.publish(event, headers=headers)
