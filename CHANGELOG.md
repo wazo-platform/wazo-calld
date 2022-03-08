@@ -2,6 +2,19 @@
 
 ## 22.04
 
+* The `answer_time` field has been added to the following resources:
+
+  * GET `/calls`
+  * GET `/calls/<call-id>`
+  * GET `/users/me/calls`
+  
+* The `answer_time` field have been added to the following events:
+
+  * `call_created`
+  * `call_updated`
+  * `call_answered`
+  * `call_ended`
+  
 * The `ivr_extension` and `wait_time` fields have been added to the following resources:
 
   * POST `/faxes`

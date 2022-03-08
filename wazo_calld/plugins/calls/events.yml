@@ -93,6 +93,10 @@ definitions:
       conversation_id:
         type: string
         description: The ID shared by all calls in the same conversation
+      answer_time:
+        type: string
+        format: date-time
+        description: The date when this call was answered. This field is reliable for an inbound call. For outbound calls, early-media, IVR, voicemails and other telephony services may introduce errors in the date.
   UserMissedCall:
     type: object
     properties:

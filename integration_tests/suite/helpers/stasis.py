@@ -1,4 +1,4 @@
-# Copyright 2015-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import requests
@@ -132,7 +132,8 @@ class StasisClient:
         sip_call_id=None,
         creation_time=None,
         timestamp=None,
-        connected_number=''
+        connected_number='',
+        answer_time=None,
     ):
         url = self.url('_send_ws_event')
         creation_time = creation_time or "2016-02-04T15:10:21.225-0500"
@@ -152,9 +153,10 @@ class StasisClient:
                     "number": connected_number
                 },
                 "channelvars": {
+                    'WAZO_ANSWER_TIME': answer_time,
+                    'WAZO_CHANNEL_DIRECTION': channel_direction,
                     "WAZO_LINE_ID": line_id,
                     'WAZO_SIP_CALL_ID': sip_call_id,
-                    'WAZO_CHANNEL_DIRECTION': channel_direction,
                 },
                 "creationtime": creation_time,
                 "dialplan": {

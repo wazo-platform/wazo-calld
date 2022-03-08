@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
@@ -169,7 +169,7 @@ def list_endpoints():
     return make_response(json.dumps(result), 200, {'Content-Type': 'application/json'})
 
 
-@app.route('/ari/channels/<channel_id>/variable')
+@app.route('/ari/channels/<channel_id>/variable', methods=['GET'])
 def channel_variable(channel_id):
     variable = request.args['variable']
     if channel_id not in _responses['channel_variables']:
@@ -179,6 +179,18 @@ def channel_variable(channel_id):
     return jsonify({
         'value': _responses['channel_variables'][channel_id][variable]
     })
+
+
+@app.route('/ari/channels/<channel_id>/variable', methods=['POST'])
+def post_channel_variable(channel_id):
+    variable = request.args['variable']
+    value = request.args['value']
+    if channel_id not in _responses['channels']:
+        return '', 404
+    if channel_id not in _responses['channel_variables']:
+        _responses['channel_variables'][channel_id] = {}
+    _responses['channel_variables'][channel_id][variable] = value
+    return '', 204
 
 
 @app.route('/ari/applications/<application_name>/subscription', methods=['POST'])

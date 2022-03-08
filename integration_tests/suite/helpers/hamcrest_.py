@@ -1,10 +1,13 @@
 # Copyright 2016-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+from datetime import datetime
+
 from hamcrest import all_of
 from hamcrest import instance_of
 from hamcrest import is_in
 from hamcrest import not_
+from hamcrest.core.base_matcher import BaseMatcher
 
 from ari.exceptions import ARINotFound
 
@@ -61,3 +64,20 @@ class HamcrestARIBridge:
     def is_found(self):
         bridge_ids = (bridge.id for bridge in self._ari.bridges.list())
         return is_in(list(bridge_ids))
+
+
+class ATimeStamp(BaseMatcher):
+
+    def _matches(self, item):
+        try:
+            datetime.fromisoformat(item)
+            return True
+        except (ValueError, TypeError):
+            return False
+
+    def describe_to(self, description):
+        description.append_text('a valid date')
+
+
+def a_timestamp():
+    return ATimeStamp()

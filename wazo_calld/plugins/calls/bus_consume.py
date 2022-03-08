@@ -1,4 +1,4 @@
-# Copyright 2016-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -122,6 +122,7 @@ class CallsBusEventHandler:
             return
 
         logger.debug('Relaying to bus: channel %s answered', channel_id)
+        self.services.set_answered_time(channel_id)
         try:
             channel = self.ari.channels.get(channelId=channel_id)
         except ARINotFound:
