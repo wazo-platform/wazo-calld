@@ -314,6 +314,7 @@ class CallsService:
         call.line_id = channel_variables.get('WAZO_LINE_ID') or None
         call.creation_time = channel.get('creationtime')
         call.answer_time = channel_variables.get('WAZO_ANSWER_TIME') or None
+        call.hangup_time = datetime.datetime.now(LOCAL_TIMEZONE).isoformat()
         call.is_video = channel_variables.get('CHANNEL(videonativeformat)') != '(nothing)'
         direction = channel_variables.get('WAZO_CHANNEL_DIRECTION')
         call.is_caller = True if direction == 'to-wazo' else False

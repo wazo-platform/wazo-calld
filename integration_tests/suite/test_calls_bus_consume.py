@@ -72,6 +72,7 @@ class TestBusConsume(IntegrationTest):
                 'data': has_entries({
                     'call_id': call_id,
                     'status': 'Up',
+                    'hangup_time': None,
                     'answer_time': is_(a_timestamp()),
                     'is_video': True,
                 })
@@ -93,6 +94,7 @@ class TestBusConsume(IntegrationTest):
                 'data': has_entries({
                     'call_id': call_id,
                     'status': 'Up',
+                    'hangup_time': None,
                     'answer_time': is_(a_timestamp()),
                 })
             })))

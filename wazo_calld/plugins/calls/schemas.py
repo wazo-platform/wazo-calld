@@ -82,6 +82,7 @@ class CallSchema(CallBaseSchema):
     sip_call_id = fields.String()
     line_id = fields.Integer()
     answer_time = fields.String()
+    hangup_time = fields.String()
 
     @post_dump()
     def default_peer_caller_id_number(self, call, **kwargs):

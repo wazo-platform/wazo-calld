@@ -121,6 +121,7 @@ class TestDialedFrom(IntegrationTest):
                     'reason_code': 0,
                     'is_caller': True,
                     'answer_time': is_(a_timestamp()),
+                    'hangup_time': is_(a_timestamp()),
                 })})))
 
         until.assert_(assert_function, tries=5)
@@ -149,6 +150,7 @@ class TestDialedFrom(IntegrationTest):
                     'line_id': 2,
                     'reason_code': 0,
                     'is_caller': False,
+                    'hangup_time': is_(a_timestamp()),
                 })})))
 
         until.assert_(assert_function, tries=5)
@@ -173,6 +175,7 @@ class TestDialedFrom(IntegrationTest):
                     'creation_time': '2016-02-01T15:00:00.000-0500',
                     'sip_call_id': '',
                     'line_id': None,
+                    'hangup_time': is_(a_timestamp()),
                 })})))
 
         until.assert_(assert_function, tries=5)

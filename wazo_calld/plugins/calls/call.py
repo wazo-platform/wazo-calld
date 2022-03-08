@@ -25,3 +25,4 @@ class Call:
         self.line_id = None
         self.is_video = False
         self.answer_time = None
+        self.hangup_time = None
