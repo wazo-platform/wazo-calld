@@ -41,10 +41,10 @@ class ConferencesNotifier:
         for uuid in user_uuids or []:
             headers[f'user_uuid:{uuid}'] = True
 
-        for kw in kwargs:
-            if kw:
-                headers[kw] = kwargs[kw]
-        return headers if headers else None
+        for key, value in kwargs.items():
+            if value is not None:
+                headers[key] = value
+        return headers
 
     def participant_joined(self, tenant_uuid, conference_id, participant, participants_already_present):
         participants_uuids = list(Participants(participant, *participants_already_present).valid_user_uuids())

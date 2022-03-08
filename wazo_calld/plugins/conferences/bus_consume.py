@@ -138,13 +138,13 @@ class ConferencesBusEventHandler:
         if not conference_id:
             return
 
+        logger.debug('Conference %s is being recorded', conference_id)
         try:
             conference = Conference.from_id(conference_id, self._confd)
         except NoSuchConferenceID:
-            logger.debug('Could not start recording for conference %s: no such conference ID', conference_id)
+            logger.error('Could not start recording for conference %s: no such conference ID', conference_id)
             return
 
-        logger.debug('Conference %s is being recorded', conference_id)
         self._notifier.conference_record_started(conference_id, conference.tenant_uuid)
 
     def _notify_record_stopped(self, event):
@@ -152,13 +152,13 @@ class ConferencesBusEventHandler:
         if not conference_id:
             return
 
+        logger.debug('Conference %s is not being recorded', conference_id)
         try:
             conference = Conference.from_id(conference_id, self._confd)
         except NoSuchConferenceID:
-            logger.debug('Could not stop recording for conference %s: no such conference ID', conference_id)
+            logger.error('Could not stop recording for conference %s: no such conference ID', conference_id)
             return
 
-        logger.debug('Conference %s is not being recorded', conference_id)
         self._notifier.conference_record_stopped(conference_id, conference.tenant_uuid)
 
     def _notify_participant_talking(self, event):

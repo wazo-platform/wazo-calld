@@ -30,7 +30,8 @@ class MeetingsNotifier:
     def _build_headers(user_uuids=None, **kwargs):
         headers = {}
         for key, value in kwargs.items():
-            headers[key] = value
+            if value is not None:
+                headers[key] = value
 
         for uuid in user_uuids or []:
             headers[f'user_uuid:{uuid}'] = True
