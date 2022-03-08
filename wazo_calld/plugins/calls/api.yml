@@ -576,6 +576,12 @@ definitions:
       creation_time:
         type: string
         format: date-time
+      answer_time:
+        type: string
+        format: date-time
+      hangup_time:
+        type: string
+        format: date-time
       caller_id_name:
         type: string
       caller_id_number:

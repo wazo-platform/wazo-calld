@@ -1,4 +1,4 @@
-# Copyright 2015-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
@@ -9,6 +9,7 @@ from hamcrest import (
     has_entry,
     has_item,
     has_items,
+    is_,
 )
 from wazo_test_helpers import until
 
@@ -17,6 +18,7 @@ from .helpers.base import IntegrationTest
 from .helpers.constants import SOME_STASIS_APP, SOME_STASIS_APP_INSTANCE, XIVO_UUID
 from .helpers.calld import new_call_id
 from .helpers.confd import MockLine, MockUser
+from .helpers.hamcrest_ import a_timestamp
 
 STASIS_APP = 'callcontrol'
 
@@ -102,7 +104,8 @@ class TestDialedFrom(IntegrationTest):
             stasis_app=STASIS_APP,
             line_id=2,
             sip_call_id='foobar',
-            creation_time='2016-02-01T15:00:00.000-0500',
+            creation_time='2016-02-01T15:00:00.000-05:00',
+            answer_time='2022-03-08T04:09:00-05:00',
             cause=0,
             channel_direction='to-wazo',
         )
@@ -112,11 +115,13 @@ class TestDialedFrom(IntegrationTest):
                 'name': 'call_ended',
                 'origin_uuid': XIVO_UUID,
                 'data': has_entries({
-                    'creation_time': '2016-02-01T15:00:00.000-0500',
+                    'creation_time': '2016-02-01T15:00:00.000-05:00',
                     'sip_call_id': 'foobar',
                     'line_id': 2,
                     'reason_code': 0,
                     'is_caller': True,
+                    'answer_time': is_(a_timestamp()),
+                    'hangup_time': is_(a_timestamp()),
                 })})))
 
         until.assert_(assert_function, tries=5)
@@ -145,6 +150,7 @@ class TestDialedFrom(IntegrationTest):
                     'line_id': 2,
                     'reason_code': 0,
                     'is_caller': False,
+                    'hangup_time': is_(a_timestamp()),
                 })})))
 
         until.assert_(assert_function, tries=5)
@@ -169,6 +175,7 @@ class TestDialedFrom(IntegrationTest):
                     'creation_time': '2016-02-01T15:00:00.000-0500',
                     'sip_call_id': '',
                     'line_id': None,
+                    'hangup_time': is_(a_timestamp()),
                 })})))
 
         until.assert_(assert_function, tries=5)

@@ -1,13 +1,14 @@
 # Copyright 2015-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+import datetime
 import logging
 import uuid
 
 from ari.exceptions import ARINotFound
 from wazo_calld.ari_ import DEFAULT_APPLICATION_NAME
 from wazo_calld.plugin_helpers import ami
-from wazo_calld.plugin_helpers.ari_ import AUTO_ANSWER_VARIABLES, Channel, set_channel_var_sync
+from wazo_calld.plugin_helpers.ari_ import AUTO_ANSWER_VARIABLES, Channel, set_channel_var_sync, set_channel_id_var_sync
 from wazo_calld.plugin_helpers.confd import User
 from wazo_calld.plugin_helpers.exceptions import (
     InvalidExtension,
@@ -25,6 +26,7 @@ from .dial_echo import DialEchoTimeout
 logger = logging.getLogger(__name__)
 
 CALL_RECORDING_FILENAME_TEMPLATE = '/var/lib/wazo/sounds/tenants/{tenant_uuid}/monitor/{recording_uuid}.wav'
+LOCAL_TIMEZONE = datetime.datetime.now(datetime.timezone.utc).astimezone().tzinfo
 
 
 class CallsService:
@@ -268,6 +270,7 @@ class CallsService:
         call = Call(channel.id)
         call.conversation_id = channel_helper.conversation_id()
         call.creation_time = channel.json['creationtime']
+        call.answer_time = channel_variables.get('WAZO_ANSWER_TIME') or None
         call.status = channel.json['state']
         call.caller_id_name = channel.json['caller']['name']
         call.caller_id_number = channel.json['caller']['number']
@@ -310,6 +313,8 @@ class CallsService:
         call.sip_call_id = channel_variables.get('WAZO_SIP_CALL_ID')
         call.line_id = channel_variables.get('WAZO_LINE_ID') or None
         call.creation_time = channel.get('creationtime')
+        call.answer_time = channel_variables.get('WAZO_ANSWER_TIME') or None
+        call.hangup_time = datetime.datetime.now(LOCAL_TIMEZONE).isoformat()
         call.is_video = channel_variables.get('CHANNEL(videonativeformat)') != '(nothing)'
         direction = channel_variables.get('WAZO_CHANNEL_DIRECTION')
         call.is_caller = True if direction == 'to-wazo' else False
@@ -470,6 +475,19 @@ class CallsService:
     def answer_user(self, call_id, user_uuid):
         self._verify_user(call_id, user_uuid)
         self.answer(call_id)
+
+    def set_answered_time(self, channel_id):
+        try:
+            set_channel_id_var_sync(
+                self._ari,
+                channel_id,
+                'WAZO_ANSWER_TIME',
+                datetime.datetime.now(LOCAL_TIMEZONE).isoformat(),
+                bypass_stasis=True,
+            )
+        except ARINotFound:
+            logger.debug('channel %s not found', channel_id)
+            raise NoSuchCall(channel_id)
 
     def _verify_user(self, call_id, user_uuid):
         channel = Channel(call_id, self._ari)

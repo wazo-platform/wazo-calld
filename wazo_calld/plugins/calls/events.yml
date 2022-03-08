@@ -24,13 +24,13 @@ events:
     routing_key: calls.hold.created
     required_acl: events.calls.{user_uuid}
     schema:
-      '$ref': '#/definitions/Call'
+      '$ref': '#/definitions/CallHeld'
   call_resumed:
     summary: A call has been resumed
     routing_key: calls.hold.deleted
     required_acl: events.calls.{user_uuid}
     schema:
-      '$ref': '#/definitions/Call'
+      '$ref': '#/definitions/CallHeld'
   call_dtmf_created:
     summary: A DTMF has been sent to Wazo
     routing_key: calls.dtmf.created
@@ -93,6 +93,14 @@ definitions:
       conversation_id:
         type: string
         description: The ID shared by all calls in the same conversation
+      answer_time:
+        type: string
+        format: date-time
+        description: The date when this call was answered. This field is reliable for an inbound call. For outbound calls, early-media, IVR, voicemails and other telephony services may introduce errors in the date.
+      hangup_time:
+        type: string
+        format: date-time
+        description: The date when this call was hung up. This field is useful only in the `call_ended` event.
   UserMissedCall:
     type: object
     properties:
@@ -111,3 +119,10 @@ definitions:
       conversation_id:
         type: string
         description: The ID shared by all calls in the same conversation
+  CallHeld:
+    type: object
+    properties:
+        call_id:
+          type: string
+        user_uuid:
+          type: string

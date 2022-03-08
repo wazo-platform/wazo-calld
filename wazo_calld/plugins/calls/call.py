@@ -24,3 +24,5 @@ class Call:
         self.sip_call_id = None
         self.line_id = None
         self.is_video = False
+        self.answer_time = None
+        self.hangup_time = None

@@ -6,6 +6,7 @@ from hamcrest import (
     assert_that,
     has_entries,
     has_item,
+    is_,
 )
 from wazo_test_helpers import until
 
@@ -13,6 +14,7 @@ from .helpers.base import IntegrationTest
 from .helpers.ari_ import MockChannel
 from .helpers.calld import new_call_id
 from .helpers.constants import XIVO_UUID
+from .helpers.hamcrest_ import a_timestamp
 from .helpers.wait_strategy import CalldEverythingOkWaitStrategy
 
 
@@ -58,7 +60,7 @@ class TestBusConsume(IntegrationTest):
 
     def test_when_channel_updated_then_bus_event(self):
         call_id = new_call_id()
-        self.ari.set_channels(MockChannel(id=call_id, state='Up', channelvars={'CHANNEL(videonativeformat)': '(vp8)'}))
+        self.ari.set_channels(MockChannel(id=call_id, state='Up', channelvars={'CHANNEL(videonativeformat)': '(vp8)', 'WAZO_ANSWER_TIME': '2022-03-08T03:49:00+00:00'}))
         events = self.bus.accumulator(routing_key='calls.call.updated')
 
         self.bus.send_ami_newstate_event(call_id)
@@ -67,14 +69,20 @@ class TestBusConsume(IntegrationTest):
             assert_that(events.accumulate(), has_item(has_entries({
                 'name': 'call_updated',
                 'origin_uuid': XIVO_UUID,
-                'data': has_entries({'call_id': call_id, 'status': 'Up', 'is_video': True})
+                'data': has_entries({
+                    'call_id': call_id,
+                    'status': 'Up',
+                    'hangup_time': None,
+                    'answer_time': is_(a_timestamp()),
+                    'is_video': True,
+                })
             })))
 
         until.assert_(assert_function, tries=5)
 
     def test_when_channel_answered_then_bus_event(self):
         call_id = new_call_id()
-        self.ari.set_channels(MockChannel(id=call_id, state='Up'))
+        self.ari.set_channels(MockChannel(id=call_id, state='Up', channelvars={'WAZO_ANSWER_TIME': '2022-03-08T03:48:00+00:00'}))
         events = self.bus.accumulator(routing_key='calls.call.answered')
 
         self.bus.send_ami_newstate_event(call_id, state='Up')
@@ -83,7 +91,12 @@ class TestBusConsume(IntegrationTest):
             assert_that(events.accumulate(), has_item(has_entries({
                 'name': 'call_answered',
                 'origin_uuid': XIVO_UUID,
-                'data': has_entries({'call_id': call_id, 'status': 'Up'})
+                'data': has_entries({
+                    'call_id': call_id,
+                    'status': 'Up',
+                    'hangup_time': None,
+                    'answer_time': is_(a_timestamp()),
+                })
             })))
 
         until.assert_(assert_function, tries=5)
@@ -109,7 +122,9 @@ class TestBusConsume(IntegrationTest):
             assert_that(events.accumulate(), has_item(has_entries({
                 'name': 'call_held',
                 'origin_uuid': XIVO_UUID,
-                'data': has_entries({'call_id': call_id})
+                'data': has_entries({
+                    'call_id': call_id,
+                })
             })))
 
         until.assert_(assert_function, tries=5)
@@ -135,7 +150,9 @@ class TestBusConsume(IntegrationTest):
             assert_that(events.accumulate(), has_item(has_entries({
                 'name': 'call_resumed',
                 'origin_uuid': XIVO_UUID,
-                'data': has_entries({'call_id': call_id})
+                'data': has_entries({
+                    'call_id': call_id,
+                })
             })))
 
         until.assert_(assert_function, tries=5)
