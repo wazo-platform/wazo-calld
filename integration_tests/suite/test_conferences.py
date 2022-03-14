@@ -17,7 +17,6 @@ from hamcrest import (
     has_properties,
     is_,
     less_than,
-    has_key,
 )
 from wazo_test_helpers import until
 from wazo_test_helpers.hamcrest.raises import raises
@@ -203,10 +202,10 @@ class TestConferenceParticipants(TestConferences):
         first_uuid = 'first-uuid'
         second_uuid = 'second-uuid'
 
+        self.given_call_in_conference(CONFERENCE1_EXTENSION, user_uuid=first_uuid)
         self.given_call_in_conference(
-            CONFERENCE1_EXTENSION, caller_id_name='participant1', user_uuid=first_uuid
+            CONFERENCE1_EXTENSION, caller_id_name='participant1', user_uuid=second_uuid
         )
-        self.given_call_in_conference(CONFERENCE1_EXTENSION, user_uuid=second_uuid)
 
         def participant_joined_event_received(expected_caller_id_name):
             events = bus_events.accumulate(with_headers=True)
@@ -215,7 +214,9 @@ class TestConferenceParticipants(TestConferences):
                 has_items(
                     has_entries(
                         message=has_entries(
-                            data=has_key('caller_id_name')
+                            data=has_entries(
+                                caller_id_name=expected_caller_id_name
+                            )
                         ),
                         headers=has_entries({
                             'name': 'conference_participant_joined',
@@ -227,10 +228,8 @@ class TestConferenceParticipants(TestConferences):
                     )
                 )
             )
-            caller_id_names = [event['message']['data']['caller_id_name'] for event in events]
-            return expected_caller_id_name in caller_id_names
 
-        until.true(participant_joined_event_received, 'participant1', timeout=10)
+        until.assert_(participant_joined_event_received, 'participant1', timeout=10)
 
     def test_user_participant_joins_sends_event(self):
         conference_id = CONFERENCE1_ID
@@ -332,7 +331,9 @@ class TestConferenceParticipants(TestConferences):
                 has_items(
                     has_entries(
                         message=has_entries(
-                            data=has_key('caller_id_name'),
+                            data=has_entries(
+                                caller_id_name=expected_caller_id_name
+                            )
                         ),
                         headers=has_entries({
                             'name': 'conference_participant_left',
@@ -344,10 +345,8 @@ class TestConferenceParticipants(TestConferences):
                     )
                 )
             )
-            caller_id_names = [event['message']['data']['caller_id_name'] for event in events]
-            return expected_caller_id_name in caller_id_names
 
-        until.true(participant_left_event_received, 'participant1', timeout=10)
+        until.assert_(participant_left_event_received, 'participant1', timeout=10)
 
     def test_user_participant_leaves_sends_event(self):
         conference_id = CONFERENCE1_ID
