@@ -55,6 +55,37 @@ duration=12
         }
         assert_that(result, equal_to(expected))
 
+    def test_parse_with_spaces(self):
+        content = '''
+;
+; Message Information file
+;
+[message]
+origmailbox = 1001
+context   = user
+macrocontext   = 
+exten=     voicemail
+rdnis = 1001
+priority=7
+callerchan   =    PJSIP/xivo64-00000000
+   callerid = "Etienne" <101>
+ origdate = Thu Nov  3 07:11:59 PM UTC 2016
+origtime=  1478200319
+category= 
+msg_id=1478200319-00000000
+flag= 
+duration= 12
+'''.encode('utf-8')
+        result = self._parse(content)
+        expected = {
+            'id': '1478200319-00000000',
+            'caller_id_name': 'Etienne',
+            'caller_id_num': '101',
+            'timestamp': 1478200319,
+            'duration': 12,
+        }
+        assert_that(result, equal_to(expected))
+
     def test_parse_missing_field(self):
         content = '''
 callerid="Etienne" <101>

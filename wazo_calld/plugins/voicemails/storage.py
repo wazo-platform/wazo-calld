@@ -219,6 +219,9 @@ class _MessageInfoParser:
         result = {}
         parsed = set()
         for line in fobj:
+            line = '='.join([x.strip() for x in line.decode('utf-8').split('=')])
+            line = line.lstrip()
+            line = line.encode('utf-8')
             for prefix, extract, parse in self._parse_table:
                 if line.startswith(prefix):
                     parsed.add(prefix)
