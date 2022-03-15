@@ -62,7 +62,11 @@ class TestPushMobile(RealAsteriskIntegrationTest):
             }
         }
 
-        self.bus.publish(push_mobile_event, routing_key='ami.UserEvent')
+        self.bus.publish(
+            push_mobile_event,
+            headers={'name': 'UserEvent'},
+            routing_key='ami.UserEvent'
+        )
 
         def bus_events_received():
             assert_that(
@@ -105,6 +109,11 @@ class TestPushMobile(RealAsteriskIntegrationTest):
                     'mobile': True,
                 },
             },
+            headers={
+                'name': 'auth_refresh_token_created',
+                'tenant_uuid': tenant_uuid,
+                f'user_uuid:{user_uuid}': True,
+            },
             routing_key=f'auth.users.{user_uuid}.tokens.{client_id}.created',
         )
 
@@ -129,6 +138,11 @@ class TestPushMobile(RealAsteriskIntegrationTest):
                     'mobile': True,
                 },
             },
+            headers={
+                'name': 'auth_refresh_token_deleted',
+                'tenant_uuid': tenant_uuid,
+                f'user_uuid:{user_uuid}': True,
+            },
             routing_key=f'auth.users.{user_uuid}.tokens.{client_id}.deleted',
         )
 
@@ -152,6 +166,11 @@ class TestPushMobile(RealAsteriskIntegrationTest):
                     'client_id': client_id,
                     'mobile': True,
                 },
+            },
+            headers={
+                'name': 'auth_refresh_token_deleted',
+                'tenant_uuid': tenant_uuid,
+                f'user_uuid:{user_uuid}': True,
             },
             routing_key=f'auth.users.{user_uuid}.tokens.{client_id}.deleted',
         )

@@ -47,115 +47,180 @@ class BusClient(bus_helper.BusClient):
                 except TimeoutError:
                     pass
 
-    def send_event(self, event, routing_key):
+    def send_event(self, event, routing_key=None, headers=None):
         with Connection(self._url) as connection:
             producer = Producer(connection, exchange=BUS_EXCHANGE_XIVO, auto_declare=True)
-            producer.publish(json.dumps(event), routing_key=routing_key, content_type='application/json')
+            producer.publish(
+                json.dumps(event),
+                routing_key=routing_key,
+                headers=headers,
+                content_type='application/json'
+            )
 
     def send_ami_newchannel_event(self, channel_id, channel=None):
-        self.send_event({
-            'data': {
-                'Event': 'Newchannel',
-                'Uniqueid': channel_id,
-                'Channel': channel or 'PJSIP/abcdef-00000001',
-            }
-        }, 'ami.Newchannel')
+        self.send_event(
+            {
+                'data': {
+                    'Event': 'Newchannel',
+                    'Uniqueid': channel_id,
+                    'Channel': channel or 'PJSIP/abcdef-00000001',
+                }
+            },
+            headers={
+                'name': 'Newchannel',
+            },
+            routing_key='ami.Newchannel',
+        )
 
     def send_ami_newstate_event(self, channel_id, state='Up', channel=None):
-        self.send_event({
-            'data': {
-                'Channel': channel or 'PJSIP/abcdef-00000001',
-                'Event': 'Newstate',
-                'Uniqueid': channel_id,
-                'ChannelStateDesc': state,
-            }
-        }, 'ami.Newstate')
+        self.send_event(
+            {
+                'data': {
+                    'Channel': channel or 'PJSIP/abcdef-00000001',
+                    'Event': 'Newstate',
+                    'Uniqueid': channel_id,
+                    'ChannelStateDesc': state,
+                }
+            },
+            headers={
+                'name': 'Newstate',
+            },
+            routing_key='ami.Newstate'
+        )
 
     def send_ami_hold_event(self, channel_id):
-        self.send_event({
-            'data': {
-                'Event': 'Hold',
-                'Uniqueid': channel_id,
-            }
-        }, 'ami.Hold')
+        self.send_event(
+            {
+                'data': {
+                    'Event': 'Hold',
+                    'Uniqueid': channel_id,
+                }
+            },
+            headers={
+                'name': 'Hold',
+            },
+            routing_key='ami.Hold'
+        )
 
     def send_ami_unhold_event(self, channel_id):
-        self.send_event({
-            'data': {
-                'Event': 'Unhold',
-                'Uniqueid': channel_id,
-            }
-        }, 'ami.Unhold')
+        self.send_event(
+            {
+                'data': {
+                    'Event': 'Unhold',
+                    'Uniqueid': channel_id,
+                }
+            },
+            headers={
+                'name': 'Unhold',
+            },
+            routing_key='ami.Unhold'
+        )
 
     def send_ami_hangup_event(self, channel_id, entry_exten=None, sip_call_id=None, channel=None, line_id=None):
-        self.send_event({
-            'data': {
-                'Event': 'Hangup',
-                'Uniqueid': channel_id,
-                'Channel': channel or 'PJSIP/abcdef-00000001',
-                'ChannelStateDesc': 'Up',
-                'CallerIDName': 'my-caller-id-name',
-                'CallerIDNum': 'my-caller-id-num',
-                'ConnectedLineName': 'peer-name',
-                'ConnectedLineNum': 'peer-num',
-                'ChanVariable': {
-                    'XIVO_USERUUID': 'my-uuid',
-                    'WAZO_ENTRY_EXTEN': entry_exten if entry_exten else '*10',
-                    'WAZO_SIP_CALL_ID': sip_call_id,
-                    'WAZO_LINE_ID': line_id,
-                },
-            }
-        }, 'ami.Hangup')
+        self.send_event(
+            {
+                'data': {
+                    'Event': 'Hangup',
+                    'Uniqueid': channel_id,
+                    'Channel': channel or 'PJSIP/abcdef-00000001',
+                    'ChannelStateDesc': 'Up',
+                    'CallerIDName': 'my-caller-id-name',
+                    'CallerIDNum': 'my-caller-id-num',
+                    'ConnectedLineName': 'peer-name',
+                    'ConnectedLineNum': 'peer-num',
+                    'ChanVariable': {
+                        'XIVO_USERUUID': 'my-uuid',
+                        'WAZO_ENTRY_EXTEN': entry_exten if entry_exten else '*10',
+                        'WAZO_SIP_CALL_ID': sip_call_id,
+                        'WAZO_LINE_ID': line_id,
+                    },
+                }
+            },
+            headers={
+                'name': 'Hangup',
+            },
+            routing_key='ami.Hangup'
+        )
 
     def send_ami_peerstatus_event(self, channel_type, peer, status):
-        self.send_event({
-            'data': {
-                'Event': 'PeerStatus',
-                'Privilege': 'system,all',
-                'ChannelType': channel_type,
-                'Peer': peer,
-                'PeerStatus': status,
+        self.send_event(
+            {
+                'data': {
+                    'Event': 'PeerStatus',
+                    'Privilege': 'system,all',
+                    'ChannelType': channel_type,
+                    'Peer': peer,
+                    'PeerStatus': status,
+                },
             },
-        }, 'ami.PeerStatus')
+            headers={
+                'name': 'PeerStatus',
+            },
+            routing_key='ami.PeerStatus'
+        )
 
     def send_ami_registry_event(self, channel_type, domain, status, username):
-        self.send_event({
-            'data': {
-                'ChannelType': channel_type,
-                'Domain': domain,
-                'Event': 'Registry',
-                'Privilege': 'system,all',
-                'Status': status,
-                'Username': username,
+        self.send_event(
+            {
+                'data': {
+                    'ChannelType': channel_type,
+                    'Domain': domain,
+                    'Event': 'Registry',
+                    'Privilege': 'system,all',
+                    'Status': status,
+                    'Username': username,
+                },
             },
-        }, 'ami.Registry')
+            headers={
+                'name': 'Registry',
+            },
+            routing_key='ami.Registry'
+        )
 
     def send_ami_dtmf_end_digit(self, channel_id, digit):
-        self.send_event({
-            'data': {
-                'Event': 'DTMFEnd',
-                'Uniqueid': channel_id,
-                'Digit': digit,
+        self.send_event(
+            {
+                'data': {
+                    'Event': 'DTMFEnd',
+                    'Uniqueid': channel_id,
+                    'Digit': digit,
+                },
             },
-        }, 'ami.DTMFEnd')
+            headers={
+                'name': 'DTMFEnd',
+            },
+            routing_key='ami.DTMFEnd'
+        )
 
     def send_moh_created_event(self, moh_uuid):
-        self.send_event({
-            'data': {
-                'uuid': moh_uuid,
-                'name': 'default',
+        self.send_event(
+            {
+                'data': {
+                    'uuid': moh_uuid,
+                    'name': 'default',
+                },
+                'name': 'moh_created',
             },
-            'name': 'moh_created',
-        }, 'config.moh.created')
+            headers={
+                'name': 'moh_created',
+            },
+            routing_key='config.moh.created'
+        )
 
     def send_moh_deleted_event(self, moh_uuid):
-        self.send_event({
-            'data': {
-                'uuid': moh_uuid,
-                'name': 'default',
+        self.send_event(
+            {
+                'data': {
+                    'uuid': moh_uuid,
+                    'name': 'default',
+                },
+                'name': 'moh_deleted',
             },
-            'name': 'moh_deleted',
-        }, 'config.moh.deleted')
+            headers={
+                'name': 'moh_deleted',
+            },
+            routing_key='config.moh.deleted'
+        )
 
     def send_application_created_event(self, application_uuid, destination=None):
         payload = {
@@ -174,7 +239,11 @@ class BusClient(bus_helper.BusClient):
                 'music_on_hold': None,
                 'answer': False,
             }
-        self.send_event(payload, 'config.applications.created')
+        self.send_event(
+            payload,
+            headers={'name': 'application_created'},
+            routing_key='config.applications.created'
+        )
 
     def send_application_edited_event(self, application_uuid, destination=None):
         payload = {
@@ -193,7 +262,11 @@ class BusClient(bus_helper.BusClient):
                 'music_on_hold': None,
                 'answer': False,
             }
-        self.send_event(payload, 'config.applications.edited')
+        self.send_event(
+            payload,
+            headers={'name': 'application_edited'},
+            routing_key='config.applications.edited'
+        )
 
     def send_application_deleted_event(self, application_uuid):
         payload = {
@@ -206,33 +279,46 @@ class BusClient(bus_helper.BusClient):
             },
             'name': 'application_deleted',
         }
-        self.send_event(payload, 'config.applications.deleted')
+        self.send_event(
+            payload,
+            headers={'name': 'application_deleted'},
+            routing_key='config.applications.deleted')
 
     def send_trunk_endpoint_associated_event(self, trunk_id, endpoint_id):
         payload = {
             'data': {'trunk_id': trunk_id, 'endpoint_id': endpoint_id},
             'name': 'trunk_endpoint_associated',
         }
-        self.send_event(payload, 'config.trunks.endpoints.updated')
+        self.send_event(
+            payload,
+            headers={'name': 'trunk_endpoint_associated'},
+            routing_key='config.trunks.endpoints.updated'
+        )
 
     def send_user_missed_call_userevent(self, user_uuid, reason, hangup_cause, conversation_id):
-        self.send_event({
-            'data': {
-                'Event': 'UserEvent',
-                'UserEvent': 'user_missed_call',
-                'destination_user_uuid': user_uuid,
-                'reason': reason,
-                'hangup_cause': hangup_cause,
-                'caller_user_uuid': '',
-                'caller_id_name': '',
-                'caller_id_number': '',
-                'entry_exten': '',
-                'conversation_id': conversation_id,
-                'ChanVariable': {
-                    'WAZO_TENANT_UUID': VALID_TENANT,
+        self.send_event(
+            {
+                'data': {
+                    'Event': 'UserEvent',
+                    'UserEvent': 'user_missed_call',
+                    'destination_user_uuid': user_uuid,
+                    'reason': reason,
+                    'hangup_cause': hangup_cause,
+                    'caller_user_uuid': '',
+                    'caller_id_name': '',
+                    'caller_id_number': '',
+                    'entry_exten': '',
+                    'conversation_id': conversation_id,
+                    'ChanVariable': {
+                        'WAZO_TENANT_UUID': VALID_TENANT,
+                    },
                 },
             },
-        }, 'ami.UserEvent')
+            headers={
+                'name': 'UserEvent',
+            },
+            routing_key='ami.UserEvent'
+        )
 
     def send_user_dnd_update(self, user_id, enabled):
         self.send_event(
@@ -240,7 +326,10 @@ class BusClient(bus_helper.BusClient):
                 'name': 'users_services_dnd_updated',
                 'data': {'user_id': user_id, 'user_uuid': user_id, 'enabled': enabled},
             },
-            f'config.users.{user_id}.services.dnd.updated'
+            headers={
+                'name': 'users_services_dnd_updated',
+            },
+            routing_key=f'config.users.{user_id}.services.dnd.updated'
         )
 
     def send_meeting_deleted_event(self, meeting_uuid):
@@ -251,4 +340,8 @@ class BusClient(bus_helper.BusClient):
             },
             'name': 'meeting_deleted',
         }
-        self.send_event(payload, 'config.meetings.deleted')
+        self.send_event(
+            payload,
+            headers={'name': 'meeting_deleted'},
+            routing_key='config.meetings.deleted'
+        )
