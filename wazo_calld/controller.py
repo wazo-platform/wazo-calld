@@ -1,4 +1,4 @@
-# Copyright 2015-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -16,8 +16,7 @@ from xivo.token_renewer import TokenRenewer
 from .ari_ import CoreARI
 from .asyncio_ import CoreAsyncio
 from .auth import init_master_tenant
-from .bus import CoreBusConsumer
-from .bus import CoreBusPublisher
+from .bus import CoreBusConsumer, CoreBusPublisher
 from .collectd import CoreCollectd
 from .http_server import api, HTTPServer
 from .service_discovery import self_check
@@ -32,8 +31,8 @@ class Controller:
         auth_client = AuthClient(**config['auth'])
         self.ari = CoreARI(config['ari'])
         self.asyncio = CoreAsyncio()
-        self.bus_publisher = CoreBusPublisher(config)
-        self.bus_consumer = CoreBusConsumer(config)
+        self.bus_consumer = CoreBusConsumer(**config['bus'])
+        self.bus_publisher = CoreBusPublisher(service_uuid=config['uuid'], **config['bus'])
         self.collectd = CoreCollectd(config)
         self.http_server = HTTPServer(config)
         self.status_aggregator = StatusAggregator()
@@ -76,38 +75,29 @@ class Controller:
         self.status_aggregator.add_provider(self.ari.provide_status)
         self.status_aggregator.add_provider(self.bus_consumer.provide_status)
         self.status_aggregator.add_provider(self.token_status.provide_status)
-        bus_producer_thread = Thread(target=self.bus_publisher.run, name='bus_producer_thread')
-        bus_producer_thread.start()
         collectd_thread = Thread(target=self.collectd.run, name='collectd_thread')
         collectd_thread.start()
-        bus_consumer_thread = Thread(target=self.bus_consumer.run, name='bus_consumer_thread')
-        bus_consumer_thread.start()
         ari_thread = Thread(target=self.ari.run, name='ari_thread')
         ari_thread.start()
         asyncio_thread = Thread(target=self.asyncio.run, name='asyncio_thread')
         asyncio_thread.start()
         try:
             with self.token_renewer:
-                with ServiceCatalogRegistration(*self._service_registration_params):
-                    self.http_server.run()
+                with self.bus_consumer:
+                    with ServiceCatalogRegistration(*self._service_registration_params):
+                        self.http_server.run()
         finally:
             logger.info('wazo-calld stopping...')
             self._pubsub.publish('stopping', None)
             self.asyncio.stop()
             self.ari.stop()
-            self.bus_consumer.should_stop = True
             self.collectd.stop()
-            self.bus_publisher.stop()
             logger.debug('joining asyncio thread')
             asyncio_thread.join()
             logger.debug('joining ari thread')
             ari_thread.join()
-            logger.debug('joining bus consumer thread')
-            bus_consumer_thread.join()
             logger.debug('joining collectd thread')
             collectd_thread.join()
-            logger.debug('joining bus producer thread')
-            bus_producer_thread.join()
             logger.debug('done joining')
 
     def stop(self, reason):
