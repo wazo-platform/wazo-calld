@@ -1,4 +1,4 @@
-# Copyright 2019-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from unittest import TestCase
@@ -168,7 +168,8 @@ class DialMobileServiceTestCase(DialerTestCase):
 
     def setUp(self):
         self.ari = Mock()
-        self.service = DialMobileService(self.ari)
+        self.amid_client = Mock()
+        self.service = DialMobileService(self.ari, self.amid_client)
         self.channel_id = '1234567890.42'
         self.aor = 'foobar'
 
@@ -176,3 +177,19 @@ class DialMobileServiceTestCase(DialerTestCase):
         self.service.dial_all_contacts(self.channel_id, self.aor)
 
         self.ari.client.channels.ring.assert_called_once_with(channelId=self.channel_id)
+
+    def test_set_user_hint_no_mobile_session(self):
+        self.service.set_user_hint('<the-uuid>', False)
+
+        self.amid_client.action.assert_called_once_with(
+            'Setvar',
+            {'Variable': 'DEVICE_STATE(Custom:<the-uuid>)', 'Value': 'UNAVAILABLE'},
+        )
+
+    def test_set_user_hint_with_mobile_session(self):
+        self.service.set_user_hint('<the-uuid>', True)
+
+        self.amid_client.action.assert_called_once_with(
+            'Setvar',
+            {'Variable': 'DEVICE_STATE(Custom:<the-uuid>)', 'Value': 'NOT_INUSE'},
+        )

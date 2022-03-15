@@ -1,4 +1,4 @@
-# Copyright 2019-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import uuid
@@ -136,8 +136,9 @@ class _PollingContactDialer:
 
 class DialMobileService:
 
-    def __init__(self, ari):
+    def __init__(self, ari, amid_client):
         self._ari = ari.client
+        self._amid_client = amid_client
         self._contact_dialers = {}
         self._outgoing_calls = {}
 
@@ -212,3 +213,12 @@ class DialMobileService:
     def on_calld_stopping(self):
         for dialer in self._contact_dialers.values():
             dialer.stop()
+
+    def set_user_hint(self, user_uuid, has_mobile_sessions):
+        self._amid_client.action(
+            'Setvar',
+            {
+                'Variable': f'DEVICE_STATE(Custom:{user_uuid})',
+                'Value': 'NOT_INUSE' if has_mobile_sessions else 'UNAVAILABLE',
+            },
+        )
