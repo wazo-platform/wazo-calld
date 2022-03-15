@@ -1,4 +1,4 @@
-# Copyright 2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -88,9 +88,9 @@ class ConfdApplicationsCache:
         return application
 
     def subscribe(self, bus_consumer):
-        bus_consumer.on_event('application_created', self._application_created)
-        bus_consumer.on_event('application_deleted', self._application_deleted)
-        bus_consumer.on_event('application_edited', self._application_updated)
+        bus_consumer.subscribe('application_created', self._application_created)
+        bus_consumer.subscribe('application_deleted', self._application_deleted)
+        bus_consumer.subscribe('application_edited', self._application_updated)
 
     def created_subscribe(self, callback):
         self._triggers['created'].append(callback)
@@ -168,8 +168,8 @@ class MohCache:
                 return moh
 
     def subscribe(self, bus_consumer):
-        bus_consumer.on_event('moh_created', self._moh_created)
-        bus_consumer.on_event('moh_deleted', self._moh_deleted)
+        bus_consumer.subscribe('moh_created', self._moh_created)
+        bus_consumer.subscribe('moh_deleted', self._moh_deleted)
 
     def _moh_created(self, event):
         if not self._is_initialized():

@@ -22,9 +22,9 @@ class MeetingsBusEventHandler:
         self._service = service
 
     def subscribe(self, bus_consumer):
-        bus_consumer.on_ami_event('ConfbridgeJoin', self._notify_participant_joined)
-        bus_consumer.on_ami_event('ConfbridgeLeave', self._notify_participant_left)
-        bus_consumer.on_event('meeting_deleted', self._on_meeting_deleted)
+        bus_consumer.subscribe('ConfbridgeJoin', self._notify_participant_joined)
+        bus_consumer.subscribe('ConfbridgeLeave', self._notify_participant_left)
+        bus_consumer.subscribe('meeting_deleted', self._on_meeting_deleted)
 
     def _notify_participant_joined(self, event):
         try:

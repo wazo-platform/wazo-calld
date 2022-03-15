@@ -19,13 +19,13 @@ class ConferencesBusEventHandler:
         self._service = service
 
     def subscribe(self, bus_consumer):
-        bus_consumer.on_ami_event('ConfbridgeJoin', self._notify_participant_joined)
-        bus_consumer.on_ami_event('ConfbridgeLeave', self._notify_participant_left)
-        bus_consumer.on_ami_event('ConfbridgeMute', self._notify_participant_muted)
-        bus_consumer.on_ami_event('ConfbridgeUnmute', self._notify_participant_unmuted)
-        bus_consumer.on_ami_event('ConfbridgeRecord', self._notify_record_started)
-        bus_consumer.on_ami_event('ConfbridgeStopRecord', self._notify_record_stopped)
-        bus_consumer.on_ami_event('ConfbridgeTalking', self._notify_participant_talking)
+        bus_consumer.subscribe('ConfbridgeJoin', self._notify_participant_joined)
+        bus_consumer.subscribe('ConfbridgeLeave', self._notify_participant_left)
+        bus_consumer.subscribe('ConfbridgeMute', self._notify_participant_muted)
+        bus_consumer.subscribe('ConfbridgeUnmute', self._notify_participant_unmuted)
+        bus_consumer.subscribe('ConfbridgeRecord', self._notify_record_started)
+        bus_consumer.subscribe('ConfbridgeStopRecord', self._notify_record_stopped)
+        bus_consumer.subscribe('ConfbridgeTalking', self._notify_participant_talking)
 
     def _notify_participant_joined(self, event):
         conference_id = self._extract_conference_id(event['Conference'])
