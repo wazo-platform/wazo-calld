@@ -118,6 +118,7 @@ class IntegrationTest(AssetLaunchingTestCase):
         '''
         try:
             cls.bus = BusClient.from_connection_fields(host='127.0.0.1', port=cls.service_port(5672, 'rabbitmq'))
+            cls.bus.downstream_exchange_declare('wazo-headers', 'headers')
         except (NoSuchService, NoSuchPort) as e:
             logger.debug(e)
             cls.bus = WrongClient('bus')
