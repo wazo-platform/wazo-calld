@@ -44,7 +44,7 @@ category=
 msg_id=1478200319-00000000
 flag=
 duration=12
-'''.encode('utf-8')
+'''.encode('utf-8')  # noqa: W291
         result = self._parse(content)
         expected = {
             'id': '1478200319-00000000',
@@ -75,7 +75,7 @@ category=
 msg_id=1478200319-00000000
 flag= 
 duration= 12
-'''.encode('utf-8')
+'''.encode('utf-8')  # noqa: W291
         result = self._parse(content)
         expected = {
             'id': '1478200319-00000000',
@@ -91,7 +91,7 @@ duration= 12
 callerid="Etienne" <101>
 origtime=1478200319
 msg_id=1478200319-00000000
-'''.encode('utf-8')
+'''.encode('utf-8')  # noqa: W291
         assert_that(calling(self._parse).with_args(content), raises(Exception))
 
     def test_parse_callerid_unknown(self):
