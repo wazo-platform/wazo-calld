@@ -219,6 +219,7 @@ class _MessageInfoParser:
         result = {}
         parsed = set()
         for line in fobj:
+            line = b'='.join([x.strip() for x in line.split(b'=')])
             for prefix, extract, parse in self._parse_table:
                 if line.startswith(prefix):
                     parsed.add(prefix)
