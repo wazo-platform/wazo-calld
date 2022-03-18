@@ -4,7 +4,7 @@
 from xivo_bus.resources.push_notification.events import PushNotificationEvent
 
 
-class MobilePushNotifier:
+class Notifier:
     def __init__(self, bus_producer):
         self._bus_producer = bus_producer
 

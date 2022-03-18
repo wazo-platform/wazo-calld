@@ -21,6 +21,7 @@ from ari.exceptions import ARINotFound
 
 from ..services import _PollingContactDialer as PollingContactDialer
 from ..services import DialMobileService
+from ..notifier import Notifier
 
 
 class DialerTestCase(TestCase):
@@ -172,7 +173,8 @@ class DialMobileServiceTestCase(DialerTestCase):
         self.ari = Mock()
         self.amid_client = Mock()
         self.auth_client = Mock()
-        self.service = DialMobileService(self.ari, self.amid_client, self.auth_client)
+        self.notifier = Mock(Notifier)
+        self.service = DialMobileService(self.ari, self.notifier, self.amid_client, self.auth_client)
         self.channel_id = '1234567890.42'
         self.aor = 'foobar'
 
