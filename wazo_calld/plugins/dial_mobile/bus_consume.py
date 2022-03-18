@@ -12,6 +12,7 @@ class EventHandler:
         self._service = service
 
     def subscribe(self, bus_consumer):
+        bus_consumer.subscribe('BridgeEnter', self._on_bridge_enter)
         bus_consumer.subscribe('UserEvent', self._on_user_event)
         bus_consumer.subscribe('auth_refresh_token_created', self._on_refresh_token_created)
         bus_consumer.subscribe('auth_refresh_token_deleted', self._on_refresh_token_deleted)
@@ -49,3 +50,6 @@ class EventHandler:
             return
 
         self._service.on_mobile_refresh_token_deleted(event['user_uuid'])
+
+    def _on_bridge_enter(self, event):
+        self._service.cancel_push_mobile(event['Uniqueid'])
