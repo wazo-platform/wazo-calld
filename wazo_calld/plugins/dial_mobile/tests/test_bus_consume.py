@@ -63,6 +63,7 @@ class TestEventHandler(TestCase):
             '2c34c282-433e-4bb8-8d56-fec14ff7e1e9',
             '89554a93-3761-43d2-9b14-a9b094bcbf1d',
             '1647612626.39',
+            'de9eb39fb7585796',
             'Anastasia Romanov',
             '1005',
             False,

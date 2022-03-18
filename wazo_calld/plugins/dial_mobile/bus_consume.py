@@ -34,6 +34,7 @@ class EventHandler:
             tenant_uuid,
             user_uuid,
             event["Uniqueid"],
+            event['ChanVariable']['WAZO_SIP_CALL_ID'],
             event["CallerIDName"],
             event["CallerIDNum"],
             video_enabled,

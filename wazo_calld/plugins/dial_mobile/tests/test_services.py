@@ -238,6 +238,7 @@ class TestCancelPushNotification(TestCase):
             s.tenant_uuid,
             s.user_uuid,
             s.call_id,
+            s.sip_call_id,
             s.cid_name,
             s.cid_num,
             s.video_enabled,

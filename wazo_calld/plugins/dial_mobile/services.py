@@ -249,6 +249,7 @@ class DialMobileService:
         tenant_uuid,
         user_uuid,
         call_id,
+        sip_call_id,
         caller_id_name,
         caller_id_number,
         video_enabled,
@@ -257,7 +258,8 @@ class DialMobileService:
             'peer_caller_id_number': caller_id_number,
             'peer_caller_id_name': caller_id_name,
             'call_id': call_id,
-            'video': video_enabled
+            'video': video_enabled,
+            'sip_call_id': sip_call_id,
         }
 
         self._pending_push_mobile[call_id] = PendingPushMobile(
