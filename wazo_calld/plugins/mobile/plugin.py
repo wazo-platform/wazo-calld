@@ -4,6 +4,7 @@
 
 from .bus_consume import PushNotificationBusEventHandler
 from .notifier import MobilePushNotifier
+from .service import MobilePushService
 
 
 class Plugin(object):
@@ -13,6 +14,7 @@ class Plugin(object):
         bus_publisher = dependencies['bus_publisher']
 
         notifier = MobilePushNotifier(bus_publisher)
+        service = MobilePushService(notifier)
 
-        push_notification_bus_event_handler = PushNotificationBusEventHandler(notifier)
+        push_notification_bus_event_handler = PushNotificationBusEventHandler(service)
         push_notification_bus_event_handler.subscribe(bus_consumer)

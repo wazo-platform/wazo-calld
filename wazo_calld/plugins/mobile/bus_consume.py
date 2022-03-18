@@ -9,8 +9,8 @@ logger = logging.getLogger(__name__)
 
 class PushNotificationBusEventHandler(object):
 
-    def __init__(self, notifier):
-        self._notifier = notifier
+    def __init__(self, service):
+        self._service = service
 
     def subscribe(self, bus_consumer):
         bus_consumer.subscribe('UserEvent', self._user_event)
@@ -28,11 +28,11 @@ class PushNotificationBusEventHandler(object):
             user_uuid, event["CallerIDName"], event["CallerIDNum"],
         )
 
-        body = {
-            'peer_caller_id_number': event["CallerIDNum"],
-            'peer_caller_id_name': event["CallerIDName"],
-            'call_id': event["Uniqueid"],
-            'video': video_enabled
-        }
-
-        self._notifier.push_notification(body, tenant_uuid, user_uuid)
+        self._service.send_push_notification(
+            tenant_uuid,
+            user_uuid,
+            event["Uniqueid"],
+            event["CallerIDName"],
+            event["CallerIDNum"],
+            video_enabled,
+        )
