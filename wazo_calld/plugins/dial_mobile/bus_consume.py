@@ -57,4 +57,7 @@ class EventHandler:
         self._service.cancel_push_mobile(event['Uniqueid'])
 
     def _on_dial_end(self, event):
+        if event['DestContext'] != 'wazo_wait_for_registration':
+            return
+
         self._service.cancel_push_mobile(event['Uniqueid'])
