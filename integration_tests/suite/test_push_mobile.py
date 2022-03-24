@@ -109,7 +109,7 @@ class TestPushMobile(RealAsteriskIntegrationTest):
         )
 
         def user_hint_updated():
-            result = self.amid.action('Getvar', {'Variable': f'DEVICE_STATE(Custom:{user_uuid})'})
+            result = self.amid.action('Getvar', {'Variable': f'DEVICE_STATE(Custom:{user_uuid}-mobile)'})
             assert_that(result, contains(has_entries(
                 Response='Success',
                 Value='NOT_INUSE',
@@ -130,7 +130,7 @@ class TestPushMobile(RealAsteriskIntegrationTest):
         )
 
         def user_hint_updated():
-            result = self.amid.action('Getvar', {'Variable': f'DEVICE_STATE(Custom:{user_uuid})'})
+            result = self.amid.action('Getvar', {'Variable': f'DEVICE_STATE(Custom:{user_uuid}-mobile)'})
             assert_that(result, contains(has_entries(
                 Response='Success',
                 Value='UNAVAILABLE',

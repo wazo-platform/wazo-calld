@@ -183,7 +183,7 @@ class DialMobileServiceTestCase(DialerTestCase):
 
         self.amid_client.action.assert_called_once_with(
             'Setvar',
-            {'Variable': 'DEVICE_STATE(Custom:<the-uuid>)', 'Value': 'UNAVAILABLE'},
+            {'Variable': 'DEVICE_STATE(Custom:<the-uuid>-mobile)', 'Value': 'UNAVAILABLE'},
         )
 
     def test_set_user_hint_with_mobile_session(self):
@@ -191,5 +191,5 @@ class DialMobileServiceTestCase(DialerTestCase):
 
         self.amid_client.action.assert_called_once_with(
             'Setvar',
-            {'Variable': 'DEVICE_STATE(Custom:<the-uuid>)', 'Value': 'NOT_INUSE'},
+            {'Variable': 'DEVICE_STATE(Custom:<the-uuid>-mobile)', 'Value': 'NOT_INUSE'},
         )

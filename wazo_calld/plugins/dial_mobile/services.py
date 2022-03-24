@@ -218,7 +218,7 @@ class DialMobileService:
         self._amid_client.action(
             'Setvar',
             {
-                'Variable': f'DEVICE_STATE(Custom:{user_uuid})',
+                'Variable': f'DEVICE_STATE(Custom:{user_uuid}-mobile)',
                 'Value': 'NOT_INUSE' if has_mobile_sessions else 'UNAVAILABLE',
             },
         )
