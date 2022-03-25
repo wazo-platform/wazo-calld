@@ -49,7 +49,8 @@ ROUTING_KEY_MAPPING = {
     'user_line_associated': 'config.users.*.lines.*.updated',
     'user_line_dissociated': 'config.users.*.lines.*.deleted',
     'users_services_dnd_updated': 'config.users.*.services.dnd.updated',
-    'auth_user_sessions_updated': 'auth.users.*.sessions.updated',
+    'auth_refresh_token_created': 'auth.users.*.tokens.*.created',
+    'auth_refresh_token_deleted': 'auth.users.*.tokens.*.deleted',
 }
 
 

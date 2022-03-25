@@ -7,14 +7,17 @@ class EventHandler:
         self._service = service
 
     def subscribe(self, bus_consumer):
-        bus_consumer.on_event('auth_user_sessions_updated', self._on_auth_user_sessions_updated)
+        bus_consumer.on_event('auth_refresh_token_created', self._on_refresh_token_created)
+        bus_consumer.on_event('auth_refresh_token_deleted', self._on_refresh_token_deleted)
 
-    def _on_auth_user_sessions_updated(self, event):
-        user_uuid = event['user_uuid']
-        has_mobile = False
-        for session in event['sessions']:
-            if session['mobile']:
-                has_mobile = True
-                break
+    def _on_refresh_token_created(self, event):
+        if not event['mobile']:
+            return
 
-        self._service.set_user_hint(user_uuid, has_mobile)
+        self._service.on_mobile_refresh_token_created(event['user_uuid'])
+
+    def _on_refresh_token_deleted(self, event):
+        if not event['mobile']:
+            return
+
+        self._service.on_mobile_refresh_token_deleted(event['user_uuid'])

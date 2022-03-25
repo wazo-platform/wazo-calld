@@ -2,9 +2,11 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from unittest import TestCase
+import requests
 
 from mock import (
     Mock,
+    patch,
     sentinel as s,
 )
 from hamcrest import (
@@ -169,7 +171,8 @@ class DialMobileServiceTestCase(DialerTestCase):
     def setUp(self):
         self.ari = Mock()
         self.amid_client = Mock()
-        self.service = DialMobileService(self.ari, self.amid_client)
+        self.auth_client = Mock()
+        self.service = DialMobileService(self.ari, self.amid_client, self.auth_client)
         self.channel_id = '1234567890.42'
         self.aor = 'foobar'
 
@@ -179,7 +182,7 @@ class DialMobileServiceTestCase(DialerTestCase):
         self.ari.client.channels.ring.assert_called_once_with(channelId=self.channel_id)
 
     def test_set_user_hint_no_mobile_session(self):
-        self.service.set_user_hint('<the-uuid>', False)
+        self.service._set_user_hint('<the-uuid>', False)
 
         self.amid_client.action.assert_called_once_with(
             'Setvar',
@@ -187,9 +190,30 @@ class DialMobileServiceTestCase(DialerTestCase):
         )
 
     def test_set_user_hint_with_mobile_session(self):
-        self.service.set_user_hint('<the-uuid>', True)
+        self.service._set_user_hint('<the-uuid>', True)
 
         self.amid_client.action.assert_called_once_with(
             'Setvar',
             {'Variable': 'DEVICE_STATE(Custom:<the-uuid>-mobile)', 'Value': 'NOT_INUSE'},
         )
+
+    def test_on_mobile_refresh_token_created(self):
+        with patch.object(self.service, '_set_user_hint') as mock:
+            self.service.on_mobile_refresh_token_created(s.user_uuid)
+            mock.assert_called_once_with(s.user_uuid, True)
+
+    def test_on_mobile_refresh_token_deleted(self):
+        self.auth_client.token.list.return_value = {'items': [], 'filtered': 0, 'total': 42}
+        with patch.object(self.service, '_set_user_hint') as mock:
+            self.service.on_mobile_refresh_token_deleted(s.user_uuid)
+            mock.assert_called_once_with(s.user_uuid, False)
+
+        self.auth_client.token.list.return_value = {'items': [{'uuid': 'some-uuid'}], 'filtered': 1, 'total': 42}
+        with patch.object(self.service, '_set_user_hint') as mock:
+            self.service.on_mobile_refresh_token_deleted(s.user_uuid)
+            mock.assert_called_once_with(s.user_uuid, True)
+
+        self.auth_client.token.list.side_effect = requests.HTTPError()
+        with patch.object(self.service, '_set_user_hint') as mock:
+            self.service.on_mobile_refresh_token_deleted(s.user_uuid)
+            mock.assert_not_called()

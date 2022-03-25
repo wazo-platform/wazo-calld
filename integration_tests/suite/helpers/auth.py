@@ -1,4 +1,4 @@
-# Copyright 2013-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2013-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import requests
@@ -20,6 +20,10 @@ class AuthClient:
     def set_token(self, token):
         url = self.url('_set_token')
         requests.post(url, json=token.to_dict())
+
+    def set_refresh_tokens(self, refresh_tokens):
+        url = self.url('_set_refresh_tokens')
+        requests.post(url, json=refresh_tokens)
 
 
 class MockUserToken:

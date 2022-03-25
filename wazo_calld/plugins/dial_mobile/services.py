@@ -5,6 +5,7 @@ import uuid
 import time
 import threading
 import logging
+import requests
 
 from ari.exceptions import ARINotFound
 from wazo_calld.plugin_helpers.ari_ import Bridge
@@ -136,8 +137,9 @@ class _PollingContactDialer:
 
 class DialMobileService:
 
-    def __init__(self, ari, amid_client):
+    def __init__(self, ari, amid_client, auth_client):
         self._ari = ari.client
+        self._auth_client = auth_client
         self._amid_client = amid_client
         self._contact_dialers = {}
         self._outgoing_calls = {}
@@ -214,7 +216,7 @@ class DialMobileService:
         for dialer in self._contact_dialers.values():
             dialer.stop()
 
-    def set_user_hint(self, user_uuid, has_mobile_sessions):
+    def _set_user_hint(self, user_uuid, has_mobile_sessions):
         self._amid_client.action(
             'Setvar',
             {
@@ -222,3 +224,16 @@ class DialMobileService:
                 'Value': 'NOT_INUSE' if has_mobile_sessions else 'UNAVAILABLE',
             },
         )
+
+    def on_mobile_refresh_token_created(self, user_uuid):
+        self._set_user_hint(user_uuid, True)
+
+    def on_mobile_refresh_token_deleted(self, user_uuid):
+        try:
+            response = self._auth_client.token.list(user_uuid, mobile=True)
+        except requests.HTTPError:
+            logger.info('failed to check if %s still has a mobile refresh token', user_uuid)
+            return
+
+        mobile = response['filtered'] > 0
+        self._set_user_hint(user_uuid, mobile)
