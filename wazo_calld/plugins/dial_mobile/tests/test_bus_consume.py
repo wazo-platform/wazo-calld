@@ -59,7 +59,7 @@ class TestEventHandler(TestCase):
 
         self.event_handler._on_user_event(event)
 
-        self.service.send_push_notification(
+        self.service.send_push_notification.assert_called_with(
             '2c34c282-433e-4bb8-8d56-fec14ff7e1e9',
             '89554a93-3761-43d2-9b14-a9b094bcbf1d',
             '1647612626.39',
@@ -126,4 +126,4 @@ class TestEventHandler(TestCase):
 
         self.event_handler._on_dial_end(event)
 
-        self.service.cancel_push_mobile('1647871892.53')
+        self.service.cancel_push_mobile.assert_called_with('1647871892.53')
