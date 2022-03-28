@@ -8,7 +8,7 @@ from hamcrest import all_of
 from hamcrest import anything
 from hamcrest import assert_that
 from hamcrest import calling
-from hamcrest import contains
+from hamcrest import contains_exactly
 from hamcrest import contains_inanyorder
 from hamcrest import contains_string
 from hamcrest import equal_to
@@ -418,7 +418,7 @@ class TestUserListTransfers(TestTransfers):
 
         result = self.calld.list_my_transfers(token)
 
-        assert_that(result['items'], contains({
+        assert_that(result['items'], contains_exactly({
             'id': transfer_id,
             'initiator_uuid': user_uuid,
             'initiator_tenant_uuid': VALID_TENANT,
@@ -438,7 +438,7 @@ class TestUserListTransfers(TestTransfers):
 
         result = self.calld.list_my_transfers(token)
 
-        assert_that(result['items'], contains(has_entries({
+        assert_that(result['items'], contains_exactly(has_entries({
             'id': transfer1_id,
             'initiator_uuid': user_uuid,
         })))
@@ -742,7 +742,7 @@ class TestCreateTransfer(TestTransfers):
         response1 = self.calld.post_transfer_result(body1, VALID_TOKEN)
         response2 = self.calld.post_transfer_result(body2, VALID_TOKEN)
 
-        assert_that((response1.status_code, response2.status_code), contains(201, 201))
+        assert_that((response1.status_code, response2.status_code), contains_exactly(201, 201))
 
 
 class TestUserCreateTransfer(TestTransfers):

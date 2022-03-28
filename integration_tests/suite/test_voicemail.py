@@ -7,7 +7,7 @@ import uuid
 from hamcrest import (
     assert_that,
     calling,
-    contains,
+    contains_exactly,
     contains_string,
     equal_to,
     has_entries,
@@ -103,7 +103,7 @@ class TestVoicemails(RealAsteriskIntegrationTest):
             raises(CalldError).matching(has_properties(
                 status_code=400,
                 message=contains_string("Sent data is invalid"),
-                details=has_entry("dest_greeting", contains(
+                details=has_entry("dest_greeting", contains_exactly(
                     has_entries(
                         constraint=has_entry("choices", equal_to(
                             ["unavailable", "busy", "name"]

@@ -12,7 +12,7 @@ from ari.exceptions import (
 from hamcrest import (
     any_of,
     assert_that,
-    contains,
+    contains_exactly,
     contains_string,
     contains_inanyorder,
     empty,
@@ -208,7 +208,7 @@ class TestSwitchboardCallsQueued(TestSwitchboards):
                             'name': 'switchboard_queued_calls_updated',
                             'data': has_entries({
                                 'switchboard_uuid': switchboard_uuid,
-                                'items': contains(has_entry(
+                                'items': contains_exactly(has_entry(
                                     'id', new_channel.id,
                                 )),
                             })
@@ -241,7 +241,7 @@ class TestSwitchboardCallsQueued(TestSwitchboards):
         def event_received():
             assert_that(
                 bus_events.accumulate(with_headers=True),
-                contains(
+                contains_exactly(
                     has_entries(
                         message=has_entries({
                             'name': 'switchboard_queued_calls_updated',
@@ -889,13 +889,13 @@ class TestSwitchboardHoldCall(TestSwitchboards):
         def event_received():
             assert_that(
                 held_bus_events.accumulate(with_headers=True),
-                contains(
+                contains_exactly(
                     has_entries(
                         message=has_entries({
                             'name': 'switchboard_held_calls_updated',
                             'data': has_entries({
                                 'switchboard_uuid': switchboard_uuid,
-                                'items': contains(
+                                'items': contains_exactly(
                                     has_entry('id', queued_call_id)
                                 ),
                             })
@@ -1086,7 +1086,7 @@ class TestSwitchboardCallsHeld(TestSwitchboards):
         def event_received():
             assert_that(
                 held_bus_events.accumulate(with_headers=True),
-                contains(
+                contains_exactly(
                     has_entries(
                         message=has_entries({
                             'name': 'switchboard_held_calls_updated',

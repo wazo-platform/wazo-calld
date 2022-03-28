@@ -11,7 +11,7 @@ from mock import (
 )
 from hamcrest import (
     assert_that,
-    contains,
+    contains_exactly,
     empty,
     equal_to,
     has_items,
@@ -107,14 +107,14 @@ class TestGetContacts(DialerTestCase):
 
         result = self.poller._get_contacts(self.channel_id, self.aor)
 
-        assert_that(result, contains('contact1'))
+        assert_that(result, contains_exactly('contact1'))
 
     def test_multiple_values(self):
         self.ari.channels.getChannelVar.return_value = {'value': 'contact1&contact2&contact3'}
 
         result = self.poller._get_contacts(self.channel_id, self.aor)
 
-        assert_that(result, contains('contact1', 'contact2', 'contact3'))
+        assert_that(result, contains_exactly('contact1', 'contact2', 'contact3'))
 
 
 class TestRemoveUnansweredChannels(DialerTestCase):

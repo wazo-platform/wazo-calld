@@ -1,9 +1,9 @@
-# Copyright 2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from hamcrest import (
     assert_that,
-    contains,
+    contains_exactly,
     empty,
 )
 from unittest import TestCase
@@ -28,7 +28,7 @@ class TestNotifierParticipantsValidUserUUIDs(TestCase):
 
         result = participants.valid_user_uuids()
 
-        assert_that(result, contains('uuid1', 'uuid2'))
+        assert_that(result, contains_exactly('uuid1', 'uuid2'))
 
     def test_same_participant(self):
         participants = Participants(
@@ -38,7 +38,7 @@ class TestNotifierParticipantsValidUserUUIDs(TestCase):
 
         result = participants.valid_user_uuids()
 
-        assert_that(result, contains('uuid1'))
+        assert_that(result, contains_exactly('uuid1'))
 
     def test_participant_without_user_uuid(self):
         participants = Participants(
@@ -48,4 +48,4 @@ class TestNotifierParticipantsValidUserUUIDs(TestCase):
 
         result = participants.valid_user_uuids()
 
-        assert_that(result, contains('uuid1'))
+        assert_that(result, contains_exactly('uuid1'))

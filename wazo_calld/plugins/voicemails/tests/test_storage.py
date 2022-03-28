@@ -1,11 +1,11 @@
-# Copyright 2016-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from mock import Mock
 from io import BytesIO
 from hamcrest import assert_that
 from hamcrest import calling
-from hamcrest import contains
+from hamcrest import contains_exactly
 from hamcrest import empty
 from hamcrest import equal_to
 from hamcrest import has_key
@@ -140,7 +140,7 @@ class TestVoicemailMessagesCache(TestCase):
 
         diff = self.cache.get_diff(self.number, self.context)
 
-        assert_that(diff.created_messages, contains(self.message_info1))
+        assert_that(diff.created_messages, contains_exactly(self.message_info1))
         assert_that(diff.updated_messages, empty())
         assert_that(diff.deleted_messages, empty())
 
@@ -157,7 +157,7 @@ class TestVoicemailMessagesCache(TestCase):
         diff = self.cache.get_diff(self.number, self.context)
 
         assert_that(diff.created_messages, empty())
-        assert_that(diff.updated_messages, contains(self.message_info2))
+        assert_that(diff.updated_messages, contains_exactly(self.message_info2))
         assert_that(diff.deleted_messages, empty())
 
     def test_diff_when_message_deleted(self):
@@ -172,7 +172,7 @@ class TestVoicemailMessagesCache(TestCase):
 
         assert_that(diff.created_messages, empty())
         assert_that(diff.updated_messages, empty())
-        assert_that(diff.deleted_messages, contains(self.message_info1))
+        assert_that(diff.deleted_messages, contains_exactly(self.message_info1))
 
     def test_diff_twice_in_a_row(self):
         self.storage.get_voicemail_info.return_value = {
@@ -184,7 +184,7 @@ class TestVoicemailMessagesCache(TestCase):
         diff1 = self.cache.get_diff(self.number, self.context)
         diff2 = self.cache.get_diff(self.number, self.context)
 
-        assert_that(diff1.created_messages, contains(self.message_info1))
+        assert_that(diff1.created_messages, contains_exactly(self.message_info1))
         assert_that(diff2.created_messages, empty())
 
     def test_cache_cleanup(self):
