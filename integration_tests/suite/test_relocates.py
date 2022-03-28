@@ -6,7 +6,7 @@ import uuid
 
 from hamcrest import assert_that
 from hamcrest import calling
-from hamcrest import contains
+from hamcrest import contains_exactly
 from hamcrest import contains_inanyorder
 from hamcrest import empty
 from hamcrest import has_entry
@@ -204,7 +204,7 @@ class TestListUserRelocate(TestRelocates):
 
         result = calld_client.relocates.list_from_user()
 
-        assert_that(result['items'], contains({
+        assert_that(result['items'], contains_exactly({
             'uuid': relocate['uuid'],
             'relocated_call': relocate['relocated_call'],
             'initiator_call': relocate['initiator_call'],
@@ -221,7 +221,7 @@ class TestListUserRelocate(TestRelocates):
 
         relocates = calld_client.relocates.list_from_user()
 
-        assert_that(relocates['items'], not_(contains(has_entry('uuid', relocate['uuid']))))
+        assert_that(relocates['items'], not_(contains_exactly(has_entry('uuid', relocate['uuid']))))
 
     def test_given_two_relocates_when_list_then_relocates_are_filtered_by_user(self):
         relocate1, user_uuid1, _, __ = self.given_ringing_user_relocate()
@@ -230,7 +230,7 @@ class TestListUserRelocate(TestRelocates):
 
         result = user2_calld_client.relocates.list_from_user()
 
-        assert_that(result['items'], contains(has_entries({
+        assert_that(result['items'], contains_exactly(has_entries({
             'uuid': relocate2['uuid'],
         })))
 
@@ -433,7 +433,7 @@ class TestCreateUserRelocate(TestRelocates):
         def relocate_events_received():
             assert_that(
                 events.accumulate(with_headers=True),
-                contains(
+                contains_exactly(
                     has_entries(
                         message=has_entries({
                             'name': 'relocate_initiated',
@@ -506,7 +506,7 @@ class TestCreateUserRelocate(TestRelocates):
         def relocate_events_received():
             assert_that(
                 events.accumulate(with_headers=True),
-                contains(
+                contains_exactly(
                     has_entries(
                         message=has_entries({
                             'name': 'relocate_initiated',

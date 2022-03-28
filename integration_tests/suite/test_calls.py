@@ -7,7 +7,7 @@ import json
 from hamcrest import (
     assert_that,
     calling,
-    contains,
+    contains_exactly,
     contains_inanyorder,
     contains_string,
     empty,
@@ -58,7 +58,7 @@ class TestListCalls(IntegrationTest):
     def test_given_no_calls_when_list_calls_then_empty_list(self):
         calls = self.calld_client.calls.list_calls()
 
-        assert_that(calls, has_entries(items=contains()))
+        assert_that(calls, has_entries(items=contains_exactly()))
 
     def test_given_some_calls_with_user_id_when_list_calls_then_calls_are_complete(self):
         self.ari.set_channels(MockChannel(id='first-id',
@@ -217,7 +217,7 @@ class TestListCalls(IntegrationTest):
             application_instance='appX',
         )
 
-        assert_that(calls, has_entries(items=contains(
+        assert_that(calls, has_entries(items=contains_exactly(
             has_entries(call_id='first-id'),
         )))
 
@@ -252,7 +252,7 @@ class TestUserListCalls(IntegrationTest):
         calld_client = self.make_user_calld(user_uuid)
         calls = calld_client.calls.list_calls_from_user()
 
-        assert_that(calls, has_entries(items=contains()))
+        assert_that(calls, has_entries(items=contains_exactly()))
 
     def test_given_some_calls_with_user_id_when_list_my_calls_then_calls_are_filtered_by_user(self):
         user_uuid = 'user-uuid'
@@ -412,7 +412,7 @@ class TestGetCall(IntegrationTest):
             user_uuid='user1-uuid',
             status='Up',
             talking_to={'second-id': 'user2-uuid'},
-            bridges=contains('bridge-id'),
+            bridges=contains_exactly('bridge-id'),
             creation_time='first-time',
             caller_id_name='Weber',
             caller_id_number='4185559999',

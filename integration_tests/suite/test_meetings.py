@@ -8,7 +8,7 @@ import uuid
 from hamcrest import (
     assert_that,
     calling,
-    contains,
+    contains_exactly,
     contains_inanyorder,
     empty,
     has_entries,
@@ -682,7 +682,7 @@ class TestMeetingParticipants(TestMeetings):
             participants = self.calld_client.meetings.list_participants(meeting_uuid)
             assert_that(participants, has_entries({
                 'total': 1,
-                'items': contains(has_entry('muted', True))
+                'items': contains_exactly(has_entry('muted', True))
             }))
         until.assert_(participant_is_muted, timeout=10, message='Participant was not muted')
 
@@ -692,7 +692,7 @@ class TestMeetingParticipants(TestMeetings):
             participants = self.calld_client.meetings.list_participants(meeting_uuid)
             assert_that(participants, has_entries({
                 'total': 1,
-                'items': contains(has_entry('muted', False))
+                'items': contains_exactly(has_entry('muted', False))
             }))
         until.assert_(participant_is_not_muted, timeout=10, message='Participant is still muted')
 

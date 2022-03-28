@@ -4,7 +4,7 @@
 from hamcrest import (
     assert_that,
     calling,
-    contains,
+    contains_exactly,
     contains_inanyorder,
     empty,
     equal_to,
@@ -228,7 +228,7 @@ class TestStasisTriggers(BaseApplicationTestCase):
                                 application_uuid=app_uuid,
                                 node=has_entries(
                                     uuid=app_uuid,
-                                    calls=contains(has_entries(id=channel.id)),
+                                    calls=contains_exactly(has_entries(id=channel.id)),
                                 )
                             )
                         ),
@@ -552,7 +552,7 @@ class TestApplication(BaseApplicationTestCase):
         calls = self.calld_client.applications.list_calls(self.no_node_app_uuid)['items']
         assert_that(
             calls,
-            contains(
+            contains_exactly(
                 has_entries(
                     id=channel.id,
                     status='Up',
@@ -790,7 +790,7 @@ class TestApplication(BaseApplicationTestCase):
                                 application_uuid=self.node_app_uuid,
                                 node=has_entries(
                                     uuid=self.node_app_uuid,
-                                    calls=contains(has_entries(id=call['id']))
+                                    calls=contains_exactly(has_entries(id=call['id']))
                                 )
                             )
                         ),
@@ -875,7 +875,7 @@ class TestApplication(BaseApplicationTestCase):
                                 application_uuid=self.node_app_uuid,
                                 node=has_entries(
                                     uuid=self.node_app_uuid,
-                                    calls=contains(has_entries(id=call['id']))
+                                    calls=contains_exactly(has_entries(id=call['id']))
                                 )
                             )
                         ),
@@ -975,7 +975,7 @@ class TestApplication(BaseApplicationTestCase):
                                 application_uuid=self.node_app_uuid,
                                 node=has_entries(
                                     uuid=self.node_app_uuid,
-                                    calls=contains(has_entries(id=call['id']))
+                                    calls=contains_exactly(has_entries(id=call['id']))
                                 )
                             )
                         ),
@@ -1036,7 +1036,7 @@ class TestApplication(BaseApplicationTestCase):
         assert_that(nodes, empty())
 
         nodes = self.calld_client.applications.list_nodes(self.node_app_uuid)['items']
-        assert_that(nodes, contains(has_entries(uuid=self.node_app_uuid, calls=empty())))
+        assert_that(nodes, contains_exactly(has_entries(uuid=self.node_app_uuid, calls=empty())))
 
         # TODO: replace precondition with POST /applications/uuid/nodes/uuid/calls
         channel = self.call_app(self.node_app_uuid)
@@ -1045,10 +1045,10 @@ class TestApplication(BaseApplicationTestCase):
             nodes = self.calld_client.applications.list_nodes(self.node_app_uuid)['items']
             assert_that(
                 nodes,
-                contains(
+                contains_exactly(
                     has_entries(
                         uuid=self.node_app_uuid,
-                        calls=contains(has_entries(id=channel.id)),
+                        calls=contains_exactly(has_entries(id=channel.id)),
                     )
                 )
             )
@@ -1085,7 +1085,7 @@ class TestApplicationMute(BaseApplicationTestCase):
             events = event_accumulator.accumulate(with_headers=True)
             assert_that(
                 events,
-                contains(
+                contains_exactly(
                     has_entries(
                         message=has_entries(
                             name='application_call_updated',
@@ -1106,7 +1106,7 @@ class TestApplicationMute(BaseApplicationTestCase):
 
         assert_that(
             self.calld_client.applications.list_calls(app_uuid)['items'],
-            contains(
+            contains_exactly(
                 has_entries(
                     id=channel.id,
                     muted=True,
@@ -1161,7 +1161,7 @@ class TestApplicationMute(BaseApplicationTestCase):
 
         assert_that(
             self.calld_client.applications.list_calls(app_uuid)['items'],
-            contains(
+            contains_exactly(
                 has_entries(
                     id=channel.id,
                     muted=False,
@@ -1221,7 +1221,7 @@ class TestApplicationHold(BaseApplicationTestCase):
 
         assert_that(
             self.calld_client.applications.list_calls(app_uuid)['items'],
-            contains(has_entries(id=channel.id, on_hold=True))
+            contains_exactly(has_entries(id=channel.id, on_hold=True))
         )
 
     def test_put_hold_stop(self):
@@ -1285,7 +1285,7 @@ class TestApplicationHold(BaseApplicationTestCase):
 
         assert_that(
             self.calld_client.applications.list_calls(app_uuid)['items'],
-            contains(has_entries(id=channel.id, on_hold=False))
+            contains_exactly(has_entries(id=channel.id, on_hold=False))
         )
 
 
@@ -1774,7 +1774,7 @@ class TestApplicationMoh(BaseApplicationTestCase):
 
         assert_that(
             self.calld_client.applications.list_calls(app_uuid)['items'],
-            contains(has_entries(id=channel.id, moh_uuid=self.moh_uuid))
+            contains_exactly(has_entries(id=channel.id, moh_uuid=self.moh_uuid))
         )
 
     def test_put_moh_stop_success(self):
@@ -1825,7 +1825,7 @@ class TestApplicationMoh(BaseApplicationTestCase):
 
         assert_that(
             self.calld_client.applications.list_calls(app_uuid)['items'],
-            contains(has_entries(id=channel.id, moh_uuid=None))
+            contains_exactly(has_entries(id=channel.id, moh_uuid=None))
         )
 
     def test_confd_moh_created_event_update_cache(self):
@@ -1843,12 +1843,12 @@ class TestApplicationMoh(BaseApplicationTestCase):
 
         def music_on_hold_started_event_received():
             events = event_accumulator.accumulate()
-            assert_that(events, contains(has_entries(name='application_call_updated')))
+            assert_that(events, contains_exactly(has_entries(name='application_call_updated')))
 
         until.assert_(music_on_hold_started_event_received, tries=5)
 
         calls = self.calld_client.applications.list_calls(app_uuid)['items']
-        assert_that(calls, contains(has_entries(id=channel.id, moh_uuid=moh_uuid)))
+        assert_that(calls, contains_exactly(has_entries(id=channel.id, moh_uuid=moh_uuid)))
 
     def test_confd_moh_deleted_event_update_cache(self):
         app_uuid = self.no_node_app_uuid
@@ -2091,7 +2091,7 @@ class TestApplicationAnswer(BaseApplicationTestCase):
 
         assert_that(
             self.calld_client.applications.list_calls(self.node_app_uuid)['items'],
-            contains(has_entries(id=channel.id, status='Up'))
+            contains_exactly(has_entries(id=channel.id, status='Up'))
         )
 
 
@@ -2149,7 +2149,7 @@ class TestApplicationProgress(BaseApplicationTestCase):
 
         assert_that(
             self.calld_client.applications.list_calls(self.node_app_uuid)['items'],
-            contains(has_entries(id=channel.id, status='Progress'))
+            contains_exactly(has_entries(id=channel.id, status='Progress'))
         )
 
     def test_progress_stop(self):
@@ -2204,7 +2204,7 @@ class TestApplicationProgress(BaseApplicationTestCase):
 
         assert_that(
             self.calld_client.applications.list_calls(self.node_app_uuid)['items'],
-            contains(has_entries(id=channel.id, status='Ring'))
+            contains_exactly(has_entries(id=channel.id, status='Ring'))
         )
 
 
@@ -2238,7 +2238,7 @@ class TestApplicationNode(BaseApplicationTestCase):
             node,
             has_entries(
                 uuid=uuid_(),
-                calls=contains(
+                calls=contains_exactly(
                     has_entries(id=channel.id),
                 )
             )
@@ -2269,7 +2269,7 @@ class TestApplicationNode(BaseApplicationTestCase):
                                 application_uuid=self.no_node_app_uuid,
                                 node=has_entries(
                                     uuid=node['uuid'],
-                                    calls=contains(has_entries(id=channel.id)),
+                                    calls=contains_exactly(has_entries(id=channel.id)),
                                 )
                             )
                         ),
@@ -2320,7 +2320,7 @@ class TestApplicationNode(BaseApplicationTestCase):
             node,
             has_entries(
                 uuid=uuid_(),
-                calls=contains(
+                calls=contains_exactly(
                     has_entries(id=channel.id),
                 )
             )
@@ -2361,7 +2361,7 @@ class TestApplicationNode(BaseApplicationTestCase):
                             data=has_entries(
                                 node=has_entries(
                                     uuid=node['uuid'],
-                                    calls=contains(has_entries(id=channel.id)),
+                                    calls=contains_exactly(has_entries(id=channel.id)),
                                 ),
                             ),
                         ),
@@ -2662,7 +2662,7 @@ class TestApplicationNodeCall(BaseApplicationTestCase):
                                 application_uuid=self.no_node_app_uuid,
                                 node=has_entries(
                                     uuid=node_1['uuid'],
-                                    calls=contains(
+                                    calls=contains_exactly(
                                         has_entries(id=channel_1.id),
                                         has_entries(id=channel_3.id),
                                     )
