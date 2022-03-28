@@ -1,10 +1,11 @@
-# Copyright 2019-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import uuid
 import time
 import threading
 import logging
+import requests
 
 from ari.exceptions import ARINotFound
 from wazo_calld.plugin_helpers.ari_ import Bridge
@@ -136,8 +137,10 @@ class _PollingContactDialer:
 
 class DialMobileService:
 
-    def __init__(self, ari):
+    def __init__(self, ari, amid_client, auth_client):
         self._ari = ari.client
+        self._auth_client = auth_client
+        self._amid_client = amid_client
         self._contact_dialers = {}
         self._outgoing_calls = {}
 
@@ -212,3 +215,25 @@ class DialMobileService:
     def on_calld_stopping(self):
         for dialer in self._contact_dialers.values():
             dialer.stop()
+
+    def _set_user_hint(self, user_uuid, has_mobile_sessions):
+        self._amid_client.action(
+            'Setvar',
+            {
+                'Variable': f'DEVICE_STATE(Custom:{user_uuid}-mobile)',
+                'Value': 'NOT_INUSE' if has_mobile_sessions else 'UNAVAILABLE',
+            },
+        )
+
+    def on_mobile_refresh_token_created(self, user_uuid):
+        self._set_user_hint(user_uuid, True)
+
+    def on_mobile_refresh_token_deleted(self, user_uuid):
+        try:
+            response = self._auth_client.token.list(user_uuid, mobile=True)
+        except requests.HTTPError as e:
+            logger.error('failed to check if user %s still has a mobile refresh token: %s: %s', user_uuid, type(e).__name__, e)
+            return
+
+        mobile = response['filtered'] > 0
+        self._set_user_hint(user_uuid, mobile)

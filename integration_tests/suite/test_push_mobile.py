@@ -3,18 +3,31 @@
 
 from hamcrest import (
     assert_that,
+    contains,
     has_item,
     has_entries,
 )
 
+from wazo_amid_client import Client as AmidClient
 from wazo_test_helpers import until
 
 from .helpers.real_asterisk import RealAsteriskIntegrationTest
+from .helpers.constants import VALID_TOKEN_MULTITENANT
 
 
 class TestPushMobile(RealAsteriskIntegrationTest):
 
     asset = 'real_asterisk'
+
+    def setUp(self):
+        super().setUp()
+        self.amid = AmidClient(
+            'localhost',
+            port=self.service_port(9491, 'amid'),
+            https=False,
+            prefix=None,
+            token=VALID_TOKEN_MULTITENANT,
+        )
 
     def test_send_push_mobile(self):
         events = self.bus.accumulator('calls.call.push_notification')
@@ -76,3 +89,78 @@ class TestPushMobile(RealAsteriskIntegrationTest):
             )
 
         until.assert_(bus_events_received, timeout=10)
+
+    def test_user_hint_is_updated_on_mobile_refresh_token(self):
+        user_uuid = 'eaa18a7f-3f49-419a-9abb-b445b8ba2e03'
+        tenant_uuid = 'some-tenant-uuid'
+        client_id = 'calld-tests'
+
+        self.bus.publish(
+            {
+                'name': 'auth_refresh_token_created',
+                'data': {
+                    'user_uuid': user_uuid,
+                    'client_id': client_id,
+                    'tenant_uuid': tenant_uuid,
+                    'mobile': True,
+                },
+            },
+            routing_key=f'auth.users.{user_uuid}.tokens.{client_id}.created',
+        )
+
+        def user_hint_updated():
+            result = self.amid.action('Getvar', {'Variable': f'DEVICE_STATE(Custom:{user_uuid}-mobile)'})
+            assert_that(result, contains(has_entries(
+                Response='Success',
+                Value='NOT_INUSE',
+            )))
+
+        until.assert_(user_hint_updated, timeout=10)
+
+        self.auth.set_refresh_tokens([{'user_uuid': user_uuid, 'mobile': True}])
+
+        self.bus.publish(
+            {
+                'name': 'auth_refresh_token_deleted',
+                'data': {
+                    'user_uuid': user_uuid,
+                    'tenant_uuid': tenant_uuid,
+                    'client_id': client_id,
+                    'mobile': True,
+                },
+            },
+            routing_key=f'auth.users.{user_uuid}.tokens.{client_id}.deleted',
+        )
+
+        def user_hint_updated():
+            result = self.amid.action('Getvar', {'Variable': f'DEVICE_STATE(Custom:{user_uuid}-mobile)'})
+            assert_that(result, contains(has_entries(
+                Response='Success',
+                Value='NOT_INUSE',
+            )))
+
+        until.assert_(user_hint_updated, timeout=10)
+
+        self.auth.set_refresh_tokens([])
+
+        self.bus.publish(
+            {
+                'name': 'auth_refresh_token_deleted',
+                'data': {
+                    'user_uuid': user_uuid,
+                    'tenant_uuid': tenant_uuid,
+                    'client_id': client_id,
+                    'mobile': True,
+                },
+            },
+            routing_key=f'auth.users.{user_uuid}.tokens.{client_id}.deleted',
+        )
+
+        def user_hint_updated():
+            result = self.amid.action('Getvar', {'Variable': f'DEVICE_STATE(Custom:{user_uuid}-mobile)'})
+            assert_that(result, contains(has_entries(
+                Response='Success',
+                Value='UNAVAILABLE',
+            )))
+
+        until.assert_(user_hint_updated, timeout=10)
