@@ -231,8 +231,8 @@ class DialMobileService:
     def on_mobile_refresh_token_deleted(self, user_uuid):
         try:
             response = self._auth_client.token.list(user_uuid, mobile=True)
-        except requests.HTTPError:
-            logger.info('failed to check if %s still has a mobile refresh token', user_uuid)
+        except requests.HTTPError as e:
+            logger.error('failed to check if user %s still has a mobile refresh token: %s: %s', user_uuid, type(e).__name__, e)
             return
 
         mobile = response['filtered'] > 0
