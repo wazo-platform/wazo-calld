@@ -3,6 +3,8 @@
 
 import logging
 
+from wazo_calld.plugin_helpers.asterisk import SIP_CAUSE
+
 logger = logging.getLogger(__name__)
 
 
@@ -13,6 +15,7 @@ class EventHandler:
 
     def subscribe(self, bus_consumer):
         bus_consumer.subscribe('BridgeEnter', self._on_bridge_enter)
+        bus_consumer.subscribe('Hangup', self._on_hangup)
         bus_consumer.subscribe('UserEvent', self._on_user_event)
         bus_consumer.subscribe('auth_refresh_token_created', self._on_refresh_token_created)
         bus_consumer.subscribe('auth_refresh_token_deleted', self._on_refresh_token_deleted)
@@ -53,4 +56,10 @@ class EventHandler:
         self._service.on_mobile_refresh_token_deleted(event['user_uuid'])
 
     def _on_bridge_enter(self, event):
+        self._service.cancel_push_mobile(event['Uniqueid'])
+
+    def _on_hangup(self, event):
+        if SIP_CAUSE(int(event['Cause'])) == SIP_CAUSE.CALL_REJECTED:
+            self._service.cancel_push_mobile(event['Linkedid'])
+
         self._service.cancel_push_mobile(event['Uniqueid'])
