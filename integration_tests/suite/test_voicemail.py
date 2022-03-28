@@ -13,7 +13,7 @@ from hamcrest import (
     has_entries,
     has_entry,
     has_properties,
-    not_,
+    is_,
 )
 
 from wazo_test_helpers.hamcrest.raises import raises
@@ -62,13 +62,13 @@ class TestVoicemails(RealAsteriskIntegrationTest):
         exists = self.calld_client.voicemails.voicemail_greeting_exists(
             "not-exists", "busy"
         )
-        assert_that(not_(exists))
+        assert_that(exists, is_(False))
 
     def test_voicemail_head_greeting_invalid_greeting(self):
         exists = self.calld_client.voicemails.voicemail_greeting_exists(
             self._voicemail_id, "not-exists"
         )
-        assert_that(not_(exists))
+        assert_that(exists, is_(False))
 
     def test_voicemail_get_greeting_invalid_voicemail(self):
         assert_that(
@@ -120,7 +120,7 @@ class TestVoicemails(RealAsteriskIntegrationTest):
         exists = self.calld_client.voicemails.voicemail_greeting_from_user_exists(
             "not-exists"
         )
-        assert_that(not_(exists))
+        assert_that(exists, is_(False))
 
     def test_voicemail_get_greeting_invalid_greeting_from_user(self):
         assert_that(
@@ -162,7 +162,7 @@ class TestVoicemails(RealAsteriskIntegrationTest):
         exists = self.calld_client.voicemails.voicemail_greeting_exists(
             self._voicemail_id, "busy"
         )
-        assert_that(not_(exists))
+        assert_that(exists, is_(False))
 
     def test_voicemail_get_unset_greeting(self):
         assert_that(
@@ -180,7 +180,7 @@ class TestVoicemails(RealAsteriskIntegrationTest):
         exists = self.calld_client.voicemails.voicemail_greeting_from_user_exists(
             "busy"
         )
-        assert_that(not_(exists))
+        assert_that(exists, is_(False))
 
     def test_voicemail_get_unset_greeting_from_user(self):
         assert_that(
