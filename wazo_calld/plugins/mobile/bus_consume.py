@@ -13,7 +13,7 @@ class PushNotificationBusEventHandler(object):
         self._notifier = notifier
 
     def subscribe(self, bus_consumer):
-        bus_consumer.on_ami_event('UserEvent', self._user_event)
+        bus_consumer.subscribe('UserEvent', self._user_event)
 
     def _user_event(self, event):
         if event['UserEvent'] != 'Pushmobile':

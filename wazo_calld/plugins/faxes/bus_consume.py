@@ -1,4 +1,4 @@
-# Copyright 2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -14,7 +14,7 @@ class FaxesBusEventHandler:
         self._notifier = notifier
 
     def subscribe(self, bus_consumer):
-        bus_consumer.on_ami_event('UserEvent', self._fax_result)
+        bus_consumer.subscribe('UserEvent', self._fax_result)
 
     def _fax_result(self, event):
         if event['UserEvent'] != 'FaxProgress':

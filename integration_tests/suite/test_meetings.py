@@ -996,6 +996,9 @@ class TestMeetingParticipants(TestMeetings):
                     'TalkingStatus': 'off',
                 }
             },
+            headers={
+                'name': 'ConfbridgeTalking',
+            },
             routing_key='ami.ConfbridgeTalking'
         )
 

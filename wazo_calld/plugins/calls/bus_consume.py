@@ -28,24 +28,23 @@ class CallsBusEventHandler:
         self.notifier = notifier
 
     def subscribe(self, bus_consumer):
-        bus_consumer.on_ami_event('Newchannel', self._add_sip_call_id)
-        bus_consumer.on_ami_event('Newchannel', self._relay_channel_created)
-        bus_consumer.on_ami_event('Newchannel', self._collectd_channel_created)
-        bus_consumer.on_ami_event('Newstate', self._relay_channel_updated)
-        bus_consumer.on_ami_event('Newstate', self._relay_channel_answered)
-        bus_consumer.on_ami_event('NewConnectedLine', self._relay_channel_updated)
-        bus_consumer.on_ami_event('Hold', self._channel_hold)
-        bus_consumer.on_ami_event('Unhold', self._channel_unhold)
-        bus_consumer.on_ami_event('Hangup', self._collectd_channel_ended)
-        bus_consumer.on_ami_event('UserEvent', self._relay_user_missed_call)
-        bus_consumer.on_ami_event('UserEvent', self._set_dial_echo_result)
-        bus_consumer.on_ami_event('DTMFEnd', self._relay_dtmf)
-        bus_consumer.on_ami_event('BridgeEnter', self._relay_channel_entered_bridge)
-        bus_consumer.on_ami_event('BridgeLeave', self._relay_channel_left_bridge)
-        bus_consumer.on_ami_event('MixMonitorStart', self._mix_monitor_start)
-        bus_consumer.on_ami_event('MixMonitorStop', self._mix_monitor_stop)
-
-        bus_consumer.on_event(
+        bus_consumer.subscribe('Newchannel', self._add_sip_call_id)
+        bus_consumer.subscribe('Newchannel', self._relay_channel_created)
+        bus_consumer.subscribe('Newchannel', self._collectd_channel_created)
+        bus_consumer.subscribe('Newstate', self._relay_channel_updated)
+        bus_consumer.subscribe('Newstate', self._relay_channel_answered)
+        bus_consumer.subscribe('NewConnectedLine', self._relay_channel_updated)
+        bus_consumer.subscribe('Hold', self._channel_hold)
+        bus_consumer.subscribe('Unhold', self._channel_unhold)
+        bus_consumer.subscribe('Hangup', self._collectd_channel_ended)
+        bus_consumer.subscribe('UserEvent', self._relay_user_missed_call)
+        bus_consumer.subscribe('UserEvent', self._set_dial_echo_result)
+        bus_consumer.subscribe('DTMFEnd', self._relay_dtmf)
+        bus_consumer.subscribe('BridgeEnter', self._relay_channel_entered_bridge)
+        bus_consumer.subscribe('BridgeLeave', self._relay_channel_left_bridge)
+        bus_consumer.subscribe('MixMonitorStart', self._mix_monitor_start)
+        bus_consumer.subscribe('MixMonitorStop', self._mix_monitor_stop)
+        bus_consumer.subscribe(
             'users_services_dnd_updated', self._users_services_dnd_updated
         )
 

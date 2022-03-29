@@ -7,8 +7,8 @@ class EventHandler:
         self._service = service
 
     def subscribe(self, bus_consumer):
-        bus_consumer.on_event('auth_refresh_token_created', self._on_refresh_token_created)
-        bus_consumer.on_event('auth_refresh_token_deleted', self._on_refresh_token_deleted)
+        bus_consumer.subscribe('auth_refresh_token_created', self._on_refresh_token_created)
+        bus_consumer.subscribe('auth_refresh_token_deleted', self._on_refresh_token_deleted)
 
     def _on_refresh_token_created(self, event):
         if not event['mobile']:

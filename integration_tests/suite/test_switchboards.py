@@ -732,10 +732,11 @@ class TestSwitchboardConfdCache(IntegrationTest):
 
         # Change user config
         self.bus.send_event(
-            event={
+            {
                 'name': 'user_edited',
                 'data': {'uuid': user_uuid},
             },
+            headers={'name': 'user_edited'},
             routing_key='config.user.edited',
         )
 
@@ -748,10 +749,11 @@ class TestSwitchboardConfdCache(IntegrationTest):
         until.assert_(confd_cache_refresh_triggered, timeout=5, message='switchboard confd cache was not refreshed')
         # Change switchboard config
         self.bus.send_event(
-            event={
+            {
                 'name': 'switchboard_edited',
                 'data': {'uuid': switchboard_uuid},
             },
+            headers={'name': 'switchboard_edited'},
             routing_key='config.switchboards.{}.edited'.format(switchboard_uuid),
         )
 
@@ -765,10 +767,11 @@ class TestSwitchboardConfdCache(IntegrationTest):
 
         # Change line id
         self.bus.send_event(
-            event={
+            {
                 'name': 'line_edited',
                 'data': {'id': line_id},
             },
+            headers={'name': 'line_edited'},
             routing_key='config.line.edited',
         )
 

@@ -1,4 +1,4 @@
-# Copyright 2015-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from hamcrest import assert_that
@@ -241,8 +241,8 @@ class TestCollectdRabbitMQRestart(IntegrationTest):
         )
 
         self.restart_service('rabbitmq')
-        self.reset_bus_client()
         CalldEverythingOkWaitStrategy().wait(self)  # wait for calld to reconnect to rabbitmq
+        self.reset_bus_client()
 
         events = self.bus.accumulator(routing_key='collectd.calls', exchange=BUS_EXCHANGE_COLLECTD)
         self.stasis.event_channel_destroyed(

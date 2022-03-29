@@ -1,4 +1,4 @@
-# Copyright 2019-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -18,7 +18,7 @@ class ConfdClientGetUUIDCacheDecorator:
 
     def subscribe(self, bus_consumer, events):
         for event in events:
-            bus_consumer.on_event(event, self._on_entry_changed)
+            bus_consumer.subscribe(event, self._on_entry_changed)
 
     def _on_entry_changed(self, event_body):
         uuid = event_body['uuid']
@@ -65,9 +65,9 @@ class ConfdClientGetIDCacheDecorator(ConfdClientGetUUIDCacheDecorator):
 class ConfdClientUserLineGetCacheDecorator(ConfdClientGetUUIDCacheDecorator):
     def subscribe(self, bus_consumer):
         for event in ('user_edited', 'user_deleted'):
-            bus_consumer.on_event(event, self._on_user_changed)
+            bus_consumer.subscribe(event, self._on_user_changed)
         for event in ('user_line_associated', 'user_line_dissociated'):
-            bus_consumer.on_event(event, self._on_user_line_changed)
+            bus_consumer.subscribe(event, self._on_user_line_changed)
 
     def _on_user_changed(self, event_body):
         uuid = event_body['uuid']
