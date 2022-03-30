@@ -5,9 +5,10 @@ from wazo_amid_client import Client as AmidClient
 from wazo_auth_client import Client as AuthClient
 from xivo.pubsub import CallbackCollector
 
+from .bus_consume import EventHandler
 from .stasis import DialMobileStasis
 from .services import DialMobileService
-from .bus_consume import EventHandler
+from .notifier import Notifier
 
 
 class Plugin:
@@ -18,6 +19,7 @@ class Plugin:
         bus_consumer = dependencies['bus_consumer']
         token_changed_subscribe = dependencies['token_changed_subscribe']
         config = dependencies['config']
+        bus_publisher = dependencies['bus_publisher']
 
         amid_client = AmidClient(**config['amid'])
         token_changed_subscribe(amid_client.set_token)
@@ -25,14 +27,13 @@ class Plugin:
         auth_client = AuthClient(**config['auth'])
         token_changed_subscribe(auth_client.set_token)
 
-        service = DialMobileService(ari, amid_client, auth_client)
-        pubsub.subscribe('stopping', lambda _: service.on_calld_stopping())
-
+        notifier = Notifier(bus_publisher)
+        service = DialMobileService(ari, notifier, amid_client, auth_client)
         stasis = DialMobileStasis(ari, service)
+        event_handler = EventHandler(service)
 
+        event_handler.subscribe(bus_consumer)
+        pubsub.subscribe('stopping', lambda _: service.on_calld_stopping())
         startup_callback_collector = CallbackCollector()
         ari.client_initialized_subscribe(startup_callback_collector.new_source())
         startup_callback_collector.subscribe(stasis.initialize)
-
-        event_handler = EventHandler(service)
-        event_handler.subscribe(bus_consumer)

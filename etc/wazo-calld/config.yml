@@ -97,7 +97,6 @@ enabled_plugins:
   applications: true
   calls: true
   dial_mobile: true
-  mobile: true
   relocates: true
   status: true
   switchboards: true

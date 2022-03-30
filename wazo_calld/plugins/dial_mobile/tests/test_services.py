@@ -21,6 +21,7 @@ from ari.exceptions import ARINotFound
 
 from ..services import _PollingContactDialer as PollingContactDialer
 from ..services import DialMobileService
+from ..notifier import Notifier
 
 
 class DialerTestCase(TestCase):
@@ -172,7 +173,8 @@ class DialMobileServiceTestCase(DialerTestCase):
         self.ari = Mock()
         self.amid_client = Mock()
         self.auth_client = Mock()
-        self.service = DialMobileService(self.ari, self.amid_client, self.auth_client)
+        self.notifier = Mock(Notifier)
+        self.service = DialMobileService(self.ari, self.notifier, self.amid_client, self.auth_client)
         self.channel_id = '1234567890.42'
         self.aor = 'foobar'
 
@@ -217,3 +219,33 @@ class DialMobileServiceTestCase(DialerTestCase):
         with patch.object(self.service, '_set_user_hint') as mock:
             self.service.on_mobile_refresh_token_deleted(s.user_uuid)
             mock.assert_not_called()
+
+
+class TestCancelPushNotification(TestCase):
+
+    def setUp(self):
+        self.ari = Mock()
+        self.notifier = Mock(Notifier)
+        self.amid_client = Mock()
+        self.auth_client = Mock()
+        self.service = DialMobileService(self.ari, self.notifier, self.amid_client, self.auth_client)
+
+    def test_that_nothing_happens_when_not_a_pending_push(self):
+        self.service.cancel_push_mobile(s.call_id)
+
+    def test_that_original_payload_is_sent_when_canceling(self):
+        self.service.send_push_notification(
+            s.tenant_uuid,
+            s.user_uuid,
+            s.call_id,
+            s.sip_call_id,
+            s.cid_name,
+            s.cid_num,
+            s.video_enabled,
+        )
+
+        payload = self.notifier.push_notification.call_args_list[0][0][0]
+
+        self.service.cancel_push_mobile(s.call_id)
+
+        self.notifier.cancel_push_notification.assert_called_once_with(payload, s.tenant_uuid, s.user_uuid)

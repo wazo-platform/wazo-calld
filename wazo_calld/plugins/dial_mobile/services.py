@@ -7,11 +7,15 @@ import threading
 import logging
 import requests
 
+from collections import namedtuple
+
 from ari.exceptions import ARINotFound
 from wazo_calld.plugin_helpers.ari_ import Bridge
 
 
 logger = logging.getLogger(__name__)
+
+PendingPushMobile = namedtuple('PendingPushMobile', ['call_id', 'tenant_uuid', 'user_uuid', 'payload'])
 
 
 class _NoSuchChannel(Exception):
@@ -137,12 +141,14 @@ class _PollingContactDialer:
 
 class DialMobileService:
 
-    def __init__(self, ari, amid_client, auth_client):
+    def __init__(self, ari, notifier, amid_client, auth_client):
         self._ari = ari.client
         self._auth_client = auth_client
         self._amid_client = amid_client
         self._contact_dialers = {}
         self._outgoing_calls = {}
+        self._pending_push_mobile = {}
+        self._notifier = notifier
 
     def dial_all_contacts(self, caller_channel_id, aor):
         self._ari.channels.ring(channelId=caller_channel_id)
@@ -237,3 +243,41 @@ class DialMobileService:
 
         mobile = response['filtered'] > 0
         self._set_user_hint(user_uuid, mobile)
+
+    def send_push_notification(
+        self,
+        tenant_uuid,
+        user_uuid,
+        call_id,
+        sip_call_id,
+        caller_id_name,
+        caller_id_number,
+        video_enabled,
+    ):
+        payload = {
+            'peer_caller_id_number': caller_id_number,
+            'peer_caller_id_name': caller_id_name,
+            'call_id': call_id,
+            'video': video_enabled,
+            'sip_call_id': sip_call_id,
+        }
+
+        self._pending_push_mobile[call_id] = PendingPushMobile(
+            call_id,
+            tenant_uuid,
+            user_uuid,
+            payload,
+        )
+
+        self._notifier.push_notification(payload, tenant_uuid, user_uuid)
+
+    def cancel_push_mobile(self, call_id):
+        pending_push = self._pending_push_mobile.pop(call_id, None)
+        if not pending_push:
+            return
+
+        self._notifier.cancel_push_notification(
+            pending_push.payload,
+            pending_push.tenant_uuid,
+            pending_push.user_uuid,
+        )
