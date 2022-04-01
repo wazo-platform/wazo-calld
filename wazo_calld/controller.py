@@ -77,7 +77,7 @@ class Controller:
         self.status_aggregator.add_provider(self.token_status.provide_status)
         collectd_thread = Thread(target=self.collectd.run, name='collectd_thread')
         collectd_thread.start()
-        ari_thread = Thread(target=self.ari.run, name='ari_thread')
+        ari_thread = Thread(target=self._run_ari, name='ari_thread')
         ari_thread.start()
         asyncio_thread = Thread(target=self.asyncio.run, name='asyncio_thread')
         asyncio_thread.start()
@@ -99,6 +99,11 @@ class Controller:
             logger.debug('joining collectd thread')
             collectd_thread.join()
             logger.debug('done joining')
+
+    def _run_ari(self):
+        logger.info('ARI thread starting')
+        self.ari.run()
+        logger.info('ARI thread stopping')
 
     def stop(self, reason):
         logger.warning('Stopping wazo-calld: %s', reason)
