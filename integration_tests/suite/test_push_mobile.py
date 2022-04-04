@@ -22,7 +22,7 @@ class TestPushMobile(RealAsteriskIntegrationTest):
     def setUp(self):
         super().setUp()
         self.amid = AmidClient(
-            'localhost',
+            '127.0.0.1',
             port=self.service_port(9491, 'amid'),
             https=False,
             prefix=None,
