@@ -1,11 +1,11 @@
-# Copyright 2019-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
 import copy
-import threading
 from contextlib import contextmanager
 
+from wazo_calld.helpers import threading
 from wazo_calld.plugin_helpers.exceptions import CalldUninitializedError
 
 logger = logging.getLogger(__name__)
@@ -120,7 +120,7 @@ class ConfdCache:
         self._trunks = {}
         self._lines = {}
         self._initialized = False
-        self._initialization_lock = threading.Lock()
+        self._initialization_lock = threading.Lock('endpoint cache')
 
     def add_line(self, techno, line_id, name, username, tenant_uuid):
         value = {'id': line_id, 'technology': techno, 'name': name, 'tenant_uuid': tenant_uuid}

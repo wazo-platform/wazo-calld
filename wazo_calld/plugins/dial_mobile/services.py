@@ -3,9 +3,10 @@
 
 import uuid
 import time
-import threading
 import logging
 import requests
+
+from wazo_calld.helpers import threading
 
 from collections import namedtuple
 

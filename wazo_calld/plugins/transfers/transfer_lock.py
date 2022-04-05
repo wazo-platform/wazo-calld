@@ -1,8 +1,9 @@
-# Copyright 2017 The Wazo Authors  (see AUTHORS file)
+# Copyright 2017-2022 The Wazo Authors  (see AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
-import threading
+
+from wazo_calld.helpers import threading
 
 logger = logging.getLogger(__name__)
 
@@ -10,7 +11,7 @@ logger = logging.getLogger(__name__)
 class TransferLock:
     def __init__(self):
         self._locked_calls = set()
-        self._lock = threading.Lock()
+        self._lock = threading.Lock('transfer lock')
 
     def acquire(self, call):
         logger.debug('acquiring transfer lock on %s...', call)

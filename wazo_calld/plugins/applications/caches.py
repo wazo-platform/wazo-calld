@@ -3,7 +3,8 @@
 
 import logging
 import requests
-import threading
+
+from wazo_calld.helpers import threading
 
 from .exceptions import NoSuchApplication, NoSuchMoh, WazoConfdUnreachable
 
@@ -64,7 +65,7 @@ class ConfdApplicationsCache:
     def __init__(self, confd):
         self._confd = confd
         self._cache = None
-        self._cache_lock = threading.Lock()
+        self._cache_lock = threading.Lock('confd application cache')
         self._triggers = {'created': [], 'updated': [], 'deleted': []}
 
     @property
@@ -139,7 +140,7 @@ class MohCache:
     def __init__(self, confd):
         self._confd = confd
         self._cache = None
-        self._cache_lock = threading.Lock()
+        self._cache_lock = threading.Lock('moh cache')
 
     @property
     def _moh(self):

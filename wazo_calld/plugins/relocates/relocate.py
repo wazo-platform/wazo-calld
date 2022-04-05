@@ -1,12 +1,13 @@
-# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
-import threading
 import uuid
 
 from contextlib import contextmanager
 from xivo.pubsub import Pubsub
+
+from wazo_calld.helpers import threading
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +31,7 @@ class Relocate:
         self.completions = None
 
         self.set_state('ready')
-        self._lock = threading.Lock()
+        self._lock = threading.Lock('relocate cache')
         self.events = Pubsub()
 
     def set_state(self, state_name):
@@ -98,7 +99,7 @@ class RelocateCollection:
 
     def __init__(self):
         self._relocates = {}
-        self._lock = threading.Lock()
+        self._lock = threading.Lock('relocate collection cache')
 
     def add(self, relocate):
         with self._lock:

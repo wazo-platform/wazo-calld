@@ -1,9 +1,8 @@
 # Copyright 2020-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-import threading
-
 from ari.exceptions import ARINotFound
+from wazo_calld.helpers import threading
 from wazo_calld.plugin_helpers.ari_ import Bridge, BridgeSnapshot, Channel
 from wazo_calld.plugins.calls.services import CallsService
 
@@ -20,7 +19,7 @@ class AdhocConferencesStasis:
         self._ari = ari.client
         self._core_ari = ari
         self._notifier = notifier
-        self._adhoc_conference_creation_lock = threading.Lock()
+        self._adhoc_conference_creation_lock = threading.Lock('adhoc conference lock')
 
     def _subscribe(self):
         self._ari.on_channel_event('StasisStart', self.on_stasis_start)

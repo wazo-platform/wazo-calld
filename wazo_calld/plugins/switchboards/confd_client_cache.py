@@ -2,7 +2,8 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
-import threading
+
+from wazo_calld.helpers import threading
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +15,7 @@ class ConfdClientGetUUIDCacheDecorator:
         self._decorated_get = decorated_get
         self._resource_name = resource_name
         self._cache = {}
-        self._lock = threading.Lock()
+        self._lock = threading.Lock('confd get uuid cache')
 
     def subscribe(self, bus_consumer, events):
         for event in events:

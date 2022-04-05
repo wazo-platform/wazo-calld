@@ -3,8 +3,8 @@
 
 import re
 import logging
-import threading
 
+from wazo_calld.helpers import threading
 from wazo_calld.plugin_helpers import ami
 from wazo_calld.plugin_helpers.ari_ import (
     AUTO_ANSWER_VARIABLES,
@@ -140,7 +140,7 @@ class RelocatesService:
         self.state_factory = state_factory
         self.destination_factory = DestinationFactory(amid, ari)
         self.relocates = relocates
-        self.duplicate_relocate_lock = threading.Lock()
+        self.duplicate_relocate_lock = threading.Lock('duplicate relocate cache')
 
     def list_from_user(self, user_uuid):
         return [relocate
