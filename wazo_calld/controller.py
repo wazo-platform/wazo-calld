@@ -3,7 +3,7 @@
 
 import logging
 
-from threading import Thread
+from threading import Thread, Timer
 from functools import partial
 from wazo_auth_client import Client as AuthClient
 from xivo import plugin_helpers
@@ -81,6 +81,8 @@ class Controller:
         ari_thread.start()
         asyncio_thread = Thread(target=self.asyncio.run, name='asyncio_thread')
         asyncio_thread.start()
+        t = Timer(30.0, self._stop_ari_thread)
+        t.start()
         try:
             with self.token_renewer:
                 with self.bus_consumer:
@@ -103,3 +105,8 @@ class Controller:
     def stop(self, reason):
         logger.warning('Stopping wazo-calld: %s', reason)
         self.http_server.stop()
+
+    def _stop_ari_thread(self):
+        logger.info('stopping ARI thread')
+        self.ari.stop(clean=False)
+        self.ari.client.close()

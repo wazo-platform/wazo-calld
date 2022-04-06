@@ -1,4 +1,4 @@
-# Copyright 2015-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import errno
@@ -172,9 +172,10 @@ class CoreARI:
                 return
             time.sleep(0.1)
 
-    def stop(self):
+    def stop(self, clean=True):
         self._should_stop = True
-        self._trigger_disconnect()
+        if clean:
+            self._trigger_disconnect()
 
     def _trigger_disconnect(self):
         self._sync()
