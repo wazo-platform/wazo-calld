@@ -21,6 +21,6 @@ egg-info:
 	cd .. && python setup.py egg_info
 
 test:
-	pytest -x
+	pytest
 
 .PHONY: test-setup build-calld build-ari egg-info test
