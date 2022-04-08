@@ -160,6 +160,7 @@ class MeetingsService:
             if e.message in [
                 'No Conference by that name found.',  # This conference is not running at this time.
                 'No active conferences.',    # No conferences are taking place at this time.
+                'No Channel by that name found in Conference.',  # Participant not found.
             ]:
                 logger.debug(
                     'No participants found to kick out of meeting %s', meeting_uuid

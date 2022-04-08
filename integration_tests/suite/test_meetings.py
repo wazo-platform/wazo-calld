@@ -28,9 +28,16 @@ from .helpers.constants import ENDPOINT_AUTOANSWER
 from .helpers.hamcrest_ import HamcrestARIChannel
 from .helpers.real_asterisk import RealAsteriskIntegrationTest
 
-MEETING1_EXTENSION = 'meeting-user'
+MEETING1_EXTENSION = 'meeting1-user'
 MEETING1_UUID = '6267d321-1d42-41ac-be3d-551a318c745b'
 MEETING1_TENANT_UUID = '404afda0-36ba-43de-9571-a06c81b9c43e'
+
+MEETING2_EXTENSION = 'meeting2-user'
+MEETING2_UUID = '9ae6eb46-489b-42fc-8184-6a9a2bf6c48a'
+MEETING2_TENANT_UUID = '404afda0-36ba-43de-9571-a06c81b9c43e'
+
+EMPTY_MEETING_UUID = '1e366c30-4708-4bd3-a386-b27b4a237c22'
+EMPTY_MEETING_TENANT_UUID = '404afda0-36ba-43de-9571-a06c81b9c43e'
 
 
 def make_user_uuid():
@@ -555,6 +562,75 @@ class TestMeetingParticipants(TestMeetings):
 
         assert_that(calling(self.calld_client.meetings.kick_participant)
                     .with_args(meeting_uuid, participant_id),
+                    raises(CalldError).matching(has_properties({
+                        'status_code': 404,
+                        'error_id': 'no-such-participant',
+                    })))
+
+    def test_kick_participant_notfound(self):
+        meeting_uuid = MEETING1_UUID
+        wrong_participant_id = 'wrong-participant-id'
+        self.confd.set_meetings(
+            MockMeeting(uuid=meeting_uuid, name='meeting'),
+        )
+        self.given_call_in_meeting(MEETING1_EXTENSION, caller_id_name='participant1')
+
+        assert_that(calling(self.calld_client.meetings.kick_participant)
+                    .with_args(meeting_uuid, wrong_participant_id),
+                    raises(CalldError).matching(has_properties({
+                        'status_code': 404,
+                        'error_id': 'no-such-participant',
+                    })))
+
+    def test_kick_meeting_notfound(self):
+        meeting_uuid = MEETING1_UUID
+        wrong_meeting_uuid = 'wrong-meeting-uuid'
+        self.confd.set_meetings(
+            MockMeeting(uuid=meeting_uuid, name='meeting'),
+        )
+        self.given_call_in_meeting(MEETING1_EXTENSION, caller_id_name='participant1')
+        participants = self.calld_client.meetings.list_participants(meeting_uuid)
+        participant = participants['items'][0]
+
+        assert_that(calling(self.calld_client.meetings.kick_participant)
+                    .with_args(wrong_meeting_uuid, participant['id']),
+                    raises(CalldError).matching(has_properties({
+                        'status_code': 404,
+                        'error_id': 'no-such-meeting',
+                    })))
+
+    def test_kick_wrong_meeting(self):
+        meeting_uuid = MEETING1_UUID
+        wrong_meeting_uuid = EMPTY_MEETING_UUID
+        self.confd.set_meetings(
+            MockMeeting(uuid=meeting_uuid, name='meeting'),
+            MockMeeting(uuid=wrong_meeting_uuid, name='empty meeting'),
+        )
+        self.given_call_in_meeting(MEETING1_EXTENSION, caller_id_name='participant1')
+        participants = self.calld_client.meetings.list_participants(meeting_uuid)
+        participant = participants['items'][0]
+
+        assert_that(calling(self.calld_client.meetings.kick_participant)
+                    .with_args(wrong_meeting_uuid, participant['id']),
+                    raises(CalldError).matching(has_properties({
+                        'status_code': 404,
+                        'error_id': 'no-such-participant',
+                    })))
+
+    def test_kick_wrong_participant(self):
+        meeting1_uuid = MEETING1_UUID
+        meeting2_uuid = MEETING2_UUID
+        self.confd.set_meetings(
+            MockMeeting(uuid=meeting1_uuid, name='meeting1'),
+            MockMeeting(uuid=meeting2_uuid, name='meeting2'),
+        )
+        self.given_call_in_meeting(MEETING1_EXTENSION, caller_id_name='participant1')
+        self.given_call_in_meeting(MEETING2_EXTENSION, caller_id_name='participant2')
+        participants = self.calld_client.meetings.list_participants(meeting1_uuid)
+        wrong_participant = participants['items'][0]
+
+        assert_that(calling(self.calld_client.meetings.kick_participant)
+                    .with_args(meeting2_uuid, wrong_participant['id']),
                     raises(CalldError).matching(has_properties({
                         'status_code': 404,
                         'error_id': 'no-such-participant',
