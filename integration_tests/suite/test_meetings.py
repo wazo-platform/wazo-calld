@@ -506,7 +506,6 @@ class TestMeetingParticipants(TestMeetings):
 
         until.assert_(channels_left_meeting, channel_id, other_channel_id, timeout=5)
 
-    @unittest.skip
     def test_kick_participant_with_no_confd(self):
         meeting_uuid = 14
         participant_id = '12345.67'
@@ -519,7 +518,6 @@ class TestMeetingParticipants(TestMeetings):
                             'error_id': 'wazo-confd-unreachable',
                         })))
 
-    @unittest.skip
     def test_kick_participant_with_no_amid(self):
         meeting_uuid = MEETING1_UUID
         self.confd.set_meetings(
@@ -537,7 +535,6 @@ class TestMeetingParticipants(TestMeetings):
                             'error_id': 'wazo-amid-error',
                         })))
 
-    @unittest.skip
     def test_kick_participant_with_no_meetings(self):
         meeting_uuid = 14
         participant_id = '12345.67'
@@ -549,7 +546,6 @@ class TestMeetingParticipants(TestMeetings):
                         'error_id': 'no-such-meeting',
                     })))
 
-    @unittest.skip
     def test_kick_participant_with_no_participants(self):
         meeting_uuid = MEETING1_UUID
         participant_id = '12345.67'
@@ -564,7 +560,6 @@ class TestMeetingParticipants(TestMeetings):
                         'error_id': 'no-such-participant',
                     })))
 
-    @unittest.skip
     def test_kick_participant(self):
         meeting_uuid = MEETING1_UUID
         self.confd.set_meetings(

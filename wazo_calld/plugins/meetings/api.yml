@@ -51,9 +51,30 @@ paths:
           $ref: '#/responses/NoSuchMeeting'
         '503':
           $ref: '#/responses/AnotherServiceUnavailable'
+  /meetings/{meeting_uuid}/participants/{participant_id}:
+    delete:
+      summary: Kick a participant from a meeting
+      description: '**Required ACL:** `calld.meetings.{meeting_uuid}.participants.delete`'
+      parameters:
+        - $ref: '#/parameters/MeetingUUID'
+        - $ref: '#/parameters/ParticipantID'
+      tags:
+        - meetings
+        - users
+      responses:
+        '204':
+          description: The participant was kicked
+        '404':
+          $ref: '#/responses/NoSuchMeetingOrParticipant'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
 responses:
   NoSuchMeeting:
     description: The specified meeting does not exist
+    schema:
+      $ref: '#/definitions/Error'
+  NoSuchMeetingOrParticipant:
+    description: The specified meeting or participant does not exist
     schema:
       $ref: '#/definitions/Error'
 parameters:

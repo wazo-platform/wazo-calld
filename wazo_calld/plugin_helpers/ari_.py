@@ -155,6 +155,14 @@ class Channel:
     def __str__(self):
         return self.id
 
+    def asterisk_name(self):
+        try:
+            channel = self._ari.channels.get(channelId=self.id)
+        except ARINotFound:
+            return False
+
+        return channel.json['name']
+
     def connected_channels(self):
         channel_ids = set(sum((bridge.json['channels'] for bridge in self._ari.bridges.list()
                                if self.id in bridge.json['channels']), list()))

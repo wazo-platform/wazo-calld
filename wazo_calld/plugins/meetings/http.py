@@ -25,6 +25,17 @@ class MeetingParticipantsResource(AuthResource):
         return items, 200
 
 
+class MeetingParticipantItemResource(AuthResource):
+    def __init__(self, meetings_service):
+        self._service = meetings_service
+
+    @required_acl('calld.meetings.{meeting_uuid}.participants.delete')
+    def delete(self, meeting_uuid, participant_id):
+        tenant = Tenant.autodetect()
+        self._service.kick_participant(tenant.uuid, meeting_uuid, participant_id)
+        return '', 204
+
+
 class MeetingParticipantsUserResource(AuthResource):
     def __init__(self, meetings_service):
         self._service = meetings_service
