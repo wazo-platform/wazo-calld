@@ -54,6 +54,18 @@ class MeetingParticipantsUserResource(AuthResource):
         return items, 200
 
 
+class MeetingParticipantItemUserResource(AuthResource):
+    def __init__(self, meetings_service):
+        self._service = meetings_service
+
+    @required_acl('calld.users.me.meetings.participants.delete')
+    def delete(self, meeting_uuid, participant_id):
+        tenant = Tenant.autodetect()
+        user_uuid = get_token_user_uuid_from_request()
+        self._service.user_kick_participant(tenant.uuid, user_uuid, meeting_uuid, participant_id)
+        return '', 204
+
+
 class MeetingStatusGuestResource(ErrorCatchingResource):
     def __init__(self, meetings_service):
         self._service = meetings_service

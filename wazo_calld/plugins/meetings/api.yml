@@ -68,6 +68,23 @@ paths:
           $ref: '#/responses/NoSuchMeetingOrParticipant'
         '503':
           $ref: '#/responses/AnotherServiceUnavailable'
+  /users/me/meetings/{meeting_uuid}/participants/{participant_id}:
+    delete:
+      summary: Kick a participant from a meeting as a user
+      description: '**Required ACL:** `calld.users.me.meetings.participants.delete`'
+      parameters:
+        - $ref: '#/parameters/MeetingUUID'
+        - $ref: '#/parameters/ParticipantID'
+      tags:
+        - meetings
+        - users
+      responses:
+        '204':
+          description: The participant was kicked
+        '404':
+          $ref: '#/responses/NoSuchMeetingOrParticipant'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
 responses:
   NoSuchMeeting:
     description: The specified meeting does not exist

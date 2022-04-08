@@ -169,3 +169,13 @@ class MeetingsService:
             raise
         except RequestException as e:
             raise WazoAmidError(self._amid, e)
+
+    def user_kick_participant(self, tenant_uuid, user_uuid, meeting_uuid, participant_id):
+        meeting = Meeting(tenant_uuid, meeting_uuid, self._confd)
+        if not meeting.exists():
+            raise NoSuchMeeting(tenant_uuid, meeting_uuid)
+
+        if not meeting.is_owned_by(user_uuid):
+            raise NoSuchMeeting(tenant_uuid, meeting_uuid)
+
+        self.kick_participant(tenant_uuid, meeting_uuid, participant_id)

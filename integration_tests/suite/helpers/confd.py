@@ -280,9 +280,10 @@ class MockConference:
 
 class MockMeeting:
 
-    def __init__(self, uuid, name=None, tenant_uuid=None):
+    def __init__(self, uuid, name=None, tenant_uuid=None, owner_uuids=None):
         self._uuid = uuid
         self._name = name
+        self._owner_uuids = owner_uuids or []
         self._tenant_uuid = tenant_uuid
 
     def uuid(self):
@@ -292,6 +293,7 @@ class MockMeeting:
         return {
             'uuid': self._uuid,
             'name': self._name,
+            'owner_uuids': self._owner_uuids,
             'tenant_uuid': self._tenant_uuid,
         }
 

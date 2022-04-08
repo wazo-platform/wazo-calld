@@ -42,6 +42,14 @@ class Meeting:
         else:
             return True
 
+    def is_owned_by(self, user_uuid):
+        try:
+            meeting = self._confd.meetings.get(self.meeting_uuid)
+        except RequestException as e:
+            raise WazoConfdUnreachable(self._confd, e)
+
+        return user_uuid in meeting['owner_uuids']
+
     @classmethod
     def from_uuid(cls, meeting_uuid, confd_client):
         try:

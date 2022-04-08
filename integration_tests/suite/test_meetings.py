@@ -655,6 +655,58 @@ class TestMeetingParticipants(TestMeetings):
             }))
         until.assert_(no_more_participants, timeout=10, message='Participant was not kicked')
 
+    def test_user_kick_participant_with_no_meetings(self):
+        meeting_uuid = 14
+        participant_id = '12345.67'
+        user_uuid = make_user_uuid()
+        calld_client = self.make_user_calld(user_uuid)
+
+        assert_that(calling(calld_client.meetings.user_kick_participant)
+                    .with_args(meeting_uuid, participant_id),
+                    raises(CalldError).matching(has_properties({
+                        'status_code': 404,
+                        'error_id': 'no-such-meeting',
+                    })))
+
+    def test_user_no_owner_kick_participant(self):
+        meeting_uuid = MEETING1_UUID
+        user_uuid = make_user_uuid()
+        calld_client = self.make_user_calld(user_uuid)
+        self.confd.set_meetings(
+            MockMeeting(uuid=meeting_uuid, name='meeting', owner_uuids=[]),
+        )
+        self.given_call_in_meeting(MEETING1_EXTENSION, caller_id_name='participant1')
+        participants = self.calld_client.meetings.list_participants(meeting_uuid)
+        participant = participants['items'][0]
+
+        assert_that(calling(calld_client.meetings.user_kick_participant)
+                    .with_args(meeting_uuid, participant['id']),
+                    raises(CalldError).matching(has_properties({
+                        'status_code': 404,
+                        'error_id': 'no-such-meeting',
+                    })))
+
+    def test_user_kick_participant(self):
+        meeting_uuid = MEETING1_UUID
+        user_uuid = make_user_uuid()
+        calld_client = self.make_user_calld(user_uuid)
+        self.confd.set_meetings(
+            MockMeeting(uuid=meeting_uuid, name='meeting', owner_uuids=[user_uuid]),
+        )
+        self.given_call_in_meeting(MEETING1_EXTENSION, caller_id_name='participant1')
+        participants = self.calld_client.meetings.list_participants(meeting_uuid)
+        participant = participants['items'][0]
+
+        calld_client.meetings.user_kick_participant(meeting_uuid, participant['id'])
+
+        def no_more_participants():
+            participants = calld_client.meetings.list_participants(meeting_uuid)
+            assert_that(participants, has_entries({
+                'total': 0,
+                'items': empty()
+            }))
+        until.assert_(no_more_participants, timeout=10, message='Participant was not kicked')
+
     @unittest.skip
     def test_mute_participant_with_no_confd(self):
         meeting_uuid = 14
