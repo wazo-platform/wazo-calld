@@ -1,4 +1,4 @@
-# Copyright 2015-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import errno
@@ -23,6 +23,45 @@ from .exceptions import AsteriskARINotInitialized
 logger = logging.getLogger(__name__)
 
 DEFAULT_APPLICATION_NAME = 'callcontrol'
+ALL_STASIS_EVENTS = [
+    "ApplicationReplaced",
+    "BridgeAttendedTransfer",
+    "BridgeBlindTransfer",
+    "BridgeCreated",
+    "BridgeDestroyed",
+    "BridgeMerged",
+    "ChannelCallerId",
+    "ChannelConnectedLine",
+    "ChannelCreated",
+    "ChannelDestroyed",
+    "ChannelDialplan",
+    "ChannelDtmfReceived",
+    "ChannelEnteredBridge",
+    "ChannelHangupRequest",
+    "ChannelHold",
+    "ChannelLeftBridge",
+    "ChannelMohStart",
+    "ChannelMohStop",
+    "ChannelStateChange",
+    "ChannelTalkingFinished",
+    "ChannelTalkingStarted",
+    "ChannelUnhold",
+    "ChannelUserevent",
+    "ChannelVarset",
+    "ContactStatusChange",
+    "DeviceStateChanged",
+    "Dial",
+    "EndpointStateChange",
+    "PeerStatusChange",
+    "PlaybackFinished",
+    "PlaybackStarted",
+    "RecordingFailed",
+    "RecordingFinished",
+    "RecordingStarted",
+    "StasisEnd",
+    "StasisStart",
+    "TextMessageReceived",
+]
 
 
 def not_found(error):
@@ -67,16 +106,19 @@ class ARIClientProxy(ari.client.Client):
 
 class CoreARI:
 
-    def __init__(self, config):
+    def __init__(self, config, bus_consumer):
         self._apps = []
         self.config = config
         self._is_running = False
         self._should_delay_reconnect = True
         self._should_stop = False
         self._pubsub = Pubsub()
+        self._bus_consumer = bus_consumer
         self.client = ARIClientProxy(**config['connection'])
 
     def _init_client(self):
+        self._subscribe_to_all_stasis_events()
+
         try:
             self.client.init()
         except requests.ConnectionError:
@@ -90,6 +132,14 @@ class CoreARI:
                 raise
         self._pubsub.publish('client_initialized', message=None)
         return True
+
+    def _subscribe_to_all_stasis_events(self):
+        for event_name in ALL_STASIS_EVENTS:
+            self._bus_consumer.subscribe(
+                event_name,
+                self.client.on_stasis_event,
+                headers={'category': 'stasis'},
+            )
 
     def client_initialized_subscribe(self, callback):
         self._pubsub.subscribe('client_initialized', callback)
