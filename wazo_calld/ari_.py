@@ -117,7 +117,7 @@ class CoreARI:
         self.client = ARIClientProxy(**config['connection'])
 
     def _init_client(self):
-        self._subscribe_to_all_stasis_events()
+        self._subscribe_to_bus_events()
 
         try:
             self.client.init()
@@ -133,13 +133,14 @@ class CoreARI:
         self._pubsub.publish('client_initialized', message=None)
         return True
 
-    def _subscribe_to_all_stasis_events(self):
+    def _subscribe_to_bus_events(self):
         for event_name in ALL_STASIS_EVENTS:
             self._bus_consumer.subscribe(
                 event_name,
                 self.client.on_stasis_event,
                 headers={'category': 'stasis'},
             )
+        self._bus_consumer.subscribe('FullyBooted', self.reregister_applications)
 
     def client_initialized_subscribe(self, callback):
         self._pubsub.subscribe('client_initialized', callback)
@@ -192,9 +193,16 @@ class CoreARI:
         finally:
             self._is_running = False
 
+    def reregister_applications(self, _event):
+        logger.info('Asterisk started, registering all stasis applications')
+        for app in self._apps:
+            self.client.amqp.stasisSubscribe(applicationName=app)
+
     def register_application(self, app):
         if app not in self._apps:
             self._apps.append(app)
+
+        self.client.amqp.stasisSubscribe(applicationName=app)
 
     def deregister_application(self, app):
         if app in self._apps:

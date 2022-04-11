@@ -51,8 +51,6 @@ class DialMobileStasis:
         self._service.notify_channel_gone(event['channel']['id'])
 
     def _subscribe(self):
-        self._ari.amqp.stasisSubscribe(applicationName=self._app_name)
-
         self._ari.on_channel_event('StasisStart', self.stasis_start)
         self._ari.on_channel_event('ChannelLeftBridge', self.on_channel_left_bridge)
         self._ari.on_channel_event('ChannelDestroyed', self.channel_destroyed)
