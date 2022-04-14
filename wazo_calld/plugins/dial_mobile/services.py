@@ -281,3 +281,29 @@ class DialMobileService:
             pending_push.tenant_uuid,
             pending_push.user_uuid,
         )
+
+    def remove_pending_push_mobile(self, call_id):
+        self._pending_push_mobile.pop(call_id, None)
+
+    def is_push_answered_by_mobile(self, push_call_id, call_id, endpoint, user_uuid):
+        pending_push = self._pending_push_mobile.get(push_call_id)
+        if not pending_push:
+            return False
+
+        if user_uuid != pending_push.user_uuid:
+            return False
+
+        raw_contacts = self._ari.channels.getChannelVar(
+            channelId=call_id,
+            variable=f'PJSIP_AOR({endpoint},contact)',
+        )['value']
+        for contact in raw_contacts.split(','):
+            if not contact:
+                continue
+            mobility = self._ari.channels.getChannelVar(
+                channelId=call_id,
+                variable=f'PJSIP_CONTACT({contact},mobility)'
+            )['value']
+            if mobility == 'mobile':
+                return True
+        return False

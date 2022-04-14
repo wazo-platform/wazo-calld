@@ -2,9 +2,9 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from unittest import TestCase
-from unittest.mock import Mock
+from unittest.mock import Mock, sentinel as s
 
-from ..bus_consume import EventHandler
+from ..bus_consume import EventHandler, ARINotFound
 from ..services import DialMobileService
 
 
@@ -127,3 +127,157 @@ class TestEventHandler(TestCase):
         self.event_handler._on_dial_end(event)
 
         self.service.cancel_push_mobile.assert_called_with('1647871892.53')
+
+    def test_cancel_push_on_dial_end_answered(self):
+        event = {
+            'CallerIDName': 'Anastasia Romanov',
+            'CallerIDNum': '1005',
+            'ChanVariable': {
+                'CHANNEL(linkedid)': '1647871892.53',
+                'CHANNEL(videonativeformat)': '(nothing)',
+                'WAZO_ANSWER_TIME': '',
+                'WAZO_CALL_RECORD_ACTIVE': '',
+                'WAZO_CALL_RECORD_SIDE': 'caller',
+                'WAZO_CHANNEL_DIRECTION': 'to-wazo',
+                'WAZO_DEREFERENCED_USERUUID': '',
+                'WAZO_ENTRY_CONTEXT': 'inside',
+                'WAZO_ENTRY_EXTEN': '1101',
+                'WAZO_LINE_ID': '83',
+                'WAZO_LOCAL_CHAN_MATCH_UUID': '',
+                'WAZO_SIP_CALL_ID': 'cf31ee68cec261d9',
+                'WAZO_SWITCHBOARD_HOLD': '',
+                'WAZO_SWITCHBOARD_QUEUE': '',
+                'WAZO_TENANT_UUID': '2c34c282-433e-4bb8-8d56-fec14ff7e1e9',
+                'XIVO_BASE_EXTEN': '1101',
+                'XIVO_ON_HOLD': '',
+                'XIVO_USERUUID': 'def42192-837a-41e0-aa4e-86390e46eb17'
+            },
+            'Channel': 'PJSIP/zcua59c9-0000001b',
+            'ChannelState': '4',
+            'ChannelStateDesc': 'Ring',
+            'ConnectedLineName': 'Alice WebRTC',
+            'ConnectedLineNum': '1101',
+            'Context': 'user',
+            'DestAccountCode': '',
+            'DestCallerIDName': 'Alice WebRTC',
+            'DestCallerIDNum': 's',
+            'DestChanVariable': 'XIVO_USERUUID=',
+            'DestChannel': 'Local/ycetqvtr@wazo_wait_for_registration-0000000d;1',
+            'DestChannelState': '5',
+            'DestChannelStateDesc': 'Ringing',
+            'DestConnectedLineName': 'Anastasia Romanov',
+            'DestConnectedLineNum': '1005',
+            'DestContext': 'wazo_wait_for_registration',
+            'DestExten': 's',
+            'DestLanguage': 'en',
+            'DestLinkedid': '1647871892.53',
+            'DestPriority': '1',
+            'DestUniqueid': '1647871892.54',
+            'DialStatus': 'ANSWER',  # Only important field for this test
+            'Event': 'DialEnd',
+            'Exten': 's',
+            'Language': 'fr_FR',
+            'Linkedid': '1647871892.53',
+            'Priority': '44',
+            'Privilege': 'call,all',
+            'Uniqueid': '1647871892.53',
+        }
+
+        self.event_handler._on_dial_end(event)
+
+        self.service.cancel_push_mobile.assert_not_called()
+
+    def test_on_bridge_enter_not_stasis(self):
+        event = {
+            'Event': 'BridgeEnter',
+            'BridgeType': 'unknown',
+        }
+
+        self.event_handler._on_bridge_enter(event)
+
+        self.service.cancel_push_mobile.assert_not_called()
+        self.service.remove_pending_push_mobile.assert_not_called()
+
+    def test_on_bridge_enter_ignore_not_pjsip(self):
+        event = {
+            'Event': 'BridgeEnter',
+            'BridgeType': 'stasis',
+            'Channel': 'Local/endpoint@wazo-wait-for-mobile-9090832;1'
+        }
+
+        self.event_handler._on_bridge_enter(event)
+
+        self.service.cancel_push_mobile.assert_not_called()
+        self.service.remove_pending_push_mobile.assert_not_called()
+
+    def test_on_bridge_enter_not_answered_by_mobile(self):
+        self.service.is_push_answered_by_mobile.return_value = False
+
+        event = {
+            'Event': 'BridgeEnter',
+            'BridgeType': 'stasis',
+            'Channel': 'PJSIP/myendpoint-000000213',
+            'ChanVariable': {'XIVO_USERUUID': s.user_uuid},
+            'Linkedid': s.linkedid,
+            'Uniqueid': s.uniqueid,
+        }
+
+        self.event_handler._on_bridge_enter(event)
+
+        self.service.is_push_answered_by_mobile.assert_called_once_with(
+            s.linkedid,
+            s.uniqueid,
+            'myendpoint',
+            s.user_uuid,
+        )
+
+        self.service.cancel_push_mobile.assert_called_once_with(s.linkedid)
+        self.service.remove_pending_push_mobile.assert_not_called()
+
+    def test_on_bridge_enter_answered_by_mobile(self):
+        self.service.is_push_answered_by_mobile.return_value = True
+
+        event = {
+            'Event': 'BridgeEnter',
+            'BridgeType': 'stasis',
+            'Channel': 'PJSIP/myendpoint-000000213',
+            'ChanVariable': {'XIVO_USERUUID': s.user_uuid},
+            'Linkedid': s.linkedid,
+            'Uniqueid': s.uniqueid,
+        }
+
+        self.event_handler._on_bridge_enter(event)
+
+        self.service.is_push_answered_by_mobile.assert_called_once_with(
+            s.linkedid,
+            s.uniqueid,
+            'myendpoint',
+            s.user_uuid,
+        )
+
+        self.service.cancel_push_mobile.assert_not_called()
+        self.service.remove_pending_push_mobile.assert_called_once_with(s.linkedid)
+
+    def test_on_bridge_enter_caller_hung_up(self):
+        self.service.is_push_answered_by_mobile.side_effect = ARINotFound(Mock, Mock)
+
+        event = {
+            'Event': 'BridgeEnter',
+            'BridgeType': 'stasis',
+            'Channel': 'PJSIP/myendpoint-000000213',
+            'ChanVariable': {'XIVO_USERUUID': s.user_uuid},
+            'Linkedid': s.linkedid,
+            'Uniqueid': s.uniqueid,
+        }
+
+        self.event_handler._on_bridge_enter(event)
+
+        self.service.is_push_answered_by_mobile.assert_called_once_with(
+            s.linkedid,
+            s.uniqueid,
+            'myendpoint',
+            s.user_uuid,
+        )
+
+        self.service.cancel_push_mobile.assert_called_once_with(s.linkedid)
+        self.service.remove_pending_push_mobile.assert_not_called()
