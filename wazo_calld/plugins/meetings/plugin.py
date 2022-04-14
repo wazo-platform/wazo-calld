@@ -6,7 +6,9 @@ from wazo_amid_client import Client as AmidClient
 
 from .http import (
     MeetingParticipantsResource,
+    MeetingParticipantItemResource,
     MeetingParticipantsUserResource,
+    MeetingParticipantItemUserResource,
     MeetingStatusGuestResource,
 )
 from .bus_consume import MeetingsBusEventHandler
@@ -42,8 +44,18 @@ class Plugin:
             resource_class_args=[meetings_service],
         )
         api.add_resource(
+            MeetingParticipantItemResource,
+            '/meetings/<meeting_uuid>/participants/<participant_id>',
+            resource_class_args=[meetings_service],
+        )
+        api.add_resource(
             MeetingParticipantsUserResource,
             '/users/me/meetings/<meeting_uuid>/participants',
+            resource_class_args=[meetings_service],
+        )
+        api.add_resource(
+            MeetingParticipantItemUserResource,
+            '/users/me/meetings/<meeting_uuid>/participants/<participant_id>',
             resource_class_args=[meetings_service],
         )
         api.add_resource(

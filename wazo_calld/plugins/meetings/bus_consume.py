@@ -40,7 +40,7 @@ class MeetingsBusEventHandler:
             )
             return
 
-        logger.debug('Participant joined meeting %s', meeting_uuid)
+        logger.debug('Participant %s joined meeting %s', event['Uniqueid'], meeting_uuid)
         raw_participant = {
             'id': event['Uniqueid'],
             'caller_id_name': event['CallerIDName'],
@@ -77,7 +77,7 @@ class MeetingsBusEventHandler:
             )
             return
 
-        logger.debug('Participant left meeting %s', meeting_uuid)
+        logger.debug('Participant %s left meeting %s', event['Uniqueid'], meeting_uuid)
         raw_participant = {
             'id': event['Uniqueid'],
             'caller_id_name': event['CallerIDName'],

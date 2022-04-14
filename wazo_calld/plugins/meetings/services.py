@@ -15,6 +15,7 @@ from wazo_calld.plugin_helpers.exceptions import (
 from .exceptions import (
     MeetingParticipantError,
     NoSuchMeeting,
+    NoSuchMeetingParticipant,
     UserNotParticipant,
 )
 from .schemas import participant_schema
@@ -133,10 +134,48 @@ class MeetingsService:
         except AmidProtocolError as e:
             if e.message in [
                 'No Conference by that name found.',  # This conference is not running at this time.
-                'No active conferences.',    # No conferences are taking place at this time.
+                'No active conferences.',  # No conferences are taking place at this time.
             ]:
                 logger.debug(
                     'No participants found to kick out of meeting %s', meeting_uuid
                 )
                 return
             raise
+
+    def kick_participant(self, tenant_uuid, meeting_uuid, participant_id):
+        meeting = Meeting(tenant_uuid, meeting_uuid, self._confd)
+        if not meeting.exists():
+            raise NoSuchMeeting(tenant_uuid, meeting_uuid)
+
+        channel = Channel(participant_id, self._ari)
+        try:
+            self._amid.action(
+                'ConfbridgeKick',
+                {
+                    'Conference': meeting.asterisk_name(),
+                    'Channel': channel.asterisk_name(),
+                },
+            )
+        except AmidProtocolError as e:
+            if e.message in [
+                'No Conference by that name found.',  # This conference is not running at this time.
+                'No active conferences.',  # No conferences are taking place at this time.
+                'No Channel by that name found in Conference.',  # Participant not found.
+            ]:
+                logger.debug(
+                    'No participants found to kick out of meeting %s', meeting_uuid
+                )
+                raise NoSuchMeetingParticipant(tenant_uuid, meeting_uuid, participant_id)
+            raise
+        except RequestException as e:
+            raise WazoAmidError(self._amid, e)
+
+    def user_kick_participant(self, tenant_uuid, user_uuid, meeting_uuid, participant_id):
+        meeting = Meeting(tenant_uuid, meeting_uuid, self._confd)
+        if not meeting.exists():
+            raise NoSuchMeeting(tenant_uuid, meeting_uuid)
+
+        if not meeting.is_owned_by(user_uuid):
+            raise NoSuchMeeting(tenant_uuid, meeting_uuid)
+
+        self.kick_participant(tenant_uuid, meeting_uuid, participant_id)
