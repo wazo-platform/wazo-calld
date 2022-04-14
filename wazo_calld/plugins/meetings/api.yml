@@ -60,7 +60,6 @@ paths:
         - $ref: '#/parameters/ParticipantID'
       tags:
         - meetings
-        - users
       responses:
         '204':
           description: The participant was kicked
