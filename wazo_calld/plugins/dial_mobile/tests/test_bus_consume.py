@@ -198,11 +198,24 @@ class TestEventHandler(TestCase):
         self.service.cancel_push_mobile.assert_not_called()
         self.service.remove_pending_push_mobile.assert_not_called()
 
+    def test_on_bridge_enter_not_a_dial_mobile_bridge(self):
+        event = {
+            'Event': 'BridgeEnter',
+            'BridgeType': 'unknown',
+            'BridgeUniqueid': 'wazo-dial-mobile-<UUID>',
+        }
+
+        self.event_handler._on_bridge_enter(event)
+
+        self.service.cancel_push_mobile.assert_not_called()
+        self.service.remove_pending_push_mobile.assert_not_called()
+
     def test_on_bridge_enter_ignore_not_pjsip(self):
         event = {
             'Event': 'BridgeEnter',
             'BridgeType': 'stasis',
-            'Channel': 'Local/endpoint@wazo-wait-for-mobile-9090832;1'
+            'Channel': 'Local/endpoint@wazo-wait-for-mobile-9090832;1',
+            'BridgeUniqueid': 'wazo-dial-mobile-<UUID>',
         }
 
         self.event_handler._on_bridge_enter(event)
@@ -216,6 +229,7 @@ class TestEventHandler(TestCase):
         event = {
             'Event': 'BridgeEnter',
             'BridgeType': 'stasis',
+            'BridgeUniqueid': 'wazo-dial-mobile-<UUID>',
             'Channel': 'PJSIP/myendpoint-000000213',
             'ChanVariable': {'XIVO_USERUUID': s.user_uuid},
             'Linkedid': s.linkedid,
@@ -240,6 +254,7 @@ class TestEventHandler(TestCase):
         event = {
             'Event': 'BridgeEnter',
             'BridgeType': 'stasis',
+            'BridgeUniqueid': 'wazo-dial-mobile-<UUID>',
             'Channel': 'PJSIP/myendpoint-000000213',
             'ChanVariable': {'XIVO_USERUUID': s.user_uuid},
             'Linkedid': s.linkedid,
@@ -264,6 +279,7 @@ class TestEventHandler(TestCase):
         event = {
             'Event': 'BridgeEnter',
             'BridgeType': 'stasis',
+            'BridgeUniqueid': 'wazo-dial-mobile-<UUID>',
             'Channel': 'PJSIP/myendpoint-000000213',
             'ChanVariable': {'XIVO_USERUUID': s.user_uuid},
             'Linkedid': s.linkedid,
