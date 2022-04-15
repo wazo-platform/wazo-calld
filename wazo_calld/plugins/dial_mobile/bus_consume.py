@@ -56,8 +56,11 @@ class EventHandler:
         self._service.on_mobile_refresh_token_deleted(event['user_uuid'])
 
     def _on_bridge_enter(self, event):
+        # Ignoring unrelated bridges
         if event['BridgeType'] != 'stasis':
-            # Ignoring unrelated bridges
+            return
+
+        if not event['BridgeUniqueid'].startswith('wazo-dial-mobile-'):
             return
 
         protocol, end = event['Channel'].split('/', 1)

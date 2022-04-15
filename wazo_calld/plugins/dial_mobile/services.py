@@ -184,7 +184,7 @@ class DialMobileService:
 
         bridge = self._ari.bridges.createWithId(
             type='mixing',
-            bridgeId=future_bridge_uuid,
+            bridgeId=f'wazo-dial-mobile-{future_bridge_uuid}',
         )
         # Without the inhibitConnectedLineUpdates everyone in the bridge will receive a new
         # connected line update with the caller ID of the caller when PAI is trusted, including
