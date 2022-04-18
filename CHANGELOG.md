@@ -1,5 +1,12 @@
 # Changelog
 
+## 22.06
+
+* New API to kick participants out of a meeting:
+
+* `DELETE /meetings/{meeting_uuid}/participants/{participant_id}`
+* `DELETE /users/me/meetings/{meeting_uuid}/participants/{participant_id}`
+
 ## 22.04
 
 * The `answer_time` field has been added to the following resources:
