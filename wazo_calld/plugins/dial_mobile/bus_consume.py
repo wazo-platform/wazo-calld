@@ -68,7 +68,7 @@ class EventHandler:
         user_uuid = event['ChanVariable']['XIVO_USERUUID']
 
         try:
-            is_answered_by_mobile_endpoint = self._service.is_push_answered_by_mobile(
+            has_a_registered_mobile_and_pending_push = self._service.has_a_registered_mobile_and_pending_push(
                 linkedid,
                 event['Uniqueid'],
                 endpoint,
@@ -78,7 +78,7 @@ class EventHandler:
             # The channel that entered the bridge has already been hung up
             return self._service.cancel_push_mobile(linkedid)
 
-        if is_answered_by_mobile_endpoint:
+        if has_a_registered_mobile_and_pending_push:
             self._service.remove_pending_push_mobile(linkedid)
         else:
             self._service.cancel_push_mobile(linkedid)

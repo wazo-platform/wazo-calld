@@ -213,7 +213,7 @@ class TestEventHandler(TestCase):
         self.service.remove_pending_push_mobile.assert_not_called()
 
     def test_on_bridge_enter_not_answered_by_mobile(self):
-        self.service.is_push_answered_by_mobile.return_value = False
+        self.service.has_a_registered_mobile_and_pending_push.return_value = False
 
         event = {
             'Event': 'BridgeEnter',
@@ -227,7 +227,7 @@ class TestEventHandler(TestCase):
 
         self.event_handler._on_bridge_enter(event)
 
-        self.service.is_push_answered_by_mobile.assert_called_once_with(
+        self.service.has_a_registered_mobile_and_pending_push.assert_called_once_with(
             s.linkedid,
             s.uniqueid,
             'myendpoint',
@@ -238,7 +238,7 @@ class TestEventHandler(TestCase):
         self.service.remove_pending_push_mobile.assert_not_called()
 
     def test_on_bridge_enter_answered_by_mobile(self):
-        self.service.is_push_answered_by_mobile.return_value = True
+        self.service.has_a_registered_mobile_and_pending_push.return_value = True
 
         event = {
             'Event': 'BridgeEnter',
@@ -252,7 +252,7 @@ class TestEventHandler(TestCase):
 
         self.event_handler._on_bridge_enter(event)
 
-        self.service.is_push_answered_by_mobile.assert_called_once_with(
+        self.service.has_a_registered_mobile_and_pending_push.assert_called_once_with(
             s.linkedid,
             s.uniqueid,
             'myendpoint',
@@ -263,7 +263,7 @@ class TestEventHandler(TestCase):
         self.service.remove_pending_push_mobile.assert_called_once_with(s.linkedid)
 
     def test_on_bridge_enter_caller_hung_up(self):
-        self.service.is_push_answered_by_mobile.side_effect = ARINotFound(Mock, Mock)
+        self.service.has_a_registered_mobile_and_pending_push.side_effect = ARINotFound(Mock, Mock)
 
         event = {
             'Event': 'BridgeEnter',
@@ -277,7 +277,7 @@ class TestEventHandler(TestCase):
 
         self.event_handler._on_bridge_enter(event)
 
-        self.service.is_push_answered_by_mobile.assert_called_once_with(
+        self.service.has_a_registered_mobile_and_pending_push.assert_called_once_with(
             s.linkedid,
             s.uniqueid,
             'myendpoint',
