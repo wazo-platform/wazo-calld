@@ -187,22 +187,11 @@ class TestEventHandler(TestCase):
 
         self.service.cancel_push_mobile.assert_not_called()
 
-    def test_on_bridge_enter_not_stasis(self):
-        event = {
-            'Event': 'BridgeEnter',
-            'BridgeType': 'unknown',
-        }
-
-        self.event_handler._on_bridge_enter(event)
-
-        self.service.cancel_push_mobile.assert_not_called()
-        self.service.remove_pending_push_mobile.assert_not_called()
-
     def test_on_bridge_enter_not_a_dial_mobile_bridge(self):
         event = {
             'Event': 'BridgeEnter',
             'BridgeType': 'unknown',
-            'BridgeUniqueid': 'wazo-dial-mobile-<UUID>',
+            'BridgeUniqueid': '<UUID>',
         }
 
         self.event_handler._on_bridge_enter(event)
