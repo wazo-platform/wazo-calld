@@ -285,7 +285,7 @@ class DialMobileService:
     def remove_pending_push_mobile(self, call_id):
         self._pending_push_mobile.pop(call_id, None)
 
-    def is_push_answered_by_mobile(self, push_call_id, call_id, endpoint, user_uuid):
+    def has_a_registered_mobile_and_pending_push(self, push_call_id, call_id, endpoint, user_uuid):
         pending_push = self._pending_push_mobile.get(push_call_id)
         if not pending_push:
             return False
