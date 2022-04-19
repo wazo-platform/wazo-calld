@@ -3,6 +3,9 @@
 
 import logging
 
+from ari.exceptions import ARINotFound
+from xivo.asterisk.protocol_interface import protocol_interface_from_channel
+
 logger = logging.getLogger(__name__)
 
 
@@ -54,10 +57,39 @@ class EventHandler:
         self._service.on_mobile_refresh_token_deleted(event['user_uuid'])
 
     def _on_bridge_enter(self, event):
-        self._service.cancel_push_mobile(event['Uniqueid'])
+        if not event['BridgeUniqueid'].startswith('wazo-dial-mobile-'):
+            return
+
+        protocol, endpoint = protocol_interface_from_channel(event['Channel'])
+        if protocol.lower() != 'sip':
+            return
+
+        linkedid = event['Linkedid']
+        user_uuid = event['ChanVariable']['XIVO_USERUUID']
+
+        try:
+            has_a_registered_mobile_and_pending_push = self._service.has_a_registered_mobile_and_pending_push(
+                linkedid,
+                event['Uniqueid'],
+                endpoint,
+                user_uuid,
+            )
+        except ARINotFound:
+            # The channel that entered the bridge has already been hung up
+            return self._service.cancel_push_mobile(linkedid)
+
+        if has_a_registered_mobile_and_pending_push:
+            self._service.remove_pending_push_mobile(linkedid)
+        else:
+            self._service.cancel_push_mobile(linkedid)
 
     def _on_dial_end(self, event):
+        # Ignore dial_end if it's in an unrelated context
         if event['DestContext'] != 'wazo_wait_for_registration':
+            return
+
+        # Ignore dial_end if the call was answered, those are handled in _on_bridge_enter
+        if event['DialStatus'] == 'ANSWER':
             return
 
         self._service.cancel_push_mobile(event['Uniqueid'])

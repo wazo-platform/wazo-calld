@@ -184,7 +184,7 @@ class DialMobileService:
 
         bridge = self._ari.bridges.createWithId(
             type='mixing',
-            bridgeId=future_bridge_uuid,
+            bridgeId=f'wazo-dial-mobile-{future_bridge_uuid}',
         )
         # Without the inhibitConnectedLineUpdates everyone in the bridge will receive a new
         # connected line update with the caller ID of the caller when PAI is trusted, including
@@ -281,3 +281,29 @@ class DialMobileService:
             pending_push.tenant_uuid,
             pending_push.user_uuid,
         )
+
+    def remove_pending_push_mobile(self, call_id):
+        self._pending_push_mobile.pop(call_id, None)
+
+    def has_a_registered_mobile_and_pending_push(self, push_call_id, call_id, endpoint, user_uuid):
+        pending_push = self._pending_push_mobile.get(push_call_id)
+        if not pending_push:
+            return False
+
+        if user_uuid != pending_push.user_uuid:
+            return False
+
+        raw_contacts = self._ari.channels.getChannelVar(
+            channelId=call_id,
+            variable=f'PJSIP_AOR({endpoint},contact)',
+        )['value']
+        for contact in raw_contacts.split(','):
+            if not contact:
+                continue
+            mobility = self._ari.channels.getChannelVar(
+                channelId=call_id,
+                variable=f'PJSIP_CONTACT({contact},mobility)'
+            )['value']
+            if mobility == 'mobile':
+                return True
+        return False
