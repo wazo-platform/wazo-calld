@@ -4,6 +4,7 @@
 import logging
 
 from ari.exceptions import ARINotFound
+from xivo.asterisk.protocol_interface import protocol_interface_from_channel
 
 logger = logging.getLogger(__name__)
 
@@ -63,12 +64,10 @@ class EventHandler:
         if not event['BridgeUniqueid'].startswith('wazo-dial-mobile-'):
             return
 
-        protocol, end = event['Channel'].split('/', 1)
-        if protocol != 'PJSIP':
-            # Mobiles can only be PJSIP
+        protocol, endpoint = protocol_interface_from_channel(event['Channel'])
+        if protocol.lower() != 'sip':
             return
 
-        endpoint, _ = end.split('-', 1)
         linkedid = event['Linkedid']
         user_uuid = event['ChanVariable']['XIVO_USERUUID']
 
