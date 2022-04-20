@@ -75,7 +75,7 @@ class Controller:
         self.status_aggregator.add_provider(self.ari.provide_status)
         self.status_aggregator.add_provider(self.bus_consumer.provide_status)
         self.status_aggregator.add_provider(self.token_status.provide_status)
-        self.ari._init_client()
+        self.ari.init_client()
         collectd_thread = Thread(target=self.collectd.run, name='collectd_thread')
         collectd_thread.start()
         asyncio_thread = Thread(target=self.asyncio.run, name='asyncio_thread')

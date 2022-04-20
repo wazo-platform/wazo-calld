@@ -116,20 +116,24 @@ class CoreARI:
         self._bus_consumer = bus_consumer
         self.client = ARIClientProxy(**config['connection'])
 
-    def _init_client(self):
+    def init_client(self):
         self._subscribe_to_bus_events()
 
-        try:
-            self.client.init()
-        except requests.ConnectionError:
-            logger.info('No ARI server found')
-            return False
-        except requests.HTTPError as e:
-            if asterisk_is_loading(e):
-                logger.info('ARI is not ready yet')
-                return False
-            else:
-                raise
+        while True:
+            try:
+                self.client.init()
+                break
+            except requests.ConnectionError:
+                logger.info('No ARI server found')
+                time.sleep(1)
+                continue
+            except requests.HTTPError as e:
+                if asterisk_is_loading(e):
+                    logger.info('ARI is not ready yet')
+                    time.sleep(1)
+                    continue
+                else:
+                    raise
         self._pubsub.publish('client_initialized', message=None)
         return True
 
@@ -151,7 +155,7 @@ class CoreARI:
 
     def run(self):
         while not self._should_stop:
-            initialized = self._init_client()
+            initialized = self.init_client()
             if initialized:
                 break
             connection_delay = self.config['startup_connection_delay']
