@@ -149,10 +149,6 @@ class CoreARI:
     def client_initialized_subscribe(self, callback):
         self._pubsub.subscribe('client_initialized', callback)
 
-    def reload(self):
-        self._should_delay_reconnect = False
-        self._trigger_disconnect()
-
     def run(self):
         while not self._should_stop:
             initialized = self.init_client()

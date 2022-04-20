@@ -95,7 +95,6 @@ class ApplicationStasis:
         self._ari.on_application_deregistered(app_name, self._on_websocket_stop)
         self._ari.on_application_registered(app_name, self._on_websocket_start)
         self._core_ari.register_application(app_name)
-        self._core_ari.reload()
         logger.debug('Stasis application added')
 
     def remove_ari_application(self, application):
@@ -107,7 +106,6 @@ class ApplicationStasis:
         self._ari._app_deregistered_callbacks.pop(app_name, None)
 
         self._core_ari.deregister_application(app_name)
-        self._core_ari.reload()
         logger.debug('Stasis application added')
 
     def stasis_start(self, event_objects, event):
@@ -274,8 +272,6 @@ class ApplicationStasis:
         apps_name = set([AppNameHelper.to_name(app['uuid']) for app in applications])
         for app_name in apps_name:
             self._core_ari.register_application(app_name)
-
-        self._core_ari.reload()
 
     def _on_websocket_start(self):
         if self._destinations_created:
