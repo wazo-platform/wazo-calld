@@ -216,7 +216,13 @@ class CoreARI:
         return self._is_running
 
     def provide_status(self, status):
-        status['ari']['status'] = Status.ok if self.is_running() else Status.fail
+        expected_apps = [
+            'adhoc_conference',
+            'callcontrol',
+            'dial_mobile'
+        ]
+        ok = self.client._initialized and set(expected_apps).issubset(set(self._apps))
+        status['ari']['status'] = Status.ok if ok else Status.fail
 
     def _connection_error(self, error):
         logger.warning('ARI connection error: %s...', error)
