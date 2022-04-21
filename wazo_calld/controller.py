@@ -90,6 +90,7 @@ class Controller:
             self._pubsub.publish('stopping', None)
             self.asyncio.stop()
             self.collectd.stop()
+            self.ari.stop()
             logger.debug('joining asyncio thread')
             asyncio_thread.join()
             logger.debug('joining collectd thread')

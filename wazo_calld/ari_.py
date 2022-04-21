@@ -6,6 +6,7 @@ import logging
 import socket
 import time
 import urllib
+import threading
 
 from contextlib import contextmanager
 
@@ -85,11 +86,13 @@ class ARIClientProxy(ari.client.Client):
         self._initialized = False
 
     def init(self):
-        split = urllib.parse.urlsplit(self._base_url)
-        http_client = swaggerpy.http_client.SynchronousHttpClient()
-        http_client.set_basic_auth(split.hostname, self._username, self._password)
-        super().__init__(self._base_url, http_client)
-        self._initialized = True
+        if not self._initialized:
+            split = urllib.parse.urlsplit(self._base_url)
+            http_client = swaggerpy.http_client.SynchronousHttpClient()
+            http_client.set_basic_auth(split.hostname, self._username, self._password)
+            super().__init__(self._base_url, http_client)
+            self._initialized = True
+        return self._initialized
 
     def close(self):
         if not self._initialized:
@@ -115,26 +118,11 @@ class CoreARI:
         self._pubsub = Pubsub()
         self._bus_consumer = bus_consumer
         self.client = ARIClientProxy(**config['connection'])
+        self._initialization_thread = threading.Thread(target=self.run)
 
     def init_client(self):
         self._subscribe_to_bus_events()
-
-        while True:
-            try:
-                self.client.init()
-                break
-            except requests.ConnectionError:
-                logger.info('No ARI server found')
-                time.sleep(1)
-                continue
-            except requests.HTTPError as e:
-                if asterisk_is_loading(e):
-                    logger.info('ARI is not ready yet')
-                    time.sleep(1)
-                    continue
-                else:
-                    raise
-        self._pubsub.publish('client_initialized', message=None)
+        self._initialization_thread.start()
         return True
 
     def _subscribe_to_bus_events(self):
@@ -151,21 +139,19 @@ class CoreARI:
 
     def run(self):
         while not self._should_stop:
-            initialized = self.init_client()
+            try:
+                initialized = self.client.init()
+            except Exception:
+                initialized = False
+
             if initialized:
+                self._pubsub.publish('client_initialized', message=None)
                 break
+
             connection_delay = self.config['startup_connection_delay']
             logger.warning('ARI not initialized, retrying in %s seconds...', connection_delay)
             time.sleep(connection_delay)
         self._should_delay_reconnect = False
-
-        while not self._should_stop:
-            if self._should_delay_reconnect:
-                delay = self.config['reconnection_delay']
-                logger.warning('Reconnecting to ARI in %s seconds', delay)
-                time.sleep(delay)
-            self._should_delay_reconnect = True
-            self._connect()
 
     def _connect(self):
         logger.debug('ARI client listening...')
@@ -238,7 +224,7 @@ class CoreARI:
 
     def stop(self):
         self._should_stop = True
-        self._trigger_disconnect()
+        self._initialization_thread.join()
 
     def _trigger_disconnect(self):
         self._sync()
