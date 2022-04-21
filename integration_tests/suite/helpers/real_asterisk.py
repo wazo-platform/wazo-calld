@@ -42,6 +42,9 @@ class RealAsteriskIntegrationTest(IntegrationTest):
         self.ari = ari.connect(**self.ari_config())
         self.reset_ari()
 
+    def reconnect_ari(self):
+        self.ari = ari.connect(**self.ari_config())
+
     def tearDown(self):
         super().tearDown()
 

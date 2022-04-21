@@ -176,8 +176,3 @@ class StasisClient:
 
         response = requests.post(url, json=body)
         assert_that(response.status_code, equal_to(201))
-
-    def non_json_message(self):
-        url = self.url('_send_ws_event')
-        response = requests.post(url, data='')
-        assert_that(response.status_code, equal_to(201))

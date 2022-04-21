@@ -1,12 +1,12 @@
-# Copyright 2016-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
-
-import requests
 
 from hamcrest import (
     assert_that,
     calling,
     contains_string,
+    has_entries,
+    has_items,
     has_properties
 )
 from wazo_test_helpers import until
@@ -14,7 +14,8 @@ from wazo_test_helpers.hamcrest.raises import raises
 from wazo_calld_client.exceptions import CalldError
 
 from .helpers.base import IntegrationTest
-from .helpers.wait_strategy import CalldUpWaitStrategy
+from .helpers.wait_strategy import CalldUpWaitStrategy, CalldEverythingOkWaitStrategy
+from .helpers.real_asterisk import RealAsteriskIntegrationTest
 
 
 class TestNoARI(IntegrationTest):
@@ -32,36 +33,40 @@ class TestNoARI(IntegrationTest):
         )
 
 
-class TestARIReconnection(IntegrationTest):
+class TestARIReconnection(RealAsteriskIntegrationTest):
 
-    asset = 'quick_ari_reconnect'
+    asset = 'real_asterisk'
+    wait_strategy = CalldEverythingOkWaitStrategy()
 
     def test_when_asterisk_restart_then_calld_reconnects(self):
-        until.true(self._calld_is_connected, tries=3)
+        until.assert_(self._calld_is_connected, tries=3)
 
         self.restart_service('ari')
         self.reset_clients()
+        self.reconnect_ari()
 
-        assert_that(self.service_logs(), contains_string("ARI connection error"))
-
-        until.true(self._calld_is_connected, tries=3)
+        until.assert_(self._calld_is_connected, tries=3)
 
     def _calld_is_connected(self):
-        try:
-            ws = self.ari.websockets()
-        except requests.ConnectionError:
-            ws = []
+        assert_that(self.calld.status(), has_entries(
+            ari=has_entries(status='ok'),
+            bus_consumer=has_entries(status='ok'),
+        ))
+        registered_applications = [application['name'] for application in self.ari.applications.list()]
+        assert_that(registered_applications, has_items(
+            'adhoc_conference',
+            'callcontrol',
+            'dial_mobile',
+        ))
 
-        return len(ws) > 0
-
-    def _calld_is_not_connected(self):
-        return not self._calld_is_connected()
+    def _consumer_reconnected(self):
+        return "Exception occurred in thread 'consumer', restarting..." in self.service_logs()
 
     def test_when_asterisk_sends_non_json_events_then_calld_reconnects(self):
-        self.stasis.non_json_message()
+        self.bus.send_stasis_non_json_event()
 
-        until.false(self._calld_is_not_connected, tries=3, message='wazo-calld did not disconnect from ARI')
-        until.true(self._calld_is_connected, tries=3, message='wazo-calld did not reconnect to ARI')
+        until.true(self._consumer_reconnected, tries=5, message='wazo-calld did non raise an exception')
+        until.assert_(self._calld_is_connected, tries=3, message='wazo-calld did not reconnect to ARI')
 
     '''Other tests I don't know how to implement:
 
