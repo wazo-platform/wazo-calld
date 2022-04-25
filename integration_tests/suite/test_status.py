@@ -1,4 +1,4 @@
-# Copyright 2016-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from hamcrest import (
@@ -17,25 +17,12 @@ from .helpers.wait_strategy import (
 )
 
 
-class TestStatusNoARI(IntegrationTest):
+class TestStatusARIStops(IntegrationTest):
 
     asset = 'no_ari'
     wait_strategy = CalldUpWaitStrategy()
 
-    def test_given_no_ari_when_status_then_ari_fail(self):
-        result = self.calld.status()
-
-        assert_that(result['ari']['status'], equal_to('fail'))
-
-
-class TestStatusARIStops(IntegrationTest):
-
-    asset = 'basic_rest'
-    wait_strategy = CalldConnectionsOkWaitStrategy()
-
     def test_given_ari_stops_when_status_then_ari_fail(self):
-        self.stop_service('ari')
-
         def ari_is_down():
             result = self.calld.status()
             assert_that(result['ari']['status'], equal_to('fail'))
