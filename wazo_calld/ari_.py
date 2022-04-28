@@ -84,6 +84,7 @@ class ARIClientProxy(ari.client.Client):
         self._username = username
         self._password = password
         self._initialized = False
+        self._registered_app = set()
 
     def init(self):
         if not self._initialized:
@@ -105,6 +106,25 @@ class ARIClientProxy(ari.client.Client):
             raise AsteriskARINotInitialized()
 
         return super().__getattr__(*args, **kwargs)
+
+    def on_application_registered(self, application_name, fn, *args, **kwargs):
+        super().on_application_registered(application_name, fn, *args, **kwargs)
+        if application_name in self._registered_app:
+            # The app is already registered, execute the callback now
+            try:
+                fn(*args, **kwargs)
+            except Exception as e:
+                self.exception_handler(e)
+
+    def execute_app_registered_callbacks(self, apps):
+        for app in apps:
+            self._registered_app.add(app)
+        return self._execute_app_registered_callbacks(','.join(apps))
+
+    def execute_app_deregistered_callbacks(self, apps):
+        for app in apps:
+            self._registered_app.discard(app)
+        return self._execute_app_deregistered_callbacks(','.join(apps))
 
 
 class CoreARI:
@@ -181,18 +201,23 @@ class CoreARI:
 
     def reregister_applications(self, _event):
         logger.info('Asterisk started, registering all stasis applications')
+        self.client.execute_app_deregistered_callbacks(self._apps)
         for app in self._apps:
             self.client.amqp.stasisSubscribe(applicationName=app)
+        self.client.execute_app_registered_callbacks(self._apps)
 
     def register_application(self, app):
-        if app not in self._apps:
-            self._apps.append(app)
+        if app in self._apps:
+            return
 
+        self._apps.append(app)
         self.client.amqp.stasisSubscribe(applicationName=app)
+        self.client.execute_app_registered_callbacks([app])
 
     def deregister_application(self, app):
         if app in self._apps:
             self._apps.remove(app)
+            self.client.execute_app_deregistered_callbacks([app])
 
     def is_running(self):
         return self._is_running
