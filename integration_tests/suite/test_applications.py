@@ -394,24 +394,19 @@ class TestStasisTriggers(BaseApplicationTestCase):
             )
         until.assert_(event_received, tries=3)
 
-    def test_confd_application_deleted_event_then_stasis_reconnect(self):
-        self.ari.bridges.destroy(bridgeId=self.node_app_uuid)
-        event_accumulator = self.bus.accumulator('applications.#')
+    def test_confd_application_deleted_event_then_application_deleted(self):
+        # self.ari.bridges.destroy(bridgeId=self.node_app_uuid)
+        # event_accumulator = self.bus.accumulator('applications.#')
 
         self.bus.send_application_deleted_event(self.no_node_app_uuid)
 
-        def event_received():
-            events = event_accumulator.accumulate(with_headers=True)
-            assert_that(
-                events,
-                has_item(
-                    has_entries(
-                        message=has_entries(name='application_destination_node_created'),
-                        headers=has_entry('tenant_uuid', VALID_TENANT),
-                    )
-                )
-            )
-        until.assert_(event_received, tries=3)
+        application_name = f'wazo-app-{self.no_node_app_uuid}'
+
+        def application_deleted():
+            app_names = [app['name'] for app in self.ari.applications.list()]
+            assert application_name not in app_names, 'Stasis application has not been deleted'
+
+        until.assert_(application_deleted, tries=3)
 
 
 class TestApplication(BaseApplicationTestCase):

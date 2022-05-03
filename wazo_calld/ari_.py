@@ -218,6 +218,7 @@ class CoreARI:
         if app in self._apps:
             self._apps.remove(app)
             self.client.execute_app_deregistered_callbacks([app])
+            self.client.amqp.stasisUnsubscribe(applicationName=app)
 
     def is_running(self):
         return self._is_running
