@@ -106,7 +106,7 @@ class ApplicationStasis:
         self._ari._app_deregistered_callbacks.pop(app_name, None)
 
         self._core_ari.deregister_application(app_name)
-        logger.debug('Stasis application added')
+        logger.debug('Stasis application removed')
 
     def stasis_start(self, event_objects, event):
         application_uuid = AppNameHelper.to_uuid(event.get('application'))
