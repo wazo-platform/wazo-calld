@@ -525,7 +525,7 @@ class TestApplication(BaseApplicationTestCase):
                 )
             )
 
-        until.assert_(event_received, tries=5)
+        until.assert_(event_received, tries=10)
 
         assert_that(
             calling(self.calld_client.applications.hangup_call).with_args(
@@ -1840,7 +1840,7 @@ class TestApplicationMoh(BaseApplicationTestCase):
             events = event_accumulator.accumulate()
             assert_that(events, contains_exactly(has_entries(name='application_call_updated')))
 
-        until.assert_(music_on_hold_started_event_received, tries=5)
+        until.assert_(music_on_hold_started_event_received, tries=10)
 
         calls = self.calld_client.applications.list_calls(app_uuid)['items']
         assert_that(calls, contains_exactly(has_entries(id=channel.id, moh_uuid=moh_uuid)))
