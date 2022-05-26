@@ -4,7 +4,7 @@
 from unittest import TestCase
 import requests
 
-from mock import (
+from unittest.mock import (
     Mock,
     patch,
     sentinel as s,
