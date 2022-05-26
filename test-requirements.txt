@@ -1,4 +1,3 @@
 https://github.com/wazo-platform/wazo-test-helpers/archive/master.zip
-mock
 pyhamcrest
 pytest

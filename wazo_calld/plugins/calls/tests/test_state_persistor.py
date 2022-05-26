@@ -1,4 +1,4 @@
-# Copyright 2016 by Avencall
+# Copyright 2016-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
@@ -10,8 +10,8 @@ from hamcrest import equal_to
 from hamcrest import has_property
 from hamcrest import is_not
 from hamcrest import raises
-from mock import Mock
-from mock import sentinel as s
+from unittest.mock import Mock
+from unittest.mock import sentinel as s
 from unittest import TestCase
 
 from ..state_persistor import ChannelCacheEntry

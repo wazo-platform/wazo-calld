@@ -1,11 +1,11 @@
-# Copyright 2016 by Avencall
+# Copyright 2016-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from hamcrest import assert_that
 from hamcrest import calling
 from hamcrest import instance_of
 from hamcrest import raises
-from mock import Mock
+from unittest.mock import Mock
 from unittest import TestCase
 
 from ..state import CallState
