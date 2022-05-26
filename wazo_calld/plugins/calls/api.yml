@@ -576,6 +576,13 @@ definitions:
       creation_time:
         type: string
         format: date-time
+      direction:
+        type: string
+        enum:
+          - internal
+          - outbound
+          - inbound
+          - unknown
       answer_time:
         type: string
         format: date-time

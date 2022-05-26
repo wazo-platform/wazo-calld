@@ -27,3 +27,4 @@ class Call:
         self.is_video = False
         self.answer_time = None
         self.hangup_time = None
+        self.direction = 'unknown'
