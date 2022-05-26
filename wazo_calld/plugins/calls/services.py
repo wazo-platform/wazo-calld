@@ -294,6 +294,7 @@ class CallsService:
         call.dialed_extension = channel_helper.dialed_extension()
         call.sip_call_id = channel_helper.sip_call_id()
         call.line_id = channel_helper.line_id()
+        call.direction = channel_helper.call_direction() or 'unknown'
 
         return call
 
@@ -325,6 +326,7 @@ class CallsService:
         call.is_video = channel_variables.get('CHANNEL(videonativeformat)') != '(nothing)'
         direction = channel_variables.get('WAZO_CHANNEL_DIRECTION')
         call.is_caller = True if direction == 'to-wazo' else False
+        call.direction = channel_variables.get('WAZO_CALL_DIRECTION') or 'unknown'
 
         return call
 
