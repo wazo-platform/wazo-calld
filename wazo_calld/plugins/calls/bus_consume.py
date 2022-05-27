@@ -203,6 +203,14 @@ class CallsBusEventHandler:
             logger.debug('bridge %s not found', bridge_id)
             return
 
+        set_channel_id_var_sync(
+            self.ari,
+            channel_id,
+            '__WAZO_CALL_DIRECTION',
+            self.services.call_direction_from_channels(participant_channel_ids),
+            bypass_stasis=True,
+        )
+
         for participant_channel_id in participant_channel_ids:
             try:
                 channel = self.ari.channels.get(channelId=participant_channel_id)
@@ -227,6 +235,14 @@ class CallsBusEventHandler:
         except ARINotFound:
             logger.debug('bridge %s not found', bridge_id)
             return
+
+        set_channel_id_var_sync(
+            self.ari,
+            channel_id,
+            '__WAZO_CALL_DIRECTION',
+            self.services.call_direction_from_channels(participant_channel_ids),
+            bypass_stasis=True,
+        )
 
         for participant_channel_id in participant_channel_ids:
             try:

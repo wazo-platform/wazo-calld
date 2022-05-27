@@ -332,42 +332,6 @@ class Channel:
         except ARINotFound:
             return
 
-    def call_direction(self):
-        all_directions = []
-
-        try:
-            own_direction = self._get_var('WAZO_CALL_DIRECTION')
-        except ARINotFound:
-            pass
-        else:
-            if own_direction:
-                all_directions.append(own_direction)
-
-        channels = self.connected_channels()
-        for channel in channels:
-            try:
-                channel_direction = (
-                    self._ari.channels.getChannelVar(channelId=channel.id, variable='WAZO_CALL_DIRECTION')['value']
-                )
-            except ARINotFound:
-                continue
-            else:
-                if channel_direction:
-                    all_directions.append(channel_direction)
-
-        if 'outbound' in all_directions and 'inbound' in all_directions:
-            return 'unknown'
-
-        if 'outbound' in all_directions:
-            return 'outbound'
-
-        if 'inbound' in all_directions:
-            return 'inbound'
-
-        # NOTE(afournier): internal should have the lowest priority
-        if 'internal' in all_directions:
-            return 'internal'
-
     def _get_var(self, var):
         return self._ari.channels.getChannelVar(channelId=self.id, variable=var)['value']
 

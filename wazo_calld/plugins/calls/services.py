@@ -294,7 +294,7 @@ class CallsService:
         call.dialed_extension = channel_helper.dialed_extension()
         call.sip_call_id = channel_helper.sip_call_id()
         call.line_id = channel_helper.line_id()
-        call.direction = channel_helper.call_direction() or 'unknown'
+        call.direction = channel_variables.get('WAZO_CALL_DIRECTION') or 'unknown'
 
         return call
 
@@ -349,6 +349,7 @@ class CallsService:
         call.talking_to = {}
         call.sip_call_id = event_variables.get('WAZO_SIP_CALL_ID') or None
         call.line_id = event_variables.get('WAZO_LINE_ID') or None
+        call.direction = event_variables.get('WAZO_CALL_DIRECTION') or 'unknown'
 
         return call
 
@@ -498,6 +499,33 @@ class CallsService:
         except ARINotFound:
             logger.debug('channel %s not found', channel_id)
             raise NoSuchCall(channel_id)
+
+    def call_direction_from_channels(self, channel_ids):
+        all_directions = []
+
+        for channel in channel_ids:
+            try:
+                channel_direction = (
+                    self._ari.channels.getChannelVar(channelId=channel.id, variable='WAZO_CALL_DIRECTION')['value']
+                )
+            except ARINotFound:
+                continue
+            else:
+                if channel_direction:
+                    all_directions.append(channel_direction)
+
+        if 'outbound' in all_directions and 'inbound' in all_directions:
+            return 'unknown'
+
+        if 'outbound' in all_directions:
+            return 'outbound'
+
+        if 'inbound' in all_directions:
+            return 'inbound'
+
+        # NOTE(afournier): internal should have the lowest priority
+        if 'internal' in all_directions:
+            return 'internal'
 
     def _verify_user(self, call_id, user_uuid):
         channel = Channel(call_id, self._ari)
