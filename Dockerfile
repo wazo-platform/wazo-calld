@@ -29,4 +29,4 @@ EXPOSE 9500
 
 # Activate virtual env
 ENV PATH="/opt/venv/bin:$PATH"
-CMD ["wazo-calld", "-d"]
+CMD ["wazo-calld"]
