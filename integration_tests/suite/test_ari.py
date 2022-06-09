@@ -4,7 +4,6 @@
 from hamcrest import (
     assert_that,
     calling,
-    contains_string,
     has_entries,
     has_items,
     has_properties

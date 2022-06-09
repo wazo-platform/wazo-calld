@@ -11,7 +11,6 @@ import threading
 from contextlib import contextmanager
 
 import ari
-import requests
 import swaggerpy.http_client
 
 from requests.exceptions import HTTPError
