@@ -206,8 +206,8 @@ class CallsBusEventHandler:
         set_channel_id_var_sync(
             self.ari,
             channel_id,
-            '__WAZO_CALL_DIRECTION',
-            self.services.call_direction_from_channels(participant_channel_ids),
+            '__WAZO_CONVERSATION_DIRECTION',
+            self.services.conversation_direction_from_channels(participant_channel_ids),
             bypass_stasis=True,
         )
 
@@ -239,8 +239,8 @@ class CallsBusEventHandler:
         set_channel_id_var_sync(
             self.ari,
             channel_id,
-            '__WAZO_CALL_DIRECTION',
-            self.services.call_direction_from_channels(participant_channel_ids),
+            '__WAZO_CONVERSATION_DIRECTION',
+            self.services.conversation_direction_from_channels(participant_channel_ids),
             bypass_stasis=True,
         )
 

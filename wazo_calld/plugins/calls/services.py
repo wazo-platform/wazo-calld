@@ -268,8 +268,7 @@ class CallsService:
 
         return new_channel.id
 
-    @staticmethod
-    def make_call_from_channel(ari, channel):
+    def make_call_from_channel(self, ari, channel):
         channel_variables = channel.json.get('channelvars', {})
         channel_helper = Channel(channel.id, ari)
         call = Call(channel.id)
@@ -294,7 +293,10 @@ class CallsService:
         call.dialed_extension = channel_helper.dialed_extension()
         call.sip_call_id = channel_helper.sip_call_id()
         call.line_id = channel_helper.line_id()
-        call.direction = channel_variables.get('WAZO_CALL_DIRECTION') or 'unknown'
+        connected_channels = channel_helper.connected_channels()
+        call.direction = channel_variables.get('WAZO_CONVERSATION_DIRECTION') or (
+            self.conversation_direction_from_channels([channel, *connected_channels])
+        ) or 'unknown'
 
         return call
 
@@ -326,7 +328,7 @@ class CallsService:
         call.is_video = channel_variables.get('CHANNEL(videonativeformat)') != '(nothing)'
         direction = channel_variables.get('WAZO_CHANNEL_DIRECTION')
         call.is_caller = True if direction == 'to-wazo' else False
-        call.direction = channel_variables.get('WAZO_CALL_DIRECTION') or 'unknown'
+        call.direction = channel_variables.get('WAZO_CONVERSATION_DIRECTION') or 'unknown'
 
         return call
 
@@ -349,7 +351,7 @@ class CallsService:
         call.talking_to = {}
         call.sip_call_id = event_variables.get('WAZO_SIP_CALL_ID') or None
         call.line_id = event_variables.get('WAZO_LINE_ID') or None
-        call.direction = event_variables.get('WAZO_CALL_DIRECTION') or 'unknown'
+        call.direction = event_variables.get('WAZO_CONVERSATION_DIRECTION') or 'unknown'
 
         return call
 
