@@ -207,7 +207,7 @@ class CallsBusEventHandler:
             self.ari,
             channel_id,
             '__WAZO_CONVERSATION_DIRECTION',
-            self.services.conversation_direction_from_channels(participant_channel_ids),
+            self.services.conversation_direction_from_channels(self.ari, participant_channel_ids),
             bypass_stasis=True,
         )
 
@@ -240,7 +240,7 @@ class CallsBusEventHandler:
             self.ari,
             channel_id,
             '__WAZO_CONVERSATION_DIRECTION',
-            self.services.conversation_direction_from_channels(participant_channel_ids),
+            self.services.conversation_direction_from_channels(self.ari, participant_channel_ids),
             bypass_stasis=True,
         )
 

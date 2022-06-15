@@ -268,7 +268,8 @@ class CallsService:
 
         return new_channel.id
 
-    def make_call_from_channel(self, ari, channel):
+    @staticmethod
+    def make_call_from_channel(ari, channel):
         channel_variables = channel.json.get('channelvars', {})
         channel_helper = Channel(channel.id, ari)
         call = Call(channel.id)
@@ -295,7 +296,7 @@ class CallsService:
         call.line_id = channel_helper.line_id()
         connected_channels = channel_helper.connected_channels()
         call.direction = channel_variables.get('WAZO_CONVERSATION_DIRECTION') or (
-            self.conversation_direction_from_channels([channel, *connected_channels])
+            CallsService.conversation_direction_from_channels(ari, [channel, *connected_channels])
         ) or 'unknown'
 
         return call
@@ -502,13 +503,14 @@ class CallsService:
             logger.debug('channel %s not found', channel_id)
             raise NoSuchCall(channel_id)
 
-    def conversation_direction_from_channels(self, channels):
+    @staticmethod
+    def conversation_direction_from_channels(ari, channels):
         all_directions = []
 
         for channel in channels:
             try:
                 call_direction = (
-                    self._ari.channels.getChannelVar(channelId=channel.id, variable='WAZO_CALL_DIRECTION')['value']
+                    ari.channels.getChannelVar(channelId=channel.id, variable='WAZO_CALL_DIRECTION')['value']
                 )
             except ARINotFound:
                 continue
@@ -516,9 +518,10 @@ class CallsService:
                 if call_direction:
                     all_directions.append(call_direction)
 
-        return self._conversation_direction_from_directions(all_directions)
+        return CallsService._conversation_direction_from_directions(all_directions)
 
-    def _conversation_direction_from_directions(self, directions):
+    @staticmethod
+    def _conversation_direction_from_directions(directions):
         if 'outbound' in directions and 'inbound' in directions:
             return 'unknown'
 
