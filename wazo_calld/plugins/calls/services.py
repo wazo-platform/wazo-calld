@@ -500,32 +500,37 @@ class CallsService:
             logger.debug('channel %s not found', channel_id)
             raise NoSuchCall(channel_id)
 
-    def call_direction_from_channels(self, channel_ids):
+    def conversation_direction_from_channels(self, channels):
         all_directions = []
 
-        for channel in channel_ids:
+        for channel in channels:
             try:
-                channel_direction = (
+                call_direction = (
                     self._ari.channels.getChannelVar(channelId=channel.id, variable='WAZO_CALL_DIRECTION')['value']
                 )
             except ARINotFound:
                 continue
             else:
-                if channel_direction:
-                    all_directions.append(channel_direction)
+                if call_direction:
+                    all_directions.append(call_direction)
 
-        if 'outbound' in all_directions and 'inbound' in all_directions:
+        return self._conversation_direction_from_directions(all_directions)
+
+    def _conversation_direction_from_directions(self, directions):
+        if 'outbound' in directions and 'inbound' in directions:
             return 'unknown'
 
-        if 'outbound' in all_directions:
+        if 'outbound' in directions:
             return 'outbound'
 
-        if 'inbound' in all_directions:
+        if 'inbound' in directions:
             return 'inbound'
 
         # NOTE(afournier): internal should have the lowest priority
-        if 'internal' in all_directions:
+        if 'internal' in directions:
             return 'internal'
+
+        return 'unknown'
 
     def _verify_user(self, call_id, user_uuid):
         channel = Channel(call_id, self._ari)

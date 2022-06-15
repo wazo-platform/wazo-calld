@@ -1,5 +1,6 @@
 # Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
+
 from hamcrest import assert_that, equal_to
 from unittest.mock import Mock
 from unittest import TestCase
@@ -12,6 +13,7 @@ class TestServices(TestCase):
     def setUp(self):
         self.services = CallsService(Mock(), Mock(), Mock(), Mock(), Mock(),
                                      Mock(), Mock())
+
         self.example_to_fit = {
             'type': 'ChannelDestroyed',
             'timestamp': '2021-06-15T11:06:46.331-0400',
@@ -104,3 +106,42 @@ class TestServices(TestCase):
         call = self.services.channel_destroyed_event(event)
 
         assert_that(call.is_caller, equal_to(True))
+
+    def _assert_conversation_direction(self, directions, expected):
+        assert_that(
+            self.services._conversation_direction_from_directions(directions),
+            equal_to(expected),
+        )
+
+    def test_call_direction(self):
+
+        inbound_channel = 'inbound'
+        outbound_channel = 'outbound'
+        internal_channel = 'internal'
+        unknown_channel = 'unknown'
+
+        self._assert_conversation_direction([], unknown_channel)
+
+        self._assert_conversation_direction([internal_channel], internal_channel)
+        self._assert_conversation_direction([inbound_channel], inbound_channel)
+        self._assert_conversation_direction([outbound_channel], outbound_channel)
+
+        self._assert_conversation_direction([inbound_channel, inbound_channel], inbound_channel)
+        self._assert_conversation_direction([inbound_channel, outbound_channel], unknown_channel)
+        self._assert_conversation_direction([inbound_channel, internal_channel], inbound_channel)
+        self._assert_conversation_direction([outbound_channel, inbound_channel], unknown_channel)
+        self._assert_conversation_direction([outbound_channel, outbound_channel], outbound_channel)
+        self._assert_conversation_direction([outbound_channel, internal_channel], outbound_channel)
+        self._assert_conversation_direction([internal_channel, inbound_channel], inbound_channel)
+        self._assert_conversation_direction([internal_channel, outbound_channel], outbound_channel)
+        self._assert_conversation_direction([internal_channel, internal_channel], internal_channel)
+
+        self._assert_conversation_direction([inbound_channel, inbound_channel, inbound_channel], inbound_channel)
+        self._assert_conversation_direction([inbound_channel, outbound_channel, inbound_channel], unknown_channel)
+        self._assert_conversation_direction([inbound_channel, internal_channel, internal_channel], inbound_channel)
+        self._assert_conversation_direction([outbound_channel, inbound_channel, outbound_channel], unknown_channel)
+        self._assert_conversation_direction([outbound_channel, outbound_channel, outbound_channel], outbound_channel)
+        self._assert_conversation_direction([outbound_channel, internal_channel, internal_channel], outbound_channel)
+        self._assert_conversation_direction([internal_channel, inbound_channel, internal_channel], inbound_channel)
+        self._assert_conversation_direction([internal_channel, outbound_channel, internal_channel], outbound_channel)
+        self._assert_conversation_direction([internal_channel, internal_channel, internal_channel], internal_channel)
