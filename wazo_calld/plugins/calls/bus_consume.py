@@ -203,14 +203,6 @@ class CallsBusEventHandler:
             logger.debug('bridge %s not found', bridge_id)
             return
 
-        set_channel_id_var_sync(
-            self.ari,
-            channel_id,
-            '__WAZO_CONVERSATION_DIRECTION',
-            self.services.conversation_direction_from_channels(self.ari, participant_channel_ids),
-            bypass_stasis=True,
-        )
-
         for participant_channel_id in participant_channel_ids:
             try:
                 channel = self.ari.channels.get(channelId=participant_channel_id)
@@ -218,6 +210,13 @@ class CallsBusEventHandler:
                 logger.debug('channel %s not found', participant_channel_id)
                 return
 
+            set_channel_id_var_sync(
+                self.ari,
+                participant_channel_id,
+                'WAZO_CONVERSATION_DIRECTION',
+                '',  # NOTE(afournier): it will be recalculated in `make_call_from_channel`
+                bypass_stasis=True,
+            )
             call = self.services.make_call_from_channel(self.ari, channel)
             self.notifier.call_updated(call)
 
@@ -236,14 +235,6 @@ class CallsBusEventHandler:
             logger.debug('bridge %s not found', bridge_id)
             return
 
-        set_channel_id_var_sync(
-            self.ari,
-            channel_id,
-            '__WAZO_CONVERSATION_DIRECTION',
-            self.services.conversation_direction_from_channels(self.ari, participant_channel_ids),
-            bypass_stasis=True,
-        )
-
         for participant_channel_id in participant_channel_ids:
             try:
                 channel = self.ari.channels.get(channelId=participant_channel_id)
@@ -251,6 +242,13 @@ class CallsBusEventHandler:
                 logger.debug('channel %s not found', participant_channel_id)
                 return
 
+            set_channel_id_var_sync(
+                self.ari,
+                participant_channel_id,
+                'WAZO_CONVERSATION_DIRECTION',
+                '',  # NOTE(afournier): it will be recalculated in `make_call_from_channel`
+                bypass_stasis=True,
+            )
             call = self.services.make_call_from_channel(self.ari, channel)
             self.notifier.call_updated(call)
 
