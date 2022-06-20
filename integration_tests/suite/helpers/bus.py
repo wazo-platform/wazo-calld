@@ -142,6 +142,22 @@ class BusClient(bus_helper.BusClient):
             routing_key='ami.Hangup'
         )
 
+    def send_ami_bridge_leave_event(self, channel_id, bridge_id, bridge_num_channels):
+        self.send_event(
+            {
+                'data': {
+                    'Event': 'BridgeLeave',
+                    'Uniqueid': channel_id,
+                    'BridgeUniqueid': bridge_id,
+                    'BridgeNumChannels': bridge_num_channels,
+                }
+            },
+            headers={
+                'name': 'BridgeLeave',
+            },
+            routing_key='ami.BridgeLeave'
+        )
+
     def send_ami_peerstatus_event(self, channel_type, peer, status):
         self.send_event(
             {

@@ -223,7 +223,8 @@ class CallsBusEventHandler:
     def _relay_channel_left_bridge(self, event):
         channel_id = event['Uniqueid']
         bridge_id = event['BridgeUniqueid']
-        if int(event['BridgeNumChannels']) == 0:
+        channels_in_bridge = int(event['BridgeNumChannels'])
+        if channels_in_bridge == 0:
             logger.debug('ignoring channel %s left bridge %s: bridge is empty', channel_id, bridge_id)
             return
 
@@ -242,13 +243,15 @@ class CallsBusEventHandler:
                 logger.debug('channel %s not found', participant_channel_id)
                 return
 
-            set_channel_id_var_sync(
-                self.ari,
-                participant_channel_id,
-                'WAZO_CONVERSATION_DIRECTION',
-                '',  # NOTE(afournier): it will be recalculated in `make_call_from_channel`
-                bypass_stasis=True,
-            )
+            if channels_in_bridge > 1:
+                # If this is the last channel of the bridge we want to keep the last call direction
+                set_channel_id_var_sync(
+                    self.ari,
+                    participant_channel_id,
+                    'WAZO_CONVERSATION_DIRECTION',
+                    '',  # NOTE(afournier): it will be recalculated in `make_call_from_channel`
+                    bypass_stasis=True,
+                )
             call = self.services.make_call_from_channel(self.ari, channel)
             self.notifier.call_updated(call)
 
