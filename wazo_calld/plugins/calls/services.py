@@ -532,10 +532,7 @@ class CallsService:
             return 'inbound'
 
         # NOTE(afournier): internal should have the lowest priority
-        if 'internal' in directions:
-            return 'internal'
-
-        return 'unknown'
+        return 'internal'
 
     def _verify_user(self, call_id, user_uuid):
         channel = Channel(call_id, self._ari)

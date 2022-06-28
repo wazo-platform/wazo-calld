@@ -120,7 +120,7 @@ class TestServices(TestCase):
         internal_channel = 'internal'
         unknown_channel = 'unknown'
 
-        self._assert_conversation_direction([], unknown_channel)
+        self._assert_conversation_direction([], internal_channel)
 
         self._assert_conversation_direction([internal_channel], internal_channel)
         self._assert_conversation_direction([inbound_channel], inbound_channel)
