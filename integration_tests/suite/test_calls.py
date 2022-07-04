@@ -131,96 +131,11 @@ class TestListCalls(IntegrationTest):
             )
         )))
 
-    def test_call_direction_internal_internal(self):
+    def test_call_direction(self):
         self.ari.set_channels(MockChannel(id='first-id'), MockChannel(id='second-id'))
         self.ari.set_channel_variable(
             {
                 'first-id': {'WAZO_CALL_DIRECTION': 'internal'},
-                'second-id': {'WAZO_CALL_DIRECTION': 'internal'},
-            }
-        )
-        self.ari.set_bridges(MockBridge(id='bridge-id', channels=['first-id', 'second-id']))
-
-        calls = self.calld_client.calls.list_calls()
-
-        assert_that(calls, has_entries(items=contains_inanyorder(
-            has_entries(call_id='first-id', direction='internal'),
-            has_entries(call_id='second-id', direction='internal'),
-        )))
-
-    def test_call_direction_internal_outbound(self):
-        self.ari.set_channels(MockChannel(id='first-id'), MockChannel(id='second-id'))
-        self.ari.set_channel_variable(
-            {
-                'first-id': {'WAZO_CALL_DIRECTION': 'internal'},
-                'second-id': {'WAZO_CALL_DIRECTION': 'outbound'},
-            }
-        )
-        self.ari.set_bridges(MockBridge(id='bridge-id', channels=['first-id', 'second-id']))
-
-        calls = self.calld_client.calls.list_calls()
-
-        assert_that(calls, has_entries(items=contains_inanyorder(
-            has_entries(call_id='first-id', direction='outbound'),
-            has_entries(call_id='second-id', direction='outbound'),
-        )))
-
-    def test_call_direction_internal_inbound(self):
-        self.ari.set_channels(MockChannel(id='first-id'), MockChannel(id='second-id'))
-        self.ari.set_channel_variable(
-            {
-                'first-id': {'WAZO_CALL_DIRECTION': 'inbound'},
-                'second-id': {'WAZO_CALL_DIRECTION': 'internal'},
-            }
-        )
-        self.ari.set_bridges(MockBridge(id='bridge-id', channels=['first-id', 'second-id']))
-
-        calls = self.calld_client.calls.list_calls()
-
-        assert_that(calls, has_entries(items=contains_inanyorder(
-            has_entries(call_id='first-id', direction='inbound'),
-            has_entries(call_id='second-id', direction='inbound'),
-        )))
-
-    def test_call_direction_inbound_inbound(self):
-        self.ari.set_channels(MockChannel(id='first-id'), MockChannel(id='second-id'))
-        self.ari.set_channel_variable(
-            {
-                'first-id': {'WAZO_CALL_DIRECTION': 'inbound'},
-                'second-id': {'WAZO_CALL_DIRECTION': 'inbound'},
-            }
-        )
-        self.ari.set_bridges(MockBridge(id='bridge-id', channels=['first-id', 'second-id']))
-
-        calls = self.calld_client.calls.list_calls()
-
-        assert_that(calls, has_entries(items=contains_inanyorder(
-            has_entries(call_id='first-id', direction='inbound'),
-            has_entries(call_id='second-id', direction='inbound'),
-        )))
-
-    def test_call_direction_inbound_outbound(self):
-        self.ari.set_channels(MockChannel(id='first-id'), MockChannel(id='second-id'))
-        self.ari.set_channel_variable(
-            {
-                'first-id': {'WAZO_CALL_DIRECTION': 'inbound'},
-                'second-id': {'WAZO_CALL_DIRECTION': 'outbound'},
-            }
-        )
-        self.ari.set_bridges(MockBridge(id='bridge-id', channels=['first-id', 'second-id']))
-
-        calls = self.calld_client.calls.list_calls()
-
-        assert_that(calls, has_entries(items=contains_inanyorder(
-            has_entries(call_id='first-id', direction='unknown'),
-            has_entries(call_id='second-id', direction='unknown'),
-        )))
-
-    def test_call_direction_outbound_outbound(self):
-        self.ari.set_channels(MockChannel(id='first-id'), MockChannel(id='second-id'))
-        self.ari.set_channel_variable(
-            {
-                'first-id': {'WAZO_CALL_DIRECTION': 'outbound'},
                 'second-id': {'WAZO_CALL_DIRECTION': 'outbound'},
             }
         )
