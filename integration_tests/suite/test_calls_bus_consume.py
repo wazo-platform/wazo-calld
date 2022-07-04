@@ -125,22 +125,8 @@ class TestBusConsume(IntegrationTest):
         first_channel_id = new_call_id()
         second_channel_id = new_call_id()
         self.ari.set_channels(
-            MockChannel(
-                id=first_channel_id,
-                state='Up',
-                channelvars={
-                    'CHANNEL(videonativeformat)': '(vp8)',
-                    'WAZO_ANSWER_TIME': '2022-03-08T03:49:00+00:00',
-                },
-            ),
-            MockChannel(
-                id=second_channel_id,
-                state='Up',
-                channelvars={
-                    'CHANNEL(videonativeformat)': '(vp8)',
-                    'WAZO_ANSWER_TIME': '2022-03-08T03:49:10+00:00',
-                },
-            )
+            MockChannel(id=first_channel_id, state='Up'),
+            MockChannel(id=second_channel_id, state='Up'),
         )
         self.ari.set_channel_variable({
             first_channel_id: {
@@ -168,9 +154,6 @@ class TestBusConsume(IntegrationTest):
                             'data': has_entries({
                                 'call_id': first_channel_id,
                                 'status': 'Up',
-                                'hangup_time': None,
-                                'answer_time': is_(a_timestamp()),
-                                'is_video': True,
                                 'direction': 'outbound',
                             })
                         }),
@@ -191,22 +174,8 @@ class TestBusConsume(IntegrationTest):
             MockBridge(first_channel_id, channels=[first_channel_id, second_channel_id])
         )
         self.ari.set_channels(
-            MockChannel(
-                id=first_channel_id,
-                state='Up',
-                channelvars={
-                    'CHANNEL(videonativeformat)': '(vp8)',
-                    'WAZO_ANSWER_TIME': '2022-03-08T03:49:00+00:00',
-                },
-            ),
-            MockChannel(
-                id=second_channel_id,
-                state='Up',
-                channelvars={
-                    'CHANNEL(videonativeformat)': '(vp8)',
-                    'WAZO_ANSWER_TIME': '2022-03-08T03:49:10+00:00',
-                },
-            )
+            MockChannel(id=first_channel_id, state='Up'),
+            MockChannel(id=second_channel_id, state='Up'),
         )
         self.ari.set_channel_variable({
             first_channel_id: {
@@ -222,14 +191,7 @@ class TestBusConsume(IntegrationTest):
         self.bus.send_ami_newstate_event(second_channel_id)
 
         self.ari.set_channels(
-            MockChannel(
-                id=first_channel_id,
-                state='Up',
-                channelvars={
-                    'CHANNEL(videonativeformat)': '(vp8)',
-                    'WAZO_ANSWER_TIME': '2022-03-08T03:49:10+00:00',
-                },
-            )
+            MockChannel(id=first_channel_id, state='Up')
         )
         events = self.bus.accumulator(routing_key='calls.call.updated')
 
@@ -249,9 +211,6 @@ class TestBusConsume(IntegrationTest):
                             'data': has_entries({
                                 'call_id': first_channel_id,
                                 'status': 'Up',
-                                'hangup_time': None,
-                                'answer_time': is_(a_timestamp()),
-                                'is_video': True,
                                 'direction': 'outbound',
                             })
                         }),
