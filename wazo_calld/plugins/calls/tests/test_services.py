@@ -107,12 +107,6 @@ class TestServices(TestCase):
 
         assert_that(call.is_caller, equal_to(True))
 
-    def _assert_conversation_direction(self, directions, expected):
-        assert_that(
-            self.services._conversation_direction_from_directions(directions),
-            equal_to(expected),
-        )
-
     def test_call_direction(self):
 
         inbound_channel = 'inbound'
@@ -120,28 +114,30 @@ class TestServices(TestCase):
         internal_channel = 'internal'
         unknown_channel = 'unknown'
 
-        self._assert_conversation_direction([], internal_channel)
+        direction = self.services._conversation_direction_from_directions
 
-        self._assert_conversation_direction([internal_channel], internal_channel)
-        self._assert_conversation_direction([inbound_channel], inbound_channel)
-        self._assert_conversation_direction([outbound_channel], outbound_channel)
+        assert_that(direction([]), equal_to(internal_channel))
 
-        self._assert_conversation_direction([inbound_channel, inbound_channel], inbound_channel)
-        self._assert_conversation_direction([inbound_channel, outbound_channel], unknown_channel)
-        self._assert_conversation_direction([inbound_channel, internal_channel], inbound_channel)
-        self._assert_conversation_direction([outbound_channel, inbound_channel], unknown_channel)
-        self._assert_conversation_direction([outbound_channel, outbound_channel], outbound_channel)
-        self._assert_conversation_direction([outbound_channel, internal_channel], outbound_channel)
-        self._assert_conversation_direction([internal_channel, inbound_channel], inbound_channel)
-        self._assert_conversation_direction([internal_channel, outbound_channel], outbound_channel)
-        self._assert_conversation_direction([internal_channel, internal_channel], internal_channel)
+        assert_that(direction([internal_channel]), equal_to(internal_channel))
+        assert_that(direction([inbound_channel]), equal_to(inbound_channel))
+        assert_that(direction([outbound_channel]), equal_to(outbound_channel))
 
-        self._assert_conversation_direction([inbound_channel, inbound_channel, inbound_channel], inbound_channel)
-        self._assert_conversation_direction([inbound_channel, outbound_channel, inbound_channel], unknown_channel)
-        self._assert_conversation_direction([inbound_channel, internal_channel, internal_channel], inbound_channel)
-        self._assert_conversation_direction([outbound_channel, inbound_channel, outbound_channel], unknown_channel)
-        self._assert_conversation_direction([outbound_channel, outbound_channel, outbound_channel], outbound_channel)
-        self._assert_conversation_direction([outbound_channel, internal_channel, internal_channel], outbound_channel)
-        self._assert_conversation_direction([internal_channel, inbound_channel, internal_channel], inbound_channel)
-        self._assert_conversation_direction([internal_channel, outbound_channel, internal_channel], outbound_channel)
-        self._assert_conversation_direction([internal_channel, internal_channel, internal_channel], internal_channel)
+        assert_that(direction([inbound_channel, inbound_channel]), equal_to(inbound_channel))
+        assert_that(direction([inbound_channel, outbound_channel]), equal_to(unknown_channel))
+        assert_that(direction([inbound_channel, internal_channel]), equal_to(inbound_channel))
+        assert_that(direction([outbound_channel, inbound_channel]), equal_to(unknown_channel))
+        assert_that(direction([outbound_channel, outbound_channel]), equal_to(outbound_channel))
+        assert_that(direction([outbound_channel, internal_channel]), equal_to(outbound_channel))
+        assert_that(direction([internal_channel, inbound_channel]), equal_to(inbound_channel))
+        assert_that(direction([internal_channel, outbound_channel]), equal_to(outbound_channel))
+        assert_that(direction([internal_channel, internal_channel]), equal_to(internal_channel))
+
+        assert_that(direction([inbound_channel, inbound_channel, inbound_channel]), equal_to(inbound_channel))
+        assert_that(direction([inbound_channel, outbound_channel, inbound_channel]), equal_to(unknown_channel))
+        assert_that(direction([inbound_channel, internal_channel, internal_channel]), equal_to(inbound_channel))
+        assert_that(direction([outbound_channel, inbound_channel, outbound_channel]), equal_to(unknown_channel))
+        assert_that(direction([outbound_channel, outbound_channel, outbound_channel]), equal_to(outbound_channel))
+        assert_that(direction([outbound_channel, internal_channel, internal_channel]), equal_to(outbound_channel))
+        assert_that(direction([internal_channel, inbound_channel, internal_channel]), equal_to(inbound_channel))
+        assert_that(direction([internal_channel, outbound_channel, internal_channel]), equal_to(outbound_channel))
+        assert_that(direction([internal_channel, internal_channel, internal_channel]), equal_to(internal_channel))
