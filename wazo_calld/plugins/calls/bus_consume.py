@@ -189,6 +189,15 @@ class CallsBusEventHandler:
         call = self._partial_call_from_channel_id(channel_id)
         self.notifier.call_dtmf(call, digit)
 
+    def _invalidate_conversation_direction_cache(self, channel_id):
+        set_channel_id_var_sync(
+            self.ari,
+            channel_id,
+            'WAZO_CONVERSATION_DIRECTION',
+            '',
+            bypass_stasis=True,
+        )
+
     def _relay_channel_entered_bridge(self, event):
         channel_id = event['Uniqueid']
         bridge_id = event['BridgeUniqueid']
@@ -210,13 +219,8 @@ class CallsBusEventHandler:
                 logger.debug('channel %s not found', participant_channel_id)
                 return
 
-            set_channel_id_var_sync(
-                self.ari,
-                participant_channel_id,
-                'WAZO_CONVERSATION_DIRECTION',
-                '',  # NOTE(afournier): it will be recalculated in `make_call_from_channel`
-                bypass_stasis=True,
-            )
+            self._invalidate_conversation_direction_cache(participant_channel_id)
+
             call = self.services.make_call_from_channel(self.ari, channel)
             self.notifier.call_updated(call)
 
@@ -244,14 +248,8 @@ class CallsBusEventHandler:
                 return
 
             if channels_in_bridge > 1:
-                # If this is the last channel of the bridge we want to keep the last call direction
-                set_channel_id_var_sync(
-                    self.ari,
-                    participant_channel_id,
-                    'WAZO_CONVERSATION_DIRECTION',
-                    '',  # NOTE(afournier): it will be recalculated in `make_call_from_channel`
-                    bypass_stasis=True,
-                )
+                self._invalidate_conversation_direction_cache(participant_channel_id)
+
             call = self.services.make_call_from_channel(self.ari, channel)
             self.notifier.call_updated(call)
 
