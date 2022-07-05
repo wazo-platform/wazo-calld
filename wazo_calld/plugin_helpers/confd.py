@@ -8,6 +8,7 @@ from .exceptions import (
     InvalidUserUUID,
     InvalidUserLine,
     NoSuchConferenceID,
+    NoSuchContextName,
     NoSuchMeeting,
     NoSuchUserVoicemail,
     NoSuchVoicemail,
@@ -18,6 +19,27 @@ from .exceptions import (
 
 def not_found(error):
     return error.response is not None and error.response.status_code == 404
+
+
+class Context:
+
+    def __init__(self, id, tenant_uuid, name, confd_client):
+        self._confd_client = confd_client
+        self.id = id
+        self.tenant_uuid = tenant_uuid
+        self.name = name
+
+    @classmethod
+    def from_name(cls, name, confd_client):
+        try:
+            response = confd_client.contexts.list(name=name, recurse=True)
+        except RequestException as e:
+            raise WazoConfdUnreachable(confd_client, e)
+
+        for context in response['items']:
+            return cls(context['id'], context['tenant_uuid'], context['name'], confd_client)
+
+        raise NoSuchContextName(name)
 
 
 class Meeting:

@@ -1,4 +1,4 @@
-# Copyright 2015-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from wazo_calld.exceptions import APIException
@@ -27,6 +27,12 @@ class NoSuchConferenceID(Exception):
     def __init__(self, conference_id):
         self.conference_id = conference_id
         super().__init__('No such conference ID "{}"'.format(conference_id))
+
+
+class NoSuchContextName(Exception):
+    def __init__(self, context_name):
+        self.context_name = context_name
+        super().__init__(f'No such context name "{context_name}"')
 
 
 class NoSuchMeeting(Exception):

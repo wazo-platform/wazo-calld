@@ -32,6 +32,15 @@ class ConfdClient:
 
         requests.post(url, json=body)
 
+    def set_contexts(self, *mock_contexts):
+        url = self.url('_set_response')
+        body = {
+            'response': 'contexts',
+            'content': {context.id_(): context.to_dict() for context in mock_contexts},
+        }
+
+        requests.post(url, json=body)
+
     def set_users(self, *mock_users):
         url = self.url('_set_response')
         body = {'response': 'users',
