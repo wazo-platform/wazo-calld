@@ -168,14 +168,16 @@ class TestBusConsume(IntegrationTest):
         until.assert_(assert_function, tries=5)
 
     def test_when_channel_leaves_bridge_call_direction_updated(self):
-        first_channel_id = new_call_id()
-        second_channel_id = new_call_id()
+        first_channel_id = new_call_id(1)
+        second_channel_id = new_call_id(2)
+        third_channel_id = new_call_id(3)
         self.ari.set_bridges(
-            MockBridge(first_channel_id, channels=[first_channel_id, second_channel_id])
+            MockBridge(first_channel_id, channels=[first_channel_id, second_channel_id, third_channel_id])
         )
         self.ari.set_channels(
             MockChannel(id=first_channel_id, state='Up'),
             MockChannel(id=second_channel_id, state='Up'),
+            MockChannel(id=third_channel_id, state='Up'),
         )
         self.ari.set_channel_variable({
             first_channel_id: {
@@ -183,24 +185,18 @@ class TestBusConsume(IntegrationTest):
             },
             second_channel_id: {
                 'WAZO_TENANT_UUID': VALID_TENANT,
-                'WAZO_CALL_DIRECTION': 'outbound',
+            },
+            third_channel_id: {
+                'WAZO_TENANT_UUID': VALID_TENANT,
+                'WAZO_CALL_DIRECTION': 'inbound',
             },
         })
 
-        self.bus.send_ami_newstate_event(first_channel_id)
-        self.bus.send_ami_newstate_event(second_channel_id)
-
-        self.ari.set_channels(
-            MockChannel(id=first_channel_id, state='Up')
-        )
         events = self.bus.accumulator(routing_key='calls.call.updated')
 
-        self.ari.set_bridges(
-            MockBridge(first_channel_id, channels=[first_channel_id])
-        )
-        self.bus.send_ami_bridge_leave_event(second_channel_id, first_channel_id, 1)
+        self.bus.send_ami_newstate_event(first_channel_id)
 
-        def assert_function():
+        def assert_call_inbound():
             assert_that(
                 events.accumulate(with_headers=True),
                 has_item(
@@ -211,7 +207,7 @@ class TestBusConsume(IntegrationTest):
                             'data': has_entries({
                                 'call_id': first_channel_id,
                                 'status': 'Up',
-                                'direction': 'outbound',
+                                'direction': 'inbound',
                             })
                         }),
                         headers=has_entries(
@@ -222,7 +218,45 @@ class TestBusConsume(IntegrationTest):
                 )
             )
 
-        until.assert_(assert_function, tries=5)
+        until.assert_(assert_call_inbound, tries=5)
+
+        self.ari.set_channels(
+            MockChannel(id=first_channel_id, state='Up'),
+            MockChannel(id=second_channel_id, state='Up')
+        )
+
+        self.ari.set_bridges(
+            MockBridge(first_channel_id, channels=[first_channel_id, second_channel_id])
+        )
+
+        events = self.bus.accumulator(routing_key='calls.call.updated')
+        self.bus.send_ami_bridge_leave_event(
+            channel_id=third_channel_id, bridge_id=first_channel_id, bridge_num_channels=2
+        )
+
+        def assert_call_internal():
+            assert_that(
+                events.accumulate(with_headers=True),
+                has_item(
+                    has_entries(
+                        message=has_entries({
+                            'name': 'call_updated',
+                            'origin_uuid': XIVO_UUID,
+                            'data': has_entries({
+                                'call_id': first_channel_id,
+                                'status': 'Up',
+                                'direction': 'internal',
+                            })
+                        }),
+                        headers=has_entries(
+                            name='call_updated',
+                            tenant_uuid=VALID_TENANT,
+                        )
+                    )
+                )
+            )
+
+        until.assert_(assert_call_internal, tries=5)
 
     def test_when_channel_answered_then_bus_event(self):
         call_id = new_call_id()
