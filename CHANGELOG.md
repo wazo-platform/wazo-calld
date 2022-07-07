@@ -1,5 +1,20 @@
 # Changelog
 
+## 22.15
+
+* The `direction` field has been added to the following resources:
+
+  * GET `/calls`
+  * GET `/calls/<call-id>`
+  * GET `/users/me/calls`
+
+* The `direction` field has been added to the following events:
+
+  * `call_created`
+  * `call_updated`
+  * `call_answered`
+  * `call_ended`
+
 ## 22.06
 
 * New API to kick participants out of a meeting:
