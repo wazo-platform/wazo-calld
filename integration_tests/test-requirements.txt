@@ -4,6 +4,7 @@ https://github.com/wazo-platform/wazo-lib-rest-client/archive/master.zip
 https://github.com/wazo-platform/wazo-calld-client/archive/master.zip
 https://github.com/wazo-platform/wazo-test-helpers/archive/master.zip
 https://github.com/wazo-platform/wazo-amid-client/archive/master.zip
+https://github.com/wazo-platform/xivo-bus/archive/master.zip
 kombu
 openapi-spec-validator
 psycopg2-binary
