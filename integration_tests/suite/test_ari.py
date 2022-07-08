@@ -42,9 +42,17 @@ class TestARIReconnection(RealAsteriskIntegrationTest):
 
         self.restart_service('ari')
         self.reset_clients()
-        self.reconnect_ari()
 
-        until.assert_(self._calld_is_connected, tries=3)
+        def reconnect():
+            try:
+                self.reconnect_ari()
+                return True
+            except Exception:
+                return False
+
+        until.true(reconnect, tries=3)
+
+        until.assert_(self._calld_is_connected, tries=10)
 
     def _calld_is_connected(self):
         assert_that(self.calld.status(), has_entries(
