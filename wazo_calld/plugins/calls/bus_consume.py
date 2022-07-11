@@ -79,6 +79,7 @@ class CallsBusEventHandler:
             logger.debug('channel %s not found', channel_id)
             return
         call = self.services.make_call_from_channel(self.ari, channel)
+        self._set_conversation_direction_cache(call.id_, call.direction)
         self.notifier.call_created(call)
 
     def _collectd_channel_created(self, event):
@@ -98,6 +99,7 @@ class CallsBusEventHandler:
             logger.debug('channel %s not found', channel_id)
             return
         call = self.services.make_call_from_channel(self.ari, channel)
+        self._set_conversation_direction_cache(call.id_, call.direction)
         self.notifier.call_updated(call)
 
     def _relay_channel_answered(self, event):
@@ -116,6 +118,7 @@ class CallsBusEventHandler:
             logger.debug('channel %s not found', channel_id)
             return
         call = self.services.make_call_from_channel(self.ari, channel)
+        self._set_conversation_direction_cache(call.id_, call.direction)
         self.notifier.call_answered(call)
 
     def _collectd_channel_ended(self, event):
@@ -190,11 +193,14 @@ class CallsBusEventHandler:
         self.notifier.call_dtmf(call, digit)
 
     def _invalidate_conversation_direction_cache(self, channel_id):
+        self._set_conversation_direction_cache(channel_id, '')
+
+    def _set_conversation_direction_cache(self, channel_id, direction):
         set_channel_id_var_sync(
             self.ari,
             channel_id,
             'WAZO_CONVERSATION_DIRECTION',
-            '',
+            direction,
             bypass_stasis=True,
         )
 
@@ -222,6 +228,7 @@ class CallsBusEventHandler:
             self._invalidate_conversation_direction_cache(participant_channel_id)
 
             call = self.services.make_call_from_channel(self.ari, channel)
+            self._set_conversation_direction_cache(participant_channel_id, call.direction)
             self.notifier.call_updated(call)
 
     def _relay_channel_left_bridge(self, event):
@@ -251,6 +258,7 @@ class CallsBusEventHandler:
                 self._invalidate_conversation_direction_cache(participant_channel_id)
 
             call = self.services.make_call_from_channel(self.ari, channel)
+            self._set_conversation_direction_cache(participant_channel_id, call.direction)
             self.notifier.call_updated(call)
 
     def _mix_monitor_start(self, event):

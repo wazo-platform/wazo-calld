@@ -229,14 +229,15 @@ class TestBusConsume(IntegrationTest):
             MockBridge(first_channel_id, channels=[first_channel_id, second_channel_id])
         )
 
-        events = self.bus.accumulator(routing_key='calls.call.updated')
+        events_updated = self.bus.accumulator(routing_key='calls.call.updated')
+
         self.bus.send_ami_bridge_leave_event(
             channel_id=third_channel_id, bridge_id=first_channel_id, bridge_num_channels=2
         )
 
         def assert_call_internal():
             assert_that(
-                events.accumulate(with_headers=True),
+                events_updated.accumulate(with_headers=True),
                 has_item(
                     has_entries(
                         message=has_entries({
