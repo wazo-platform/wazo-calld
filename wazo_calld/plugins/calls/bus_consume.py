@@ -78,8 +78,11 @@ class CallsBusEventHandler:
         except ARINotFound:
             logger.debug('channel %s not found', channel_id)
             return
+        channel_variables = channel.json.get('channelvars', {})
+        previous_conversation_direction = channel_variables.get('WAZO_CONVERSATION_DIRECTION')
         call = self.services.make_call_from_channel(self.ari, channel)
-        self._set_conversation_direction_cache(call.id_, call.direction)
+        if call.direction != previous_conversation_direction:
+            self._set_conversation_direction_cache(call.id_, call.direction)
         self.notifier.call_created(call)
 
     def _collectd_channel_created(self, event):
@@ -98,8 +101,11 @@ class CallsBusEventHandler:
         except ARINotFound:
             logger.debug('channel %s not found', channel_id)
             return
+        channel_variables = channel.json.get('channelvars', {})
+        previous_conversation_direction = channel_variables.get('WAZO_CONVERSATION_DIRECTION')
         call = self.services.make_call_from_channel(self.ari, channel)
-        self._set_conversation_direction_cache(call.id_, call.direction)
+        if call.direction != previous_conversation_direction:
+            self._set_conversation_direction_cache(call.id_, call.direction)
         self.notifier.call_updated(call)
 
     def _relay_channel_answered(self, event):
@@ -118,7 +124,6 @@ class CallsBusEventHandler:
             logger.debug('channel %s not found', channel_id)
             return
         call = self.services.make_call_from_channel(self.ari, channel)
-        self._set_conversation_direction_cache(call.id_, call.direction)
         self.notifier.call_answered(call)
 
     def _collectd_channel_ended(self, event):
@@ -226,7 +231,6 @@ class CallsBusEventHandler:
                 return
 
             self._invalidate_conversation_direction_cache(participant_channel_id)
-
             call = self.services.make_call_from_channel(self.ari, channel)
             self._set_conversation_direction_cache(participant_channel_id, call.direction)
             self.notifier.call_updated(call)
