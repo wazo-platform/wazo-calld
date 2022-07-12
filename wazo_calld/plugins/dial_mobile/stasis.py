@@ -1,4 +1,4 @@
-# Copyright 2019-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -45,6 +45,7 @@ class DialMobileStasis:
 
     def _add_ari_application(self):
         self._core_ari.register_application(self._app_name)
+        self._core_ari.reload()
 
     def channel_destroyed(self, channel, event):
         self._service.notify_channel_gone(event['channel']['id'])

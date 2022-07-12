@@ -42,9 +42,6 @@ class RealAsteriskIntegrationTest(IntegrationTest):
         self.ari = ari.connect(**self.ari_config())
         self.reset_ari()
 
-    def reconnect_ari(self):
-        self.ari = ari.connect(**self.ari_config())
-
     def tearDown(self):
         super().tearDown()
 
@@ -121,7 +118,7 @@ class RealAsterisk:
             channel_ids = [call['call_id'] for call in calls['items']]
             return (caller_id in channel_ids and callee_id in channel_ids)
 
-        until.true(channels_have_been_created_in_calld, callee.id, caller.id, tries=5)
+        until.true(channels_have_been_created_in_calld, callee.id, caller.id, tries=3)
 
         return caller.id, callee.id
 

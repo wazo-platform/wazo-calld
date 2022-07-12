@@ -243,7 +243,6 @@ class TestCollectdRabbitMQRestart(IntegrationTest):
         self.restart_service('rabbitmq')
         CalldEverythingOkWaitStrategy().wait(self)  # wait for calld to reconnect to rabbitmq
         self.reset_bus_client()
-        self.reset_ari_bus()
 
         events = self.bus.accumulator(routing_key='collectd.calls', exchange=BUS_EXCHANGE_COLLECTD)
         self.stasis.event_channel_destroyed(

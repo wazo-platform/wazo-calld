@@ -1,4 +1,4 @@
-# Copyright 2016-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
@@ -23,7 +23,7 @@ from .exceptions import (
     TransferException,
 )
 from .lock import HangupLock, InvalidLock
-from .transfer import TransferRole, TransferStatus
+from .transfer import TransferRole
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +49,6 @@ class TransfersStasis:
 
     def _subscribe(self):
         self.ari.on_application_registered(DEFAULT_APPLICATION_NAME, self.process_lost_hangups)
-        self.ari.on_application_registered(DEFAULT_APPLICATION_NAME, self.process_answered_calls)
         self.ari.on_channel_event('ChannelEnteredBridge', self.release_hangup_lock)
         self.ari.on_channel_event('ChannelDestroyed', self.bypass_hangup_lock_from_source)
         self.ari.on_bridge_event('BridgeDestroyed', self.clean_bridge_variables)
@@ -113,21 +112,6 @@ class TransfersStasis:
             if not Channel(transfer.recipient_call, self.ari).exists():
                 logger.debug('Recipient hangup from transfer %s', transfer.id)
                 transfer_state = transfer_state.recipient_hangup()
-        logger.debug('Done.')
-
-    def process_answered_calls(self):
-        transfers = list(self.state_persistor.list())
-
-        logger.debug('Processing lost answered calls since last stop...')
-        for transfer in transfers:
-            transfer_state = self.state_factory.make(transfer)
-            if transfer_state.name == TransferStatus.ringback and Channel(transfer.recipient_call, self.ari).exists():
-                channel = self.ari.channels.get(channelId=transfer.recipient_call)
-                if channel.json['state'] != 'Up':
-                    logger.debug('Recipiend answered from transfer %s', transfer.id)
-                    continue
-                event = {'args': ['', '', transfer.id]}
-                self.transfer_recipient_answered((channel, event))
         logger.debug('Done.')
 
     def stasis_start(self, event_objects, event):

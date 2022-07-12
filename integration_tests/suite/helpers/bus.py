@@ -345,6 +345,3 @@ class BusClient(bus_helper.BusClient):
             headers={'name': 'meeting_deleted'},
             routing_key='config.meetings.deleted'
         )
-
-    def send_stasis_non_json_event(self):
-        self.send_event('', headers={'category': 'stasis', 'name': 'StasisStart'})

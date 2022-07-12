@@ -1,4 +1,4 @@
-# Copyright 2015-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import errno
@@ -6,11 +6,11 @@ import logging
 import socket
 import time
 import urllib
-import threading
 
 from contextlib import contextmanager
 
 import ari
+import requests
 import swaggerpy.http_client
 
 from requests.exceptions import HTTPError
@@ -23,45 +23,6 @@ from .exceptions import AsteriskARINotInitialized
 logger = logging.getLogger(__name__)
 
 DEFAULT_APPLICATION_NAME = 'callcontrol'
-ALL_STASIS_EVENTS = [
-    "ApplicationReplaced",
-    "BridgeAttendedTransfer",
-    "BridgeBlindTransfer",
-    "BridgeCreated",
-    "BridgeDestroyed",
-    "BridgeMerged",
-    "ChannelCallerId",
-    "ChannelConnectedLine",
-    "ChannelCreated",
-    "ChannelDestroyed",
-    "ChannelDialplan",
-    "ChannelDtmfReceived",
-    "ChannelEnteredBridge",
-    "ChannelHangupRequest",
-    "ChannelHold",
-    "ChannelLeftBridge",
-    "ChannelMohStart",
-    "ChannelMohStop",
-    "ChannelStateChange",
-    "ChannelTalkingFinished",
-    "ChannelTalkingStarted",
-    "ChannelUnhold",
-    "ChannelUserevent",
-    "ChannelVarset",
-    "ContactStatusChange",
-    "DeviceStateChanged",
-    "Dial",
-    "EndpointStateChange",
-    "PeerStatusChange",
-    "PlaybackFinished",
-    "PlaybackStarted",
-    "RecordingFailed",
-    "RecordingFinished",
-    "RecordingStarted",
-    "StasisEnd",
-    "StasisStart",
-    "TextMessageReceived",
-]
 
 
 def not_found(error):
@@ -83,16 +44,13 @@ class ARIClientProxy(ari.client.Client):
         self._username = username
         self._password = password
         self._initialized = False
-        self._registered_app = set()
 
     def init(self):
-        if not self._initialized:
-            split = urllib.parse.urlsplit(self._base_url)
-            http_client = swaggerpy.http_client.SynchronousHttpClient()
-            http_client.set_basic_auth(split.hostname, self._username, self._password)
-            super().__init__(self._base_url, http_client)
-            self._initialized = True
-        return self._initialized
+        split = urllib.parse.urlsplit(self._base_url)
+        http_client = swaggerpy.http_client.SynchronousHttpClient()
+        http_client.set_basic_auth(split.hostname, self._username, self._password)
+        super().__init__(self._base_url, http_client)
+        self._initialized = True
 
     def close(self):
         if not self._initialized:
@@ -106,71 +64,57 @@ class ARIClientProxy(ari.client.Client):
 
         return super().__getattr__(*args, **kwargs)
 
-    def on_application_registered(self, application_name, fn, *args, **kwargs):
-        super().on_application_registered(application_name, fn, *args, **kwargs)
-        if application_name in self._registered_app:
-            # The app is already registered, execute the callback now
-            try:
-                fn(*args, **kwargs)
-            except Exception as e:
-                self.exception_handler(e)
-
-    def execute_app_registered_callbacks(self, apps):
-        for app in apps:
-            self._registered_app.add(app)
-        return self._execute_app_registered_callbacks(','.join(apps))
-
-    def execute_app_deregistered_callbacks(self, apps):
-        for app in apps:
-            self._registered_app.discard(app)
-        return self._execute_app_deregistered_callbacks(','.join(apps))
-
 
 class CoreARI:
 
-    def __init__(self, config, bus_consumer):
+    def __init__(self, config):
         self._apps = []
         self.config = config
         self._is_running = False
         self._should_delay_reconnect = True
         self._should_stop = False
         self._pubsub = Pubsub()
-        self._bus_consumer = bus_consumer
         self.client = ARIClientProxy(**config['connection'])
-        self._initialization_thread = threading.Thread(target=self.run)
 
-    def init_client(self):
-        self._subscribe_to_bus_events()
-        self._initialization_thread.start()
+    def _init_client(self):
+        try:
+            self.client.init()
+        except requests.ConnectionError:
+            logger.info('No ARI server found')
+            return False
+        except requests.HTTPError as e:
+            if asterisk_is_loading(e):
+                logger.info('ARI is not ready yet')
+                return False
+            else:
+                raise
+        self._pubsub.publish('client_initialized', message=None)
         return True
-
-    def _subscribe_to_bus_events(self):
-        for event_name in ALL_STASIS_EVENTS:
-            self._bus_consumer.subscribe(
-                event_name,
-                self.client.on_stasis_event,
-                headers={'category': 'stasis'},
-            )
-        self._bus_consumer.subscribe('FullyBooted', self.reregister_applications)
 
     def client_initialized_subscribe(self, callback):
         self._pubsub.subscribe('client_initialized', callback)
 
+    def reload(self):
+        self._should_delay_reconnect = False
+        self._trigger_disconnect()
+
     def run(self):
         while not self._should_stop:
-            try:
-                initialized = self.client.init()
-            except Exception:
-                initialized = False
-
+            initialized = self._init_client()
             if initialized:
-                self._pubsub.publish('client_initialized', message=None)
                 break
-
             connection_delay = self.config['startup_connection_delay']
             logger.warning('ARI not initialized, retrying in %s seconds...', connection_delay)
             time.sleep(connection_delay)
         self._should_delay_reconnect = False
+
+        while not self._should_stop:
+            if self._should_delay_reconnect:
+                delay = self.config['reconnection_delay']
+                logger.warning('Reconnecting to ARI in %s seconds', delay)
+                time.sleep(delay)
+            self._should_delay_reconnect = True
+            self._connect()
 
     def _connect(self):
         logger.debug('ARI client listening...')
@@ -198,38 +142,19 @@ class CoreARI:
         finally:
             self._is_running = False
 
-    def reregister_applications(self, _event):
-        logger.info('Asterisk started, registering all stasis applications')
-        self.client.execute_app_deregistered_callbacks(self._apps)
-        for app in self._apps:
-            self.client.amqp.stasisSubscribe(applicationName=app)
-        self.client.execute_app_registered_callbacks(self._apps)
-
     def register_application(self, app):
-        if app in self._apps:
-            return
-
-        self._apps.append(app)
-        self.client.amqp.stasisSubscribe(applicationName=app)
-        self.client.execute_app_registered_callbacks([app])
+        if app not in self._apps:
+            self._apps.append(app)
 
     def deregister_application(self, app):
         if app in self._apps:
             self._apps.remove(app)
-            self.client.execute_app_deregistered_callbacks([app])
-            self.client.amqp.stasisUnsubscribe(applicationName=app)
 
     def is_running(self):
         return self._is_running
 
     def provide_status(self, status):
-        expected_apps = [
-            'adhoc_conference',
-            'callcontrol',
-            'dial_mobile'
-        ]
-        ok = self.client._initialized and set(expected_apps).issubset(set(self._apps))
-        status['ari']['status'] = Status.ok if ok else Status.fail
+        status['ari']['status'] = Status.ok if self.is_running() else Status.fail
 
     def _connection_error(self, error):
         logger.warning('ARI connection error: %s...', error)
@@ -249,7 +174,7 @@ class CoreARI:
 
     def stop(self):
         self._should_stop = True
-        self._initialization_thread.join()
+        self._trigger_disconnect()
 
     def _trigger_disconnect(self):
         self._sync()

@@ -103,7 +103,7 @@ class IntegrationTest(AssetLaunchingTestCase):
             logger.debug(e)
             cls.phoned = WrongClient('phoned')
         try:
-            cls.stasis = StasisClient('127.0.0.1', cls.service_port(5672, 'rabbitmq'))
+            cls.stasis = StasisClient('127.0.0.1', cls.service_port(5039, 'ari'))
         except (NoSuchService, NoSuchPort) as e:
             logger.debug(e)
             cls.stasis = WrongClient('stasis')
@@ -122,14 +122,6 @@ class IntegrationTest(AssetLaunchingTestCase):
         except (NoSuchService, NoSuchPort) as e:
             logger.debug(e)
             cls.bus = WrongClient('bus')
-
-    @classmethod
-    def reset_ari_bus(cls):
-        try:
-            cls.stasis = StasisClient('127.0.0.1', cls.service_port(5672, 'rabbitmq'))
-        except (NoSuchService, NoSuchPort) as e:
-            logger.debug(e)
-            cls.stasis = WrongClient('stasis')
 
     @classmethod
     def make_calld(cls, token=VALID_TOKEN):

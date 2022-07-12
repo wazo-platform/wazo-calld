@@ -1,47 +1,26 @@
 # Copyright 2015-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from xivo_bus.publisher import BusPublisher
-from xivo_bus.resources.common.event import BaseEvent
+import requests
 
-from .constants import SOME_STASIS_APP, VALID_TENANT, XIVO_UUID
+from hamcrest import assert_that, equal_to
 
-
-class _StasisEvent(BaseEvent):
-    # TODO PCM: check what routing key should be now that headers are used
-    routing_key_fmt = ''
-
-    def __init__(self, body):
-        self._body = body
-        self.name = body['type']
-        super().__init__()
+from .constants import SOME_STASIS_APP, VALID_TENANT
 
 
 class StasisClient:
 
     def __init__(self, host, port):
-        bus_config = {
-            'username': 'guest',
-            'password': 'guest',
-            'host': host,
-            'port': port,
-            'exchange_name': 'wazo-headers',
-            'exchange_type': 'headers',
-        }
-        self._publisher = BusPublisher(service_uuid=XIVO_UUID, **bus_config)
+        self._host = host
+        self._port = port
 
-    def _send_stasis_event(self, body):
-        headers = {
-            'category': 'stasis',
-            'name': body['type'],
-            'application_name': body['application'],
-        }
-
-        event = _StasisEvent(body)
-
-        self._publisher.publish(event, headers)
+    def url(self, *parts):
+        return 'http://{host}:{port}/{path}'.format(host=self._host,
+                                                    port=self._port,
+                                                    path='/'.join(parts))
 
     def event_answer_connect(self, from_, new_call_id, stasis_app, stasis_app_instance):
+        url = self.url('_send_ws_event')
         body = {
             "application": stasis_app,
             "args": [
@@ -73,9 +52,12 @@ class StasisClient:
             "timestamp": "2015-12-16T15:14:04.269-0500",
             "type": "StasisStart"
         }
-        return self._send_stasis_event(body)
+
+        response = requests.post(url, json=body)
+        assert_that(response.status_code, equal_to(201))
 
     def event_hangup(self, channel_id):
+        url = self.url('_send_ws_event')
         body = {
             "application": SOME_STASIS_APP,
             "channel": {
@@ -102,10 +84,13 @@ class StasisClient:
             "timestamp": "2015-12-18T15:40:39.073-0500",
             "type": "StasisEnd"
         }
-        return self._send_stasis_event(body)
+
+        response = requests.post(url, json=body)
+        assert_that(response.status_code, equal_to(201))
 
     def event_stasis_start(self, channel_id, stasis_app, stasis_app_instance, stasis_args=None):
         stasis_args = stasis_args or []
+        url = self.url('_send_ws_event')
         body = {
             "application": stasis_app,
             "args": [stasis_app_instance] + stasis_args,
@@ -133,7 +118,9 @@ class StasisClient:
             "timestamp": "2016-02-04T14:25:00.408-0500",
             "type": "StasisStart"
         }
-        return self._send_stasis_event(body)
+
+        response = requests.post(url, json=body)
+        assert_that(response.status_code, equal_to(201))
 
     def event_channel_destroyed(
         self,
@@ -148,6 +135,7 @@ class StasisClient:
         connected_number='',
         answer_time=None,
     ):
+        url = self.url('_send_ws_event')
         creation_time = creation_time or "2016-02-04T15:10:21.225-0500"
         timestamp = timestamp or "2016-02-04T15:10:22.548-0500"
         body = {
@@ -185,4 +173,11 @@ class StasisClient:
             "timestamp": timestamp,
             "type": "ChannelDestroyed"
         }
-        return self._send_stasis_event(body)
+
+        response = requests.post(url, json=body)
+        assert_that(response.status_code, equal_to(201))
+
+    def non_json_message(self):
+        url = self.url('_send_ws_event')
+        response = requests.post(url, data='')
+        assert_that(response.status_code, equal_to(201))

@@ -49,10 +49,6 @@
 		{
 			"path": "/api-docs/applications.{format}",
 			"description": "Stasis application resources"
-		},
-		{
-			"path": "/api-docs/amqp.{format}",
-			"description": "AMQP resource"
 		}
 	]
 }
