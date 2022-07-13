@@ -94,24 +94,6 @@ class MockApplication:
         }
 
 
-class MockContext:
-
-    def __init__(self, id, tenant_uuid, name):
-        self._id = id
-        self._tenant_uuid = tenant_uuid
-        self._name = name
-
-    def id_(self):
-        return self._id
-
-    def to_dict(self):
-        return {
-            'id': self._id,
-            'tenant_uuid': self._tenant_uuid,
-            'name': self._name,
-        }
-
-
 class MockChannel:
 
     def __init__(self,

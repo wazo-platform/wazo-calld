@@ -29,12 +29,6 @@ class NoSuchConferenceID(Exception):
         super().__init__('No such conference ID "{}"'.format(conference_id))
 
 
-class NoSuchContextName(Exception):
-    def __init__(self, context_name):
-        self.context_name = context_name
-        super().__init__(f'No such context name "{context_name}"')
-
-
 class NoSuchMeeting(Exception):
     def __init__(self, meeting_uuid):
         self.meeting_uuid = meeting_uuid

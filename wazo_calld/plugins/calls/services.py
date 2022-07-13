@@ -9,10 +9,9 @@ from ari.exceptions import ARINotFound
 from wazo_calld.ari_ import DEFAULT_APPLICATION_NAME
 from wazo_calld.plugin_helpers import ami
 from wazo_calld.plugin_helpers.ari_ import AUTO_ANSWER_VARIABLES, Channel, set_channel_var_sync, set_channel_id_var_sync
-from wazo_calld.plugin_helpers.confd import Context, User
+from wazo_calld.plugin_helpers.confd import User
 from wazo_calld.plugin_helpers.exceptions import (
     InvalidExtension,
-    NoSuchContextName,
     UserPermissionDenied,
 )
 from xivo.asterisk.protocol_interface import protocol_interface_from_channel
@@ -81,12 +80,6 @@ class CallsService:
             # Context does not exist in the dialplan
             raise InvalidExtension(requested_context, requested_extension)
 
-        try:
-            context = Context.from_name(requested_context, self._confd)
-        except NoSuchContextName:
-            # Context does not exist in wazo-confd
-            raise InvalidExtension(requested_context, requested_extension)
-
         source_user = request['source']['user']
         variables = request.get('variables', {})
         dial_echo_request_id = None
@@ -97,16 +90,18 @@ class CallsService:
             if not source_mobile:
                 raise CallCreationError('User has no mobile phone number', details={'user': source_user})
             source_context = user.main_line().context()
+
             if not ami.extension_exists(self._ami, source_context, source_mobile, priority=1):
                 details = {'user': source_user,
                            'mobile_exten': source_mobile,
                            'mobile_context': source_context}
                 raise CallCreationError('User has invalid mobile phone number', details=details)
+
             endpoint = 'local/s@wazo-originate-mobile-leg1/n'
             context_name, extension, priority = 'wazo-originate-mobile-leg2', 's', 1
 
             variables.setdefault('_XIVO_USERUUID', source_user)
-            variables.setdefault('_WAZO_TENANT_UUID', context.tenant_uuid)
+            variables.setdefault('_WAZO_TENANT_UUID', user.tenant_uuid)
             variables.setdefault('WAZO_DEREFERENCED_USERUUID', source_user)
             variables.setdefault('WAZO_ORIGINATE_MOBILE_PRIORITY', '1')
             variables.setdefault('WAZO_ORIGINATE_MOBILE_EXTENSION', source_mobile)
@@ -150,7 +145,7 @@ class CallsService:
 
             variables.setdefault('XIVO_FIX_CALLERID', '1')
             variables.setdefault('WAZO_USERUUID', source_user)
-            variables.setdefault('_WAZO_TENANT_UUID', context.tenant_uuid)
+            variables.setdefault('_WAZO_TENANT_UUID', user.tenant_uuid)
             variables.setdefault('CONNECTEDLINE(name)', extension)
             variables.setdefault('CONNECTEDLINE(num)', '' if extension.startswith('#') else extension)
             variables.setdefault('CALLERID(name)', extension)

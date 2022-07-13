@@ -8,7 +8,6 @@ from .exceptions import (
     InvalidUserUUID,
     InvalidUserLine,
     NoSuchConferenceID,
-    NoSuchContextName,
     NoSuchMeeting,
     NoSuchUserVoicemail,
     NoSuchVoicemail,
@@ -19,27 +18,6 @@ from .exceptions import (
 
 def not_found(error):
     return error.response is not None and error.response.status_code == 404
-
-
-class Context:
-
-    def __init__(self, id, tenant_uuid, name, confd_client):
-        self._confd_client = confd_client
-        self.id = id
-        self.tenant_uuid = tenant_uuid
-        self.name = name
-
-    @classmethod
-    def from_name(cls, name, confd_client):
-        try:
-            response = confd_client.contexts.list(name=name, recurse=True)
-        except RequestException as e:
-            raise WazoConfdUnreachable(confd_client, e)
-
-        for context in response['items']:
-            return cls(context['id'], context['tenant_uuid'], context['name'], confd_client)
-
-        raise NoSuchContextName(name)
 
 
 class Meeting:
@@ -90,8 +68,15 @@ class User:
     # TODO set tenant_uuid mandatory when calls plugin will be multi-tenant
     def __init__(self, user_uuid, confd_client, tenant_uuid=None):
         self.uuid = user_uuid
-        self.tenant_uuid = tenant_uuid
+        self._tenant_uuid = tenant_uuid
         self._confd = confd_client
+
+    @property
+    def tenant_uuid(self):
+        if not self._tenant_uuid:
+            self._tenant_uuid = self._get_tenant_uuid()
+
+        return self._tenant_uuid
 
     def main_line(self):
         try:
@@ -128,6 +113,16 @@ class User:
     def mobile_phone_number(self):
         try:
             return self._confd.users.get(self.uuid, tenant_uuid=self.tenant_uuid)['mobile_phone_number']
+        except HTTPError as e:
+            if not_found(e):
+                raise InvalidUserUUID(self.uuid)
+            raise
+        except RequestException as e:
+            raise WazoConfdUnreachable(self._confd, e)
+
+    def _get_tenant_uuid(self):
+        try:
+            return self._confd.users.get(self.uuid)['tenant_uuid']
         except HTTPError as e:
             if not_found(e):
                 raise InvalidUserUUID(self.uuid)
