@@ -172,11 +172,12 @@ class MockMoh:
 
 class MockUser:
 
-    def __init__(self, uuid, line_ids=None, mobile=None, voicemail=None):
+    def __init__(self, uuid, line_ids=None, mobile=None, voicemail=None, tenant_uuid=None):
         self._uuid = uuid
         self._line_ids = line_ids or []
         self._mobile = mobile
         self._voicemail = voicemail
+        self._tenant_uuid = tenant_uuid
 
     def uuid(self):
         return self._uuid
@@ -187,6 +188,7 @@ class MockUser:
             'lines': [{'id': line_id} for line_id in self._line_ids],
             'mobile_phone_number': self._mobile,
             'voicemail': self._voicemail,
+            'tenant_uuid': self._tenant_uuid,
         }
 
 
