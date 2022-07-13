@@ -78,11 +78,10 @@ class CallsBusEventHandler:
         except ARINotFound:
             logger.debug('channel %s not found', channel_id)
             return
-        channel_variables = channel.json.get('channelvars', {})
-        previous_conversation_direction = channel_variables.get('WAZO_CONVERSATION_DIRECTION')
+
         call = self.services.make_call_from_channel(self.ari, channel)
-        if call.direction != previous_conversation_direction:
-            self._set_conversation_direction_cache(call.id_, call.direction)
+        call_direction = self.services.conversation_direction_from_channels(self.ari, [channel])
+        self._set_conversation_direction_cache(call.id_, call_direction)
         self.notifier.call_created(call)
 
     def _collectd_channel_created(self, event):
@@ -101,11 +100,7 @@ class CallsBusEventHandler:
         except ARINotFound:
             logger.debug('channel %s not found', channel_id)
             return
-        channel_variables = channel.json.get('channelvars', {})
-        previous_conversation_direction = channel_variables.get('WAZO_CONVERSATION_DIRECTION')
         call = self.services.make_call_from_channel(self.ari, channel)
-        if call.direction != previous_conversation_direction:
-            self._set_conversation_direction_cache(call.id_, call.direction)
         self.notifier.call_updated(call)
 
     def _relay_channel_answered(self, event):
@@ -223,16 +218,24 @@ class CallsBusEventHandler:
             logger.debug('bridge %s not found', bridge_id)
             return
 
+        participant_channels = []
+
         for participant_channel_id in participant_channel_ids:
             try:
                 channel = self.ari.channels.get(channelId=participant_channel_id)
             except ARINotFound:
                 logger.debug('channel %s not found', participant_channel_id)
                 return
+            participant_channels.append(channel)
 
-            self._invalidate_conversation_direction_cache(participant_channel_id)
+        call_direction = self.services.conversation_direction_from_channels(
+            self.ari, participant_channels
+        )
+        for channel in participant_channels:
             call = self.services.make_call_from_channel(self.ari, channel)
-            self._set_conversation_direction_cache(participant_channel_id, call.direction)
+            if call.direction != call_direction:
+                self._set_conversation_direction_cache(channel.id, call_direction)
+                call.direction = call_direction
             self.notifier.call_updated(call)
 
     def _relay_channel_left_bridge(self, event):
@@ -251,6 +254,7 @@ class CallsBusEventHandler:
             logger.debug('bridge %s not found', bridge_id)
             return
 
+        participant_channels = []
         for participant_channel_id in participant_channel_ids:
             try:
                 channel = self.ari.channels.get(channelId=participant_channel_id)
@@ -261,8 +265,16 @@ class CallsBusEventHandler:
             if channels_in_bridge > 1:
                 self._invalidate_conversation_direction_cache(participant_channel_id)
 
+            participant_channels.append(channel)
+
+        call_direction = self.services.conversation_direction_from_channels(
+            self.ari, participant_channels
+        )
+        for channel in participant_channels:
             call = self.services.make_call_from_channel(self.ari, channel)
-            self._set_conversation_direction_cache(participant_channel_id, call.direction)
+            if call.direction != call_direction:
+                self._set_conversation_direction_cache(channel.id, call_direction)
+                call.direction = call_direction
             self.notifier.call_updated(call)
 
     def _mix_monitor_start(self, event):

@@ -294,10 +294,7 @@ class CallsService:
         call.dialed_extension = channel_helper.dialed_extension()
         call.sip_call_id = channel_helper.sip_call_id()
         call.line_id = channel_helper.line_id()
-        connected_channels = channel_helper.connected_channels()
-        call.direction = channel_variables.get('WAZO_CONVERSATION_DIRECTION') or (
-            CallsService.conversation_direction_from_channels(ari, [channel, *connected_channels])
-        ) or 'unknown'
+        call.direction = channel_variables.get('WAZO_CONVERSATION_DIRECTION') or 'unknown'
 
         return call
 
@@ -506,6 +503,7 @@ class CallsService:
     @staticmethod
     def conversation_direction_from_channels(ari, channels):
         all_directions = []
+        logger.debug('Determining conversation direction for channels: "%s"', channels)
 
         for channel in channels:
             try:
