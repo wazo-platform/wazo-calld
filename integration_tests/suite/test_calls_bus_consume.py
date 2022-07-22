@@ -4,9 +4,12 @@ import uuid
 
 from hamcrest import (
     assert_that,
+    contains,
+    empty,
     has_entries,
     has_item,
     is_,
+    not_,
 )
 from wazo_test_helpers import until
 
@@ -140,8 +143,9 @@ class TestBusConsume(IntegrationTest):
 
         events = self.bus.accumulator(routing_key='calls.call.updated')
 
-        self.bus.send_ami_newstate_event(first_channel_id)
         self.bus.send_ami_newchannel_event(second_channel_id)
+        self.bus.send_ami_newstate_event(second_channel_id)
+        self.bus.send_ami_newstate_event(first_channel_id)
 
         def assert_function():
             assert_that(
@@ -154,6 +158,7 @@ class TestBusConsume(IntegrationTest):
                             'data': has_entries({
                                 'call_id': first_channel_id,
                                 'status': 'Up',
+                                'talking_to': not_(empty()),
                                 'direction': 'outbound',
                             })
                         }),

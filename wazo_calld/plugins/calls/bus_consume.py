@@ -80,8 +80,9 @@ class CallsBusEventHandler:
             return
 
         call = self.services.make_call_from_channel(self.ari, channel)
-        call_direction = self.services.conversation_direction_from_channels(self.ari, [channel])
-        self._set_conversation_direction_cache(call.id_, call_direction)
+        if self._call_direction_unknown(call):
+            call.direction = self.services.conversation_direction_from_channels(self.ari, [channel])
+            self._set_conversation_direction_cache(channel_id, call.direction)
         self.notifier.call_created(call)
 
     def _collectd_channel_created(self, event):
@@ -119,6 +120,9 @@ class CallsBusEventHandler:
             logger.debug('channel %s not found', channel_id)
             return
         call = self.services.make_call_from_channel(self.ari, channel)
+        if self._call_direction_unknown(call):
+            call.direction = self.services.conversation_direction_from_channels(self.ari, [channel])
+            self._set_conversation_direction_cache(channel_id, call.direction)
         self.notifier.call_answered(call)
 
     def _collectd_channel_ended(self, event):
@@ -192,9 +196,6 @@ class CallsBusEventHandler:
         call = self._partial_call_from_channel_id(channel_id)
         self.notifier.call_dtmf(call, digit)
 
-    def _invalidate_conversation_direction_cache(self, channel_id):
-        self._set_conversation_direction_cache(channel_id, '')
-
     def _set_conversation_direction_cache(self, channel_id, direction):
         set_channel_id_var_sync(
             self.ari,
@@ -203,6 +204,9 @@ class CallsBusEventHandler:
             direction,
             bypass_stasis=True,
         )
+
+    def _call_direction_unknown(self, call):
+        return call.direction not in ('inbound', 'outbound', 'internal')
 
     def _relay_channel_entered_bridge(self, event):
         channel_id = event['Uniqueid']

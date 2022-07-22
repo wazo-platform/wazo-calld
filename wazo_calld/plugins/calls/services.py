@@ -294,7 +294,9 @@ class CallsService:
         call.dialed_extension = channel_helper.dialed_extension()
         call.sip_call_id = channel_helper.sip_call_id()
         call.line_id = channel_helper.line_id()
-        call.direction = channel_variables.get('WAZO_CONVERSATION_DIRECTION') or 'unknown'
+        call.direction = channel_variables.get('WAZO_CONVERSATION_DIRECTION') or (
+            CallsService.conversation_direction_from_channels(ari, [channel, *channel_helper.connected_channels()])
+        ) or 'unknown'
 
         return call
 
