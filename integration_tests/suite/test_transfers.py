@@ -1587,14 +1587,14 @@ class TestInitialisation(TestTransfers):
          transfer_id) = self.given_ringing_transfer()
 
         with self._calld_stopped():
-            self.answer_recipient_channel(recipient_channel_id)  # will be hungup by Asterisk, cause "no such application")
+            self.answer_recipient_channel(recipient_channel_id)
 
-        until.assert_(self.assert_transfer_is_cancelled,
+        until.assert_(self.assert_transfer_is_answered,
                       transfer_id,
                       transferred_channel_id,
                       initiator_channel_id,
-                      recipient_channel_id,
                       self.events,
+                      recipient_channel_id,
                       tries=5)
 
     def test_given_answered_transfer_and_transferred_hangs_up_while_calld_is_down_when_calld_restarts_then_transfer_is_abandoned(self):

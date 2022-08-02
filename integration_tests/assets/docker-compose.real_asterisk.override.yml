@@ -27,6 +27,7 @@ services:
     ports:
       - "5039"
     volumes:
+      - "./etc/asterisk/amqp.conf:/etc/asterisk/amqp.conf"
       - "./etc/asterisk/ari.conf:/etc/asterisk/ari.conf"
       - "./etc/asterisk/asterisk.conf:/etc/asterisk/asterisk.conf"
       - "./etc/asterisk/extensions.conf:/etc/asterisk/extensions.conf"
@@ -35,6 +36,7 @@ services:
       - "./etc/asterisk/manager.conf:/etc/asterisk/manager.conf"
       - "./etc/asterisk/modules.conf:/etc/asterisk/modules.conf"
       - "./etc/asterisk/musiconhold.conf:/etc/asterisk/musiconhold.conf"
+      - "./etc/asterisk/stasis_amqp.conf:/etc/asterisk/stasis_amqp.conf"
       - "./ssl:/usr/local/share/ssl"
     command: "asterisk -fTn"
 
