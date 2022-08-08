@@ -2,12 +2,12 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from xivo_bus.resources.faxes.event import (
-    FaxOutboundCreated,
-    FaxOutboundFailed,
-    FaxOutboundSucceeded,
-    FaxOutboundUserCreated,
-    FaxOutboundUserFailed,
-    FaxOutboundUserSucceeded,
+    FaxOutboundCreatedEvent,
+    FaxOutboundFailedEvent,
+    FaxOutboundSucceededEvent,
+    FaxOutboundUserCreatedEvent,
+    FaxOutboundUserFailedEvent,
+    FaxOutboundUserSucceededEvent,
 )
 
 
@@ -21,33 +21,33 @@ class FaxesNotifier:
 
     def notify_fax_created(self, fax_infos):
         user_uuid = fax_infos['user_uuid']
-        event = FaxOutboundCreated(fax_infos)
-        headers = self._build_headers(fax_infos)
-        self._bus_producer.publish(event, headers=headers)
+        event = FaxOutboundCreatedEvent(fax_infos, fax_infos['tenant_uuid'])
+        self._bus_producer.publish(event)
 
         if user_uuid:
-            event = FaxOutboundUserCreated(fax_infos)
-            headers[f'user_uuid:{user_uuid}'] = True
-            self._bus_producer.publish(event, headers=headers)
+            event = FaxOutboundUserCreatedEvent(
+                fax_infos, fax_infos['tenant_uuid'], user_uuid
+            )
+            self._bus_producer.publish(event)
 
     def notify_fax_succeeded(self, fax_infos):
         user_uuid = fax_infos['user_uuid']
-        event = FaxOutboundSucceeded(fax_infos)
-        headers = self._build_headers(fax_infos)
-        self._bus_producer.publish(event, headers=headers)
+        event = FaxOutboundSucceededEvent(fax_infos, fax_infos['tenant_uuid'])
+        self._bus_producer.publish(event)
 
         if user_uuid:
-            event = FaxOutboundUserSucceeded(fax_infos)
-            headers[f'user_uuid:{user_uuid}'] = True
-            self._bus_producer.publish(event, headers=headers)
+            event = FaxOutboundUserSucceededEvent(
+                fax_infos, fax_infos['tenant_uuid'], user_uuid
+            )
+            self._bus_producer.publish(event)
 
     def notify_fax_failed(self, fax_infos):
         user_uuid = fax_infos['user_uuid']
-        event = FaxOutboundFailed(fax_infos)
-        headers = self._build_headers(fax_infos)
-        self._bus_producer.publish(event, headers=headers)
+        event = FaxOutboundFailedEvent(fax_infos, fax_infos['tenant_uuid'])
+        self._bus_producer.publish(event)
 
         if user_uuid:
-            event = FaxOutboundUserFailed(fax_infos)
-            headers[f'user_uuid:{user_uuid}'] = True
-            self._bus_producer.publish(event, headers=headers)
+            event = FaxOutboundUserFailedEvent(
+                fax_infos, fax_infos['tenant_uuid'], user_uuid
+            )
+            self._bus_producer.publish(event)

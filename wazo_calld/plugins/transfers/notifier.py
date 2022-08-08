@@ -3,85 +3,61 @@
 
 import logging
 
-from xivo_bus.resources.calls.transfer import (AbandonTransferEvent,
-                                               AnswerTransferEvent,
-                                               CancelTransferEvent,
-                                               CompleteTransferEvent,
-                                               CreateTransferEvent,
-                                               EndTransferEvent,
-                                               UpdateTransferEvent,)
+from xivo_bus.resources.calls.event import (
+    CallTransferAbandonedEvent,
+    CallTransferAnsweredEvent,
+    CallTransferCancelledEvent,
+    CallTransferCompletedEvent,
+    CallTransferCreatedEvent,
+    CallTransferEndedEvent,
+    CallTransferUpdatedEvent,
+)
 
 logger = logging.getLogger(__name__)
 
 
 class TransferNotifier:
-
     def __init__(self, bus_producer):
         self._bus_producer = bus_producer
 
-    @staticmethod
-    def _build_headers(user_uuids=None, **kwargs):
-        headers = {}
-        for uuid in user_uuids or []:
-            headers[f'user_uuid:{uuid}'] = True
-
-        for key, value in kwargs.items():
-            if value:
-                headers[key] = value
-        return headers
-
     def created(self, transfer):
-        event = CreateTransferEvent(transfer.initiator_uuid, transfer.to_dict())
-        headers = self._build_headers(
-            user_uuids=[transfer.initiator_uuid],
-            tenant_uuid=transfer.initiator_tenant_uuid,
+        event = CallTransferCreatedEvent(
+            transfer.to_dict(), transfer.initiator_tenant_uuid, transfer.initiator_uuid
         )
-        self._bus_producer.publish(event, headers=headers)
+        self._bus_producer.publish(event)
 
     def updated(self, transfer):
-        event = UpdateTransferEvent(transfer.initiator_uuid, transfer.to_dict())
-        headers = self._build_headers(
-            user_uuids=[transfer.initiator_uuid],
-            tenant_uuid=transfer.initiator_tenant_uuid,
+        event = CallTransferUpdatedEvent(
+            transfer.to_dict(), transfer.initiator_tenant_uuid, transfer.initiator_uuid
         )
-        self._bus_producer.publish(event, headers=headers)
+        self._bus_producer.publish(event)
 
     def answered(self, transfer):
-        event = AnswerTransferEvent(transfer.initiator_uuid, transfer.to_dict())
-        headers = self._build_headers(
-            user_uuids=[transfer.initiator_uuid],
-            tenant_uuid=transfer.initiator_tenant_uuid,
+        event = CallTransferAnsweredEvent(
+            transfer.to_dict(), transfer.initiator_tenant_uuid, transfer.initiator_uuid
         )
-        self._bus_producer.publish(event, headers=headers)
+        self._bus_producer.publish(event)
 
     def cancelled(self, transfer):
-        event = CancelTransferEvent(transfer.initiator_uuid, transfer.to_dict())
-        headers = self._build_headers(
-            user_uuids=[transfer.initiator_uuid],
-            tenant_uuid=transfer.initiator_tenant_uuid,
+        event = CallTransferCancelledEvent(
+            transfer.to_dict(), transfer.initiator_tenant_uuid, transfer.initiator_uuid
         )
-        self._bus_producer.publish(event, headers=headers)
+        self._bus_producer.publish(event)
 
     def completed(self, transfer):
-        event = CompleteTransferEvent(transfer.initiator_uuid, transfer.to_dict())
-        headers = self._build_headers(
-            user_uuids=[transfer.initiator_uuid],
-            tenant_uuid=transfer.initiator_tenant_uuid,
+        event = CallTransferCompletedEvent(
+            transfer.to_dict(), transfer.initiator_tenant_uuid, transfer.initiator_uuid
         )
-        self._bus_producer.publish(event, headers=headers)
+        self._bus_producer.publish(event)
 
     def abandoned(self, transfer):
-        event = AbandonTransferEvent(transfer.initiator_uuid, transfer.to_dict())
-        headers = self._build_headers(
-            user_uuids=[transfer.initiator_uuid],
-            tenant_uuid=transfer.initiator_tenant_uuid,
+        event = CallTransferAbandonedEvent(
+            transfer.to_dict(), transfer.initiator_tenant_uuid, transfer.initiator_uuid
         )
-        self._bus_producer.publish(event, headers=headers)
+        self._bus_producer.publish(event)
 
     def ended(self, transfer):
-        event = EndTransferEvent(transfer.initiator_uuid, transfer.to_dict())
-        headers = self._build_headers(
-            user_uuids=[transfer.initiator_uuid],
-            tenant_uuid=transfer.initiator_tenant_uuid,
+        event = CallTransferEndedEvent(
+            transfer.to_dict(), transfer.initiator_tenant_uuid, transfer.initiator_uuid
         )
-        self._bus_producer.publish(event, headers=headers)
+        self._bus_producer.publish(event)

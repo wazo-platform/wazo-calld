@@ -7,7 +7,7 @@ from xivo_bus.resources.switchboard.event import (
     SwitchboardQueuedCallsUpdatedEvent,
     SwitchboardQueuedCallAnsweredEvent,
     SwitchboardHeldCallsUpdatedEvent,
-    SwitchboardHeldCallAnsweredEvent
+    SwitchboardHeldCallAnsweredEvent,
 )
 from .http import (
     held_call_schema,
@@ -26,19 +26,15 @@ class SwitchboardsNotifier:
         return {'tenant_uuid': tenant_uuid}
 
     def queued_calls(self, tenant_uuid, switchboard_uuid, calls):
-        body = {
-            'switchboard_uuid': switchboard_uuid,
-            'items': queued_call_schema.dump(calls, many=True),
-        }
         logger.debug(
             'Notifying updated queued calls for switchboard %s: %s calls',
             switchboard_uuid,
             len(calls),
         )
 
-        event = SwitchboardQueuedCallsUpdatedEvent(body)
-        headers = self._build_headers(tenant_uuid)
-        self._bus.publish(event, headers=headers)
+        items = queued_call_schema.dump(calls, many=True)
+        event = SwitchboardQueuedCallsUpdatedEvent(items, switchboard_uuid, tenant_uuid)
+        self._bus.publish(event)
 
     def queued_call_answered(
         self, tenant_uuid, switchboard_uuid, operator_call_id, queued_call_id
@@ -49,15 +45,11 @@ class SwitchboardsNotifier:
             switchboard_uuid,
             operator_call_id,
         )
-        body = {
-            'switchboard_uuid': switchboard_uuid,
-            'operator_call_id': operator_call_id,
-            'queued_call_id': queued_call_id,
-        }
 
-        event = SwitchboardQueuedCallAnsweredEvent(body)
-        headers = self._build_headers(tenant_uuid)
-        self._bus.publish(event, headers=headers)
+        event = SwitchboardQueuedCallAnsweredEvent(
+            operator_call_id, queued_call_id, switchboard_uuid, tenant_uuid
+        )
+        self._bus.publish(event)
 
     def held_calls(self, tenant_uuid, switchboard_uuid, calls):
         logger.debug(
@@ -66,13 +58,9 @@ class SwitchboardsNotifier:
             len(calls),
         )
 
-        body = {
-            'switchboard_uuid': switchboard_uuid,
-            'items': held_call_schema.dump(calls, many=True),
-        }
-        event = SwitchboardHeldCallsUpdatedEvent(body)
-        headers = self._build_headers(tenant_uuid)
-        self._bus.publish(event, headers=headers)
+        items = held_call_schema.dump(calls, many=True)
+        event = SwitchboardHeldCallsUpdatedEvent(items, switchboard_uuid, tenant_uuid)
+        self._bus.publish(event)
 
     def held_call_answered(
         self, tenant_uuid, switchboard_uuid, operator_call_id, held_call_id
@@ -84,11 +72,7 @@ class SwitchboardsNotifier:
             operator_call_id,
         )
 
-        body = {
-            'switchboard_uuid': switchboard_uuid,
-            'operator_call_id': operator_call_id,
-            'held_call_id': held_call_id,
-        }
-        event = SwitchboardHeldCallAnsweredEvent(body)
-        headers = self._build_headers(tenant_uuid)
-        self._bus.publish(event, headers=headers)
+        event = SwitchboardHeldCallAnsweredEvent(
+            operator_call_id, held_call_id, switchboard_uuid, tenant_uuid
+        )
+        self._bus.publish(event)
