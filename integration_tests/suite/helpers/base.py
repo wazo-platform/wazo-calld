@@ -6,6 +6,7 @@ import logging
 import tempfile
 import uuid
 
+from kombu import Exchange
 from contextlib import contextmanager
 from requests.packages import urllib3
 from wazo_test_helpers import until
@@ -32,7 +33,6 @@ if os.environ.get('TEST_LOGS') != 'verbose':
 
 
 class ClientCreateException(Exception):
-
     def __init__(self, client_name):
         super().__init__(f'Could not create client {client_name}')
 
@@ -116,9 +116,15 @@ class IntegrationTest(AssetLaunchingTestCase):
         others, we lose this state.
 
         '''
+        topic = Exchange('xivo', 'topic')
         try:
-            cls.bus = BusClient.from_connection_fields(host='127.0.0.1', port=cls.service_port(5672, 'rabbitmq'))
-            cls.bus.downstream_exchange_declare('wazo-headers', 'headers')
+            cls.bus = BusClient.from_connection_fields(
+                host='127.0.0.1',
+                port=cls.service_port(5672, 'rabbitmq'),
+                exchange_name='wazo-headers',
+                exchange_type='headers',
+            )
+            cls.bus.downstream_exchange_declare('wazo-headers', 'headers', upstream=topic)
         except (NoSuchService, NoSuchPort) as e:
             logger.debug(e)
             cls.bus = WrongClient('bus')
@@ -133,13 +139,21 @@ class IntegrationTest(AssetLaunchingTestCase):
 
     @classmethod
     def make_calld(cls, token=VALID_TOKEN):
-        return CalldClient('127.0.0.1', cls.service_port(9500, 'calld'), prefix=None, https=False, token=token)
+        return CalldClient(
+            '127.0.0.1',
+            cls.service_port(9500, 'calld'),
+            prefix=None,
+            https=False,
+            token=token,
+        )
 
     @classmethod
     def make_user_calld(cls, user_uuid, tenant_uuid=None):
         token_id = str(uuid.uuid4())
         tenant_uuid = tenant_uuid or str(uuid.uuid4())
-        cls.auth.set_token(MockUserToken(token_id, tenant_uuid=tenant_uuid, user_uuid=user_uuid))
+        cls.auth.set_token(
+            MockUserToken(token_id, tenant_uuid=tenant_uuid, user_uuid=user_uuid)
+        )
         return cls.make_calld(token=token_id)
 
     @classmethod
