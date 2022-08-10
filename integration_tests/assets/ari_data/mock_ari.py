@@ -13,6 +13,7 @@ from flask import make_response
 from flask import request
 
 _EMPTY_RESPONSES = {
+    'amqp': {},
     'applications': {},
     'bridges': {},
     'channel_variables': {},
@@ -85,6 +86,11 @@ def websockets():
     if websocket:
         result.append(id(websocket))
     return make_response(json.dumps(result), 200, {'Content-Type': 'application/json'})
+
+
+@app.route('/ari/amqp/<application_name>', methods=['POST'])
+def get_amqp(application_name):
+    return jsonify({'foo': 'bar'})
 
 
 @app.route('/ari/api-docs/<path:file_name>')

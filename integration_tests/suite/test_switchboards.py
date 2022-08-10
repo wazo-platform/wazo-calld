@@ -911,7 +911,7 @@ class TestSwitchboardHoldCall(TestSwitchboards):
                 )
             )
 
-        until.assert_(event_received, tries=3)
+        until.assert_(event_received, tries=10)
 
     def test_hold_same_call_twice(self):
         token = random_uuid(prefix='my-token-')
