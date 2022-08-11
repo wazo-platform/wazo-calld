@@ -30,7 +30,7 @@ class TestPushMobile(RealAsteriskIntegrationTest):
         )
 
     def test_send_push_mobile(self):
-        events = self.bus.accumulator('calls.call.push_notification')
+        events = self.bus.accumulator(headers={'name': 'call_push_notification'})
 
         push_mobile_event = {
             'data': {

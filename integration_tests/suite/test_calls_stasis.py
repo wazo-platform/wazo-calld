@@ -102,7 +102,7 @@ class TestDialedFrom(IntegrationTest):
 
     def test_when_stasis_channel_destroyed(self):
         call_id = new_call_id()
-        events = self.bus.accumulator(routing_key='calls.call.ended')
+        events = self.bus.accumulator(headers={'name': 'call_ended'})
 
         self.stasis.event_channel_destroyed(
             channel_id=call_id,
@@ -145,7 +145,7 @@ class TestDialedFrom(IntegrationTest):
 
     def test_when_stasis_channel_destroyed_callee(self):
         call_id = new_call_id()
-        events = self.bus.accumulator(routing_key='calls.call.ended')
+        events = self.bus.accumulator(headers={'name': 'call_ended'})
 
         self.stasis.event_channel_destroyed(
             channel_id=call_id,
@@ -186,7 +186,7 @@ class TestDialedFrom(IntegrationTest):
 
     def test_when_stasis_channel_destroyed_when_empty_values(self):
         call_id = new_call_id()
-        events = self.bus.accumulator(routing_key='calls.call.ended')
+        events = self.bus.accumulator(headers={'name': 'call_ended'})
 
         self.stasis.event_channel_destroyed(
             channel_id=call_id,

@@ -109,8 +109,6 @@ class TestVoicemails(RealAsteriskIntegrationTest):
                             ["unavailable", "busy", "name"]
                         )),
                         message='Must be one of: unavailable, busy, name.'
-
-
                     )
                 ))
             ))

@@ -11,6 +11,7 @@ from hamcrest import contains_inanyorder
 from hamcrest import empty
 from hamcrest import has_entry
 from hamcrest import has_entries
+from hamcrest import has_items
 from hamcrest import has_item
 from hamcrest import has_properties
 from hamcrest import has_property
@@ -109,7 +110,7 @@ class TestRelocates(RealAsteriskIntegrationTest):
         line_id = SOME_LINE_ID
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id], tenant_uuid='my-tenant-uuid'))
         self.confd.set_lines(MockLine(id=line_id, name='recipient_autoanswer@local', protocol='local', context=SOME_CONTEXT))
-        events = self.bus.accumulator('calls.relocate.*')
+        events = self.bus.accumulator(headers={'name': 'relocate_answered'})
         destination = 'line'
         location = {'line_id': line_id}
         completions = ['api']
@@ -416,7 +417,7 @@ class TestCreateUserRelocate(TestRelocates):
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
         self.confd.set_lines(MockLine(id=line_id, name='recipient_autoanswer@local', protocol='local', context=SOME_CONTEXT))
         relocated_channel_id, initiator_channel_id = self.real_asterisk.given_bridged_call_stasis(callee_uuid=user_uuid)
-        events = self.bus.accumulator('calls.relocate.*')
+        events = self.bus.accumulator(headers={f'user_uuid:{user_uuid}': True})
         calld_client = self.make_user_calld(user_uuid)
 
         relocate = calld_client.relocates.create_from_user(initiator_channel_id, 'line', {'line_id': line_id})
@@ -433,7 +434,7 @@ class TestCreateUserRelocate(TestRelocates):
         def relocate_events_received():
             assert_that(
                 events.accumulate(with_headers=True),
-                contains_exactly(
+                has_items(
                     has_entries(
                         message=has_entries({
                             'name': 'relocate_initiated',
@@ -489,7 +490,7 @@ class TestCreateUserRelocate(TestRelocates):
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
         self.confd.set_lines(MockLine(id=line_id, name='recipient_autoanswer@local', protocol='local', context=SOME_CONTEXT))
         relocated_channel_id, initiator_channel_id = self.real_asterisk.given_bridged_call_not_stasis(callee_uuid=user_uuid)
-        events = self.bus.accumulator('calls.relocate.*')
+        events = self.bus.accumulator(headers={f'user_uuid:{user_uuid}': True})
         calld_client = self.make_user_calld(user_uuid)
 
         relocate = calld_client.relocates.create_from_user(initiator_channel_id, 'line', {'line_id': line_id})
@@ -506,7 +507,7 @@ class TestCreateUserRelocate(TestRelocates):
         def relocate_events_received():
             assert_that(
                 events.accumulate(with_headers=True),
-                contains_exactly(
+                has_items(
                     has_entries(
                         message=has_entries({
                             'name': 'relocate_initiated',

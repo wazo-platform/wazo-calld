@@ -28,15 +28,13 @@ class TestCallRecord(RealAsteriskIntegrationTest):
 
     def test_put_record_start(self):
         channel_id = self.given_call_not_stasis()
-
-        routing_key = 'calls.*.updated'
-        event_accumulator = self.bus.accumulator(routing_key)
+        events = self.bus.accumulator(headers={'name': 'call_updated'})
 
         self.calld_client.calls.start_record(channel_id)
 
         def event_received():
             assert_that(
-                event_accumulator.accumulate(with_headers=True),
+                events.accumulate(with_headers=True),
                 has_items(
                     has_entries(
                         message=has_entries(
@@ -75,15 +73,13 @@ class TestCallRecord(RealAsteriskIntegrationTest):
         token = self.given_user_token(user_uuid)
         self.calld_client.set_token(token)
         channel_id = self.given_call_not_stasis(user_uuid=user_uuid)
-
-        routing_key = 'calls.*.updated'
-        event_accumulator = self.bus.accumulator(routing_key)
+        events = self.bus.accumulator(headers={'name': 'call_updated'})
 
         self.calld_client.calls.start_record_from_user(channel_id)
 
         def event_received():
             assert_that(
-                event_accumulator.accumulate(with_headers=True),
+                events.accumulate(with_headers=True),
                 has_items(
                     has_entries(
                         message=has_entries(
@@ -135,14 +131,13 @@ class TestCallRecord(RealAsteriskIntegrationTest):
             calling(self.calld_client.calls.stop_record).with_args(UNKNOWN_UUID),
             raises(CalldError).matching(has_properties(status_code=404))
         )
-        routing_key = 'calls.*.updated'
-        event_accumulator = self.bus.accumulator(routing_key)
+        events = self.bus.accumulator(headers={'name': 'call_updated'})
 
         self.calld_client.calls.stop_record(channel_id)
 
         def event_received():
             assert_that(
-                event_accumulator.accumulate(with_headers=True),
+                events.accumulate(with_headers=True),
                 has_items(
                     has_entries(
                         message=has_entries(
@@ -189,14 +184,13 @@ class TestCallRecord(RealAsteriskIntegrationTest):
             raises(CalldError).matching(has_properties(status_code=403))
         )
 
-        routing_key = 'calls.*.updated'
-        event_accumulator = self.bus.accumulator(routing_key)
+        events = self.bus.accumulator(headers={'name': 'call_updated'})
 
         self.calld_client.calls.stop_record_from_user(channel_id)
 
         def event_received():
             assert_that(
-                event_accumulator.accumulate(with_headers=True),
+                events.accumulate(with_headers=True),
                 has_items(
                     has_entries(
                         message=has_entries(

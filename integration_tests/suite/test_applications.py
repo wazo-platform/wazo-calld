@@ -77,6 +77,13 @@ class BaseApplicationTestCase(RealAsteriskIntegrationTest):
 
         until.assert_(applications_created, tries=5)
 
+    def app_event_accumulator(self, app_uuid):
+        return self.bus.accumulator(
+            headers={
+                'application_uuid': app_uuid,
+            }
+        )
+
     def call_app(self, app_uuid, variables=None):
         kwargs = {
             'endpoint': ENDPOINT_AUTOANSWER,
@@ -93,7 +100,7 @@ class BaseApplicationTestCase(RealAsteriskIntegrationTest):
             for key, value in variables.items():
                 kwargs['variables']['variables'][key] = value
 
-        event_accumulator = self.bus.accumulator('applications.{uuid}.#'.format(uuid=app_uuid))
+        event_accumulator = self.app_event_accumulator(app_uuid)
 
         channel = self.ari.channels.originate(**kwargs)
 
@@ -106,7 +113,7 @@ class BaseApplicationTestCase(RealAsteriskIntegrationTest):
         return until.true(call_entered_application, event_accumulator, timeout=10, message='Failed to start call')
 
     def call_app_incoming(self, app_uuid):
-        event_accumulator = self.bus.accumulator('applications.{uuid}.#'.format(uuid=app_uuid))
+        event_accumulator = self.app_event_accumulator(app_uuid)
 
         self.docker_exec(['asterisk', '-rx', 'test new {exten} applications'.format(exten=app_uuid)], 'ari')
 
@@ -128,7 +135,7 @@ class TestStasisTriggers(BaseApplicationTestCase):
 
     def test_entering_stasis_user_outgoing_call(self):
         app_uuid = self.no_node_app_uuid
-        event_accumulator = self.bus.accumulator('applications.{uuid}.#'.format(uuid=app_uuid))
+        event_accumulator = self.app_event_accumulator(app_uuid)
         exten = '1001'
         channel_id = self.call_from_user(app_uuid, exten)
 
@@ -164,7 +171,7 @@ class TestStasisTriggers(BaseApplicationTestCase):
 
     def test_entering_stasis_without_a_node(self):
         app_uuid = self.no_node_app_uuid
-        event_accumulator = self.bus.accumulator('applications.{uuid}.#'.format(uuid=app_uuid))
+        event_accumulator = self.app_event_accumulator(app_uuid)
         channel = self.call_app(app_uuid)
 
         def event_received():
@@ -198,7 +205,7 @@ class TestStasisTriggers(BaseApplicationTestCase):
 
     def test_entering_stasis_with_a_node(self):
         app_uuid = self.node_app_uuid
-        event_accumulator = self.bus.accumulator('applications.{uuid}.#'.format(uuid=app_uuid))
+        event_accumulator = self.app_event_accumulator(app_uuid)
         channel = self.call_app(app_uuid)
 
         def event_received():
@@ -264,7 +271,7 @@ class TestStasisTriggers(BaseApplicationTestCase):
     def test_event_destination_node_created(self):
         with self._calld_stopped():
             self.reset_ari()
-            event_accumulator = self.bus.accumulator('applications.{uuid}.#'.format(uuid=self.node_app_uuid))
+            event_accumulator = self.app_event_accumulator(self.node_app_uuid)
         CalldEverythingOkWaitStrategy().wait(self)
 
         def event_received():
@@ -291,7 +298,7 @@ class TestStasisTriggers(BaseApplicationTestCase):
         until.assert_(event_received, tries=10)
 
     def test_when_asterisk_restart_then_reconnect(self):
-        event_accumulator = self.bus.accumulator('applications.{uuid}.#'.format(uuid=self.node_app_uuid))
+        event_accumulator = self.app_event_accumulator(self.node_app_uuid)
         self.restart_service('ari')
         CalldEverythingOkWaitStrategy().wait(self)
 
@@ -311,7 +318,8 @@ class TestStasisTriggers(BaseApplicationTestCase):
 
     def test_confd_application_event_then_ari_client_is_reset(self):
         app_uuid = '00000000-0000-0000-0000-000000000001'
-        event_accumulator = self.bus.accumulator('applications.#')
+        event_accumulator = self.bus.accumulator(headers={'name': 'application_destination_node_created'})
+
         self.bus.send_application_created_event(app_uuid, destination='node')
 
         def event_received():
@@ -328,8 +336,12 @@ class TestStasisTriggers(BaseApplicationTestCase):
 
         until.assert_(event_received, tries=3)
 
-        routing_key = 'applications.{uuid}.calls.created'.format(uuid=self.no_node_app_uuid)
-        event_accumulator = self.bus.accumulator(routing_key)
+        event_accumulator = self.bus.accumulator(
+            headers={
+                'name': 'application_call_entered',
+                'application_uuid': self.no_node_app_uuid,
+            }
+        )
 
         self.call_app(self.no_node_app_uuid)
 
@@ -341,7 +353,11 @@ class TestStasisTriggers(BaseApplicationTestCase):
 
     def test_confd_application_created_event_then_stasis_reconnect(self):
         app_uuid = '00000000-0000-0000-0000-000000000001'
-        event_accumulator = self.bus.accumulator('applications.#')
+        event_accumulator = self.bus.accumulator(
+            headers={
+                'name': 'application_destination_node_created',
+            }
+        )
 
         self.bus.send_application_created_event(app_uuid, destination='node')
 
@@ -359,7 +375,11 @@ class TestStasisTriggers(BaseApplicationTestCase):
         until.assert_(event_received, tries=3)
 
     def test_confd_application_edited_event_then_destination_node_created(self):
-        event_accumulator = self.bus.accumulator('applications.#')
+        event_accumulator = self.bus.accumulator(
+            headers={
+                'name': 'application_destination_node_created',
+            }
+        )
 
         self.bus.send_application_edited_event(self.no_node_app_uuid, destination='node')
 
@@ -377,7 +397,7 @@ class TestStasisTriggers(BaseApplicationTestCase):
         until.assert_(event_received, tries=3)
 
     def test_confd_application_edited_event_then_destination_node_deleted(self):
-        event_accumulator = self.bus.accumulator('applications.#')
+        event_accumulator = self.app_event_accumulator(self.node_app_uuid)
 
         self.bus.send_application_edited_event(self.node_app_uuid, destination=None)
 
@@ -396,7 +416,7 @@ class TestStasisTriggers(BaseApplicationTestCase):
 
     def test_confd_application_deleted_event_then_application_deleted(self):
         # self.ari.bridges.destroy(bridgeId=self.node_app_uuid)
-        # event_accumulator = self.bus.accumulator('applications.#')
+        # event_accumulator = self.app_event_accumulator(self.no_node_app_uuid)
 
         self.bus.send_application_deleted_event(self.no_node_app_uuid)
 
@@ -475,8 +495,7 @@ class TestApplication(BaseApplicationTestCase):
 
     def test_delete_call(self):
         channel = self.call_app(self.node_app_uuid)
-        routing_key = 'applications.{uuid}.calls.#'.format(uuid=self.node_app_uuid)
-        event_accumulator = self.bus.accumulator(routing_key)
+        event_accumulator = self.app_event_accumulator(self.node_app_uuid)
 
         assert_that(
             calling(self.calld_client.applications.hangup_call).with_args(
@@ -584,8 +603,7 @@ class TestApplication(BaseApplicationTestCase):
             raises(CalldError).matching(has_properties(status_code=400))
         )
 
-        routing_key = 'applications.{uuid}.#'.format(uuid=self.no_node_app_uuid)
-        event_accumulator = self.bus.accumulator(routing_key)
+        event_accumulator = self.app_event_accumulator(self.no_node_app_uuid)
 
         call_args = {
             'context': context,
@@ -643,9 +661,7 @@ class TestApplication(BaseApplicationTestCase):
 
     def test_post_call_extension_containing_whitespace(self):
         context, exten = 'local', 'rec ipi\rent_\nauto\tanswer'
-
-        routing_key = 'applications.{uuid}.#'.format(uuid=self.no_node_app_uuid)
-        event_accumulator = self.bus.accumulator(routing_key)
+        event_accumulator = self.app_event_accumulator(self.no_node_app_uuid)
 
         call_args = {
             'context': context,
@@ -733,8 +749,7 @@ class TestApplication(BaseApplicationTestCase):
                 raises(CalldError).matching(has_properties(status_code=status_code))
             )
 
-        routing_key = 'applications.{uuid}.#'.format(uuid=self.node_app_uuid)
-        event_accumulator = self.bus.accumulator(routing_key)
+        event_accumulator = self.app_event_accumulator(self.node_app_uuid)
 
         call_args = {
             'context': context,
@@ -817,9 +832,7 @@ class TestApplication(BaseApplicationTestCase):
 
     def test_post_node_call_extension_containing_whitespace(self):
         context, exten = 'local', 'rec ipi\rent_\nauto\tanswer'
-
-        routing_key = 'applications.{uuid}.#'.format(uuid=self.node_app_uuid)
-        event_accumulator = self.bus.accumulator(routing_key)
+        event_accumulator = self.app_event_accumulator(self.node_app_uuid)
 
         call_args = {
             'context': context,
@@ -919,8 +932,7 @@ class TestApplication(BaseApplicationTestCase):
                 raises(CalldError).matching(has_properties(status_code=status_code))
             )
 
-        routing_key = 'applications.{uuid}.#'.format(uuid=self.node_app_uuid)
-        event_accumulator = self.bus.accumulator(routing_key)
+        event_accumulator = self.app_event_accumulator(self.node_app_uuid)
 
         call_args = {
             'user_uuid': user_uuid,
@@ -1071,8 +1083,7 @@ class TestApplicationMute(BaseApplicationTestCase):
             raises(CalldError).matching(has_properties(status_code=404))
         )
 
-        routing_key = 'applications.{uuid}.#'.format(uuid=app_uuid)
-        event_accumulator = self.bus.accumulator(routing_key)
+        event_accumulator = self.app_event_accumulator(app_uuid)
 
         self.calld_client.applications.start_mute(app_uuid, channel.id)
 
@@ -1126,8 +1137,7 @@ class TestApplicationMute(BaseApplicationTestCase):
             ),
             raises(CalldError).matching(has_properties(status_code=404))
         )
-        routing_key = 'applications.{uuid}.#'.format(uuid=app_uuid)
-        event_accumulator = self.bus.accumulator(routing_key)
+        event_accumulator = self.app_event_accumulator(app_uuid)
 
         self.calld_client.applications.stop_mute(app_uuid, channel.id)
 
@@ -1171,9 +1181,7 @@ class TestApplicationHold(BaseApplicationTestCase):
         app_uuid = self.no_node_app_uuid
         channel = self.call_app(self.no_node_app_uuid)
         other_channel = self.call_app(self.node_app_uuid)
-
-        routing_key = 'applications.{uuid}.#'.format(uuid=app_uuid)
-        event_accumulator = self.bus.accumulator(routing_key)
+        event_accumulator = self.app_event_accumulator(app_uuid)
 
         assert_that(
             calling(self.calld_client.applications.start_hold).with_args(
@@ -1250,8 +1258,7 @@ class TestApplicationHold(BaseApplicationTestCase):
 
         until.true(call_held)
 
-        routing_key = 'applications.{uuid}.#'.format(uuid=app_uuid)
-        event_accumulator = self.bus.accumulator(routing_key)
+        event_accumulator = self.app_event_accumulator(app_uuid)
 
         self.calld_client.applications.stop_hold(app_uuid, channel.id)
 
@@ -1305,8 +1312,7 @@ class TestApplicationSnoop(BaseApplicationTestCase):
             {'context': 'local', 'exten': 'recipient_autoanswer'},
         )
 
-        routing_key = 'applications.{uuid}.snoops.#'.format(uuid=self.app_uuid)
-        event_accumulator = self.bus.accumulator(routing_key)
+        event_accumulator = self.app_event_accumulator(self.app_uuid)
 
         snoop_args = {'whisper_mode': 'both', 'snooping_call_id': supervisor_channel['id']}
         snoop = self.calld_client.applications.snoops(
@@ -1353,8 +1359,7 @@ class TestApplicationSnoop(BaseApplicationTestCase):
             snoop_args,
         )
 
-        routing_key = 'applications.{uuid}.snoops.#'.format(uuid=self.app_uuid)
-        event_accumulator = self.bus.accumulator(routing_key)
+        event_accumulator = self.app_event_accumulator(self.app_uuid)
 
         self.calld_client.applications.delete_snoop(self.app_uuid, snoop['uuid'])
 
@@ -1391,8 +1396,7 @@ class TestApplicationSnoop(BaseApplicationTestCase):
             snoop_args,
         )
 
-        routing_key = 'applications.{uuid}.snoops.#'.format(uuid=self.app_uuid)
-        event_accumulator = self.bus.accumulator(routing_key)
+        event_accumulator = self.app_event_accumulator(self.app_uuid)
 
         snoop_args = {'whisper_mode': 'in'}
         self.calld_client.applications.update_snoop(
@@ -1739,8 +1743,7 @@ class TestApplicationMoh(BaseApplicationTestCase):
         app_uuid = self.no_node_app_uuid
         channel = self.call_app(self.no_node_app_uuid)
 
-        routing_key = 'applications.{uuid}.#'.format(uuid=app_uuid)
-        event_accumulator = self.bus.accumulator(routing_key)
+        event_accumulator = self.app_event_accumulator(app_uuid)
 
         self.calld_client.applications.start_moh(app_uuid, channel.id, self.moh_uuid)
 
@@ -1775,9 +1778,7 @@ class TestApplicationMoh(BaseApplicationTestCase):
     def test_put_moh_stop_success(self):
         app_uuid = self.no_node_app_uuid
         channel = self.call_app(self.no_node_app_uuid)
-
-        routing_key = 'applications.{uuid}.#'.format(uuid=app_uuid)
-        event_accumulator = self.bus.accumulator(routing_key)
+        event_accumulator = self.app_event_accumulator(app_uuid)
 
         self.calld_client.applications.start_moh(app_uuid, channel.id, self.moh_uuid)
         self.calld_client.applications.stop_moh(app_uuid, channel.id)
@@ -1830,9 +1831,7 @@ class TestApplicationMoh(BaseApplicationTestCase):
         channel = self.call_app(self.no_node_app_uuid)
         self._hitting_moh_cache(app_uuid, channel.id)
         self.bus.send_moh_created_event(moh_uuid)
-
-        routing_key = 'applications.{uuid}.#'.format(uuid=app_uuid)
-        event_accumulator = self.bus.accumulator(routing_key)
+        event_accumulator = self.app_event_accumulator(app_uuid)
 
         self.calld_client.applications.start_moh(app_uuid, channel.id, moh_uuid)
 
@@ -1912,9 +1911,8 @@ class TestApplicationPlayback(BaseApplicationTestCase):
         app_uuid = self.node_app_uuid
         body = {'uri': 'sound:tt-weasels'}
         channel = self.call_app(app_uuid)
+        event_accumulator = self.app_event_accumulator(app_uuid)
 
-        routing_key = 'applications.{}.#'.format(app_uuid)
-        event_accumulator = self.bus.accumulator(routing_key)
         playback = self.calld_client.applications.send_playback(app_uuid, channel.id, body)
 
         def event_received():
@@ -1968,8 +1966,7 @@ class TestApplicationPlayback(BaseApplicationTestCase):
 
         playback = self.calld_client.applications.send_playback(app_uuid, channel.id, body)
 
-        routing_key = 'applications.{}.#'.format(app_uuid)
-        event_accumulator = self.bus.accumulator(routing_key)
+        event_accumulator = self.app_event_accumulator(app_uuid)
 
         def event_received():
             events = event_accumulator.accumulate(with_headers=True)
@@ -2002,8 +1999,7 @@ class TestApplicationPlayback(BaseApplicationTestCase):
 
         playback = self.calld_client.applications.send_playback(app_uuid, channel.id, body)
 
-        routing_key = 'applications.{}.#'.format(app_uuid)
-        event_accumulator = self.bus.accumulator(routing_key)
+        event_accumulator = self.app_event_accumulator(app_uuid)
 
         self.calld_client.applications.delete_playback(app_uuid, playback['uuid'])
 
@@ -2056,8 +2052,7 @@ class TestApplicationAnswer(BaseApplicationTestCase):
             raises(CalldError).matching(has_properties(status_code=404))
         )
 
-        routing_key = 'applications.{uuid}.#'.format(uuid=self.node_app_uuid)
-        event_accumulator = self.bus.accumulator(routing_key)
+        event_accumulator = self.app_event_accumulator(self.node_app_uuid)
 
         self.calld_client.applications.answer_call(self.node_app_uuid, channel.id)
 
@@ -2114,8 +2109,7 @@ class TestApplicationProgress(BaseApplicationTestCase):
             raises(CalldError).matching(has_properties(status_code=404))
         )
 
-        routing_key = 'applications.{uuid}.#'.format(uuid=self.node_app_uuid)
-        event_accumulator = self.bus.accumulator(routing_key)
+        event_accumulator = self.app_event_accumulator(self.node_app_uuid)
 
         self.calld_client.applications.start_progress(self.node_app_uuid, channel.id)
 
@@ -2169,8 +2163,7 @@ class TestApplicationProgress(BaseApplicationTestCase):
             raises(CalldError).matching(has_properties(status_code=404))
         )
 
-        routing_key = 'applications.{uuid}.#'.format(uuid=self.node_app_uuid)
-        event_accumulator = self.bus.accumulator(routing_key)
+        event_accumulator = self.app_event_accumulator(self.node_app_uuid)
 
         self.calld_client.applications.stop_progress(self.node_app_uuid, channel.id)
 
@@ -2225,8 +2218,7 @@ class TestApplicationNode(BaseApplicationTestCase):
 
     def test_post_not_bridged(self):
         channel = self.call_app(self.no_node_app_uuid)
-        routing_key = 'applications.{uuid}.#'.format(uuid=self.no_node_app_uuid)
-        event_accumulator = self.bus.accumulator(routing_key)
+        event_accumulator = self.app_event_accumulator(self.no_node_app_uuid)
 
         node = self.calld_client.applications.create_node(self.no_node_app_uuid, [channel.id])
         assert_that(
@@ -2306,9 +2298,7 @@ class TestApplicationNode(BaseApplicationTestCase):
 
     def test_post_bridged_default_bridge(self):
         channel = self.call_app(self.node_app_uuid)
-
-        routing_key = 'applications.{uuid}.#'.format(uuid=self.node_app_uuid)
-        event_accumulator = self.bus.accumulator(routing_key)
+        event_accumulator = self.app_event_accumulator(self.node_app_uuid)
 
         node = self.calld_client.applications.create_node(self.node_app_uuid, [channel.id])
         assert_that(
@@ -2393,8 +2383,7 @@ class TestApplicationNode(BaseApplicationTestCase):
 
     def test_delete_unknown_app(self):
         channel = self.call_app(self.no_node_app_uuid)
-        routing_key = 'applications.{uuid}.#'.format(uuid=self.no_node_app_uuid)
-        event_accumulator = self.bus.accumulator(routing_key)
+        event_accumulator = self.app_event_accumulator(self.no_node_app_uuid)
         node = self.calld_client.applications.create_node(self.no_node_app_uuid, [channel.id])
 
         def event_received():
@@ -2430,8 +2419,7 @@ class TestApplicationNode(BaseApplicationTestCase):
 
     def test_delete(self):
         channel = self.call_app(self.no_node_app_uuid)
-        routing_key = 'applications.{uuid}.#'.format(uuid=self.no_node_app_uuid)
-        event_accumulator = self.bus.accumulator(routing_key)
+        event_accumulator = self.app_event_accumulator(self.no_node_app_uuid)
         node = self.calld_client.applications.create_node(self.no_node_app_uuid, [channel.id])
 
         def event_received():
@@ -2521,8 +2509,7 @@ class TestApplicationNodeCall(BaseApplicationTestCase):
 
     def test_delete(self):
         channel = self.call_app(self.node_app_uuid)
-        routing_key = 'applications.{uuid}.#'.format(uuid=self.node_app_uuid)
-        event_accumulator = self.bus.accumulator(routing_key)
+        event_accumulator = self.app_event_accumulator(self.node_app_uuid)
 
         assert_that(
             calling(self.calld_client.applications.delete_call_from_node).with_args(
@@ -2636,8 +2623,7 @@ class TestApplicationNodeCall(BaseApplicationTestCase):
             raises(CalldError).matching(has_properties(status_code=400))
         )
 
-        routing_key = 'applications.{uuid}.#'.format(uuid=self.no_node_app_uuid)
-        event_accumulator = self.bus.accumulator(routing_key)
+        event_accumulator = self.app_event_accumulator(self.no_node_app_uuid)
 
         self.calld_client.applications.join_node(
             self.no_node_app_uuid,
@@ -2697,8 +2683,7 @@ class TestDTMFEvents(BaseApplicationTestCase):
 
     def test_that_events_are_received(self):
         channel = self.call_app(self.node_app_uuid)
-        routing_key = 'applications.{uuid}.#'.format(uuid=self.node_app_uuid)
-        event_accumulator = self.bus.accumulator(routing_key)
+        event_accumulator = self.app_event_accumulator(self.node_app_uuid)
 
         self.chan_test.send_dtmf(channel.id, '1')
 
@@ -2754,8 +2739,11 @@ class TestApplicationSendDTMF(BaseApplicationTestCase):
             raises(CalldError).matching(has_properties(status_code=400))
         )
 
-        routing_key = 'ami.*'
-        event_accumulator = self.bus.accumulator(routing_key)
+        event_accumulator = self.bus.accumulator(
+            headers={
+                'name': 'DTMFEnd',
+            }
+        )
 
         # Valid DTMF
         test_str = '12*#'

@@ -1578,7 +1578,7 @@ class TestCallerID(RealAsteriskIntegrationTest):
         originator_channel = self.ari.channels.get(channelId=originator_call['call_id'])
         recipient_caller_id_name = 'rêcîpîênt'
         recipient_caller_id_number = 'ring-connected-line'
-        bus_events = self.bus.accumulator('calls.call.updated')
+        bus_events = self.bus.accumulator(headers={'name': 'call_updated'})
 
         self.chan_test.answer_channel(originator_channel.id)
 
@@ -1654,14 +1654,13 @@ class TestCallMute(RealAsteriskIntegrationTest):
             raises(CalldError).matching(has_properties(status_code=404))
         )
 
-        routing_key = 'calls.*.updated'
-        event_accumulator = self.bus.accumulator(routing_key)
+        events = self.bus.accumulator(headers={'name': 'call_updated'})
 
         self.calld_client.calls.start_mute(channel_id)
 
         def event_received():
             assert_that(
-                event_accumulator.accumulate(with_headers=True),
+                events.accumulate(with_headers=True),
                 has_items(
                     has_entries(
                         message=has_entries(
@@ -1702,14 +1701,13 @@ class TestCallMute(RealAsteriskIntegrationTest):
             raises(CalldError).matching(has_properties(status_code=403))
         )
 
-        routing_key = 'calls.*.updated'
-        event_accumulator = self.bus.accumulator(routing_key)
+        events = self.bus.accumulator(headers={'name': 'call_updated'})
 
         self.calld_client.calls.start_mute_from_user(channel_id)
 
         def event_received():
             assert_that(
-                event_accumulator.accumulate(with_headers=True),
+                events.accumulate(with_headers=True),
                 has_items(
                     has_entries(
                         message=has_entries(
@@ -1741,14 +1739,14 @@ class TestCallMute(RealAsteriskIntegrationTest):
             calling(self.calld_client.calls.stop_mute).with_args(UNKNOWN_UUID),
             raises(CalldError).matching(has_properties(status_code=404))
         )
-        routing_key = 'calls.*.updated'
-        event_accumulator = self.bus.accumulator(routing_key)
+
+        events = self.bus.accumulator(headers={'name': 'call_updated'})
 
         self.calld_client.calls.stop_mute(channel_id)
 
         def event_received():
             assert_that(
-                event_accumulator.accumulate(with_headers=True),
+                events.accumulate(with_headers=True),
                 has_items(
                     has_entries(
                         message=has_entries(
@@ -1789,14 +1787,13 @@ class TestCallMute(RealAsteriskIntegrationTest):
             raises(CalldError).matching(has_properties(status_code=403))
         )
 
-        routing_key = 'calls.*.updated'
-        event_accumulator = self.bus.accumulator(routing_key)
+        events = self.bus.accumulator(headers={'name': 'call_updated'})
 
         self.calld_client.calls.stop_mute_from_user(channel_id)
 
         def event_received():
             assert_that(
-                event_accumulator.accumulate(with_headers=True),
+                events.accumulate(with_headers=True),
                 has_items(
                     has_entries(
                         message=has_entries(
@@ -1862,8 +1859,7 @@ class TestCallSendDTMF(RealAsteriskIntegrationTest):
             raises(CalldError).matching(has_properties(status_code=400))
         )
 
-        routing_key = 'ami.*'
-        event_accumulator = self.bus.accumulator(routing_key)
+        event_accumulator = self.bus.accumulator(headers={'name': 'DTMFEnd'})
 
         # Valid DTMF
         test_str = '12*#'
@@ -1912,8 +1908,7 @@ class TestCallSendDTMF(RealAsteriskIntegrationTest):
             raises(CalldError).matching(has_properties(status_code=403))
         )
 
-        routing_key = 'ami.*'
-        event_accumulator = self.bus.accumulator(routing_key)
+        event_accumulator = self.bus.accumulator(headers={'name': 'DTMFEnd'})
 
         # Valid DTMF
         test_str = '12*#'

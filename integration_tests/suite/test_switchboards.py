@@ -190,8 +190,7 @@ class TestSwitchboardCallsQueued(TestSwitchboards):
 
     def test_given_no_calls_when_new_queued_call_then_bus_event(self):
         switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
-        routing_key = 'switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid)
-        bus_events = self.bus.accumulator(routing_key)
+        bus_events = self.bus.accumulator(headers={'switchboard_uuid': switchboard_uuid})
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         new_channel = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
@@ -225,8 +224,7 @@ class TestSwitchboardCallsQueued(TestSwitchboards):
 
     def test_given_one_call_queued_when_hangup_then_bus_event(self):
         switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
-        routing_key = 'switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid)
-        bus_events = self.bus.accumulator(routing_key)
+        bus_events = self.bus.accumulator(headers={'switchboard_uuid': switchboard_uuid})
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         new_channel = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
@@ -275,8 +273,7 @@ class TestSwitchboardCallsQueued(TestSwitchboards):
 
     def test_given_calld_stopped_and_queued_is_hung_up_when_calld_starts_then_bus_event(self):
         switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
-        routing_key = 'switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid)
-        bus_events = self.bus.accumulator(routing_key)
+        bus_events = self.bus.accumulator(headers={'switchboard_uuid': switchboard_uuid})
         self.confd.set_switchboards(
             MockSwitchboard(uuid=switchboard_uuid, tenant_uuid=VALID_TENANT)
         )
@@ -328,8 +325,7 @@ class TestSwitchboardCallsQueued(TestSwitchboards):
 
     def test_call_queued_reaches_timeout(self):
         switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
-        routing_key = 'switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid)
-        bus_events = self.bus.accumulator(routing_key)
+        bus_events = self.bus.accumulator(headers={'switchboard_uuid': switchboard_uuid})
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid, timeout=2))
         queued_channel = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
@@ -418,7 +414,7 @@ class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
         self.auth.set_token(MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT))
         switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
-        bus_events = self.bus.accumulator('switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid))
+        bus_events = self.bus.accumulator(headers={'switchboard_uuid': switchboard_uuid})
         new_channel = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app=STASIS_APP,
@@ -439,8 +435,7 @@ class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
         switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         self.confd.set_users(MockUser(uuid=user_uuid))
-        routing_key = 'switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid)
-        bus_events = self.bus.accumulator(routing_key)
+        bus_events = self.bus.accumulator(headers={'switchboard_uuid': switchboard_uuid})
         new_channel = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app=STASIS_APP,
@@ -463,8 +458,12 @@ class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
         self.confd.set_lines(MockLine(id=line_id, name='switchboard-operator/autoanswer', protocol='test'))
-        routing_key = 'switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid)
-        bus_events = self.bus.accumulator(routing_key)
+        bus_events = self.bus.accumulator(
+            headers={
+                'switchboard_uuid': switchboard_uuid,
+                'name': 'switchboard_queued_calls_updated',
+            }
+        )
         new_channel = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app=STASIS_APP,
@@ -491,10 +490,18 @@ class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
             MockLine(id=first_line_id, name='switchboard-first-line/autoanswer', protocol='test'),
             MockLine(id=second_line_id, name='switchboard-second-line/autoanswer', protocol='test')
         )
-        routing_key = 'switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid)
-        queued_bus_events = self.bus.accumulator(routing_key)
-        routing_key = 'switchboards.{uuid}.calls.queued.*.answer.updated'.format(uuid=switchboard_uuid)
-        answered_bus_events = self.bus.accumulator(routing_key)
+        queued_bus_events = self.bus.accumulator(
+            headers={
+                'switchboard_uuid': switchboard_uuid,
+                'name': 'switchboard_queued_calls_updated',
+            }
+        )
+        answered_bus_events = self.bus.accumulator(
+            headers={
+                'switchboard_uuid': switchboard_uuid,
+                'name': 'switchboard_queued_call_answered',
+            }
+        )
         new_channel = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app=STASIS_APP,
@@ -550,10 +557,18 @@ class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
             MockLine(id=first_line_id, name='switchboard-first-line/autoanswer', protocol='test'),
             MockLine(id=second_line_id, name='switchboard-second-line/autoanswer', protocol='test')
         )
-        routing_key = 'switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid)
-        queued_bus_events = self.bus.accumulator(routing_key)
-        routing_key = 'switchboards.{uuid}.calls.queued.*.answer.updated'.format(uuid=switchboard_uuid)
-        answered_bus_events = self.bus.accumulator(routing_key)
+        queued_bus_events = self.bus.accumulator(
+            headers={
+                'switchboard_uuid': switchboard_uuid,
+                'name': 'switchboard_queued_calls_updated',
+            }
+        )
+        answered_bus_events = self.bus.accumulator(
+            headers={
+                'switchboard_uuid': switchboard_uuid,
+                'name': 'switchboard_queued_call_answered',
+            }
+        )
         new_channel = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app=STASIS_APP,
@@ -609,8 +624,12 @@ class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
         self.confd.set_lines(MockLine(id=line_id, name='switchboard-operator', protocol='test'))
-        routing_key = 'switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid)
-        queued_bus_events = self.bus.accumulator(routing_key)
+        queued_bus_events = self.bus.accumulator(
+            headers={
+                'switchboard_uuid': switchboard_uuid,
+                'name': 'switchboard_queued_calls_updated'
+            }
+        )
         new_channel = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app=STASIS_APP,
@@ -629,8 +648,12 @@ class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
             has_entry('caller', has_entries({'name': 'câller', 'number': '1234'}))
         )
 
-        routing_key = 'switchboards.{uuid}.calls.queued.*.answer.updated'.format(uuid=switchboard_uuid)
-        answered_bus_events = self.bus.accumulator(routing_key)
+        answered_bus_events = self.bus.accumulator(
+            headers={
+                'switchboard_uuid': switchboard_uuid,
+                'name': 'switchboard_queued_call_answered',
+            }
+        )
         self.chan_test.answer_channel(operator_channel.id)
         until.true(answered_bus_events.accumulate, tries=3)
 
@@ -649,8 +672,12 @@ class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
         self.confd.set_lines(MockLine(id=line_id, name='switchboard-operator', protocol='test'))
-        routing_key = 'switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid)
-        bus_events = self.bus.accumulator(routing_key)
+        bus_events = self.bus.accumulator(
+            headers={
+                'switchboard_uuid': switchboard_uuid,
+                'name': 'switchboard_queued_calls_updated'
+            }
+        )
         new_channel = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app=STASIS_APP,
@@ -797,8 +824,12 @@ class TestSwitchboardHoldCall(TestSwitchboards):
     def test_given_no_switchboard_when_hold_call_then_404(self):
         switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
-        routing_key = 'switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid)
-        queued_bus_events = self.bus.accumulator(routing_key)
+        queued_bus_events = self.bus.accumulator(
+            headers={
+                'switchboard_uuid': switchboard_uuid,
+                'name': 'switchboard_queued_calls_updated'
+            }
+        )
         new_channel = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app=STASIS_APP,
@@ -839,10 +870,18 @@ class TestSwitchboardHoldCall(TestSwitchboards):
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
         self.confd.set_lines(MockLine(id=line_id, name='switchboard-operator/autoanswer', protocol='test'))
-        routing_key = 'switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid)
-        queued_bus_events = self.bus.accumulator(routing_key)
-        routing_key = 'switchboards.{uuid}.calls.queued.*.answer.updated'.format(uuid=switchboard_uuid)
-        answered_bus_events = self.bus.accumulator(routing_key)
+        queued_bus_events = self.bus.accumulator(
+            headers={
+                'switchboard_uuid': switchboard_uuid,
+                'name': 'switchboard_queued_calls_updated',
+            }
+        )
+        answered_bus_events = self.bus.accumulator(
+            headers={
+                'switchboard_uuid': switchboard_uuid,
+                'name': 'switchboard_queued_call_answered',
+            }
+        )
         new_channel = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app=STASIS_APP,
@@ -871,8 +910,13 @@ class TestSwitchboardHoldCall(TestSwitchboards):
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
         self.confd.set_lines(MockLine(id=line_id, name='switchboard-operator/autoanswer', protocol='test'))
-        routing_key = 'switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid)
-        queued_bus_events = self.bus.accumulator(routing_key)
+        queued_bus_events = self.bus.accumulator(
+            headers={
+                'switchboard_uuid': switchboard_uuid,
+                'name': 'switchboard_queued_calls_updated',
+            }
+        )
+
         new_channel = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app=STASIS_APP,
@@ -880,12 +924,20 @@ class TestSwitchboardHoldCall(TestSwitchboards):
         )
         queued_call_id = new_channel.id
         until.true(queued_bus_events.accumulate, tries=3)
-        routing_key = 'switchboards.{uuid}.calls.queued.*.answer.updated'.format(uuid=switchboard_uuid)
-        answered_bus_events = self.bus.accumulator(routing_key)
+        answered_bus_events = self.bus.accumulator(
+            headers={
+                'switchboard_uuid': switchboard_uuid,
+                'name': 'switchboard_queued_call_answered',
+            }
+        )
         self.calld.switchboard_answer_queued_call(switchboard_uuid, queued_call_id, token)
         until.true(answered_bus_events.accumulate, tries=3)
-        routing_key = 'switchboards.{uuid}.calls.held.updated'.format(uuid=switchboard_uuid)
-        held_bus_events = self.bus.accumulator(routing_key)
+        held_bus_events = self.bus.accumulator(
+            headers={
+                'switchboard_uuid': switchboard_uuid,
+                'name': 'switchboard_held_calls_updated',
+            }
+        )
 
         self.calld.switchboard_hold_call(switchboard_uuid, queued_call_id)
 
@@ -922,8 +974,12 @@ class TestSwitchboardHoldCall(TestSwitchboards):
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
         self.confd.set_lines(MockLine(id=line_id, name='switchboard-operator/autoanswer', protocol='test'))
-        routing_key = 'switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid)
-        queued_bus_events = self.bus.accumulator(routing_key)
+        queued_bus_events = self.bus.accumulator(
+            headers={
+                'switchboard_uuid': switchboard_uuid,
+                'name': 'switchboard_queued_calls_updated',
+            }
+        )
         new_channel = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app=STASIS_APP,
@@ -932,23 +988,39 @@ class TestSwitchboardHoldCall(TestSwitchboards):
         queued_call_id = new_channel.id
         until.true(queued_bus_events.accumulate, tries=3)
 
-        routing_key = 'switchboards.{uuid}.calls.queued.*.answer.updated'.format(uuid=switchboard_uuid)
-        answered_bus_events = self.bus.accumulator(routing_key)
+        answered_bus_events = self.bus.accumulator(
+            headers={
+                'switchboard_uuid': switchboard_uuid,
+                'name': 'switchboard_queued_call_answered',
+            }
+        )
         self.calld.switchboard_answer_queued_call(switchboard_uuid, queued_call_id, token)
         until.true(answered_bus_events.accumulate, tries=3)
 
-        routing_key = 'switchboards.{uuid}.calls.held.updated'.format(uuid=switchboard_uuid)
-        held_bus_events = self.bus.accumulator(routing_key)
+        held_bus_events = self.bus.accumulator(
+            headers={
+                'switchboard_uuid': switchboard_uuid,
+                'name': 'switchboard_held_calls_updated',
+            }
+        )
         self.calld.switchboard_hold_call(switchboard_uuid, queued_call_id)
         until.true(held_bus_events.accumulate, tries=3)
 
-        routing_key = 'switchboards.{uuid}.calls.queued.*.answer.updated'.format(uuid=switchboard_uuid)
-        answered_bus_events = self.bus.accumulator(routing_key)
+        answered_bus_events = self.bus.accumulator(
+            headers={
+                'switchboard_uuid': switchboard_uuid,
+                'name': 'switchboard_queued_call_answered',
+            }
+        )
         self.calld.switchboard_answer_queued_call(switchboard_uuid, queued_call_id, token)
         until.true(answered_bus_events.accumulate, tries=3)
 
-        routing_key = 'switchboards.{uuid}.calls.held.updated'.format(uuid=switchboard_uuid)
-        held_bus_events = self.bus.accumulator(routing_key)
+        held_bus_events = self.bus.accumulator(
+            headers={
+                'switchboard_uuid': switchboard_uuid,
+                'name': 'switchboard_held_calls_updated',
+            }
+        )
         self.calld.switchboard_hold_call(switchboard_uuid, queued_call_id)
         until.true(held_bus_events.accumulate, tries=3)
 
@@ -990,8 +1062,12 @@ class TestSwitchboardCallsHeld(TestSwitchboards):
     def test_given_one_call_hungup_then_return_empty_list(self):
         switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
-        routing_key = 'switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid)
-        queued_bus_events = self.bus.accumulator(routing_key)
+        queued_bus_events = self.bus.accumulator(
+            headers={
+                'switchboard_uuid': switchboard_uuid,
+                'name': 'switchboard_queued_calls_updated',
+            }
+        )
         new_channel = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app=STASIS_APP,
@@ -1008,8 +1084,12 @@ class TestSwitchboardCallsHeld(TestSwitchboards):
     def test_given_two_calls_held_then_list_two_calls(self):
         switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
-        routing_key = 'switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid)
-        queued_bus_events = self.bus.accumulator(routing_key)
+        queued_bus_events = self.bus.accumulator(
+            headers={
+                'switchboard_uuid': switchboard_uuid,
+                'name': 'switchboard_queued_calls_updated',
+            }
+        )
         new_channel_1 = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app=STASIS_APP,
@@ -1045,8 +1125,12 @@ class TestSwitchboardCallsHeld(TestSwitchboards):
 
         switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
-        routing_key = 'switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid)
-        queued_bus_events = self.bus.accumulator(routing_key)
+        queued_bus_events = self.bus.accumulator(
+            headers={
+                'switchboard_uuid': switchboard_uuid,
+                'name': 'switchboard_queued_calls_updated',
+            }
+        )
         new_channel_1 = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app=STASIS_APP,
@@ -1069,8 +1153,12 @@ class TestSwitchboardCallsHeld(TestSwitchboards):
 
     def test_given_one_call_held_when_hangup_then_bus_event(self):
         switchboard_uuid = 'my-switchboard-uuid'
-        routing_key = 'switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid)
-        queued_bus_events = self.bus.accumulator(routing_key)
+        queued_bus_events = self.bus.accumulator(
+            headers={
+                'switchboard_uuid': switchboard_uuid,
+                'name': 'switchboard_queued_calls_updated',
+            }
+        )
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         new_channel = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
@@ -1079,8 +1167,12 @@ class TestSwitchboardCallsHeld(TestSwitchboards):
         )
 
         until.true(queued_bus_events.accumulate, tries=3)
-        routing_key = 'switchboards.{uuid}.calls.held.updated'.format(uuid=switchboard_uuid)
-        held_bus_events = self.bus.accumulator(routing_key)
+        held_bus_events = self.bus.accumulator(
+            headers={
+                'switchboard_uuid': switchboard_uuid,
+                'name': 'switchboard_held_calls_updated',
+            }
+        )
         self.calld.switchboard_hold_call(switchboard_uuid, new_channel.id)
         until.true(held_bus_events.accumulate, tries=3)
 
@@ -1123,8 +1215,12 @@ class TestSwitchboardCallsHeld(TestSwitchboards):
 
     def test_given_calld_stopped_and_held_is_hung_up_when_calld_starts_then_bus_event(self):
         switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
-        routing_key = 'switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid)
-        queued_bus_events = self.bus.accumulator(routing_key)
+        queued_bus_events = self.bus.accumulator(
+            headers={
+                'switchboard_uuid': switchboard_uuid,
+                'name': 'switchboard_queued_calls_updated',
+            }
+        )
         self.confd.set_switchboards(
             MockSwitchboard(uuid=switchboard_uuid, tenant_uuid=VALID_TENANT)
         )
@@ -1135,8 +1231,12 @@ class TestSwitchboardCallsHeld(TestSwitchboards):
         )
 
         until.true(queued_bus_events.accumulate, tries=3)
-        routing_key = 'switchboards.{uuid}.calls.held.updated'.format(uuid=switchboard_uuid)
-        held_bus_events = self.bus.accumulator(routing_key)
+        held_bus_events = self.bus.accumulator(
+            headers={
+                'switchboard_uuid': switchboard_uuid,
+                'name': 'switchboard_held_calls_updated',
+            }
+        )
         self.calld.switchboard_hold_call(switchboard_uuid, new_channel.id)
         until.true(held_bus_events.accumulate, tries=3)
 
@@ -1229,16 +1329,24 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
         self.auth.set_token(MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT))
         switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
-        routing_key = 'switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid)
-        queued_bus_events = self.bus.accumulator(routing_key)
+        queued_bus_events = self.bus.accumulator(
+            headers={
+                'switchboard_uuid': switchboard_uuid,
+                'name': 'switchboard_queued_calls_updated',
+            }
+        )
         new_channel = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app=STASIS_APP,
             appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, VALID_TENANT, switchboard_uuid],
         )
         until.true(queued_bus_events.accumulate, tries=3)
-        routing_key = 'switchboards.{uuid}.calls.held.updated'.format(uuid=switchboard_uuid)
-        held_bus_events = self.bus.accumulator(routing_key)
+        held_bus_events = self.bus.accumulator(
+            headers={
+                'switchboard_uuid': switchboard_uuid,
+                'name': 'switchboard_held_calls_updated',
+            }
+        )
         self.calld.switchboard_hold_call(switchboard_uuid, new_channel.id)
         until.true(held_bus_events.accumulate, tries=3)
         held_call_id = new_channel.id
@@ -1255,16 +1363,24 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
         switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         self.confd.set_users(MockUser(uuid=user_uuid))
-        routing_key = 'switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid)
-        queued_bus_events = self.bus.accumulator(routing_key)
+        queued_bus_events = self.bus.accumulator(
+            headers={
+                'switchboard_uuid': switchboard_uuid,
+                'name': 'switchboard_queued_calls_updated',
+            }
+        )
         new_channel = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app=STASIS_APP,
             appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, VALID_TENANT, switchboard_uuid],
         )
         until.true(queued_bus_events.accumulate, tries=3)
-        routing_key = 'switchboards.{uuid}.calls.held.updated'.format(uuid=switchboard_uuid)
-        held_bus_events = self.bus.accumulator(routing_key)
+        held_bus_events = self.bus.accumulator(
+            headers={
+                'switchboard_uuid': switchboard_uuid,
+                'name': 'switchboard_held_calls_updated',
+            }
+        )
         self.calld.switchboard_hold_call(switchboard_uuid, new_channel.id)
         until.true(held_bus_events.accumulate, tries=3)
         held_call_id = new_channel.id
@@ -1283,16 +1399,24 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
         self.confd.set_lines(MockLine(id=line_id, name='switchboard-operator/autoanswer', protocol='test'))
-        routing_key = 'switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid)
-        queued_bus_events = self.bus.accumulator(routing_key)
+        queued_bus_events = self.bus.accumulator(
+            headers={
+                'switchboard_uuid': switchboard_uuid,
+                'name': 'switchboard_queued_calls_updated',
+            }
+        )
         new_channel = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app=STASIS_APP,
             appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, VALID_TENANT, switchboard_uuid],
         )
         until.true(queued_bus_events.accumulate, tries=3)
-        routing_key = 'switchboards.{uuid}.calls.held.updated'.format(uuid=switchboard_uuid)
-        held_bus_events = self.bus.accumulator(routing_key)
+        held_bus_events = self.bus.accumulator(
+            headers={
+                'switchboard_uuid': switchboard_uuid,
+                'name': 'switchboard_held_calls_updated',
+            }
+        )
         self.calld.switchboard_hold_call(switchboard_uuid, new_channel.id)
         until.true(held_bus_events.accumulate, tries=3)
         held_call_id = new_channel.id
@@ -1315,9 +1439,24 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
             MockLine(id=first_line_id, name='switchboard-first-line/autoanswer', protocol='test'),
             MockLine(id=second_line_id, name='switchboard-second-line/autoanswer', protocol='test')
         )
-        queued_bus_events = self.bus.accumulator('switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid))
-        held_bus_events = self.bus.accumulator('switchboards.{uuid}.calls.held.updated'.format(uuid=switchboard_uuid))
-        answered_bus_events = self.bus.accumulator('switchboards.{uuid}.calls.held.*.answer.updated'.format(uuid=switchboard_uuid))
+        queued_bus_events = self.bus.accumulator(
+            headers={
+                'switchboard_uuid': switchboard_uuid,
+                'name': 'switchboard_queued_calls_updated',
+            }
+        )
+        held_bus_events = self.bus.accumulator(
+            headers={
+                'switchboard_uuid': switchboard_uuid,
+                'name': 'switchboard_held_calls_updated',
+            }
+        )
+        answered_bus_events = self.bus.accumulator(
+            headers={
+                'switchboard_uuid': switchboard_uuid,
+                'name': 'switchboard_held_call_answered',
+            }
+        )
 
         new_channel = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
@@ -1377,20 +1516,33 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
             MockLine(id=first_line_id, name='switchboard-first-line/autoanswer', protocol='test'),
             MockLine(id=second_line_id, name='switchboard-second-line/autoanswer', protocol='test')
         )
-        routing_key = 'switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid)
-        queued_bus_events = self.bus.accumulator(routing_key)
+        queued_bus_events = self.bus.accumulator(
+            headers={
+                'switchboard_uuid': switchboard_uuid,
+                'name': 'switchboard_queued_calls_updated',
+            }
+        )
         new_channel = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app=STASIS_APP,
             appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, VALID_TENANT, switchboard_uuid],
         )
         until.true(queued_bus_events.accumulate, tries=3)
-        held_bus_events = self.bus.accumulator('switchboards.{uuid}.calls.held.updated'.format(uuid=switchboard_uuid))
+        held_bus_events = self.bus.accumulator(
+            headers={
+                'switchboard_uuid': switchboard_uuid,
+                'name': 'switchboard_held_calls_updated',
+            }
+        )
         self.calld.switchboard_hold_call(switchboard_uuid, new_channel.id)
         until.true(held_bus_events.accumulate, tries=3)
         held_call_id = new_channel.id
-        routing_key = 'switchboards.{uuid}.calls.held.*.answer.updated'.format(uuid=switchboard_uuid)
-        answered_bus_events = self.bus.accumulator(routing_key)
+        answered_bus_events = self.bus.accumulator(
+            headers={
+                'switchboard_uuid': switchboard_uuid,
+                'name': 'switchboard_held_call_answered',
+            }
+        )
 
         result = self.calld.switchboard_answer_held_call(switchboard_uuid,
                                                          held_call_id, token,
@@ -1439,8 +1591,12 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
         self.confd.set_lines(MockLine(id=line_id, name='switchboard-operator', protocol='test'))
-        routing_key = 'switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid)
-        queued_bus_events = self.bus.accumulator(routing_key)
+        queued_bus_events = self.bus.accumulator(
+            headers={
+                'switchboard_uuid': switchboard_uuid,
+                'name': 'switchboard_queued_calls_updated',
+            }
+        )
         new_channel = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app=STASIS_APP,
@@ -1448,8 +1604,12 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
             callerId=held_caller_id,
         )
         until.true(queued_bus_events.accumulate, tries=3)
-        routing_key = 'switchboards.{uuid}.calls.held.updated'.format(uuid=switchboard_uuid)
-        held_bus_events = self.bus.accumulator(routing_key)
+        held_bus_events = self.bus.accumulator(
+            headers={
+                'switchboard_uuid': switchboard_uuid,
+                'name': 'switchboard_held_calls_updated',
+            }
+        )
         self.calld.switchboard_hold_call(switchboard_uuid, new_channel.id)
         until.true(held_bus_events.accumulate, tries=3)
         held_call_id = new_channel.id
@@ -1467,8 +1627,12 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
             has_entry('caller', has_entries({'name': 'câller', 'number': '1234'}))
         )
 
-        routing_key = 'switchboards.{uuid}.calls.held.*.answer.updated'.format(uuid=switchboard_uuid)
-        answered_bus_events = self.bus.accumulator(routing_key)
+        answered_bus_events = self.bus.accumulator(
+            headers={
+                'switchboard_uuid': switchboard_uuid,
+                'name': 'switchboard_held_call_answered',
+            }
+        )
         self.chan_test.answer_channel(operator_channel.id)
         until.true(answered_bus_events.accumulate, tries=3)
 
@@ -1487,16 +1651,24 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
         self.confd.set_lines(MockLine(id=line_id, name='switchboard-operator', protocol='test'))
-        routing_key = 'switchboards.{uuid}.calls.queued.updated'.format(uuid=switchboard_uuid)
-        queued_bus_events = self.bus.accumulator(routing_key)
+        queued_bus_events = self.bus.accumulator(
+            headers={
+                'switchboard_uuid': switchboard_uuid,
+                'name': 'switchboard_queued_calls_updated',
+            }
+        )
         new_channel = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             app=STASIS_APP,
             appArgs=[STASIS_APP_INSTANCE, STASIS_APP_QUEUE, VALID_TENANT, switchboard_uuid],
         )
         until.true(queued_bus_events.accumulate, tries=3)
-        routing_key = 'switchboards.{uuid}.calls.held.updated'.format(uuid=switchboard_uuid)
-        held_bus_events = self.bus.accumulator(routing_key)
+        held_bus_events = self.bus.accumulator(
+            headers={
+                'switchboard_uuid': switchboard_uuid,
+                'name': 'switchboard_held_calls_updated',
+            }
+        )
         self.calld.switchboard_hold_call(switchboard_uuid, new_channel.id)
         until.true(held_bus_events.accumulate, tries=3)
         held_call_id = new_channel.id

@@ -1,4 +1,4 @@
-# Copyright 2019-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from hamcrest import assert_that
@@ -47,7 +47,7 @@ class TestTrunkBusConsume(IntegrationTest):
 
         self.restart_service('calld')
 
-        events = self.bus.accumulator(routing_key='trunks.{}.status.updated'.format(trunk_id))
+        events = self.bus.accumulator(headers={'name': 'trunk_status_updated'})
         self.reset_clients()
         self.wait_strategy.wait(self)
         self.bus.send_ami_hangup_event(call_id, channel='PJSIP/abcdef-00000001')
@@ -87,7 +87,7 @@ class TestTrunkBusConsume(IntegrationTest):
 
         self.restart_service('calld')
 
-        events = self.bus.accumulator(routing_key='trunks.{}.status.updated'.format(trunk_id))
+        events = self.bus.accumulator(headers={'name': 'trunk_status_updated'})
         self.reset_clients()
         self.wait_strategy.wait(self)
         self.bus.send_ami_newchannel_event(new_call_id(leap=2), channel='PJSIP/abcdef-00000001')
@@ -127,7 +127,7 @@ class TestTrunkBusConsume(IntegrationTest):
 
         self.restart_service('calld')
 
-        events = self.bus.accumulator(routing_key='trunks.{}.status.updated'.format(trunk_id))
+        events = self.bus.accumulator(headers={'name': 'trunk_status_updated'})
         self.reset_clients()
         self.wait_strategy.wait(self)
         self.bus.send_ami_peerstatus_event('PJSIP', 'PJSIP/abcdef', 'Reachable')
@@ -184,7 +184,7 @@ class TestTrunkBusConsume(IntegrationTest):
 
         self.restart_service('calld')
 
-        events = self.bus.accumulator(routing_key='trunks.{}.status.updated'.format(trunk_id))
+        events = self.bus.accumulator(headers={'name': 'trunk_status_updated'})
         self.reset_clients()
         self.wait_strategy.wait(self)
         self.bus.send_ami_registry_event(
@@ -236,7 +236,7 @@ class TestTrunkBusConsume(IntegrationTest):
 
         self.restart_service('calld')
 
-        events = self.bus.accumulator(routing_key='trunks.{}.status.updated'.format(trunk_id))
+        events = self.bus.accumulator(headers={'name': 'trunk_status_updated'})
         self.reset_clients()
         self.wait_strategy.wait(self)
 
@@ -302,7 +302,7 @@ class TestLineBusConsume(IntegrationTest):
 
         self.restart_service('calld')
 
-        events = self.bus.accumulator(routing_key='lines.{}.status.updated'.format(line_id))
+        events = self.bus.accumulator(headers={'name': 'line_status_updated'})
         self.reset_clients()
         self.wait_strategy.wait(self)
         self.bus.send_ami_hangup_event(call_id, channel='PJSIP/abcdef-00000001')
@@ -344,7 +344,7 @@ class TestLineBusConsume(IntegrationTest):
 
         self.restart_service('calld')
 
-        events = self.bus.accumulator(routing_key='lines.{}.status.updated'.format(line_id))
+        events = self.bus.accumulator(headers={'name': 'line_status_updated'})
         self.reset_clients()
         self.wait_strategy.wait(self)
         self.bus.send_ami_newchannel_event(new_call_id(leap=2), channel='PJSIP/abcdef-00000001')
@@ -386,7 +386,7 @@ class TestLineBusConsume(IntegrationTest):
 
         self.restart_service('calld')
 
-        events = self.bus.accumulator(routing_key='lines.{}.status.updated'.format(line_id))
+        events = self.bus.accumulator(headers={'name': 'line_status_updated'})
         self.reset_clients()
         self.wait_strategy.wait(self)
         self.bus.send_ami_peerstatus_event('PJSIP', 'PJSIP/abcdef', 'Reachable')

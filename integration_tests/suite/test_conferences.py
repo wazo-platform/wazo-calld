@@ -198,7 +198,7 @@ class TestConferenceParticipants(TestConferences):
                 name='conference',
             ),
         )
-        bus_events = self.bus.accumulator('conferences.{}.participants.joined'.format(conference_id))
+        bus_events = self.bus.accumulator(headers={'conference_id': conference_id})
         first_uuid = 'first-uuid'
         second_uuid = 'second-uuid'
 
@@ -239,8 +239,13 @@ class TestConferenceParticipants(TestConferences):
         self.confd.set_conferences(
             MockConference(id=conference_id, name='conference', tenant_uuid=tenant_uuid),
         )
-        conference_bus_events = self.bus.accumulator('conferences.users.{}.participants.joined'.format(user_uuid))
-        call_bus_events = self.bus.accumulator('calls.call.updated')
+        conference_bus_events = self.bus.accumulator(
+            headers={
+                'name': 'conference_user_participant_joined',
+                'conference_id': conference_id,
+            }
+        )
+        call_bus_events = self.bus.accumulator(headers={'name': 'call_updated'})
 
         self.given_call_in_conference(CONFERENCE1_EXTENSION, user_uuid=user_uuid)
         other_channel_id = self.given_call_in_conference(CONFERENCE1_EXTENSION, user_uuid=other_user_uuid)
@@ -312,6 +317,7 @@ class TestConferenceParticipants(TestConferences):
             ),
         )
         bus_events = self.bus.accumulator('conferences.{}.participants.left'.format(conference_id))
+        bus_events = self.bus.accumulator(headers={'conference_id': conference_id})
         user_uuid = make_user_uuid()
         other_user_uuid = 'another-uuid'
 
@@ -360,8 +366,8 @@ class TestConferenceParticipants(TestConferences):
                 tenant_uuid=tenant_uuid,
             )
         )
-        conference_bus_events = self.bus.accumulator('conferences.users.{}.participants.left'.format(user_uuid))
-        call_bus_events = self.bus.accumulator('calls.call.updated')
+        conference_bus_events = self.bus.accumulator(headers={'conference_id': conference_id})
+        call_bus_events = self.bus.accumulator(headers={'name': 'call_updated'})
 
         channel_id = self.given_call_in_conference(CONFERENCE1_EXTENSION, user_uuid=user_uuid)
         other_channel_id = self.given_call_in_conference(CONFERENCE1_EXTENSION, user_uuid=other_user_uuid)
@@ -632,7 +638,7 @@ class TestConferenceParticipants(TestConferences):
         )
         participants = self.calld_client.conferences.list_participants(conference_id)
         participant = participants['items'][0]
-        mute_bus_events = self.bus.accumulator('conferences.{}.participants.mute'.format(conference_id))
+        mute_bus_events = self.bus.accumulator(headers={'name': 'conference_participant_muted'})
 
         self.calld_client.conferences.mute_participant(conference_id, participant['id'])
 
@@ -800,7 +806,7 @@ class TestConferenceParticipants(TestConferences):
             ),
         )
         self.given_call_in_conference(CONFERENCE1_EXTENSION, caller_id_name='participant1')
-        record_bus_events = self.bus.accumulator('conferences.{}.record'.format(conference_id))
+        record_bus_events = self.bus.accumulator(headers={'conference_id': conference_id})
 
         self.calld_client.conferences.record(conference_id)
 
@@ -842,9 +848,7 @@ class TestConferenceParticipants(TestConferences):
         talking_user_uuid = 'talking-user-uuid'
         listening_user_uuid = 'listening-user-uuid'
 
-        admin_bus_events = self.bus.accumulator(f'conferences.{conference_id}.participants.talk')
-        talking_user_bus_events = self.bus.accumulator(f'conferences.users.{talking_user_uuid}.participants.talk')
-        listening_user_bus_events = self.bus.accumulator(f'conferences.users.{listening_user_uuid}.participants.talk')
+        bus_events = self.bus.accumulator(headers={'conference_id': conference_id})
 
         # listening user must enter the conference first, to receive the event from the talking user
         self.given_call_in_conference(CONFERENCE1_EXTENSION, caller_id_name='participant2', user_uuid=listening_user_uuid)
@@ -852,62 +856,62 @@ class TestConferenceParticipants(TestConferences):
         participants = self.calld_client.conferences.list_participants(conference_id)
         talking_participant = [participant for participant in participants['items'] if participant['user_uuid'] == talking_user_uuid][0]
 
-        def talking_event_received(bus_events, talking):
-            event_name = 'conference_participant_talk_stopped'
-            if talking:
-                event_name = 'conference_participant_talk_started'
+        def talking_events_received(bus_events, talking):
+            suffix = '_started' if talking else '_stopped'
 
             assert_that(
                 bus_events.accumulate(with_headers=True),
-                has_item(
+                has_items(
                     has_entries(
                         message=has_entries({
-                            'name': event_name,
+                            'name': 'conference_participant_talk' + suffix,
                             'data': has_entries({
                                 'id': talking_participant['id'],
                                 'conference_id': conference_id,
                             })
                         }),
                         headers=has_entries({
-                            'name': event_name,
+                            'name': 'conference_participant_talk' + suffix,
                             'conference_id': conference_id,
                             'tenant_uuid': CONFERENCE1_TENANT_UUID,
                             f'user_uuid:{talking_user_uuid}': True,
                             f'user_uuid:{listening_user_uuid}': True,
                         })
-                    )
-                )
-            )
-
-        def talking_user_event_received(bus_events, user_uuid, talking):
-            event_name = 'conference_user_participant_talk_started'
-            if not talking:
-                event_name = 'conference_user_participant_talk_stopped'
-
-            assert_that(
-                bus_events.accumulate(with_headers=True),
-                has_item(
+                    ),
                     has_entries(
                         message=has_entries({
-                            'name': event_name,
+                            'name': 'conference_user_participant_talk' + suffix,
                             'data': has_entries({
                                 'id': talking_participant['id'],
                                 'conference_id': conference_id,
                             })
                         }),
                         headers=has_entries({
-                            'name': event_name,
+                            'name': 'conference_user_participant_talk' + suffix,
                             'conference_id': conference_id,
                             'tenant_uuid': CONFERENCE1_TENANT_UUID,
-                            f'user_uuid:{user_uuid}': True,
+                            f'user_uuid:{talking_user_uuid}': True,
                         })
-                    )
+                    ),
+                    has_entries(
+                        message=has_entries({
+                            'name': 'conference_user_participant_talk' + suffix,
+                            'data': has_entries({
+                                'id': talking_participant['id'],
+                                'conference_id': conference_id,
+                            })
+                        }),
+                        headers=has_entries({
+                            'name': 'conference_user_participant_talk' + suffix,
+                            'conference_id': conference_id,
+                            'tenant_uuid': CONFERENCE1_TENANT_UUID,
+                            f'user_uuid:{listening_user_uuid}': True,
+                        })
+                    ),
                 )
             )
 
-        until.assert_(talking_event_received, admin_bus_events, talking=True, timeout=10)
-        until.assert_(talking_user_event_received, talking_user_bus_events, talking_user_uuid, talking=True, timeout=10)
-        until.assert_(talking_user_event_received, listening_user_bus_events, listening_user_uuid, talking=True, timeout=10)
+        until.assert_(talking_events_received, bus_events, talking=True, timeout=10)
 
         # send fake "stopped talking" AMI event
         self.bus.publish(
@@ -930,6 +934,4 @@ class TestConferenceParticipants(TestConferences):
             routing_key='ami.ConfbridgeTalking'
         )
 
-        until.assert_(talking_event_received, admin_bus_events, talking=False, timeout=10)
-        until.assert_(talking_user_event_received, talking_user_bus_events, talking_user_uuid, talking=False)
-        until.assert_(talking_user_event_received, listening_user_bus_events, listening_user_uuid, talking=False)
+        until.assert_(talking_events_received, bus_events, talking=False, timeout=10)
