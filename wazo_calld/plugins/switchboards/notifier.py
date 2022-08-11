@@ -21,10 +21,6 @@ class SwitchboardsNotifier:
     def __init__(self, bus):
         self._bus = bus
 
-    @staticmethod
-    def _build_headers(tenant_uuid):
-        return {'tenant_uuid': tenant_uuid}
-
     def queued_calls(self, tenant_uuid, switchboard_uuid, calls):
         logger.debug(
             'Notifying updated queued calls for switchboard %s: %s calls',
