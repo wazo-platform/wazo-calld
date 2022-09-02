@@ -1,4 +1,4 @@
-# Copyright 2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from unittest import TestCase
@@ -13,7 +13,6 @@ from ..services import Endpoint
 
 
 class TestEndpointStatusNotifier(TestCase):
-
     def setUp(self):
         self.confd_cache = Mock()
         self.publisher = Mock()
@@ -34,14 +33,7 @@ class TestEndpointStatusNotifier(TestCase):
         self.notifier.endpoint_updated(endpoint)
 
         self.publisher.publish.assert_called_once_with(
-            TrunkStatusUpdatedEvent({
-                'id': s.trunk_id,
-                'technology': 'sip',
-                'name': s.name,
-                'registered': True,
-                'current_call_count': 3,
-            }),
-            headers={'tenant_uuid': s.tenant_uuid},
+            TrunkStatusUpdatedEvent(s.trunk_id, 'sip', s.name, True, 3, s.tenant_uuid)
         )
 
     def test_line_updated(self):
@@ -58,12 +50,5 @@ class TestEndpointStatusNotifier(TestCase):
         self.notifier.endpoint_updated(endpoint)
 
         self.publisher.publish.assert_called_once_with(
-            LineStatusUpdatedEvent({
-                'id': s.line_id,
-                'technology': 'sccp',
-                'name': s.name,
-                'registered': True,
-                'current_call_count': 3,
-            }),
-            headers={'tenant_uuid': s.tenant_uuid},
+            LineStatusUpdatedEvent(s.line_id, 'sccp', s.name, True, 3, s.tenant_uuid)
         )

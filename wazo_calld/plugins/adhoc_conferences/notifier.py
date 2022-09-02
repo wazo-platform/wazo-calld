@@ -2,12 +2,11 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from xivo_bus.resources.adhoc_conference.event import (
-    AdhocConferenceCreatedUserEvent,
-    AdhocConferenceDeletedUserEvent,
-    AdhocConferenceParticipantJoinedUserEvent,
-    AdhocConferenceParticipantLeftUserEvent,
+    AdhocConferenceCreatedEvent,
+    AdhocConferenceDeletedEvent,
+    AdhocConferenceParticipantJoinedEvent,
+    AdhocConferenceParticipantLeftEvent,
 )
-from wazo_calld.plugins.calls.schemas import call_schema
 
 
 class AdhocConferencesNotifier:
@@ -21,14 +20,16 @@ class AdhocConferencesNotifier:
         }
 
     def created(self, adhoc_conference_id, tenant_uuid, host_user_uuid):
-        event = AdhocConferenceCreatedUserEvent(adhoc_conference_id, host_user_uuid)
-        headers = self._build_headers(tenant_uuid, host_user_uuid)
-        self._bus_producer.publish(event, headers=headers)
+        event = AdhocConferenceCreatedEvent(
+            adhoc_conference_id, tenant_uuid, host_user_uuid
+        )
+        self._bus_producer.publish(event)
 
     def deleted(self, adhoc_conference_id, tenant_uuid, host_user_uuid):
-        event = AdhocConferenceDeletedUserEvent(adhoc_conference_id, host_user_uuid)
-        headers = self._build_headers(tenant_uuid, host_user_uuid)
-        self._bus_producer.publish(event, headers=headers)
+        event = AdhocConferenceDeletedEvent(
+            adhoc_conference_id, tenant_uuid, host_user_uuid
+        )
+        self._bus_producer.publish(event)
 
     def participant_joined(
         self,
@@ -37,16 +38,13 @@ class AdhocConferencesNotifier:
         participant_call,
     ):
         for other_participant_user_uuid in other_participant_user_uuids:
-            event = AdhocConferenceParticipantJoinedUserEvent(
+            event = AdhocConferenceParticipantJoinedEvent(
                 adhoc_conference_id,
-                other_participant_user_uuid,
-                call_schema.dump(participant_call),
-            )
-            headers = self._build_headers(
+                participant_call.id_,
                 participant_call.tenant_uuid,
                 other_participant_user_uuid,
             )
-            self._bus_producer.publish(event, headers=headers)
+            self._bus_producer.publish(event)
 
     def participant_left(
         self,
@@ -55,13 +53,10 @@ class AdhocConferencesNotifier:
         participant_call,
     ):
         for other_participant_user_uuid in other_participant_user_uuids:
-            event = AdhocConferenceParticipantLeftUserEvent(
+            event = AdhocConferenceParticipantLeftEvent(
                 adhoc_conference_id,
-                other_participant_user_uuid,
-                call_schema.dump(participant_call),
-            )
-            headers = self._build_headers(
+                participant_call.id_,
                 participant_call.tenant_uuid,
                 other_participant_user_uuid,
             )
-            self._bus_producer.publish(event, headers=headers)
+            self._bus_producer.publish(event)

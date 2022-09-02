@@ -143,7 +143,7 @@ class TestFax(RealAsteriskIntegrationTest):
         with open(os.path.join(ASSET_ROOT, 'fax', 'fax.pdf'), 'rb') as fax_file:
             fax_content = fax_file.read()
 
-        events = self.bus.accumulator('faxes.outbound.#')
+        events = self.bus.accumulator(headers={'tenant_uuid': VALID_TENANT})
 
         result = self.calld_client.faxes.send(fax_content,
                                               context='recipient',
@@ -192,7 +192,7 @@ class TestFax(RealAsteriskIntegrationTest):
         with open(os.path.join(ASSET_ROOT, 'fax', 'fax.pdf'), 'rb') as fax_file:
             fax_content = fax_file.read()
 
-        events = self.bus.accumulator('faxes.outbound.#')
+        events = self.bus.accumulator(headers={'tenant_uuid': VALID_TENANT})
 
         result = self.calld_client.faxes.send(fax_content,
                                               context='recipient',
@@ -241,7 +241,7 @@ class TestFax(RealAsteriskIntegrationTest):
         with open(os.path.join(ASSET_ROOT, 'fax', 'fax.pdf'), 'rb') as fax_file:
             fax_content = fax_file.read()
 
-        events = self.bus.accumulator('faxes.outbound.#')
+        events = self.bus.accumulator(headers={'tenant_uuid': VALID_TENANT})
 
         result = self.calld_client.faxes.send(fax_content,
                                               context='recipient',
@@ -367,7 +367,7 @@ class TestFax(RealAsteriskIntegrationTest):
         with open(os.path.join(ASSET_ROOT, 'fax', 'fax.pdf'), 'rb') as fax_file:
             fax_content = fax_file.read()
 
-        events = self.bus.accumulator('faxes.outbound.users.some-user-id.#')
+        events = self.bus.accumulator(headers={f'user_uuid:{user_uuid}': True})
 
         result = calld_client.faxes.send_from_user(fax_content,
                                                    extension='recipient-fax',
@@ -425,7 +425,7 @@ class TestFax(RealAsteriskIntegrationTest):
         with open(os.path.join(ASSET_ROOT, 'fax', 'fax.pdf'), 'rb') as fax_file:
             fax_content = fax_file.read()
 
-        events = self.bus.accumulator('faxes.outbound.users.some-user-id.#')
+        events = self.bus.accumulator(headers={f'user_uuid:{user_uuid}': True})
 
         result = calld_client.faxes.send_from_user(fax_content,
                                                    extension='rec ip\nie\rnt-f\tax',

@@ -3,32 +3,21 @@
 
 import logging
 
-from xivo_bus.resources.calls.relocate import (
-    RelocateAnsweredEvent,
-    RelocateCompletedEvent,
-    RelocateInitiatedEvent,
-    RelocateEndedEvent
+from xivo_bus.resources.calls.event import (
+    CallRelocateAnsweredEvent,
+    CallRelocateCompletedEvent,
+    CallRelocateEndedEvent,
+    CallRelocateInitiatedEvent,
 )
+
 from .schemas import relocate_schema
 
 logger = logging.getLogger(__name__)
 
 
 class RelocatesNotifier:
-
     def __init__(self, bus_producer):
         self._bus_producer = bus_producer
-
-    @staticmethod
-    def _build_headers(user_uuids=None, **kwargs):
-        headers = {}
-        for uuid in user_uuids or []:
-            headers[f'user_uuid:{uuid}'] = True
-
-        for key, value in kwargs.items():
-            if value:
-                headers[key] = value
-        return headers if headers else None
 
     def observe(self, relocate):
         relocate.events.subscribe('initiated', self.initiated)
@@ -37,37 +26,25 @@ class RelocatesNotifier:
         relocate.events.subscribe('ended', self.ended)
 
     def initiated(self, relocate):
-        relocate_dict = relocate_schema.dump(relocate)
-        event = RelocateInitiatedEvent(relocate.initiator, relocate_dict)
-        headers = self._build_headers(
-            user_uuids=[relocate.initiator],
-            tenant_uuid=relocate.recipient_variables.get('WAZO_TENANT_UUID'),
-        )
-        self._bus_producer.publish(event, headers=headers)
+        payload = relocate_schema.dump(relocate)
+        tenant_uuid = relocate.recipient_variables['WAZO_TENANT_UUID']
+        event = CallRelocateInitiatedEvent(payload, tenant_uuid, relocate.initiator)
+        self._bus_producer.publish(event)
 
     def answered(self, relocate):
-        relocate_dict = relocate_schema.dump(relocate)
-        event = RelocateAnsweredEvent(relocate.initiator, relocate_dict)
-        headers = self._build_headers(
-            user_uuids=[relocate.initiator],
-            tenant_uuid=relocate.recipient_variables.get('WAZO_TENANT_UUID'),
-        )
-        self._bus_producer.publish(event, headers=headers)
+        payload = relocate_schema.dump(relocate)
+        tenant_uuid = relocate.recipient_variables['WAZO_TENANT_UUID']
+        event = CallRelocateAnsweredEvent(payload, tenant_uuid, relocate.initiator)
+        self._bus_producer.publish(event)
 
     def completed(self, relocate):
-        relocate_dict = relocate_schema.dump(relocate)
-        event = RelocateCompletedEvent(relocate.initiator, relocate_dict)
-        headers = self._build_headers(
-            user_uuids=[relocate.initiator],
-            tenant_uuid=relocate.recipient_variables.get('WAZO_TENANT_UUID'),
-        )
-        self._bus_producer.publish(event, headers=headers)
+        payload = relocate_schema.dump(relocate)
+        tenant_uuid = relocate.recipient_variables['WAZO_TENANT_UUID']
+        event = CallRelocateCompletedEvent(payload, tenant_uuid, relocate.initiator)
+        self._bus_producer.publish(event)
 
     def ended(self, relocate):
-        relocate_dict = relocate_schema.dump(relocate)
-        event = RelocateEndedEvent(relocate.initiator, relocate_dict)
-        headers = self._build_headers(
-            user_uuids=[relocate.initiator],
-            tenant_uuid=relocate.recipient_variables.get('WAZO_TENANT_UUID'),
-        )
-        self._bus_producer.publish(event, headers=headers)
+        payload = relocate_schema.dump(relocate)
+        tenant_uuid = relocate.recipient_variables['WAZO_TENANT_UUID']
+        event = CallRelocateEndedEvent(payload, tenant_uuid, relocate.initiator)
+        self._bus_producer.publish(event)

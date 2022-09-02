@@ -40,7 +40,7 @@ class TestBusConsume(IntegrationTest):
                 'CHANNEL(pjsip,call-id)': 'a-sip-call-id',
             },
         })
-        events = self.bus.accumulator(routing_key='calls.call.created')
+        events = self.bus.accumulator(headers={'name': 'call_created'})
 
         self.bus.send_ami_newchannel_event(call_id)
 
@@ -87,7 +87,7 @@ class TestBusConsume(IntegrationTest):
                 'WAZO_TENANT_UUID': VALID_TENANT,
             },
         })
-        events = self.bus.accumulator(routing_key='calls.call.updated')
+        events = self.bus.accumulator(headers={'name': 'call_updated'})
 
         self.bus.send_ami_newstate_event(call_id)
 
@@ -133,7 +133,7 @@ class TestBusConsume(IntegrationTest):
                 'WAZO_TENANT_UUID': VALID_TENANT,
             },
         })
-        events = self.bus.accumulator(routing_key='calls.call.answered')
+        events = self.bus.accumulator(headers={'name': 'call_answered'})
 
         self.bus.send_ami_newstate_event(call_id, state='Up')
 
@@ -171,7 +171,7 @@ class TestBusConsume(IntegrationTest):
                 'WAZO_TENANT_UUID': VALID_TENANT,
             },
         })
-        events = self.bus.accumulator(routing_key='calls.hold.created')
+        events = self.bus.accumulator(headers={'name': 'call_held'})
 
         self.bus.send_ami_hold_event(call_id)
 
@@ -213,7 +213,7 @@ class TestBusConsume(IntegrationTest):
                 'WAZO_TENANT_UUID': VALID_TENANT,
             }
         })
-        events = self.bus.accumulator(routing_key='calls.hold.deleted')
+        events = self.bus.accumulator(headers={'name': 'call_resumed'})
 
         self.bus.send_ami_unhold_event(call_id)
 
@@ -254,7 +254,7 @@ class TestBusConsume(IntegrationTest):
                 'WAZO_TENANT_UUID': VALID_TENANT,
             },
         })
-        events = self.bus.accumulator(routing_key='calls.dtmf.created')
+        events = self.bus.accumulator(headers={'name': 'call_dtmf_created'})
 
         self.bus.send_ami_dtmf_end_digit(call_id, '1')
 
@@ -281,7 +281,7 @@ class TestBusConsume(IntegrationTest):
     def test_missed_call_event(self):
         user_uuid = str(uuid.uuid4())
         conversation_id = '16666244.24'
-        events = self.bus.accumulator(routing_key='calls.missed')
+        events = self.bus.accumulator(headers={'name': 'user_missed_call'})
 
         self.bus.send_user_missed_call_userevent(
             user_uuid,

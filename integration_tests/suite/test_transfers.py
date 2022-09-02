@@ -542,7 +542,7 @@ class TestCreateTransfer(TestTransfers):
     def test_given_stasis_when_create_then_event_sent_in_bus(self):
         transferred_channel_id, initiator_channel_id = self.real_asterisk.given_bridged_call_stasis()
 
-        events = self.bus.accumulator('calls.transfer.created')
+        events = self.bus.accumulator(headers={'name': 'transfer_created'})
         self.calld.create_transfer(
             transferred_channel_id,
             initiator_channel_id,
@@ -568,7 +568,7 @@ class TestCreateTransfer(TestTransfers):
     def test_given_non_stasis_when_create_then_event_sent_in_bus(self):
         transferred_channel_id, initiator_channel_id = self.real_asterisk.given_bridged_call_not_stasis()
 
-        events = self.bus.accumulator('calls.transfer.created')
+        events = self.bus.accumulator(headers={'name': 'transfer_created'})
         self.calld.create_transfer(
             transferred_channel_id,
             initiator_channel_id,
@@ -749,7 +749,7 @@ class TestUserCreateTransfer(TestTransfers):
     def setUp(self):
         super().setUp()
         self.confd.reset()
-        self.events = self.bus.accumulator('calls.transfer.*')
+        self.events = self.bus.accumulator(headers={'tenant_uuid': VALID_TENANT})
 
     def given_user_token(self, user_uuid):
         token = 'my-token'
@@ -992,7 +992,7 @@ class TestCancelTransfer(TestTransfers):
 class TestUserCancelTransfer(TestTransfers):
     def setUp(self):
         super().setUp()
-        self.events = self.bus.accumulator('calls.transfer.*')
+        self.events = self.bus.accumulator(headers={'tenant_uuid': VALID_TENANT})
 
     def test_given_no_transfer_when_cancel_transfer_then_error_404(self):
         token = 'my-token'
@@ -1044,7 +1044,7 @@ class TestCompleteTransfer(TestTransfers):
 class TestUserCompleteTransfer(TestTransfers):
     def setUp(self):
         super().setUp()
-        self.events = self.bus.accumulator('calls.transfer.*')
+        self.events = self.bus.accumulator(headers={'tenant_uuid': VALID_TENANT})
 
     def test_given_no_transfer_when_complete_transfer_then_error_404(self):
         token = 'my-token'
@@ -1089,7 +1089,7 @@ class TestTransferFromStasis(TestTransfers):
 
     def setUp(self):
         super().setUp()
-        self.events = self.bus.accumulator('calls.transfer.*')
+        self.events = self.bus.accumulator(headers={'tenant_uuid': VALID_TENANT})
 
     def test_given_state_ready_when_transfer_start_and_answer_then_state_answered(self):
         transferred_channel_id, initiator_channel_id = self.real_asterisk.given_bridged_call_stasis()
@@ -1419,11 +1419,11 @@ class TestTransferFromNonStasis(TestTransfers):
 
     def setUp(self):
         super().setUp()
-        self.events = self.bus.accumulator('calls.transfer.*')
+        self.events = self.bus.accumulator(headers={'tenant_uuid': VALID_TENANT})
 
     def test_given_state_ready_from_not_stasis_when_transfer_start_and_answer_then_state_answered(self):
         transferred_channel_id, initiator_channel_id = self.real_asterisk.given_bridged_call_not_stasis()
-        events = self.bus.accumulator('calls.transfer.*')
+        events = self.bus.accumulator(headers={'tenant_uuid': VALID_TENANT})
 
         response = self.calld.create_transfer(transferred_channel_id,
                                               initiator_channel_id,
@@ -1543,7 +1543,7 @@ class TestInitialisation(TestTransfers):
 
     def setUp(self):
         super().setUp()
-        self.events = self.bus.accumulator('calls.transfer.*')
+        self.events = self.bus.accumulator(headers={'tenant_uuid': VALID_TENANT})
 
     def test_given_started_transfer_when_wazo_calld_restarts_then_transfer_may_continue(self):
         (transferred_channel_id,

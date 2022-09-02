@@ -288,7 +288,7 @@ class TestMeetingParticipants(TestMeetings):
                 name='meeting',
             ),
         )
-        bus_events = self.bus.accumulator(f'meetings.{meeting_uuid}.participants.joined')
+        bus_events = self.bus.accumulator(headers={'meeting_uuid': meeting_uuid})
 
         self.given_call_in_meeting(MEETING1_EXTENSION, caller_id_name='participant1')
 
@@ -324,8 +324,8 @@ class TestMeetingParticipants(TestMeetings):
                 uuid=meeting_uuid, name='meeting', tenant_uuid=tenant_uuid
             ),
         )
-        meeting_bus_events = self.bus.accumulator(f'meetings.users.{user_uuid}.participants.joined')
-        call_bus_events = self.bus.accumulator('calls.call.updated')
+        meeting_bus_events = self.bus.accumulator(headers={'meeting_uuid': meeting_uuid})
+        call_bus_events = self.bus.accumulator(headers={'name': 'call_updated'})
 
         self.given_call_in_meeting(
             MEETING1_EXTENSION, user_uuid=user_uuid, tenant_uuid=tenant_uuid
@@ -399,7 +399,7 @@ class TestMeetingParticipants(TestMeetings):
                 uuid=meeting_uuid, tenant_uuid=tenant_uuid, name='meeting'
             ),
         )
-        bus_events = self.bus.accumulator(f'meetings.{meeting_uuid}.participants.left')
+        bus_events = self.bus.accumulator(headers={'meeting_uuid': meeting_uuid})
 
         channel_id = self.given_call_in_meeting(MEETING1_EXTENSION, caller_id_name='participant1')
 
@@ -434,8 +434,8 @@ class TestMeetingParticipants(TestMeetings):
         self.confd.set_meetings(
             MockMeeting(uuid=meeting_uuid, name='meeting', tenant_uuid=tenant_uuid),
         )
-        meeting_bus_events = self.bus.accumulator(f'meetings.users.{user_uuid}.participants.left')
-        call_bus_events = self.bus.accumulator('calls.call.updated')
+        meeting_bus_events = self.bus.accumulator(headers={'meeting_uuid': meeting_uuid})
+        call_bus_events = self.bus.accumulator(headers={'name': 'call_updated'})
 
         channel_id = self.given_call_in_meeting(
             MEETING1_EXTENSION, user_uuid=user_uuid, tenant_uuid=tenant_uuid
@@ -853,7 +853,7 @@ class TestMeetingParticipants(TestMeetings):
         )
         participants = self.calld_client.meetings.list_participants(meeting_uuid)
         participant = participants['items'][0]
-        mute_bus_events = self.bus.accumulator('meetings.{}.participants.mute'.format(meeting_uuid))
+        mute_bus_events = self.bus.accumulator(headers={'meeting_uuid': meeting_uuid})
 
         self.calld_client.meetings.mute_participant(meeting_uuid, participant['id'])
 
@@ -1032,7 +1032,7 @@ class TestMeetingParticipants(TestMeetings):
         self.given_call_in_meeting(
             MEETING1_EXTENSION, caller_id_name='participant1', tenant_uuid=tenant_uuid
         )
-        record_bus_events = self.bus.accumulator('meetings.{}.record'.format(meeting_uuid))
+        record_bus_events = self.bus.accumulator(headers={'meeting_uuid': meeting_uuid})
 
         self.calld_client.meetings.record(meeting_uuid)
 
@@ -1067,14 +1067,12 @@ class TestMeetingParticipants(TestMeetings):
     def test_participant_talking_sends_event(self):
         meeting_uuid = MEETING1_UUID
         self.confd.set_meetings(
-            MockMeeting(uuid=meeting_uuid, name='meeting'),
+            MockMeeting(uuid=meeting_uuid, name='meeting', tenant_uuid=MEETING1_TENANT_UUID),
         )
         talking_user_uuid = 'talking-user-uuid'
         listening_user_uuid = 'listening-user-uuid'
 
-        admin_bus_events = self.bus.accumulator(f'meetings.{meeting_uuid}.participants.talk')
-        talking_user_bus_events = self.bus.accumulator(f'meetings.users.{talking_user_uuid}.participants.talk')
-        listening_user_bus_events = self.bus.accumulator(f'meetings.users.{listening_user_uuid}.participants.talk')
+        meeting_events = self.bus.accumulator(headers={'meeting_uuid': meeting_uuid})
 
         # listening user must enter the meeting first, to receive the event from the talking user
         self.given_call_in_meeting(MEETING1_EXTENSION, caller_id_name='participant2', user_uuid=listening_user_uuid)
@@ -1083,26 +1081,57 @@ class TestMeetingParticipants(TestMeetings):
         talking_participant = [participant for participant in participants['items'] if participant['user_uuid'] == talking_user_uuid][0]
 
         def talking_event_received(bus_events, talking):
-            assert_that(bus_events.accumulate(), has_item(has_entries({
-                'name': 'meeting_participant_talk_started' if talking else 'meeting_participant_talk_stopped',
-                'data': has_entries({
-                    'id': talking_participant['id'],
-                    'meeting_uuid': meeting_uuid,
-                })
-            })))
+            suffix = '_started' if talking else '_stopped'
 
-        def talking_user_event_received(bus_events, talking):
-            assert_that(bus_events.accumulate(), has_item(has_entries({
-                'name': 'meeting_user_participant_talk_started' if talking else 'meeting_user_participant_talk_stopped',
-                'data': has_entries({
-                    'id': talking_participant['id'],
-                    'meeting_uuid': meeting_uuid,
-                })
-            })))
+            assert_that(
+                bus_events.accumulate(with_headers=True),
+                has_items(
+                    has_entries(
+                        message=has_entries(
+                            data=has_entries(
+                                id=talking_participant['id'],
+                                meeting_uuid=meeting_uuid,
+                            )
+                        ),
+                        headers=has_entries(
+                            name='meeting_participant_talk' + suffix,
+                            tenant_uuid=MEETING1_TENANT_UUID,
+                        ),
+                    ),
+                    has_entries(
+                        message=has_entries(
+                            data=has_entries(
+                                id=talking_participant['id'],
+                                meeting_uuid=meeting_uuid,
+                            )
+                        ),
+                        headers=has_entries(
+                            {
+                                'name': 'meeting_user_participant_talk' + suffix,
+                                'tenant_uuid': MEETING1_TENANT_UUID,
+                                f'user_uuid:{talking_user_uuid}': True,
+                            }
+                        ),
+                    ),
+                    has_entries(
+                        message=has_entries(
+                            data=has_entries(
+                                id=talking_participant['id'],
+                                meeting_uuid=meeting_uuid,
+                            ),
+                        ),
+                        headers=has_entries(
+                            {
+                                'name': 'meeting_user_participant_talk' + suffix,
+                                'tenant_uuid': MEETING1_TENANT_UUID,
+                                f'user_uuid:{listening_user_uuid}': True,
+                            }
+                        ),
+                    )
+                )
+            )
 
-        until.assert_(talking_event_received, admin_bus_events, talking=True, timeout=10)
-        until.assert_(talking_user_event_received, talking_user_bus_events, talking=True, timeout=10)
-        until.assert_(talking_user_event_received, listening_user_bus_events, talking=True, timeout=10)
+        until.assert_(talking_event_received, meeting_events, talking=True, timeout=10)
 
         # send fake "stopped talking" AMI event
         self.bus.publish(
@@ -1125,6 +1154,4 @@ class TestMeetingParticipants(TestMeetings):
             routing_key='ami.ConfbridgeTalking'
         )
 
-        until.assert_(talking_event_received, admin_bus_events, talking=False, timeout=10)
-        until.assert_(talking_user_event_received, talking_user_bus_events, talking=False)
-        until.assert_(talking_user_event_received, listening_user_bus_events, talking=False)
+        until.assert_(talking_event_received, meeting_events, talking=False, timeout=10)

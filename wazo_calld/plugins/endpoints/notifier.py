@@ -1,4 +1,4 @@
-# Copyright 2019-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from xivo_bus.resources.trunk.event import TrunkStatusUpdatedEvent
@@ -17,24 +17,30 @@ class EndpointStatusNotifier:
         self._confd_cache = confd_cache
 
     def endpoint_updated(self, endpoint):
-        techno = self._asterisk_to_confd_techno_map.get(endpoint.techno, endpoint.techno)
-        body = {
-            'technology': techno,
-            'name': endpoint.name,
-            'registered': endpoint.registered,
-            'current_call_count': endpoint.current_call_count,
-        }
+        techno = self._asterisk_to_confd_techno_map.get(
+            endpoint.techno, endpoint.techno
+        )
 
         trunk = self._confd_cache.get_trunk(endpoint.techno, endpoint.name)
         if trunk:
-            body['id'] = trunk['id']
-            event = TrunkStatusUpdatedEvent(body)
-            headers = {'tenant_uuid': trunk['tenant_uuid']}
-            return self._publisher.publish(event, headers=headers)
+            event = TrunkStatusUpdatedEvent(
+                trunk['id'],
+                techno,
+                endpoint.name,
+                endpoint.registered,
+                endpoint.current_call_count,
+                trunk['tenant_uuid'],
+            )
+            return self._publisher.publish(event)
 
         line = self._confd_cache.get_line(endpoint.techno, endpoint.name)
         if line:
-            body['id'] = line['id']
-            event = LineStatusUpdatedEvent(body)
-            headers = {'tenant_uuid': line['tenant_uuid']}
-            return self._publisher.publish(event, headers=headers)
+            event = LineStatusUpdatedEvent(
+                line['id'],
+                techno,
+                endpoint.name,
+                endpoint.registered,
+                endpoint.current_call_count,
+                line['tenant_uuid'],
+            )
+            return self._publisher.publish(event)
