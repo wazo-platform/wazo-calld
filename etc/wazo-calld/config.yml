@@ -1,9 +1,8 @@
 # This file should not be modified as it may get changed by the maintainer.
-# Add extra configuration files in the extra_config_files directory to override
-# the content from this file
+# Add extra configuration files to the extra_config_files directory to override
+# the settings in this file
 
-# Extra configuration directory where the config files overriding this file
-# should be.
+# Directory in which to place config overrides
 extra_config_files: /etc/wazo-calld/conf.d/
 
 # Change the log level to debug level.
@@ -15,22 +14,22 @@ logfile: /var/log/wazo-calld.log
 # REST API server
 rest_api:
 
-  # Listening address
+  # Address to listen on
   listen: 127.0.0.1
 
-  # Listening port
+  # Port to listen on
   port: 9500
 
-  #CORS configuration. See Flask-CORS documentation for other values.
+  # CORS configuration. See Flask-CORS documentation for other values.
   cors:
 
-    #Enabled by default
+    # Enabled by default
     enabled: True
 
-    #Allow JSON preflight requests
+    # Allow JSON preflight requests
     allow_headers: [Content-Type, X-Auth-Token, Wazo-Tenant]
 
-# wazo-auth (authentication daemon) connection informations.
+# wazo-auth (authentication daemon) connection settings.
 auth:
   host: localhost
   port: 9497
@@ -44,7 +43,7 @@ confd:
   prefix: null
   https: false
 
-# Event bus (AMQP) connection informations
+# Event bus (AMQP) connection settings
 bus:
   username: guest
   password: guest
@@ -57,7 +56,7 @@ bus:
 collectd:
   exchange_name: collectd
 
-# Asterisk ARI connection informations
+# Asterisk ARI connection settings
 ari:
   connection:
     base_url: http://localhost:5039
@@ -70,21 +69,21 @@ ari:
   # How many seconds between each try to connect to ARI at startup
   startup_connection_delay: 1
 
-# wazo-amid connection informations
+# wazo-amid connection settings
 amid:
     host: localhost
     port: 9491
     prefix: null
     https: false
 
-# wazo-phoned connection informations
+# wazo-phoned connection settings
 phoned:
     host: localhost
     port: 9498
     prefix: null
     https: false
 
-# consul connection informations
+# consul connection settings
 consul:
   scheme: http
   host: localhost
@@ -103,24 +102,24 @@ enabled_plugins:
   transfers: true
   voicemails: true
 
-# Service discovery configuration. all time intervals are in seconds
+# Service discovery configuration. All time intervals are in seconds
 service_discovery:
-  # to indicate wether of not to use service discovery, should only be disabled
+  # to indicate whether of not to use service discovery, should only be disabled
   # for testing purposes
   enabled: true
-  # the address that will be received by other services using service discovery.
-  # use "advertise_address: auto" to enable ip address detection based on
+  # The address that will be received by other services using service discovery.
+  # Use "advertise_address: auto" to enable ip address detection based on
   # advertise_address_interface
   advertise_address: auto
-  # if advertise_address is "auto" this interface will be used to find the ip
-  # address to advertise. ignored otherwise
+  # If advertise_address is "auto" this interface will be used to find the ip
+  # address to advertise. Ignored otherwise
   advertise_address_interface: eth0
   advertise_port: 9500
-  # the number of seconds that consul will wait between 2 ttl messages to mark
+  # The number of seconds that consul will wait between 2 ttl messages to mark
   # this service as up
   ttl_interval: 30
-  # the time interval before the service sends a new ttl message to consul
+  # The time interval before the service sends a new ttl message to consul
   refresh_interval: 27
-  # the time interval to detect that the service is running when starting
+  # The time interval to detect that the service is running when starting
   retry_interval: 2
   extra_tags: []
