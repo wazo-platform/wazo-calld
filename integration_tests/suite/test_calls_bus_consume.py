@@ -3,13 +3,11 @@
 import uuid
 
 from hamcrest import (
+    all_of,
     assert_that,
-    contains,
-    empty,
     has_entries,
     has_item,
     is_,
-    not_,
 )
 from wazo_test_helpers import until
 
@@ -150,23 +148,41 @@ class TestBusConsume(IntegrationTest):
         def assert_function():
             assert_that(
                 events.accumulate(with_headers=True),
-                has_item(
-                    has_entries(
-                        message=has_entries({
-                            'name': 'call_updated',
-                            'origin_uuid': XIVO_UUID,
-                            'data': has_entries({
-                                'call_id': first_channel_id,
-                                'status': 'Up',
-                                'talking_to': not_(empty()),
-                                'direction': 'outbound',
-                            })
-                        }),
-                        headers=has_entries(
-                            name='call_updated',
-                            tenant_uuid=VALID_TENANT,
+                all_of(
+                    has_item(
+                        has_entries(
+                            message=has_entries({
+                                'name': 'call_updated',
+                                'origin_uuid': XIVO_UUID,
+                                'data': has_entries({
+                                    'call_id': first_channel_id,
+                                    'status': 'Up',
+                                    'direction': 'outbound',
+                                })
+                            }),
+                            headers=has_entries(
+                                name='call_updated',
+                                tenant_uuid=VALID_TENANT,
+                            )
                         )
-                    )
+                    ),
+                    has_item(
+                        has_entries(
+                            message=has_entries({
+                                'name': 'call_updated',
+                                'origin_uuid': XIVO_UUID,
+                                'data': has_entries({
+                                    'call_id': second_channel_id,
+                                    'status': 'Up',
+                                    'direction': 'outbound',
+                                })
+                            }),
+                            headers=has_entries(
+                                name='call_updated',
+                                tenant_uuid=VALID_TENANT,
+                            )
+                        )
+                    ),
                 )
             )
 
@@ -200,26 +216,64 @@ class TestBusConsume(IntegrationTest):
         events = self.bus.accumulator(routing_key='calls.call.updated')
 
         self.bus.send_ami_newstate_event(first_channel_id)
+        self.bus.send_ami_newstate_event(second_channel_id)
+        self.bus.send_ami_newstate_event(third_channel_id)
 
         def assert_call_inbound():
             assert_that(
                 events.accumulate(with_headers=True),
-                has_item(
-                    has_entries(
-                        message=has_entries({
-                            'name': 'call_updated',
-                            'origin_uuid': XIVO_UUID,
-                            'data': has_entries({
-                                'call_id': first_channel_id,
-                                'status': 'Up',
-                                'direction': 'inbound',
-                            })
-                        }),
-                        headers=has_entries(
-                            name='call_updated',
-                            tenant_uuid=VALID_TENANT,
+                all_of(
+                    has_item(
+                        has_entries(
+                            message=has_entries({
+                                'name': 'call_updated',
+                                'origin_uuid': XIVO_UUID,
+                                'data': has_entries({
+                                    'call_id': first_channel_id,
+                                    'status': 'Up',
+                                    'direction': 'inbound',
+                                })
+                            }),
+                            headers=has_entries(
+                                name='call_updated',
+                                tenant_uuid=VALID_TENANT,
+                            )
                         )
-                    )
+                    ),
+                    has_item(
+                        has_entries(
+                            message=has_entries({
+                                'name': 'call_updated',
+                                'origin_uuid': XIVO_UUID,
+                                'data': has_entries({
+                                    'call_id': second_channel_id,
+                                    'status': 'Up',
+                                    'direction': 'inbound',
+                                })
+                            }),
+                            headers=has_entries(
+                                name='call_updated',
+                                tenant_uuid=VALID_TENANT,
+                            )
+                        )
+                    ),
+                    has_item(
+                        has_entries(
+                            message=has_entries({
+                                'name': 'call_updated',
+                                'origin_uuid': XIVO_UUID,
+                                'data': has_entries({
+                                    'call_id': third_channel_id,
+                                    'status': 'Up',
+                                    'direction': 'inbound',
+                                })
+                            }),
+                            headers=has_entries(
+                                name='call_updated',
+                                tenant_uuid=VALID_TENANT,
+                            )
+                        )
+                    ),
                 )
             )
 
@@ -240,25 +294,48 @@ class TestBusConsume(IntegrationTest):
             channel_id=third_channel_id, bridge_id=first_channel_id, bridge_num_channels=2
         )
 
+        self.bus.send_ami_newstate_event(first_channel_id)
+        self.bus.send_ami_newstate_event(second_channel_id)
+        self.bus.send_ami_newstate_event(third_channel_id)
+
         def assert_call_internal():
             assert_that(
                 events_updated.accumulate(with_headers=True),
-                has_item(
-                    has_entries(
-                        message=has_entries({
-                            'name': 'call_updated',
-                            'origin_uuid': XIVO_UUID,
-                            'data': has_entries({
-                                'call_id': first_channel_id,
-                                'status': 'Up',
-                                'direction': 'internal',
-                            })
-                        }),
-                        headers=has_entries(
-                            name='call_updated',
-                            tenant_uuid=VALID_TENANT,
+                all_of(
+                    has_item(
+                        has_entries(
+                            message=has_entries({
+                                'name': 'call_updated',
+                                'origin_uuid': XIVO_UUID,
+                                'data': has_entries({
+                                    'call_id': first_channel_id,
+                                    'status': 'Up',
+                                    'direction': 'internal',
+                                })
+                            }),
+                            headers=has_entries(
+                                name='call_updated',
+                                tenant_uuid=VALID_TENANT,
+                            )
                         )
-                    )
+                    ),
+                    has_item(
+                        has_entries(
+                            message=has_entries({
+                                'name': 'call_updated',
+                                'origin_uuid': XIVO_UUID,
+                                'data': has_entries({
+                                    'call_id': second_channel_id,
+                                    'status': 'Up',
+                                    'direction': 'internal',
+                                })
+                            }),
+                            headers=has_entries(
+                                name='call_updated',
+                                tenant_uuid=VALID_TENANT,
+                            )
+                        )
+                    ),
                 )
             )
 
