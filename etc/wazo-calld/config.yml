@@ -37,6 +37,7 @@ auth:
   https: false
   key_file: /var/lib/wazo-auth-keys/wazo-calld-key.yml
 
+# wazo-confd connection settings
 confd:
   host: localhost
   port: 9486
@@ -83,7 +84,7 @@ phoned:
     prefix: null
     https: false
 
-# consul connection settings
+# Consul connection settings
 consul:
   scheme: http
   host: localhost
@@ -104,8 +105,8 @@ enabled_plugins:
 
 # Service discovery configuration. All time intervals are in seconds
 service_discovery:
-  # to indicate whether of not to use service discovery, should only be disabled
-  # for testing purposes
+  # Indicates whether of not to use service discovery.
+  # It should only be disabled for testing purposes
   enabled: true
   # The address that will be received by other services using service discovery.
   # Use "advertise_address: auto" to enable ip address detection based on
