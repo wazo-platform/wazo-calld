@@ -10,6 +10,7 @@ cheroot==6.5.4
 flask-cors==3.0.7
 flask-restful==0.3.7
 flask==1.0.2
+importlib_metadata==1.6.0  # from kombu
 iso8601==0.1.11
 itsdangerous==0.24  # from flask
 jinja2==2.10  # from flask
