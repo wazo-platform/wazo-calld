@@ -14,7 +14,7 @@ from wazo_test_helpers import until
 from .helpers.base import IntegrationTest
 from .helpers.ari_ import MockBridge, MockChannel
 from .helpers.calld import new_call_id
-from .helpers.constants import XIVO_UUID, VALID_TENANT
+from .helpers.constants import SOME_STASIS_APP, XIVO_UUID, VALID_TENANT
 from .helpers.hamcrest_ import a_timestamp
 from .helpers.wait_strategy import CalldEverythingOkWaitStrategy
 
@@ -213,133 +213,45 @@ class TestBusConsume(IntegrationTest):
             },
         })
 
-        events = self.bus.accumulator(routing_key='calls.call.updated')
-
-        self.bus.send_ami_newstate_event(first_channel_id)
-        self.bus.send_ami_newstate_event(second_channel_id)
-        self.bus.send_ami_newstate_event(third_channel_id)
-
-        def assert_call_inbound():
-            assert_that(
-                events.accumulate(with_headers=True),
-                all_of(
-                    has_item(
-                        has_entries(
-                            message=has_entries({
-                                'name': 'call_updated',
-                                'origin_uuid': XIVO_UUID,
-                                'data': has_entries({
-                                    'call_id': first_channel_id,
-                                    'status': 'Up',
-                                    'direction': 'inbound',
-                                })
-                            }),
-                            headers=has_entries(
-                                name='call_updated',
-                                tenant_uuid=VALID_TENANT,
-                            )
-                        )
-                    ),
-                    has_item(
-                        has_entries(
-                            message=has_entries({
-                                'name': 'call_updated',
-                                'origin_uuid': XIVO_UUID,
-                                'data': has_entries({
-                                    'call_id': second_channel_id,
-                                    'status': 'Up',
-                                    'direction': 'inbound',
-                                })
-                            }),
-                            headers=has_entries(
-                                name='call_updated',
-                                tenant_uuid=VALID_TENANT,
-                            )
-                        )
-                    ),
-                    has_item(
-                        has_entries(
-                            message=has_entries({
-                                'name': 'call_updated',
-                                'origin_uuid': XIVO_UUID,
-                                'data': has_entries({
-                                    'call_id': third_channel_id,
-                                    'status': 'Up',
-                                    'direction': 'inbound',
-                                })
-                            }),
-                            headers=has_entries(
-                                name='call_updated',
-                                tenant_uuid=VALID_TENANT,
-                            )
-                        )
-                    ),
-                )
-            )
-
-        until.assert_(assert_call_inbound, tries=5)
-
         self.ari.set_channels(
             MockChannel(id=first_channel_id, state='Up'),
-            MockChannel(id=second_channel_id, state='Up')
+            MockChannel(id=second_channel_id, state='Up'),
+            MockChannel(id=third_channel_id, state='Down'),
         )
 
         self.ari.set_bridges(
             MockBridge(first_channel_id, channels=[first_channel_id, second_channel_id])
         )
 
-        events_updated = self.bus.accumulator(routing_key='calls.call.updated')
-
+        events_ended = self.bus.accumulator(routing_key='calls.call.ended')
         self.bus.send_ami_bridge_leave_event(
             channel_id=third_channel_id, bridge_id=first_channel_id, bridge_num_channels=2
         )
+        self.stasis.event_channel_destroyed(third_channel_id, SOME_STASIS_APP)
+        self.bus.send_ami_hangup_event(channel_id=third_channel_id)
 
-        self.bus.send_ami_newstate_event(first_channel_id)
-        self.bus.send_ami_newstate_event(second_channel_id)
-        self.bus.send_ami_newstate_event(third_channel_id)
-
-        def assert_call_internal():
+        def assert_third_call_ended_is_internal():
             assert_that(
-                events_updated.accumulate(with_headers=True),
-                all_of(
-                    has_item(
-                        has_entries(
-                            message=has_entries({
-                                'name': 'call_updated',
-                                'origin_uuid': XIVO_UUID,
-                                'data': has_entries({
-                                    'call_id': first_channel_id,
-                                    'status': 'Up',
-                                    'direction': 'internal',
-                                })
-                            }),
-                            headers=has_entries(
-                                name='call_updated',
-                                tenant_uuid=VALID_TENANT,
-                            )
+                events_ended.accumulate(with_headers=True),
+                has_item(
+                    has_entries(
+                        message=has_entries({
+                            'name': 'call_ended',
+                            'origin_uuid': XIVO_UUID,
+                            'data': has_entries({
+                                'call_id': third_channel_id,
+                                'direction': 'internal',
+                            })
+                        }),
+                        headers=has_entries(
+                            name='call_ended',
+                            tenant_uuid=VALID_TENANT,
                         )
-                    ),
-                    has_item(
-                        has_entries(
-                            message=has_entries({
-                                'name': 'call_updated',
-                                'origin_uuid': XIVO_UUID,
-                                'data': has_entries({
-                                    'call_id': second_channel_id,
-                                    'status': 'Up',
-                                    'direction': 'internal',
-                                })
-                            }),
-                            headers=has_entries(
-                                name='call_updated',
-                                tenant_uuid=VALID_TENANT,
-                            )
-                        )
-                    ),
-                )
+                    )
+                ),
             )
 
-        until.assert_(assert_call_internal, tries=5)
+        until.assert_(assert_third_call_ended_is_internal, tries=5)
 
     def test_when_channel_answered_then_bus_event(self):
         call_id = new_call_id()

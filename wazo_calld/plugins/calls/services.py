@@ -301,9 +301,10 @@ class CallsService:
         return call
 
     @staticmethod
-    def channel_destroyed_event(event):
+    def channel_destroyed_event(ari, event):
         channel = event['channel']
         channel_id = channel.get('id')
+        channel_helper = Channel(channel_id, ari)
         channel_variables = event['channel']['channelvars']
         conversation_id = channel_variables.get('CHANNEL(linkedid)')
         connected = channel.get('connected')
@@ -328,7 +329,9 @@ class CallsService:
         call.is_video = channel_variables.get('CHANNEL(videonativeformat)') != '(nothing)'
         direction = channel_variables.get('WAZO_CHANNEL_DIRECTION')
         call.is_caller = True if direction == 'to-wazo' else False
-        call.direction = channel_variables.get('WAZO_CONVERSATION_DIRECTION') or 'unknown'
+        call.direction = channel_variables.get('WAZO_CONVERSATION_DIRECTION') or (
+            CallsService.conversation_direction_from_channels(ari, [channel, *channel_helper.connected_channels()])
+        ) or 'unknown'
 
         return call
 
