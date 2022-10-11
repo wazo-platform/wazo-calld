@@ -295,7 +295,7 @@ class CallsService:
         call.sip_call_id = channel_helper.sip_call_id()
         call.line_id = channel_helper.line_id()
         call.direction = channel_variables.get('WAZO_CONVERSATION_DIRECTION') or (
-            CallsService.conversation_direction_from_channels(ari, [channel, *channel_helper.connected_channels()])
+            CallsService.conversation_direction_from_channels(ari, [channel.id, *[channel_.id for channel_ in channel_helper.connected_channels()]])
         ) or 'unknown'
 
         return call
@@ -330,8 +330,9 @@ class CallsService:
         direction = channel_variables.get('WAZO_CHANNEL_DIRECTION')
         call.is_caller = True if direction == 'to-wazo' else False
         call.direction = channel_variables.get('WAZO_CONVERSATION_DIRECTION') or (
-            CallsService.conversation_direction_from_channels(ari, [channel, *channel_helper.connected_channels()])
+            CallsService.conversation_direction_from_channels(ari, [channel_id, *[channel_.id for channel_ in channel_helper.connected_channels()]])
         ) or 'unknown'
+        logger.critical('AFDEBUG: destroyed event call direction: %s', call.direction)
 
         return call
 
@@ -510,10 +511,10 @@ class CallsService:
         all_directions = []
         logger.debug('Determining conversation direction for channels: "%s"', channels)
 
-        for channel in channels:
+        for channel_id in channels:
             try:
                 call_direction = (
-                    ari.channels.getChannelVar(channelId=channel.id, variable='WAZO_CALL_DIRECTION')['value']
+                    ari.channels.getChannelVar(channelId=channel_id, variable='WAZO_CALL_DIRECTION')['value']
                 )
             except ARINotFound:
                 continue

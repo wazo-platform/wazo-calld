@@ -81,7 +81,7 @@ class CallsBusEventHandler:
 
         call = self.services.make_call_from_channel(self.ari, channel)
         if self._call_direction_unknown(call):
-            call.direction = self.services.conversation_direction_from_channels(self.ari, [channel])
+            call.direction = self.services.conversation_direction_from_channels(self.ari, [channel.id])
             self._set_conversation_direction_cache(channel_id, call.direction)
         self.notifier.call_created(call)
 
@@ -121,7 +121,7 @@ class CallsBusEventHandler:
             return
         call = self.services.make_call_from_channel(self.ari, channel)
         if self._call_direction_unknown(call):
-            call.direction = self.services.conversation_direction_from_channels(self.ari, [channel])
+            call.direction = self.services.conversation_direction_from_channels(self.ari, [channel.id])
             self._set_conversation_direction_cache(channel_id, call.direction)
         self.notifier.call_answered(call)
 
@@ -233,7 +233,7 @@ class CallsBusEventHandler:
             participant_channels.append(channel)
 
         call_direction = self.services.conversation_direction_from_channels(
-            self.ari, participant_channels
+            self.ari, [channel.id for channel in participant_channels]
         )
         for channel in participant_channels:
             call = self.services.make_call_from_channel(self.ari, channel)
@@ -266,13 +266,10 @@ class CallsBusEventHandler:
                 logger.debug('channel %s not found', participant_channel_id)
                 return
 
-            if channels_in_bridge > 1:
-                self._invalidate_conversation_direction_cache(participant_channel_id)
-
             participant_channels.append(channel)
 
         call_direction = self.services.conversation_direction_from_channels(
-            self.ari, participant_channels
+            self.ari, [channel.id for channel in participant_channels]
         )
         for channel in participant_channels:
             call = self.services.make_call_from_channel(self.ari, channel)
