@@ -42,6 +42,7 @@ class EventHandler:
             event["CallerIDName"],
             event["CallerIDNum"],
             video_enabled,
+            event['Geolocation'],
         )
 
     def _on_refresh_token_created(self, event):

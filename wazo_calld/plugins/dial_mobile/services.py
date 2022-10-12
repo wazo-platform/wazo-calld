@@ -253,6 +253,7 @@ class DialMobileService:
         caller_id_name,
         caller_id_number,
         video_enabled,
+        geolocation,
     ):
         payload = {
             'peer_caller_id_number': caller_id_number,
@@ -260,6 +261,7 @@ class DialMobileService:
             'call_id': call_id,
             'video': video_enabled,
             'sip_call_id': sip_call_id,
+            'geolocation': geolocation,
         }
 
         self._pending_push_mobile[call_id] = PendingPushMobile(
