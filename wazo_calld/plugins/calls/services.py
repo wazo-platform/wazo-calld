@@ -294,6 +294,7 @@ class CallsService:
         call.dialed_extension = channel_helper.dialed_extension()
         call.sip_call_id = channel_helper.sip_call_id()
         call.line_id = channel_helper.line_id()
+        call.geolocation = channel.getChannelVar(variable='PJSIP_HEADER(read,Geolocation)').get('value', '')
 
         return call
 

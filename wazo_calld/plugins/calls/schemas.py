@@ -83,6 +83,7 @@ class CallSchema(CallBaseSchema):
     line_id = fields.Integer()
     answer_time = fields.String()
     hangup_time = fields.String()
+    geolocation = fields.String()
 
     @post_dump()
     def default_peer_caller_id_number(self, call, **kwargs):
