@@ -295,7 +295,9 @@ class CallsService:
         call.sip_call_id = channel_helper.sip_call_id()
         call.line_id = channel_helper.line_id()
         call.direction = channel_variables.get('WAZO_CONVERSATION_DIRECTION') or (
-            CallsService.conversation_direction_from_channels(ari, [channel.id, *[channel_.id for channel_ in channel_helper.connected_channels()]])
+            CallsService.conversation_direction_from_channels(
+                ari, CallsService._get_connected_channel_ids_from_helper(channel_helper)
+            )
         ) or 'unknown'
 
         return call
@@ -330,9 +332,10 @@ class CallsService:
         direction = channel_variables.get('WAZO_CHANNEL_DIRECTION')
         call.is_caller = True if direction == 'to-wazo' else False
         call.direction = channel_variables.get('WAZO_CONVERSATION_DIRECTION') or (
-            CallsService.conversation_direction_from_channels(ari, [channel_id, *[channel_.id for channel_ in channel_helper.connected_channels()]])
+            CallsService.conversation_direction_from_channels(
+                ari, CallsService._get_connected_channel_ids_from_helper(channel_helper)
+            )
         ) or 'unknown'
-        logger.critical('AFDEBUG: destroyed event call direction: %s', call.direction)
 
         return call
 
@@ -536,6 +539,10 @@ class CallsService:
             return 'inbound'
 
         return 'internal'
+
+    @staticmethod
+    def _get_connected_channel_ids_from_helper(channel_helper):
+        return [channel_helper.id, *[channel_.id for channel_ in channel_helper.connected_channels()]]
 
     def _verify_user(self, call_id, user_uuid):
         channel = Channel(call_id, self._ari)

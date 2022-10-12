@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from hamcrest import assert_that, equal_to
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 from unittest import TestCase
 
 from ..services import CallsService
@@ -11,7 +11,8 @@ from ..services import CallsService
 class TestServices(TestCase):
 
     def setUp(self):
-        self.services = CallsService(Mock(), Mock(), Mock(), Mock(), Mock(),
+        self.ari = Mock()
+        self.services = CallsService(Mock(), Mock(), self.ari, Mock(), Mock(),
                                      Mock(), Mock())
 
         self.example_to_fit = {
@@ -66,44 +67,54 @@ class TestServices(TestCase):
             'application': 'callcontrol'
         }
 
-    def test_given_no_chan_variables_when_make_call_from_stasis_event_then_call_has_none_values(self):
+    @patch('wazo_calld.plugins.calls.services.CallsService._get_connected_channel_ids_from_helper')
+    def test_given_no_chan_variables_when_make_call_from_stasis_event_then_call_has_none_values(self, channel_ids):
+        channel_ids.return_value = []
         event = self.example_to_fit
         event['channel']['channelvars'] = {}
 
-        call = self.services.channel_destroyed_event(event)
+        call = self.services.channel_destroyed_event(self.ari, event)
 
         assert_that(call.user_uuid, equal_to(None))
         assert_that(call.dialed_extension, equal_to(None))
 
-    def test_given_xivo_useruuid_when_make_call_from_stasis_event_then_call_has_useruuid(self):
+    @patch('wazo_calld.plugins.calls.services.CallsService._get_connected_channel_ids_from_helper')
+    def test_given_xivo_useruuid_when_make_call_from_stasis_event_then_call_has_useruuid(self, channel_ids):
+        channel_ids.return_value = []
         event = self.example_to_fit
         event['channel']['channelvars'] = {'XIVO_USERUUID': 'new_useruuid'}
 
-        call = self.services.channel_destroyed_event(event)
+        call = self.services.channel_destroyed_event(self.ari, event)
 
         assert_that(call.user_uuid, equal_to('new_useruuid'))
 
-    def test_given_wazo_dereferenced_useruuid_when_make_call_from_stasis_event_then_override_xivo_useruuid(self):
+    @patch('wazo_calld.plugins.calls.services.CallsService._get_connected_channel_ids_from_helper')
+    def test_given_wazo_dereferenced_useruuid_when_make_call_from_stasis_event_then_override_xivo_useruuid(self, channel_ids):
+        channel_ids.return_value = []
         event = self.example_to_fit
         event['channel']['channelvars'] = {
             'XIVO_USERUUID': 'my-user-uuid',
             'WAZO_DEREFERENCED_USERUUID': 'new-user-uuid',
         }
 
-        call = self.services.channel_destroyed_event(event)
+        call = self.services.channel_destroyed_event(self.ari, event)
 
         assert_that(call.user_uuid, equal_to('new-user-uuid'))
 
-    def test_creation_time_from_channel_creation_to_call_on_hungup(self):
+    @patch('wazo_calld.plugins.calls.services.CallsService._get_connected_channel_ids_from_helper')
+    def test_creation_time_from_channel_creation_to_call_on_hungup(self, channel_ids):
+        channel_ids.return_value = []
         event = self.example_to_fit
         creation_time = event['channel']['creationtime']
-        call = self.services.channel_destroyed_event(event)
+        call = self.services.channel_destroyed_event(self.ari, event)
 
         assert_that(call.creation_time, equal_to(creation_time))
 
-    def test_direction_of_call_to_who_is_caller(self):
+    @patch('wazo_calld.plugins.calls.services.CallsService._get_connected_channel_ids_from_helper')
+    def test_direction_of_call_to_who_is_caller(self, channel_ids):
+        channel_ids.return_value = []
         event = self.example_to_fit
-        call = self.services.channel_destroyed_event(event)
+        call = self.services.channel_destroyed_event(self.ari, event)
 
         assert_that(call.is_caller, equal_to(True))
 
