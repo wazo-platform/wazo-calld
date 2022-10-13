@@ -28,6 +28,7 @@ class EventHandler:
         user_uuid = event['WAZO_DST_UUID']
         video_enabled = event['WAZO_VIDEO_ENABLED'] == '1'
         tenant_uuid = event.get('ChanVariable', {}).get('WAZO_TENANT_UUID')
+        geolocation = event['Geolocation'].replace('|', ',')
 
         logger.info(
             'Received push notification request for user %s from %s <%s>',
@@ -42,7 +43,7 @@ class EventHandler:
             event["CallerIDName"],
             event["CallerIDNum"],
             video_enabled,
-            event['Geolocation'],
+            geolocation,
         )
 
     def _on_refresh_token_created(self, event):
