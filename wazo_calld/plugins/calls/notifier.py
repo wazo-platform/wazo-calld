@@ -12,11 +12,23 @@ from xivo_bus.resources.calls.event import (
     CallEndedEvent,
     CallUpdatedEvent,
 )
+from xivo_bus.resources.common.event import UserEvent
 
 from .schemas import call_schema
 
 
 logger = logging.getLogger(__name__)
+
+
+class CallConnectedEvent(UserEvent):
+    service = 'calld'
+    name = 'call_connected'
+    routing_key_fmt = 'calls.connected'
+    required_acl_fmt = 'events.calls.{user_uuid}'
+
+    def __init__(self, geolocation, tenant_uuid, user_uuid):
+        content = {'geolocation': geolocation}
+        super().__init__(content, tenant_uuid, user_uuid)
 
 
 class CallNotifier:
@@ -38,6 +50,12 @@ class CallNotifier:
         payload = call_schema.dump(call)
         event = CallUpdatedEvent(payload, call.tenant_uuid, call.user_uuid)
         self._bus.publish(event)
+
+        if call.is_caller:
+            for target_uuid in call.talking_to.values():
+                self._bus.publish(
+                    CallConnectedEvent(call.geolocation, call.tenant_uuid, target_uuid)
+                )
 
     def call_answered(self, call):
         payload = call_schema.dump(call)
