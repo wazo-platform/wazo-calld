@@ -5,7 +5,7 @@ import datetime
 import logging
 import uuid
 
-from ari.exceptions import ARINotFound
+from ari.exceptions import ARINotFound, ARIServerError
 from wazo_calld.ari_ import DEFAULT_APPLICATION_NAME
 from wazo_calld.plugin_helpers import ami
 from wazo_calld.plugin_helpers.ari_ import AUTO_ANSWER_VARIABLES, Channel, set_channel_var_sync, set_channel_id_var_sync
@@ -270,6 +270,7 @@ class CallsService:
 
     @staticmethod
     def make_call_from_channel(ari, channel):
+        logger.debug('Hackathoon channel: %s', channel.json)
         channel_variables = channel.json.get('channelvars', {})
         channel_helper = Channel(channel.id, ari)
         call = Call(channel.id)
@@ -294,7 +295,13 @@ class CallsService:
         call.dialed_extension = channel_helper.dialed_extension()
         call.sip_call_id = channel_helper.sip_call_id()
         call.line_id = channel_helper.line_id()
-        call.geolocation = channel.getChannelVar(variable='PJSIP_HEADER(read,Geolocation)').get('value', '90.0000000,135.0000000')
+
+        if not channel_helper.is_local():
+            try:
+                call.geolocation = channel.getChannelVar(variable='PJSIP_HEADER(read,Geolocation)')['value']
+            except ARIServerError:
+                logger.debug('Geolocation not found for channel')
+                call.geolocation = ''
 
         return call
 
