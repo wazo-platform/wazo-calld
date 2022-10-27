@@ -107,5 +107,5 @@ class CallsStasis:
             logger.debug('Ignoring local channel hangup: %s', channel_id)
             return
         logger.debug('Relaying to bus: channel %s ended', channel_id)
-        call = self.services.channel_destroyed_event(event)
+        call = self.services.channel_destroyed_event(self.ari, event)
         self.notifier.call_ended(call, event['cause'])

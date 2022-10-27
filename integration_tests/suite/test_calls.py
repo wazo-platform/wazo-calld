@@ -131,6 +131,23 @@ class TestListCalls(IntegrationTest):
             )
         )))
 
+    def test_call_direction(self):
+        self.ari.set_channels(MockChannel(id='first-id'), MockChannel(id='second-id'))
+        self.ari.set_channel_variable(
+            {
+                'first-id': {'WAZO_CALL_DIRECTION': 'internal'},
+                'second-id': {'WAZO_CALL_DIRECTION': 'outbound'},
+            }
+        )
+        self.ari.set_bridges(MockBridge(id='bridge-id', channels=['first-id', 'second-id']))
+
+        calls = self.calld_client.calls.list_calls()
+
+        assert_that(calls, has_entries(items=contains_inanyorder(
+            has_entries(call_id='first-id', direction='outbound'),
+            has_entries(call_id='second-id', direction='outbound'),
+        )))
+
     def test_given_some_calls_and_no_user_id_when_list_calls_then_list_calls_with_no_user_uuid(self):
         self.ari.set_channels(MockChannel(id='first-id'),
                               MockChannel(id='second-id'))

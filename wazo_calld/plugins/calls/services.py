@@ -294,13 +294,19 @@ class CallsService:
         call.dialed_extension = channel_helper.dialed_extension()
         call.sip_call_id = channel_helper.sip_call_id()
         call.line_id = channel_helper.line_id()
+        call.direction = channel_variables.get('WAZO_CONVERSATION_DIRECTION') or (
+            CallsService.conversation_direction_from_channels(
+                ari, CallsService._get_connected_channel_ids_from_helper(channel_helper)
+            )
+        ) or 'unknown'
 
         return call
 
     @staticmethod
-    def channel_destroyed_event(event):
+    def channel_destroyed_event(ari, event):
         channel = event['channel']
         channel_id = channel.get('id')
+        channel_helper = Channel(channel_id, ari)
         channel_variables = event['channel']['channelvars']
         conversation_id = channel_variables.get('CHANNEL(linkedid)')
         connected = channel.get('connected')
@@ -325,6 +331,11 @@ class CallsService:
         call.is_video = channel_variables.get('CHANNEL(videonativeformat)') != '(nothing)'
         direction = channel_variables.get('WAZO_CHANNEL_DIRECTION')
         call.is_caller = True if direction == 'to-wazo' else False
+        call.direction = channel_variables.get('WAZO_CONVERSATION_DIRECTION') or (
+            CallsService.conversation_direction_from_channels(
+                ari, CallsService._get_connected_channel_ids_from_helper(channel_helper)
+            )
+        ) or 'unknown'
 
         return call
 
@@ -347,6 +358,7 @@ class CallsService:
         call.talking_to = {}
         call.sip_call_id = event_variables.get('WAZO_SIP_CALL_ID') or None
         call.line_id = event_variables.get('WAZO_LINE_ID') or None
+        call.direction = event_variables.get('WAZO_CONVERSATION_DIRECTION') or 'unknown'
 
         return call
 
@@ -496,6 +508,41 @@ class CallsService:
         except ARINotFound:
             logger.debug('channel %s not found', channel_id)
             raise NoSuchCall(channel_id)
+
+    @staticmethod
+    def conversation_direction_from_channels(ari, channels):
+        all_directions = []
+        logger.debug('Determining conversation direction for channels: "%s"', channels)
+
+        for channel_id in channels:
+            try:
+                call_direction = (
+                    ari.channels.getChannelVar(channelId=channel_id, variable='WAZO_CALL_DIRECTION')['value']
+                )
+            except ARINotFound:
+                continue
+            else:
+                if call_direction:
+                    all_directions.append(call_direction)
+
+        return CallsService._conversation_direction_from_directions(all_directions)
+
+    @staticmethod
+    def _conversation_direction_from_directions(directions):
+        if 'outbound' in directions and 'inbound' in directions:
+            return 'unknown'
+
+        if 'outbound' in directions:
+            return 'outbound'
+
+        if 'inbound' in directions:
+            return 'inbound'
+
+        return 'internal'
+
+    @staticmethod
+    def _get_connected_channel_ids_from_helper(channel_helper):
+        return [channel_helper.id, *[channel_.id for channel_ in channel_helper.connected_channels()]]
 
     def _verify_user(self, call_id, user_uuid):
         channel = Channel(call_id, self._ari)
