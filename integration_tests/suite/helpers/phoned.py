@@ -1,4 +1,4 @@
-# Copyright 2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2020-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import requests
@@ -19,8 +19,11 @@ class PhonedClient:
 
     def reset(self):
         url = self.url('_reset')
-        requests.post(url)
+        response = requests.post(url)
+        response.raise_for_status()
 
     def requests(self):
         url = self.url('_requests')
-        return requests.get(url).json()
+        response = requests.get(url)
+        response.raise_for_status()
+        return response.json()

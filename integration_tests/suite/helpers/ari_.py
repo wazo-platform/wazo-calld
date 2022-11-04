@@ -27,55 +27,67 @@ class ARIClient:
         url = self.url('_set_response')
         body = {'response': 'applications',
                 'content': {application.name(): application.to_dict() for application in mock_applications}}
-        requests.post(url, json=body)
+        response = requests.post(url, json=body)
+        response.raise_for_status()
 
     def set_channels(self, *mock_channels):
         url = self.url('_set_response')
         body = {'response': 'channels',
                 'content': {channel.id_(): channel.to_dict() for channel in mock_channels}}
-        requests.post(url, json=body)
+        response = requests.post(url, json=body)
+        response.raise_for_status()
 
     def set_bridges(self, *mock_bridges):
         url = self.url('_set_response')
         body = {'response': 'bridges',
                 'content': {bridge.id_(): bridge.to_dict() for bridge in mock_bridges}}
-        requests.post(url, json=body)
+        response = requests.post(url, json=body)
+        response.raise_for_status()
 
     def set_endpoints(self, *mock_endpoints):
         url = self.url('_set_response')
         body = {'response': 'endpoints',
                 'content': [endpoint.to_dict() for endpoint in mock_endpoints]}
-        requests.post(url, json=body)
+        response = requests.post(url, json=body)
+        response.raise_for_status()
 
     def set_originates(self, *mock_channels):
         url = self.url('_set_response')
         body = {'response': 'originates',
                 'content': [channel.to_dict() for channel in mock_channels]}
-        requests.post(url, json=body)
+        response = requests.post(url, json=body)
+        response.raise_for_status()
 
     def set_channel_variable(self, variables):
         url = self.url('_set_response')
         body = {'response': 'channel_variables',
                 'content': variables}
-        requests.post(url, json=body)
+        response = requests.post(url, json=body)
+        response.raise_for_status()
 
     def set_global_variables(self, variables):
         url = self.url('_set_response')
         body = {'response': 'global_variables',
                 'content': variables}
-        requests.post(url, json=body)
+        response = requests.post(url, json=body)
+        response.raise_for_status()
 
     def reset(self):
         url = self.url('_reset')
-        requests.post(url)
+        response = requests.post(url)
+        response.raise_for_status()
 
     def requests(self):
         url = self.url('_requests')
-        return requests.get(url).json()
+        response = requests.get(url)
+        response.raise_for_status()
+        return response.json()
 
     def websockets(self):
         url = self.url('_websockets')
-        return requests.get(url).json()
+        response = requests.get(url)
+        response.raise_for_status()
+        return response.json()
 
 
 class MockApplication:

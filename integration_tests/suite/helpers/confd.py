@@ -30,19 +30,22 @@ class ConfdClient:
         body = {'response': 'applications',
                 'content': {app.uuid(): app.to_dict() for app in mock_applications}}
 
-        requests.post(url, json=body)
+        response = requests.post(url, json=body)
+        response.raise_for_status()
 
     def set_users(self, *mock_users):
         url = self.url('_set_response')
         body = {'response': 'users',
                 'content': {user.uuid(): user.to_dict() for user in mock_users}}
-        requests.post(url, json=body)
+        response = requests.post(url, json=body)
+        response.raise_for_status()
 
     def set_lines(self, *mock_lines):
         url = self.url('_set_response')
         body = {'response': 'lines',
                 'content': {line.id_(): line.to_dict() for line in mock_lines}}
-        requests.post(url, json=body)
+        response = requests.post(url, json=body)
+        response.raise_for_status()
 
     def set_user_lines(self, set_user_lines):
         content = {}
@@ -52,7 +55,8 @@ class ConfdClient:
         url = self.url('_set_response')
         body = {'response': 'user_lines',
                 'content': content}
-        requests.post(url, json=body)
+        response = requests.post(url, json=body)
+        response.raise_for_status()
 
     def set_user_voicemails(self, set_user_voicemails):
         content = {}
@@ -62,14 +66,16 @@ class ConfdClient:
         url = self.url('_set_response')
         body = {'response': 'user_voicemails',
                 'content': content}
-        requests.post(url, json=body)
+        response = requests.post(url, json=body)
+        response.raise_for_status()
 
     def set_switchboards(self, *mock_switchboards):
         url = self.url('_set_response')
         body = {'response': 'switchboards',
                 'content': {switchboard.uuid(): switchboard.to_dict() for switchboard in mock_switchboards}}
 
-        requests.post(url, json=body)
+        response = requests.post(url, json=body)
+        response.raise_for_status()
 
     def set_switchboard_fallbacks(self, *mock_switchboard_fallbacks):
         url = self.url('_set_response')
@@ -79,28 +85,32 @@ class ConfdClient:
                     for switchboard_fallback in mock_switchboard_fallbacks
                 }}
 
-        requests.post(url, json=body)
+        response = requests.post(url, json=body)
+        response.raise_for_status()
 
     def set_conferences(self, *mock_conferences):
         url = self.url('_set_response')
         body = {'response': 'conferences',
                 'content': {conference.id(): conference.to_dict() for conference in mock_conferences}}
 
-        requests.post(url, json=body)
+        response = requests.post(url, json=body)
+        response.raise_for_status()
 
     def set_meetings(self, *mock_meetings):
         url = self.url('_set_response')
         body = {'response': 'meetings',
                 'content': {meeting.uuid(): meeting.to_dict() for meeting in mock_meetings}}
 
-        requests.post(url, json=body)
+        response = requests.post(url, json=body)
+        response.raise_for_status()
 
     def set_moh(self, *mock_mohs):
         url = self.url('_set_response')
         body = {'response': 'moh',
                 'content': {moh.uuid(): moh.to_dict() for moh in mock_mohs}}
 
-        requests.post(url, json=body)
+        response = requests.post(url, json=body)
+        response.raise_for_status()
 
     def set_trunks(self, *mock_trunks):
         url = self.url('_set_response')
@@ -109,21 +119,26 @@ class ConfdClient:
             'content': {trunk.id(): trunk.to_dict() for trunk in mock_trunks},
         }
 
-        requests.post(url, json=body)
+        response = requests.post(url, json=body)
+        response.raise_for_status()
 
     def set_voicemails(self, *mock_voicemails):
         url = self.url('_set_response')
         body = {'response': 'voicemails',
                 'content': {voicemail.id(): voicemail.to_dict() for voicemail in mock_voicemails}}
-        requests.post(url, json=body)
+        response = requests.post(url, json=body)
+        response.raise_for_status()
 
     def reset(self):
         url = self.url('_reset')
-        requests.post(url)
+        response = requests.post(url)
+        response.raise_for_status()
 
     def requests(self):
         url = self.url('_requests')
-        return requests.get(url).json()
+        response = requests.get(url)
+        response.raise_for_status()
+        return response.json()
 
 
 class MockApplication:
