@@ -1,4 +1,4 @@
-# Copyright 2015-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import requests
@@ -26,7 +26,8 @@ class AmidClient:
             return False
 
     def set_action_result(self, result):
-        requests.post(self.url('_set_action'), json=result)
+        response = requests.post(self.url('_set_action'), json=result)
+        response.raise_for_status()
 
     def set_no_valid_exten(self):
         result = []
@@ -34,12 +35,16 @@ class AmidClient:
 
     def set_valid_exten(self, context, exten, priority='1'):
         body = {'context': context, 'exten': exten, 'priority': priority}
-        requests.post(self.url('_set_valid_exten'), json=body)
+        response = requests.post(self.url('_set_valid_exten'), json=body)
+        response.raise_for_status()
 
     def reset(self):
         url = self.url('_reset')
-        requests.post(url)
+        response = requests.post(url)
+        response.raise_for_status()
 
     def requests(self):
         url = self.url('_requests')
-        return requests.get(url).json()
+        response = requests.get(url)
+        response.raise_for_status()
+        return response.json()

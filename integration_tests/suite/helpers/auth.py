@@ -19,11 +19,13 @@ class AuthClient:
 
     def set_token(self, token):
         url = self.url('_set_token')
-        requests.post(url, json=token.to_dict())
+        response = requests.post(url, json=token.to_dict())
+        response.raise_for_status()
 
     def set_refresh_tokens(self, refresh_tokens):
         url = self.url('_set_refresh_tokens')
-        requests.post(url, json=refresh_tokens)
+        response = requests.post(url, json=refresh_tokens)
+        response.raise_for_status()
 
 
 class MockUserToken:
