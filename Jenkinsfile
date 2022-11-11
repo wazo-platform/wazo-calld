@@ -18,7 +18,7 @@ pipeline {
     }
     stage('Docker build') {
       steps {
-        sh "docker build -t wazoplatform/${JOB_NAME}:latest ."
+        sh "docker build --no-cache -t wazoplatform/${JOB_NAME}:latest ."
       }
     }
     stage('Docker publish') {
