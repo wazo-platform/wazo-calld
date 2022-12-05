@@ -24,9 +24,6 @@ confd:
 phoned:
   host: phoned
 
-service_discovery:
-  enabled: false
-
 remote_credentials:
   auth_not_registered:
     xivo_uuid: 582fbd45-73a3-41dd-9079-4c6d16fe1aad

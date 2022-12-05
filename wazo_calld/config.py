@@ -76,12 +76,11 @@ _DEFAULT_CONFIG = {
         'https': False,
     },
     'consul': {
-        'host': 'localhost',
         'port': 8500,
         'scheme': 'http',
     },
     'service_discovery': {
-        'enabled': True,
+        'enabled': False,
         'advertise_address': 'auto',
         'advertise_address_interface': 'eth0',
         'advertise_port': _DEFAULT_HTTP_PORT,
