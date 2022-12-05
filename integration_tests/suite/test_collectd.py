@@ -1,6 +1,8 @@
 # Copyright 2015-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+import time
+
 from hamcrest import assert_that
 from hamcrest import has_item
 from hamcrest import matches_regexp
@@ -204,7 +206,7 @@ class TestCollectdCalldRestart(IntegrationTest):
             stasis_app=STASIS_APP,
             stasis_app_instance=STASIS_APP_INSTANCE,
         )
-
+        time.sleep(1)  # wait for calld to write channel state on ari
         self.restart_service('calld')
         self.reset_clients()
         CalldEverythingOkWaitStrategy().wait(self)  # wait for calld to reconnect to rabbitmq
