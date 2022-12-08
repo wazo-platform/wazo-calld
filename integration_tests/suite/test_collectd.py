@@ -1,8 +1,6 @@
 # Copyright 2015-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-import pytest
-
 from hamcrest import assert_that
 from hamcrest import has_item
 from hamcrest import matches_regexp
@@ -197,7 +195,6 @@ class TestCollectdCalldRestart(IntegrationTest):
         self.ari.reset()
         self.confd.reset()
 
-    @pytest.mark.skip('WAZO-2959')
     def test_given_calld_restarts_during_call_when_stasis_channel_destroyed_then_stat_call_end(self):
         call_id = new_call_id()
         self.ari.set_channels(MockChannel(id=call_id))
@@ -207,6 +204,16 @@ class TestCollectdCalldRestart(IntegrationTest):
             stasis_app=STASIS_APP,
             stasis_app_instance=STASIS_APP_INSTANCE,
         )
+
+        def assert_call_has_been_handled_by_calld():
+            expected_message = 'PUTVAL [^/]+/calls-{app}.{app_instance}/counter-start .* N:1'
+            expected_message = expected_message.format(
+                app=STASIS_APP,
+                app_instance=STASIS_APP_INSTANCE,
+            )
+            assert_that(events.accumulate(), has_item(matches_regexp(expected_message)))
+
+        until.assert_(assert_call_has_been_handled_by_calld, tries=5)
 
         # We should not have to wait here, calld could be restarted at anytime
         self.restart_service('calld')
