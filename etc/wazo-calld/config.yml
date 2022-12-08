@@ -99,12 +99,12 @@ enabled_plugins:
 service_discovery:
   enabled: false
 
-# Example of service discovery settings
+# Example settings to enable service discovery
 #
 # Necessary to use service discovery
 # consul:
 #   scheme: http
-#   host: localhost
+#   host: consul.example.com
 #   port: 8500
 #   token: 'the_one_ring'
 #
