@@ -72,6 +72,12 @@ class ARIClient:
         response = requests.post(url, json=body)
         response.raise_for_status()
 
+    def get_global_variable(self, variable):
+        url = self.url('ari/asterisk/variable')
+        response = requests.get(url, params={'variable': variable})
+        response.raise_for_status()
+        return response.json()
+
     def reset(self):
         url = self.url('_reset')
         response = requests.post(url)

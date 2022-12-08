@@ -3,6 +3,8 @@
 
 import time
 
+from requests import HTTPError
+
 from hamcrest import assert_that
 from hamcrest import has_item
 from hamcrest import matches_regexp
@@ -206,7 +208,21 @@ class TestCollectdCalldRestart(IntegrationTest):
             stasis_app=STASIS_APP,
             stasis_app_instance=STASIS_APP_INSTANCE,
         )
-        time.sleep(1)  # wait for calld to write channel state on ari
+
+        def state_variable_is_set():
+            try:
+                self.ari.get_global_variable(variable=f'XIVO_CHANNELS_{call_id}')
+                return True
+            except HTTPError as e:
+                response = getattr(e, 'response', None)
+                status_code = getattr(response, 'status_code', None)
+                if status_code == 404:
+                    return False
+                raise
+
+        # Wait for channel state to be set before restarting
+        until.true(state_variable_is_set, tries=10)
+
         self.restart_service('calld')
         self.reset_clients()
         CalldEverythingOkWaitStrategy().wait(self)  # wait for calld to reconnect to rabbitmq
