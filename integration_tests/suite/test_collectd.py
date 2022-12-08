@@ -215,7 +215,6 @@ class TestCollectdCalldRestart(IntegrationTest):
 
         until.assert_(assert_call_has_been_handled_by_calld, tries=5)
 
-        # We should not have to wait here, calld could be restarted at anytime
         self.restart_service('calld')
 
         self.reset_clients()
