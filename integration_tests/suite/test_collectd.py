@@ -1,9 +1,7 @@
 # Copyright 2015-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-import time
-
-from requests import HTTPError
+import pytest
 
 from hamcrest import assert_that
 from hamcrest import has_item
@@ -199,6 +197,7 @@ class TestCollectdCalldRestart(IntegrationTest):
         self.ari.reset()
         self.confd.reset()
 
+    @pytest.mark.skip('WAZO-2959')
     def test_given_calld_restarts_during_call_when_stasis_channel_destroyed_then_stat_call_end(self):
         call_id = new_call_id()
         self.ari.set_channels(MockChannel(id=call_id))
@@ -209,21 +208,9 @@ class TestCollectdCalldRestart(IntegrationTest):
             stasis_app_instance=STASIS_APP_INSTANCE,
         )
 
-        def state_variable_is_set():
-            try:
-                self.ari.get_global_variable(variable=f'XIVO_CHANNELS_{call_id}')
-                return True
-            except HTTPError as e:
-                response = getattr(e, 'response', None)
-                status_code = getattr(response, 'status_code', None)
-                if status_code == 404:
-                    return False
-                raise
-
-        # Wait for channel state to be set before restarting
-        until.true(state_variable_is_set, tries=10)
-
+        # We should not have to wait here, calld could be restarted at anytime
         self.restart_service('calld')
+
         self.reset_clients()
         CalldEverythingOkWaitStrategy().wait(self)  # wait for calld to reconnect to rabbitmq
         self.stasis.event_channel_destroyed(
