@@ -44,14 +44,6 @@ services:
       - ./phoned_data:/usr/local/share/wazo-phoned
     command: python /usr/local/share/wazo-phoned/mock-wazo-phoned.py 9498
 
-  consul:
-    image: p0bailey/docker-flask
-    ports:
-      - 8500
-    volumes:
-      - ./consul_data:/usr/local/share/consul
-    command: python /usr/local/share/consul/mock-consul.py 8500
-
   calld:
     image: wazo-calld-test
     volumes:

@@ -21,14 +21,8 @@ bus:
 confd:
   host: confd
 
-consul:
-  host: consul
-
 phoned:
   host: phoned
-
-service_discovery:
-  enabled: false
 
 remote_credentials:
   auth_not_registered:
