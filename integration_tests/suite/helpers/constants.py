@@ -12,7 +12,7 @@ VALID_TENANT = 'ffffffff-ffff-ffff-ffff-ffffffffffff'
 VALID_TOKEN_MULTITENANT = 'valid-token-multitenant'
 
 BUS_EXCHANGE_WAZO = Exchange('wazo-headers', type='headers')
-BUS_EXCHANGE_COLLECTD = Exchange('collectd', type='topic', durable=False)
+BUS_EXCHANGE_COLLECTD = Exchange('collectd', type='topic')
 BUS_QUEUE_NAME = 'integration'
 
 XIVO_UUID = '08c56466-8f29-45c7-9856-92bf1ba89b92'
