@@ -1,20 +1,19 @@
-# Copyright 2015-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from xivo_bus.publisher import BusPublisher
-from xivo_bus.resources.common.event import BaseEvent
+from xivo_bus.resources.common.event import ServiceEvent
 
 from .constants import SOME_STASIS_APP, VALID_TENANT, XIVO_UUID
 
 
-class _StasisEvent(BaseEvent):
-    # TODO PCM: check what routing key should be now that headers are used
-    routing_key_fmt = ''
+class _StasisEvent(ServiceEvent):
+    name = '{event_name}'
+    routing_key_fmt = ''  # Blank since must be defined but using headers for routing
 
-    def __init__(self, body):
-        self._body = body
-        self.name = body['type']
-        super().__init__()
+    def __init__(self, content):
+        self.name = type(self).name.format(event_name=content['type'])
+        super().__init__(content)
 
 
 class StasisClient:
