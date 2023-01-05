@@ -1,4 +1,4 @@
-# Copyright 2015-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
@@ -11,13 +11,13 @@ from kombu.exceptions import TimeoutError
 from wazo_test_helpers import bus as bus_helper
 
 from .constants import BUS_QUEUE_NAME
-from .constants import BUS_EXCHANGE_XIVO
+from .constants import BUS_EXCHANGE_WAZO
 from .constants import VALID_TENANT
 
 
 class BusClient(bus_helper.BusClient):
 
-    def listen_events(self, routing_key, exchange=BUS_EXCHANGE_XIVO):
+    def listen_events(self, routing_key, exchange=BUS_EXCHANGE_WAZO):
         with Connection(self._url) as conn:
             queue = Queue(BUS_QUEUE_NAME, exchange=exchange, routing_key=routing_key, channel=conn.channel())
             queue.declare()
@@ -49,7 +49,7 @@ class BusClient(bus_helper.BusClient):
 
     def send_event(self, event, routing_key=None, headers=None):
         with Connection(self._url) as connection:
-            producer = Producer(connection, exchange=BUS_EXCHANGE_XIVO, auto_declare=True)
+            producer = Producer(connection, exchange=BUS_EXCHANGE_WAZO, auto_declare=True)
             producer.publish(
                 json.dumps(event),
                 routing_key=routing_key,
