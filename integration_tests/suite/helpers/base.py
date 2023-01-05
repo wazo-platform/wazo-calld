@@ -1,4 +1,4 @@
-# Copyright 2015-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import os
@@ -6,7 +6,6 @@ import logging
 import tempfile
 import uuid
 
-from kombu import Exchange
 from contextlib import contextmanager
 from requests.packages import urllib3
 from wazo_test_helpers import until
@@ -116,7 +115,6 @@ class IntegrationTest(AssetLaunchingTestCase):
         others, we lose this state.
 
         '''
-        topic = Exchange('xivo', 'topic')
         try:
             cls.bus = BusClient.from_connection_fields(
                 host='127.0.0.1',
@@ -124,7 +122,6 @@ class IntegrationTest(AssetLaunchingTestCase):
                 exchange_name='wazo-headers',
                 exchange_type='headers',
             )
-            cls.bus.downstream_exchange_declare('wazo-headers', 'headers', upstream=topic)
         except (NoSuchService, NoSuchPort) as e:
             logger.debug(e)
             cls.bus = WrongClient('bus')
