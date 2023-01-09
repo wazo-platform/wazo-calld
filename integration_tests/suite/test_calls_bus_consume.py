@@ -1,4 +1,4 @@
-# Copyright 2016-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 import uuid
 
@@ -139,7 +139,7 @@ class TestBusConsume(IntegrationTest):
             },
         })
 
-        events = self.bus.accumulator(routing_key='calls.call.updated')
+        events = self.bus.accumulator(headers={'name': 'call_updated'})
 
         self.bus.send_ami_newchannel_event(second_channel_id)
         self.bus.send_ami_newstate_event(second_channel_id)
@@ -223,14 +223,14 @@ class TestBusConsume(IntegrationTest):
             MockBridge(first_channel_id, channels=[first_channel_id, second_channel_id])
         )
 
-        events_ended = self.bus.accumulator(routing_key='calls.call.ended')
+        events_ended = self.bus.accumulator(headers={'name': 'call_ended'})
         self.bus.send_ami_bridge_leave_event(
             channel_id=third_channel_id, bridge_id=first_channel_id, bridge_num_channels=2
         )
         self.stasis.event_channel_destroyed(third_channel_id, SOME_STASIS_APP)
         self.bus.send_ami_hangup_event(channel_id=third_channel_id)
 
-        events_updated = self.bus.accumulator(routing_key='calls.call.updated')
+        events_updated = self.bus.accumulator(headers={'name': 'call_updated'})
         self.bus.send_ami_newstate_event(second_channel_id)
         self.bus.send_ami_newstate_event(first_channel_id)
 

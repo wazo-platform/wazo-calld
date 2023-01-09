@@ -1,58 +1,22 @@
-# Copyright 2015-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
 
 from kombu import Connection
-from kombu import Consumer
 from kombu import Producer
-from kombu import Queue
-from kombu.exceptions import TimeoutError
 from wazo_test_helpers import bus as bus_helper
 
-from .constants import BUS_QUEUE_NAME
-from .constants import BUS_EXCHANGE_XIVO
+from .constants import BUS_EXCHANGE_WAZO
 from .constants import VALID_TENANT
 
 
 class BusClient(bus_helper.BusClient):
-
-    def listen_events(self, routing_key, exchange=BUS_EXCHANGE_XIVO):
-        with Connection(self._url) as conn:
-            queue = Queue(BUS_QUEUE_NAME, exchange=exchange, routing_key=routing_key, channel=conn.channel())
-            queue.declare()
-            queue.purge()
-            self.bus_queue = queue
-
-    def events(self):
-        events = []
-
-        def on_event(body, message):
-            # events are already decoded, thanks to the content-type
-            events.append(body)
-            message.ack()
-
-        self._drain_events(on_event=on_event)
-
-        return events
-
-    def _drain_events(self, on_event):
-        if not hasattr(self, 'bus_queue'):
-            raise Exception('You must listen for events before consuming them')
-        with Connection(self._url) as conn:
-            with Consumer(conn, self.bus_queue, callbacks=[on_event]):
-                try:
-                    while True:
-                        conn.drain_events(timeout=0.5)
-                except TimeoutError:
-                    pass
-
-    def send_event(self, event, routing_key=None, headers=None):
+    def send_event(self, event, headers=None):
         with Connection(self._url) as connection:
-            producer = Producer(connection, exchange=BUS_EXCHANGE_XIVO, auto_declare=True)
+            producer = Producer(connection, exchange=BUS_EXCHANGE_WAZO, auto_declare=True)
             producer.publish(
                 json.dumps(event),
-                routing_key=routing_key,
                 headers=headers,
                 content_type='application/json'
             )
@@ -69,7 +33,6 @@ class BusClient(bus_helper.BusClient):
             headers={
                 'name': 'Newchannel',
             },
-            routing_key='ami.Newchannel',
         )
 
     def send_ami_newstate_event(self, channel_id, state='Up', channel=None):
@@ -85,7 +48,6 @@ class BusClient(bus_helper.BusClient):
             headers={
                 'name': 'Newstate',
             },
-            routing_key='ami.Newstate'
         )
 
     def send_ami_hold_event(self, channel_id):
@@ -99,7 +61,6 @@ class BusClient(bus_helper.BusClient):
             headers={
                 'name': 'Hold',
             },
-            routing_key='ami.Hold'
         )
 
     def send_ami_unhold_event(self, channel_id):
@@ -113,7 +74,6 @@ class BusClient(bus_helper.BusClient):
             headers={
                 'name': 'Unhold',
             },
-            routing_key='ami.Unhold'
         )
 
     def send_ami_hangup_event(self, channel_id, entry_exten=None, sip_call_id=None, channel=None, line_id=None):
@@ -139,7 +99,6 @@ class BusClient(bus_helper.BusClient):
             headers={
                 'name': 'Hangup',
             },
-            routing_key='ami.Hangup'
         )
 
     def send_ami_bridge_leave_event(self, channel_id, bridge_id, bridge_num_channels):
@@ -155,7 +114,6 @@ class BusClient(bus_helper.BusClient):
             headers={
                 'name': 'BridgeLeave',
             },
-            routing_key='ami.BridgeLeave'
         )
 
     def send_ami_peerstatus_event(self, channel_type, peer, status):
@@ -172,7 +130,6 @@ class BusClient(bus_helper.BusClient):
             headers={
                 'name': 'PeerStatus',
             },
-            routing_key='ami.PeerStatus'
         )
 
     def send_ami_registry_event(self, channel_type, domain, status, username):
@@ -190,7 +147,6 @@ class BusClient(bus_helper.BusClient):
             headers={
                 'name': 'Registry',
             },
-            routing_key='ami.Registry'
         )
 
     def send_ami_dtmf_end_digit(self, channel_id, digit):
@@ -205,7 +161,6 @@ class BusClient(bus_helper.BusClient):
             headers={
                 'name': 'DTMFEnd',
             },
-            routing_key='ami.DTMFEnd'
         )
 
     def send_moh_created_event(self, moh_uuid):
@@ -220,7 +175,6 @@ class BusClient(bus_helper.BusClient):
             headers={
                 'name': 'moh_created',
             },
-            routing_key='config.moh.created'
         )
 
     def send_moh_deleted_event(self, moh_uuid):
@@ -235,7 +189,6 @@ class BusClient(bus_helper.BusClient):
             headers={
                 'name': 'moh_deleted',
             },
-            routing_key='config.moh.deleted'
         )
 
     def send_application_created_event(self, application_uuid, destination=None):
@@ -258,7 +211,6 @@ class BusClient(bus_helper.BusClient):
         self.send_event(
             payload,
             headers={'name': 'application_created'},
-            routing_key='config.applications.created'
         )
 
     def send_application_edited_event(self, application_uuid, destination=None):
@@ -281,7 +233,6 @@ class BusClient(bus_helper.BusClient):
         self.send_event(
             payload,
             headers={'name': 'application_edited'},
-            routing_key='config.applications.edited'
         )
 
     def send_application_deleted_event(self, application_uuid):
@@ -298,7 +249,7 @@ class BusClient(bus_helper.BusClient):
         self.send_event(
             payload,
             headers={'name': 'application_deleted'},
-            routing_key='config.applications.deleted')
+        )
 
     def send_trunk_endpoint_associated_event(self, trunk_id, endpoint_id):
         payload = {
@@ -308,7 +259,6 @@ class BusClient(bus_helper.BusClient):
         self.send_event(
             payload,
             headers={'name': 'trunk_endpoint_associated'},
-            routing_key='config.trunks.endpoints.updated'
         )
 
     def send_user_missed_call_userevent(self, user_uuid, reason, hangup_cause, conversation_id):
@@ -333,7 +283,6 @@ class BusClient(bus_helper.BusClient):
             headers={
                 'name': 'UserEvent',
             },
-            routing_key='ami.UserEvent'
         )
 
     def send_user_dnd_update(self, user_id, enabled):
@@ -345,7 +294,6 @@ class BusClient(bus_helper.BusClient):
             headers={
                 'name': 'users_services_dnd_updated',
             },
-            routing_key=f'config.users.{user_id}.services.dnd.updated'
         )
 
     def send_meeting_deleted_event(self, meeting_uuid):
@@ -359,7 +307,6 @@ class BusClient(bus_helper.BusClient):
         self.send_event(
             payload,
             headers={'name': 'meeting_deleted'},
-            routing_key='config.meetings.deleted'
         )
 
     def send_stasis_non_json_event(self):

@@ -50,8 +50,7 @@ bus:
   password: guest
   host: localhost
   port: 5672
-  exchange_name: xivo
-  exchange_type: topic
+  exchange_name: wazo-headers
 
 # Event bus exchange for collectd (statistics)
 collectd:

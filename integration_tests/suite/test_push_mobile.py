@@ -1,4 +1,4 @@
-# Copyright 2019-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from hamcrest import (
@@ -66,7 +66,6 @@ class TestPushMobile(RealAsteriskIntegrationTest):
         self.bus.publish(
             push_mobile_event,
             headers={'name': 'UserEvent'},
-            routing_key='ami.UserEvent'
         )
 
         def bus_events_received():
@@ -116,7 +115,6 @@ class TestPushMobile(RealAsteriskIntegrationTest):
                 'tenant_uuid': tenant_uuid,
                 f'user_uuid:{user_uuid}': True,
             },
-            routing_key=f'auth.users.{user_uuid}.tokens.{client_id}.created',
         )
 
         def user_hint_updated():
@@ -145,7 +143,6 @@ class TestPushMobile(RealAsteriskIntegrationTest):
                 'tenant_uuid': tenant_uuid,
                 f'user_uuid:{user_uuid}': True,
             },
-            routing_key=f'auth.users.{user_uuid}.tokens.{client_id}.deleted',
         )
 
         def user_hint_updated():
@@ -174,7 +171,6 @@ class TestPushMobile(RealAsteriskIntegrationTest):
                 'tenant_uuid': tenant_uuid,
                 f'user_uuid:{user_uuid}': True,
             },
-            routing_key=f'auth.users.{user_uuid}.tokens.{client_id}.deleted',
         )
 
         def user_hint_updated():

@@ -1,4 +1,4 @@
-# Copyright 2015-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from hamcrest import assert_that
@@ -121,24 +121,25 @@ class TestCollectd(IntegrationTest):
     def test_given_connected_when_stasis_channel_destroyed_then_do_not_stat_abandoned_call(self):
         call_id = new_call_id()
         self.ari.set_channels(MockChannel(id=call_id))
-        self.bus.listen_events(routing_key='collectd.calls', exchange=BUS_EXCHANGE_COLLECTD)
+        events = self.bus.accumulator(routing_key='collectd.calls', exchange=BUS_EXCHANGE_COLLECTD)
 
         self.stasis.event_stasis_start(
             channel_id=call_id,
             stasis_app=STASIS_APP,
             stasis_app_instance=STASIS_APP_INSTANCE,
+            stasis_args=['dialed_from', 'another-channel'],
         )
         self.stasis.event_channel_destroyed(
             channel_id=call_id,
             stasis_app=STASIS_APP,
-            connected_number='another-number'
+            connected_number='another-number',
         )
 
         def assert_function():
             expected_message = 'PUTVAL [^/]+/calls-{app}.{app_instance}/counter-abandoned .* N:1'
             expected_message = expected_message.format(app=STASIS_APP,
                                                        app_instance=STASIS_APP_INSTANCE)
-            assert_that(self.bus.events(), not_(has_item(matches_regexp(expected_message))))
+            assert_that(events.accumulate(), not_(has_item(matches_regexp(expected_message))))
 
         until.assert_(assert_function, tries=3)
 

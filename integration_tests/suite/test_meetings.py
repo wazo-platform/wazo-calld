@@ -1,4 +1,4 @@
-# Copyright 2021-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2021-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import os
@@ -1151,7 +1151,6 @@ class TestMeetingParticipants(TestMeetings):
             headers={
                 'name': 'ConfbridgeTalking',
             },
-            routing_key='ami.ConfbridgeTalking'
         )
 
         until.assert_(talking_event_received, meeting_events, talking=False, timeout=10)

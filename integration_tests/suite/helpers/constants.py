@@ -1,4 +1,4 @@
-# Copyright 2015-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from kombu import Exchange
@@ -11,7 +11,7 @@ VALID_TOKEN = 'valid-token'
 VALID_TENANT = 'ffffffff-ffff-ffff-ffff-ffffffffffff'
 VALID_TOKEN_MULTITENANT = 'valid-token-multitenant'
 
-BUS_EXCHANGE_XIVO = Exchange('xivo', type='topic')
+BUS_EXCHANGE_WAZO = Exchange('wazo-headers', type='headers')
 BUS_EXCHANGE_COLLECTD = Exchange('collectd', type='topic', durable=False)
 BUS_QUEUE_NAME = 'integration'
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## 23.01
+
+* The following bus configuration keys have been changed:
+  
+  * key `exchange_name` now defaults to `wazo-headers`
+  * key `exchange_type` was removed
+
 ## 22.15
 
 * The `direction` field has been added to the following resources:

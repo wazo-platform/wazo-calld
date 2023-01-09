@@ -23,6 +23,7 @@ bus:
   host: rabbitmq
   username: guest
   password: guest
-  startup_connection_delay: 1
+  exchange_name: wazo-headers
+  exchange_type: headers
 
 uuid: 08c56466-8f29-45c7-9856-92bf1ba89b92
