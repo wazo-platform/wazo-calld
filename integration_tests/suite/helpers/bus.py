@@ -4,49 +4,14 @@
 import json
 
 from kombu import Connection
-from kombu import Consumer
 from kombu import Producer
-from kombu import Queue
-from kombu.exceptions import TimeoutError
 from wazo_test_helpers import bus as bus_helper
 
-from .constants import BUS_QUEUE_NAME
 from .constants import BUS_EXCHANGE_WAZO
 from .constants import VALID_TENANT
 
 
 class BusClient(bus_helper.BusClient):
-
-    def listen_events(self, routing_key, exchange=BUS_EXCHANGE_WAZO):
-        with Connection(self._url) as conn:
-            queue = Queue(BUS_QUEUE_NAME, exchange=exchange, routing_key=routing_key, channel=conn.channel())
-            queue.declare()
-            queue.purge()
-            self.bus_queue = queue
-
-    def events(self):
-        events = []
-
-        def on_event(body, message):
-            # events are already decoded, thanks to the content-type
-            events.append(body)
-            message.ack()
-
-        self._drain_events(on_event=on_event)
-
-        return events
-
-    def _drain_events(self, on_event):
-        if not hasattr(self, 'bus_queue'):
-            raise Exception('You must listen for events before consuming them')
-        with Connection(self._url) as conn:
-            with Consumer(conn, self.bus_queue, callbacks=[on_event]):
-                try:
-                    while True:
-                        conn.drain_events(timeout=0.5)
-                except TimeoutError:
-                    pass
-
     def send_event(self, event, headers=None):
         with Connection(self._url) as connection:
             producer = Producer(connection, exchange=BUS_EXCHANGE_WAZO, auto_declare=True)
