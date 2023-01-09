@@ -47,12 +47,11 @@ class BusClient(bus_helper.BusClient):
                 except TimeoutError:
                     pass
 
-    def send_event(self, event, routing_key=None, headers=None):
+    def send_event(self, event, headers=None):
         with Connection(self._url) as connection:
             producer = Producer(connection, exchange=BUS_EXCHANGE_WAZO, auto_declare=True)
             producer.publish(
                 json.dumps(event),
-                routing_key=routing_key,
                 headers=headers,
                 content_type='application/json'
             )
