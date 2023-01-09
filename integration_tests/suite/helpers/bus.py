@@ -285,6 +285,7 @@ class BusClient(bus_helper.BusClient):
         self.send_event(
             payload,
             headers={'name': 'application_deleted'},
+        )
 
     def send_trunk_endpoint_associated_event(self, trunk_id, endpoint_id):
         payload = {
