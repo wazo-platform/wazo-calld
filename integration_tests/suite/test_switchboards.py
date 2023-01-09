@@ -1,4 +1,4 @@
-# Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import random
@@ -764,7 +764,6 @@ class TestSwitchboardConfdCache(IntegrationTest):
                 'data': {'uuid': user_uuid},
             },
             headers={'name': 'user_edited'},
-            routing_key='config.user.edited',
         )
 
         reset_confd()
@@ -781,7 +780,6 @@ class TestSwitchboardConfdCache(IntegrationTest):
                 'data': {'uuid': switchboard_uuid},
             },
             headers={'name': 'switchboard_edited'},
-            routing_key='config.switchboards.{}.edited'.format(switchboard_uuid),
         )
 
         reset_confd()
@@ -799,7 +797,6 @@ class TestSwitchboardConfdCache(IntegrationTest):
                 'data': {'id': line_id},
             },
             headers={'name': 'line_edited'},
-            routing_key='config.line.edited',
         )
 
         reset_confd()
