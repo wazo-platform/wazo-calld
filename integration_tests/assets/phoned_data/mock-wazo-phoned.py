@@ -1,12 +1,13 @@
+#!/usr/bin/env python3
 # Copyright 2020-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
+from __future__ import annotations
 
 import logging
 import sys
 
-from flask import Flask
-from flask import jsonify
-from flask import request
+from flask import Flask, jsonify, request, Response
+
 
 app = Flask(__name__)
 
@@ -18,7 +19,7 @@ valid_extens = []
 _requests = []
 
 
-def _reset():
+def _reset() -> None:
     global _requests
     global action_response
     global valid_extens
@@ -28,7 +29,7 @@ def _reset():
 
 
 @app.before_request
-def log_request():
+def log_request() -> None:
     global _requests
 
     if request.path.startswith('/_'):
@@ -46,18 +47,18 @@ def log_request():
 
 
 @app.route('/_reset', methods=['POST'])
-def reset():
+def reset() -> tuple[str, int]:
     _reset()
     return '', 204
 
 
 @app.route('/_requests', methods=['GET'])
-def list_requests():
+def list_requests() -> Response:
     return jsonify({'requests': _requests})
 
 
 @app.route("/0.1/endpoints/<endpoint>/hold/start", methods=['PUT'])
-def start_hold(endpoint):
+def start_hold(endpoint: str) -> tuple[str, int]:
     if endpoint == 'not-found':
         return '', 404
     if endpoint == 'no-plugin':
@@ -66,7 +67,7 @@ def start_hold(endpoint):
 
 
 @app.route("/0.1/endpoints/<endpoint>/hold/stop", methods=['PUT'])
-def stop_hold(endpoint):
+def stop_hold(endpoint: str) -> tuple[str, int]:
     if endpoint == 'not-found':
         return '', 404
     if endpoint == 'no-plugin':
