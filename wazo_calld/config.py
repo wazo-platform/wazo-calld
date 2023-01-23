@@ -59,6 +59,7 @@ _DEFAULT_CONFIG = {
     'collectd': {
         'exchange_name': 'collectd',
         'exchange_type': 'topic',
+        'exchange_durable': False,
     },
     'confd': {
         'host': 'localhost',
