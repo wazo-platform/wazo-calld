@@ -1,4 +1,4 @@
-# Copyright 2016 by Avencall
+# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -19,20 +19,20 @@ class StatSender:
 
     def new_call(self, call):
         logger.debug('sending stat for new call %s', call.channel.id)
-        self.collectd.publish(CallStartCollectdEvent(call.app, call.app_instance))
+        self.collectd.publish_soon(CallStartCollectdEvent(call.app, call.app_instance))
 
     def abandoned(self, call):
         logger.debug('sending stat for abandoned call %s', call.channel.id)
-        self.collectd.publish(CallAbandonedCollectdEvent(call.app, call.app_instance))
+        self.collectd.publish_soon(CallAbandonedCollectdEvent(call.app, call.app_instance))
 
     def duration(self, call):
         logger.debug('sending stat for duration of call %s', call.channel.id)
-        self.collectd.publish(CallDurationCollectdEvent(call.app, call.app_instance, call.duration()))
+        self.collectd.publish_soon(CallDurationCollectdEvent(call.app, call.app_instance, call.duration()))
 
     def connect(self, call):
         logger.debug('sending stat for connecting call %s', call.channel.id)
-        self.collectd.publish(CallConnectCollectdEvent(call.app, call.app_instance))
+        self.collectd.publish_soon(CallConnectCollectdEvent(call.app, call.app_instance))
 
     def end_call(self, call):
         logger.debug('sending stat for ended call %s', call.channel.id)
-        self.collectd.publish(CallEndCollectdEvent(call.app, call.app_instance))
+        self.collectd.publish_soon(CallEndCollectdEvent(call.app, call.app_instance))
