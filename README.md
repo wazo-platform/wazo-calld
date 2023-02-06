@@ -12,7 +12,7 @@ further details on installing one.
 
 ```
 pip install tox
-tox --recreate -e py37
+tox --recreate -e py39
 ```
 
 ## Running integration tests
@@ -23,8 +23,8 @@ You need Docker installed on your machine.
 2. ```pip install -r test-requirements.txt```
 3. ```git clone https://github.com/wazo-platform/chan-test```
 4. ```export CHAN_TEST_DIR=$PWD/chan-test   # CHAN_TEST_DIR defaults to ../../chan-test```
-4. ```make test-setup```
-5. ```make test```
+5. ```make test-setup```
+6. ```make test```
 
 ## Environment variables
 
