@@ -1,5 +1,4 @@
-FROM p0bailey/docker-flask
+FROM python:3.9-slim-bullseye
 
-RUN apt-get update -q && apt-get install -yq gunicorn
 RUN pip install -U pip
-RUN pip install flask-sockets
+RUN pip install flask flask-sockets gunicorn

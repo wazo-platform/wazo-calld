@@ -9,7 +9,7 @@ from datetime import timedelta
 from flask import Flask
 from flask_restful import Api
 from flask_cors import CORS
-from werkzeug.contrib.fixers import ProxyFix
+from werkzeug.middleware.proxy_fix import ProxyFix
 from xivo import http_helpers
 from xivo.http_helpers import ReverseProxied
 
