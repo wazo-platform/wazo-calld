@@ -1,4 +1,4 @@
-# Copyright 2016-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import re
@@ -27,7 +27,6 @@ from .schemas import (
 
 
 class VoicemailResource(AuthResource):
-
     def __init__(self, voicemails_service):
         self._voicemails_service = voicemails_service
 
@@ -39,7 +38,6 @@ class VoicemailResource(AuthResource):
 
 
 class UserVoicemailResource(AuthResource):
-
     def __init__(self, voicemails_service):
         self._voicemails_service = voicemails_service
 
@@ -51,7 +49,6 @@ class UserVoicemailResource(AuthResource):
 
 
 class VoicemailFolderResource(AuthResource):
-
     def __init__(self, voicemails_service):
         self._voicemails_service = voicemails_service
 
@@ -64,7 +61,6 @@ class VoicemailFolderResource(AuthResource):
 
 
 class UserVoicemailFolderResource(AuthResource):
-
     def __init__(self, voicemails_service):
         self._voicemails_service = voicemails_service
 
@@ -77,7 +73,6 @@ class UserVoicemailFolderResource(AuthResource):
 
 
 class VoicemailMessageResource(AuthResource):
-
     def __init__(self, voicemails_service):
         self._voicemails_service = voicemails_service
 
@@ -93,7 +88,9 @@ class VoicemailMessageResource(AuthResource):
         voicemail_id = _validate_voicemail_id(voicemail_id)
         message_id = _validate_message_id(message_id)
         data = voicemail_message_update_schema.load(request.get_json(force=True))
-        self._voicemails_service.move_message(voicemail_id, message_id, data['folder_id'])
+        self._voicemails_service.move_message(
+            voicemail_id, message_id, data['folder_id']
+        )
         return '', 204
 
     @required_acl('calld.voicemails.{voicemail_id}.messages.{message_id}.delete')
@@ -105,7 +102,6 @@ class VoicemailMessageResource(AuthResource):
 
 
 class UserVoicemailMessageResource(AuthResource):
-
     def __init__(self, voicemails_service):
         self._voicemails_service = voicemails_service
 
@@ -121,7 +117,9 @@ class UserVoicemailMessageResource(AuthResource):
         user_uuid = get_token_user_uuid_from_request()
         message_id = _validate_message_id(message_id)
         data = voicemail_message_update_schema.load(request.get_json(force=True))
-        self._voicemails_service.move_user_message(user_uuid, message_id, data['folder_id'])
+        self._voicemails_service.move_user_message(
+            user_uuid, message_id, data['folder_id']
+        )
         return '', 204
 
     @required_acl('calld.users.me.voicemails.messages.{message_id}.delete')
@@ -133,20 +131,24 @@ class UserVoicemailMessageResource(AuthResource):
 
 
 class _BaseVoicemailRecordingResource(AuthResource):
-
     def __init__(self, voicemails_service):
         self._voicemails_service = voicemails_service
 
     def _get_response(self, recording, message_id):
         if request.args.get('download') == '1':
-            headers = {'Content-Disposition': 'attachment;filename=vm-msg-{}.wav'.format(message_id)}
+            headers = {
+                'Content-Disposition': 'attachment;filename=vm-msg-{}.wav'.format(
+                    message_id
+                )
+            }
         else:
             headers = None
-        return Response(response=recording, status=200, headers=headers, content_type='audio/wav')
+        return Response(
+            response=recording, status=200, headers=headers, content_type='audio/wav'
+        )
 
 
 class VoicemailRecordingResource(_BaseVoicemailRecordingResource):
-
     @required_acl(
         'calld.voicemails.{voicemail_id}.messages.{message_id}.recording.read',
         extract_token_id=extract_token_id_from_query_or_header,
@@ -154,12 +156,13 @@ class VoicemailRecordingResource(_BaseVoicemailRecordingResource):
     def get(self, voicemail_id, message_id):
         voicemail_id = _validate_voicemail_id(voicemail_id)
         message_id = _validate_message_id(message_id)
-        recording = self._voicemails_service.get_message_recording(voicemail_id, message_id)
+        recording = self._voicemails_service.get_message_recording(
+            voicemail_id, message_id
+        )
         return self._get_response(recording, message_id)
 
 
 class UserVoicemailRecordingResource(_BaseVoicemailRecordingResource):
-
     @required_acl(
         'calld.users.me.voicemails.messages.{message_id}.recording.read',
         extract_token_id=extract_token_id_from_query_or_header,
@@ -167,7 +170,9 @@ class UserVoicemailRecordingResource(_BaseVoicemailRecordingResource):
     def get(self, message_id):
         user_uuid = get_token_user_uuid_from_request()
         message_id = _validate_message_id(message_id)
-        recording = self._voicemails_service.get_user_message_recording(user_uuid, message_id)
+        recording = self._voicemails_service.get_user_message_recording(
+            user_uuid, message_id
+        )
         return self._get_response(recording, message_id)
 
 
@@ -203,7 +208,6 @@ def _validate_message_id(message_id):
 
 
 class VoicemailGreetingResource(AuthResource):
-
     content_dispo_tpl = 'attachment;filename=vm-greeting-{}.wav'
 
     def __init__(self, voicemails_service):
@@ -229,7 +233,9 @@ class VoicemailGreetingResource(AuthResource):
         greeting = _validate_greeting(greeting)
         data = self._service.get_greeting(voicemail_id, greeting)
         headers = {'Content-Disposition': self.content_dispo_tpl.format(greeting)}
-        return Response(response=data, status=200, headers=headers, content_type='audio/wav')
+        return Response(
+            response=data, status=200, headers=headers, content_type='audio/wav'
+        )
 
     @required_acl('calld.voicemails.{voicemail_id}.greetings.{greeting}.update')
     def put(self, voicemail_id, greeting):
@@ -247,7 +253,6 @@ class VoicemailGreetingResource(AuthResource):
 
 
 class UserVoicemailGreetingResource(AuthResource):
-
     content_dispo_tpl = 'attachment;filename=vm-greeting-{}.wav'
 
     def __init__(self, voicemails_service):
@@ -273,7 +278,9 @@ class UserVoicemailGreetingResource(AuthResource):
         greeting = _validate_greeting(greeting)
         data = self._service.get_user_greeting(user_uuid, greeting)
         headers = {'Content-Disposition': self.content_dispo_tpl.format(greeting)}
-        return Response(response=data, status=200, headers=headers, content_type='audio/wav')
+        return Response(
+            response=data, status=200, headers=headers, content_type='audio/wav'
+        )
 
     @required_acl('calld.users.me.voicemails.greetings.{greeting}.update')
     def put(self, greeting):
@@ -291,7 +298,6 @@ class UserVoicemailGreetingResource(AuthResource):
 
 
 class VoicemailGreetingCopyResource(AuthResource):
-
     def __init__(self, voicemails_service):
         self._service = voicemails_service
 
@@ -307,7 +313,6 @@ class VoicemailGreetingCopyResource(AuthResource):
 
 
 class UserVoicemailGreetingCopyResource(AuthResource):
-
     def __init__(self, voicemails_service):
         self._service = voicemails_service
 

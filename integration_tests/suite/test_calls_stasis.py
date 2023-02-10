@@ -1,4 +1,4 @@
-# Copyright 2015-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
@@ -19,7 +19,7 @@ from .helpers.constants import (
     SOME_STASIS_APP,
     SOME_STASIS_APP_INSTANCE,
     XIVO_UUID,
-    VALID_TENANT
+    VALID_TENANT,
 )
 from .helpers.calld import new_call_id
 from .helpers.confd import MockLine, MockUser
@@ -29,7 +29,6 @@ STASIS_APP = 'callcontrol'
 
 
 class TestDialedFrom(IntegrationTest):
-
     asset = 'basic_rest'
 
     def setUp(self):
@@ -41,49 +40,91 @@ class TestDialedFrom(IntegrationTest):
         call_id = new_call_id()
         new_call_id_ = new_call_id()
         self.ari.set_channels(MockChannel(id=call_id), MockChannel(id=new_call_id_))
-        self.ari.set_global_variables({'XIVO_CHANNELS_{}'.format(call_id): json.dumps({'state': 'ringing',
-                                                                                       'app': SOME_STASIS_APP,
-                                                                                       'app_instance': SOME_STASIS_APP_INSTANCE})})
+        self.ari.set_global_variables(
+            {
+                'XIVO_CHANNELS_{}'.format(call_id): json.dumps(
+                    {
+                        'state': 'ringing',
+                        'app': SOME_STASIS_APP,
+                        'app_instance': SOME_STASIS_APP_INSTANCE,
+                    }
+                )
+            }
+        )
 
         self.stasis.event_answer_connect(
             from_=call_id,
             new_call_id=new_call_id_,
             stasis_app=SOME_STASIS_APP,
-            stasis_app_instance=SOME_STASIS_APP_INSTANCE
+            stasis_app_instance=SOME_STASIS_APP_INSTANCE,
         )
 
         def assert_function():
-            assert_that(self.ari.requests(), has_entry('requests', has_items(has_entries({
-                'method': 'POST',
-                'path': '/ari/channels/{channel_id}/answer'.format(channel_id=call_id),
-            }), has_entries({
-                'method': 'POST',
-                'path': '/ari/channels/{channel_id}/answer'.format(channel_id=new_call_id_),
-            }), has_entries({
-                'method': 'POST',
-                'path': '/ari/bridges/bridge-id/addChannel',
-                'query': [['channel', call_id]],
-            }), has_entries({
-                'method': 'POST',
-                'path': '/ari/bridges/bridge-id/addChannel',
-                'query': [['channel', new_call_id_]],
-            }), has_entries({
-                'method': 'POST',
-                'path': '/ari/bridges',
-                'query': [['type', 'mixing']],
-            }))))
+            assert_that(
+                self.ari.requests(),
+                has_entry(
+                    'requests',
+                    has_items(
+                        has_entries(
+                            {
+                                'method': 'POST',
+                                'path': '/ari/channels/{channel_id}/answer'.format(
+                                    channel_id=call_id
+                                ),
+                            }
+                        ),
+                        has_entries(
+                            {
+                                'method': 'POST',
+                                'path': '/ari/channels/{channel_id}/answer'.format(
+                                    channel_id=new_call_id_
+                                ),
+                            }
+                        ),
+                        has_entries(
+                            {
+                                'method': 'POST',
+                                'path': '/ari/bridges/bridge-id/addChannel',
+                                'query': [['channel', call_id]],
+                            }
+                        ),
+                        has_entries(
+                            {
+                                'method': 'POST',
+                                'path': '/ari/bridges/bridge-id/addChannel',
+                                'query': [['channel', new_call_id_]],
+                            }
+                        ),
+                        has_entries(
+                            {
+                                'method': 'POST',
+                                'path': '/ari/bridges',
+                                'query': [['type', 'mixing']],
+                            }
+                        ),
+                    ),
+                ),
+            )
 
         until.assert_(assert_function, tries=5)
 
     def test_given_dialed_from_when_originator_hangs_up_then_user_stops_ringing(self):
         call_id = 'call-id'
         new_call_id = 'new-call-id'
-        self.ari.set_channels(MockChannel(id=call_id),
-                              MockChannel(id=new_call_id, ))
+        self.ari.set_channels(
+            MockChannel(id=call_id),
+            MockChannel(
+                id=new_call_id,
+            ),
+        )
         self.ari.set_channel_variable({new_call_id: {'XIVO_USERUUID': 'user-uuid'}})
-        self.ari.set_global_variables({'XIVO_CHANNELS_{}'.format(call_id): json.dumps({'app': 'my-app',
-                                                                                       'app_instance': 'sw1',
-                                                                                       'state': 'ringing'})})
+        self.ari.set_global_variables(
+            {
+                'XIVO_CHANNELS_{}'.format(call_id): json.dumps(
+                    {'app': 'my-app', 'app_instance': 'sw1', 'state': 'ringing'}
+                )
+            }
+        )
         self.confd.set_users(MockUser(uuid='user-uuid', line_ids=['line-id']))
         self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='pjsip'))
         self.ari.set_originates(MockChannel(id=new_call_id))
@@ -93,10 +134,22 @@ class TestDialedFrom(IntegrationTest):
         self.stasis.event_hangup(call_id)
 
         def assert_function():
-            assert_that(self.ari.requests(), has_entry('requests', has_items(has_entries({
-                'method': 'DELETE',
-                'path': '/ari/channels/{call_id}'.format(call_id=new_call_id),
-            }))))
+            assert_that(
+                self.ari.requests(),
+                has_entry(
+                    'requests',
+                    has_items(
+                        has_entries(
+                            {
+                                'method': 'DELETE',
+                                'path': '/ari/channels/{call_id}'.format(
+                                    call_id=new_call_id
+                                ),
+                            }
+                        )
+                    ),
+                ),
+            )
 
         until.assert_(assert_function, tries=5)
 
@@ -120,25 +173,29 @@ class TestDialedFrom(IntegrationTest):
                 events.accumulate(with_headers=True),
                 has_item(
                     has_entries(
-                        message=has_entries({
-                            'name': 'call_ended',
-                            'origin_uuid': XIVO_UUID,
-                            'data': has_entries({
-                                'creation_time': '2016-02-01T15:00:00.000-05:00',
-                                'sip_call_id': 'foobar',
-                                'line_id': 2,
-                                'reason_code': 0,
-                                'is_caller': True,
-                                'answer_time': is_(a_timestamp()),
-                                'hangup_time': is_(a_timestamp()),
-                            })
-                        }),
+                        message=has_entries(
+                            {
+                                'name': 'call_ended',
+                                'origin_uuid': XIVO_UUID,
+                                'data': has_entries(
+                                    {
+                                        'creation_time': '2016-02-01T15:00:00.000-05:00',
+                                        'sip_call_id': 'foobar',
+                                        'line_id': 2,
+                                        'reason_code': 0,
+                                        'is_caller': True,
+                                        'answer_time': is_(a_timestamp()),
+                                        'hangup_time': is_(a_timestamp()),
+                                    }
+                                ),
+                            }
+                        ),
                         headers=has_entries(
                             name='call_ended',
                             tenant_uuid=VALID_TENANT,
-                        )
+                        ),
                     )
-                )
+                ),
             )
 
         until.assert_(assert_function, tries=5)
@@ -162,24 +219,28 @@ class TestDialedFrom(IntegrationTest):
                 events.accumulate(with_headers=True),
                 has_item(
                     has_entries(
-                        message=has_entries({
-                            'name': 'call_ended',
-                            'origin_uuid': XIVO_UUID,
-                            'data': has_entries({
-                                'creation_time': '2016-02-01T15:00:00.000-0500',
-                                'sip_call_id': 'foobar',
-                                'line_id': 2,
-                                'reason_code': 0,
-                                'is_caller': False,
-                                'hangup_time': is_(a_timestamp()),
-                            })
-                        }),
+                        message=has_entries(
+                            {
+                                'name': 'call_ended',
+                                'origin_uuid': XIVO_UUID,
+                                'data': has_entries(
+                                    {
+                                        'creation_time': '2016-02-01T15:00:00.000-0500',
+                                        'sip_call_id': 'foobar',
+                                        'line_id': 2,
+                                        'reason_code': 0,
+                                        'is_caller': False,
+                                        'hangup_time': is_(a_timestamp()),
+                                    }
+                                ),
+                            }
+                        ),
                         headers=has_entries(
                             name='call_ended',
                             tenant_uuid=VALID_TENANT,
-                        )
+                        ),
                     )
-                )
+                ),
             )
 
         until.assert_(assert_function, tries=5)
@@ -201,22 +262,26 @@ class TestDialedFrom(IntegrationTest):
                 events.accumulate(with_headers=True),
                 has_item(
                     has_entries(
-                        message=has_entries({
-                            'name': 'call_ended',
-                            'origin_uuid': XIVO_UUID,
-                            'data': has_entries({
-                                'creation_time': '2016-02-01T15:00:00.000-0500',
-                                'sip_call_id': '',
-                                'line_id': None,
-                                'hangup_time': is_(a_timestamp()),
-                            })
-                        }),
+                        message=has_entries(
+                            {
+                                'name': 'call_ended',
+                                'origin_uuid': XIVO_UUID,
+                                'data': has_entries(
+                                    {
+                                        'creation_time': '2016-02-01T15:00:00.000-0500',
+                                        'sip_call_id': '',
+                                        'line_id': None,
+                                        'hangup_time': is_(a_timestamp()),
+                                    }
+                                ),
+                            }
+                        ),
                         headers=has_entries(
                             name='call_ended',
                             tenant_uuid=VALID_TENANT,
-                        )
+                        ),
                     )
-                )
+                ),
             )
 
         until.assert_(assert_function, tries=5)

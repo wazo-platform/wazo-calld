@@ -1,4 +1,4 @@
-# Copyright 2016-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from datetime import datetime
@@ -19,30 +19,39 @@ class HamcrestARIChannel:
     def is_in_bridge(self, type_=None):
         bridges = self._ari.bridges.list()
         if type_:
-            bridges = (bridge for bridge in bridges if bridge.json['bridge_type'] == type_)
-        channel_ids = (channel_id for bridge in bridges for channel_id in bridge.json['channels'])
+            bridges = (
+                bridge for bridge in bridges if bridge.json['bridge_type'] == type_
+            )
+        channel_ids = (
+            channel_id for bridge in bridges for channel_id in bridge.json['channels']
+        )
         return is_in(list(channel_ids))
 
     def is_talking(self):
         channels = self._ari.channels.list()
-        channel_ids = (channel.id for channel in channels if channel.json['state'] == 'Up')
+        channel_ids = (
+            channel.id for channel in channels if channel.json['state'] == 'Up'
+        )
         return is_in(list(channel_ids))
 
     def is_ringback(self):
         # There is currently no way to tell if a channel is ringback or not. It is considered Up.
         channels = self._ari.channels.list()
-        channel_ids = (channel.id for channel in channels if channel.json['state'] == 'Up')
+        channel_ids = (
+            channel.id for channel in channels if channel.json['state'] == 'Up'
+        )
         return is_in(list(channel_ids))
 
     def is_ringing(self):
         channels = self._ari.channels.list()
-        channel_ids = (channel.id for channel in channels if channel.json['state'] == 'Ringing')
+        channel_ids = (
+            channel.id for channel in channels if channel.json['state'] == 'Ringing'
+        )
         return is_in(list(channel_ids))
 
     def is_hungup(self):
         channel_ids = (channel.id for channel in self._ari.channels.list())
-        return all_of(instance_of(str),
-                      not_(is_in(list(channel_ids))))
+        return all_of(instance_of(str), not_(is_in(list(channel_ids))))
 
     def has_variable(self, variable, expected_value):
         channels = self._ari.channels.list()
@@ -67,7 +76,6 @@ class HamcrestARIBridge:
 
 
 class ATimeStamp(BaseMatcher):
-
     def _matches(self, item):
         try:
             datetime.fromisoformat(item)

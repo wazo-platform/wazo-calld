@@ -20,7 +20,6 @@ from .helpers.wait_strategy import CalldEverythingOkWaitStrategy
 
 
 class TestBusConsume(IntegrationTest):
-
     asset = 'basic_rest'
     wait_strategy = CalldEverythingOkWaitStrategy()
 
@@ -32,16 +31,24 @@ class TestBusConsume(IntegrationTest):
 
     def test_when_channel_created_then_bus_event(self):
         call_id = new_call_id()
-        self.ari.set_channels(MockChannel(id=call_id, connected_line_number='', channelvars={'CHANNEL(videonativeformat)': '(vp8)'}))
-        self.ari.set_channel_variable({
-            call_id: {
-                'WAZO_ENTRY_EXTEN': '*10',
-                'WAZO_TENANT_UUID': VALID_TENANT,
-                'CHANNEL(channeltype)': 'PJSIP',
-                'CHANNEL(pjsip,call-id)': 'a-sip-call-id',
-                'WAZO_CALL_DIRECTION': 'inbound',
-            },
-        })
+        self.ari.set_channels(
+            MockChannel(
+                id=call_id,
+                connected_line_number='',
+                channelvars={'CHANNEL(videonativeformat)': '(vp8)'},
+            )
+        )
+        self.ari.set_channel_variable(
+            {
+                call_id: {
+                    'WAZO_ENTRY_EXTEN': '*10',
+                    'WAZO_TENANT_UUID': VALID_TENANT,
+                    'CHANNEL(channeltype)': 'PJSIP',
+                    'CHANNEL(pjsip,call-id)': 'a-sip-call-id',
+                    'WAZO_CALL_DIRECTION': 'inbound',
+                },
+            }
+        )
         events = self.bus.accumulator(headers={'name': 'call_created'})
 
         self.bus.send_ami_newchannel_event(call_id)
@@ -51,24 +58,28 @@ class TestBusConsume(IntegrationTest):
                 events.accumulate(with_headers=True),
                 has_item(
                     has_entries(
-                        message=has_entries({
-                            'name': 'call_created',
-                            'origin_uuid': XIVO_UUID,
-                            'data': has_entries({
-                                'call_id': call_id,
-                                'dialed_extension': '*10',
-                                'peer_caller_id_number': '*10',
-                                'sip_call_id': 'a-sip-call-id',
-                                'is_video': True,
-                                'direction': 'inbound',
-                            })
-                        }),
+                        message=has_entries(
+                            {
+                                'name': 'call_created',
+                                'origin_uuid': XIVO_UUID,
+                                'data': has_entries(
+                                    {
+                                        'call_id': call_id,
+                                        'dialed_extension': '*10',
+                                        'peer_caller_id_number': '*10',
+                                        'sip_call_id': 'a-sip-call-id',
+                                        'is_video': True,
+                                        'direction': 'inbound',
+                                    }
+                                ),
+                            }
+                        ),
                         headers=has_entries(
                             name='call_created',
                             tenant_uuid=VALID_TENANT,
-                        )
+                        ),
                     )
-                )
+                ),
             )
 
         until.assert_(assert_function, tries=5)
@@ -85,12 +96,14 @@ class TestBusConsume(IntegrationTest):
                 },
             )
         )
-        self.ari.set_channel_variable({
-            call_id: {
-                'WAZO_TENANT_UUID': VALID_TENANT,
-                'WAZO_CALL_DIRECTION': 'outbound',
-            },
-        })
+        self.ari.set_channel_variable(
+            {
+                call_id: {
+                    'WAZO_TENANT_UUID': VALID_TENANT,
+                    'WAZO_CALL_DIRECTION': 'outbound',
+                },
+            }
+        )
         events = self.bus.accumulator(headers={'name': 'call_updated'})
 
         self.bus.send_ami_newstate_event(call_id)
@@ -100,24 +113,28 @@ class TestBusConsume(IntegrationTest):
                 events.accumulate(with_headers=True),
                 has_item(
                     has_entries(
-                        message=has_entries({
-                            'name': 'call_updated',
-                            'origin_uuid': XIVO_UUID,
-                            'data': has_entries({
-                                'call_id': call_id,
-                                'status': 'Up',
-                                'hangup_time': None,
-                                'answer_time': is_(a_timestamp()),
-                                'is_video': True,
-                                'direction': 'outbound',
-                            })
-                        }),
+                        message=has_entries(
+                            {
+                                'name': 'call_updated',
+                                'origin_uuid': XIVO_UUID,
+                                'data': has_entries(
+                                    {
+                                        'call_id': call_id,
+                                        'status': 'Up',
+                                        'hangup_time': None,
+                                        'answer_time': is_(a_timestamp()),
+                                        'is_video': True,
+                                        'direction': 'outbound',
+                                    }
+                                ),
+                            }
+                        ),
                         headers=has_entries(
                             name='call_updated',
                             tenant_uuid=VALID_TENANT,
-                        )
+                        ),
                     )
-                )
+                ),
             )
 
         until.assert_(assert_function, tries=5)
@@ -129,15 +146,17 @@ class TestBusConsume(IntegrationTest):
             MockChannel(id=first_channel_id, state='Up'),
             MockChannel(id=second_channel_id, state='Up'),
         )
-        self.ari.set_channel_variable({
-            first_channel_id: {
-                'WAZO_TENANT_UUID': VALID_TENANT,
-            },
-            second_channel_id: {
-                'WAZO_TENANT_UUID': VALID_TENANT,
-                'WAZO_CALL_DIRECTION': 'outbound',
-            },
-        })
+        self.ari.set_channel_variable(
+            {
+                first_channel_id: {
+                    'WAZO_TENANT_UUID': VALID_TENANT,
+                },
+                second_channel_id: {
+                    'WAZO_TENANT_UUID': VALID_TENANT,
+                    'WAZO_CALL_DIRECTION': 'outbound',
+                },
+            }
+        )
 
         events = self.bus.accumulator(headers={'name': 'call_updated'})
 
@@ -151,39 +170,47 @@ class TestBusConsume(IntegrationTest):
                 all_of(
                     has_item(
                         has_entries(
-                            message=has_entries({
-                                'name': 'call_updated',
-                                'origin_uuid': XIVO_UUID,
-                                'data': has_entries({
-                                    'call_id': first_channel_id,
-                                    'status': 'Up',
-                                    'direction': 'outbound',
-                                })
-                            }),
+                            message=has_entries(
+                                {
+                                    'name': 'call_updated',
+                                    'origin_uuid': XIVO_UUID,
+                                    'data': has_entries(
+                                        {
+                                            'call_id': first_channel_id,
+                                            'status': 'Up',
+                                            'direction': 'outbound',
+                                        }
+                                    ),
+                                }
+                            ),
                             headers=has_entries(
                                 name='call_updated',
                                 tenant_uuid=VALID_TENANT,
-                            )
+                            ),
                         )
                     ),
                     has_item(
                         has_entries(
-                            message=has_entries({
-                                'name': 'call_updated',
-                                'origin_uuid': XIVO_UUID,
-                                'data': has_entries({
-                                    'call_id': second_channel_id,
-                                    'status': 'Up',
-                                    'direction': 'outbound',
-                                })
-                            }),
+                            message=has_entries(
+                                {
+                                    'name': 'call_updated',
+                                    'origin_uuid': XIVO_UUID,
+                                    'data': has_entries(
+                                        {
+                                            'call_id': second_channel_id,
+                                            'status': 'Up',
+                                            'direction': 'outbound',
+                                        }
+                                    ),
+                                }
+                            ),
                             headers=has_entries(
                                 name='call_updated',
                                 tenant_uuid=VALID_TENANT,
-                            )
+                            ),
                         )
                     ),
-                )
+                ),
             )
 
         until.assert_(assert_function, tries=5)
@@ -193,25 +220,30 @@ class TestBusConsume(IntegrationTest):
         second_channel_id = new_call_id(2)
         third_channel_id = new_call_id(3)
         self.ari.set_bridges(
-            MockBridge(first_channel_id, channels=[first_channel_id, second_channel_id, third_channel_id])
+            MockBridge(
+                first_channel_id,
+                channels=[first_channel_id, second_channel_id, third_channel_id],
+            )
         )
         self.ari.set_channels(
             MockChannel(id=first_channel_id, state='Up'),
             MockChannel(id=second_channel_id, state='Up'),
             MockChannel(id=third_channel_id, state='Up'),
         )
-        self.ari.set_channel_variable({
-            first_channel_id: {
-                'WAZO_TENANT_UUID': VALID_TENANT,
-            },
-            second_channel_id: {
-                'WAZO_TENANT_UUID': VALID_TENANT,
-            },
-            third_channel_id: {
-                'WAZO_TENANT_UUID': VALID_TENANT,
-                'WAZO_CALL_DIRECTION': 'inbound',
-            },
-        })
+        self.ari.set_channel_variable(
+            {
+                first_channel_id: {
+                    'WAZO_TENANT_UUID': VALID_TENANT,
+                },
+                second_channel_id: {
+                    'WAZO_TENANT_UUID': VALID_TENANT,
+                },
+                third_channel_id: {
+                    'WAZO_TENANT_UUID': VALID_TENANT,
+                    'WAZO_CALL_DIRECTION': 'inbound',
+                },
+            }
+        )
 
         self.ari.set_channels(
             MockChannel(id=first_channel_id, state='Up'),
@@ -225,7 +257,9 @@ class TestBusConsume(IntegrationTest):
 
         events_ended = self.bus.accumulator(headers={'name': 'call_ended'})
         self.bus.send_ami_bridge_leave_event(
-            channel_id=third_channel_id, bridge_id=first_channel_id, bridge_num_channels=2
+            channel_id=third_channel_id,
+            bridge_id=first_channel_id,
+            bridge_num_channels=2,
         )
         self.stasis.event_channel_destroyed(third_channel_id, SOME_STASIS_APP)
         self.bus.send_ami_hangup_event(channel_id=third_channel_id)
@@ -239,18 +273,22 @@ class TestBusConsume(IntegrationTest):
                 events_ended.accumulate(with_headers=True),
                 has_item(
                     has_entries(
-                        message=has_entries({
-                            'name': 'call_ended',
-                            'origin_uuid': XIVO_UUID,
-                            'data': has_entries({
-                                'call_id': third_channel_id,
-                                'direction': 'inbound',
-                            })
-                        }),
+                        message=has_entries(
+                            {
+                                'name': 'call_ended',
+                                'origin_uuid': XIVO_UUID,
+                                'data': has_entries(
+                                    {
+                                        'call_id': third_channel_id,
+                                        'direction': 'inbound',
+                                    }
+                                ),
+                            }
+                        ),
                         headers=has_entries(
                             name='call_ended',
                             tenant_uuid=VALID_TENANT,
-                        )
+                        ),
                     )
                 ),
             )
@@ -263,39 +301,47 @@ class TestBusConsume(IntegrationTest):
                 all_of(
                     has_item(
                         has_entries(
-                            message=has_entries({
-                                'name': 'call_updated',
-                                'origin_uuid': XIVO_UUID,
-                                'data': has_entries({
-                                    'call_id': first_channel_id,
-                                    'status': 'Up',
-                                    'direction': 'internal',
-                                })
-                            }),
+                            message=has_entries(
+                                {
+                                    'name': 'call_updated',
+                                    'origin_uuid': XIVO_UUID,
+                                    'data': has_entries(
+                                        {
+                                            'call_id': first_channel_id,
+                                            'status': 'Up',
+                                            'direction': 'internal',
+                                        }
+                                    ),
+                                }
+                            ),
                             headers=has_entries(
                                 name='call_updated',
                                 tenant_uuid=VALID_TENANT,
-                            )
+                            ),
                         )
                     ),
                     has_item(
                         has_entries(
-                            message=has_entries({
-                                'name': 'call_updated',
-                                'origin_uuid': XIVO_UUID,
-                                'data': has_entries({
-                                    'call_id': second_channel_id,
-                                    'status': 'Up',
-                                    'direction': 'internal',
-                                })
-                            }),
+                            message=has_entries(
+                                {
+                                    'name': 'call_updated',
+                                    'origin_uuid': XIVO_UUID,
+                                    'data': has_entries(
+                                        {
+                                            'call_id': second_channel_id,
+                                            'status': 'Up',
+                                            'direction': 'internal',
+                                        }
+                                    ),
+                                }
+                            ),
                             headers=has_entries(
                                 name='call_updated',
                                 tenant_uuid=VALID_TENANT,
-                            )
+                            ),
                         )
                     ),
-                )
+                ),
             )
 
         until.assert_(assert_first_and_second_calls_are_internal, tries=5)
@@ -308,15 +354,17 @@ class TestBusConsume(IntegrationTest):
                 state='Up',
                 channelvars={
                     'WAZO_ANSWER_TIME': '2022-03-08T03:48:00+00:00',
-                }
+                },
             )
         )
-        self.ari.set_channel_variable({
-            call_id: {
-                'WAZO_TENANT_UUID': VALID_TENANT,
-                'WAZO_CALL_DIRECTION': 'internal',
-            },
-        })
+        self.ari.set_channel_variable(
+            {
+                call_id: {
+                    'WAZO_TENANT_UUID': VALID_TENANT,
+                    'WAZO_CALL_DIRECTION': 'internal',
+                },
+            }
+        )
         events = self.bus.accumulator(headers={'name': 'call_answered'})
 
         self.bus.send_ami_newstate_event(call_id, state='Up')
@@ -326,23 +374,27 @@ class TestBusConsume(IntegrationTest):
                 events.accumulate(with_headers=True),
                 has_item(
                     has_entries(
-                        message=has_entries({
-                            'name': 'call_answered',
-                            'origin_uuid': XIVO_UUID,
-                            'data': has_entries({
-                                'call_id': call_id,
-                                'status': 'Up',
-                                'hangup_time': None,
-                                'answer_time': is_(a_timestamp()),
-                                'direction': 'internal',
-                            })
-                        }),
+                        message=has_entries(
+                            {
+                                'name': 'call_answered',
+                                'origin_uuid': XIVO_UUID,
+                                'data': has_entries(
+                                    {
+                                        'call_id': call_id,
+                                        'status': 'Up',
+                                        'hangup_time': None,
+                                        'answer_time': is_(a_timestamp()),
+                                        'direction': 'internal',
+                                    }
+                                ),
+                            }
+                        ),
                         headers=has_entries(
                             name='call_answered',
                             tenant_uuid=VALID_TENANT,
                         ),
                     )
-                )
+                ),
             )
 
         until.assert_(assert_function, tries=5)
@@ -350,41 +402,54 @@ class TestBusConsume(IntegrationTest):
     def test_when_channel_held_then_bus_event(self):
         call_id = new_call_id()
         self.ari.set_channels(MockChannel(id=call_id))
-        self.ari.set_channel_variable({
-            call_id: {
-                'XIVO_ON_HOLD': '1',
-                'WAZO_TENANT_UUID': VALID_TENANT,
-            },
-        })
+        self.ari.set_channel_variable(
+            {
+                call_id: {
+                    'XIVO_ON_HOLD': '1',
+                    'WAZO_TENANT_UUID': VALID_TENANT,
+                },
+            }
+        )
         events = self.bus.accumulator(headers={'name': 'call_held'})
 
         self.bus.send_ami_hold_event(call_id)
 
         def assert_function():
-            assert_that(self.amid.requests()['requests'], has_item(has_entries({
-                'method': 'POST',
-                'path': '/1.0/action/Setvar',
-                'json': has_entries({
-                    'Channel': call_id,
-                    'Variable': 'XIVO_ON_HOLD',
-                    'Value': '1'
-                }),
-            })))
+            assert_that(
+                self.amid.requests()['requests'],
+                has_item(
+                    has_entries(
+                        {
+                            'method': 'POST',
+                            'path': '/1.0/action/Setvar',
+                            'json': has_entries(
+                                {
+                                    'Channel': call_id,
+                                    'Variable': 'XIVO_ON_HOLD',
+                                    'Value': '1',
+                                }
+                            ),
+                        }
+                    )
+                ),
+            )
             assert_that(
                 events.accumulate(with_headers=True),
                 has_item(
                     has_entries(
-                        message=has_entries({
-                            'name': 'call_held',
-                            'origin_uuid': XIVO_UUID,
-                            'data': has_entries({'call_id': call_id})
-                        }),
+                        message=has_entries(
+                            {
+                                'name': 'call_held',
+                                'origin_uuid': XIVO_UUID,
+                                'data': has_entries({'call_id': call_id}),
+                            }
+                        ),
                         headers=has_entries(
                             name='call_held',
                             tenant_uuid=VALID_TENANT,
-                        )
+                        ),
                     )
-                )
+                ),
             )
 
         until.assert_(assert_function, tries=5)
@@ -392,41 +457,54 @@ class TestBusConsume(IntegrationTest):
     def test_when_channel_resumed_then_bus_event(self):
         call_id = new_call_id()
         self.ari.set_channels(MockChannel(id=call_id))
-        self.ari.set_channel_variable({
-            call_id: {
-                'XIVO_ON_HOLD': '',
-                'WAZO_TENANT_UUID': VALID_TENANT,
+        self.ari.set_channel_variable(
+            {
+                call_id: {
+                    'XIVO_ON_HOLD': '',
+                    'WAZO_TENANT_UUID': VALID_TENANT,
+                }
             }
-        })
+        )
         events = self.bus.accumulator(headers={'name': 'call_resumed'})
 
         self.bus.send_ami_unhold_event(call_id)
 
         def assert_function():
-            assert_that(self.amid.requests()['requests'], has_item(has_entries({
-                'method': 'POST',
-                'path': '/1.0/action/Setvar',
-                'json': has_entries({
-                    'Channel': call_id,
-                    'Variable': 'XIVO_ON_HOLD',
-                    'Value': ''
-                }),
-            })))
+            assert_that(
+                self.amid.requests()['requests'],
+                has_item(
+                    has_entries(
+                        {
+                            'method': 'POST',
+                            'path': '/1.0/action/Setvar',
+                            'json': has_entries(
+                                {
+                                    'Channel': call_id,
+                                    'Variable': 'XIVO_ON_HOLD',
+                                    'Value': '',
+                                }
+                            ),
+                        }
+                    )
+                ),
+            )
             assert_that(
                 events.accumulate(with_headers=True),
                 has_item(
                     has_entries(
-                        message=has_entries({
-                            'name': 'call_resumed',
-                            'origin_uuid': XIVO_UUID,
-                            'data': has_entries({'call_id': call_id})
-                        }),
+                        message=has_entries(
+                            {
+                                'name': 'call_resumed',
+                                'origin_uuid': XIVO_UUID,
+                                'data': has_entries({'call_id': call_id}),
+                            }
+                        ),
                         headers=has_entries(
                             name='call_resumed',
                             tenant_uuid=VALID_TENANT,
                         ),
                     )
-                )
+                ),
             )
 
         until.assert_(assert_function, tries=5)
@@ -434,11 +512,13 @@ class TestBusConsume(IntegrationTest):
     def test_when_channel_dtmf_then_bus_event(self):
         call_id = new_call_id()
         self.ari.set_channels(MockChannel(id=call_id))
-        self.ari.set_channel_variable({
-            call_id: {
-                'WAZO_TENANT_UUID': VALID_TENANT,
-            },
-        })
+        self.ari.set_channel_variable(
+            {
+                call_id: {
+                    'WAZO_TENANT_UUID': VALID_TENANT,
+                },
+            }
+        )
         events = self.bus.accumulator(headers={'name': 'call_dtmf_created'})
 
         self.bus.send_ami_dtmf_end_digit(call_id, '1')
@@ -448,17 +528,19 @@ class TestBusConsume(IntegrationTest):
                 events.accumulate(with_headers=True),
                 has_item(
                     has_entries(
-                        message=has_entries({
-                            'name': 'call_dtmf_created',
-                            'origin_uuid': XIVO_UUID,
-                            'data': has_entries({'call_id': call_id, 'digit': '1'})
-                        }),
+                        message=has_entries(
+                            {
+                                'name': 'call_dtmf_created',
+                                'origin_uuid': XIVO_UUID,
+                                'data': has_entries({'call_id': call_id, 'digit': '1'}),
+                            }
+                        ),
                         headers=has_entries(
                             name='call_dtmf_created',
                             tenant_uuid=VALID_TENANT,
                         ),
                     )
-                )
+                ),
             )
 
         until.assert_(assert_function, tries=5)
@@ -480,21 +562,25 @@ class TestBusConsume(IntegrationTest):
                 events.accumulate(with_headers=True),
                 has_item(
                     has_entries(
-                        message=has_entries({
-                            'name': 'user_missed_call',
-                            'origin_uuid': XIVO_UUID,
-                            'data': has_entries({
-                                'user_uuid': user_uuid,
-                                'reason': 'phone-unreachable',
-                                'conversation_id': conversation_id,
-                            })
-                        }),
+                        message=has_entries(
+                            {
+                                'name': 'user_missed_call',
+                                'origin_uuid': XIVO_UUID,
+                                'data': has_entries(
+                                    {
+                                        'user_uuid': user_uuid,
+                                        'reason': 'phone-unreachable',
+                                        'conversation_id': conversation_id,
+                                    }
+                                ),
+                            }
+                        ),
                         headers=has_entries(
                             name='user_missed_call',
                             tenant_uuid=VALID_TENANT,
-                        )
+                        ),
                     )
-                )
+                ),
             )
 
         until.assert_(assert_function, tries=5)

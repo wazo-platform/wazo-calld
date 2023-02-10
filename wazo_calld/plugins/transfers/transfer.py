@@ -1,9 +1,8 @@
-# Copyright 2016-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 
 class Transfer:
-
     def __init__(self, id_, initiator_uuid, initiator_tenant_uuid):
         self.id = id_
         self.initiator_uuid = initiator_uuid

@@ -1,4 +1,4 @@
-# Copyright 2021-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2021-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -42,11 +42,13 @@ class MeetingsService:
                 'ConfBridgeList',
                 {'Conference': meeting.asterisk_name()},
             )
-            participant_count = len(participant_list) - 2  # 1 event for the success and on for the list complete
+            participant_count = (
+                len(participant_list) - 2
+            )  # 1 event for the success and on for the list complete
         except AmidProtocolError as e:
             if e.message in [
                 'No active conferences.',
-                'No Conference by that name found.'
+                'No Conference by that name found.',
             ]:
                 participant_count = 0
             else:
@@ -165,12 +167,16 @@ class MeetingsService:
                 logger.debug(
                     'No participants found to kick out of meeting %s', meeting_uuid
                 )
-                raise NoSuchMeetingParticipant(tenant_uuid, meeting_uuid, participant_id)
+                raise NoSuchMeetingParticipant(
+                    tenant_uuid, meeting_uuid, participant_id
+                )
             raise
         except RequestException as e:
             raise WazoAmidError(self._amid, e)
 
-    def user_kick_participant(self, tenant_uuid, user_uuid, meeting_uuid, participant_id):
+    def user_kick_participant(
+        self, tenant_uuid, user_uuid, meeting_uuid, participant_id
+    ):
         meeting = Meeting(tenant_uuid, meeting_uuid, self._confd)
         if not meeting.exists():
             raise NoSuchMeeting(tenant_uuid, meeting_uuid)

@@ -1,4 +1,4 @@
-# Copyright 2016-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
@@ -14,10 +14,7 @@ from wazo_calld.plugin_helpers.ari_ import Channel
 from wazo_calld.plugin_helpers.exceptions import WazoAmidError
 
 from . import ari_helpers
-from .event import (
-    CreateTransferEvent,
-    TransferRecipientAnsweredEvent
-)
+from .event import CreateTransferEvent, TransferRecipientAnsweredEvent
 from .exceptions import (
     InvalidEvent,
     TransferException,
@@ -29,8 +26,9 @@ logger = logging.getLogger(__name__)
 
 
 class TransfersStasis:
-
-    def __init__(self, amid_client, ari, services, state_factory, state_persistor, xivo_uuid):
+    def __init__(
+        self, amid_client, ari, services, state_factory, state_persistor, xivo_uuid
+    ):
         self.ari = ari.client
         self._core_ari = ari
         self.amid = amid_client
@@ -48,16 +46,24 @@ class TransfersStasis:
         self._core_ari.register_application(DEFAULT_APPLICATION_NAME)
 
     def _subscribe(self):
-        self.ari.on_application_registered(DEFAULT_APPLICATION_NAME, self.process_lost_hangups)
-        self.ari.on_application_registered(DEFAULT_APPLICATION_NAME, self.process_answered_calls)
+        self.ari.on_application_registered(
+            DEFAULT_APPLICATION_NAME, self.process_lost_hangups
+        )
+        self.ari.on_application_registered(
+            DEFAULT_APPLICATION_NAME, self.process_answered_calls
+        )
         self.ari.on_channel_event('ChannelEnteredBridge', self.release_hangup_lock)
-        self.ari.on_channel_event('ChannelDestroyed', self.bypass_hangup_lock_from_source)
+        self.ari.on_channel_event(
+            'ChannelDestroyed', self.bypass_hangup_lock_from_source
+        )
         self.ari.on_bridge_event('BridgeDestroyed', self.clean_bridge_variables)
 
         self.ari.on_channel_event('ChannelLeftBridge', self.clean_bridge)
 
         self.ari.on_channel_event('StasisStart', self.stasis_start)
-        self.stasis_start_pubsub.subscribe('transfer_recipient_called', self.transfer_recipient_answered)
+        self.stasis_start_pubsub.subscribe(
+            'transfer_recipient_called', self.transfer_recipient_answered
+        )
         self.stasis_start_pubsub.subscribe('create_transfer', self.create_transfer)
 
         self.ari.on_channel_event('ChannelDestroyed', self.hangup)
@@ -70,16 +76,28 @@ class TransfersStasis:
         self.ari.on_channel_event('ChannelCallerId', self.update_transfer_caller_id)
 
     def moh_stop(self, channel, event):
-        logger.debug('received ChannelMohStop for channel %s (%s)', channel.id, event['channel']['name'])
+        logger.debug(
+            'received ChannelMohStop for channel %s (%s)',
+            channel.id,
+            event['channel']['name'],
+        )
         try:
             transfer = self.state_persistor.get_by_channel(channel.id)
         except KeyError:
-            logger.debug('ignoring ChannelMohStop event: channel %s, app %s', event['channel']['name'], event['application'])
+            logger.debug(
+                'ignoring ChannelMohStop event: channel %s, app %s',
+                event['channel']['name'],
+                event['application'],
+            )
             return
 
         transfer_role = transfer.role(channel.id)
         if transfer_role != TransferRole.transferred:
-            logger.debug('ignoring ChannelMohStop event: channel %s, app %s', event['channel']['name'], event['application'])
+            logger.debug(
+                'ignoring ChannelMohStop event: channel %s, app %s',
+                event['channel']['name'],
+                event['application'],
+            )
             return
 
         transfer_state = self.state_factory.make(transfer)
@@ -89,8 +107,9 @@ class TransfersStasis:
         if isinstance(exception, InvalidEvent):
             event = exception.event
             logger.error('invalid stasis event received: %s', event)
-        elif (isinstance(exception, WazoAmidError)
-              or isinstance(exception, TransferException)):
+        elif isinstance(exception, WazoAmidError) or isinstance(
+            exception, TransferException
+        ):
             self.handle_error(exception)
         else:
             raise exception
@@ -121,7 +140,10 @@ class TransfersStasis:
         logger.debug('Processing lost answered calls since last stop...')
         for transfer in transfers:
             transfer_state = self.state_factory.make(transfer)
-            if transfer_state.name == TransferStatus.ringback and Channel(transfer.recipient_call, self.ari).exists():
+            if (
+                transfer_state.name == TransferStatus.ringback
+                and Channel(transfer.recipient_call, self.ari).exists()
+            ):
                 channel = self.ari.channels.get(channelId=transfer.recipient_call)
                 if channel.json['state'] != 'Up':
                     logger.debug('Recipiend answered from transfer %s', transfer.id)
@@ -135,10 +157,12 @@ class TransfersStasis:
         try:
             app_action = event['args'][1]
         except IndexError:
-            logger.debug('ignoring StasisStart event: channel %s, app %s, args %s',
-                         event['channel']['name'],
-                         event['application'],
-                         event['args'])
+            logger.debug(
+                'ignoring StasisStart event: channel %s, app %s, args %s',
+                event['channel']['name'],
+                event['application'],
+                event['args'],
+            )
             return
         self.stasis_start_pubsub.publish(app_action, (channel, event))
 
@@ -146,7 +170,11 @@ class TransfersStasis:
         try:
             transfer = self.state_persistor.get_by_channel(channel.id)
         except KeyError:
-            logger.debug('ignoring StasisEnd event: channel %s, app %s', event['channel']['name'], event['application'])
+            logger.debug(
+                'ignoring StasisEnd event: channel %s, app %s',
+                event['channel']['name'],
+                event['application'],
+            )
             return
         transfer_role = transfer.role(channel.id)
         self.hangup_pubsub.publish(transfer_role, transfer)
@@ -183,28 +211,45 @@ class TransfersStasis:
         try:
             bridge = self.ari.bridges.get(bridgeId=event.transfer_id)
         except ARINotFound:
-            bridge = self.ari.bridges.createWithId(type='mixing', name='transfer', bridgeId=event.transfer_id)
+            bridge = self.ari.bridges.createWithId(
+                type='mixing', name='transfer', bridgeId=event.transfer_id
+            )
 
         bridge.addChannel(channel=channel.id)
         channel_ids = bridge.get().json['channels']
         if len(channel_ids) == 2:
             transfer = self.state_persistor.get(event.transfer_id)
             try:
-                context = self.ari.channels.getChannelVar(channelId=transfer.initiator_call, variable='XIVO_TRANSFER_RECIPIENT_CONTEXT')['value']
-                exten = self.ari.channels.getChannelVar(channelId=transfer.initiator_call, variable='XIVO_TRANSFER_RECIPIENT_EXTEN')['value']
-                variables_str = self.ari.channels.getChannelVar(channelId=transfer.initiator_call, variable='XIVO_TRANSFER_VARIABLES')['value']
-                timeout_str = self.ari.channels.getChannelVar(channelId=transfer.initiator_call, variable='XIVO_TRANSFER_TIMEOUT')['value']
+                context = self.ari.channels.getChannelVar(
+                    channelId=transfer.initiator_call,
+                    variable='XIVO_TRANSFER_RECIPIENT_CONTEXT',
+                )['value']
+                exten = self.ari.channels.getChannelVar(
+                    channelId=transfer.initiator_call,
+                    variable='XIVO_TRANSFER_RECIPIENT_EXTEN',
+                )['value']
+                variables_str = self.ari.channels.getChannelVar(
+                    channelId=transfer.initiator_call,
+                    variable='XIVO_TRANSFER_VARIABLES',
+                )['value']
+                timeout_str = self.ari.channels.getChannelVar(
+                    channelId=transfer.initiator_call, variable='XIVO_TRANSFER_TIMEOUT'
+                )['value']
             except ARINotFound:
                 logger.error('initiator hung up while creating transfer')
             try:
                 variables = json.loads(variables_str)
             except ValueError:
-                logger.warning('could not decode transfer variables "%s"', variables_str)
+                logger.warning(
+                    'could not decode transfer variables "%s"', variables_str
+                )
                 variables = {}
             timeout = None if timeout_str == 'None' else int(timeout_str)
 
             transfer_state = self.state_factory.make(transfer)
-            new_state = transfer_state.start(transfer, context, exten, variables, timeout)
+            new_state = transfer_state.start(
+                transfer, context, exten, variables, timeout
+            )
             if new_state.transfer.flow == 'blind':
                 new_state.complete()
 
@@ -300,24 +345,29 @@ class TransfersStasis:
         try:
             transfer = self.state_persistor.get_by_channel(channel.id)
         except KeyError:
-            logger.debug('ignoring ChannelCallerId event: channel %s', event['channel']['name'])
+            logger.debug(
+                'ignoring ChannelCallerId event: channel %s', event['channel']['name']
+            )
             return
 
         transfer_role = transfer.role(channel.id)
         if transfer_role != TransferRole.recipient:
-            logger.debug('ignoring ChannelCallerId event: channel %s', event['channel']['name'])
+            logger.debug(
+                'ignoring ChannelCallerId event: channel %s', event['channel']['name']
+            )
             return
 
         try:
-            ari_helpers.update_connectedline(self.ari,
-                                             self.amid,
-                                             transfer.initiator_call,
-                                             transfer.recipient_call)
+            ari_helpers.update_connectedline(
+                self.ari, self.amid, transfer.initiator_call, transfer.recipient_call
+            )
         except ARINotFound:
             try:
-                ari_helpers.update_connectedline(self.ari,
-                                                 self.amid,
-                                                 transfer.transferred_call,
-                                                 transfer.recipient_call)
+                ari_helpers.update_connectedline(
+                    self.ari,
+                    self.amid,
+                    transfer.transferred_call,
+                    transfer.recipient_call,
+                )
             except ARINotFound:
                 logger.debug('cannot update transfer callerid: everyone hung up')

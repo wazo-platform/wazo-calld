@@ -1,4 +1,4 @@
-# Copyright 2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2020-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from wazo_calld.exceptions import APIException
@@ -15,7 +15,7 @@ class AdhocConferenceCreationError(AdhocConferenceException):
             status_code=400,
             message=message,
             error_id='host-call-creation-error',
-            details=details
+            details=details,
         )
 
 
@@ -27,7 +27,7 @@ class AdhocConferenceNotFound(AdhocConferenceException):
             error_id='adhoc-conference-not-found',
             details={
                 'adhoc_conference_id': adhoc_conference_id,
-            }
+            },
         )
 
 
@@ -39,7 +39,7 @@ class HostCallNotFound(AdhocConferenceException):
             error_id='host-call-not-found',
             details={
                 'host_call_id': host_call_id,
-            }
+            },
         )
 
 
@@ -51,7 +51,7 @@ class HostCallAlreadyInConference(AdhocConferenceException):
             error_id='host-already-in-conference',
             details={
                 'host_call_id': host_call_id,
-            }
+            },
         )
 
 
@@ -63,7 +63,7 @@ class ParticipantCallAlreadyInConference(AdhocConferenceException):
             error_id='participant-already-in-conference',
             details={
                 'participant_call_id': participant_call_id,
-            }
+            },
         )
 
 
@@ -75,5 +75,5 @@ class ParticipantCallNotFound(AdhocConferenceException):
             error_id='participant-call-not-found',
             details={
                 'participant_call_id': participant_call_id,
-            }
+            },
         )

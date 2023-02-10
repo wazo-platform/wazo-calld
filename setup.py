@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Copyright 2015-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from setuptools import setup
@@ -38,6 +38,6 @@ setup(
             'switchboards = wazo_calld.plugins.switchboards.plugin:Plugin',
             'transfers = wazo_calld.plugins.transfers.plugin:Plugin',
             'voicemails = wazo_calld.plugins.voicemails.plugin:Plugin',
-        ]
-    }
+        ],
+    },
 )

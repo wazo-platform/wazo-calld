@@ -1,4 +1,4 @@
-# Copyright 2019-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from hamcrest import assert_that
@@ -15,7 +15,6 @@ from .helpers.confd import MockLine, MockTrunk
 
 
 class TestTrunkBusConsume(IntegrationTest):
-
     asset = 'basic_rest'
     wait_strategy = CalldEverythingOkWaitStrategy()
 
@@ -32,14 +31,18 @@ class TestTrunkBusConsume(IntegrationTest):
         name = 'abcdef'
 
         self.ari.set_endpoints(
-            MockEndpoint('PJSIP', name, 'online', channel_ids=[call_id, new_call_id(leap=1)])
+            MockEndpoint(
+                'PJSIP', name, 'online', channel_ids=[call_id, new_call_id(leap=1)]
+            )
         )
         self.confd.set_trunks(
             MockTrunk(
                 trunk_id,
                 endpoint_sip={
                     'name': name,
-                    'registration_section_options': [['client_uri', 'sip:the-username@hostname']],
+                    'registration_section_options': [
+                        ['client_uri', 'sip:the-username@hostname']
+                    ],
                 },
                 tenant_uuid=tenant_uuid,
             )
@@ -53,16 +56,21 @@ class TestTrunkBusConsume(IntegrationTest):
         self.bus.send_ami_hangup_event(call_id, channel='PJSIP/abcdef-00000001')
 
         def assert_function():
-            assert_that(events.accumulate(), has_item(has_entries(
-                name='trunk_status_updated',
-                origin_uuid=XIVO_UUID,
-                data=has_entries(
-                    id=trunk_id,
-                    technology='sip',
-                    name='abcdef',
-                    current_call_count=1,
-                )
-            )))
+            assert_that(
+                events.accumulate(),
+                has_item(
+                    has_entries(
+                        name='trunk_status_updated',
+                        origin_uuid=XIVO_UUID,
+                        data=has_entries(
+                            id=trunk_id,
+                            technology='sip',
+                            name='abcdef',
+                            current_call_count=1,
+                        ),
+                    )
+                ),
+            )
 
         until.assert_(assert_function, tries=5)
 
@@ -72,7 +80,12 @@ class TestTrunkBusConsume(IntegrationTest):
         name = 'abcdef'
 
         self.ari.set_endpoints(
-            MockEndpoint('PJSIP', name, 'online', channel_ids=[new_call_id(), new_call_id(leap=1)])
+            MockEndpoint(
+                'PJSIP',
+                name,
+                'online',
+                channel_ids=[new_call_id(), new_call_id(leap=1)],
+            )
         )
         self.confd.set_trunks(
             MockTrunk(
@@ -90,19 +103,26 @@ class TestTrunkBusConsume(IntegrationTest):
         events = self.bus.accumulator(headers={'name': 'trunk_status_updated'})
         self.reset_clients()
         self.wait_strategy.wait(self)
-        self.bus.send_ami_newchannel_event(new_call_id(leap=2), channel='PJSIP/abcdef-00000001')
+        self.bus.send_ami_newchannel_event(
+            new_call_id(leap=2), channel='PJSIP/abcdef-00000001'
+        )
 
         def assert_function():
-            assert_that(events.accumulate(), has_item(has_entries(
-                name='trunk_status_updated',
-                origin_uuid=XIVO_UUID,
-                data=has_entries(
-                    id=trunk_id,
-                    technology='sip',
-                    name='abcdef',
-                    current_call_count=3,
-                )
-            )))
+            assert_that(
+                events.accumulate(),
+                has_item(
+                    has_entries(
+                        name='trunk_status_updated',
+                        origin_uuid=XIVO_UUID,
+                        data=has_entries(
+                            id=trunk_id,
+                            technology='sip',
+                            name='abcdef',
+                            current_call_count=3,
+                        ),
+                    )
+                ),
+            )
 
         until.assert_(assert_function, tries=5)
 
@@ -133,32 +153,42 @@ class TestTrunkBusConsume(IntegrationTest):
         self.bus.send_ami_peerstatus_event('PJSIP', 'PJSIP/abcdef', 'Reachable')
 
         def assert_function():
-            assert_that(events.accumulate(), has_item(has_entries(
-                name='trunk_status_updated',
-                origin_uuid=XIVO_UUID,
-                data=has_entries(
-                    id=trunk_id,
-                    technology='sip',
-                    name='abcdef',
-                    registered=True,
-                )
-            )))
+            assert_that(
+                events.accumulate(),
+                has_item(
+                    has_entries(
+                        name='trunk_status_updated',
+                        origin_uuid=XIVO_UUID,
+                        data=has_entries(
+                            id=trunk_id,
+                            technology='sip',
+                            name='abcdef',
+                            registered=True,
+                        ),
+                    )
+                ),
+            )
 
         until.assert_(assert_function, tries=5)
 
         self.bus.send_ami_peerstatus_event('PJSIP', 'PJSIP/abcdef', 'Unreachable')
 
         def assert_function():
-            assert_that(events.accumulate(), has_item(has_entries(
-                name='trunk_status_updated',
-                origin_uuid=XIVO_UUID,
-                data=has_entries(
-                    id=trunk_id,
-                    technology='sip',
-                    name='abcdef',
-                    registered=False,
-                )
-            )))
+            assert_that(
+                events.accumulate(),
+                has_item(
+                    has_entries(
+                        name='trunk_status_updated',
+                        origin_uuid=XIVO_UUID,
+                        data=has_entries(
+                            id=trunk_id,
+                            technology='sip',
+                            name='abcdef',
+                            registered=False,
+                        ),
+                    )
+                ),
+            )
 
         until.assert_(assert_function, tries=5)
 
@@ -188,38 +218,54 @@ class TestTrunkBusConsume(IntegrationTest):
         self.reset_clients()
         self.wait_strategy.wait(self)
         self.bus.send_ami_registry_event(
-            'PJSIP', 'sip:here', 'Registered', client_uri,
+            'PJSIP',
+            'sip:here',
+            'Registered',
+            client_uri,
         )
 
         def assert_function():
-            assert_that(events.accumulate(), has_item(has_entries(
-                name='trunk_status_updated',
-                origin_uuid=XIVO_UUID,
-                data=has_entries(
-                    id=trunk_id,
-                    technology='sip',
-                    name='abcdef',
-                    registered=True,
-                )
-            )))
+            assert_that(
+                events.accumulate(),
+                has_item(
+                    has_entries(
+                        name='trunk_status_updated',
+                        origin_uuid=XIVO_UUID,
+                        data=has_entries(
+                            id=trunk_id,
+                            technology='sip',
+                            name='abcdef',
+                            registered=True,
+                        ),
+                    )
+                ),
+            )
 
         until.assert_(assert_function, tries=5)
 
         self.bus.send_ami_registry_event(
-            'PJSIP', 'sip:here', 'Unregistered', client_uri,
+            'PJSIP',
+            'sip:here',
+            'Unregistered',
+            client_uri,
         )
 
         def assert_function():
-            assert_that(events.accumulate(), has_item(has_entries(
-                name='trunk_status_updated',
-                origin_uuid=XIVO_UUID,
-                data=has_entries(
-                    id=trunk_id,
-                    technology='sip',
-                    name='abcdef',
-                    registered=False,
-                )
-            )))
+            assert_that(
+                events.accumulate(),
+                has_item(
+                    has_entries(
+                        name='trunk_status_updated',
+                        origin_uuid=XIVO_UUID,
+                        data=has_entries(
+                            id=trunk_id,
+                            technology='sip',
+                            name='abcdef',
+                            registered=False,
+                        ),
+                    )
+                ),
+            )
 
         until.assert_(assert_function, tries=5)
 
@@ -254,21 +300,28 @@ class TestTrunkBusConsume(IntegrationTest):
         self.bus.send_trunk_endpoint_associated_event(trunk_id, endpoint_id=3)
 
         self.bus.send_ami_registry_event(
-            'PJSIP', 'sip:here', 'Registered', client_uri,
+            'PJSIP',
+            'sip:here',
+            'Registered',
+            client_uri,
         )
 
         def assert_function():
-            assert_that(events.accumulate(), has_item(has_entries(
-                name='trunk_status_updated',
-                origin_uuid=XIVO_UUID,
-                data=has_entries(id=trunk_id),
-            )))
+            assert_that(
+                events.accumulate(),
+                has_item(
+                    has_entries(
+                        name='trunk_status_updated',
+                        origin_uuid=XIVO_UUID,
+                        data=has_entries(id=trunk_id),
+                    )
+                ),
+            )
 
         until.assert_(assert_function, tries=5)
 
 
 class TestLineBusConsume(IntegrationTest):
-
     asset = 'basic_rest'
     wait_strategy = CalldEverythingOkWaitStrategy()
 
@@ -285,7 +338,9 @@ class TestLineBusConsume(IntegrationTest):
         name = 'abcdef'
 
         self.ari.set_endpoints(
-            MockEndpoint('PJSIP', name, 'online', channel_ids=[call_id, new_call_id(leap=1)])
+            MockEndpoint(
+                'PJSIP', name, 'online', channel_ids=[call_id, new_call_id(leap=1)]
+            )
         )
         self.confd.set_lines(
             MockLine(
@@ -308,16 +363,21 @@ class TestLineBusConsume(IntegrationTest):
         self.bus.send_ami_hangup_event(call_id, channel='PJSIP/abcdef-00000001')
 
         def assert_function():
-            assert_that(events.accumulate(), has_item(has_entries(
-                name='line_status_updated',
-                origin_uuid=XIVO_UUID,
-                data=has_entries(
-                    id=line_id,
-                    technology='sip',
-                    name='abcdef',
-                    current_call_count=1,
-                )
-            )))
+            assert_that(
+                events.accumulate(),
+                has_item(
+                    has_entries(
+                        name='line_status_updated',
+                        origin_uuid=XIVO_UUID,
+                        data=has_entries(
+                            id=line_id,
+                            technology='sip',
+                            name='abcdef',
+                            current_call_count=1,
+                        ),
+                    )
+                ),
+            )
 
         until.assert_(assert_function, tries=5)
 
@@ -327,7 +387,12 @@ class TestLineBusConsume(IntegrationTest):
         name = 'abcdef'
 
         self.ari.set_endpoints(
-            MockEndpoint('PJSIP', name, 'online', channel_ids=[new_call_id(), new_call_id(leap=1)])
+            MockEndpoint(
+                'PJSIP',
+                name,
+                'online',
+                channel_ids=[new_call_id(), new_call_id(leap=1)],
+            )
         )
         self.confd.set_lines(
             MockLine(
@@ -347,19 +412,26 @@ class TestLineBusConsume(IntegrationTest):
         events = self.bus.accumulator(headers={'name': 'line_status_updated'})
         self.reset_clients()
         self.wait_strategy.wait(self)
-        self.bus.send_ami_newchannel_event(new_call_id(leap=2), channel='PJSIP/abcdef-00000001')
+        self.bus.send_ami_newchannel_event(
+            new_call_id(leap=2), channel='PJSIP/abcdef-00000001'
+        )
 
         def assert_function():
-            assert_that(events.accumulate(), has_item(has_entries(
-                name='line_status_updated',
-                origin_uuid=XIVO_UUID,
-                data=has_entries(
-                    id=line_id,
-                    technology='sip',
-                    name='abcdef',
-                    current_call_count=3,
-                )
-            )))
+            assert_that(
+                events.accumulate(),
+                has_item(
+                    has_entries(
+                        name='line_status_updated',
+                        origin_uuid=XIVO_UUID,
+                        data=has_entries(
+                            id=line_id,
+                            technology='sip',
+                            name='abcdef',
+                            current_call_count=3,
+                        ),
+                    )
+                ),
+            )
 
         until.assert_(assert_function, tries=5)
 
@@ -392,31 +464,41 @@ class TestLineBusConsume(IntegrationTest):
         self.bus.send_ami_peerstatus_event('PJSIP', 'PJSIP/abcdef', 'Reachable')
 
         def assert_function():
-            assert_that(events.accumulate(), has_item(has_entries(
-                name='line_status_updated',
-                origin_uuid=XIVO_UUID,
-                data=has_entries(
-                    id=line_id,
-                    technology='sip',
-                    name='abcdef',
-                    registered=True,
-                )
-            )))
+            assert_that(
+                events.accumulate(),
+                has_item(
+                    has_entries(
+                        name='line_status_updated',
+                        origin_uuid=XIVO_UUID,
+                        data=has_entries(
+                            id=line_id,
+                            technology='sip',
+                            name='abcdef',
+                            registered=True,
+                        ),
+                    )
+                ),
+            )
 
         until.assert_(assert_function, tries=5)
 
         self.bus.send_ami_peerstatus_event('PJSIP', 'PJSIP/abcdef', 'Unreachable')
 
         def assert_function():
-            assert_that(events.accumulate(), has_item(has_entries(
-                name='line_status_updated',
-                origin_uuid=XIVO_UUID,
-                data=has_entries(
-                    id=line_id,
-                    technology='sip',
-                    name='abcdef',
-                    registered=False,
-                )
-            )))
+            assert_that(
+                events.accumulate(),
+                has_item(
+                    has_entries(
+                        name='line_status_updated',
+                        origin_uuid=XIVO_UUID,
+                        data=has_entries(
+                            id=line_id,
+                            technology='sip',
+                            name='abcdef',
+                            registered=False,
+                        ),
+                    )
+                ),
+            )
 
         until.assert_(assert_function, tries=5)

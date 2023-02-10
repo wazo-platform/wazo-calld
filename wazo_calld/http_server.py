@@ -1,4 +1,4 @@
-# Copyright 2015-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -23,7 +23,6 @@ api = Api(app, prefix='/{}'.format(VERSION))
 
 
 class HTTPServer:
-
     def __init__(self, global_config):
         self.config = global_config['rest_api']
         http_helpers.add_logger(app, logger)
@@ -43,7 +42,9 @@ class HTTPServer:
             CORS(app, **cors_config)
 
     def run(self):
-        wsgi_app_https = ReverseProxied(ProxyFix(wsgi.WSGIPathInfoDispatcher({'/': app})))
+        wsgi_app_https = ReverseProxied(
+            ProxyFix(wsgi.WSGIPathInfoDispatcher({'/': app}))
+        )
 
         bind_addr = (self.config['listen'], self.config['port'])
         self.server = wsgi.WSGIServer(bind_addr=bind_addr, wsgi_app=wsgi_app_https)
@@ -52,7 +53,8 @@ class HTTPServer:
                 'Using service SSL configuration is deprecated. Please use NGINX instead.'
             )
             self.server.ssl_adapter = http_helpers.ssl_adapter(
-                self.config['certificate'], self.config['private_key'],
+                self.config['certificate'],
+                self.config['private_key'],
             )
         logger.debug(
             'WSGIServer starting... uid: %s, listen: %s:%s',

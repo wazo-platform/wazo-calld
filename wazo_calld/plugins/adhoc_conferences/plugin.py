@@ -1,4 +1,4 @@
-# Copyright 2020-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2020-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from wazo_amid_client import Client as AmidClient
@@ -15,7 +15,6 @@ from .stasis import AdhocConferencesStasis
 
 
 class Plugin:
-
     def load(self, dependencies):
         api = dependencies['api']
         ari = dependencies['ari']
@@ -28,7 +27,9 @@ class Plugin:
         token_changed_subscribe(amid_client.set_token)
 
         notifier = AdhocConferencesNotifier(bus_publisher)
-        adhoc_conferences_service = AdhocConferencesService(amid_client, ari.client, notifier)
+        adhoc_conferences_service = AdhocConferencesService(
+            amid_client, ari.client, notifier
+        )
 
         startup_callback_collector = CallbackCollector()
         adhoc_conferences_stasis = AdhocConferencesStasis(ari, notifier)

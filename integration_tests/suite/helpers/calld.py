@@ -1,4 +1,4 @@
-# Copyright 2015-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
@@ -14,7 +14,6 @@ from .constants import VALID_TOKEN
 
 
 class CalldClient(Client):
-
     def is_up(self):
         try:
             self.status.get()
@@ -30,6 +29,7 @@ class CalldClient(Client):
             def decorator(*args, **kwargs):
                 kwargs['data'] = json.dumps(kwargs.pop('json'))
                 return decorated(*args, **kwargs)
+
             return decorator
 
         old_post = self.calls.session.post
@@ -42,7 +42,6 @@ class CalldClient(Client):
 
 
 class LegacyCalldClient:
-
     _url_tpl = 'http://{host}:{port}/1.0/{path}'
 
     def __init__(self, host, port):
@@ -55,24 +54,20 @@ class LegacyCalldClient:
 
     def post_user_me_call_result(self, body, token=None):
         url = self.url('users', 'me', 'calls')
-        result = requests.post(url,
-                               json=body,
-                               headers=self._headers(token=token))
+        result = requests.post(url, json=body, headers=self._headers(token=token))
         return result
 
     def originate_me(
-            self,
-            extension,
-            variables=None,
-            line_id=None,
-            from_mobile=False,
-            all_lines=False,
-            auto_answer_caller=False,
-            token=VALID_TOKEN,
+        self,
+        extension,
+        variables=None,
+        line_id=None,
+        from_mobile=False,
+        all_lines=False,
+        auto_answer_caller=False,
+        token=VALID_TOKEN,
     ):
-        body = {
-            'extension': extension
-        }
+        body = {'extension': extension}
         if variables:
             body['variables'] = variables
         if line_id:
@@ -127,19 +122,17 @@ class LegacyCalldClient:
 
     def post_transfer_result(self, body, token=None):
         url = self.url('transfers')
-        result = requests.post(url,
-                               json=body,
-                               headers=self._headers(token=token))
+        result = requests.post(url, json=body, headers=self._headers(token=token))
         return result
 
     def create_transfer(
-            self,
-            transferred_call,
-            initiator_call,
-            context,
-            exten,
-            variables=None,
-            timeout=None,
+        self,
+        transferred_call,
+        initiator_call,
+        context,
+        exten,
+        variables=None,
+        timeout=None,
     ):
         body = {
             'transferred_call': transferred_call,
@@ -170,9 +163,7 @@ class LegacyCalldClient:
 
     def post_user_transfer_result(self, body, token=None):
         url = self.url('users', 'me', 'transfers')
-        result = requests.post(url,
-                               json=body,
-                               headers=self._headers(token=token))
+        result = requests.post(url, json=body, headers=self._headers(token=token))
         return result
 
     def create_user_transfer(self, initiator_call, exten, token=VALID_TOKEN):
@@ -281,7 +272,9 @@ class LegacyCalldClient:
         result = requests.get(url, headers=self._headers(token=token))
         return result
 
-    def put_voicemail_message_result(self, message, voicemail_id, message_id, token=None):
+    def put_voicemail_message_result(
+        self, message, voicemail_id, message_id, token=None
+    ):
         url = self.url('voicemails', voicemail_id, 'messages', message_id)
         result = requests.put(url, json=message, headers=self._headers(token=token))
         return result
@@ -301,63 +294,83 @@ class LegacyCalldClient:
         result = requests.get(url, headers=self._headers(token=token))
         return result
 
-    def switchboard_queued_calls(self, switchboard_uuid, token=VALID_TOKEN, tenant_uuid=None):
-        response = self.get_switchboard_queued_calls_result(switchboard_uuid, token, tenant_uuid)
+    def switchboard_queued_calls(
+        self, switchboard_uuid, token=VALID_TOKEN, tenant_uuid=None
+    ):
+        response = self.get_switchboard_queued_calls_result(
+            switchboard_uuid, token, tenant_uuid
+        )
 
         assert_that(response.status_code, equal_to(200))
         return response.json()
 
-    def get_switchboard_queued_calls_result(self, switchboard_uuid, token=None, tenant_uuid=None):
+    def get_switchboard_queued_calls_result(
+        self, switchboard_uuid, token=None, tenant_uuid=None
+    ):
         url = self.url('switchboards', switchboard_uuid, 'calls', 'queued')
         headers = self._headers(token=token, tenant_uuid=tenant_uuid)
         return requests.get(url, headers=headers)
 
-    def switchboard_answer_queued_call(self, switchboard_uuid, call_id, token,
-                                       line_id=None):
+    def switchboard_answer_queued_call(
+        self, switchboard_uuid, call_id, token, line_id=None
+    ):
         response = self.put_switchboard_queued_call_answer_result(
             switchboard_uuid, call_id, token, line_id
         )
         assert_that(response.status_code, equal_to(200))
         return response.json()
 
-    def put_switchboard_queued_call_answer_result(self, switchboard_uuid,
-                                                  call_id, token=None,
-                                                  line_id=None):
-        url = self.url('switchboards', switchboard_uuid, 'calls', 'queued', call_id, 'answer')
+    def put_switchboard_queued_call_answer_result(
+        self, switchboard_uuid, call_id, token=None, line_id=None
+    ):
+        url = self.url(
+            'switchboards', switchboard_uuid, 'calls', 'queued', call_id, 'answer'
+        )
         params = {'line_id': line_id} if line_id else None
         return requests.put(url, headers=self._headers(token), params=params)
 
     def switchboard_hold_call(self, switchboard_uuid, call_id, token=VALID_TOKEN):
-        response = self.put_switchboard_held_call_result(switchboard_uuid, call_id, token)
+        response = self.put_switchboard_held_call_result(
+            switchboard_uuid, call_id, token
+        )
         assert_that(response.status_code, equal_to(204))
 
     def put_switchboard_held_call_result(self, switchboard_uuid, call_id, token=None):
         url = self.url('switchboards', switchboard_uuid, 'calls', 'held', call_id)
         return requests.put(url, headers=self._headers(token=token))
 
-    def switchboard_held_calls(self, switchboard_uuid, token=VALID_TOKEN, tenant_uuid=None):
-        response = self.get_switchboard_held_calls_result(switchboard_uuid, token, tenant_uuid)
+    def switchboard_held_calls(
+        self, switchboard_uuid, token=VALID_TOKEN, tenant_uuid=None
+    ):
+        response = self.get_switchboard_held_calls_result(
+            switchboard_uuid, token, tenant_uuid
+        )
 
         assert_that(response.status_code, equal_to(200))
         return response.json()
 
-    def get_switchboard_held_calls_result(self, switchboard_uuid, token=None, tenant_uuid=None):
+    def get_switchboard_held_calls_result(
+        self, switchboard_uuid, token=None, tenant_uuid=None
+    ):
         url = self.url('switchboards', switchboard_uuid, 'calls', 'held')
         headers = self._headers(token=token, tenant_uuid=tenant_uuid)
         return requests.get(url, headers=headers)
 
-    def switchboard_answer_held_call(self, switchboard_uuid, call_id, token,
-                                     line_id=None):
+    def switchboard_answer_held_call(
+        self, switchboard_uuid, call_id, token, line_id=None
+    ):
         response = self.put_switchboard_held_call_answer_result(
             switchboard_uuid, call_id, token, line_id
         )
         assert_that(response.status_code, equal_to(200))
         return response.json()
 
-    def put_switchboard_held_call_answer_result(self, switchboard_uuid,
-                                                call_id, token=None,
-                                                line_id=None):
-        url = self.url('switchboards', switchboard_uuid, 'calls', 'held', call_id, 'answer')
+    def put_switchboard_held_call_answer_result(
+        self, switchboard_uuid, call_id, token=None, line_id=None
+    ):
+        url = self.url(
+            'switchboards', switchboard_uuid, 'calls', 'held', call_id, 'answer'
+        )
         params = {'line_id': line_id} if line_id else None
         return requests.put(url, headers=self._headers(token=token), params=params)
 
@@ -375,6 +388,7 @@ class LegacyCalldClient:
             def decorator(*args, **kwargs):
                 kwargs['data'] = json.dumps(kwargs.pop('json'))
                 return decorated(*args, **kwargs)
+
             return decorator
 
         old_post = requests.post

@@ -1,4 +1,4 @@
-# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -30,14 +30,15 @@ def state(wrapped):
 
 
 class RelocateCompleter:
-
     def __init__(self, amid, ari):
         self._amid = amid
         self._ari = ari
 
     def bridge(self, relocate):
         try:
-            bridge = self._ari.bridges.create(type='mixing', name='relocate:{}'.format(relocate.uuid))
+            bridge = self._ari.bridges.create(
+                type='mixing', name='relocate:{}'.format(relocate.uuid)
+            )
             bridge.addChannel(channel=relocate.recipient_channel)
             bridge.addChannel(channel=relocate.relocated_channel)
         except ARIException as e:
@@ -48,19 +49,23 @@ class RelocateCompleter:
 
     def move_to_stasis(self, relocate):
         try:
-            self._ari.channels.setChannelVar(channelId=relocate.relocated_channel,
-                                             variable='WAZO_RELOCATE_UUID',
-                                             value=relocate.uuid,
-                                             bypassStasis=True)
+            self._ari.channels.setChannelVar(
+                channelId=relocate.relocated_channel,
+                variable='WAZO_RELOCATE_UUID',
+                value=relocate.uuid,
+                bypassStasis=True,
+            )
         except ARIException as e:
             logger.exception('ARI error: %s', e)
             return
 
         try:
-            ami.redirect(self._amid,
-                         relocate.relocated_channel,
-                         context='convert_to_stasis',
-                         exten='relocate')
+            ami.redirect(
+                self._amid,
+                relocate.relocated_channel,
+                context='convert_to_stasis',
+                exten='relocate',
+            )
         except WazoAmidError as e:
             logger.exception('wazo-amid error: %s', e.__dict__)
 
@@ -75,7 +80,6 @@ class StateFactory:
 
 
 class RelocateState:
-
     def __init__(self, amid, ari):
         self._amid = amid
         self._ari = ari
@@ -83,7 +87,6 @@ class RelocateState:
 
 @state
 class RelocateStateReady(RelocateState):
-
     name = 'ready'
 
     def initiate(self, relocate, destination):
@@ -110,7 +113,6 @@ class RelocateStateReady(RelocateState):
 
 @state
 class RelocateStateRecipientRing(RelocateState):
-
     name = 'recipient_ring'
 
     def relocated_hangup(self, relocate):
@@ -161,7 +163,6 @@ class RelocateStateRecipientRing(RelocateState):
 
 @state
 class RelocateStateWaitingForCompletion(RelocateState):
-
     name = 'waiting_for_completion'
 
     def cancel(self, relocate):
@@ -204,7 +205,6 @@ class RelocateStateWaitingForCompletion(RelocateState):
 
 @state
 class RelocateStateWaitingForRelocated(RelocateState):
-
     name = 'waiting_for_relocated'
 
     def relocated_answered(self, relocate):
@@ -242,7 +242,6 @@ class RelocateStateWaitingForRelocated(RelocateState):
 
 @state
 class RelocateStateEnded(RelocateState):
-
     name = 'ended'
 
     def recipient_hangup(self, relocate):

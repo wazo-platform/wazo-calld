@@ -1,4 +1,4 @@
-# Copyright 2019-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -16,7 +16,6 @@ logger = logging.getLogger(__name__)
 
 # If this helper is used more than once, then it should go to the wazo-confd-client
 class ConfdIsReadyThread:
-
     def __init__(self, confd_client):
         self._confd_client = confd_client
         self._started = False
@@ -46,7 +45,10 @@ class ConfdIsReadyThread:
             if self._is_ready():
                 self.callback()
                 return
-            logger.info('wazo-confd is not ready yet, retrying in %s seconds...', self._retry_time)
+            logger.info(
+                'wazo-confd is not ready yet, retrying in %s seconds...',
+                self._retry_time,
+            )
             self._should_stop.wait(timeout=self._retry_time)
 
     def _is_ready(self):
@@ -60,7 +62,6 @@ class ConfdIsReadyThread:
 
 
 class ConfdApplicationsCache:
-
     def __init__(self, confd):
         self._confd = confd
         self._cache = None
@@ -135,7 +136,6 @@ class ConfdApplicationsCache:
 
 
 class MohCache:
-
     def __init__(self, confd):
         self._confd = confd
         self._cache = None

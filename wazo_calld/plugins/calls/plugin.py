@@ -1,4 +1,4 @@
-# Copyright 2015-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from wazo_confd_client import Client as ConfdClient
@@ -37,7 +37,6 @@ from .stasis import CallsStasis
 
 
 class Plugin:
-
     def load(self, dependencies):
         api = dependencies['api']
         ari = dependencies['ari']
@@ -59,9 +58,25 @@ class Plugin:
         dial_echo_manager = DialEchoManager()
 
         notifier = CallNotifier(bus_publisher)
-        calls_service = CallsService(amid_client, config['ari']['connection'], ari.client, confd_client, dial_echo_manager, phoned_client, notifier)
+        calls_service = CallsService(
+            amid_client,
+            config['ari']['connection'],
+            ari.client,
+            confd_client,
+            dial_echo_manager,
+            phoned_client,
+            notifier,
+        )
 
-        calls_stasis = CallsStasis(ari, collectd, bus_publisher, calls_service, notifier, config['uuid'], amid_client)
+        calls_stasis = CallsStasis(
+            ari,
+            collectd,
+            bus_publisher,
+            calls_service,
+            notifier,
+            config['uuid'],
+            amid_client,
+        )
 
         startup_callback_collector = CallbackCollector()
         ari.client_initialized_subscribe(startup_callback_collector.new_source())
@@ -88,16 +103,38 @@ class Plugin:
         api.add_resource(CallDtmfResource, '/calls/<call_id>/dtmf', **kwargs)
         api.add_resource(CallHoldResource, '/calls/<call_id>/hold/start', **kwargs)
         api.add_resource(CallUnholdResource, '/calls/<call_id>/hold/stop', **kwargs)
-        api.add_resource(CallRecordStartResource, '/calls/<call_id>/record/start', **kwargs)
-        api.add_resource(CallRecordStopResource, '/calls/<call_id>/record/stop', **kwargs)
+        api.add_resource(
+            CallRecordStartResource, '/calls/<call_id>/record/start', **kwargs
+        )
+        api.add_resource(
+            CallRecordStopResource, '/calls/<call_id>/record/stop', **kwargs
+        )
         api.add_resource(CallAnswerResource, '/calls/<call_id>/answer', **kwargs)
         api.add_resource(MyCallResource, '/users/me/calls/<call_id>', **kwargs)
-        api.add_resource(MyCallMuteStartResource, '/users/me/calls/<call_id>/mute/start', **kwargs)
-        api.add_resource(MyCallMuteStopResource, '/users/me/calls/<call_id>/mute/stop', **kwargs)
+        api.add_resource(
+            MyCallMuteStartResource, '/users/me/calls/<call_id>/mute/start', **kwargs
+        )
+        api.add_resource(
+            MyCallMuteStopResource, '/users/me/calls/<call_id>/mute/stop', **kwargs
+        )
         api.add_resource(MyCallDtmfResource, '/users/me/calls/<call_id>/dtmf', **kwargs)
-        api.add_resource(MyCallHoldResource, '/users/me/calls/<call_id>/hold/start', **kwargs)
-        api.add_resource(MyCallUnholdResource, '/users/me/calls/<call_id>/hold/stop', **kwargs)
-        api.add_resource(MyCallRecordStartResource, '/users/me/calls/<call_id>/record/start', **kwargs)
-        api.add_resource(MyCallRecordStopResource, '/users/me/calls/<call_id>/record/stop', **kwargs)
-        api.add_resource(MyCallAnswerResource, '/users/me/calls/<call_id>/answer', **kwargs)
-        api.add_resource(ConnectCallToUserResource, '/calls/<call_id>/user/<user_uuid>', **kwargs)
+        api.add_resource(
+            MyCallHoldResource, '/users/me/calls/<call_id>/hold/start', **kwargs
+        )
+        api.add_resource(
+            MyCallUnholdResource, '/users/me/calls/<call_id>/hold/stop', **kwargs
+        )
+        api.add_resource(
+            MyCallRecordStartResource,
+            '/users/me/calls/<call_id>/record/start',
+            **kwargs
+        )
+        api.add_resource(
+            MyCallRecordStopResource, '/users/me/calls/<call_id>/record/stop', **kwargs
+        )
+        api.add_resource(
+            MyCallAnswerResource, '/users/me/calls/<call_id>/answer', **kwargs
+        )
+        api.add_resource(
+            ConnectCallToUserResource, '/calls/<call_id>/user/<user_uuid>', **kwargs
+        )

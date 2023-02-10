@@ -1,4 +1,4 @@
-# Copyright 2015-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -52,7 +52,9 @@ def set_channel_id_var_sync(ari, channel_id, var, value, bypass_stasis=False):
     # TODO remove this when Asterisk gets fixed to set var synchronously
     def get_value():
         try:
-            return ari.channels.getChannelVar(channelId=channel_id, variable=var)['value']
+            return ari.channels.getChannelVar(channelId=channel_id, variable=var)[
+                'value'
+            ]
         except ARINotFound as e:
             if e.original_error.response.reason == 'Variable Not Found':
                 return None
@@ -75,7 +77,6 @@ def set_channel_id_var_sync(ari, channel_id, var, value, bypass_stasis=False):
 
 
 class GlobalVariableAdapter:
-
     def __init__(self, ari_client):
         self._ari = ari_client
 
@@ -95,7 +96,6 @@ class GlobalVariableAdapter:
 
 
 class GlobalVariableJsonAdapter:
-
     def __init__(self, global_variables):
         self._global_variables = global_variables
 
@@ -115,7 +115,6 @@ class GlobalVariableJsonAdapter:
 
 
 class GlobalVariableNameDecorator:
-
     def __init__(self, global_variables, variable_name_format):
         self._global_variables = global_variables
         self._format = variable_name_format
@@ -131,7 +130,6 @@ class GlobalVariableNameDecorator:
 
 
 class GlobalVariableConstantNameAdapter:
-
     def __init__(self, global_variables, variable_name):
         self._global_variables = global_variables
         self._variable = variable_name
@@ -147,7 +145,6 @@ class GlobalVariableConstantNameAdapter:
 
 
 class Channel:
-
     def __init__(self, channel_id, ari):
         self.id = channel_id
         self._ari = ari
@@ -164,8 +161,16 @@ class Channel:
         return channel.json['name']
 
     def connected_channels(self):
-        channel_ids = set(sum((bridge.json['channels'] for bridge in self._ari.bridges.list()
-                               if self.id in bridge.json['channels']), list()))
+        channel_ids = set(
+            sum(
+                (
+                    bridge.json['channels']
+                    for bridge in self._ari.bridges.list()
+                    if self.id in bridge.json['channels']
+                ),
+                list(),
+            )
+        )
         try:
             channel_ids.remove(self.id)
         except KeyError:
@@ -242,7 +247,9 @@ class Channel:
 
     def is_in_stasis(self):
         try:
-            self._ari.channels.setChannelVar(channelId=self.id, variable='WAZO_TEST_STASIS')
+            self._ari.channels.setChannelVar(
+                channelId=self.id, variable='WAZO_TEST_STASIS'
+            )
             return True
         except ARINotInStasis:
             return False
@@ -255,7 +262,9 @@ class Channel:
 
     def dialed_extension(self):
         try:
-            return self._ari.channels.getChannelVar(channelId=self.id, variable='WAZO_ENTRY_EXTEN')['value']
+            return self._ari.channels.getChannelVar(
+                channelId=self.id, variable='WAZO_ENTRY_EXTEN'
+            )['value']
         except ARINotFound:
             try:
                 channel = self._ari.channels.get(channelId=self.id)
@@ -302,7 +311,11 @@ class Channel:
         except ARINotFound:
             return
         except ValueError:
-            logger.error('Channel %s: Malformed WAZO_LINE_ID=%s', self.id, self._get_var('WAZO_LINE_ID'))
+            logger.error(
+                'Channel %s: Malformed WAZO_LINE_ID=%s',
+                self.id,
+                self._get_var('WAZO_LINE_ID'),
+            )
             return
 
     def wait_until_in_stasis(self, retry=20, delay=0.1):
@@ -333,17 +346,18 @@ class Channel:
             return
 
     def _get_var(self, var):
-        return self._ari.channels.getChannelVar(channelId=self.id, variable=var)['value']
+        return self._ari.channels.getChannelVar(channelId=self.id, variable=var)[
+            'value'
+        ]
 
 
 class Bridge:
-
     def __init__(self, bridge_id, ari):
         self.id = bridge_id
         self._ari = ari
         self.global_variables = GlobalVariableNameDecorator(
             GlobalVariableAdapter(self._ari),
-            'WAZO_BRIDGE_{bridge_id}_VARIABLE_{{}}'.format(bridge_id=self.id)
+            'WAZO_BRIDGE_{bridge_id}_VARIABLE_{{}}'.format(bridge_id=self.id),
         )
 
     def has_lone_channel(self):
@@ -380,7 +394,10 @@ class Bridge:
         except ARINotFound:
             return set()
 
-        return set(Channel(channel_id, self._ari).user() for channel_id in bridge.json['channels'])
+        return set(
+            Channel(channel_id, self._ari).user()
+            for channel_id in bridge.json['channels']
+        )
 
     def exists(self):
         try:
@@ -396,4 +413,7 @@ class BridgeSnapshot(Bridge):
         super().__init__(snapshot['id'], ari)
 
     def valid_user_uuids(self):
-        return set(Channel(channel_id, self._ari).user() for channel_id in self._snapshot['channels'])
+        return set(
+            Channel(channel_id, self._ari).user()
+            for channel_id in self._snapshot['channels']
+        )

@@ -1,4 +1,4 @@
-# Copyright 2018-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from wazo_confd_client import Client as ConfdClient
@@ -18,7 +18,6 @@ from .services import ConferencesService
 
 
 class Plugin:
-
     def load(self, dependencies):
         api = dependencies['api']
         ari = dependencies['ari']
@@ -35,13 +34,39 @@ class Plugin:
 
         conferences_service = ConferencesService(amid_client, ari.client, confd_client)
         notifier = ConferencesNotifier(bus_publisher)
-        bus_event_handler = ConferencesBusEventHandler(confd_client, notifier, conferences_service)
+        bus_event_handler = ConferencesBusEventHandler(
+            confd_client, notifier, conferences_service
+        )
         bus_event_handler.subscribe(bus_consumer)
 
         kwargs = {'resource_class_args': [conferences_service]}
-        api.add_resource(ParticipantsResource, '/conferences/<int:conference_id>/participants', **kwargs)
-        api.add_resource(ParticipantsUserResource, '/users/me/conferences/<int:conference_id>/participants', **kwargs)
-        api.add_resource(ParticipantResource, '/conferences/<int:conference_id>/participants/<participant_id>', **kwargs)
-        api.add_resource(ParticipantMuteResource, '/conferences/<int:conference_id>/participants/<participant_id>/mute', **kwargs)
-        api.add_resource(ParticipantUnmuteResource, '/conferences/<int:conference_id>/participants/<participant_id>/unmute', **kwargs)
-        api.add_resource(ConferenceRecordResource, '/conferences/<int:conference_id>/record', **kwargs)
+        api.add_resource(
+            ParticipantsResource,
+            '/conferences/<int:conference_id>/participants',
+            **kwargs
+        )
+        api.add_resource(
+            ParticipantsUserResource,
+            '/users/me/conferences/<int:conference_id>/participants',
+            **kwargs
+        )
+        api.add_resource(
+            ParticipantResource,
+            '/conferences/<int:conference_id>/participants/<participant_id>',
+            **kwargs
+        )
+        api.add_resource(
+            ParticipantMuteResource,
+            '/conferences/<int:conference_id>/participants/<participant_id>/mute',
+            **kwargs
+        )
+        api.add_resource(
+            ParticipantUnmuteResource,
+            '/conferences/<int:conference_id>/participants/<participant_id>/unmute',
+            **kwargs
+        )
+        api.add_resource(
+            ConferenceRecordResource,
+            '/conferences/<int:conference_id>/record',
+            **kwargs
+        )

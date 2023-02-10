@@ -14,11 +14,11 @@ from .constants import VALID_TENANT
 class BusClient(bus_helper.BusClient):
     def send_event(self, event, headers=None):
         with Connection(self._url) as connection:
-            producer = Producer(connection, exchange=BUS_EXCHANGE_WAZO, auto_declare=True)
+            producer = Producer(
+                connection, exchange=BUS_EXCHANGE_WAZO, auto_declare=True
+            )
             producer.publish(
-                json.dumps(event),
-                headers=headers,
-                content_type='application/json'
+                json.dumps(event), headers=headers, content_type='application/json'
             )
 
     def send_ami_newchannel_event(self, channel_id, channel=None):
@@ -76,7 +76,9 @@ class BusClient(bus_helper.BusClient):
             },
         )
 
-    def send_ami_hangup_event(self, channel_id, entry_exten=None, sip_call_id=None, channel=None, line_id=None):
+    def send_ami_hangup_event(
+        self, channel_id, entry_exten=None, sip_call_id=None, channel=None, line_id=None
+    ):
         self.send_event(
             {
                 'data': {
@@ -261,7 +263,9 @@ class BusClient(bus_helper.BusClient):
             headers={'name': 'trunk_endpoint_associated'},
         )
 
-    def send_user_missed_call_userevent(self, user_uuid, reason, hangup_cause, conversation_id):
+    def send_user_missed_call_userevent(
+        self, user_uuid, reason, hangup_cause, conversation_id
+    ):
         self.send_event(
             {
                 'data': {

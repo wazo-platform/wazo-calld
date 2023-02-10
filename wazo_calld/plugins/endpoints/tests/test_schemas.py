@@ -1,4 +1,4 @@
-# Copyright 2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from unittest import TestCase
@@ -21,14 +21,17 @@ class TestTrunkEndpointSchema(TestCase):
 
         result = trunk_endpoint_schema.dump(minimal_body)
 
-        assert_that(result, has_entries(
-            id=42,
-            name='my-endpoint',
-            type='trunk',
-            technology='unknown',
-            registered=None,
-            current_call_count=None,
-        ))
+        assert_that(
+            result,
+            has_entries(
+                id=42,
+                name='my-endpoint',
+                type='trunk',
+                technology='unknown',
+                registered=None,
+                current_call_count=None,
+            ),
+        )
 
     def test_all_fields(self):
         minimal_body = {
@@ -42,11 +45,14 @@ class TestTrunkEndpointSchema(TestCase):
 
         result = trunk_endpoint_schema.dump(minimal_body)
 
-        assert_that(result, has_entries(
-            id=42,
-            name='my-endpoint',
-            type='trunk',
-            technology='sip',
-            registered=True,
-            current_call_count=0,
-        ))
+        assert_that(
+            result,
+            has_entries(
+                id=42,
+                name='my-endpoint',
+                type='trunk',
+                technology='sip',
+                registered=True,
+                current_call_count=0,
+            ),
+        )

@@ -1,4 +1,4 @@
-# Copyright 2019-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from wazo_confd_client import Client as ConfdClient
@@ -14,7 +14,6 @@ from .services import FaxesService
 
 
 class Plugin:
-
     def load(self, dependencies):
         api = dependencies['api']
         ari = dependencies['ari']
@@ -35,4 +34,6 @@ class Plugin:
         bus_event_handler.subscribe(bus_consumer)
 
         api.add_resource(FaxesResource, '/faxes', resource_class_args=[fax_service])
-        api.add_resource(UserFaxesResource, '/users/me/faxes', resource_class_args=[fax_service])
+        api.add_resource(
+            UserFaxesResource, '/users/me/faxes', resource_class_args=[fax_service]
+        )

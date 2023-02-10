@@ -1,4 +1,4 @@
-# Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from wazo_calld.ari_ import DEFAULT_APPLICATION_NAME
@@ -9,7 +9,6 @@ logger = logging.getLogger(__name__)
 
 
 class RelocatesStasis:
-
     def __init__(self, ari, relocates):
         self.ari = ari.client
         self._core_ari = ari
@@ -29,10 +28,12 @@ class RelocatesStasis:
         try:
             sub_app, relocate_uuid, role = event['args']
         except ValueError:
-            logger.debug('ignoring StasisStart event: channel %s, app %s, args %s',
-                         event['channel']['name'],
-                         event['application'],
-                         event['args'])
+            logger.debug(
+                'ignoring StasisStart event: channel %s, app %s, args %s',
+                event['channel']['name'],
+                event['application'],
+                event['args'],
+            )
             return
 
         if sub_app != 'relocate':
@@ -50,7 +51,11 @@ class RelocatesStasis:
         try:
             relocate = self.relocates.get_by_channel(channel.id)
         except KeyError:
-            logger.debug('ignoring StasisEnd event: channel %s, app %s', event['channel']['name'], event['application'])
+            logger.debug(
+                'ignoring StasisEnd event: channel %s, app %s',
+                event['channel']['name'],
+                event['application'],
+            )
             return
         with relocate.locked():
             role = relocate.role(channel.id)

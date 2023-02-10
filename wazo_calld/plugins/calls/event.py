@@ -1,4 +1,4 @@
-# Copyright 2016-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import iso8601
@@ -11,7 +11,6 @@ from .exceptions import InvalidStartCallEvent
 
 
 class CallEvent:
-
     def __init__(self, channel, event, state_persistor):
         self.channel = channel
         self._event = event
@@ -36,7 +35,6 @@ class CallEvent:
 
 
 class StartCallEvent(CallEvent):
-
     def _get_app(self):
         if 'args' not in self._event:
             raise InvalidStartCallEvent()
@@ -45,7 +43,6 @@ class StartCallEvent(CallEvent):
 
 
 class ConnectCallEvent(StartCallEvent):
-
     def __init__(self, channel, event, ari, state_persistor):
         super().__init__(channel, event, state_persistor)
         originator_channel_id = self._originator_channel_id(event)

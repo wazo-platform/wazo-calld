@@ -1,4 +1,4 @@
-# Copyright 2016-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from marshmallow import EXCLUDE, Schema, fields, post_dump, post_load
@@ -36,9 +36,11 @@ class CallRequestDestinationSchema(CallBaseSchema):
 class CallRequestSchema(CallBaseSchema):
     source = fields.Nested('CallRequestSourceSchema', required=True)
     destination = fields.Nested('CallRequestDestinationSchema', required=True)
-    variables = StrictDict(key_field=fields.String(required=True, validate=Length(min=1)),
-                           value_field=fields.String(required=True, validate=Length(min=1)),
-                           missing=dict)
+    variables = StrictDict(
+        key_field=fields.String(required=True, validate=Length(min=1)),
+        value_field=fields.String(required=True, validate=Length(min=1)),
+        missing=dict,
+    )
 
 
 class UserCallRequestSchema(CallBaseSchema):
@@ -46,9 +48,11 @@ class UserCallRequestSchema(CallBaseSchema):
     line_id = fields.Integer()
     all_lines = fields.Boolean(missing=False)
     from_mobile = fields.Boolean(missing=False)
-    variables = StrictDict(key_field=fields.String(required=True, validate=Length(min=1)),
-                           value_field=fields.String(required=True, validate=Length(min=1)),
-                           missing=dict)
+    variables = StrictDict(
+        key_field=fields.String(required=True, validate=Length(min=1)),
+        value_field=fields.String(required=True, validate=Length(min=1)),
+        missing=dict,
+    )
     auto_answer_caller = fields.Boolean(missing=False)
 
     @post_load

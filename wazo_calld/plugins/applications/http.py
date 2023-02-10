@@ -1,4 +1,4 @@
-# Copyright 2018-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from flask import request
@@ -20,13 +20,11 @@ from .schemas import (
 
 
 class _BaseResource(AuthResource):
-
     def __init__(self, service):
         self._service = service
 
 
 class ApplicationItem(_BaseResource):
-
     @required_acl('calld.applications.{application_uuid}.read')
     def get(self, application_uuid):
         application = self._service.get_application(application_uuid)
@@ -34,7 +32,6 @@ class ApplicationItem(_BaseResource):
 
 
 class ApplicationCallItem(_BaseResource):
-
     @required_acl('calld.applications.{application_uuid}.calls.{call_id}.delete')
     def delete(self, application_uuid, call_id):
         application = self._service.get_application(application_uuid)
@@ -44,7 +41,6 @@ class ApplicationCallItem(_BaseResource):
 
 
 class ApplicationCallList(_BaseResource):
-
     @required_acl('calld.applications.{application_uuid}.calls.create')
     def post(self, application_uuid):
         request_body = application_call_request_schema.load(request.get_json())
@@ -60,8 +56,9 @@ class ApplicationCallList(_BaseResource):
 
 
 class ApplicationCallHoldStartList(_BaseResource):
-
-    @required_acl('calld.applications.{application_uuid}.calls.{call_id}.hold.start.update')
+    @required_acl(
+        'calld.applications.{application_uuid}.calls.{call_id}.hold.start.update'
+    )
     def put(self, application_uuid, call_id):
         application = self._service.get_application(application_uuid)
         self._service.get_call_id(application, call_id)
@@ -70,8 +67,9 @@ class ApplicationCallHoldStartList(_BaseResource):
 
 
 class ApplicationCallHoldStopList(_BaseResource):
-
-    @required_acl('calld.applications.{application_uuid}.calls.{call_id}.hold.stop.update')
+    @required_acl(
+        'calld.applications.{application_uuid}.calls.{call_id}.hold.stop.update'
+    )
     def put(self, application_uuid, call_id):
         application = self._service.get_application(application_uuid)
         self._service.get_call_id(application, call_id)
@@ -80,8 +78,9 @@ class ApplicationCallHoldStopList(_BaseResource):
 
 
 class ApplicationCallMohStartList(_BaseResource):
-
-    @required_acl('calld.applications.{application_uuid}.calls.{call_id}.moh.{moh_uuid}.start.update')
+    @required_acl(
+        'calld.applications.{application_uuid}.calls.{call_id}.moh.{moh_uuid}.start.update'
+    )
     def put(self, application_uuid, call_id, moh_uuid):
         application = self._service.get_application(application_uuid)
         self._service.get_call_id(application, call_id)
@@ -90,8 +89,9 @@ class ApplicationCallMohStartList(_BaseResource):
 
 
 class ApplicationCallMohStopList(_BaseResource):
-
-    @required_acl('calld.applications.{application_uuid}.calls.{call_id}.moh.stop.update')
+    @required_acl(
+        'calld.applications.{application_uuid}.calls.{call_id}.moh.stop.update'
+    )
     def put(self, application_uuid, call_id):
         application = self._service.get_application(application_uuid)
         self._service.get_call_id(application, call_id)
@@ -100,8 +100,9 @@ class ApplicationCallMohStopList(_BaseResource):
 
 
 class ApplicationCallMuteStartList(_BaseResource):
-
-    @required_acl('calld.applications.{application_uuid}.calls.{call_id}.mute.start.update')
+    @required_acl(
+        'calld.applications.{application_uuid}.calls.{call_id}.mute.start.update'
+    )
     def put(self, application_uuid, call_id):
         application = self._service.get_application(application_uuid)
         self._service.get_call_id(application, call_id)
@@ -110,8 +111,9 @@ class ApplicationCallMuteStartList(_BaseResource):
 
 
 class ApplicationCallMuteStopList(_BaseResource):
-
-    @required_acl('calld.applications.{application_uuid}.calls.{call_id}.mute.stop.update')
+    @required_acl(
+        'calld.applications.{application_uuid}.calls.{call_id}.mute.stop.update'
+    )
     def put(self, application_uuid, call_id):
         application = self._service.get_application(application_uuid)
         self._service.get_call_id(application, call_id)
@@ -120,7 +122,6 @@ class ApplicationCallMuteStopList(_BaseResource):
 
 
 class ApplicationCallAnswer(_BaseResource):
-
     @required_acl('calld.applications.{application_uuid}.calls.{call_id}.answer.update')
     def put(self, application_uuid, call_id):
         application = self._service.get_application(application_uuid)
@@ -130,8 +131,9 @@ class ApplicationCallAnswer(_BaseResource):
 
 
 class ApplicationCallProgressStart(_BaseResource):
-
-    @required_acl('calld.applications.{application_uuid}.calls.{call_id}.progress.start.update')
+    @required_acl(
+        'calld.applications.{application_uuid}.calls.{call_id}.progress.start.update'
+    )
     def put(self, application_uuid, call_id):
         application = self._service.get_application(application_uuid)
         self._service.get_call_id(application, call_id)
@@ -140,8 +142,9 @@ class ApplicationCallProgressStart(_BaseResource):
 
 
 class ApplicationCallProgressStop(_BaseResource):
-
-    @required_acl('calld.applications.{application_uuid}.calls.{call_id}.progress.stop.update')
+    @required_acl(
+        'calld.applications.{application_uuid}.calls.{call_id}.progress.stop.update'
+    )
     def put(self, application_uuid, call_id):
         application = self._service.get_application(application_uuid)
         self._service.get_call_id(application, call_id)
@@ -150,8 +153,9 @@ class ApplicationCallProgressStop(_BaseResource):
 
 
 class ApplicationCallPlaybackList(_BaseResource):
-
-    @required_acl('calld.applications.{application_uuid}.calls.{call_id}.playbacks.create')
+    @required_acl(
+        'calld.applications.{application_uuid}.calls.{call_id}.playbacks.create'
+    )
     def post(self, application_uuid, call_id):
         application = self._service.get_application(application_uuid)
         self._service.get_call_id(application, call_id)
@@ -161,7 +165,6 @@ class ApplicationCallPlaybackList(_BaseResource):
 
 
 class ApplicationCallSnoopList(_BaseResource):
-
     @required_acl('calld.applications.{application_uuid}.calls.{call_id}.snoops.create')
     def post(self, application_uuid, call_id):
         form = application_snoop_schema.load(request.get_json())
@@ -171,8 +174,9 @@ class ApplicationCallSnoopList(_BaseResource):
 
 
 class ApplicationPlaybackItem(_BaseResource):
-
-    @required_acl('calld.applications.{application_uuid}.playbacks.{playback_uuid}.delete')
+    @required_acl(
+        'calld.applications.{application_uuid}.playbacks.{playback_uuid}.delete'
+    )
     def delete(self, application_uuid, playback_uuid):
         self._service.get_application(application_uuid)
         # TODO: verify that playback_uuid is in the application
@@ -181,7 +185,6 @@ class ApplicationPlaybackItem(_BaseResource):
 
 
 class ApplicationSnoopList(_BaseResource):
-
     @required_acl('calld.applications.{application_uuid}.snoops.read')
     def get(self, application_uuid):
         application = self._service.get_application(application_uuid)
@@ -190,7 +193,6 @@ class ApplicationSnoopList(_BaseResource):
 
 
 class ApplicationSnoopItem(_BaseResource):
-
     @required_acl('calld.applications.{application_uuid}.snoops.{snoop_uuid}.read')
     def get(self, application_uuid, snoop_uuid):
         application = self._service.get_application(application_uuid)
@@ -212,25 +214,31 @@ class ApplicationSnoopItem(_BaseResource):
 
 
 class ApplicationNodeCallItem(_BaseResource):
-
-    @required_acl('calld.applications.{application_uuid}.nodes.{node_uuid}.calls.{call_id}.delete')
+    @required_acl(
+        'calld.applications.{application_uuid}.nodes.{node_uuid}.calls.{call_id}.delete'
+    )
     def delete(self, application_uuid, node_uuid, call_id):
         application = self._service.get_application(application_uuid)
         self._service.get_node_uuid(application, node_uuid)
         self._service.leave_node(application_uuid, node_uuid, [call_id])
         return '', 204
 
-    @required_acl('calld.applications.{application_uuid}.nodes.{node_uuid}.calls.{call_id}.update')
+    @required_acl(
+        'calld.applications.{application_uuid}.nodes.{node_uuid}.calls.{call_id}.update'
+    )
     def put(self, application_uuid, node_uuid, call_id):
         application = self._service.get_application(application_uuid)
         self._service.get_node_uuid(application, node_uuid)
-        self._service.join_node(application_uuid, node_uuid, [call_id], no_call_status_code=404)
+        self._service.join_node(
+            application_uuid, node_uuid, [call_id], no_call_status_code=404
+        )
         return '', 204
 
 
 class ApplicationNodeCallList(_BaseResource):
-
-    @required_acl('calld.applications.{application_uuid}.nodes.{node_uuid}.calls.create')
+    @required_acl(
+        'calld.applications.{application_uuid}.nodes.{node_uuid}.calls.create'
+    )
     def post(self, application_uuid, node_uuid):
         application = self._service.get_application(application_uuid)
         # TODO: Check if node is in application
@@ -242,8 +250,9 @@ class ApplicationNodeCallList(_BaseResource):
 
 
 class ApplicationNodeCallUserList(_BaseResource):
-
-    @required_acl('calld.applications.{application_uuid}.nodes.{node_uuid}.calls.user.create')
+    @required_acl(
+        'calld.applications.{application_uuid}.nodes.{node_uuid}.calls.user.create'
+    )
     def post(self, application_uuid, node_uuid):
         application = self._service.get_application(application_uuid)
         # TODO: Check if node is in application
@@ -255,7 +264,6 @@ class ApplicationNodeCallUserList(_BaseResource):
 
 
 class ApplicationNodeItem(_BaseResource):
-
     @required_acl('calld.applications.{application_uuid}.nodes.{node_uuid}.read')
     def get(self, application_uuid, node_uuid):
         application = self._service.get_application(application_uuid)
@@ -271,7 +279,6 @@ class ApplicationNodeItem(_BaseResource):
 
 
 class ApplicationNodeList(_BaseResource):
-
     @required_acl('calld.applications.{application_uuid}.nodes.read')
     def get(self, application_uuid):
         self._service.get_application(application_uuid)
@@ -288,7 +295,6 @@ class ApplicationNodeList(_BaseResource):
 
 
 class ApplicationDTMFList(_BaseResource):
-
     @required_acl('calld.applications.{application_uuid}.calls.{call_id}.dtmf.update')
     def put(self, application_uuid, call_id):
         request_args = application_dtmf_schema.load(request.args)

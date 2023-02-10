@@ -1,4 +1,4 @@
-# Copyright 2016-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -16,9 +16,7 @@ MOH_CLASS_RE = re.compile(r'^Class: (.+)$')
 
 def set_variable_ami(amid, channel_id, variable, value):
     try:
-        parameters = {'Channel': channel_id,
-                      'Variable': variable,
-                      'Value': value}
+        parameters = {'Channel': channel_id, 'Variable': variable, 'Value': value}
         amid.action('Setvar', parameters)
     except RequestException as e:
         raise WazoAmidError(amid, e, {'original_parameters': parameters})
@@ -30,14 +28,15 @@ def unset_variable_ami(amid, channel_id, variable):
 
 def extension_exists(amid, context, exten, priority=1):
     try:
-        response = amid.action('ShowDialplan', {'Context': context,
-                                                'Extension': exten})
+        response = amid.action('ShowDialplan', {'Context': context, 'Extension': exten})
     except AmidProtocolError:
         return False
     except RequestException as e:
         raise WazoAmidError(amid, e)
 
-    return str(priority) in (event['Priority'] for event in response if event.get('Event') == 'ListDialplan')
+    return str(priority) in (
+        event['Priority'] for event in response if event.get('Event') == 'ListDialplan'
+    )
 
 
 def moh_class_exists(amid, moh_class):
@@ -47,11 +46,25 @@ def moh_class_exists(amid, moh_class):
         raise WazoAmidError(amid, e)
 
     raw_body = response['response']
-    classes = [MOH_CLASS_RE.match(line).group(1) for line in raw_body if line.startswith('Class:')]
+    classes = [
+        MOH_CLASS_RE.match(line).group(1)
+        for line in raw_body
+        if line.startswith('Class:')
+    ]
     return moh_class in classes
 
 
-def redirect(amid, channel, context, exten, priority=1, extra_channel=None, extra_context=None, extra_exten=None, extra_priority=None):
+def redirect(
+    amid,
+    channel,
+    context,
+    exten,
+    priority=1,
+    extra_channel=None,
+    extra_context=None,
+    extra_exten=None,
+    extra_priority=None,
+):
     destination = {
         'Channel': channel,
         'Context': context,

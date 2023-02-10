@@ -1,4 +1,4 @@
-# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from wazo_calld.exceptions import APIException
@@ -16,7 +16,7 @@ class RelocateCreationError(RelocateException):
             status_code=400,
             message='Relocate creation error',
             error_id='relocate-creation-error',
-            details=details
+            details=details,
         )
 
 
@@ -28,7 +28,7 @@ class TooManyChannelCandidates(RelocateException):
             error_id='too-many-channels-candidates',
             details={
                 'candidates': list(candidates),
-            }
+            },
         )
 
 
@@ -40,12 +40,11 @@ class RelocateAlreadyStarted(RelocateException):
             error_id='relocate-already-started',
             details={
                 'initiator_call': initiator_call,
-            }
+            },
         )
 
 
 class NoSuchRelocate(RelocateException):
-
     def __init__(self, relocate_id):
         super().__init__(
             status_code=404,
@@ -53,12 +52,11 @@ class NoSuchRelocate(RelocateException):
             error_id='no-such-relocate',
             details={
                 'relocate_id': relocate_id,
-            }
+            },
         )
 
 
 class RelocateCompletionError(RelocateException):
-
     def __init__(self, message, details=None):
         details = details or {}
         details.setdefault('message', message)
@@ -66,12 +64,11 @@ class RelocateCompletionError(RelocateException):
             status_code=400,
             message='Relocate completion error',
             error_id='relocate-completion-error',
-            details=details
+            details=details,
         )
 
 
 class RelocateCancellationError(RelocateException):
-
     def __init__(self, message, details=None):
         details = details or {}
         details.setdefault('message', message)
@@ -79,5 +76,5 @@ class RelocateCancellationError(RelocateException):
             status_code=400,
             message='Relocate cancellation error',
             error_id='relocate-cancellation-error',
-            details=details
+            details=details,
         )

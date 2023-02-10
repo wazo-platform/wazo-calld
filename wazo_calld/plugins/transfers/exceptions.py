@@ -1,11 +1,10 @@
-# Copyright 2016-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from wazo_calld.exceptions import APIException
 
 
 class InvalidEvent(ValueError):
-
     def __init__(self, event):
         self.event = event
 
@@ -22,7 +21,7 @@ class TransferCreationError(TransferException):
             error_id='transfer-creation-error',
             details={
                 'message': message,
-            }
+            },
         )
 
 
@@ -34,7 +33,7 @@ class TooManyTransferredCandidates(TransferException):
             error_id='too-many-transferred-candidates',
             details={
                 'candidates': list(candidates),
-            }
+            },
         )
 
 
@@ -47,7 +46,7 @@ class TransferAnswerError(TransferException):
             details={
                 'transfer_id': transfer_id,
                 'message': message,
-            }
+            },
         )
 
 
@@ -60,7 +59,7 @@ class TransferCompletionError(TransferException):
             details={
                 'transfer_id': transfer_id,
                 'message': message,
-            }
+            },
         )
 
 
@@ -73,12 +72,11 @@ class TransferCancellationError(TransferException):
             details={
                 'transfer_id': transfer_id,
                 'message': message,
-            }
+            },
         )
 
 
 class NoSuchTransfer(TransferException):
-
     def __init__(self, transfer_id):
         super().__init__(
             status_code=404,
@@ -86,7 +84,7 @@ class NoSuchTransfer(TransferException):
             error_id='no-such-transfer',
             details={
                 'transfer_id': transfer_id,
-            }
+            },
         )
 
 
@@ -98,5 +96,5 @@ class TransferAlreadyStarted(TransferException):
             error_id='transfer-already-started',
             details={
                 'initiator_call': initiator_call,
-            }
+            },
         )

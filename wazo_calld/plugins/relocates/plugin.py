@@ -1,4 +1,4 @@
-# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from wazo_confd_client import Client as ConfdClient
@@ -19,7 +19,6 @@ from .relocate import RelocateCollection
 
 
 class Plugin:
-
     def load(self, dependencies):
         api = dependencies['api']
         ari = dependencies['ari']
@@ -37,7 +36,9 @@ class Plugin:
         state_factory = StateFactory(state_index, amid_client, ari.client)
 
         notifier = RelocatesNotifier(bus_publisher)
-        relocates_service = RelocatesService(amid_client, ari.client, confd_client, notifier, relocates, state_factory)
+        relocates_service = RelocatesService(
+            amid_client, ari.client, confd_client, notifier, relocates, state_factory
+        )
 
         relocates_stasis = RelocatesStasis(ari, relocates)
 
@@ -47,6 +48,16 @@ class Plugin:
 
         kwargs = {'resource_class_args': [relocates_service]}
         api.add_resource(UserRelocatesResource, '/users/me/relocates', **kwargs)
-        api.add_resource(UserRelocateResource, '/users/me/relocates/<relocate_uuid>', **kwargs)
-        api.add_resource(UserRelocateCompleteResource, '/users/me/relocates/<relocate_uuid>/complete', **kwargs)
-        api.add_resource(UserRelocateCancelResource, '/users/me/relocates/<relocate_uuid>/cancel', **kwargs)
+        api.add_resource(
+            UserRelocateResource, '/users/me/relocates/<relocate_uuid>', **kwargs
+        )
+        api.add_resource(
+            UserRelocateCompleteResource,
+            '/users/me/relocates/<relocate_uuid>/complete',
+            **kwargs
+        )
+        api.add_resource(
+            UserRelocateCancelResource,
+            '/users/me/relocates/<relocate_uuid>/cancel',
+            **kwargs
+        )

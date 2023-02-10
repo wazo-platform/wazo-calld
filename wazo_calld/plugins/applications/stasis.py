@@ -1,4 +1,4 @@
-# Copyright 2018-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -18,14 +18,13 @@ logger = logging.getLogger(__name__)
 
 
 class AppNameHelper:
-
     PREFIX = 'wazo-app-'
 
     @staticmethod
     def to_uuid(name):
         if not name or not name.startswith(AppNameHelper.PREFIX):
             return
-        return name[len(AppNameHelper.PREFIX):]
+        return name[len(AppNameHelper.PREFIX) :]
 
     @staticmethod
     def to_name(uuid):
@@ -33,7 +32,6 @@ class AppNameHelper:
 
 
 class ApplicationStasis:
-
     def __init__(self, ari, service, notifier, confd_apps, moh):
         self._ari = ari.client
         self._confd_apps = confd_apps
@@ -111,14 +109,18 @@ class ApplicationStasis:
             return
 
         if not event['args']:
-            return self._stasis_start_user_outgoing(application_uuid, event_objects, event)
+            return self._stasis_start_user_outgoing(
+                application_uuid, event_objects, event
+            )
 
         command, *command_args = event['args']
         if command == 'incoming':
             self._stasis_start_incoming(application_uuid, event_objects, event)
         elif command == 'originate':
             node_uuid = command_args[0] if command_args else None
-            self._stasis_start_originate(application_uuid, node_uuid, event_objects, event)
+            self._stasis_start_originate(
+                application_uuid, node_uuid, event_objects, event
+            )
 
     def stasis_end(self, channel, event):
         application_uuid = AppNameHelper.to_uuid(event.get('application'))
@@ -228,7 +230,9 @@ class ApplicationStasis:
         for application in applications:
             app_uuid = application['uuid']
             app_name = AppNameHelper.to_name(app_uuid)
-            self._ari.on_application_registered(app_name, self._on_application_registered)
+            self._ari.on_application_registered(
+                app_name, self._on_application_registered
+            )
             self._core_ari.register_application(app_name)
 
     def _create_destinations(self, applications):
@@ -257,7 +261,9 @@ class ApplicationStasis:
         application = self._service.get_application(application_uuid)
         self._service.start_user_outgoing_call(application, channel)
 
-    def _stasis_start_originate(self, application_uuid, node_uuid, event_objects, event):
+    def _stasis_start_originate(
+        self, application_uuid, node_uuid, event_objects, event
+    ):
         channel = event_objects['channel']
         application = self._service.get_application(application_uuid)
         self._service.originate_answered(application, channel)

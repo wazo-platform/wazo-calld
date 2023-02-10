@@ -1,4 +1,4 @@
-# Copyright 2021-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2021-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from xivo.tenant_flask_helpers import Tenant
@@ -62,7 +62,9 @@ class MeetingParticipantItemUserResource(AuthResource):
     def delete(self, meeting_uuid, participant_id):
         tenant = Tenant.autodetect()
         user_uuid = get_token_user_uuid_from_request()
-        self._service.user_kick_participant(tenant.uuid, user_uuid, meeting_uuid, participant_id)
+        self._service.user_kick_participant(
+            tenant.uuid, user_uuid, meeting_uuid, participant_id
+        )
         return '', 204
 
 

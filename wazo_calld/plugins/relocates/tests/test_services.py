@@ -1,4 +1,4 @@
-# Copyright 2019-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from unittest import TestCase
@@ -16,7 +16,6 @@ from ..services import InterfaceDestination
 
 
 class TestInterfaceDestination(TestCase):
-
     def setUp(self):
         self.ari = Mock()
 
@@ -66,6 +65,7 @@ class TestInterfaceDestination(TestCase):
             channelId=s.initiator_call,
             variable='PJSIP_DIAL_CONTACTS(ycetqvtr)',
         )
-        assert_that(destination.ari_endpoint(), equal_to(
-            'PJSIP/ycetqvtr/sip:lg12k0c1@127.0.0.1:54800;transport=ws'
-        ))
+        assert_that(
+            destination.ari_endpoint(),
+            equal_to('PJSIP/ycetqvtr/sip:lg12k0c1@127.0.0.1:54800;transport=ws'),
+        )

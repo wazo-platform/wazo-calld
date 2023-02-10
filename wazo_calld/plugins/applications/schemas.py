@@ -1,4 +1,4 @@
-# Copyright 2018-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from marshmallow import (
@@ -78,11 +78,15 @@ class ApplicationNodeCallSchema(BaseSchema):
 
 class ApplicationNodeSchema(BaseSchema):
     uuid = fields.String(dump_only=True)
-    calls = fields.Nested(ApplicationNodeCallSchema, many=True, validate=Length(min=1), required=True)
+    calls = fields.Nested(
+        ApplicationNodeCallSchema, many=True, validate=Length(min=1), required=True
+    )
 
 
 class ApplicationSnoopPutSchema(BaseSchema):
-    whisper_mode = fields.String(validate=OneOf(['in', 'out', 'both', 'none']), missing='none')
+    whisper_mode = fields.String(
+        validate=OneOf(['in', 'out', 'both', 'none']), missing='none'
+    )
 
 
 class ApplicationSnoopSchema(ApplicationSnoopPutSchema):

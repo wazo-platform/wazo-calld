@@ -1,11 +1,10 @@
-# Copyright 2016-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import requests
 
 
 class ChanTest:
-
     def __init__(self, ari_config):
         self.config = ari_config
         self._auth = (self.config['username'], self.config['password'])

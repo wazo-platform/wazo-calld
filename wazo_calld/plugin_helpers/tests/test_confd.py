@@ -1,4 +1,4 @@
-# Copyright 2016-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import requests
@@ -17,7 +17,6 @@ from ..exceptions import WazoConfdUnreachable
 
 
 class TestLine(TestCase):
-
     def setUp(self):
         self.confd_client = Mock()
         self.line = Line(42, self.confd_client)
@@ -25,8 +24,7 @@ class TestLine(TestCase):
     def test_request_exception_is_transformed_in_confd_exception(self):
         self.confd_client.lines.get.side_effect = requests.RequestException
 
-        assert_that(calling(self.line._get).with_args(),
-                    raises(WazoConfdUnreachable))
+        assert_that(calling(self.line._get).with_args(), raises(WazoConfdUnreachable))
 
     def test_line_interface_autoanswer_sip(self):
         self.confd_client.lines.get.return_value = {
@@ -40,4 +38,6 @@ class TestLine(TestCase):
             'protocol': 'sccp',
             'name': 'abcdef',
         }
-        assert_that(self.line.interface_autoanswer(), equal_to('sccp/abcdef/autoanswer'))
+        assert_that(
+            self.line.interface_autoanswer(), equal_to('sccp/abcdef/autoanswer')
+        )

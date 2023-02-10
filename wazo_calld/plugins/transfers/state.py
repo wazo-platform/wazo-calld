@@ -1,4 +1,4 @@
-# Copyright 2016-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -18,7 +18,6 @@ logger = logging.getLogger(__name__)
 
 
 class StateFactory:
-
     def __init__(self, ari=None):
         self._state_constructors = {}
         self._ari = ari
@@ -56,15 +55,26 @@ def transition(decorated):
             if state.transfer:
                 state._transfer_lock.release(state.transfer.initiator_call)
             raise
-        logger.info('Transition: %s -> %s -> %s', state.name, decorated.__name__, result.name)
+        logger.info(
+            'Transition: %s -> %s -> %s', state.name, decorated.__name__, result.name
+        )
         result.update_cache()
         return result
+
     return decorator
 
 
 class TransferState:
-
-    def __init__(self, amid, ari, notifier, services, state_persistor, transfer_lock, transfer=None):
+    def __init__(
+        self,
+        amid,
+        ari,
+        notifier,
+        services,
+        state_persistor,
+        transfer_lock,
+        transfer=None,
+    ):
         self._amid = amid
         self._ari = ari
         self._notifier = notifier
@@ -75,13 +85,15 @@ class TransferState:
 
     @classmethod
     def from_state(cls, other_state):
-        new_state = cls(other_state._amid,
-                        other_state._ari,
-                        other_state._notifier,
-                        other_state._services,
-                        other_state._state_persistor,
-                        other_state._transfer_lock,
-                        other_state.transfer)
+        new_state = cls(
+            other_state._amid,
+            other_state._ari,
+            other_state._notifier,
+            other_state._services,
+            other_state._state_persistor,
+            other_state._transfer_lock,
+            other_state.transfer,
+        )
         new_state.transfer.status = new_state.name
         return new_state
 
@@ -125,10 +137,18 @@ class TransferState:
         raise NotImplementedError()
 
     def _abandon(self):
-        ari_helpers.unset_variable(self._ari, self._amid, self.transfer.recipient_call, 'XIVO_TRANSFER_ID')
-        ari_helpers.unset_variable(self._ari, self._amid, self.transfer.recipient_call, 'XIVO_TRANSFER_ROLE')
-        ari_helpers.unset_variable(self._ari, self._amid, self.transfer.initiator_call, 'XIVO_TRANSFER_ID')
-        ari_helpers.unset_variable(self._ari, self._amid, self.transfer.initiator_call, 'XIVO_TRANSFER_ROLE')
+        ari_helpers.unset_variable(
+            self._ari, self._amid, self.transfer.recipient_call, 'XIVO_TRANSFER_ID'
+        )
+        ari_helpers.unset_variable(
+            self._ari, self._amid, self.transfer.recipient_call, 'XIVO_TRANSFER_ROLE'
+        )
+        ari_helpers.unset_variable(
+            self._ari, self._amid, self.transfer.initiator_call, 'XIVO_TRANSFER_ID'
+        )
+        ari_helpers.unset_variable(
+            self._ari, self._amid, self.transfer.initiator_call, 'XIVO_TRANSFER_ROLE'
+        )
 
         if self.transfer.transferred_call:
             try:
@@ -139,10 +159,18 @@ class TransferState:
         self._notifier.abandoned(self.transfer)
 
     def _cancel(self):
-        ari_helpers.unset_variable(self._ari, self._amid, self.transfer.transferred_call, 'XIVO_TRANSFER_ID')
-        ari_helpers.unset_variable(self._ari, self._amid, self.transfer.transferred_call, 'XIVO_TRANSFER_ROLE')
-        ari_helpers.unset_variable(self._ari, self._amid, self.transfer.initiator_call, 'XIVO_TRANSFER_ID')
-        ari_helpers.unset_variable(self._ari, self._amid, self.transfer.initiator_call, 'XIVO_TRANSFER_ROLE')
+        ari_helpers.unset_variable(
+            self._ari, self._amid, self.transfer.transferred_call, 'XIVO_TRANSFER_ID'
+        )
+        ari_helpers.unset_variable(
+            self._ari, self._amid, self.transfer.transferred_call, 'XIVO_TRANSFER_ROLE'
+        )
+        ari_helpers.unset_variable(
+            self._ari, self._amid, self.transfer.initiator_call, 'XIVO_TRANSFER_ID'
+        )
+        ari_helpers.unset_variable(
+            self._ari, self._amid, self.transfer.initiator_call, 'XIVO_TRANSFER_ROLE'
+        )
 
         if self.transfer.recipient_call:
             try:
@@ -151,7 +179,9 @@ class TransferState:
                 pass
 
         try:
-            ari_helpers.unhold_transferred_call(self._ari, self.transfer.transferred_call)
+            ari_helpers.unhold_transferred_call(
+                self._ari, self.transfer.transferred_call
+            )
         except ARINotFound:
             raise TransferCancellationError(self.transfer.id, 'transferred hung up')
 
@@ -165,11 +195,19 @@ class TransferState:
 
 @state_factory.state
 class TransferStateReady(TransferState):
-
     name = TransferStatus.ready
 
     @transition
-    def create(self, transferred_channel, initiator_channel, context, exten, flow, variables, timeout):
+    def create(
+        self,
+        transferred_channel,
+        initiator_channel,
+        context,
+        exten,
+        flow,
+        variables,
+        timeout,
+    ):
         channel = Channel(initiator_channel.id, self._ari)
         initiator_uuid = channel.user()
         initiator_tenant_uuid = channel.tenant_uuid()
@@ -179,17 +217,27 @@ class TransferStateReady(TransferState):
         transfer_bridge = self._ari.bridges.create(type='mixing', name='transfer')
         transfer_id = transfer_bridge.id
         try:
-            transferred_channel.setChannelVar(variable='XIVO_TRANSFER_ROLE', value='transferred')
-            transferred_channel.setChannelVar(variable='XIVO_TRANSFER_ID', value=transfer_id)
-            initiator_channel.setChannelVar(variable='XIVO_TRANSFER_ROLE', value='initiator')
-            initiator_channel.setChannelVar(variable='XIVO_TRANSFER_ID', value=transfer_id)
+            transferred_channel.setChannelVar(
+                variable='XIVO_TRANSFER_ROLE', value='transferred'
+            )
+            transferred_channel.setChannelVar(
+                variable='XIVO_TRANSFER_ID', value=transfer_id
+            )
+            initiator_channel.setChannelVar(
+                variable='XIVO_TRANSFER_ROLE', value='initiator'
+            )
+            initiator_channel.setChannelVar(
+                variable='XIVO_TRANSFER_ID', value=transfer_id
+            )
             transfer_bridge.addChannel(channel=transferred_channel.id)
             transfer_bridge.addChannel(channel=initiator_channel.id)
         except ARINotFound:
             raise TransferCreationError('some channel got hung up')
 
         try:
-            ari_helpers.hold_transferred_call(self._ari, self._amid, transferred_channel.id)
+            ari_helpers.hold_transferred_call(
+                self._ari, self._amid, transferred_channel.id
+            )
         except ARINotFound:
             raise TransferCreationError('transferred call hung up')
 
@@ -198,7 +246,9 @@ class TransferStateReady(TransferState):
         except ARINotFound:
             raise TransferCreationError('initiator call hung up')
 
-        recipient_call = self._services.originate_recipient(initiator_channel.id, context, exten, transfer_id, variables, timeout)
+        recipient_call = self._services.originate_recipient(
+            initiator_channel.id, context, exten, transfer_id, variables, timeout
+        )
 
         self.transfer = Transfer(transfer_id, initiator_uuid, initiator_tenant_uuid)
         self.transfer.transferred_call = transferred_channel.id
@@ -216,11 +266,19 @@ class TransferStateReady(TransferState):
 
 @state_factory.state
 class TransferStateReadyNonStasis(TransferState):
-
     name = 'ready_non_stasis'
 
     @transition
-    def create(self, transferred_channel, initiator_channel, context, exten, flow, variables, timeout):
+    def create(
+        self,
+        transferred_channel,
+        initiator_channel,
+        context,
+        exten,
+        flow,
+        variables,
+        timeout,
+    ):
         channel = Channel(initiator_channel.id, self._ari)
         initiator_uuid = channel.user()
         initiator_tenant_uuid = channel.tenant_uuid()
@@ -229,15 +287,17 @@ class TransferStateReadyNonStasis(TransferState):
 
         transfer_id = str(uuid.uuid4())
         try:
-            ari_helpers.convert_transfer_to_stasis(self._ari,
-                                                   self._amid,
-                                                   transferred_channel.id,
-                                                   initiator_channel.id,
-                                                   context,
-                                                   exten,
-                                                   transfer_id,
-                                                   variables,
-                                                   timeout)
+            ari_helpers.convert_transfer_to_stasis(
+                self._ari,
+                self._amid,
+                transferred_channel.id,
+                initiator_channel.id,
+                context,
+                exten,
+                transfer_id,
+                variables,
+                timeout,
+            )
         except ARINotFound:
             raise TransferCreationError('channel not found')
         self.transfer = Transfer(transfer_id, initiator_uuid, initiator_tenant_uuid)
@@ -255,7 +315,6 @@ class TransferStateReadyNonStasis(TransferState):
 
 @state_factory.state
 class TransferStateStarting(TransferState):
-
     name = TransferStatus.starting
 
     @transition
@@ -263,7 +322,9 @@ class TransferStateStarting(TransferState):
         self.transfer = transfer
 
         try:
-            ari_helpers.hold_transferred_call(self._ari, self._amid, self.transfer.transferred_call)
+            ari_helpers.hold_transferred_call(
+                self._ari, self._amid, self.transfer.transferred_call
+            )
         except ARINotFound:
             pass
 
@@ -273,12 +334,14 @@ class TransferStateStarting(TransferState):
             logger.error('initiator hung up while creating transfer')
 
         try:
-            self.transfer.recipient_call = self._services.originate_recipient(self.transfer.initiator_call,
-                                                                              context,
-                                                                              exten,
-                                                                              self.transfer.id,
-                                                                              variables,
-                                                                              timeout)
+            self.transfer.recipient_call = self._services.originate_recipient(
+                self.transfer.initiator_call,
+                context,
+                exten,
+                self.transfer.id,
+                variables,
+                timeout,
+            )
         except TransferCreationError as e:
             logger.error('%s %s', e.message, e.details)
         self._notifier.updated(self.transfer)
@@ -306,7 +369,6 @@ class TransferStateStarting(TransferState):
 
 @state_factory.state
 class TransferStateRingback(TransferState):
-
     name = TransferStatus.ringback
 
     @transition
@@ -317,7 +379,9 @@ class TransferStateRingback(TransferState):
     @transition
     def initiator_hangup(self):
         try:
-            ari_helpers.unhold_transferred_call(self._ari, self.transfer.transferred_call)
+            ari_helpers.unhold_transferred_call(
+                self._ari, self.transfer.transferred_call
+            )
             self._ari.channels.ring(channelId=self.transfer.transferred_call)
         except ARINotFound:
             raise TransferCompletionError(self.transfer.id, 'transferred hung up')
@@ -339,7 +403,9 @@ class TransferStateRingback(TransferState):
             pass
 
         try:
-            ari_helpers.unhold_transferred_call(self._ari, self.transfer.transferred_call)
+            ari_helpers.unhold_transferred_call(
+                self._ari, self.transfer.transferred_call
+            )
             self._ari.channels.ring(channelId=self.transfer.transferred_call)
         except ARINotFound:
             raise TransferCompletionError(self.transfer.id, 'transferred hung up')
@@ -364,7 +430,9 @@ class TransferStateRingback(TransferState):
         return TransferStateAnswered.from_state(self)
 
     def transferred_moh_stop(self):
-        logger.warning('MOH stopped playing while transfer was ringing. Playing silence.')
+        logger.warning(
+            'MOH stopped playing while transfer was ringing. Playing silence.'
+        )
         try:
             self._ari.channels.startSilence(channelId=self.transfer.transferred_call)
         except ARINotFound:
@@ -377,7 +445,6 @@ class TransferStateRingback(TransferState):
 
 @state_factory.state
 class TransferStateBlindTransferred(TransferState):
-
     name = TransferStatus.blind_transferred
 
     @transition
@@ -394,10 +461,18 @@ class TransferStateBlindTransferred(TransferState):
 
     @transition
     def recipient_answer(self):
-        ari_helpers.unset_variable(self._ari, self._amid, self.transfer.transferred_call, 'XIVO_TRANSFER_ID')
-        ari_helpers.unset_variable(self._ari, self._amid, self.transfer.transferred_call, 'XIVO_TRANSFER_ROLE')
-        ari_helpers.unset_variable(self._ari, self._amid, self.transfer.recipient_call, 'XIVO_TRANSFER_ID')
-        ari_helpers.unset_variable(self._ari, self._amid, self.transfer.recipient_call, 'XIVO_TRANSFER_ROLE')
+        ari_helpers.unset_variable(
+            self._ari, self._amid, self.transfer.transferred_call, 'XIVO_TRANSFER_ID'
+        )
+        ari_helpers.unset_variable(
+            self._ari, self._amid, self.transfer.transferred_call, 'XIVO_TRANSFER_ROLE'
+        )
+        ari_helpers.unset_variable(
+            self._ari, self._amid, self.transfer.recipient_call, 'XIVO_TRANSFER_ID'
+        )
+        ari_helpers.unset_variable(
+            self._ari, self._amid, self.transfer.recipient_call, 'XIVO_TRANSFER_ROLE'
+        )
 
         try:
             ari_helpers.unring_initiator_call(self._ari, self.transfer.transferred_call)
@@ -414,7 +489,6 @@ class TransferStateBlindTransferred(TransferState):
 
 @state_factory.state
 class TransferStateAnswered(TransferState):
-
     name = TransferStatus.answered
 
     @transition
@@ -424,13 +498,23 @@ class TransferStateAnswered(TransferState):
 
     @transition
     def initiator_hangup(self):
-        ari_helpers.unset_variable(self._ari, self._amid, self.transfer.transferred_call, 'XIVO_TRANSFER_ID')
-        ari_helpers.unset_variable(self._ari, self._amid, self.transfer.transferred_call, 'XIVO_TRANSFER_ROLE')
-        ari_helpers.unset_variable(self._ari, self._amid, self.transfer.recipient_call, 'XIVO_TRANSFER_ID')
-        ari_helpers.unset_variable(self._ari, self._amid, self.transfer.recipient_call, 'XIVO_TRANSFER_ROLE')
+        ari_helpers.unset_variable(
+            self._ari, self._amid, self.transfer.transferred_call, 'XIVO_TRANSFER_ID'
+        )
+        ari_helpers.unset_variable(
+            self._ari, self._amid, self.transfer.transferred_call, 'XIVO_TRANSFER_ROLE'
+        )
+        ari_helpers.unset_variable(
+            self._ari, self._amid, self.transfer.recipient_call, 'XIVO_TRANSFER_ID'
+        )
+        ari_helpers.unset_variable(
+            self._ari, self._amid, self.transfer.recipient_call, 'XIVO_TRANSFER_ROLE'
+        )
 
         try:
-            ari_helpers.unhold_transferred_call(self._ari, self.transfer.transferred_call)
+            ari_helpers.unhold_transferred_call(
+                self._ari, self.transfer.transferred_call
+            )
         except ARINotFound:
             raise TransferCompletionError(self.transfer.id, 'transferred hung up')
 
@@ -444,10 +528,18 @@ class TransferStateAnswered(TransferState):
 
     @transition
     def complete(self):
-        ari_helpers.unset_variable(self._ari, self._amid, self.transfer.transferred_call, 'XIVO_TRANSFER_ID')
-        ari_helpers.unset_variable(self._ari, self._amid, self.transfer.transferred_call, 'XIVO_TRANSFER_ROLE')
-        ari_helpers.unset_variable(self._ari, self._amid, self.transfer.recipient_call, 'XIVO_TRANSFER_ID')
-        ari_helpers.unset_variable(self._ari, self._amid, self.transfer.recipient_call, 'XIVO_TRANSFER_ROLE')
+        ari_helpers.unset_variable(
+            self._ari, self._amid, self.transfer.transferred_call, 'XIVO_TRANSFER_ID'
+        )
+        ari_helpers.unset_variable(
+            self._ari, self._amid, self.transfer.transferred_call, 'XIVO_TRANSFER_ROLE'
+        )
+        ari_helpers.unset_variable(
+            self._ari, self._amid, self.transfer.recipient_call, 'XIVO_TRANSFER_ID'
+        )
+        ari_helpers.unset_variable(
+            self._ari, self._amid, self.transfer.recipient_call, 'XIVO_TRANSFER_ROLE'
+        )
 
         try:
             self._ari.channels.hangup(channelId=self.transfer.initiator_call)
@@ -455,7 +547,9 @@ class TransferStateAnswered(TransferState):
             pass
 
         try:
-            ari_helpers.unhold_transferred_call(self._ari, self.transfer.transferred_call)
+            ari_helpers.unhold_transferred_call(
+                self._ari, self.transfer.transferred_call
+            )
         except ARINotFound:
             raise TransferCompletionError(self.transfer.id, 'transferred hung up')
 
@@ -469,7 +563,9 @@ class TransferStateAnswered(TransferState):
         return TransferStateEnded.from_state(self)
 
     def transferred_moh_stop(self):
-        logger.warning('MOH stopped playing while transfer was answered. Playing silence.')
+        logger.warning(
+            'MOH stopped playing while transfer was answered. Playing silence.'
+        )
         try:
             self._ari.channels.startSilence(channelId=self.transfer.transferred_call)
         except ARINotFound:
@@ -489,7 +585,6 @@ class TransferStateAnswered(TransferState):
 
 @state_factory.state
 class TransferStateEnded(TransferState):
-
     name = 'ended'
 
     def update_cache(self):

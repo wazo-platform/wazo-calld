@@ -1,4 +1,4 @@
-# Copyright 2019-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from contextlib import contextmanager
@@ -161,7 +161,9 @@ class TestBusEvent(TestCase):
         self.handler.on_hangup(event)
 
         self.updated_endpoint.remove_call.assert_called_once_with('1574445784.4')
-        assert_that(self.updated_endpoint, has_properties(techno='PJSIP', name='dev_370'))
+        assert_that(
+            self.updated_endpoint, has_properties(techno='PJSIP', name='dev_370')
+        )
 
     def test_on_hangup_ignores_local_channels(self):
         event = {
@@ -224,7 +226,9 @@ class TestBusEvent(TestCase):
         self.handler.on_new_channel(event)
 
         self.updated_endpoint.add_call.assert_called_once_with('1574445784.4')
-        assert_that(self.updated_endpoint, has_properties(techno='PJSIP', name='dev_370'))
+        assert_that(
+            self.updated_endpoint, has_properties(techno='PJSIP', name='dev_370')
+        )
 
     def test_on_new_channel_ignore_local_channels(self):
         event = {
@@ -269,15 +273,17 @@ class TestBusEvent(TestCase):
                 'tenant_uuid': tenant_uuid,
                 'auth_section_options': [['username', username]],
             },
-            'line': {
-                'id': line_id,
-                'tenant_uuid': tenant_uuid},
+            'line': {'id': line_id, 'tenant_uuid': tenant_uuid},
         }
 
         self.handler.on_line_endpoint_sip_associated(event)
 
         self.confd_cache.add_line.assert_called_once_with(
-            'sip', line_id, name, username, tenant_uuid,
+            'sip',
+            line_id,
+            name,
+            username,
+            tenant_uuid,
         )
 
     def test_on_trunk_endpoint_sip_associated(self):
@@ -302,7 +308,11 @@ class TestBusEvent(TestCase):
         self.handler.on_trunk_endpoint_sip_associated(event)
 
         self.confd_cache.add_trunk.assert_called_once_with(
-            'sip', trunk_id, name, username, tenant_uuid,
+            'sip',
+            trunk_id,
+            name,
+            username,
+            tenant_uuid,
         )
 
     def test_on_line_endpoint_sccp_associated(self):
@@ -325,7 +335,11 @@ class TestBusEvent(TestCase):
         self.handler.on_line_endpoint_sccp_associated(event)
 
         self.confd_cache.add_line.assert_called_once_with(
-            'sccp', line_id, name, None, tenant_uuid,
+            'sccp',
+            line_id,
+            name,
+            None,
+            tenant_uuid,
         )
 
     def test_on_trunk_endpoint_iax_associated(self):
@@ -348,7 +362,11 @@ class TestBusEvent(TestCase):
         self.handler.on_trunk_endpoint_iax_associated(event)
 
         self.confd_cache.add_trunk.assert_called_once_with(
-            'iax', trunk_id, name, None, tenant_uuid,
+            'iax',
+            trunk_id,
+            name,
+            None,
+            tenant_uuid,
         )
 
     def test_on_line_endpoint_custom_associated(self):
@@ -371,7 +389,11 @@ class TestBusEvent(TestCase):
         self.handler.on_line_endpoint_custom_associated(event)
 
         self.confd_cache.add_line.assert_called_once_with(
-            'custom', line_id, interface, None, tenant_uuid,
+            'custom',
+            line_id,
+            interface,
+            None,
+            tenant_uuid,
         )
 
     def test_on_trunk_endpoint_custom_associated(self):
@@ -394,7 +416,11 @@ class TestBusEvent(TestCase):
         self.handler.on_trunk_endpoint_custom_associated(event)
 
         self.confd_cache.add_trunk.assert_called_once_with(
-            'custom', trunk_id, interface, None, tenant_uuid,
+            'custom',
+            trunk_id,
+            interface,
+            None,
+            tenant_uuid,
         )
 
     def test_on_line_endpoint_sip_dissociated(self):
@@ -470,7 +496,11 @@ class TestBusEvent(TestCase):
         self.handler.on_line_edited(event)
 
         self.confd_cache.update_line.assert_called_once_with(
-            'sccp', s.line_id, s.name, None, s.tenant_uuid,
+            'sccp',
+            s.line_id,
+            s.name,
+            None,
+            s.tenant_uuid,
         )
 
         self.confd_cache.update_line.reset_mock()
@@ -499,7 +529,11 @@ class TestBusEvent(TestCase):
         self.handler.on_endpoint_sip_updated(event)
 
         self.confd_cache.update_line.assert_called_once_with(
-            'sip', s.line_id, s.name, s.username, s.tenant_uuid,
+            'sip',
+            s.line_id,
+            s.name,
+            s.username,
+            s.tenant_uuid,
         )
 
     def test_on_trunk_endpoint_sip_updated(self):
@@ -515,7 +549,11 @@ class TestBusEvent(TestCase):
         self.handler.on_endpoint_sip_updated(event)
 
         self.confd_cache.update_trunk.assert_called_once_with(
-            'sip', s.trunk_id, s.name, s.username, s.tenant_uuid,
+            'sip',
+            s.trunk_id,
+            s.name,
+            s.username,
+            s.tenant_uuid,
         )
 
     def test_on_endpoint_iax_updated(self):
@@ -530,7 +568,11 @@ class TestBusEvent(TestCase):
         self.handler.on_trunk_endpoint_iax_updated(event)
 
         self.confd_cache.update_trunk.assert_called_once_with(
-            'iax', s.trunk_id, s.name, None, s.tenant_uuid,
+            'iax',
+            s.trunk_id,
+            s.name,
+            None,
+            s.tenant_uuid,
         )
 
     def test_on_trunk_endpoint_custom_updated(self):
@@ -546,7 +588,11 @@ class TestBusEvent(TestCase):
 
         self.confd_cache.update_line.assert_not_called()
         self.confd_cache.update_trunk.assert_called_once_with(
-            'custom', s.trunk_id, s.interface, None, s.tenant_uuid,
+            'custom',
+            s.trunk_id,
+            s.interface,
+            None,
+            s.tenant_uuid,
         )
 
     def test_on_endpoint_sip_updated_line(self):
@@ -589,5 +635,9 @@ class TestBusEvent(TestCase):
 
         self.confd_cache.update_trunk.assert_not_called()
         self.confd_cache.update_line.assert_called_once_with(
-            'custom', s.line_id, s.interface, None, s.tenant_uuid,
+            'custom',
+            s.line_id,
+            s.interface,
+            None,
+            s.tenant_uuid,
         )

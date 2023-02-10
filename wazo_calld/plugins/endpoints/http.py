@@ -1,4 +1,4 @@
-# Copyright 2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from xivo.tenant_flask_helpers import Tenant
@@ -10,7 +10,6 @@ from .schemas import line_endpoint_schema, trunk_endpoint_schema
 
 
 class LineEndpoints(AuthResource):
-
     def __init__(self, endpoints_service):
         self._endpoints_service = endpoints_service
 
@@ -29,7 +28,6 @@ class LineEndpoints(AuthResource):
 
 
 class TrunkEndpoints(AuthResource):
-
     def __init__(self, endpoints_service):
         self._endpoints_service = endpoints_service
 

@@ -1,4 +1,4 @@
-# Copyright 2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2021-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from hamcrest import (
@@ -21,34 +21,49 @@ class TestBusConsume(TestCase):
     def test_from_confbridge_name(self):
         assert_that(
             calling(AsteriskMeeting.from_confbridge_name).with_args(''),
-            raises(InvalidMeetingConfbridgeName)
+            raises(InvalidMeetingConfbridgeName),
         )
         assert_that(
             calling(AsteriskMeeting.from_confbridge_name).with_args('something'),
-            raises(InvalidMeetingConfbridgeName)
+            raises(InvalidMeetingConfbridgeName),
         )
         assert_that(
-            calling(AsteriskMeeting.from_confbridge_name).with_args('wazo-meeting.uuid.confbridge'),
-            raises(InvalidMeetingConfbridgeName)
+            calling(AsteriskMeeting.from_confbridge_name).with_args(
+                'wazo-meeting.uuid.confbridge'
+            ),
+            raises(InvalidMeetingConfbridgeName),
         )
         assert_that(
-            calling(AsteriskMeeting.from_confbridge_name).with_args('wazo-meeting-uuid.confbridge'),
-            raises(InvalidMeetingConfbridgeName)
+            calling(AsteriskMeeting.from_confbridge_name).with_args(
+                'wazo-meeting-uuid.confbridge'
+            ),
+            raises(InvalidMeetingConfbridgeName),
         )
         assert_that(
-            calling(AsteriskMeeting.from_confbridge_name).with_args('wazo-meeting.uuid-confbridge'),
-            raises(InvalidMeetingConfbridgeName)
+            calling(AsteriskMeeting.from_confbridge_name).with_args(
+                'wazo-meeting.uuid-confbridge'
+            ),
+            raises(InvalidMeetingConfbridgeName),
         )
         assert_that(
-            calling(AsteriskMeeting.from_confbridge_name).with_args('wazo-meeting-uuid-confbridge.'),
-            raises(InvalidMeetingConfbridgeName)
+            calling(AsteriskMeeting.from_confbridge_name).with_args(
+                'wazo-meeting-uuid-confbridge.'
+            ),
+            raises(InvalidMeetingConfbridgeName),
         )
         assert_that(
-            calling(AsteriskMeeting.from_confbridge_name).with_args('.wazo-meeting.uuid-confbridge'),
-            raises(InvalidMeetingConfbridgeName)
+            calling(AsteriskMeeting.from_confbridge_name).with_args(
+                '.wazo-meeting.uuid-confbridge'
+            ),
+            raises(InvalidMeetingConfbridgeName),
         )
         assert_that(
-            calling(AsteriskMeeting.from_confbridge_name).with_args('wazo-meeting--confbridge'),
-            raises(InvalidMeetingConfbridgeName)
+            calling(AsteriskMeeting.from_confbridge_name).with_args(
+                'wazo-meeting--confbridge'
+            ),
+            raises(InvalidMeetingConfbridgeName),
         )
-        assert AsteriskMeeting.from_confbridge_name('wazo-meeting-uuid-confbridge').uuid == 'uuid'
+        assert (
+            AsteriskMeeting.from_confbridge_name('wazo-meeting-uuid-confbridge').uuid
+            == 'uuid'
+        )

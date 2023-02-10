@@ -1,4 +1,4 @@
-# Copyright 2016-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -28,7 +28,15 @@ logger = logging.getLogger(__name__)
 
 
 class TransfersService:
-    def __init__(self, amid_client, ari, confd_client, state_factory, state_persistor, transfer_lock):
+    def __init__(
+        self,
+        amid_client,
+        ari,
+        confd_client,
+        state_factory,
+        state_persistor,
+        transfer_lock,
+    ):
         self.amid_client = amid_client
         self.ari = ari
         self.confd_client = confd_client
@@ -38,9 +46,13 @@ class TransfersService:
 
     def list_from_user(self, user_uuid):
         transfers = self.state_persistor.list()
-        return [transfer for transfer in transfers if transfer.initiator_uuid == user_uuid]
+        return [
+            transfer for transfer in transfers if transfer.initiator_uuid == user_uuid
+        ]
 
-    def create(self, transferred_call, initiator_call, context, exten, flow, variables, timeout):
+    def create(
+        self, transferred_call, initiator_call, context, exten, flow, variables, timeout
+    ):
         try:
             transferred_channel = self.ari.channels.get(channelId=transferred_call)
             initiator_channel = self.ari.channels.get(channelId=initiator_call)
@@ -53,14 +65,26 @@ class TransfersService:
         if not self.transfer_lock.acquire(initiator_call):
             raise TransferAlreadyStarted(initiator_call)
 
-        if not (Channel(transferred_call, self.ari).is_in_stasis()
-                and Channel(initiator_call, self.ari).is_in_stasis()):
-            transfer_state = self.state_factory.make_from_class(TransferStateReadyNonStasis)
+        if not (
+            Channel(transferred_call, self.ari).is_in_stasis()
+            and Channel(initiator_call, self.ari).is_in_stasis()
+        ):
+            transfer_state = self.state_factory.make_from_class(
+                TransferStateReadyNonStasis
+            )
         else:
             transfer_state = self.state_factory.make_from_class(TransferStateReady)
 
         try:
-            new_state = transfer_state.create(transferred_channel, initiator_channel, context, exten, flow, variables, timeout)
+            new_state = transfer_state.create(
+                transferred_channel,
+                initiator_channel,
+                context,
+                exten,
+                flow,
+                variables,
+                timeout,
+            )
         except Exception:
             self.transfer_lock.release(initiator_call)
             raise
@@ -77,7 +101,9 @@ class TransfersService:
             raise UserPermissionDenied(user_uuid, {'call': initiator_call})
 
         try:
-            transferred_call = Channel(initiator_call, self.ari).only_connected_channel().id
+            transferred_call = (
+                Channel(initiator_call, self.ari).only_connected_channel().id
+            )
         except TooManyChannels as e:
             raise TooManyTransferredCandidates(e.channels)
         except NotEnoughChannels:
@@ -85,38 +111,63 @@ class TransfersService:
 
         context = User(user_uuid, self.confd_client).main_line().context()
 
-        return self.create(transferred_call, initiator_call, context, exten, flow, variables={}, timeout=timeout)
+        return self.create(
+            transferred_call,
+            initiator_call,
+            context,
+            exten,
+            flow,
+            variables={},
+            timeout=timeout,
+        )
 
-    def originate_recipient(self, initiator_call, context, exten, transfer_id, variables, timeout):
+    def originate_recipient(
+        self, initiator_call, context, exten, transfer_id, variables, timeout
+    ):
         initiator_channel = self.ari.channels.get(channelId=initiator_call)
-        caller_id = assemble_caller_id(initiator_channel.json['caller']['name'], initiator_channel.json['caller']['number']).encode('utf-8')
-        recipient_endpoint = 'Local/{exten}@{context}'.format(exten=exten, context=context)
+        caller_id = assemble_caller_id(
+            initiator_channel.json['caller']['name'],
+            initiator_channel.json['caller']['number'],
+        ).encode('utf-8')
+        recipient_endpoint = 'Local/{exten}@{context}'.format(
+            exten=exten, context=context
+        )
         app_args = ['transfer', 'transfer_recipient_called', transfer_id]
         originate_variables = dict(variables)
         originate_variables['XIVO_TRANSFER_ROLE'] = 'recipient'
         originate_variables['XIVO_TRANSFER_ID'] = transfer_id
-        originate_variables['CHANNEL(language)'] = initiator_channel.getChannelVar(variable='CHANNEL(language)')['value']
+        originate_variables['CHANNEL(language)'] = initiator_channel.getChannelVar(
+            variable='CHANNEL(language)'
+        )['value']
         try:
-            originate_variables['XIVO_USERID'] = initiator_channel.getChannelVar(variable='XIVO_USERID')['value']
+            originate_variables['XIVO_USERID'] = initiator_channel.getChannelVar(
+                variable='XIVO_USERID'
+            )['value']
         except ARINotFound:
             pass
         try:
-            originate_variables['XIVO_USERUUID'] = initiator_channel.getChannelVar(variable='XIVO_USERUUID')['value']
+            originate_variables['XIVO_USERUUID'] = initiator_channel.getChannelVar(
+                variable='XIVO_USERUUID'
+            )['value']
         except ARINotFound:
             pass
         timeout = -1 if timeout is None else timeout
 
-        new_channel = self.ari.channels.originate(endpoint=recipient_endpoint,
-                                                  app=DEFAULT_APPLICATION_NAME,
-                                                  appArgs=app_args,
-                                                  callerId=caller_id,
-                                                  variables={'variables': originate_variables},
-                                                  timeout=timeout,
-                                                  originator=initiator_call)
+        new_channel = self.ari.channels.originate(
+            endpoint=recipient_endpoint,
+            app=DEFAULT_APPLICATION_NAME,
+            appArgs=app_args,
+            callerId=caller_id,
+            variables={'variables': originate_variables},
+            timeout=timeout,
+            originator=initiator_call,
+        )
         recipient_call = new_channel.id
 
         try:
-            ari_helpers.set_bridge_variable(self.ari, transfer_id, 'XIVO_HANGUP_LOCK_SOURCE', recipient_call)
+            ari_helpers.set_bridge_variable(
+                self.ari, transfer_id, 'XIVO_HANGUP_LOCK_SOURCE', recipient_call
+            )
         except ARINotFound:
             raise TransferCreationError('bridge not found')
 

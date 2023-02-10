@@ -1,4 +1,4 @@
-# Copyright 2021-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2021-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -28,7 +28,9 @@ class MeetingsBusEventHandler:
 
     def _notify_participant_joined(self, event):
         try:
-            meeting_uuid = AsteriskMeeting.from_confbridge_name(event['Conference']).uuid
+            meeting_uuid = AsteriskMeeting.from_confbridge_name(
+                event['Conference']
+            ).uuid
         except InvalidMeetingConfbridgeName:
             return
 
@@ -40,7 +42,9 @@ class MeetingsBusEventHandler:
             )
             return
 
-        logger.debug('Participant %s joined meeting %s', event['Uniqueid'], meeting_uuid)
+        logger.debug(
+            'Participant %s joined meeting %s', event['Uniqueid'], meeting_uuid
+        )
         raw_participant = {
             'id': event['Uniqueid'],
             'caller_id_name': event['CallerIDName'],
@@ -65,7 +69,9 @@ class MeetingsBusEventHandler:
 
     def _notify_participant_left(self, event):
         try:
-            meeting_uuid = AsteriskMeeting.from_confbridge_name(event['Conference']).uuid
+            meeting_uuid = AsteriskMeeting.from_confbridge_name(
+                event['Conference']
+            ).uuid
         except InvalidMeetingConfbridgeName:
             return
 

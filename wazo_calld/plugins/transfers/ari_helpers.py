@@ -1,4 +1,4 @@
-# Copyright 2016-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
@@ -20,7 +20,10 @@ def hold_transferred_call(ari, amid, transferred_call):
     try:
         moh_class_exists = ami.moh_class_exists(amid, moh_class)
     except WazoAmidError:
-        logger.error('wazo-amid could not tell if MOH "%s" exists. Assuming it does not.', moh_class)
+        logger.error(
+            'wazo-amid could not tell if MOH "%s" exists. Assuming it does not.',
+            moh_class,
+        )
         moh_class_exists = False
 
     if moh_class_exists:
@@ -37,7 +40,9 @@ def unhold_transferred_call(ari, transferred_call):
 
 
 def unring_initiator_call(ari, initiator_call):
-    ari.channels.stopMoh(channelId=initiator_call)  # workaround for SCCP bug on ringStop
+    ari.channels.stopMoh(
+        channelId=initiator_call
+    )  # workaround for SCCP bug on ringStop
     ari.channels.ringStop(channelId=initiator_call)
 
 
@@ -54,8 +59,14 @@ def update_connectedline(ari, amid, channel_id, from_channel_id):
     from_channel = ari.channels.get(channelId=from_channel_id)
     name = from_channel.json['caller']['name']
     number = from_channel.json['caller']['number']
-    ari.channels.setChannelVar(channelId=channel_id, variable='CONNECTEDLINE(name)', value=name.encode('utf-8'))
-    ari.channels.setChannelVar(channelId=channel_id, variable='CONNECTEDLINE(num)', value=number.encode('utf-8'))
+    ari.channels.setChannelVar(
+        channelId=channel_id, variable='CONNECTEDLINE(name)', value=name.encode('utf-8')
+    )
+    ari.channels.setChannelVar(
+        channelId=channel_id,
+        variable='CONNECTEDLINE(num)',
+        value=number.encode('utf-8'),
+    )
 
 
 def set_bridge_variable(ari, bridge_id, variable, value):
@@ -89,20 +100,40 @@ def get_bridge_variable(ari, bridge_id, variable):
         raise ARINotFound(ari, e)
 
 
-def convert_transfer_to_stasis(ari, amid, transferred_call, initiator_call, context, exten, transfer_id, variables, timeout):
+def convert_transfer_to_stasis(
+    ari,
+    amid,
+    transferred_call,
+    initiator_call,
+    context,
+    exten,
+    transfer_id,
+    variables,
+    timeout,
+):
     channel_variables = json.dumps(variables) if variables else '{}'
     timeout = str(timeout)
-    set_variables = [(transferred_call, 'XIVO_TRANSFER_ROLE', 'transferred'),
-                     (transferred_call, 'XIVO_TRANSFER_ID', transfer_id),
-                     (transferred_call, 'XIVO_TRANSFER_RECIPIENT_CONTEXT', context),
-                     (transferred_call, 'XIVO_TRANSFER_RECIPIENT_EXTEN', exten),
-                     (initiator_call, 'XIVO_TRANSFER_ROLE', 'initiator'),
-                     (initiator_call, 'XIVO_TRANSFER_ID', transfer_id),
-                     (initiator_call, 'XIVO_TRANSFER_RECIPIENT_CONTEXT', context),
-                     (initiator_call, 'XIVO_TRANSFER_RECIPIENT_EXTEN', exten),
-                     (initiator_call, 'XIVO_TRANSFER_VARIABLES', channel_variables),
-                     (initiator_call, 'XIVO_TRANSFER_TIMEOUT', timeout)]
+    set_variables = [
+        (transferred_call, 'XIVO_TRANSFER_ROLE', 'transferred'),
+        (transferred_call, 'XIVO_TRANSFER_ID', transfer_id),
+        (transferred_call, 'XIVO_TRANSFER_RECIPIENT_CONTEXT', context),
+        (transferred_call, 'XIVO_TRANSFER_RECIPIENT_EXTEN', exten),
+        (initiator_call, 'XIVO_TRANSFER_ROLE', 'initiator'),
+        (initiator_call, 'XIVO_TRANSFER_ID', transfer_id),
+        (initiator_call, 'XIVO_TRANSFER_RECIPIENT_CONTEXT', context),
+        (initiator_call, 'XIVO_TRANSFER_RECIPIENT_EXTEN', exten),
+        (initiator_call, 'XIVO_TRANSFER_VARIABLES', channel_variables),
+        (initiator_call, 'XIVO_TRANSFER_TIMEOUT', timeout),
+    ]
     for channel_id, variable, value in set_variables:
-        ari.channels.setChannelVar(channelId=channel_id, variable=variable, value=value, bypassStasis=True)
+        ari.channels.setChannelVar(
+            channelId=channel_id, variable=variable, value=value, bypassStasis=True
+        )
 
-    ami.redirect(amid, transferred_call, context='convert_to_stasis', exten='transfer', extra_channel=initiator_call)
+    ami.redirect(
+        amid,
+        transferred_call,
+        context='convert_to_stasis',
+        exten='transfer',
+        extra_channel=initiator_call,
+    )

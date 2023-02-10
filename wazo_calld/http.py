@@ -1,4 +1,4 @@
-# Copyright 2019-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from ari.exceptions import (
@@ -29,22 +29,27 @@ def handle_ari_exception(func):
         try:
             return func(*args, **kwargs)
         except ARIHTTPError as e:
-            raise AsteriskARIError({'base_url': e.client.base_url}, e.original_error, e.original_message)
+            raise AsteriskARIError(
+                {'base_url': e.client.base_url}, e.original_error, e.original_message
+            )
         except ARIException as e:
-            raise AsteriskARIUnreachable({'base_url': e.client.base_url}, e.original_error, e.original_message)
+            raise AsteriskARIUnreachable(
+                {'base_url': e.client.base_url}, e.original_error, e.original_message
+            )
+
     return wrapper
 
 
 class ErrorCatchingResource(Resource):
-    method_decorators = ([mallow_helpers.handle_validation_exception,
-                          handle_ari_exception,
-                          rest_api_helpers.handle_api_exception] + Resource.method_decorators)
+    method_decorators = [
+        mallow_helpers.handle_validation_exception,
+        handle_ari_exception,
+        rest_api_helpers.handle_api_exception,
+    ] + Resource.method_decorators
 
 
 class AuthResource(ErrorCatchingResource):
-    method_decorators = (
-        [
-            auth_verifier.verify_token,
-            auth_verifier.verify_tenant,
-        ] + ErrorCatchingResource.method_decorators
-    )
+    method_decorators = [
+        auth_verifier.verify_token,
+        auth_verifier.verify_tenant,
+    ] + ErrorCatchingResource.method_decorators

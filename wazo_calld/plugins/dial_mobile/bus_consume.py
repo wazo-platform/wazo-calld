@@ -1,4 +1,4 @@
-# Copyright 2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2022-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -10,7 +10,6 @@ logger = logging.getLogger(__name__)
 
 
 class EventHandler:
-
     def __init__(self, service):
         self._service = service
 
@@ -18,8 +17,12 @@ class EventHandler:
         bus_consumer.subscribe('BridgeEnter', self._on_bridge_enter)
         bus_consumer.subscribe('DialEnd', self._on_dial_end)
         bus_consumer.subscribe('UserEvent', self._on_user_event)
-        bus_consumer.subscribe('auth_refresh_token_created', self._on_refresh_token_created)
-        bus_consumer.subscribe('auth_refresh_token_deleted', self._on_refresh_token_deleted)
+        bus_consumer.subscribe(
+            'auth_refresh_token_created', self._on_refresh_token_created
+        )
+        bus_consumer.subscribe(
+            'auth_refresh_token_deleted', self._on_refresh_token_deleted
+        )
 
     def _on_user_event(self, event):
         if event['UserEvent'] != 'Pushmobile':
@@ -31,7 +34,9 @@ class EventHandler:
 
         logger.info(
             'Received push notification request for user %s from %s <%s>',
-            user_uuid, event["CallerIDName"], event["CallerIDNum"],
+            user_uuid,
+            event["CallerIDName"],
+            event["CallerIDNum"],
         )
 
         self._service.send_push_notification(
@@ -68,11 +73,13 @@ class EventHandler:
         user_uuid = event['ChanVariable']['XIVO_USERUUID']
 
         try:
-            has_a_registered_mobile_and_pending_push = self._service.has_a_registered_mobile_and_pending_push(
-                linkedid,
-                event['Uniqueid'],
-                endpoint,
-                user_uuid,
+            has_a_registered_mobile_and_pending_push = (
+                self._service.has_a_registered_mobile_and_pending_push(
+                    linkedid,
+                    event['Uniqueid'],
+                    endpoint,
+                    user_uuid,
+                )
             )
         except ARINotFound:
             # The channel that entered the bridge has already been hung up

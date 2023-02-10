@@ -1,4 +1,4 @@
-# Copyright 2016-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from hamcrest import assert_that
@@ -11,7 +11,6 @@ from ..transfer import Transfer, TransferRole
 
 
 class Testclassname(TestCase):
-
     def setUp(self):
         pass
 
@@ -24,7 +23,13 @@ class Testclassname(TestCase):
         transfer.initiator_call = 'initiator'
         transfer.recipient_call = 'recipient'
 
-        assert_that(transfer.role(transfer.transferred_call), equal_to(TransferRole.transferred))
-        assert_that(transfer.role(transfer.initiator_call), equal_to(TransferRole.initiator))
-        assert_that(transfer.role(transfer.recipient_call), equal_to(TransferRole.recipient))
+        assert_that(
+            transfer.role(transfer.transferred_call), equal_to(TransferRole.transferred)
+        )
+        assert_that(
+            transfer.role(transfer.initiator_call), equal_to(TransferRole.initiator)
+        )
+        assert_that(
+            transfer.role(transfer.recipient_call), equal_to(TransferRole.recipient)
+        )
         assert_that(calling(transfer.role).with_args('unknown'), raises(KeyError))

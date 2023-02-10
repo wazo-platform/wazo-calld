@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
@@ -44,12 +44,14 @@ def _reset():
 def log_request():
     if not request.path.startswith('/_'):
         path = request.path
-        log = {'method': request.method,
-               'path': path,
-               'query': request.args.items(multi=True),
-               'body': request.data,
-               'json': request.json,
-               'headers': dict(request.headers)}
+        log = {
+            'method': request.method,
+            'path': path,
+            'query': request.args.items(multi=True),
+            'body': request.data,
+            'json': request.json,
+            'headers': dict(request.headers),
+        }
         _requests.append(log)
 
 
@@ -95,9 +97,13 @@ def get_amqp(application_name):
 
 @app.route('/ari/api-docs/<path:file_name>')
 def swagger(file_name):
-    with open('/usr/local/share/ari/api-docs/{file_name}'.format(file_name=file_name), 'r') as swagger_file:
+    with open(
+        '/usr/local/share/ari/api-docs/{file_name}'.format(file_name=file_name), 'r'
+    ) as swagger_file:
         swagger_spec = swagger_file.read()
-        swagger_spec = swagger_spec.replace('localhost:8088', 'ari:{port}'.format(port=request.environ['SERVER_PORT']))
+        swagger_spec = swagger_spec.replace(
+            'localhost:8088', 'ari:{port}'.format(port=request.environ['SERVER_PORT'])
+        )
         return make_response(swagger_spec, 200, {'Content-Type': 'application/json'})
 
 
@@ -159,7 +165,7 @@ def post_bridge():
         'creator': 'stasis',
         'bridge_class': 'stasis',
         'name': '',
-        'channels': []
+        'channels': [],
     }
     return jsonify(new_bridge)
 
@@ -182,9 +188,7 @@ def channel_variable(channel_id):
         return '', 404
     if variable not in _responses['channel_variables'][channel_id]:
         return '', 404
-    return jsonify({
-        'value': _responses['channel_variables'][channel_id][variable]
-    })
+    return jsonify({'value': _responses['channel_variables'][channel_id][variable]})
 
 
 @app.route('/ari/channels/<channel_id>/variable', methods=['POST'])
@@ -209,9 +213,7 @@ def get_global_variable():
     variable = request.args['variable']
     if variable not in _responses['global_variables']:
         return '', 404
-    return jsonify({
-        'value': _responses['global_variables'][variable]
-    })
+    return jsonify({'value': _responses['global_variables'][variable]})
 
 
 @app.route('/ari/asterisk/variable', methods=['POST'])

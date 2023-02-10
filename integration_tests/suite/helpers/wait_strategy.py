@@ -1,4 +1,4 @@
-# Copyright 2016-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import requests
@@ -11,25 +11,21 @@ from wazo_test_helpers import until
 
 
 class WaitStrategy:
-
     def wait(self, integration_test):
         raise NotImplementedError()
 
 
 class NoWaitStrategy(WaitStrategy):
-
     def wait(self, integration_test):
         pass
 
 
 class CalldUpWaitStrategy(WaitStrategy):
-
     def wait(self, integration_test):
         until.true(integration_test.calld_client.is_up, tries=5)
 
 
 class CalldConnectionsOkWaitStrategy(WaitStrategy):
-
     def wait(self, integration_test):
         def is_ready():
             try:
@@ -41,7 +37,7 @@ class CalldConnectionsOkWaitStrategy(WaitStrategy):
                 has_entries(
                     {
                         'ari': has_entry('status', 'ok'),
-                        'bus_consumer': has_entry('status', 'ok')
+                        'bus_consumer': has_entry('status', 'ok'),
                     }
                 ),
             )
@@ -50,7 +46,6 @@ class CalldConnectionsOkWaitStrategy(WaitStrategy):
 
 
 class CalldEverythingOkWaitStrategy(WaitStrategy):
-
     def wait(self, integration_test):
         def is_ready():
             try:

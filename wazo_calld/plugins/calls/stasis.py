@@ -1,4 +1,4 @@
-# Copyright 2016-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -25,8 +25,9 @@ logger = logging.getLogger(__name__)
 
 
 class CallsStasis:
-
-    def __init__(self, ari, collectd, bus_publisher, services, notifier, xivo_uuid, amid_client):
+    def __init__(
+        self, ari, collectd, bus_publisher, services, notifier, xivo_uuid, amid_client
+    ):
         self.ari = ari.client
         self._core_ari = ari
         self.bus_publisher = bus_publisher
@@ -48,11 +49,17 @@ class CallsStasis:
         self.ari.on_channel_event('StasisStart', self.stasis_start)
         self.ari.on_channel_event('ChannelDestroyed', self.channel_destroyed)
         self.ari.on_channel_event('ChannelDestroyed', self.relay_channel_hung_up)
-        self.ari.on_application_registered(DEFAULT_APPLICATION_NAME, self.subscribe_to_all_channel_events)
-        self.ari.on_application_deregistered(DEFAULT_APPLICATION_NAME, self.unsubscribe_from_all_channel_events)
+        self.ari.on_application_registered(
+            DEFAULT_APPLICATION_NAME, self.subscribe_to_all_channel_events
+        )
+        self.ari.on_application_deregistered(
+            DEFAULT_APPLICATION_NAME, self.unsubscribe_from_all_channel_events
+        )
 
     def subscribe_to_all_channel_events(self):
-        self.ari.applications.subscribe(applicationName=DEFAULT_APPLICATION_NAME, eventSource='channel:')
+        self.ari.applications.subscribe(
+            applicationName=DEFAULT_APPLICATION_NAME, eventSource='channel:'
+        )
 
     def unsubscribe_from_all_channel_events(self):
         self.ari.applications.unsubscribe(
@@ -69,24 +76,36 @@ class CallsStasis:
 
     def _stasis_start_connect(self, channel, event):
         try:
-            connect_event = ConnectCallEvent(channel, event, self.ari, self.state_persistor)
+            connect_event = ConnectCallEvent(
+                channel, event, self.ari, self.state_persistor
+            )
         except InvalidConnectCallEvent:
             logger.error('tried to connect call %s but no originator found', channel.id)
             return
         state_name = self.state_persistor.get(connect_event.originator_channel.id).state
         state = self.state_factory.make(state_name)
         new_state = state.connect(connect_event)
-        self.state_persistor.upsert(channel.id, ChannelCacheEntry(app=connect_event.app,
-                                                                  app_instance=connect_event.app_instance,
-                                                                  state=new_state.name))
+        self.state_persistor.upsert(
+            channel.id,
+            ChannelCacheEntry(
+                app=connect_event.app,
+                app_instance=connect_event.app_instance,
+                state=new_state.name,
+            ),
+        )
 
     def _stasis_start_new_call(self, channel, event):
         call_event = StartCallEvent(channel, event, self.state_persistor)
         state = self.state_factory.make(CallStateOnHook.name)
         new_state = state.ring(call_event)
-        self.state_persistor.upsert(channel.id, ChannelCacheEntry(app=call_event.app,
-                                                                  app_instance=call_event.app_instance,
-                                                                  state=new_state.name))
+        self.state_persistor.upsert(
+            channel.id,
+            ChannelCacheEntry(
+                app=call_event.app,
+                app_instance=call_event.app_instance,
+                state=new_state.name,
+            ),
+        )
 
     def channel_destroyed(self, channel, event):
         try:

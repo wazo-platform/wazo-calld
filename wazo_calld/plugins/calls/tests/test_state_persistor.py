@@ -1,4 +1,4 @@
-# Copyright 2016-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
@@ -22,18 +22,18 @@ SOME_CHANNEL_ID = 'some-channel-id'
 
 
 class TestChannelCacheEntry(TestCase):
-
     def test_to_dict(self):
         entry = ChannelCacheEntry(s.app, s.app_instance, s.state)
 
-        assert_that(entry.to_dict(), equal_to({'app': s.app,
-                                               'app_instance': s.app_instance,
-                                               'state': s.state}))
+        assert_that(
+            entry.to_dict(),
+            equal_to({'app': s.app, 'app_instance': s.app_instance, 'state': s.state}),
+        )
 
     def test_from_dict(self):
-        entry = ChannelCacheEntry.from_dict({'app': s.app,
-                                             'app_instance': s.app_instance,
-                                             'state': s.state})
+        entry = ChannelCacheEntry.from_dict(
+            {'app': s.app, 'app_instance': s.app_instance, 'state': s.state}
+        )
 
         assert_that(entry.app, equal_to(s.app))
         assert_that(entry.app_instance, equal_to(s.app_instance))
@@ -41,7 +41,6 @@ class TestChannelCacheEntry(TestCase):
 
 
 class TestReadOnlyStatePersistor(TestCase):
-
     def setUp(self):
         self.ari = Mock()
         self.persistor = ReadOnlyStatePersistor(self.ari)
@@ -55,19 +54,23 @@ class TestReadOnlyStatePersistor(TestCase):
     def test_given_no_calls_when_get_unknown_channel_then_raise_keyerror(self):
         self.ari.asterisk.getGlobalVar.side_effect = ARINotFound(Mock(), Mock())
 
-        assert_that(calling(self.persistor.get).with_args('unknown-channel-id'), raises(KeyError))
+        assert_that(
+            calling(self.persistor.get).with_args('unknown-channel-id'),
+            raises(KeyError),
+        )
 
     def test_given_valid_cache_when_get_existing_channel_then_return_entry(self):
-        self.ari.asterisk.getGlobalVar.return_value = {'value': json.dumps({'app': 'myapp',
-                                                                            'app_instance': 'red',
-                                                                            'state': 'mystate'})}
+        self.ari.asterisk.getGlobalVar.return_value = {
+            'value': json.dumps(
+                {'app': 'myapp', 'app_instance': 'red', 'state': 'mystate'}
+            )
+        }
         result = self.persistor.get('my-channel')
 
         assert_that(result.state, equal_to('mystate'))
 
 
 class TestStatePersistor(TestCase):
-
     def setUp(self):
         self.ari = Mock()
         self.persistor = StatePersistor(self.ari)
@@ -79,22 +82,32 @@ class TestStatePersistor(TestCase):
 
         self.persistor.upsert(SOME_CHANNEL_ID, entry)
 
-        self.ari.asterisk.setGlobalVar.assert_called_once_with(variable='XIVO_CHANNELS_{}'.format(SOME_CHANNEL_ID), value=exptected_variable)
+        self.ari.asterisk.setGlobalVar.assert_called_once_with(
+            variable='XIVO_CHANNELS_{}'.format(SOME_CHANNEL_ID),
+            value=exptected_variable,
+        )
 
     def test_when_remove_then_variable_unset(self):
         self.persistor.remove(SOME_CHANNEL_ID)
 
-        self.ari.asterisk.setGlobalVar.assert_called_once_with(variable='XIVO_CHANNELS_{}'.format(SOME_CHANNEL_ID), value='')
+        self.ari.asterisk.setGlobalVar.assert_called_once_with(
+            variable='XIVO_CHANNELS_{}'.format(SOME_CHANNEL_ID), value=''
+        )
 
     def test_given_no_calls_when_get_then_raise_keyerror(self):
         self.ari.asterisk.getGlobalVar.side_effect = ARINotFound(Mock(), Mock())
 
-        assert_that(calling(self.persistor.get).with_args('unknown-channel-id'), raises(KeyError))
+        assert_that(
+            calling(self.persistor.get).with_args('unknown-channel-id'),
+            raises(KeyError),
+        )
 
     def test_given_existing_channel_when_get_then_return_entry(self):
-        self.ari.asterisk.getGlobalVar.return_value = {'value': json.dumps({'app': 'myapp',
-                                                                            'app_instance': 'red',
-                                                                            'state': 'mystate'})}
+        self.ari.asterisk.getGlobalVar.return_value = {
+            'value': json.dumps(
+                {'app': 'myapp', 'app_instance': 'red', 'state': 'mystate'}
+            )
+        }
         result = self.persistor.get('my-channel')
 
         assert_that(result.state, equal_to('mystate'))

@@ -1,4 +1,4 @@
-# Copyright 2019-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -12,7 +12,6 @@ logger = logging.getLogger(__name__)
 
 
 class ConferencesBusEventHandler:
-
     def __init__(self, confd, notifier, service):
         self._confd = confd
         self._notifier = notifier
@@ -35,7 +34,10 @@ class ConferencesBusEventHandler:
         try:
             conference = Conference.from_id(conference_id, self._confd)
         except NoSuchConferenceID:
-            logger.debug('Ignored participant joining conference %s: no such conference ID', conference_id)
+            logger.debug(
+                'Ignored participant joining conference %s: no such conference ID',
+                conference_id,
+            )
             return
 
         logger.debug('Participant joined conference %s', conference_id)
@@ -53,10 +55,16 @@ class ConferencesBusEventHandler:
 
         participant = participant_schema.load(raw_participant)
 
-        participants_already_present = self._service.list_participants(conference.tenant_uuid,
-                                                                       conference_id)
+        participants_already_present = self._service.list_participants(
+            conference.tenant_uuid, conference_id
+        )
 
-        self._notifier.participant_joined(conference.tenant_uuid, conference_id, participant, participants_already_present)
+        self._notifier.participant_joined(
+            conference.tenant_uuid,
+            conference_id,
+            participant,
+            participants_already_present,
+        )
 
     def _notify_participant_left(self, event):
         conference_id = self._extract_conference_id(event['Conference'])
@@ -66,7 +74,10 @@ class ConferencesBusEventHandler:
         try:
             conference = Conference.from_id(conference_id, self._confd)
         except NoSuchConferenceID:
-            logger.debug('Ignored participant joining conference %s: no such conference ID', conference_id)
+            logger.debug(
+                'Ignored participant joining conference %s: no such conference ID',
+                conference_id,
+            )
             return
 
         logger.debug('Participant left conference %s', conference_id)
@@ -84,10 +95,16 @@ class ConferencesBusEventHandler:
 
         participant = participant_schema.load(raw_participant)
 
-        participants_already_present = self._service.list_participants(conference.tenant_uuid,
-                                                                       conference_id)
+        participants_already_present = self._service.list_participants(
+            conference.tenant_uuid, conference_id
+        )
 
-        self._notifier.participant_left(conference.tenant_uuid, conference_id, participant, participants_already_present)
+        self._notifier.participant_left(
+            conference.tenant_uuid,
+            conference_id,
+            participant,
+            participants_already_present,
+        )
 
     def _notify_participant_muted(self, event):
         conference_id = self._extract_conference_id(event['Conference'])
@@ -142,7 +159,10 @@ class ConferencesBusEventHandler:
         try:
             conference = Conference.from_id(conference_id, self._confd)
         except NoSuchConferenceID:
-            logger.error('Could not start recording for conference %s: no such conference ID', conference_id)
+            logger.error(
+                'Could not start recording for conference %s: no such conference ID',
+                conference_id,
+            )
             return
 
         self._notifier.conference_record_started(conference_id, conference.tenant_uuid)
@@ -156,7 +176,10 @@ class ConferencesBusEventHandler:
         try:
             conference = Conference.from_id(conference_id, self._confd)
         except NoSuchConferenceID:
-            logger.error('Could not stop recording for conference %s: no such conference ID', conference_id)
+            logger.error(
+                'Could not stop recording for conference %s: no such conference ID',
+                conference_id,
+            )
             return
 
         self._notifier.conference_record_stopped(conference_id, conference.tenant_uuid)
@@ -167,7 +190,9 @@ class ConferencesBusEventHandler:
             return
 
         talking = event['TalkingStatus'] == 'on'
-        logger.debug('Participant in conference %s is talking: %s', conference_id, talking)
+        logger.debug(
+            'Participant in conference %s is talking: %s', conference_id, talking
+        )
 
         raw_participant = {
             'id': event['Uniqueid'],
@@ -185,8 +210,9 @@ class ConferencesBusEventHandler:
 
         conference = Conference.from_id(conference_id, self._confd)
 
-        participants = self._service.list_participants(conference.tenant_uuid,
-                                                       conference_id)
+        participants = self._service.list_participants(
+            conference.tenant_uuid, conference_id
+        )
 
         if talking:
             self._notifier.participant_talk_started(

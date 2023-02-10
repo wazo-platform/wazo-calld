@@ -1,4 +1,4 @@
-# Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from marshmallow import (
@@ -37,13 +37,15 @@ class LocationField(fields.Field):
         try:
             concrete_location = self.locations.get(destination)
         except TypeError:
-            raise ValidationError({
-                'message': 'Invalid destination',
-                'constraint_id': 'destination-type',
-                'constraint': {
-                    'type': 'string',
+            raise ValidationError(
+                {
+                    'message': 'Invalid destination',
+                    'constraint_id': 'destination-type',
+                    'constraint': {
+                        'type': 'string',
+                    },
                 }
-            })
+            )
 
         if not concrete_location:
             return {}
@@ -57,7 +59,9 @@ class UserRelocateRequestSchema(Schema):
     initiator_call = fields.Str(validate=Length(min=1), required=True)
     destination = fields.Str(validate=OneOf(LocationField.locations))
     location = LocationField(missing=dict)
-    completions = fields.List(fields.Str(validate=OneOf(VALID_COMPLETIONS)), missing=['answer'])
+    completions = fields.List(
+        fields.Str(validate=OneOf(VALID_COMPLETIONS)), missing=['answer']
+    )
     timeout = fields.Integer(validate=Range(min=1), missing=30)
     auto_answer = fields.Boolean(missing=False)
 
@@ -70,10 +74,18 @@ class RelocateSchema(Schema):
         unknown = EXCLUDE
 
     uuid = fields.Str(validate=Length(equal=36), required=True)
-    relocated_call = fields.Str(validate=Length(min=1), required=True, attribute='relocated_channel')
-    initiator_call = fields.Str(validate=Length(min=1), required=True, attribute='initiator_channel')
-    recipient_call = fields.Str(validate=Length(min=1), required=True, attribute='recipient_channel')
-    completions = fields.List(fields.Str(validate=OneOf(VALID_COMPLETIONS)), missing=['answer'])
+    relocated_call = fields.Str(
+        validate=Length(min=1), required=True, attribute='relocated_channel'
+    )
+    initiator_call = fields.Str(
+        validate=Length(min=1), required=True, attribute='initiator_channel'
+    )
+    recipient_call = fields.Str(
+        validate=Length(min=1), required=True, attribute='recipient_channel'
+    )
+    completions = fields.List(
+        fields.Str(validate=OneOf(VALID_COMPLETIONS)), missing=['answer']
+    )
     initiator = fields.Str(validate=Length(equal=36), required=True)
     timeout = fields.Integer(validate=Range(min=1), missing=30)
     auto_answer = fields.Boolean(missing=False)

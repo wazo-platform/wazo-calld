@@ -1,4 +1,4 @@
-# Copyright 2018-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -29,7 +29,6 @@ logger = logging.getLogger(__name__)
 
 
 class ApplicationService:
-
     def __init__(self, ari, confd, amid, notifier, confd_apps, moh):
         self._ari = ari
         self._amid = amid
@@ -300,15 +299,15 @@ class ApplicationService:
             yield make_node_from_bridge(bridge)
 
     def originate(
-            self,
-            application,
-            node_uuid,
-            exten,
-            context,
-            autoanswer,
-            displayed_caller_id_name,
-            displayed_caller_id_number,
-            variables=None,
+        self,
+        application,
+        node_uuid,
+        exten,
+        context,
+        autoanswer,
+        displayed_caller_id_name,
+        displayed_caller_id_number,
+        variables=None,
     ):
         application_uuid = application['uuid']
         if not ami.extension_exists(self._amid, context, exten, 1):
@@ -324,7 +323,7 @@ class ApplicationService:
             'endpoint': endpoint,
             'app': AppNameHelper.to_name(application_uuid),
             'appArgs': ','.join(app_args),
-            'variables': {'variables': {}}
+            'variables': {'variables': {}},
         }
 
         if displayed_caller_id_name or displayed_caller_id_number:
@@ -346,14 +345,14 @@ class ApplicationService:
         return formatter.from_channel(channel, variables=variables, node_uuid=node_uuid)
 
     def originate_user(
-            self,
-            application,
-            node_uuid,
-            user_uuid,
-            autoanswer,
-            displayed_caller_id_name,
-            displayed_caller_id_number,
-            variables=None,
+        self,
+        application,
+        node_uuid,
+        user_uuid,
+        autoanswer,
+        displayed_caller_id_name,
+        displayed_caller_id_number,
+        variables=None,
     ):
         # check if user exists and has a line
         confd.User(user_uuid, self._confd).main_line()
@@ -379,7 +378,9 @@ class ApplicationService:
         call = formatter.from_channel(channel, variables=variables)
         self._notifier.call_initiated(application, call)
 
-    def snoop_create(self, application, snooped_call_id, snooping_call_id, whisper_mode):
+    def snoop_create(
+        self, application, snooped_call_id, snooping_call_id, whisper_mode
+    ):
         if not Channel(snooping_call_id, self._ari).is_in_stasis():
             raise CallNotInApplication(application['uuid'], snooping_call_id)
 
@@ -412,7 +413,9 @@ class ApplicationService:
 
     def start_call_hold(self, call_id):
         try:
-            self._ari.channels.setChannelVar(channelId=call_id, variable='XIVO_ON_HOLD', value='1')
+            self._ari.channels.setChannelVar(
+                channelId=call_id, variable='XIVO_ON_HOLD', value='1'
+            )
             self._ari.channels.mute(channelId=call_id, direction='in')
             self._ari.channels.hold(channelId=call_id)
         except ARINotFound:
@@ -420,7 +423,9 @@ class ApplicationService:
 
     def stop_call_hold(self, call_id):
         try:
-            self._ari.channels.setChannelVar(channelId=call_id, variable='XIVO_ON_HOLD', value='')
+            self._ari.channels.setChannelVar(
+                channelId=call_id, variable='XIVO_ON_HOLD', value=''
+            )
             self._ari.channels.unmute(channelId=call_id, direction='in')
             self._ari.channels.unhold(channelId=call_id)
         except ARINotFound:

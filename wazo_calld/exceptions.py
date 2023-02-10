@@ -1,4 +1,4 @@
-# Copyright 2015-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -12,7 +12,6 @@ APIException = rest_api_helpers.APIException
 
 
 class ARIUnreachable(Exception):
-
     def __init__(self, ari_config, original_error=None):
         super().__init__('ARI server unreachable... stopping')
         self.ari_config = ari_config
@@ -20,7 +19,6 @@ class ARIUnreachable(Exception):
 
 
 class AsteriskARIUnreachable(APIException):
-
     def __init__(self, asterisk_ari_config, original_error, original_message):
         super().__init__(
             status_code=503,
@@ -29,12 +27,11 @@ class AsteriskARIUnreachable(APIException):
             details={
                 'asterisk_ari_config': asterisk_ari_config,
                 'original_error': f'{original_error}: {original_message}',
-            }
+            },
         )
 
 
 class AsteriskARIError(APIException):
-
     def __init__(self, asterisk_ari_config, original_error, original_message):
         super().__init__(
             status_code=503,
@@ -43,12 +40,11 @@ class AsteriskARIError(APIException):
             details={
                 'asterisk_ari_config': asterisk_ari_config,
                 'original_error': f'{original_error}: {original_message}',
-            }
+            },
         )
 
 
 class AsteriskARINotInitialized(APIException):
-
     def __init__(self):
         super().__init__(
             status_code=503,
@@ -58,7 +54,6 @@ class AsteriskARINotInitialized(APIException):
 
 
 class TokenWithUserUUIDRequiredError(APIException):
-
     def __init__(self):
         super().__init__(
             status_code=400,
@@ -68,7 +63,6 @@ class TokenWithUserUUIDRequiredError(APIException):
 
 
 class PhonedError(APIException):
-
     def __init__(self, phoned_config, error):
         super().__init__(
             status_code=503,
@@ -77,7 +71,7 @@ class PhonedError(APIException):
             details={
                 'phoned_config': phoned_config,
                 'original_error': str(error),
-            }
+            },
         )
 
 

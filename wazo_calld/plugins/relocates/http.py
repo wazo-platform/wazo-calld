@@ -1,4 +1,4 @@
-# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from flask import request
@@ -14,7 +14,6 @@ from .schemas import (
 
 
 class UserRelocatesResource(AuthResource):
-
     def __init__(self, relocates_service):
         self._relocates_service = relocates_service
 
@@ -23,27 +22,26 @@ class UserRelocatesResource(AuthResource):
         user_uuid = get_token_user_uuid_from_request()
         relocates = self._relocates_service.list_from_user(user_uuid)
 
-        return {
-            'items': relocate_schema.dump(relocates, many=True)
-        }, 200
+        return {'items': relocate_schema.dump(relocates, many=True)}, 200
 
     @required_acl('calld.users.me.relocates.create')
     def post(self):
         request_body = user_relocate_request_schema.load(request.get_json(force=True))
         user_uuid = get_token_user_uuid_from_request()
-        relocate = self._relocates_service.create_from_user(request_body['initiator_call'],
-                                                            request_body['destination'],
-                                                            request_body['location'],
-                                                            request_body['completions'],
-                                                            request_body['timeout'],
-                                                            request_body['auto_answer'],
-                                                            user_uuid)
+        relocate = self._relocates_service.create_from_user(
+            request_body['initiator_call'],
+            request_body['destination'],
+            request_body['location'],
+            request_body['completions'],
+            request_body['timeout'],
+            request_body['auto_answer'],
+            user_uuid,
+        )
         result = relocate_schema.dump(relocate)
         return result, 201
 
 
 class UserRelocateResource(AuthResource):
-
     def __init__(self, relocates_service):
         self._relocates_service = relocates_service
 
@@ -57,7 +55,6 @@ class UserRelocateResource(AuthResource):
 
 
 class UserRelocateCompleteResource(AuthResource):
-
     def __init__(self, relocates_service):
         self._relocates_service = relocates_service
 
@@ -69,7 +66,6 @@ class UserRelocateCompleteResource(AuthResource):
 
 
 class UserRelocateCancelResource(AuthResource):
-
     def __init__(self, relocates_service):
         self._relocates_service = relocates_service
 

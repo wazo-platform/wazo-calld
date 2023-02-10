@@ -1,4 +1,4 @@
-# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -99,7 +99,9 @@ class SwitchboardsService:
             )
             return
 
-        noanswer_fallback_action = Channel(channel_id, self._ari).switchboard_noanswer_fallback_action()
+        noanswer_fallback_action = Channel(
+            channel_id, self._ari
+        ).switchboard_noanswer_fallback_action()
         if not noanswer_fallback_action:
             logger.debug(
                 'Switchboard %s: ignoring no answer timeout because there is no fallback',

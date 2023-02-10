@@ -45,7 +45,6 @@ class WrongClient:
 
 
 class IntegrationTest(AssetLaunchingTestCase):
-
     assets_root = ASSET_ROOT
     service = 'calld'
     wait_strategy = CalldEverythingOkWaitStrategy()

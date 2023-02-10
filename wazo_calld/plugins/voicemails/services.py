@@ -1,4 +1,4 @@
-# Copyright 2016-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import base64
@@ -16,7 +16,6 @@ from .storage import VoicemailFolderType
 
 
 class VoicemailsService:
-
     def __init__(self, ari, confd_client, voicemail_storage):
         self._ari = ari
         self._confd_client = confd_client
@@ -55,7 +54,9 @@ class VoicemailsService:
         return self._get_message_recording(vm_conf, message_id)
 
     def _get_message_recording(self, vm_conf, message_id):
-        message_info, recording = self._storage.get_message_info_and_recording(vm_conf, message_id)
+        message_info, recording = self._storage.get_message_info_and_recording(
+            vm_conf, message_id
+        )
         if message_info['folder'].is_unread:
             dest_folder = self._storage.get_folder_by_type(VoicemailFolderType.old)
             self._move_message(vm_conf, message_info, dest_folder)
@@ -111,11 +112,13 @@ class VoicemailsService:
 
     def _get_greeting(self, vm_conf, greeting):
         try:
-            return base64.b64decode(self._ari.wazo.getVoicemailGreeting(
-                context=vm_conf['context'],
-                voicemail=vm_conf['number'],
-                greeting=greeting,
-            )['greeting_base64'].encode())
+            return base64.b64decode(
+                self._ari.wazo.getVoicemailGreeting(
+                    context=vm_conf['context'],
+                    voicemail=vm_conf['number'],
+                    greeting=greeting,
+                )['greeting_base64'].encode()
+            )
         except ARIHTTPError as e:
             if e.original_error.response.status_code == 404:
                 raise NoSuchVoicemailGreeting(greeting)
@@ -150,15 +153,13 @@ class VoicemailsService:
         return self._create_greeting(vm_conf, greeting, data)
 
     def _create_greeting(self, vm_conf, greeting, data):
-        body = {
-            'greeting_base64': base64.b64encode(data).decode()
-        }
+        body = {'greeting_base64': base64.b64encode(data).decode()}
         try:
             self._ari.wazo.createVoicemailGreeting(
                 context=vm_conf['context'],
                 voicemail=vm_conf['number'],
                 greeting=greeting,
-                body=body
+                body=body,
             )
         except requests.HTTPError as e:
             # FIXME(sileht): Why ari-py does not raise ARIHTTPError for 400 ?
@@ -184,7 +185,7 @@ class VoicemailsService:
                 context=vm_conf['context'],
                 voicemail=vm_conf['number'],
                 greeting=greeting,
-                body=body
+                body=body,
             )
         except requests.HTTPError as e:
             # FIXME(sileht): Why ari-py does not raise ARIHTTPError for 400 ?
