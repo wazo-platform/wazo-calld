@@ -1,4 +1,4 @@
-# Copyright 2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2021-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from unittest import TestCase
@@ -14,7 +14,9 @@ class TestSwitchboardService(TestCase):
         self.confd = Mock()
         self.notifier = Mock()
 
-        self.service = SwitchboardsService(self.ari, self.asyncio, self.confd, self.notifier)
+        self.service = SwitchboardsService(
+            self.ari, self.asyncio, self.confd, self.notifier
+        )
 
     def test_moh_on_new_queued_call_when_defined(self):
         self.confd.switchboards.get.return_value = {'queue_music_on_hold': s.moh_class}

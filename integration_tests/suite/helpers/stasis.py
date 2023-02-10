@@ -17,7 +17,6 @@ class _StasisEvent(ServiceEvent):
 
 
 class StasisClient:
-
     def __init__(self, host, port):
         bus_config = {
             'username': 'guest',
@@ -43,34 +42,20 @@ class StasisClient:
     def event_answer_connect(self, from_, new_call_id, stasis_app, stasis_app_instance):
         body = {
             "application": stasis_app,
-            "args": [
-                stasis_app_instance,
-                "dialed_from",
-                from_
-            ],
+            "args": [stasis_app_instance, "dialed_from", from_],
             "channel": {
                 "accountcode": "",
-                "caller": {
-                    "name": "my-name",
-                    "number": "my-number"
-                },
-                "connected": {
-                    "name": "",
-                    "number": ""
-                },
+                "caller": {"name": "my-name", "number": "my-number"},
+                "connected": {"name": "", "number": ""},
                 "creationtime": "2015-12-16T15:13:59.526-0500",
-                "dialplan": {
-                    "context": "default",
-                    "exten": "",
-                    "priority": 1
-                },
+                "dialplan": {"context": "default", "exten": "", "priority": 1},
                 "id": new_call_id,
                 "language": "en_US",
                 "name": "PJSIP/my-sip-00000020",
-                "state": "Up"
+                "state": "Up",
             },
             "timestamp": "2015-12-16T15:14:04.269-0500",
-            "type": "StasisStart"
+            "type": "StasisStart",
         }
         return self._send_stasis_event(body)
 
@@ -79,58 +64,40 @@ class StasisClient:
             "application": SOME_STASIS_APP,
             "channel": {
                 "accountcode": "code",
-                "caller": {
-                    "name": "my-name",
-                    "number": "my-number"
-                },
-                "connected": {
-                    "name": "",
-                    "number": ""
-                },
+                "caller": {"name": "my-name", "number": "my-number"},
+                "connected": {"name": "", "number": ""},
                 "creationtime": "2015-12-18T15:40:32.439-0500",
-                "dialplan": {
-                    "context": "default",
-                    "exten": "my-exten",
-                    "priority": 1
-                },
+                "dialplan": {"context": "default", "exten": "my-exten", "priority": 1},
                 "id": channel_id,
                 "language": "fr_FR",
                 "name": "my-name",
-                "state": "Ring"
+                "state": "Ring",
             },
             "timestamp": "2015-12-18T15:40:39.073-0500",
-            "type": "StasisEnd"
+            "type": "StasisEnd",
         }
         return self._send_stasis_event(body)
 
-    def event_stasis_start(self, channel_id, stasis_app, stasis_app_instance, stasis_args=None):
+    def event_stasis_start(
+        self, channel_id, stasis_app, stasis_app_instance, stasis_args=None
+    ):
         stasis_args = stasis_args or []
         body = {
             "application": stasis_app,
             "args": [stasis_app_instance] + stasis_args,
             "channel": {
                 "accountcode": "code",
-                "caller": {
-                    "name": "my-name",
-                    "number": "my-number"
-                },
-                "connected": {
-                    "name": "",
-                    "number": ""
-                },
+                "caller": {"name": "my-name", "number": "my-number"},
+                "connected": {"name": "", "number": ""},
                 "creationtime": "2016-02-04T14:25:00.007-0500",
-                "dialplan": {
-                    "context": "default",
-                    "exten": "my-exten",
-                    "priority": 1
-                },
+                "dialplan": {"context": "default", "exten": "my-exten", "priority": 1},
                 "id": channel_id,
                 "language": "fr_FR",
                 "name": "my-name",
-                "state": "Ring"
+                "state": "Ring",
             },
             "timestamp": "2016-02-04T14:25:00.408-0500",
-            "type": "StasisStart"
+            "type": "StasisStart",
         }
         return self._send_stasis_event(body)
 
@@ -155,14 +122,8 @@ class StasisClient:
             "cause_txt": "Unknown",
             "channel": {
                 "accountcode": "code",
-                "caller": {
-                    "name": "my-name",
-                    "number": "my-number"
-                },
-                "connected": {
-                    "name": "",
-                    "number": connected_number
-                },
+                "caller": {"name": "my-name", "number": "my-number"},
+                "connected": {"name": "", "number": connected_number},
                 "channelvars": {
                     'WAZO_ANSWER_TIME': answer_time,
                     'WAZO_CHANNEL_DIRECTION': channel_direction,
@@ -171,17 +132,13 @@ class StasisClient:
                     'WAZO_TENANT_UUID': VALID_TENANT,
                 },
                 "creationtime": creation_time,
-                "dialplan": {
-                    "context": "default",
-                    "exten": "my-exten",
-                    "priority": 1
-                },
+                "dialplan": {"context": "default", "exten": "my-exten", "priority": 1},
                 "id": channel_id,
                 "language": "fr_FR",
                 "name": "my-name",
-                "state": "Down"
+                "state": "Down",
             },
             "timestamp": timestamp,
-            "type": "ChannelDestroyed"
+            "type": "ChannelDestroyed",
         }
         return self._send_stasis_event(body)

@@ -1,4 +1,4 @@
-# Copyright 2021-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2021-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from wazo_confd_client import Client as ConfdClient
@@ -31,7 +31,9 @@ class Plugin:
         token_changed_subscribe(amid_client.set_token)
         token_changed_subscribe(confd_client.set_token)
 
-        meetings_service = MeetingsService(amid_client, ari.client, confd_client, config)
+        meetings_service = MeetingsService(
+            amid_client, ari.client, confd_client, config
+        )
         notifier = MeetingsNotifier(bus_publisher)
         bus_event_handler = MeetingsBusEventHandler(
             confd_client, notifier, meetings_service

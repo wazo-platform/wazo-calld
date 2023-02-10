@@ -1,4 +1,4 @@
-# Copyright 2015-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import datetime
@@ -8,7 +8,12 @@ import uuid
 from ari.exceptions import ARINotFound
 from wazo_calld.ari_ import DEFAULT_APPLICATION_NAME
 from wazo_calld.plugin_helpers import ami
-from wazo_calld.plugin_helpers.ari_ import AUTO_ANSWER_VARIABLES, Channel, set_channel_var_sync, set_channel_id_var_sync
+from wazo_calld.plugin_helpers.ari_ import (
+    AUTO_ANSWER_VARIABLES,
+    Channel,
+    set_channel_var_sync,
+    set_channel_id_var_sync,
+)
 from wazo_calld.plugin_helpers.confd import User
 from wazo_calld.plugin_helpers.exceptions import (
     InvalidExtension,
@@ -25,13 +30,23 @@ from .dial_echo import DialEchoTimeout
 
 logger = logging.getLogger(__name__)
 
-CALL_RECORDING_FILENAME_TEMPLATE = '/var/lib/wazo/sounds/tenants/{tenant_uuid}/monitor/{recording_uuid}.wav'
+CALL_RECORDING_FILENAME_TEMPLATE = (
+    '/var/lib/wazo/sounds/tenants/{tenant_uuid}/monitor/{recording_uuid}.wav'
+)
 LOCAL_TIMEZONE = datetime.datetime.now(datetime.timezone.utc).astimezone().tzinfo
 
 
 class CallsService:
-
-    def __init__(self, amid_client, ari_config, ari, confd_client, dial_echo_manager, phoned_client, notifier):
+    def __init__(
+        self,
+        amid_client,
+        ari_config,
+        ari,
+        confd_client,
+        dial_echo_manager,
+        phoned_client,
+        notifier,
+    ):
         self._ami = amid_client
         self._ari_config = ari_config
         self._ari = ari
@@ -46,12 +61,16 @@ class CallsService:
 
         if application_filter:
             try:
-                channel_ids = self._ari.applications.get(applicationName=application_filter)['channel_ids']
+                channel_ids = self._ari.applications.get(
+                    applicationName=application_filter
+                )['channel_ids']
             except ARINotFound:
                 channel_ids = []
 
             if '__AST_CHANNEL_ALL_TOPIC' not in channel_ids:
-                channels = [channel for channel in channels if channel.id in channel_ids]
+                channels = [
+                    channel for channel in channels if channel.id in channel_ids
+                ]
 
             if application_instance_filter:
                 app_instance_channels = []
@@ -60,23 +79,35 @@ class CallsService:
                         channel_cache_entry = self._state_persistor.get(channel.id)
                     except KeyError:
                         continue
-                    if (channel_cache_entry.app == application_filter
-                       and channel_cache_entry.app_instance == application_instance_filter):
+                    if (
+                        channel_cache_entry.app == application_filter
+                        and channel_cache_entry.app_instance
+                        == application_instance_filter
+                    ):
                         app_instance_channels.append(channel)
                 channels = app_instance_channels
 
         return [self.make_call_from_channel(self._ari, channel) for channel in channels]
 
-    def list_calls_user(self, user_uuid, application_filter=None, application_instance_filter=None):
+    def list_calls_user(
+        self, user_uuid, application_filter=None, application_instance_filter=None
+    ):
         calls = self.list_calls(application_filter, application_instance_filter)
-        return [call for call in calls if call.user_uuid == user_uuid and not Channel(call.id_, self._ari).is_local()]
+        return [
+            call
+            for call in calls
+            if call.user_uuid == user_uuid
+            and not Channel(call.id_, self._ari).is_local()
+        ]
 
     def originate(self, request):
         requested_context = request['destination']['context']
         requested_extension = request['destination']['extension']
         requested_priority = request['destination']['priority']
 
-        if not ami.extension_exists(self._ami, requested_context, requested_extension, requested_priority):
+        if not ami.extension_exists(
+            self._ami, requested_context, requested_extension, requested_priority
+        ):
             # Context does not exist in the dialplan
             raise InvalidExtension(requested_context, requested_extension)
 
@@ -88,14 +119,22 @@ class CallsService:
         if request['source']['from_mobile']:
             source_mobile = user.mobile_phone_number()
             if not source_mobile:
-                raise CallCreationError('User has no mobile phone number', details={'user': source_user})
+                raise CallCreationError(
+                    'User has no mobile phone number', details={'user': source_user}
+                )
             source_context = user.main_line().context()
 
-            if not ami.extension_exists(self._ami, source_context, source_mobile, priority=1):
-                details = {'user': source_user,
-                           'mobile_exten': source_mobile,
-                           'mobile_context': source_context}
-                raise CallCreationError('User has invalid mobile phone number', details=details)
+            if not ami.extension_exists(
+                self._ami, source_context, source_mobile, priority=1
+            ):
+                details = {
+                    'user': source_user,
+                    'mobile_exten': source_mobile,
+                    'mobile_context': source_context,
+                }
+                raise CallCreationError(
+                    'User has invalid mobile phone number', details=details
+                )
 
             endpoint = 'local/s@wazo-originate-mobile-leg1/n'
             context_name, extension, priority = 'wazo-originate-mobile-leg2', 's', 1
@@ -107,21 +146,37 @@ class CallsService:
             variables.setdefault('WAZO_ORIGINATE_MOBILE_EXTENSION', source_mobile)
             variables.setdefault('WAZO_ORIGINATE_MOBILE_CONTEXT', source_context)
             variables.setdefault('XIVO_FIX_CALLERID', '1')
-            variables.setdefault('XIVO_ORIGINAL_CALLER_ID', '"{exten}" <{exten}>'.format(exten=requested_extension))
-            variables.setdefault('WAZO_ORIGINATE_DESTINATION_PRIORITY', str(requested_priority))
-            variables.setdefault('WAZO_ORIGINATE_DESTINATION_EXTENSION', requested_extension)
-            variables.setdefault('WAZO_ORIGINATE_DESTINATION_CONTEXT', requested_context)
-            variables.setdefault('WAZO_ORIGINATE_DESTINATION_CALLERID_ALL', '"{exten}" <{exten}>'.format(exten=source_mobile))
+            variables.setdefault(
+                'XIVO_ORIGINAL_CALLER_ID',
+                '"{exten}" <{exten}>'.format(exten=requested_extension),
+            )
+            variables.setdefault(
+                'WAZO_ORIGINATE_DESTINATION_PRIORITY', str(requested_priority)
+            )
+            variables.setdefault(
+                'WAZO_ORIGINATE_DESTINATION_EXTENSION', requested_extension
+            )
+            variables.setdefault(
+                'WAZO_ORIGINATE_DESTINATION_CONTEXT', requested_context
+            )
+            variables.setdefault(
+                'WAZO_ORIGINATE_DESTINATION_CALLERID_ALL',
+                '"{exten}" <{exten}>'.format(exten=source_mobile),
+            )
             dial_echo_request_id = self._dial_echo_manager.new_dial_echo_request()
             variables.setdefault('_WAZO_DIAL_ECHO_REQUEST_ID', dial_echo_request_id)
 
-            channel = self._ari.channels.originate(endpoint=endpoint,
-                                                   extension=extension,
-                                                   context=context_name,
-                                                   priority=priority,
-                                                   variables={'variables': variables})
+            channel = self._ari.channels.originate(
+                endpoint=endpoint,
+                extension=extension,
+                context=context_name,
+                priority=priority,
+                variables={'variables': variables},
+            )
             try:
-                channel_id = self._dial_echo_manager.wait(dial_echo_request_id, timeout=5)
+                channel_id = self._dial_echo_manager.wait(
+                    dial_echo_request_id, timeout=5
+                )
             except DialEchoTimeout:
                 details = {
                     'mobile_extension': source_mobile,
@@ -138,7 +193,11 @@ class CallsService:
             else:
                 endpoint = user.main_line().interface()
 
-            context_name, extension, priority = requested_context, requested_extension, requested_priority
+            context_name, extension, priority = (
+                requested_context,
+                requested_extension,
+                requested_priority,
+            )
 
             if request['source']['auto_answer']:
                 variables.update(AUTO_ANSWER_VARIABLES)
@@ -147,16 +206,20 @@ class CallsService:
             variables.setdefault('WAZO_USERUUID', source_user)
             variables.setdefault('_WAZO_TENANT_UUID', user.tenant_uuid)
             variables.setdefault('CONNECTEDLINE(name)', extension)
-            variables.setdefault('CONNECTEDLINE(num)', '' if extension.startswith('#') else extension)
+            variables.setdefault(
+                'CONNECTEDLINE(num)', '' if extension.startswith('#') else extension
+            )
             variables.setdefault('CALLERID(name)', extension)
             variables.setdefault('CALLERID(num)', extension)
             variables.setdefault('WAZO_CHANNEL_DIRECTION', 'to-wazo')
 
-            channel = self._ari.channels.originate(endpoint=endpoint,
-                                                   extension=extension,
-                                                   context=context_name,
-                                                   priority=priority,
-                                                   variables={'variables': variables})
+            channel = self._ari.channels.originate(
+                endpoint=endpoint,
+                extension=extension,
+                context=context_name,
+                priority=priority,
+                variables={'variables': variables},
+            )
 
         call = self.make_call_from_channel(self._ari, channel)
         call.dialed_extension = request['destination']['extension']
@@ -169,13 +232,17 @@ class CallsService:
             context = User(user_uuid, self._confd).main_line().context()
 
         new_request = {
-            'destination': {'context': context,
-                            'extension': request['extension'],
-                            'priority': 1},
-            'source': {'user': user_uuid,
-                       'from_mobile': request['from_mobile'],
-                       'all_lines': request['all_lines']},
-            'variables': request['variables']
+            'destination': {
+                'context': context,
+                'extension': request['extension'],
+                'priority': 1,
+            },
+            'source': {
+                'user': user_uuid,
+                'from_mobile': request['from_mobile'],
+                'all_lines': request['all_lines'],
+            },
+            'variables': request['variables'],
         }
         if 'line_id' in request:
             new_request['source']['line_id'] = request['line_id']
@@ -255,13 +322,17 @@ class CallsService:
         except KeyError:
             raise CallConnectError(call_id)
 
-        new_channel = self._ari.channels.originate(endpoint=endpoint,
-                                                   app=DEFAULT_APPLICATION_NAME,
-                                                   appArgs=[app_instance, 'dialed_from', channel_id],
-                                                   originator=call_id)
+        new_channel = self._ari.channels.originate(
+            endpoint=endpoint,
+            app=DEFAULT_APPLICATION_NAME,
+            appArgs=[app_instance, 'dialed_from', channel_id],
+            originator=call_id,
+        )
 
         # if the caller hangs up, we cancel our originate
-        originate_canceller = channel.on_event('StasisEnd', lambda _, __: self.hangup(new_channel.id))
+        originate_canceller = channel.on_event(
+            'StasisEnd', lambda _, __: self.hangup(new_channel.id)
+        )
         # if the callee accepts, we don't have to cancel anything
         new_channel.on_event('StasisStart', lambda _, __: originate_canceller.close())
         # if the callee refuses, leave the caller as it is
@@ -285,20 +356,37 @@ class CallsService:
         call.tenant_uuid = channel_helper.tenant_uuid()
         call.on_hold = channel_helper.on_hold()
         call.muted = channel_helper.muted()
-        call.record_state = 'active' if channel_variables.get('WAZO_CALL_RECORD_ACTIVE') == '1' else 'inactive'
-        call.bridges = [bridge.id for bridge in ari.bridges.list() if channel.id in bridge.json['channels']]
-        call.talking_to = {connected_channel.id: connected_channel.user()
-                           for connected_channel in channel_helper.connected_channels()}
+        call.record_state = (
+            'active'
+            if channel_variables.get('WAZO_CALL_RECORD_ACTIVE') == '1'
+            else 'inactive'
+        )
+        call.bridges = [
+            bridge.id
+            for bridge in ari.bridges.list()
+            if channel.id in bridge.json['channels']
+        ]
+        call.talking_to = {
+            connected_channel.id: connected_channel.user()
+            for connected_channel in channel_helper.connected_channels()
+        }
         call.is_caller = channel_helper.is_caller()
-        call.is_video = channel_variables.get('CHANNEL(videonativeformat)') != '(nothing)'
+        call.is_video = (
+            channel_variables.get('CHANNEL(videonativeformat)') != '(nothing)'
+        )
         call.dialed_extension = channel_helper.dialed_extension()
         call.sip_call_id = channel_helper.sip_call_id()
         call.line_id = channel_helper.line_id()
-        call.direction = channel_variables.get('WAZO_CONVERSATION_DIRECTION') or (
-            CallsService.conversation_direction_from_channels(
-                ari, CallsService._get_connected_channel_ids_from_helper(channel_helper)
+        call.direction = (
+            channel_variables.get('WAZO_CONVERSATION_DIRECTION')
+            or (
+                CallsService.conversation_direction_from_channels(
+                    ari,
+                    CallsService._get_connected_channel_ids_from_helper(channel_helper),
+                )
             )
-        ) or 'unknown'
+            or 'unknown'
+        )
 
         return call
 
@@ -318,7 +406,11 @@ class CallsService:
         call.caller_id_number = connected.get('number')
         call.peer_caller_id_name = caller.get('name')
         call.peer_caller_id_number = caller.get('number')
-        call.user_uuid = channel_variables.get('WAZO_DEREFERENCED_USERUUID') or channel_variables.get('XIVO_USERUUID') or None
+        call.user_uuid = (
+            channel_variables.get('WAZO_DEREFERENCED_USERUUID')
+            or channel_variables.get('XIVO_USERUUID')
+            or None
+        )
         call.tenant_uuid = channel_variables.get('WAZO_TENANT_UUID') or None
         call.dialed_extension = channel_variables.get('WAZO_ENTRY_EXTEN') or None
         call.bridges = []
@@ -328,14 +420,21 @@ class CallsService:
         call.creation_time = channel.get('creationtime')
         call.answer_time = channel_variables.get('WAZO_ANSWER_TIME') or None
         call.hangup_time = datetime.datetime.now(LOCAL_TIMEZONE).isoformat()
-        call.is_video = channel_variables.get('CHANNEL(videonativeformat)') != '(nothing)'
+        call.is_video = (
+            channel_variables.get('CHANNEL(videonativeformat)') != '(nothing)'
+        )
         direction = channel_variables.get('WAZO_CHANNEL_DIRECTION')
         call.is_caller = True if direction == 'to-wazo' else False
-        call.direction = channel_variables.get('WAZO_CONVERSATION_DIRECTION') or (
-            CallsService.conversation_direction_from_channels(
-                ari, CallsService._get_connected_channel_ids_from_helper(channel_helper)
+        call.direction = (
+            channel_variables.get('WAZO_CONVERSATION_DIRECTION')
+            or (
+                CallsService.conversation_direction_from_channels(
+                    ari,
+                    CallsService._get_connected_channel_ids_from_helper(channel_helper),
+                )
             )
-        ) or 'unknown'
+            or 'unknown'
+        )
 
         return call
 
@@ -351,7 +450,11 @@ class CallsService:
         call.caller_id_number = channel.json['caller']['number']
         call.peer_caller_id_name = channel.json['connected']['name']
         call.peer_caller_id_number = channel.json['connected']['number']
-        call.user_uuid = event_variables.get('WAZO_DEREFERENCED_USERUUID') or event_variables.get('XIVO_USERUUID') or None
+        call.user_uuid = (
+            event_variables.get('WAZO_DEREFERENCED_USERUUID')
+            or event_variables.get('XIVO_USERUUID')
+            or None
+        )
         call.tenant_uuid = event_variables.get('WAZO_TENANT_UUID') or None
         call.dialed_extension = event_variables.get('WAZO_ENTRY_EXTEN') or None
         call.bridges = []
@@ -409,12 +512,17 @@ class CallsService:
             raise NoSuchCall(call_id)
 
         channel_name = channel.json['name']
-        is_side_1_of_local = channel_name.startswith('Local/') and channel_name.endswith(';1')
+        is_side_1_of_local = channel_name.startswith(
+            'Local/'
+        ) and channel_name.endswith(';1')
         if not is_side_1_of_local:
             return channel
 
         try:
-            is_group_callee = channel.getChannelVar(variable='WAZO_RECORD_GROUP_CALLEE')['value'] == '1'
+            is_group_callee = (
+                channel.getChannelVar(variable='WAZO_RECORD_GROUP_CALLEE')['value']
+                == '1'
+            )
         except ARINotFound:
             is_group_callee = False
 
@@ -430,14 +538,20 @@ class CallsService:
         for potential_channel in self._ari.channels.list():
             if potential_channel.json['name'].startswith('Local'):
                 continue
-            if potential_channel.json['channelvars']['WAZO_LOCAL_CHAN_MATCH_UUID'] != local_chan_uuid:
+            if (
+                potential_channel.json['channelvars']['WAZO_LOCAL_CHAN_MATCH_UUID']
+                != local_chan_uuid
+            ):
                 continue
-            if potential_channel.json['channelvars']['WAZO_CALL_RECORD_SIDE'] == 'caller':
+            if (
+                potential_channel.json['channelvars']['WAZO_CALL_RECORD_SIDE']
+                == 'caller'
+            ):
                 continue
 
             logger.debug(
                 'we are going to record the "real" channel instead of the local channel %s',
-                channel.json['name']
+                channel.json['name'],
             )
             return potential_channel
 
@@ -456,7 +570,9 @@ class CallsService:
         )
 
         try:
-            mix_monitor_options = channel.getChannelVar(variable='WAZO_MIXMONITOR_OPTIONS')['value']
+            mix_monitor_options = channel.getChannelVar(
+                variable='WAZO_MIXMONITOR_OPTIONS'
+            )['value']
         except ARINotFound:
             mix_monitor_options = None
 
@@ -516,9 +632,9 @@ class CallsService:
 
         for channel_id in channels:
             try:
-                call_direction = (
-                    ari.channels.getChannelVar(channelId=channel_id, variable='WAZO_CALL_DIRECTION')['value']
-                )
+                call_direction = ari.channels.getChannelVar(
+                    channelId=channel_id, variable='WAZO_CALL_DIRECTION'
+                )['value']
             except ARINotFound:
                 continue
             else:
@@ -542,7 +658,10 @@ class CallsService:
 
     @staticmethod
     def _get_connected_channel_ids_from_helper(channel_helper):
-        return [channel_helper.id, *[channel_.id for channel_ in channel_helper.connected_channels()]]
+        return [
+            channel_helper.id,
+            *[channel_.id for channel_ in channel_helper.connected_channels()],
+        ]
 
     def _verify_user(self, call_id, user_uuid):
         channel = Channel(call_id, self._ari)

@@ -1,4 +1,4 @@
-# Copyright 2020-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2020-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import ari
@@ -28,7 +28,9 @@ class RealAsteriskIntegrationTest(IntegrationTest):
     @classmethod
     def ari_config(cls):
         return {
-            'base_url': 'http://127.0.0.1:{port}'.format(port=cls.service_port(5039, 'ari')),
+            'base_url': 'http://127.0.0.1:{port}'.format(
+                port=cls.service_port(5039, 'ari')
+            ),
             'username': 'xivo',
             'password': 'xivo',
         }
@@ -63,7 +65,6 @@ class RealAsteriskIntegrationTest(IntegrationTest):
 
 
 class RealAsterisk:
-
     def __init__(self, ari, calld_client):
         self.ari = ari
         self.calld_client = calld_client
@@ -71,14 +72,18 @@ class RealAsterisk:
     def add_channel_to_bridge(self, bridge):
         def channel_is_in_stasis(channel_id):
             try:
-                self.ari.channels.setChannelVar(channelId=channel_id, variable='TEST_STASIS', value='')
+                self.ari.channels.setChannelVar(
+                    channelId=channel_id, variable='TEST_STASIS', value=''
+                )
                 return True
             except ARINotInStasis:
                 return False
 
-        new_channel = self.ari.channels.originate(endpoint=ENDPOINT_AUTOANSWER,
-                                                  app=SOME_STASIS_APP,
-                                                  appArgs=[SOME_STASIS_APP_INSTANCE])
+        new_channel = self.ari.channels.originate(
+            endpoint=ENDPOINT_AUTOANSWER,
+            app=SOME_STASIS_APP,
+            appArgs=[SOME_STASIS_APP_INSTANCE],
+        )
         until.true(channel_is_in_stasis, new_channel.id, tries=2)
         bridge.addChannel(channel=new_channel.id)
 
@@ -87,14 +92,18 @@ class RealAsterisk:
     def stasis_channel(self):
         def channel_is_in_stasis(channel_id):
             try:
-                self.ari.channels.setChannelVar(channelId=channel_id, variable='TEST_STASIS', value='')
+                self.ari.channels.setChannelVar(
+                    channelId=channel_id, variable='TEST_STASIS', value=''
+                )
                 return True
             except ARINotInStasis:
                 return False
 
-        new_channel = self.ari.channels.originate(endpoint=ENDPOINT_AUTOANSWER,
-                                                  app=SOME_STASIS_APP,
-                                                  appArgs=[SOME_STASIS_APP_INSTANCE])
+        new_channel = self.ari.channels.originate(
+            endpoint=ENDPOINT_AUTOANSWER,
+            app=SOME_STASIS_APP,
+            appArgs=[SOME_STASIS_APP_INSTANCE],
+        )
         until.true(channel_is_in_stasis, new_channel.id, tries=2)
 
         return new_channel
@@ -117,15 +126,20 @@ class RealAsterisk:
         self.calld_client.set_token(VALID_TOKEN)
 
         def channels_have_been_created_in_calld(caller_id, callee_id):
-            calls = self.calld_client.calls.list_calls(application=SOME_STASIS_APP, application_instance=SOME_STASIS_APP_INSTANCE)
+            calls = self.calld_client.calls.list_calls(
+                application=SOME_STASIS_APP,
+                application_instance=SOME_STASIS_APP_INSTANCE,
+            )
             channel_ids = [call['call_id'] for call in calls['items']]
-            return (caller_id in channel_ids and callee_id in channel_ids)
+            return caller_id in channel_ids and callee_id in channel_ids
 
         until.true(channels_have_been_created_in_calld, callee.id, caller.id, tries=5)
 
         return caller.id, callee.id
 
-    def given_bridged_call_not_stasis(self, caller_uuid=None, callee_uuid=None, caller_variables=None):
+    def given_bridged_call_not_stasis(
+        self, caller_uuid=None, callee_uuid=None, caller_variables=None
+    ):
         caller_uuid = caller_uuid or make_user_uuid()
         callee_uuid = callee_uuid or make_user_uuid()
         variables = {
@@ -134,16 +148,23 @@ class RealAsterisk:
             '__WAZO_TENANT_UUID': VALID_TENANT,
         }
         variables.update(caller_variables or {})
-        caller = self.ari.channels.originate(endpoint=ENDPOINT_AUTOANSWER,
-                                             context='local',
-                                             extension='dial-autoanswer',
-                                             variables={'variables': variables})
+        caller = self.ari.channels.originate(
+            endpoint=ENDPOINT_AUTOANSWER,
+            context='local',
+            extension='dial-autoanswer',
+            variables={'variables': variables},
+        )
 
         def bridged_channel(caller):
             try:
-                bridge = next(bridge for bridge in self.ari.bridges.list()
-                              if caller.id in bridge.json['channels'])
-                callee_channel_id = next(iter(set(bridge.json['channels']) - {caller.id}))
+                bridge = next(
+                    bridge
+                    for bridge in self.ari.bridges.list()
+                    if caller.id in bridge.json['channels']
+                )
+                callee_channel_id = next(
+                    iter(set(bridge.json['channels']) - {caller.id})
+                )
                 return callee_channel_id
             except StopIteration:
                 return False

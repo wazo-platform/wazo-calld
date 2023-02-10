@@ -1,4 +1,4 @@
-# Copyright 2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from marshmallow import (
@@ -9,7 +9,6 @@ from xivo.mallow import fields
 
 
 class ParticipantSchema(Schema):
-
     class Meta:
         ordered = True
         unknown = EXCLUDE

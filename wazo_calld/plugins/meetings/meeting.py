@@ -1,4 +1,4 @@
-# Copyright 2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2021-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 CONFBRIDGE_NAME_PREFIX = 'wazo-meeting-'
@@ -22,9 +22,9 @@ class AsteriskMeeting:
 
     @classmethod
     def from_confbridge_name(cls, confbridge_name):
-        if not confbridge_name.startswith(CONFBRIDGE_NAME_PREFIX) or not confbridge_name.endswith(
-            CONFBRIDGE_NAME_SUFFIX
-        ):
+        if not confbridge_name.startswith(
+            CONFBRIDGE_NAME_PREFIX
+        ) or not confbridge_name.endswith(CONFBRIDGE_NAME_SUFFIX):
             raise InvalidMeetingConfbridgeName(confbridge_name)
 
         try:

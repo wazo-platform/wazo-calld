@@ -1,10 +1,7 @@
-# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from hamcrest import (
-    assert_that,
-    has_entry
-)
+from hamcrest import assert_that, has_entry
 from unittest import TestCase
 
 from ..call import Call
@@ -12,7 +9,6 @@ from ..schemas import CallSchema
 
 
 class TestSchemas(TestCase):
-
     def test_given_peer_caller_id_number_empty_when_dump_then_dialed_extension(self):
         call = Call('some-id')
         call.dialed_extension = 'dialed_extension'

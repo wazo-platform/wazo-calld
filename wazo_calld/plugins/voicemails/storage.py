@@ -1,4 +1,4 @@
-# Copyright 2016-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import errno
@@ -24,14 +24,16 @@ class VoicemailFolderType:
 
 
 def new_filesystem_storage(base_path=b'/var/spool/asterisk/voicemail'):
-    folders = _VoicemailFolders([
-        _VoicemailFolder(1, b'INBOX', VoicemailFolderType.new, True),
-        _VoicemailFolder(2, b'Old', VoicemailFolderType.old),
-        _VoicemailFolder(3, b'Urgent', VoicemailFolderType.urgent, True),
-        _VoicemailFolder(4, b'Work'),
-        _VoicemailFolder(5, b'Family'),
-        _VoicemailFolder(6, b'Friends'),
-    ])
+    folders = _VoicemailFolders(
+        [
+            _VoicemailFolder(1, b'INBOX', VoicemailFolderType.new, True),
+            _VoicemailFolder(2, b'Old', VoicemailFolderType.old),
+            _VoicemailFolder(3, b'Urgent', VoicemailFolderType.urgent, True),
+            _VoicemailFolder(4, b'Work'),
+            _VoicemailFolder(5, b'Family'),
+            _VoicemailFolder(6, b'Friends'),
+        ]
+    )
     return _VoicemailFilesystemStorage(base_path, folders)
 
 
@@ -40,7 +42,6 @@ def new_cache(voicemail_storage):
 
 
 class _VoicemailFolder:
-
     def __init__(self, id_, path, type_=VoicemailFolderType.other, is_unread=False):
         self.id = id_
         self.path = path
@@ -50,7 +51,6 @@ class _VoicemailFolder:
 
 
 class _VoicemailFolders:
-
     def __init__(self, folders):
         self._folders = folders
 
@@ -71,7 +71,6 @@ class _VoicemailFolders:
 
 
 class _VoicemailFilesystemStorage:
-
     def __init__(self, base_path, folders):
         self._base_path = base_path
         self._folders = folders
@@ -97,12 +96,18 @@ class _VoicemailFilesystemStorage:
                 logger.error('unexpected error while listing %s: %s', context_path, e)
             else:
                 for number in numbers:
-                    vm_conf = _fake_vm_conf(number.decode('utf-8'), context.decode('utf-8'))
+                    vm_conf = _fake_vm_conf(
+                        number.decode('utf-8'), context.decode('utf-8')
+                    )
                     try:
                         yield self.get_voicemail_info(vm_conf)
                     except Exception as e:
-                        logger.exception('unexpected error while getting voicemail info %s@%s: %s',
-                                         number, context, e)
+                        logger.exception(
+                            'unexpected error while getting voicemail info %s@%s: %s',
+                            number,
+                            context,
+                            e,
+                        )
 
     def get_voicemail_info(self, vm_conf):
         vm_access = _VoicemailAccess(self._base_path, self._folders, vm_conf)
@@ -145,11 +150,12 @@ class _VoicemailFilesystemStorage:
 
 
 class _VoicemailAccess:
-
     def __init__(self, base_path, folders, vm_conf):
-        self.path = os.path.join(base_path,
-                                 vm_conf['context'].encode('utf-8'),
-                                 vm_conf['number'].encode('utf-8'))
+        self.path = os.path.join(
+            base_path,
+            vm_conf['context'].encode('utf-8'),
+            vm_conf['number'].encode('utf-8'),
+        )
         self._folders = folders
         self.vm_conf = vm_conf
 
@@ -178,7 +184,6 @@ class _VoicemailAccess:
 
 
 class _FolderAccess:
-
     def __init__(self, vm_access, folder):
         self.vm_access = vm_access
         self.folder = folder
@@ -206,7 +211,6 @@ class _FolderAccess:
 
 
 class _MessageInfoParser:
-
     def __init__(self):
         self._parse_table = [
             (b'callerid=', self._extract_value, self._parse_callerid),
@@ -262,7 +266,6 @@ class _MessageInfoParser:
 
 
 class _MessageAccess:
-
     _MESSAGE_INFO_PARSER = _MessageInfoParser()
 
     def __init__(self, folder_access, message_info_name):
@@ -284,7 +287,9 @@ class _MessageAccess:
                 raise VoicemailMessageStorageError()
             raise
         except Exception:
-            logger.error('error while parsing voicemail message info %s', path, exc_info=True)
+            logger.error(
+                'error while parsing voicemail message info %s', path, exc_info=True
+            )
             raise VoicemailMessageStorageError()
 
     def info(self):
@@ -301,13 +306,14 @@ class _MessageAccess:
         except IOError as e:
             if e.errno == errno.ENOENT:
                 # probably: the message has been deleted/moved or the recording is not stored as a wav
-                logger.error('could not read voicemail recording %s: no such file', path)
+                logger.error(
+                    'could not read voicemail recording %s: no such file', path
+                )
                 raise VoicemailMessageStorageError()
             raise
 
 
 class _VoicemailMessagesCache:
-
     _EMPTY_CACHE_ENTRY = {}
 
     def __init__(self, voicemail_storage, cache_cleanup_counter_max=1500):
@@ -343,7 +349,9 @@ class _VoicemailMessagesCache:
     def _clean_cache(self):
         logger.info('cleaning voicemail cache')
         cached_keys = set(self._cache)
-        keys_to_purge = cached_keys.difference(self._storage.list_voicemails_number_and_context())
+        keys_to_purge = cached_keys.difference(
+            self._storage.list_voicemails_number_and_context()
+        )
         for key in keys_to_purge:
             del self._cache[key]
 
@@ -372,14 +380,17 @@ class _VoicemailMessagesCache:
 
 
 class _VoicemailMessagesDiff:
-
     def __init__(self):
         self.created_messages = []
         self.updated_messages = []
         self.deleted_messages = []
 
     def is_empty(self):
-        return not self.created_messages and not self.updated_messages and not self.deleted_messages
+        return (
+            not self.created_messages
+            and not self.updated_messages
+            and not self.deleted_messages
+        )
 
 
 def _fake_vm_conf(number, context):

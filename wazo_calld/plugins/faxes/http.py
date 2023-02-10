@@ -1,4 +1,4 @@
-# Copyright 2019-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from flask import request
@@ -16,7 +16,6 @@ from .schemas import (
 
 
 class FaxesResource(AuthResource):
-
     def __init__(self, faxes_service):
         self._service = faxes_service
 
@@ -24,12 +23,13 @@ class FaxesResource(AuthResource):
     def post(self):
         tenant = Tenant.autodetect()
         fax_infos = fax_creation_request_schema.load(request.args)
-        fax = self._service.send_fax(tenant.uuid, content=request.data, fax_infos=fax_infos)
+        fax = self._service.send_fax(
+            tenant.uuid, content=request.data, fax_infos=fax_infos
+        )
         return fax_schema.dump(fax), 201
 
 
 class UserFaxesResource(AuthResource):
-
     def __init__(self, faxes_service):
         self._service = faxes_service
 
@@ -38,5 +38,7 @@ class UserFaxesResource(AuthResource):
         tenant = Tenant.autodetect()
         user_uuid = get_token_user_uuid_from_request()
         fax_infos = user_fax_creation_request_schema.load(request.args)
-        fax = self._service.send_fax_from_user(tenant.uuid, user_uuid, content=request.data, fax_infos=fax_infos)
+        fax = self._service.send_fax_from_user(
+            tenant.uuid, user_uuid, content=request.data, fax_infos=fax_infos
+        )
         return fax_schema.dump(fax), 201

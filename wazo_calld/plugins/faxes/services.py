@@ -1,4 +1,4 @@
-# Copyright 2019-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -18,7 +18,6 @@ logger = logging.getLogger(__name__)
 
 
 class FaxesService:
-
     def __init__(self, amid, ari, confd, notifier):
         self._amid = amid
         self._ari = ari
@@ -49,9 +48,13 @@ class FaxesService:
 
         if not os.path.exists(tif_path):
             logger.error('wazo-pdf2fax: no output file "%s"', tif_path)
-            raise FaxFailure(message='Conversion from PDF to TIFF format failed: output file not found')
+            raise FaxFailure(
+                message='Conversion from PDF to TIFF format failed: output file not found'
+            )
 
-        wait_time_str = '' if fax_infos['wait_time'] is None else str(fax_infos['wait_time'])
+        wait_time_str = (
+            '' if fax_infos['wait_time'] is None else str(fax_infos['wait_time'])
+        )
         originate_variables = {
             'WAZO_FAX_DESTINATION_CONTEXT': fax_infos['context'],
             'WAZO_FAX_DESTINATION_EXTENSION': fax_infos['extension'],
@@ -61,13 +64,17 @@ class FaxesService:
             'XIVO_FAX_PATH': tif_path,
             'XIVO_USERUUID': user_uuid or '',
         }
-        recipient_endpoint = 'Local/{exten}@{context}'.format(exten=fax_infos['extension'], context=fax_infos['context'])
-        new_channel = self._ari.channels.originate(endpoint=recipient_endpoint,
-                                                   context='txfax',
-                                                   extension='s',
-                                                   priority='1',
-                                                   callerId=fax_infos['caller_id'],
-                                                   variables={'variables': originate_variables})
+        recipient_endpoint = 'Local/{exten}@{context}'.format(
+            exten=fax_infos['extension'], context=fax_infos['context']
+        )
+        new_channel = self._ari.channels.originate(
+            endpoint=recipient_endpoint,
+            context='txfax',
+            extension='s',
+            priority='1',
+            callerId=fax_infos['caller_id'],
+            variables={'variables': originate_variables},
+        )
         fax = {
             'id': new_channel.id,
             'call_id': new_channel.id,

@@ -1,4 +1,4 @@
-# Copyright 2016-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -16,8 +16,17 @@ logger = logging.getLogger(__name__)
 
 
 class CallsBusEventHandler:
-
-    def __init__(self, ami, ari, collectd, bus_publisher, services, xivo_uuid, dial_echo_manager, notifier):
+    def __init__(
+        self,
+        ami,
+        ari,
+        collectd,
+        bus_publisher,
+        services,
+        xivo_uuid,
+        dial_echo_manager,
+        notifier,
+    ):
         self.ami = ami
         self.ari = ari
         self.collectd = collectd
@@ -81,7 +90,9 @@ class CallsBusEventHandler:
 
         call = self.services.make_call_from_channel(self.ari, channel)
         if self._call_direction_unknown(call):
-            call.direction = self.services.conversation_direction_from_channels(self.ari, [channel.id])
+            call.direction = self.services.conversation_direction_from_channels(
+                self.ari, [channel.id]
+            )
             self._set_conversation_direction_cache(channel_id, call.direction)
         self.notifier.call_created(call)
 
@@ -121,7 +132,9 @@ class CallsBusEventHandler:
             return
         call = self.services.make_call_from_channel(self.ari, channel)
         if self._call_direction_unknown(call):
-            call.direction = self.services.conversation_direction_from_channels(self.ari, [channel.id])
+            call.direction = self.services.conversation_direction_from_channels(
+                self.ari, [channel.id]
+            )
             self._set_conversation_direction_cache(channel_id, call.direction)
         self.notifier.call_answered(call)
 
@@ -185,8 +198,7 @@ class CallsBusEventHandler:
 
         logger.debug('Got UserEvent dial_echo: %s', event)
         self.dial_echo_manager.set_dial_echo_result(
-            event['wazo_dial_echo_request_id'],
-            {'channel_id': event['channel_id']}
+            event['wazo_dial_echo_request_id'], {'channel_id': event['channel_id']}
         )
 
     def _relay_dtmf(self, event):
@@ -211,13 +223,21 @@ class CallsBusEventHandler:
     def _relay_channel_entered_bridge(self, event):
         channel_id = event['Uniqueid']
         bridge_id = event['BridgeUniqueid']
-        logger.debug('Relaying to bus: channel %s entered bridge %s', channel_id, bridge_id)
+        logger.debug(
+            'Relaying to bus: channel %s entered bridge %s', channel_id, bridge_id
+        )
         if int(event['BridgeNumChannels']) == 1:
-            logger.debug('ignoring channel %s entered bridge %s: channel is alone', channel_id, bridge_id)
+            logger.debug(
+                'ignoring channel %s entered bridge %s: channel is alone',
+                channel_id,
+                bridge_id,
+            )
             return
 
         try:
-            participant_channel_ids = self.ari.bridges.get(bridgeId=bridge_id).json['channels']
+            participant_channel_ids = self.ari.bridges.get(bridgeId=bridge_id).json[
+                'channels'
+            ]
         except ARINotFound:
             logger.debug('bridge %s not found', bridge_id)
             return
@@ -247,13 +267,21 @@ class CallsBusEventHandler:
         bridge_id = event['BridgeUniqueid']
         channels_in_bridge = int(event['BridgeNumChannels'])
         if channels_in_bridge == 0:
-            logger.debug('ignoring channel %s left bridge %s: bridge is empty', channel_id, bridge_id)
+            logger.debug(
+                'ignoring channel %s left bridge %s: bridge is empty',
+                channel_id,
+                bridge_id,
+            )
             return
 
-        logger.debug('Relaying to bus: channel %s left bridge %s', channel_id, bridge_id)
+        logger.debug(
+            'Relaying to bus: channel %s left bridge %s', channel_id, bridge_id
+        )
 
         try:
-            participant_channel_ids = self.ari.bridges.get(bridgeId=bridge_id).json['channels']
+            participant_channel_ids = self.ari.bridges.get(bridgeId=bridge_id).json[
+                'channels'
+            ]
         except ARINotFound:
             logger.debug('bridge %s not found', bridge_id)
             return
@@ -319,6 +347,9 @@ class CallsBusEventHandler:
                 ami.unpause_queue_member(self.ami, interface)
         except WazoAmidError as e:
             if e.details['original_error'] == 'Interface not found':
-                logger.debug('%s is not a member of any group. Not changing pause status', interface)
+                logger.debug(
+                    '%s is not a member of any group. Not changing pause status',
+                    interface,
+                )
                 return
             raise

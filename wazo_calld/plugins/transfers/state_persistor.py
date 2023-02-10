@@ -1,4 +1,4 @@
-# Copyright 2016-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -17,10 +17,13 @@ logger = logging.getLogger(__name__)
 
 class StatePersistor:
     def __init__(self, ari):
-        self._transfers = GlobalVariableNameDecorator(GlobalVariableJsonAdapter(GlobalVariableAdapter(ari)),
-                                                      'XIVO_TRANSFERS_{}')
-        self._index = GlobalVariableConstantNameAdapter(GlobalVariableJsonAdapter(GlobalVariableAdapter(ari)),
-                                                        'XIVO_TRANSFERS_INDEX')
+        self._transfers = GlobalVariableNameDecorator(
+            GlobalVariableJsonAdapter(GlobalVariableAdapter(ari)), 'XIVO_TRANSFERS_{}'
+        )
+        self._index = GlobalVariableConstantNameAdapter(
+            GlobalVariableJsonAdapter(GlobalVariableAdapter(ari)),
+            'XIVO_TRANSFERS_INDEX',
+        )
         self._lock = threading.RLock()
 
     def get(self, transfer_id):
@@ -30,9 +33,11 @@ class StatePersistor:
 
     def get_by_channel(self, channel_id):
         for transfer in self.list():
-            if channel_id in (transfer.transferred_call,
-                              transfer.initiator_call,
-                              transfer.recipient_call):
+            if channel_id in (
+                transfer.transferred_call,
+                transfer.initiator_call,
+                transfer.recipient_call,
+            ):
                 return transfer
         else:
             raise KeyError(channel_id)
@@ -66,7 +71,10 @@ class StatePersistor:
                 try:
                     transfer = self.get(transfer_id)
                 except KeyError:
-                    logger.debug('transfer list: transfer %s found in index, but details not found', transfer_id)
+                    logger.debug(
+                        'transfer list: transfer %s found in index, but details not found',
+                        transfer_id,
+                    )
                     continue
                 results.append(transfer)
         return results

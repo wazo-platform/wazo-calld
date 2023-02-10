@@ -1,4 +1,4 @@
-# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -18,7 +18,6 @@ class RelocateRole:
 
 
 class Relocate:
-
     def __init__(self, state_factory):
         self.uuid = str(uuid.uuid4())
         self._state_factory = state_factory
@@ -95,7 +94,6 @@ class Relocate:
 
 
 class RelocateCollection:
-
     def __init__(self):
         self._relocates = {}
         self._lock = threading.Lock()
@@ -128,9 +126,11 @@ class RelocateCollection:
     def find_by_channel(self, channel_id):
         with self._lock:
             for relocate in self._relocates.values():
-                if channel_id in (relocate.relocated_channel,
-                                  relocate.initiator_channel,
-                                  relocate.recipient_channel):
+                if channel_id in (
+                    relocate.relocated_channel,
+                    relocate.initiator_channel,
+                    relocate.recipient_channel,
+                ):
                     return relocate
 
         return None

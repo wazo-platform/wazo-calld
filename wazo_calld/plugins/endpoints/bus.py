@@ -1,4 +1,4 @@
-# Copyright 2019-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -20,20 +20,44 @@ class EventHandler:
         consumer.subscribe('iax_endpoint_updated', self.on_trunk_endpoint_iax_updated)
         consumer.subscribe('line_edited', self.on_line_edited)
         consumer.subscribe('line_deleted', self.on_line_endpoint_deleted)
-        consumer.subscribe('line_endpoint_custom_associated', self.on_line_endpoint_custom_associated)
-        consumer.subscribe('line_endpoint_custom_dissociated', self.on_line_endpoint_dissociated)
-        consumer.subscribe('line_endpoint_sccp_associated', self.on_line_endpoint_sccp_associated)
-        consumer.subscribe('line_endpoint_sccp_dissociated', self.on_line_endpoint_dissociated)
-        consumer.subscribe('line_endpoint_sip_associated', self.on_line_endpoint_sip_associated)
-        consumer.subscribe('line_endpoint_sip_dissociated', self.on_line_endpoint_dissociated)
+        consumer.subscribe(
+            'line_endpoint_custom_associated', self.on_line_endpoint_custom_associated
+        )
+        consumer.subscribe(
+            'line_endpoint_custom_dissociated', self.on_line_endpoint_dissociated
+        )
+        consumer.subscribe(
+            'line_endpoint_sccp_associated', self.on_line_endpoint_sccp_associated
+        )
+        consumer.subscribe(
+            'line_endpoint_sccp_dissociated', self.on_line_endpoint_dissociated
+        )
+        consumer.subscribe(
+            'line_endpoint_sip_associated', self.on_line_endpoint_sip_associated
+        )
+        consumer.subscribe(
+            'line_endpoint_sip_dissociated', self.on_line_endpoint_dissociated
+        )
         consumer.subscribe('sip_endpoint_updated', self.on_endpoint_sip_updated)
         consumer.subscribe('trunk_deleted', self.on_trunk_endpoint_deleted)
-        consumer.subscribe('trunk_endpoint_custom_associated', self.on_trunk_endpoint_custom_associated)
-        consumer.subscribe('trunk_endpoint_custom_dissociated', self.on_trunk_endpoint_dissociated)
-        consumer.subscribe('trunk_endpoint_iax_associated', self.on_trunk_endpoint_iax_associated)
-        consumer.subscribe('trunk_endpoint_iax_dissociated', self.on_trunk_endpoint_dissociated)
-        consumer.subscribe('trunk_endpoint_sip_associated', self.on_trunk_endpoint_sip_associated)
-        consumer.subscribe('trunk_endpoint_sip_dissociated', self.on_trunk_endpoint_dissociated)
+        consumer.subscribe(
+            'trunk_endpoint_custom_associated', self.on_trunk_endpoint_custom_associated
+        )
+        consumer.subscribe(
+            'trunk_endpoint_custom_dissociated', self.on_trunk_endpoint_dissociated
+        )
+        consumer.subscribe(
+            'trunk_endpoint_iax_associated', self.on_trunk_endpoint_iax_associated
+        )
+        consumer.subscribe(
+            'trunk_endpoint_iax_dissociated', self.on_trunk_endpoint_dissociated
+        )
+        consumer.subscribe(
+            'trunk_endpoint_sip_associated', self.on_trunk_endpoint_sip_associated
+        )
+        consumer.subscribe(
+            'trunk_endpoint_sip_dissociated', self.on_trunk_endpoint_dissociated
+        )
 
     def on_hangup(self, event):
         techno, name = self._techno_name_from_channel(event['Channel'])

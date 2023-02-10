@@ -1,4 +1,4 @@
-# Copyright 2016-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from requests import HTTPError
@@ -21,14 +21,15 @@ def not_found(error):
 
 
 class Meeting:
-
     def __init__(self, tenant_uuid=None, meeting_uuid=None, confd_client=None):
         self.tenant_uuid = tenant_uuid
         self.meeting_uuid = meeting_uuid
         self._confd = confd_client
 
     def asterisk_name(self):
-        return 'wazo-meeting-{meeting_uuid}-confbridge'.format(meeting_uuid=self.meeting_uuid)
+        return 'wazo-meeting-{meeting_uuid}-confbridge'.format(
+            meeting_uuid=self.meeting_uuid
+        )
 
     def exists(self):
         try:
@@ -58,13 +59,10 @@ class Meeting:
             if e.response is not None and e.response.status_code == 404:
                 raise NoSuchMeeting(meeting_uuid)
             raise
-        return cls(meeting['tenant_uuid'],
-                   meeting['uuid'],
-                   confd_client)
+        return cls(meeting['tenant_uuid'], meeting['uuid'], confd_client)
 
 
 class User:
-
     # TODO set tenant_uuid mandatory when calls plugin will be multi-tenant
     def __init__(self, user_uuid, confd_client, tenant_uuid=None):
         self.uuid = user_uuid
@@ -80,7 +78,9 @@ class User:
 
     def main_line(self):
         try:
-            lines = self._confd.users.get(self.uuid, tenant_uuid=self.tenant_uuid)['lines']
+            lines = self._confd.users.get(self.uuid, tenant_uuid=self.tenant_uuid)[
+                'lines'
+            ]
         except HTTPError as e:
             if not_found(e):
                 raise InvalidUserUUID(self.uuid)
@@ -96,7 +96,9 @@ class User:
 
     def line(self, line_id):
         try:
-            lines = self._confd.users.get(self.uuid, tenant_uuid=self.tenant_uuid)['lines']
+            lines = self._confd.users.get(self.uuid, tenant_uuid=self.tenant_uuid)[
+                'lines'
+            ]
         except HTTPError as e:
             if not_found(e):
                 raise InvalidUserUUID(self.uuid)
@@ -112,7 +114,9 @@ class User:
 
     def mobile_phone_number(self):
         try:
-            return self._confd.users.get(self.uuid, tenant_uuid=self.tenant_uuid)['mobile_phone_number']
+            return self._confd.users.get(self.uuid, tenant_uuid=self.tenant_uuid)[
+                'mobile_phone_number'
+            ]
         except HTTPError as e:
             if not_found(e):
                 raise InvalidUserUUID(self.uuid)
@@ -132,7 +136,6 @@ class User:
 
 
 class Line:
-
     # TODO set tenant_uuid mandatory when calls plugin will be multi-tenant
     def __init__(self, line_id, confd_client, tenant_uuid=None):
         self.id = line_id
@@ -164,7 +167,6 @@ class Line:
 
 
 class Conference:
-
     def __init__(self, tenant_uuid, conference_id, confd_client):
         self.tenant_uuid = tenant_uuid
         self.conference_id = conference_id
@@ -172,7 +174,9 @@ class Conference:
 
     def exists(self):
         try:
-            conferences = self._confd.conferences.list(tenant_uuid=self.tenant_uuid, recurse=True)['items']
+            conferences = self._confd.conferences.list(
+                tenant_uuid=self.tenant_uuid, recurse=True
+            )['items']
         except RequestException as e:
             raise WazoConfdUnreachable(self._confd, e)
         return self.conference_id in (conference['id'] for conference in conferences)
@@ -185,9 +189,7 @@ class Conference:
             if e.response is not None and e.response.status_code == 404:
                 raise NoSuchConferenceID(conference_id)
             raise
-        return cls(conference['tenant_uuid'],
-                   conference['id'],
-                   confd_client)
+        return cls(conference['tenant_uuid'], conference['id'], confd_client)
 
 
 def get_voicemail(voicemail_id, confd_client):

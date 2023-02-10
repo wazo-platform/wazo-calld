@@ -1,4 +1,4 @@
-# Copyright 2016-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from hamcrest import assert_that
@@ -13,7 +13,6 @@ from ..state import StateFactory
 
 
 class TestStateFactory(TestCase):
-
     def test_make_before_set_dependencies(self):
         factory = StateFactory()
 

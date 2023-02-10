@@ -45,7 +45,6 @@ def make_user_uuid():
 
 
 class TestMeetings(RealAsteriskIntegrationTest):
-
     asset = 'real_asterisk_conference'
 
     def setUp(self):
@@ -53,7 +52,9 @@ class TestMeetings(RealAsteriskIntegrationTest):
         self.confd.reset()
         self.c = HamcrestARIChannel(self.ari)
 
-    def given_call_in_meeting(self, meeting_extension, caller_id_name=None, user_uuid=None, tenant_uuid=None):
+    def given_call_in_meeting(
+        self, meeting_extension, caller_id_name=None, user_uuid=None, tenant_uuid=None
+    ):
         caller_id_name = caller_id_name or 'caller for {}'.format(meeting_extension)
         variables = {'CALLERID(name)': caller_id_name}
         if user_uuid:
@@ -75,15 +76,18 @@ class TestMeetings(RealAsteriskIntegrationTest):
 
 
 class TestMeetingStatus(TestMeetings):
-
     def test_get_no_confd(self):
         with self.confd_stopped():
             assert_that(
-                calling(self.calld_client.meetings.guest_status).with_args(MEETING1_UUID),
-                raises(CalldError).matching(has_properties(
-                    status_code=503,
-                    error_id='wazo-confd-unreachable',
-                ))
+                calling(self.calld_client.meetings.guest_status).with_args(
+                    MEETING1_UUID
+                ),
+                raises(CalldError).matching(
+                    has_properties(
+                        status_code=503,
+                        error_id='wazo-confd-unreachable',
+                    )
+                ),
             )
 
     def test_get_no_amid(self):
@@ -94,11 +98,15 @@ class TestMeetingStatus(TestMeetings):
 
         with self.amid_stopped():
             assert_that(
-                calling(self.calld_client.meetings.guest_status).with_args(meeting_uuid),
-                raises(CalldError).matching(has_properties(
-                    status_code=503,
-                    error_id='wazo-amid-error',
-                ))
+                calling(self.calld_client.meetings.guest_status).with_args(
+                    meeting_uuid
+                ),
+                raises(CalldError).matching(
+                    has_properties(
+                        status_code=503,
+                        error_id='wazo-amid-error',
+                    )
+                ),
             )
 
     def test_get_no_meetings(self):
@@ -106,7 +114,7 @@ class TestMeetingStatus(TestMeetings):
 
         assert_that(
             calling(self.calld_client.meetings.guest_status).with_args(wrong_id),
-            raises(CalldError).matching(has_properties(status_code=404))
+            raises(CalldError).matching(has_properties(status_code=404)),
         )
 
     def test_get_with_some_participants(self):
@@ -165,16 +173,23 @@ class TestMeetingStatus(TestMeetings):
 
 
 class TestMeetingParticipants(TestMeetings):
-
     def test_list_participants_with_no_confd(self):
         wrong_id = 14
 
         with self.confd_stopped():
-            assert_that(calling(self.calld_client.meetings.list_participants).with_args(wrong_id),
-                        raises(CalldError).matching(has_properties({
+            assert_that(
+                calling(self.calld_client.meetings.list_participants).with_args(
+                    wrong_id
+                ),
+                raises(CalldError).matching(
+                    has_properties(
+                        {
                             'status_code': 503,
                             'error_id': 'wazo-confd-unreachable',
-                        })))
+                        }
+                    )
+                ),
+            )
 
     def test_list_participants_with_no_amid(self):
         meeting_uuid = MEETING1_UUID
@@ -183,19 +198,33 @@ class TestMeetingParticipants(TestMeetings):
         )
 
         with self.amid_stopped():
-            assert_that(calling(self.calld_client.meetings.list_participants).with_args(meeting_uuid),
-                        raises(CalldError).matching(has_properties({
+            assert_that(
+                calling(self.calld_client.meetings.list_participants).with_args(
+                    meeting_uuid
+                ),
+                raises(CalldError).matching(
+                    has_properties(
+                        {
                             'status_code': 503,
                             'error_id': 'wazo-amid-error',
-                        })))
+                        }
+                    )
+                ),
+            )
 
     def test_list_participants_with_no_meetings(self):
         wrong_id = 14
 
-        assert_that(calling(self.calld_client.meetings.list_participants).with_args(wrong_id),
-                    raises(CalldError).matching(has_properties({
+        assert_that(
+            calling(self.calld_client.meetings.list_participants).with_args(wrong_id),
+            raises(CalldError).matching(
+                has_properties(
+                    {
                         'status_code': 404,
-                    })))
+                    }
+                )
+            ),
+        )
 
     def test_list_participants_with_no_participants(self):
         meeting_uuid = MEETING1_UUID
@@ -205,10 +234,15 @@ class TestMeetingParticipants(TestMeetings):
 
         participants = self.calld_client.meetings.list_participants(meeting_uuid)
 
-        assert_that(participants, has_entries({
-            'total': 0,
-            'items': empty(),
-        }))
+        assert_that(
+            participants,
+            has_entries(
+                {
+                    'total': 0,
+                    'items': empty(),
+                }
+            ),
+        )
 
     def test_list_participants_with_participants_on_other_only(self):
         meeting_uuid = 'a58471f5-3d4d-4b85-b6bd-a388fef42a0e'
@@ -221,10 +255,15 @@ class TestMeetingParticipants(TestMeetings):
 
         participants = self.calld_client.meetings.list_participants(meeting_uuid)
 
-        assert_that(participants, has_entries({
-            'total': 0,
-            'items': empty(),
-        }))
+        assert_that(
+            participants,
+            has_entries(
+                {
+                    'total': 0,
+                    'items': empty(),
+                }
+            ),
+        )
 
     def test_user_list_participants_when_user_is_not_participant(self):
         user_uuid = 'user-uuid'
@@ -234,11 +273,19 @@ class TestMeetingParticipants(TestMeetings):
         )
         calld_client = self.make_user_calld(user_uuid)
 
-        assert_that(calling(calld_client.meetings.user_list_participants).with_args(meeting_uuid),
-                    raises(CalldError).matching(has_properties({
+        assert_that(
+            calling(calld_client.meetings.user_list_participants).with_args(
+                meeting_uuid
+            ),
+            raises(CalldError).matching(
+                has_properties(
+                    {
                         'status_code': 403,
                         'error_id': 'user-not-participant',
-                    })))
+                    }
+                )
+            ),
+        )
 
     def test_user_list_participants_when_user_is_participant(self):
         user_uuid = 'user-uuid'
@@ -246,19 +293,26 @@ class TestMeetingParticipants(TestMeetings):
         self.confd.set_meetings(
             MockMeeting(uuid=meeting_uuid, name='meeting'),
         )
-        self.given_call_in_meeting(MEETING1_EXTENSION, caller_id_name='participant1', user_uuid=user_uuid)
+        self.given_call_in_meeting(
+            MEETING1_EXTENSION, caller_id_name='participant1', user_uuid=user_uuid
+        )
         self.given_call_in_meeting(MEETING1_EXTENSION, caller_id_name='participant2')
         calld_client = self.make_user_calld(user_uuid)
 
         participants = calld_client.meetings.user_list_participants(meeting_uuid)
 
-        assert_that(participants, has_entries({
-            'total': 2,
-            'items': contains_inanyorder(
-                has_entry('caller_id_name', 'participant1'),
-                has_entry('caller_id_name', 'participant2'),
-            )
-        }))
+        assert_that(
+            participants,
+            has_entries(
+                {
+                    'total': 2,
+                    'items': contains_inanyorder(
+                        has_entry('caller_id_name', 'participant1'),
+                        has_entry('caller_id_name', 'participant2'),
+                    ),
+                }
+            ),
+        )
 
     def test_list_participants_with_two_participants(self):
         meeting_uuid = MEETING1_UUID
@@ -270,13 +324,18 @@ class TestMeetingParticipants(TestMeetings):
 
         participants = self.calld_client.meetings.list_participants(meeting_uuid)
 
-        assert_that(participants, has_entries({
-            'total': 2,
-            'items': contains_inanyorder(
-                has_entry('caller_id_name', 'participant1'),
-                has_entry('caller_id_name', 'participant2'),
-            )
-        }))
+        assert_that(
+            participants,
+            has_entries(
+                {
+                    'total': 2,
+                    'items': contains_inanyorder(
+                        has_entry('caller_id_name', 'participant1'),
+                        has_entry('caller_id_name', 'participant2'),
+                    ),
+                }
+            ),
+        )
 
     def test_participant_joins_sends_event(self):
         meeting_uuid = MEETING1_UUID
@@ -303,13 +362,15 @@ class TestMeetingParticipants(TestMeetings):
                                 caller_id_name=expected_caller_id_name,
                             )
                         ),
-                        headers=has_entries({
-                            'name': 'meeting_participant_joined',
-                            'meeting_uuid': meeting_uuid,
-                            'tenant_uuid': tenant_uuid,
-                        })
+                        headers=has_entries(
+                            {
+                                'name': 'meeting_participant_joined',
+                                'meeting_uuid': meeting_uuid,
+                                'tenant_uuid': tenant_uuid,
+                            }
+                        ),
                     )
-                )
+                ),
             )
 
         until.assert_(participant_joined_event_received, 'participant1', timeout=10)
@@ -320,11 +381,11 @@ class TestMeetingParticipants(TestMeetings):
         user_uuid = make_user_uuid()
         other_user_uuid = 'another-uuid'
         self.confd.set_meetings(
-            MockMeeting(
-                uuid=meeting_uuid, name='meeting', tenant_uuid=tenant_uuid
-            ),
+            MockMeeting(uuid=meeting_uuid, name='meeting', tenant_uuid=tenant_uuid),
         )
-        meeting_bus_events = self.bus.accumulator(headers={'meeting_uuid': meeting_uuid})
+        meeting_bus_events = self.bus.accumulator(
+            headers={'meeting_uuid': meeting_uuid}
+        )
         call_bus_events = self.bus.accumulator(headers={'name': 'call_updated'})
 
         self.given_call_in_meeting(
@@ -339,69 +400,92 @@ class TestMeetingParticipants(TestMeetings):
                 meeting_bus_events.accumulate(with_headers=True),
                 has_items(
                     has_entries(
-                        message=has_entries({
-                            'name': 'meeting_user_participant_joined',
-                            'data': has_entries({
-                                'user_uuid': first_user_uuid,
-                            })
-                        }),
-                        headers=has_entries({
-                            'name': 'meeting_user_participant_joined',
-                            'meeting_uuid': meeting_uuid,
-                            'tenant_uuid': tenant_uuid,
-                            f'user_uuid:{user_uuid}': True
-                        })
+                        message=has_entries(
+                            {
+                                'name': 'meeting_user_participant_joined',
+                                'data': has_entries(
+                                    {
+                                        'user_uuid': first_user_uuid,
+                                    }
+                                ),
+                            }
+                        ),
+                        headers=has_entries(
+                            {
+                                'name': 'meeting_user_participant_joined',
+                                'meeting_uuid': meeting_uuid,
+                                'tenant_uuid': tenant_uuid,
+                                f'user_uuid:{user_uuid}': True,
+                            }
+                        ),
                     ),
                     has_entries(
-                        message=has_entries({
-                            'name': 'meeting_user_participant_joined',
-                            'data': has_entries({
-                                'user_uuid': second_user_uuid,
-                            })
-                        }),
-                        headers=has_entries({
-                            'name': 'meeting_user_participant_joined',
-                            'meeting_uuid': meeting_uuid,
-                            'tenant_uuid': tenant_uuid,
-                            f'user_uuid:{user_uuid}': True,
-                        })
-                    )
-                )
+                        message=has_entries(
+                            {
+                                'name': 'meeting_user_participant_joined',
+                                'data': has_entries(
+                                    {
+                                        'user_uuid': second_user_uuid,
+                                    }
+                                ),
+                            }
+                        ),
+                        headers=has_entries(
+                            {
+                                'name': 'meeting_user_participant_joined',
+                                'meeting_uuid': meeting_uuid,
+                                'tenant_uuid': tenant_uuid,
+                                f'user_uuid:{user_uuid}': True,
+                            }
+                        ),
+                    ),
+                ),
             )
             assert_that(
                 call_bus_events.accumulate(with_headers=True),
                 has_items(
                     has_entries(
-                        message=has_entries({
-                            'name': 'call_updated',
-                            'data': has_entries({
-                                'user_uuid': first_user_uuid,
-                                'talking_to': has_entries({
-                                    other_channel_id: second_user_uuid
-                                })
-                            })
-                        }),
-                        headers=has_entries({
-                            'name': 'call_updated',
-                            'tenant_uuid': tenant_uuid,
-                        })
+                        message=has_entries(
+                            {
+                                'name': 'call_updated',
+                                'data': has_entries(
+                                    {
+                                        'user_uuid': first_user_uuid,
+                                        'talking_to': has_entries(
+                                            {other_channel_id: second_user_uuid}
+                                        ),
+                                    }
+                                ),
+                            }
+                        ),
+                        headers=has_entries(
+                            {
+                                'name': 'call_updated',
+                                'tenant_uuid': tenant_uuid,
+                            }
+                        ),
                     )
-                )
+                ),
             )
 
-        until.assert_(user_participant_joined_event_received, user_uuid, other_user_uuid, timeout=10)
+        until.assert_(
+            user_participant_joined_event_received,
+            user_uuid,
+            other_user_uuid,
+            timeout=10,
+        )
 
     def test_participant_leaves_sends_event(self):
         meeting_uuid = MEETING1_UUID
         tenant_uuid = MEETING1_TENANT_UUID
         self.confd.set_meetings(
-            MockMeeting(
-                uuid=meeting_uuid, tenant_uuid=tenant_uuid, name='meeting'
-            ),
+            MockMeeting(uuid=meeting_uuid, tenant_uuid=tenant_uuid, name='meeting'),
         )
         bus_events = self.bus.accumulator(headers={'meeting_uuid': meeting_uuid})
 
-        channel_id = self.given_call_in_meeting(MEETING1_EXTENSION, caller_id_name='participant1')
+        channel_id = self.given_call_in_meeting(
+            MEETING1_EXTENSION, caller_id_name='participant1'
+        )
 
         self.ari.channels.hangup(channelId=channel_id)
 
@@ -415,13 +499,15 @@ class TestMeetingParticipants(TestMeetings):
                                 caller_id_name=expected_caller_id_name,
                             )
                         ),
-                        headers=has_entries({
-                            'name': 'meeting_participant_left',
-                            'meeting_uuid': meeting_uuid,
-                            'tenant_uuid': tenant_uuid,
-                        })
+                        headers=has_entries(
+                            {
+                                'name': 'meeting_participant_left',
+                                'meeting_uuid': meeting_uuid,
+                                'tenant_uuid': tenant_uuid,
+                            }
+                        ),
                     )
-                )
+                ),
             )
 
         until.assert_(participant_left_event_received, 'participant1', timeout=10)
@@ -434,7 +520,9 @@ class TestMeetingParticipants(TestMeetings):
         self.confd.set_meetings(
             MockMeeting(uuid=meeting_uuid, name='meeting', tenant_uuid=tenant_uuid),
         )
-        meeting_bus_events = self.bus.accumulator(headers={'meeting_uuid': meeting_uuid})
+        meeting_bus_events = self.bus.accumulator(
+            headers={'meeting_uuid': meeting_uuid}
+        )
         call_bus_events = self.bus.accumulator(headers={'name': 'call_updated'})
 
         channel_id = self.given_call_in_meeting(
@@ -449,20 +537,26 @@ class TestMeetingParticipants(TestMeetings):
                 meeting_bus_events.accumulate(with_headers=True),
                 has_items(
                     has_entries(
-                        message=has_entries({
-                            'name': 'meeting_user_participant_left',
-                            'data': has_entries({
-                                'user_uuid': expected_user_uuid,
-                            })
-                        }),
-                        headers=has_entries({
-                            'name': 'meeting_user_participant_left',
-                            'meeting_uuid': meeting_uuid,
-                            'tenant_uuid': tenant_uuid,
-                            f'user_uuid:{user_uuid}': True,
-                        })
+                        message=has_entries(
+                            {
+                                'name': 'meeting_user_participant_left',
+                                'data': has_entries(
+                                    {
+                                        'user_uuid': expected_user_uuid,
+                                    }
+                                ),
+                            }
+                        ),
+                        headers=has_entries(
+                            {
+                                'name': 'meeting_user_participant_left',
+                                'meeting_uuid': meeting_uuid,
+                                'tenant_uuid': tenant_uuid,
+                                f'user_uuid:{user_uuid}': True,
+                            }
+                        ),
                     ),
-                )
+                ),
             )
 
         def call_updated_event_received():
@@ -470,19 +564,25 @@ class TestMeetingParticipants(TestMeetings):
                 call_bus_events.accumulate(with_headers=True),
                 has_items(
                     has_entries(
-                        message=has_entries({
-                            'name': 'call_updated',
-                            'data': has_entries({
-                                'user_uuid': user_uuid,
-                                'talking_to': empty(),
-                            })
-                        }),
-                        headers=has_entries({
-                            'name': 'call_updated',
-                            'tenant_uuid': tenant_uuid,
-                        })
+                        message=has_entries(
+                            {
+                                'name': 'call_updated',
+                                'data': has_entries(
+                                    {
+                                        'user_uuid': user_uuid,
+                                        'talking_to': empty(),
+                                    }
+                                ),
+                            }
+                        ),
+                        headers=has_entries(
+                            {
+                                'name': 'call_updated',
+                                'tenant_uuid': tenant_uuid,
+                            }
+                        ),
                     )
-                )
+                ),
             )
 
         self.ari.channels.hangup(channelId=other_channel_id)
@@ -503,13 +603,19 @@ class TestMeetingParticipants(TestMeetings):
             MockMeeting(uuid=meeting_uuid, name='meeting', tenant_uuid=tenant_uuid),
         )
         channel_id = self.given_call_in_meeting(MEETING1_EXTENSION, user_uuid=user_uuid)
-        other_channel_id = self.given_call_in_meeting(MEETING1_EXTENSION, user_uuid=other_user_uuid)
+        other_channel_id = self.given_call_in_meeting(
+            MEETING1_EXTENSION, user_uuid=other_user_uuid
+        )
 
         self.bus.send_meeting_deleted_event(meeting_uuid)
 
         def channels_left_meeting(*channel_ids):
             for channel_id in channel_ids:
-                assert_that(channel_id, is_not(self.c.is_in_bridge()), 'Channel is still in meeting')
+                assert_that(
+                    channel_id,
+                    is_not(self.c.is_in_bridge()),
+                    'Channel is still in meeting',
+                )
 
         until.assert_(channels_left_meeting, channel_id, other_channel_id, timeout=5)
 
@@ -518,12 +624,19 @@ class TestMeetingParticipants(TestMeetings):
         participant_id = '12345.67'
 
         with self.confd_stopped():
-            assert_that(calling(self.calld_client.meetings.kick_participant)
-                        .with_args(meeting_uuid, participant_id),
-                        raises(CalldError).matching(has_properties({
+            assert_that(
+                calling(self.calld_client.meetings.kick_participant).with_args(
+                    meeting_uuid, participant_id
+                ),
+                raises(CalldError).matching(
+                    has_properties(
+                        {
                             'status_code': 503,
                             'error_id': 'wazo-confd-unreachable',
-                        })))
+                        }
+                    )
+                ),
+            )
 
     def test_kick_participant_with_no_amid(self):
         meeting_uuid = MEETING1_UUID
@@ -535,23 +648,37 @@ class TestMeetingParticipants(TestMeetings):
         participant = participants['items'][0]
 
         with self.amid_stopped():
-            assert_that(calling(self.calld_client.meetings.kick_participant)
-                        .with_args(meeting_uuid, participant['id']),
-                        raises(CalldError).matching(has_properties({
+            assert_that(
+                calling(self.calld_client.meetings.kick_participant).with_args(
+                    meeting_uuid, participant['id']
+                ),
+                raises(CalldError).matching(
+                    has_properties(
+                        {
                             'status_code': 503,
                             'error_id': 'wazo-amid-error',
-                        })))
+                        }
+                    )
+                ),
+            )
 
     def test_kick_participant_with_no_meetings(self):
         meeting_uuid = 14
         participant_id = '12345.67'
 
-        assert_that(calling(self.calld_client.meetings.kick_participant)
-                    .with_args(meeting_uuid, participant_id),
-                    raises(CalldError).matching(has_properties({
+        assert_that(
+            calling(self.calld_client.meetings.kick_participant).with_args(
+                meeting_uuid, participant_id
+            ),
+            raises(CalldError).matching(
+                has_properties(
+                    {
                         'status_code': 404,
                         'error_id': 'no-such-meeting',
-                    })))
+                    }
+                )
+            ),
+        )
 
     def test_kick_participant_with_no_participants(self):
         meeting_uuid = MEETING1_UUID
@@ -560,12 +687,19 @@ class TestMeetingParticipants(TestMeetings):
             MockMeeting(uuid=meeting_uuid, name='meeting'),
         )
 
-        assert_that(calling(self.calld_client.meetings.kick_participant)
-                    .with_args(meeting_uuid, participant_id),
-                    raises(CalldError).matching(has_properties({
+        assert_that(
+            calling(self.calld_client.meetings.kick_participant).with_args(
+                meeting_uuid, participant_id
+            ),
+            raises(CalldError).matching(
+                has_properties(
+                    {
                         'status_code': 404,
                         'error_id': 'no-such-participant',
-                    })))
+                    }
+                )
+            ),
+        )
 
     def test_kick_participant_notfound(self):
         meeting_uuid = MEETING1_UUID
@@ -575,12 +709,19 @@ class TestMeetingParticipants(TestMeetings):
         )
         self.given_call_in_meeting(MEETING1_EXTENSION, caller_id_name='participant1')
 
-        assert_that(calling(self.calld_client.meetings.kick_participant)
-                    .with_args(meeting_uuid, wrong_participant_id),
-                    raises(CalldError).matching(has_properties({
+        assert_that(
+            calling(self.calld_client.meetings.kick_participant).with_args(
+                meeting_uuid, wrong_participant_id
+            ),
+            raises(CalldError).matching(
+                has_properties(
+                    {
                         'status_code': 404,
                         'error_id': 'no-such-participant',
-                    })))
+                    }
+                )
+            ),
+        )
 
     def test_kick_meeting_notfound(self):
         meeting_uuid = MEETING1_UUID
@@ -592,12 +733,19 @@ class TestMeetingParticipants(TestMeetings):
         participants = self.calld_client.meetings.list_participants(meeting_uuid)
         participant = participants['items'][0]
 
-        assert_that(calling(self.calld_client.meetings.kick_participant)
-                    .with_args(wrong_meeting_uuid, participant['id']),
-                    raises(CalldError).matching(has_properties({
+        assert_that(
+            calling(self.calld_client.meetings.kick_participant).with_args(
+                wrong_meeting_uuid, participant['id']
+            ),
+            raises(CalldError).matching(
+                has_properties(
+                    {
                         'status_code': 404,
                         'error_id': 'no-such-meeting',
-                    })))
+                    }
+                )
+            ),
+        )
 
     def test_kick_wrong_meeting(self):
         meeting_uuid = MEETING1_UUID
@@ -610,12 +758,19 @@ class TestMeetingParticipants(TestMeetings):
         participants = self.calld_client.meetings.list_participants(meeting_uuid)
         participant = participants['items'][0]
 
-        assert_that(calling(self.calld_client.meetings.kick_participant)
-                    .with_args(wrong_meeting_uuid, participant['id']),
-                    raises(CalldError).matching(has_properties({
+        assert_that(
+            calling(self.calld_client.meetings.kick_participant).with_args(
+                wrong_meeting_uuid, participant['id']
+            ),
+            raises(CalldError).matching(
+                has_properties(
+                    {
                         'status_code': 404,
                         'error_id': 'no-such-participant',
-                    })))
+                    }
+                )
+            ),
+        )
 
     def test_kick_wrong_participant(self):
         meeting1_uuid = MEETING1_UUID
@@ -629,12 +784,19 @@ class TestMeetingParticipants(TestMeetings):
         participants = self.calld_client.meetings.list_participants(meeting1_uuid)
         wrong_participant = participants['items'][0]
 
-        assert_that(calling(self.calld_client.meetings.kick_participant)
-                    .with_args(meeting2_uuid, wrong_participant['id']),
-                    raises(CalldError).matching(has_properties({
+        assert_that(
+            calling(self.calld_client.meetings.kick_participant).with_args(
+                meeting2_uuid, wrong_participant['id']
+            ),
+            raises(CalldError).matching(
+                has_properties(
+                    {
                         'status_code': 404,
                         'error_id': 'no-such-participant',
-                    })))
+                    }
+                )
+            ),
+        )
 
     def test_kick_participant(self):
         meeting_uuid = MEETING1_UUID
@@ -649,11 +811,11 @@ class TestMeetingParticipants(TestMeetings):
 
         def no_more_participants():
             participants = self.calld_client.meetings.list_participants(meeting_uuid)
-            assert_that(participants, has_entries({
-                'total': 0,
-                'items': empty()
-            }))
-        until.assert_(no_more_participants, timeout=10, message='Participant was not kicked')
+            assert_that(participants, has_entries({'total': 0, 'items': empty()}))
+
+        until.assert_(
+            no_more_participants, timeout=10, message='Participant was not kicked'
+        )
 
     def test_user_kick_participant_with_no_meetings(self):
         meeting_uuid = 14
@@ -661,12 +823,19 @@ class TestMeetingParticipants(TestMeetings):
         user_uuid = make_user_uuid()
         calld_client = self.make_user_calld(user_uuid)
 
-        assert_that(calling(calld_client.meetings.user_kick_participant)
-                    .with_args(meeting_uuid, participant_id),
-                    raises(CalldError).matching(has_properties({
+        assert_that(
+            calling(calld_client.meetings.user_kick_participant).with_args(
+                meeting_uuid, participant_id
+            ),
+            raises(CalldError).matching(
+                has_properties(
+                    {
                         'status_code': 404,
                         'error_id': 'no-such-meeting',
-                    })))
+                    }
+                )
+            ),
+        )
 
     def test_user_no_owner_kick_participant(self):
         meeting_uuid = MEETING1_UUID
@@ -679,12 +848,19 @@ class TestMeetingParticipants(TestMeetings):
         participants = self.calld_client.meetings.list_participants(meeting_uuid)
         participant = participants['items'][0]
 
-        assert_that(calling(calld_client.meetings.user_kick_participant)
-                    .with_args(meeting_uuid, participant['id']),
-                    raises(CalldError).matching(has_properties({
+        assert_that(
+            calling(calld_client.meetings.user_kick_participant).with_args(
+                meeting_uuid, participant['id']
+            ),
+            raises(CalldError).matching(
+                has_properties(
+                    {
                         'status_code': 404,
                         'error_id': 'no-such-meeting',
-                    })))
+                    }
+                )
+            ),
+        )
 
     def test_user_kick_participant(self):
         meeting_uuid = MEETING1_UUID
@@ -701,11 +877,11 @@ class TestMeetingParticipants(TestMeetings):
 
         def no_more_participants():
             participants = calld_client.meetings.list_participants(meeting_uuid)
-            assert_that(participants, has_entries({
-                'total': 0,
-                'items': empty()
-            }))
-        until.assert_(no_more_participants, timeout=10, message='Participant was not kicked')
+            assert_that(participants, has_entries({'total': 0, 'items': empty()}))
+
+        until.assert_(
+            no_more_participants, timeout=10, message='Participant was not kicked'
+        )
 
     @unittest.skip
     def test_mute_participant_with_no_confd(self):
@@ -713,18 +889,32 @@ class TestMeetingParticipants(TestMeetings):
         participant_id = '12345.67'
 
         with self.confd_stopped():
-            assert_that(calling(self.calld_client.meetings.mute_participant)
-                        .with_args(meeting_uuid, participant_id),
-                        raises(CalldError).matching(has_properties({
+            assert_that(
+                calling(self.calld_client.meetings.mute_participant).with_args(
+                    meeting_uuid, participant_id
+                ),
+                raises(CalldError).matching(
+                    has_properties(
+                        {
                             'status_code': 503,
                             'error_id': 'wazo-confd-unreachable',
-                        })))
-            assert_that(calling(self.calld_client.meetings.unmute_participant)
-                        .with_args(meeting_uuid, participant_id),
-                        raises(CalldError).matching(has_properties({
+                        }
+                    )
+                ),
+            )
+            assert_that(
+                calling(self.calld_client.meetings.unmute_participant).with_args(
+                    meeting_uuid, participant_id
+                ),
+                raises(CalldError).matching(
+                    has_properties(
+                        {
                             'status_code': 503,
                             'error_id': 'wazo-confd-unreachable',
-                        })))
+                        }
+                    )
+                ),
+            )
 
     @unittest.skip
     def test_mute_participant_with_no_amid(self):
@@ -737,36 +927,64 @@ class TestMeetingParticipants(TestMeetings):
         participant = participants['items'][0]
 
         with self.amid_stopped():
-            assert_that(calling(self.calld_client.meetings.mute_participant)
-                        .with_args(meeting_uuid, participant['id']),
-                        raises(CalldError).matching(has_properties({
+            assert_that(
+                calling(self.calld_client.meetings.mute_participant).with_args(
+                    meeting_uuid, participant['id']
+                ),
+                raises(CalldError).matching(
+                    has_properties(
+                        {
                             'status_code': 503,
                             'error_id': 'wazo-amid-error',
-                        })))
-            assert_that(calling(self.calld_client.meetings.unmute_participant)
-                        .with_args(meeting_uuid, participant['id']),
-                        raises(CalldError).matching(has_properties({
+                        }
+                    )
+                ),
+            )
+            assert_that(
+                calling(self.calld_client.meetings.unmute_participant).with_args(
+                    meeting_uuid, participant['id']
+                ),
+                raises(CalldError).matching(
+                    has_properties(
+                        {
                             'status_code': 503,
                             'error_id': 'wazo-amid-error',
-                        })))
+                        }
+                    )
+                ),
+            )
 
     @unittest.skip
     def test_mute_participant_with_no_meetings(self):
         meeting_uuid = 14
         participant_id = '12345.67'
 
-        assert_that(calling(self.calld_client.meetings.mute_participant)
-                    .with_args(meeting_uuid, participant_id),
-                    raises(CalldError).matching(has_properties({
+        assert_that(
+            calling(self.calld_client.meetings.mute_participant).with_args(
+                meeting_uuid, participant_id
+            ),
+            raises(CalldError).matching(
+                has_properties(
+                    {
                         'status_code': 404,
                         'error_id': 'no-such-meeting',
-                    })))
-        assert_that(calling(self.calld_client.meetings.unmute_participant)
-                    .with_args(meeting_uuid, participant_id),
-                    raises(CalldError).matching(has_properties({
+                    }
+                )
+            ),
+        )
+        assert_that(
+            calling(self.calld_client.meetings.unmute_participant).with_args(
+                meeting_uuid, participant_id
+            ),
+            raises(CalldError).matching(
+                has_properties(
+                    {
                         'status_code': 404,
                         'error_id': 'no-such-meeting',
-                    })))
+                    }
+                )
+            ),
+        )
 
     @unittest.skip
     def test_mute_participant_with_no_participants(self):
@@ -776,18 +994,32 @@ class TestMeetingParticipants(TestMeetings):
             MockMeeting(uuid=meeting_uuid, name='meeting'),
         )
 
-        assert_that(calling(self.calld_client.meetings.mute_participant)
-                    .with_args(meeting_uuid, participant_id),
-                    raises(CalldError).matching(has_properties({
+        assert_that(
+            calling(self.calld_client.meetings.mute_participant).with_args(
+                meeting_uuid, participant_id
+            ),
+            raises(CalldError).matching(
+                has_properties(
+                    {
                         'status_code': 404,
                         'error_id': 'no-such-participant',
-                    })))
-        assert_that(calling(self.calld_client.meetings.unmute_participant)
-                    .with_args(meeting_uuid, participant_id),
-                    raises(CalldError).matching(has_properties({
+                    }
+                )
+            ),
+        )
+        assert_that(
+            calling(self.calld_client.meetings.unmute_participant).with_args(
+                meeting_uuid, participant_id
+            ),
+            raises(CalldError).matching(
+                has_properties(
+                    {
                         'status_code': 404,
                         'error_id': 'no-such-participant',
-                    })))
+                    }
+                )
+            ),
+        )
 
     @unittest.skip
     def test_mute_unmute_participant(self):
@@ -803,21 +1035,31 @@ class TestMeetingParticipants(TestMeetings):
 
         def participant_is_muted():
             participants = self.calld_client.meetings.list_participants(meeting_uuid)
-            assert_that(participants, has_entries({
-                'total': 1,
-                'items': contains_exactly(has_entry('muted', True))
-            }))
-        until.assert_(participant_is_muted, timeout=10, message='Participant was not muted')
+            assert_that(
+                participants,
+                has_entries(
+                    {'total': 1, 'items': contains_exactly(has_entry('muted', True))}
+                ),
+            )
+
+        until.assert_(
+            participant_is_muted, timeout=10, message='Participant was not muted'
+        )
 
         self.calld_client.meetings.unmute_participant(meeting_uuid, participant['id'])
 
         def participant_is_not_muted():
             participants = self.calld_client.meetings.list_participants(meeting_uuid)
-            assert_that(participants, has_entries({
-                'total': 1,
-                'items': contains_exactly(has_entry('muted', False))
-            }))
-        until.assert_(participant_is_not_muted, timeout=10, message='Participant is still muted')
+            assert_that(
+                participants,
+                has_entries(
+                    {'total': 1, 'items': contains_exactly(has_entry('muted', False))}
+                ),
+            )
+
+        until.assert_(
+            participant_is_not_muted, timeout=10, message='Participant is still muted'
+        )
 
     @unittest.skip
     def test_mute_unmute_participant_twice(self):
@@ -844,9 +1086,7 @@ class TestMeetingParticipants(TestMeetings):
         meeting_uuid = MEETING1_UUID
         tenant_uuid = MEETING1_TENANT_UUID
         self.confd.set_meetings(
-            MockMeeting(
-                uuid=meeting_uuid, name='meeting', tenant_uuid=tenant_uuid
-            ),
+            MockMeeting(uuid=meeting_uuid, name='meeting', tenant_uuid=tenant_uuid),
         )
         self.given_call_in_meeting(
             MEETING1_EXTENSION, caller_id_name='participant1', tenant_uuid=tenant_uuid
@@ -866,46 +1106,72 @@ class TestMeetingParticipants(TestMeetings):
                 mute_bus_events.accumulate(with_headers=True),
                 has_item(
                     has_entries(
-                        message=has_entries({
-                            'name': event_name,
-                            'data': has_entries({
-                                'id': participant['id'],
+                        message=has_entries(
+                            {
+                                'name': event_name,
+                                'data': has_entries(
+                                    {
+                                        'id': participant['id'],
+                                        'meeting_uuid': meeting_uuid,
+                                        'muted': muted,
+                                    }
+                                ),
+                            }
+                        ),
+                        headers=has_entries(
+                            {
+                                'name': event_name,
                                 'meeting_uuid': meeting_uuid,
-                                'muted': muted,
-                            })
-                        }),
-                        headers=has_entries({
-                            'name': event_name,
-                            'meeting_uuid': meeting_uuid,
-                            'tenant_uuid': tenant_uuid,
-                        })
+                                'tenant_uuid': tenant_uuid,
+                            }
+                        ),
                     )
-                )
+                ),
             )
 
-        until.assert_(participant_muted_event_received, muted=True, timeout=10, message='Mute event was not received')
+        until.assert_(
+            participant_muted_event_received,
+            muted=True,
+            timeout=10,
+            message='Mute event was not received',
+        )
 
         self.calld_client.meetings.unmute_participant(meeting_uuid, participant['id'])
 
-        until.assert_(participant_muted_event_received, muted=True, timeout=10, message='Unmute event was not received')
+        until.assert_(
+            participant_muted_event_received,
+            muted=True,
+            timeout=10,
+            message='Unmute event was not received',
+        )
 
     @unittest.skip
     def test_record_with_no_confd(self):
         meeting_uuid = 14
 
         with self.confd_stopped():
-            assert_that(calling(self.calld_client.meetings.record)
-                        .with_args(meeting_uuid),
-                        raises(CalldError).matching(has_properties({
+            assert_that(
+                calling(self.calld_client.meetings.record).with_args(meeting_uuid),
+                raises(CalldError).matching(
+                    has_properties(
+                        {
                             'status_code': 503,
                             'error_id': 'wazo-confd-unreachable',
-                        })))
-            assert_that(calling(self.calld_client.meetings.stop_record)
-                        .with_args(meeting_uuid),
-                        raises(CalldError).matching(has_properties({
+                        }
+                    )
+                ),
+            )
+            assert_that(
+                calling(self.calld_client.meetings.stop_record).with_args(meeting_uuid),
+                raises(CalldError).matching(
+                    has_properties(
+                        {
                             'status_code': 503,
                             'error_id': 'wazo-confd-unreachable',
-                        })))
+                        }
+                    )
+                ),
+            )
 
     @unittest.skip
     def test_record_with_no_amid(self):
@@ -916,35 +1182,55 @@ class TestMeetingParticipants(TestMeetings):
         self.given_call_in_meeting(MEETING1_EXTENSION, caller_id_name='participant1')
 
         with self.amid_stopped():
-            assert_that(calling(self.calld_client.meetings.record)
-                        .with_args(meeting_uuid),
-                        raises(CalldError).matching(has_properties({
+            assert_that(
+                calling(self.calld_client.meetings.record).with_args(meeting_uuid),
+                raises(CalldError).matching(
+                    has_properties(
+                        {
                             'status_code': 503,
                             'error_id': 'wazo-amid-error',
-                        })))
-            assert_that(calling(self.calld_client.meetings.stop_record)
-                        .with_args(meeting_uuid),
-                        raises(CalldError).matching(has_properties({
+                        }
+                    )
+                ),
+            )
+            assert_that(
+                calling(self.calld_client.meetings.stop_record).with_args(meeting_uuid),
+                raises(CalldError).matching(
+                    has_properties(
+                        {
                             'status_code': 503,
                             'error_id': 'wazo-amid-error',
-                        })))
+                        }
+                    )
+                ),
+            )
 
     @unittest.skip
     def test_record_with_no_meetings(self):
         meeting_uuid = 14
 
-        assert_that(calling(self.calld_client.meetings.record)
-                    .with_args(meeting_uuid),
-                    raises(CalldError).matching(has_properties({
+        assert_that(
+            calling(self.calld_client.meetings.record).with_args(meeting_uuid),
+            raises(CalldError).matching(
+                has_properties(
+                    {
                         'status_code': 404,
                         'error_id': 'no-such-meeting',
-                    })))
-        assert_that(calling(self.calld_client.meetings.stop_record)
-                    .with_args(meeting_uuid),
-                    raises(CalldError).matching(has_properties({
+                    }
+                )
+            ),
+        )
+        assert_that(
+            calling(self.calld_client.meetings.stop_record).with_args(meeting_uuid),
+            raises(CalldError).matching(
+                has_properties(
+                    {
                         'status_code': 404,
                         'error_id': 'no-such-meeting',
-                    })))
+                    }
+                )
+            ),
+        )
 
     @unittest.skip
     def test_record_participant_with_no_participants(self):
@@ -953,12 +1239,17 @@ class TestMeetingParticipants(TestMeetings):
             MockMeeting(uuid=meeting_uuid, name='meeting'),
         )
 
-        assert_that(calling(self.calld_client.meetings.record)
-                    .with_args(meeting_uuid),
-                    raises(CalldError).matching(has_properties({
+        assert_that(
+            calling(self.calld_client.meetings.record).with_args(meeting_uuid),
+            raises(CalldError).matching(
+                has_properties(
+                    {
                         'status_code': 400,
                         'error_id': 'meeting-has-no-participants',
-                    })))
+                    }
+                )
+            ),
+        )
 
     @unittest.skip
     def test_record(self):
@@ -969,7 +1260,9 @@ class TestMeetingParticipants(TestMeetings):
         self.given_call_in_meeting(MEETING1_EXTENSION, caller_id_name='participant1')
 
         def latest_record_file():
-            record_files = self.docker_exec(['ls', '-t', '/var/spool/asterisk/monitor'], 'ari')
+            record_files = self.docker_exec(
+                ['ls', '-t', '/var/spool/asterisk/monitor'], 'ari'
+            )
             latest_record_file = record_files.split(b'\n')[0].decode('utf-8')
             return os.path.join('/var/spool/asterisk/monitor', latest_record_file)
 
@@ -1004,30 +1297,38 @@ class TestMeetingParticipants(TestMeetings):
 
         # record twice
         self.calld_client.meetings.record(meeting_uuid)
-        assert_that(calling(self.calld_client.meetings.record)
-                    .with_args(meeting_uuid),
-                    raises(CalldError).matching(has_properties({
+        assert_that(
+            calling(self.calld_client.meetings.record).with_args(meeting_uuid),
+            raises(CalldError).matching(
+                has_properties(
+                    {
                         'status_code': 400,
                         'error_id': 'meeting-already-recorded',
-                    })))
+                    }
+                )
+            ),
+        )
 
         # stop record twice
         self.calld_client.meetings.stop_record(meeting_uuid)
-        assert_that(calling(self.calld_client.meetings.stop_record)
-                    .with_args(meeting_uuid),
-                    raises(CalldError).matching(has_properties({
+        assert_that(
+            calling(self.calld_client.meetings.stop_record).with_args(meeting_uuid),
+            raises(CalldError).matching(
+                has_properties(
+                    {
                         'status_code': 400,
                         'error_id': 'meeting-not-recorded',
-                    })))
+                    }
+                )
+            ),
+        )
 
     @unittest.skip
     def test_record_send_events(self):
         meeting_uuid = MEETING1_UUID
         tenant_uuid = MEETING1_TENANT_UUID
         self.confd.set_meetings(
-            MockMeeting(
-                uuid=meeting_uuid, name='meeting', tenant_uuid=tenant_uuid
-            ),
+            MockMeeting(uuid=meeting_uuid, name='meeting', tenant_uuid=tenant_uuid),
         )
         self.given_call_in_meeting(
             MEETING1_EXTENSION, caller_id_name='participant1', tenant_uuid=tenant_uuid
@@ -1037,37 +1338,57 @@ class TestMeetingParticipants(TestMeetings):
         self.calld_client.meetings.record(meeting_uuid)
 
         def record_event_received(record):
-            event_name = 'meeting_record_started' if record else 'meeting_record_stopped'
+            event_name = (
+                'meeting_record_started' if record else 'meeting_record_stopped'
+            )
             assert_that(
                 record_bus_events.accumulate(with_headers=True),
                 has_item(
                     has_entries(
-                        message=has_entries({
-                            'name': event_name,
-                            'data': has_entries({
-                                'id': meeting_uuid,
-                            })
-                        }),
-                        headers=has_entries({
-                            'name': event_name,
-                            'meeting_uuid': meeting_uuid,
-                            'tenant_uuid': tenant_uuid,
-                        })
+                        message=has_entries(
+                            {
+                                'name': event_name,
+                                'data': has_entries(
+                                    {
+                                        'id': meeting_uuid,
+                                    }
+                                ),
+                            }
+                        ),
+                        headers=has_entries(
+                            {
+                                'name': event_name,
+                                'meeting_uuid': meeting_uuid,
+                                'tenant_uuid': tenant_uuid,
+                            }
+                        ),
                     )
-                )
+                ),
             )
 
-        until.assert_(record_event_received, record=True, timeout=10, message='Record start event was not received')
+        until.assert_(
+            record_event_received,
+            record=True,
+            timeout=10,
+            message='Record start event was not received',
+        )
 
         self.calld_client.meetings.stop_record(meeting_uuid)
 
-        until.assert_(record_event_received, record=False, timeout=10, message='Record stop event was not received')
+        until.assert_(
+            record_event_received,
+            record=False,
+            timeout=10,
+            message='Record stop event was not received',
+        )
 
     @unittest.skip
     def test_participant_talking_sends_event(self):
         meeting_uuid = MEETING1_UUID
         self.confd.set_meetings(
-            MockMeeting(uuid=meeting_uuid, name='meeting', tenant_uuid=MEETING1_TENANT_UUID),
+            MockMeeting(
+                uuid=meeting_uuid, name='meeting', tenant_uuid=MEETING1_TENANT_UUID
+            ),
         )
         talking_user_uuid = 'talking-user-uuid'
         listening_user_uuid = 'listening-user-uuid'
@@ -1075,10 +1396,22 @@ class TestMeetingParticipants(TestMeetings):
         meeting_events = self.bus.accumulator(headers={'meeting_uuid': meeting_uuid})
 
         # listening user must enter the meeting first, to receive the event from the talking user
-        self.given_call_in_meeting(MEETING1_EXTENSION, caller_id_name='participant2', user_uuid=listening_user_uuid)
-        self.given_call_in_meeting(MEETING1_EXTENSION, caller_id_name='participant1', user_uuid=talking_user_uuid)
+        self.given_call_in_meeting(
+            MEETING1_EXTENSION,
+            caller_id_name='participant2',
+            user_uuid=listening_user_uuid,
+        )
+        self.given_call_in_meeting(
+            MEETING1_EXTENSION,
+            caller_id_name='participant1',
+            user_uuid=talking_user_uuid,
+        )
         participants = self.calld_client.meetings.list_participants(meeting_uuid)
-        talking_participant = [participant for participant in participants['items'] if participant['user_uuid'] == talking_user_uuid][0]
+        talking_participant = [
+            participant
+            for participant in participants['items']
+            if participant['user_uuid'] == talking_user_uuid
+        ][0]
 
         def talking_event_received(bus_events, talking):
             suffix = '_started' if talking else '_stopped'
@@ -1127,8 +1460,8 @@ class TestMeetingParticipants(TestMeetings):
                                 f'user_uuid:{listening_user_uuid}': True,
                             }
                         ),
-                    )
-                )
+                    ),
+                ),
             )
 
         until.assert_(talking_event_received, meeting_events, talking=True, timeout=10)
@@ -1146,7 +1479,7 @@ class TestMeetingParticipants(TestMeetings):
                     'Language': talking_participant['language'],
                     'Uniqueid': talking_participant['id'],
                     'TalkingStatus': 'off',
-                }
+                },
             },
             headers={
                 'name': 'ConfbridgeTalking',

@@ -1,4 +1,4 @@
-# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -20,11 +20,12 @@ logger = logging.getLogger(__name__)
 class InvalidSnoopBridge(Exception):
     def __init__(self, bridge_id):
         self.bridge_id = bridge_id
-        super().__init__('Invalid snoop bridge id "{bridge_id}"'.format(bridge_id=bridge_id))
+        super().__init__(
+            'Invalid snoop bridge id "{bridge_id}"'.format(bridge_id=bridge_id)
+        )
 
 
 class ApplicationCall:
-
     def __init__(self, id_):
         self.id_ = id_
         self.moh_uuid = None
@@ -34,14 +35,12 @@ class ApplicationCall:
 
 
 class ApplicationNode:
-
     def __init__(self, uuid):
         self.uuid = uuid
         self.calls = []
 
 
 class CallFormatter:
-
     def __init__(self, application, ari=None):
         self._application = application
         self._ari = ari
@@ -64,22 +63,31 @@ class CallFormatter:
             call.is_caller = channel_helper.is_caller()
             call.dialed_extension = channel_helper.dialed_extension()
             try:
-                call.moh_uuid = channel.getChannelVar(variable='WAZO_MOH_UUID').get('value') or None
+                call.moh_uuid = (
+                    channel.getChannelVar(variable='WAZO_MOH_UUID').get('value') or None
+                )
             except ARINotFound:
                 call.moh_uuid = None
 
             try:
-                call.user_uuid = channel.getChannelVar(variable='XIVO_USERUUID').get('value')
+                call.user_uuid = channel.getChannelVar(variable='XIVO_USERUUID').get(
+                    'value'
+                )
             except ARINotFound:
                 call.user_uuid = None
 
             try:
-                call.tenant_uuid = channel.getChannelVar(variable='WAZO_TENANT_UUID').get('value')
+                call.tenant_uuid = channel.getChannelVar(
+                    variable='WAZO_TENANT_UUID'
+                ).get('value')
             except ARINotFound:
                 call.tenant_uuid = None
 
             try:
-                call.muted = channel.getChannelVar(variable='WAZO_CALL_MUTED').get('value') == '1'
+                call.muted = (
+                    channel.getChannelVar(variable='WAZO_CALL_MUTED').get('value')
+                    == '1'
+                )
             except ARINotFound:
                 call.muted = False
 
@@ -135,7 +143,6 @@ def make_node_from_bridge_event(bridge):
 
 
 class _Snoop:
-
     bridge_name_tpl = 'wazo-app-snoop-{}'
     _snooped_call_id_chan_var = 'WAZO_SNOOPED_CALL_ID'
     _whisper_mode_chan_var = 'WAZO_SNOOP_WHISPER_MODE'
@@ -151,7 +158,9 @@ class _Snoop:
         self._snoop_channel = kwargs.get('snoop_channel')
 
     def create_bridge(self, ari):
-        logger.debug('creating a new snoop bridge for snoop %s %s', self.uuid, self.bridge_name)
+        logger.debug(
+            'creating a new snoop bridge for snoop %s %s', self.uuid, self.bridge_name
+        )
         self._bridge = ari.bridges.createWithId(
             bridgeId=self.uuid,
             name=self.bridge_name,
@@ -159,18 +168,28 @@ class _Snoop:
         )
 
         try:
-            logger.debug('adding the snooping call to the bridge %s %s', self.uuid, self.snooping_call_id)
+            logger.debug(
+                'adding the snooping call to the bridge %s %s',
+                self.uuid,
+                self.snooping_call_id,
+            )
             self._bridge.addChannel(channel=self.snooping_call_id)
         except HTTPError as e:
             response = getattr(e, 'response', None)
             status_code = getattr(response, 'status_code', None)
-            logger.debug('failed to add the channel to the snooping bridge %s', status_code)
+            logger.debug(
+                'failed to add the channel to the snooping bridge %s', status_code
+            )
             if status_code == 400:
                 raise NoSuchCall(self.snooping_call_id, status_code=400)
             raise
 
     def update_snoop_channel(self, snoop_channel):
-        logger.debug('updating the snoop channel from %s to %s', self._snoop_channel, snoop_channel)
+        logger.debug(
+            'updating the snoop channel from %s to %s',
+            self._snoop_channel,
+            snoop_channel,
+        )
         old_snoop_channel = self._snoop_channel
         self._snoop_channel = snoop_channel
         logger.debug('adding the new snoop channel %s', self._snoop_channel)
@@ -249,7 +268,9 @@ class _Snoop:
 
     @classmethod
     def get_snooped_call_id(cls, snoop_channel):
-        return snoop_channel.getChannelVar(variable=cls._snooped_call_id_chan_var)['value']
+        return snoop_channel.getChannelVar(variable=cls._snooped_call_id_chan_var)[
+            'value'
+        ]
 
     @classmethod
     def get_whisper_mode(cls, snoop_channel):
@@ -257,7 +278,6 @@ class _Snoop:
 
 
 class SnoopHelper:
-
     def __init__(self, ari):
         self._ari = ari
 

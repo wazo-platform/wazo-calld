@@ -1,4 +1,4 @@
-# Copyright 2018-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from hamcrest import (
@@ -29,7 +29,6 @@ from .helpers.constants import VALID_TENANT
 
 
 class BaseApplicationTestCase(RealAsteriskIntegrationTest):
-
     asset = 'real_asterisk'
     wait_strategy = NoWaitStrategy()
 
@@ -93,7 +92,7 @@ class BaseApplicationTestCase(RealAsteriskIntegrationTest):
                 'variables': {
                     'WAZO_CHANNEL_DIRECTION': 'to-wazo',
                 },
-            }
+            },
         }
 
         if variables:
@@ -110,12 +109,20 @@ class BaseApplicationTestCase(RealAsteriskIntegrationTest):
                 if event['name'] == 'application_call_entered':
                     return channel
 
-        return until.true(call_entered_application, event_accumulator, timeout=10, message='Failed to start call')
+        return until.true(
+            call_entered_application,
+            event_accumulator,
+            timeout=10,
+            message='Failed to start call',
+        )
 
     def call_app_incoming(self, app_uuid):
         event_accumulator = self.app_event_accumulator(app_uuid)
 
-        self.docker_exec(['asterisk', '-rx', 'test new {exten} applications'.format(exten=app_uuid)], 'ari')
+        self.docker_exec(
+            ['asterisk', '-rx', 'test new {exten} applications'.format(exten=app_uuid)],
+            'ari',
+        )
 
         def call_entered_application(event_accumulator):
             events = event_accumulator.accumulate()
@@ -123,7 +130,12 @@ class BaseApplicationTestCase(RealAsteriskIntegrationTest):
                 if event['name'] == 'application_call_entered':
                     return self.ari.channels.get(channelId=event['data']['call']['id'])
 
-        return until.true(call_entered_application, event_accumulator, timeout=10, message='Failed to start call')
+        return until.true(
+            call_entered_application,
+            event_accumulator,
+            timeout=10,
+            message='Failed to start call',
+        )
 
     def call_from_user(self, app_uuid, exten):
         context = 'stasis-wazo-app-{}'.format(app_uuid)
@@ -132,7 +144,6 @@ class BaseApplicationTestCase(RealAsteriskIntegrationTest):
 
 
 class TestStasisTriggers(BaseApplicationTestCase):
-
     def test_entering_stasis_user_outgoing_call(self):
         app_uuid = self.no_node_app_uuid
         event_accumulator = self.app_event_accumulator(app_uuid)
@@ -156,12 +167,12 @@ class TestStasisTriggers(BaseApplicationTestCase):
                                     status='Ring',
                                     on_hold=False,
                                     node_uuid=None,
-                                )
-                            )
+                                ),
+                            ),
                         ),
                         headers=has_entry('tenant_uuid', VALID_TENANT),
                     )
-                )
+                ),
             )
 
         until.assert_(event_received, tries=5)
@@ -190,12 +201,12 @@ class TestStasisTriggers(BaseApplicationTestCase):
                                     status='Up',
                                     on_hold=False,
                                     node_uuid=None,
-                                )
-                            )
+                                ),
+                            ),
                         ),
                         headers=has_entry('tenant_uuid', VALID_TENANT),
                     )
-                )
+                ),
             )
 
         until.assert_(event_received, tries=5)
@@ -224,7 +235,7 @@ class TestStasisTriggers(BaseApplicationTestCase):
                                     on_hold=False,
                                     node_uuid=None,
                                 )
-                            )
+                            ),
                         ),
                         headers=has_entry('tenant_uuid', VALID_TENANT),
                     ),
@@ -236,8 +247,8 @@ class TestStasisTriggers(BaseApplicationTestCase):
                                 node=has_entries(
                                     uuid=app_uuid,
                                     calls=contains_exactly(has_entries(id=channel.id)),
-                                )
-                            )
+                                ),
+                            ),
                         ),
                         headers=has_entry('tenant_uuid', VALID_TENANT),
                     ),
@@ -252,12 +263,12 @@ class TestStasisTriggers(BaseApplicationTestCase):
                                     node_uuid=app_uuid,
                                     is_caller=True,
                                     on_hold=False,
-                                )
-                            )
+                                ),
+                            ),
                         ),
-                        headers=has_entry('tenant_uuid', VALID_TENANT)
-                    )
-                )
+                        headers=has_entry('tenant_uuid', VALID_TENANT),
+                    ),
+                ),
             )
 
         until.assert_(event_received, tries=5)
@@ -287,12 +298,12 @@ class TestStasisTriggers(BaseApplicationTestCase):
                                 node=has_entries(
                                     uuid=self.node_app_uuid,
                                     calls=empty(),
-                                )
-                            )
+                                ),
+                            ),
                         ),
                         headers=has_entry('tenant_uuid', VALID_TENANT),
                     )
-                )
+                ),
             )
 
         until.assert_(event_received, tries=10)
@@ -308,17 +319,21 @@ class TestStasisTriggers(BaseApplicationTestCase):
                 events,
                 has_item(
                     has_entries(
-                        message=has_entries(name='application_destination_node_created'),
+                        message=has_entries(
+                            name='application_destination_node_created'
+                        ),
                         headers=has_entry('tenant_uuid', VALID_TENANT),
                     ),
-                )
+                ),
             )
 
         until.assert_(event_received, tries=5)
 
     def test_confd_application_event_then_ari_client_is_reset(self):
         app_uuid = '00000000-0000-0000-0000-000000000001'
-        event_accumulator = self.bus.accumulator(headers={'name': 'application_destination_node_created'})
+        event_accumulator = self.bus.accumulator(
+            headers={'name': 'application_destination_node_created'}
+        )
 
         self.bus.send_application_created_event(app_uuid, destination='node')
 
@@ -328,10 +343,12 @@ class TestStasisTriggers(BaseApplicationTestCase):
                 events,
                 has_item(
                     has_entries(
-                        message=has_entry('name', 'application_destination_node_created'),
+                        message=has_entry(
+                            'name', 'application_destination_node_created'
+                        ),
                         headers=has_entry('tenant_uuid', VALID_TENANT),
                     )
-                )
+                ),
             )
 
         until.assert_(event_received, tries=3)
@@ -367,11 +384,14 @@ class TestStasisTriggers(BaseApplicationTestCase):
                 events,
                 has_item(
                     has_entries(
-                        message=has_entries(name='application_destination_node_created'),
+                        message=has_entries(
+                            name='application_destination_node_created'
+                        ),
                         headers=has_entry('tenant_uuid', VALID_TENANT),
                     )
-                )
+                ),
             )
+
         until.assert_(event_received, tries=3)
 
     def test_confd_application_edited_event_then_destination_node_created(self):
@@ -381,7 +401,9 @@ class TestStasisTriggers(BaseApplicationTestCase):
             }
         )
 
-        self.bus.send_application_edited_event(self.no_node_app_uuid, destination='node')
+        self.bus.send_application_edited_event(
+            self.no_node_app_uuid, destination='node'
+        )
 
         def event_received():
             events = event_accumulator.accumulate(with_headers=True)
@@ -389,11 +411,14 @@ class TestStasisTriggers(BaseApplicationTestCase):
                 events,
                 has_item(
                     has_entries(
-                        message=has_entries(name='application_destination_node_created'),
+                        message=has_entries(
+                            name='application_destination_node_created'
+                        ),
                         headers=has_entry('tenant_uuid', VALID_TENANT),
                     )
-                )
+                ),
             )
+
         until.assert_(event_received, tries=3)
 
     def test_confd_application_edited_event_then_destination_node_deleted(self):
@@ -410,8 +435,9 @@ class TestStasisTriggers(BaseApplicationTestCase):
                         message=has_entries(name='application_node_deleted'),
                         headers=has_entry('tenant_uuid', VALID_TENANT),
                     )
-                )
+                ),
             )
+
         until.assert_(event_received, tries=3)
 
     def test_confd_application_deleted_event_then_application_deleted(self):
@@ -424,17 +450,18 @@ class TestStasisTriggers(BaseApplicationTestCase):
 
         def application_deleted():
             app_names = [app['name'] for app in self.ari.applications.list()]
-            assert application_name not in app_names, 'Stasis application has not been deleted'
+            assert (
+                application_name not in app_names
+            ), 'Stasis application has not been deleted'
 
         until.assert_(application_deleted, tries=3)
 
 
 class TestApplication(BaseApplicationTestCase):
-
     def test_get(self):
         assert_that(
             calling(self.calld_client.applications.get).with_args(self.unknown_uuid),
-            raises(CalldError).matching(has_properties(status_code=404))
+            raises(CalldError).matching(has_properties(status_code=404)),
         )
 
         application = self.calld_client.applications.get(self.node_app_uuid)
@@ -463,7 +490,9 @@ class TestApplication(BaseApplicationTestCase):
         until.assert_(application_created, tries=5)
 
     def test_confd_application_edited_event_update_cache(self):
-        self.bus.send_application_edited_event(self.no_node_app_uuid, destination='node')
+        self.bus.send_application_edited_event(
+            self.no_node_app_uuid, destination='node'
+        )
 
         def application_updated():
             try:
@@ -479,8 +508,10 @@ class TestApplication(BaseApplicationTestCase):
 
         def application_deleted():
             assert_that(
-                calling(self.calld_client.applications.get).with_args(self.no_node_app_uuid),
-                raises(CalldError).matching(has_properties(status_code=404))
+                calling(self.calld_client.applications.get).with_args(
+                    self.no_node_app_uuid
+                ),
+                raises(CalldError).matching(has_properties(status_code=404)),
             )
 
         until.assert_(application_deleted, tries=5)
@@ -489,8 +520,10 @@ class TestApplication(BaseApplicationTestCase):
         with self.confd_stopped():
             self._restart_calld()
             assert_that(
-                calling(self.calld_client.applications.get).with_args(self.node_app_uuid),
-                raises(CalldError).matching(has_properties(status_code=503))
+                calling(self.calld_client.applications.get).with_args(
+                    self.node_app_uuid
+                ),
+                raises(CalldError).matching(has_properties(status_code=503)),
             )
 
     def test_delete_call(self):
@@ -524,7 +557,7 @@ class TestApplication(BaseApplicationTestCase):
                                 application_uuid=self.node_app_uuid,
                                 call=has_entries(
                                     id=channel.id,
-                                )
+                                ),
                             ),
                         ),
                         headers=has_entry('tenant_uuid', VALID_TENANT),
@@ -536,12 +569,12 @@ class TestApplication(BaseApplicationTestCase):
                                 application_uuid=self.node_app_uuid,
                                 call=has_entries(
                                     id=channel.id,
-                                )
-                            )
+                                ),
+                            ),
                         ),
                         headers=has_entry('tenant_uuid', VALID_TENANT),
-                    )
-                )
+                    ),
+                ),
             )
 
         until.assert_(event_received, tries=10)
@@ -555,15 +588,21 @@ class TestApplication(BaseApplicationTestCase):
 
     def test_get_calls(self):
         assert_that(
-            calling(self.calld_client.applications.list_calls).with_args(self.unknown_uuid),
+            calling(self.calld_client.applications.list_calls).with_args(
+                self.unknown_uuid
+            ),
             raises(CalldError).matching(has_properties(status_code=404)),
         )
 
-        calls = self.calld_client.applications.list_calls(self.no_node_app_uuid)['items']
+        calls = self.calld_client.applications.list_calls(self.no_node_app_uuid)[
+            'items'
+        ]
         assert_that(calls, empty())
 
         channel = self.call_app(self.no_node_app_uuid, variables={'X_WAZO_FOO': 'bar'})
-        calls = self.calld_client.applications.list_calls(self.no_node_app_uuid)['items']
+        calls = self.calld_client.applications.list_calls(self.no_node_app_uuid)[
+            'items'
+        ]
         assert_that(
             calls,
             contains_exactly(
@@ -578,7 +617,7 @@ class TestApplication(BaseApplicationTestCase):
                     muted=False,
                     variables={'FOO': 'bar'},
                 )
-            )
+            ),
         )
 
     def test_post_call(self):
@@ -588,19 +627,19 @@ class TestApplication(BaseApplicationTestCase):
             calling(self.calld_client.applications.make_call).with_args(
                 self.unknown_uuid, {'context': context, 'exten': exten}
             ),
-            raises(CalldError).matching(has_properties(status_code=404))
+            raises(CalldError).matching(has_properties(status_code=404)),
         )
         assert_that(
             calling(self.calld_client.applications.make_call).with_args(
                 self.no_node_app_uuid, {'context': context, 'exten': 'not-found'}
             ),
-            raises(CalldError).matching(has_properties(status_code=400))
+            raises(CalldError).matching(has_properties(status_code=400)),
         )
         assert_that(
             calling(self.calld_client.applications.make_call).with_args(
                 self.no_node_app_uuid, {'context': 'not-found', 'exten': exten}
             ),
-            raises(CalldError).matching(has_properties(status_code=400))
+            raises(CalldError).matching(has_properties(status_code=400)),
         )
 
         event_accumulator = self.app_event_accumulator(self.no_node_app_uuid)
@@ -610,9 +649,11 @@ class TestApplication(BaseApplicationTestCase):
             'exten': exten,
             'displayed_caller_id_name': 'Foo Bar',
             'displayed_caller_id_number': '5555555555',
-            'variables': {'X_WAZO_FOO': 'BAR'}
+            'variables': {'X_WAZO_FOO': 'BAR'},
         }
-        call = self.calld_client.applications.make_call(self.no_node_app_uuid, call_args)
+        call = self.calld_client.applications.make_call(
+            self.no_node_app_uuid, call_args
+        )
 
         channel = self.ari.channels.get(channelId=call['id']).json
         assert_that(
@@ -638,17 +679,19 @@ class TestApplication(BaseApplicationTestCase):
                                     muted=False,
                                     node_uuid=None,
                                     variables={'FOO': 'BAR'},
-                                )
-                            )
+                                ),
+                            ),
                         ),
                         headers=has_entry('tenant_uuid', VALID_TENANT),
                     )
-                )
+                ),
             )
 
         until.assert_(event_received, tries=5)
 
-        calls = self.calld_client.applications.list_calls(self.no_node_app_uuid)['items']
+        calls = self.calld_client.applications.list_calls(self.no_node_app_uuid)[
+            'items'
+        ]
         assert_that(
             calls,
             has_items(
@@ -668,9 +711,11 @@ class TestApplication(BaseApplicationTestCase):
             'exten': exten,
             'displayed_caller_id_name': 'Foo Bar',
             'displayed_caller_id_number': '5555555555',
-            'variables': {'X_WAZO_FOO': 'BAR'}
+            'variables': {'X_WAZO_FOO': 'BAR'},
         }
-        call = self.calld_client.applications.make_call(self.no_node_app_uuid, call_args)
+        call = self.calld_client.applications.make_call(
+            self.no_node_app_uuid, call_args
+        )
 
         channel = self.ari.channels.get(channelId=call['id']).json
         assert_that(
@@ -696,17 +741,19 @@ class TestApplication(BaseApplicationTestCase):
                                     muted=False,
                                     node_uuid=None,
                                     variables={'FOO': 'BAR'},
-                                )
-                            )
+                                ),
+                            ),
                         ),
                         headers=has_entry('tenant_uuid', VALID_TENANT),
                     )
-                )
+                ),
             )
 
         until.assert_(event_received, tries=5)
 
-        calls = self.calld_client.applications.list_calls(self.no_node_app_uuid)['items']
+        calls = self.calld_client.applications.list_calls(self.no_node_app_uuid)[
+            'items'
+        ]
         assert_that(
             calls,
             has_items(
@@ -721,32 +768,46 @@ class TestApplication(BaseApplicationTestCase):
         context, exten = 'local', 'recipient_autoanswer'
 
         errors = [
-            ((
-                self.unknown_uuid,
-                self.node_app_uuid,
-                {'context': context, 'exten': exten},
-            ), 404),
-            ((
-                self.no_node_app_uuid,
-                self.unknown_uuid,
-                {'context': context, 'exten': exten},
-            ), 404),
-            ((
-                self.node_app_uuid,
-                self.node_app_uuid,
-                {'context': 'not-found', 'exten': exten},
-            ), 400),
-            ((
-                self.node_app_uuid,
-                self.node_app_uuid,
-                {'context': context, 'exten': 'not-found'},
-            ), 400),
+            (
+                (
+                    self.unknown_uuid,
+                    self.node_app_uuid,
+                    {'context': context, 'exten': exten},
+                ),
+                404,
+            ),
+            (
+                (
+                    self.no_node_app_uuid,
+                    self.unknown_uuid,
+                    {'context': context, 'exten': exten},
+                ),
+                404,
+            ),
+            (
+                (
+                    self.node_app_uuid,
+                    self.node_app_uuid,
+                    {'context': 'not-found', 'exten': exten},
+                ),
+                400,
+            ),
+            (
+                (
+                    self.node_app_uuid,
+                    self.node_app_uuid,
+                    {'context': context, 'exten': 'not-found'},
+                ),
+                400,
+            ),
         ]
 
         for args, status_code in errors:
             assert_that(
-                calling(self.calld_client.applications.make_call_to_node).with_args(*args),
-                raises(CalldError).matching(has_properties(status_code=status_code))
+                calling(self.calld_client.applications.make_call_to_node).with_args(
+                    *args
+                ),
+                raises(CalldError).matching(has_properties(status_code=status_code)),
             )
 
         event_accumulator = self.app_event_accumulator(self.node_app_uuid)
@@ -788,8 +849,8 @@ class TestApplication(BaseApplicationTestCase):
                                     on_hold=False,
                                     node_uuid=None,
                                     variables={'FOO': 'BAR'},
-                                )
-                            )
+                                ),
+                            ),
                         ),
                         headers=has_entry('tenant_uuid', VALID_TENANT),
                     ),
@@ -800,9 +861,9 @@ class TestApplication(BaseApplicationTestCase):
                                 application_uuid=self.node_app_uuid,
                                 node=has_entries(
                                     uuid=self.node_app_uuid,
-                                    calls=contains_exactly(has_entries(id=call['id']))
-                                )
-                            )
+                                    calls=contains_exactly(has_entries(id=call['id'])),
+                                ),
+                            ),
                         ),
                         headers=has_entry('tenant_uuid', VALID_TENANT),
                     ),
@@ -814,12 +875,12 @@ class TestApplication(BaseApplicationTestCase):
                                 call=has_entries(
                                     id=call['id'],
                                     node_uuid=self.node_app_uuid,
-                                )
-                            )
+                                ),
+                            ),
                         ),
                         headers=has_entry('tenant_uuid', VALID_TENANT),
-                    )
-                )
+                    ),
+                ),
             )
 
         until.assert_(event_received, tries=5)
@@ -827,7 +888,9 @@ class TestApplication(BaseApplicationTestCase):
         calls = self.calld_client.applications.list_calls(self.node_app_uuid)['items']
         assert_that(calls, has_items(has_entries(id=call['id'])))
 
-        node = self.calld_client.applications.get_node(self.node_app_uuid, self.node_app_uuid)
+        node = self.calld_client.applications.get_node(
+            self.node_app_uuid, self.node_app_uuid
+        )
         assert_that(node, has_entries(calls=has_items(has_entries(id=call['id']))))
 
     def test_post_node_call_extension_containing_whitespace(self):
@@ -871,8 +934,8 @@ class TestApplication(BaseApplicationTestCase):
                                     on_hold=False,
                                     node_uuid=None,
                                     variables={'FOO': 'BAR'},
-                                )
-                            )
+                                ),
+                            ),
                         ),
                         headers=has_entry('tenant_uuid', VALID_TENANT),
                     ),
@@ -883,9 +946,9 @@ class TestApplication(BaseApplicationTestCase):
                                 application_uuid=self.node_app_uuid,
                                 node=has_entries(
                                     uuid=self.node_app_uuid,
-                                    calls=contains_exactly(has_entries(id=call['id']))
-                                )
-                            )
+                                    calls=contains_exactly(has_entries(id=call['id'])),
+                                ),
+                            ),
                         ),
                         headers=has_entry('tenant_uuid', VALID_TENANT),
                     ),
@@ -897,12 +960,12 @@ class TestApplication(BaseApplicationTestCase):
                                 call=has_entries(
                                     id=call['id'],
                                     node_uuid=self.node_app_uuid,
-                                )
-                            )
+                                ),
+                            ),
                         ),
                         headers=has_entry('tenant_uuid', VALID_TENANT),
                     ),
-                )
+                ),
             )
 
         until.assert_(event_received, tries=5)
@@ -910,26 +973,46 @@ class TestApplication(BaseApplicationTestCase):
         calls = self.calld_client.applications.list_calls(self.node_app_uuid)['items']
         assert_that(calls, has_items(has_entries(id=call['id'])))
 
-        node = self.calld_client.applications.get_node(self.node_app_uuid, self.node_app_uuid)
+        node = self.calld_client.applications.get_node(
+            self.node_app_uuid, self.node_app_uuid
+        )
         assert_that(node, has_entries(calls=has_items(has_entries(id=call['id']))))
 
     def test_post_node_call_user(self):
         user_uuid = 'joiner-uuid'
         user_uuid_with_no_lines = '3d696b59-bc6a-4f89-a5b4-ce06f09a64cb'
-        self.confd.set_users(MockUser(uuid=user_uuid, line_ids=['some-line-id']),
-                             MockUser(uuid=user_uuid_with_no_lines, line_ids=[]))
+        self.confd.set_users(
+            MockUser(uuid=user_uuid, line_ids=['some-line-id']),
+            MockUser(uuid=user_uuid_with_no_lines, line_ids=[]),
+        )
 
         errors = [
             ((self.unknown_uuid, self.node_app_uuid, {'user_uuid': user_uuid}), 404),
             ((self.no_node_app_uuid, self.unknown_uuid, {'user_uuid': user_uuid}), 404),
-            ((self.node_app_uuid, self.node_app_uuid, {'user_uuid': self.unknown_uuid}), 400),
-            ((self.node_app_uuid, self.node_app_uuid, {'user_uuid': user_uuid_with_no_lines}), 400),
+            (
+                (
+                    self.node_app_uuid,
+                    self.node_app_uuid,
+                    {'user_uuid': self.unknown_uuid},
+                ),
+                400,
+            ),
+            (
+                (
+                    self.node_app_uuid,
+                    self.node_app_uuid,
+                    {'user_uuid': user_uuid_with_no_lines},
+                ),
+                400,
+            ),
         ]
 
         for args, status_code in errors:
             assert_that(
-                calling(self.calld_client.applications.make_call_user_to_node).with_args(*args),
-                raises(CalldError).matching(has_properties(status_code=status_code))
+                calling(
+                    self.calld_client.applications.make_call_user_to_node
+                ).with_args(*args),
+                raises(CalldError).matching(has_properties(status_code=status_code)),
             )
 
         event_accumulator = self.app_event_accumulator(self.node_app_uuid)
@@ -970,8 +1053,8 @@ class TestApplication(BaseApplicationTestCase):
                                     on_hold=False,
                                     node_uuid=None,
                                     variables={'FOO': 'BAR'},
-                                )
-                            )
+                                ),
+                            ),
                         ),
                         headers=has_entry('tenant_uuid', VALID_TENANT),
                     ),
@@ -982,9 +1065,9 @@ class TestApplication(BaseApplicationTestCase):
                                 application_uuid=self.node_app_uuid,
                                 node=has_entries(
                                     uuid=self.node_app_uuid,
-                                    calls=contains_exactly(has_entries(id=call['id']))
-                                )
-                            )
+                                    calls=contains_exactly(has_entries(id=call['id'])),
+                                ),
+                            ),
                         ),
                         headers=has_entry('tenant_uuid', VALID_TENANT),
                     ),
@@ -996,12 +1079,12 @@ class TestApplication(BaseApplicationTestCase):
                                 call=has_entries(
                                     id=call['id'],
                                     node_uuid=self.node_app_uuid,
-                                )
-                            )
+                                ),
+                            ),
                         ),
                         headers=has_entry('tenant_uuid', VALID_TENANT),
-                    )
-                )
+                    ),
+                ),
             )
 
         until.assert_(event_received, tries=5)
@@ -1011,7 +1094,9 @@ class TestApplication(BaseApplicationTestCase):
             calls,
             has_items(has_entries(id=call['id'])),
         )
-        node = self.calld_client.applications.get_node(self.node_app_uuid, self.node_app_uuid)
+        node = self.calld_client.applications.get_node(
+            self.node_app_uuid, self.node_app_uuid
+        )
         assert_that(node, has_entries(calls=has_items(has_entries(id=call['id']))))
 
     def test_get_node(self):
@@ -1019,16 +1104,18 @@ class TestApplication(BaseApplicationTestCase):
             calling(self.calld_client.applications.get_node).with_args(
                 self.unknown_uuid, self.unknown_uuid
             ),
-            raises(CalldError).matching(has_properties(status_code=404))
+            raises(CalldError).matching(has_properties(status_code=404)),
         )
         assert_that(
             calling(self.calld_client.applications.get_node).with_args(
                 self.no_node_app_uuid, self.unknown_uuid
             ),
-            raises(CalldError).matching(has_properties(status_code=404))
+            raises(CalldError).matching(has_properties(status_code=404)),
         )
 
-        node = self.calld_client.applications.get_node(self.node_app_uuid, self.node_app_uuid)
+        node = self.calld_client.applications.get_node(
+            self.node_app_uuid, self.node_app_uuid
+        )
         assert_that(node, has_entries(uuid=self.node_app_uuid, calls=empty()))
 
     def test_get_nodes(self):
@@ -1036,20 +1123,26 @@ class TestApplication(BaseApplicationTestCase):
             calling(self.calld_client.applications.list_nodes).with_args(
                 self.unknown_uuid
             ),
-            raises(CalldError).matching(has_properties(status_code=404))
+            raises(CalldError).matching(has_properties(status_code=404)),
         )
 
-        nodes = self.calld_client.applications.list_nodes(self.no_node_app_uuid)['items']
+        nodes = self.calld_client.applications.list_nodes(self.no_node_app_uuid)[
+            'items'
+        ]
         assert_that(nodes, empty())
 
         nodes = self.calld_client.applications.list_nodes(self.node_app_uuid)['items']
-        assert_that(nodes, contains_exactly(has_entries(uuid=self.node_app_uuid, calls=empty())))
+        assert_that(
+            nodes, contains_exactly(has_entries(uuid=self.node_app_uuid, calls=empty()))
+        )
 
         # TODO: replace precondition with POST /applications/uuid/nodes/uuid/calls
         channel = self.call_app(self.node_app_uuid)
 
         def call_entered_node():
-            nodes = self.calld_client.applications.list_nodes(self.node_app_uuid)['items']
+            nodes = self.calld_client.applications.list_nodes(self.node_app_uuid)[
+                'items'
+            ]
             assert_that(
                 nodes,
                 contains_exactly(
@@ -1057,14 +1150,13 @@ class TestApplication(BaseApplicationTestCase):
                         uuid=self.node_app_uuid,
                         calls=contains_exactly(has_entries(id=channel.id)),
                     )
-                )
+                ),
             )
 
         until.assert_(call_entered_node, tries=5)
 
 
 class TestApplicationMute(BaseApplicationTestCase):
-
     def test_put_mute_start(self):
         app_uuid = self.no_node_app_uuid
         channel = self.call_app(self.no_node_app_uuid)
@@ -1074,13 +1166,13 @@ class TestApplicationMute(BaseApplicationTestCase):
             calling(self.calld_client.applications.start_mute).with_args(
                 self.unknown_uuid, channel.id
             ),
-            raises(CalldError).matching(has_properties(status_code=404))
+            raises(CalldError).matching(has_properties(status_code=404)),
         )
         assert_that(
             calling(self.calld_client.applications.start_mute).with_args(
                 app_uuid, other_channel.id
             ),
-            raises(CalldError).matching(has_properties(status_code=404))
+            raises(CalldError).matching(has_properties(status_code=404)),
         )
 
         event_accumulator = self.app_event_accumulator(app_uuid)
@@ -1100,12 +1192,12 @@ class TestApplicationMute(BaseApplicationTestCase):
                                 call=has_entries(
                                     id=channel.id,
                                     muted=True,
-                                )
-                            )
+                                ),
+                            ),
                         ),
                         headers=has_entry('tenant_uuid', VALID_TENANT),
                     )
-                )
+                ),
             )
 
         until.assert_(event_received, tries=5)
@@ -1117,7 +1209,7 @@ class TestApplicationMute(BaseApplicationTestCase):
                     id=channel.id,
                     muted=True,
                 )
-            )
+            ),
         )
 
     def test_put_mute_stop(self):
@@ -1129,13 +1221,13 @@ class TestApplicationMute(BaseApplicationTestCase):
             calling(self.calld_client.applications.stop_mute).with_args(
                 self.unknown_uuid, channel.id
             ),
-            raises(CalldError).matching(has_properties(status_code=404))
+            raises(CalldError).matching(has_properties(status_code=404)),
         )
         assert_that(
             calling(self.calld_client.applications.stop_mute).with_args(
                 app_uuid, other_channel.id
             ),
-            raises(CalldError).matching(has_properties(status_code=404))
+            raises(CalldError).matching(has_properties(status_code=404)),
         )
         event_accumulator = self.app_event_accumulator(app_uuid)
 
@@ -1154,12 +1246,12 @@ class TestApplicationMute(BaseApplicationTestCase):
                                 call=has_entries(
                                     id=channel.id,
                                     muted=False,
-                                )
-                            )
+                                ),
+                            ),
                         ),
                         headers=has_entry('tenant_uuid', VALID_TENANT),
                     )
-                )
+                ),
             )
 
         until.assert_(event_received, tries=5)
@@ -1171,12 +1263,11 @@ class TestApplicationMute(BaseApplicationTestCase):
                     id=channel.id,
                     muted=False,
                 )
-            )
+            ),
         )
 
 
 class TestApplicationHold(BaseApplicationTestCase):
-
     def test_put_hold_start(self):
         app_uuid = self.no_node_app_uuid
         channel = self.call_app(self.no_node_app_uuid)
@@ -1187,14 +1278,14 @@ class TestApplicationHold(BaseApplicationTestCase):
             calling(self.calld_client.applications.start_hold).with_args(
                 self.unknown_uuid, channel.id
             ),
-            raises(CalldError).matching(has_properties(status_code=404))
+            raises(CalldError).matching(has_properties(status_code=404)),
         )
 
         assert_that(
             calling(self.calld_client.applications.start_hold).with_args(
                 app_uuid, other_channel.id
             ),
-            raises(CalldError).matching(has_properties(status_code=404))
+            raises(CalldError).matching(has_properties(status_code=404)),
         )
 
         self.calld_client.applications.start_hold(app_uuid, channel.id)
@@ -1212,19 +1303,19 @@ class TestApplicationHold(BaseApplicationTestCase):
                                 call=has_entries(
                                     id=channel.id,
                                     on_hold=True,
-                                )
-                            )
+                                ),
+                            ),
                         ),
                         headers=has_entry('tenant_uuid', VALID_TENANT),
                     )
-                )
+                ),
             )
 
         until.assert_(event_received, tries=5)
 
         assert_that(
             self.calld_client.applications.list_calls(app_uuid)['items'],
-            contains_exactly(has_entries(id=channel.id, on_hold=True))
+            contains_exactly(has_entries(id=channel.id, on_hold=True)),
         )
 
     def test_put_hold_stop(self):
@@ -1236,14 +1327,14 @@ class TestApplicationHold(BaseApplicationTestCase):
             calling(self.calld_client.applications.stop_hold).with_args(
                 self.unknown_uuid, channel.id
             ),
-            raises(CalldError).matching(has_properties(status_code=404))
+            raises(CalldError).matching(has_properties(status_code=404)),
         )
 
         assert_that(
             calling(self.calld_client.applications.stop_hold).with_args(
                 app_uuid, other_channel.id
             ),
-            raises(CalldError).matching(has_properties(status_code=404))
+            raises(CalldError).matching(has_properties(status_code=404)),
         )
 
         self.calld_client.applications.start_hold(app_uuid, channel.id)
@@ -1275,30 +1366,30 @@ class TestApplicationHold(BaseApplicationTestCase):
                                 call=has_entries(
                                     id=channel.id,
                                     on_hold=False,
-                                )
-                            )
+                                ),
+                            ),
                         ),
                         headers=has_entry('tenant_uuid', VALID_TENANT),
                     )
-                )
+                ),
             )
 
         until.assert_(event_received, tries=5)
 
         assert_that(
             self.calld_client.applications.list_calls(app_uuid)['items'],
-            contains_exactly(has_entries(id=channel.id, on_hold=False))
+            contains_exactly(has_entries(id=channel.id, on_hold=False)),
         )
 
 
 class TestApplicationSnoop(BaseApplicationTestCase):
-
     def setUp(self):
         super().setUp()
         self.app_uuid = self.no_node_app_uuid
         self.caller_channel = self.call_app(self.no_node_app_uuid)
         node = self.calld_client.applications.create_node(
-            self.app_uuid, [self.caller_channel.id],
+            self.app_uuid,
+            [self.caller_channel.id],
         )
         self.answering_channel = self.calld_client.applications.make_call_to_node(
             self.app_uuid,
@@ -1314,11 +1405,12 @@ class TestApplicationSnoop(BaseApplicationTestCase):
 
         event_accumulator = self.app_event_accumulator(self.app_uuid)
 
-        snoop_args = {'whisper_mode': 'both', 'snooping_call_id': supervisor_channel['id']}
+        snoop_args = {
+            'whisper_mode': 'both',
+            'snooping_call_id': supervisor_channel['id'],
+        }
         snoop = self.calld_client.applications.snoops(
-            self.app_uuid,
-            self.caller_channel.id,
-            snoop_args
+            self.app_uuid, self.caller_channel.id, snoop_args
         )
 
         def event_received():
@@ -1336,12 +1428,12 @@ class TestApplicationSnoop(BaseApplicationTestCase):
                                     snooped_call_id=self.caller_channel.id,
                                     snooping_call_id=supervisor_channel['id'],
                                     whisper_mode=snoop_args['whisper_mode'],
-                                )
-                            )
+                                ),
+                            ),
                         ),
                         headers=has_entry('tenant_uuid', VALID_TENANT),
                     )
-                )
+                ),
             )
 
         until.assert_(event_received, tries=5)
@@ -1352,7 +1444,10 @@ class TestApplicationSnoop(BaseApplicationTestCase):
             {'context': 'local', 'exten': 'recipient_autoanswer'},
         )
 
-        snoop_args = {'whisper_mode': 'both', 'snooping_call_id': supervisor_channel['id']}
+        snoop_args = {
+            'whisper_mode': 'both',
+            'snooping_call_id': supervisor_channel['id'],
+        }
         snoop = self.calld_client.applications.snoops(
             self.app_uuid,
             self.caller_channel.id,
@@ -1374,11 +1469,11 @@ class TestApplicationSnoop(BaseApplicationTestCase):
                             data=has_entries(
                                 application_uuid=self.app_uuid,
                                 snoop=has_entries(uuid=snoop['uuid']),
-                            )
+                            ),
                         ),
                         headers=has_entry('tenant_uuid', VALID_TENANT),
                     )
-                )
+                ),
             )
 
         until.assert_(event_received, tries=5)
@@ -1389,7 +1484,10 @@ class TestApplicationSnoop(BaseApplicationTestCase):
             {'context': 'local', 'exten': 'recipient_autoanswer'},
         )
 
-        snoop_args = {'whisper_mode': 'both', 'snooping_call_id': supervisor_channel['id']}
+        snoop_args = {
+            'whisper_mode': 'both',
+            'snooping_call_id': supervisor_channel['id'],
+        }
         snoop = self.calld_client.applications.snoops(
             self.app_uuid,
             self.caller_channel.id,
@@ -1420,25 +1518,24 @@ class TestApplicationSnoop(BaseApplicationTestCase):
                                     snooped_call_id=self.caller_channel.id,
                                     snooping_call_id=supervisor_channel['id'],
                                     whisper_mode=snoop_args['whisper_mode'],
-                                )
-                            )
+                                ),
+                            ),
                         ),
                         headers=has_entry('tenant_uuid', VALID_TENANT),
                     )
-                )
+                ),
             )
 
         until.assert_(event_received, tries=5)
 
     def test_list(self):
         snoop = self.calld_client.applications.list_snoops(self.app_uuid)
-        assert_that(
-            snoop,
-            has_entries(items=empty())
-        )
+        assert_that(snoop, has_entries(items=empty()))
 
         assert_that(
-            calling(self.calld_client.applications.list_snoops).with_args(self.unknown_uuid),
+            calling(self.calld_client.applications.list_snoops).with_args(
+                self.unknown_uuid
+            ),
             raises(CalldError).matching(has_properties(status_code=404)),
         )
 
@@ -1451,14 +1548,20 @@ class TestApplicationSnoop(BaseApplicationTestCase):
             {'context': 'local', 'exten': 'recipient_autoanswer'},
         )
 
-        snoop_1_args = {'whisper_mode': 'both', 'snooping_call_id': supervisor_1_channel['id']}
+        snoop_1_args = {
+            'whisper_mode': 'both',
+            'snooping_call_id': supervisor_1_channel['id'],
+        }
         snoop_1 = self.calld_client.applications.snoops(
             self.app_uuid,
             self.caller_channel.id,
             snoop_1_args,
         )
 
-        snoop_2_args = {'whisper_mode': 'both', 'snooping_call_id': supervisor_2_channel['id']}
+        snoop_2_args = {
+            'whisper_mode': 'both',
+            'snooping_call_id': supervisor_2_channel['id'],
+        }
         snoop_2 = self.calld_client.applications.snoops(
             self.app_uuid,
             self.caller_channel.id,
@@ -1476,7 +1579,7 @@ class TestApplicationSnoop(BaseApplicationTestCase):
                     snoop_1,
                     snoop_2,
                 )
-            )
+            ),
         )
 
     def test_get(self):
@@ -1484,7 +1587,10 @@ class TestApplicationSnoop(BaseApplicationTestCase):
             self.app_uuid,
             {'context': 'local', 'exten': 'recipient_autoanswer'},
         )
-        snoop_args = {'whisper_mode': 'both', 'snooping_call_id': supervisor_channel['id']}
+        snoop_args = {
+            'whisper_mode': 'both',
+            'snooping_call_id': supervisor_channel['id'],
+        }
         snoop = self.calld_client.applications.snoops(
             self.app_uuid,
             self.caller_channel.id,
@@ -1514,7 +1620,10 @@ class TestApplicationSnoop(BaseApplicationTestCase):
             self.app_uuid,
             {'context': 'local', 'exten': 'recipient_autoanswer'},
         )
-        snoop_args = {'whisper_mode': 'both', 'snooping_call_id': supervisor_channel['id']}
+        snoop_args = {
+            'whisper_mode': 'both',
+            'snooping_call_id': supervisor_channel['id'],
+        }
 
         assert_that(
             calling(self.calld_client.applications.snoops).with_args(
@@ -1532,7 +1641,10 @@ class TestApplicationSnoop(BaseApplicationTestCase):
             ),
             raises(CalldError).matching(has_properties(status_code=404)),
         )
-        snoop_unrelated_args = {'whisper_mode': 'both', 'snooping_call_id': unrelated_channel.id}
+        snoop_unrelated_args = {
+            'whisper_mode': 'both',
+            'snooping_call_id': unrelated_channel.id,
+        }
         assert_that(
             calling(self.calld_client.applications.snoops).with_args(
                 self.app_uuid,
@@ -1553,17 +1665,21 @@ class TestApplicationSnoop(BaseApplicationTestCase):
             {},
         ]
         for whisper_mode in invalid_whisper_mode:
-            snoop_args = {'whisper_mode': whisper_mode, 'snooping_call_id': supervisor_channel['id']}
+            snoop_args = {
+                'whisper_mode': whisper_mode,
+                'snooping_call_id': supervisor_channel['id'],
+            }
             assert_that(
                 calling(self.calld_client.applications.snoops).with_args(
-                    self.app_uuid,
-                    self.caller_channel.id,
-                    snoop_args
+                    self.app_uuid, self.caller_channel.id, snoop_args
                 ),
                 raises(CalldError).matching(has_properties(status_code=400)),
             )
 
-        snoop_args = {'whisper_mode': 'both', 'snooping_call_id': supervisor_channel['id']}
+        snoop_args = {
+            'whisper_mode': 'both',
+            'snooping_call_id': supervisor_channel['id'],
+        }
         snoop = self.calld_client.applications.snoops(
             self.app_uuid,
             self.caller_channel.id,
@@ -1577,7 +1693,7 @@ class TestApplicationSnoop(BaseApplicationTestCase):
                 whisper_mode='both',
                 snooped_call_id=self.caller_channel.id,
                 snooping_call_id=supervisor_channel['id'],
-            )
+            ),
         )
 
         calls = self.calld_client.applications.list_calls(self.app_uuid)['items']
@@ -1587,23 +1703,27 @@ class TestApplicationSnoop(BaseApplicationTestCase):
             has_items(
                 has_entries(
                     id=self.caller_channel.id,
-                    snoops=has_entries({
-                        snoop_uuid: has_entries(
-                            uuid=snoop_uuid,
-                            role='snooped',
-                        )
-                    })
+                    snoops=has_entries(
+                        {
+                            snoop_uuid: has_entries(
+                                uuid=snoop_uuid,
+                                role='snooped',
+                            )
+                        }
+                    ),
                 ),
                 has_entries(
                     id=supervisor_channel['id'],
-                    snoops=has_entries({
-                        snoop_uuid: has_entries(
-                            uuid=snoop_uuid,
-                            role='snooper',
-                        )
-                    })
+                    snoops=has_entries(
+                        {
+                            snoop_uuid: has_entries(
+                                uuid=snoop_uuid,
+                                role='snooper',
+                            )
+                        }
+                    ),
                 ),
-            )
+            ),
         )
 
     def test_put(self):
@@ -1612,7 +1732,10 @@ class TestApplicationSnoop(BaseApplicationTestCase):
             {'context': 'local', 'exten': 'recipient_autoanswer'},
         )
 
-        snoop_args = {'whisper_mode': 'both', 'snooping_call_id': supervisor_channel['id']}
+        snoop_args = {
+            'whisper_mode': 'both',
+            'snooping_call_id': supervisor_channel['id'],
+        }
         snoop = self.calld_client.applications.snoops(
             self.app_uuid,
             self.caller_channel.id,
@@ -1668,14 +1791,20 @@ class TestApplicationSnoop(BaseApplicationTestCase):
             {'context': 'local', 'exten': 'recipient_autoanswer'},
         )
 
-        snoop_1_args = {'whisper_mode': 'both', 'snooping_call_id': supervisor_1_channel['id']}
+        snoop_1_args = {
+            'whisper_mode': 'both',
+            'snooping_call_id': supervisor_1_channel['id'],
+        }
         snoop_1 = self.calld_client.applications.snoops(
             self.app_uuid,
             self.caller_channel.id,
             snoop_1_args,
         )
 
-        snoop_2_args = {'whisper_mode': 'both', 'snooping_call_id': supervisor_2_channel['id']}
+        snoop_2_args = {
+            'whisper_mode': 'both',
+            'snooping_call_id': supervisor_2_channel['id'],
+        }
         snoop_2 = self.calld_client.applications.snoops(
             self.app_uuid,
             self.caller_channel.id,
@@ -1685,26 +1814,27 @@ class TestApplicationSnoop(BaseApplicationTestCase):
         self.calld_client.applications.delete_snoop(self.app_uuid, snoop_2['uuid'])
         assert_that(
             self.calld_client.applications.list_snoops(self.app_uuid),
-            has_entries(items=contains_inanyorder(snoop_1))
+            has_entries(items=contains_inanyorder(snoop_1)),
         )
 
         assert_that(
             calling(self.calld_client.applications.delete_snoop).with_args(
-                self.app_uuid, snoop_2['uuid'],
+                self.app_uuid,
+                snoop_2['uuid'],
             ),
             raises(CalldError).matching(has_properties(status_code=404)),
         )
 
         assert_that(
             calling(self.calld_client.applications.delete_snoop).with_args(
-                self.unknown_uuid, snoop_2['uuid'],
+                self.unknown_uuid,
+                snoop_2['uuid'],
             ),
             raises(CalldError).matching(has_properties(status_code=404)),
         )
 
 
 class TestApplicationMoh(BaseApplicationTestCase):
-
     def test_put_moh_start_fail(self):
         app_uuid = self.no_node_app_uuid
         channel = self.call_app(self.no_node_app_uuid)
@@ -1760,19 +1890,19 @@ class TestApplicationMoh(BaseApplicationTestCase):
                                 call=has_entries(
                                     id=channel.id,
                                     moh_uuid=self.moh_uuid,
-                                )
-                            )
+                                ),
+                            ),
                         ),
                         headers=has_entry('tenant_uuid', VALID_TENANT),
                     )
-                )
+                ),
             )
 
         until.assert_(music_on_hold_started_event_received, tries=5)
 
         assert_that(
             self.calld_client.applications.list_calls(app_uuid)['items'],
-            contains_exactly(has_entries(id=channel.id, moh_uuid=self.moh_uuid))
+            contains_exactly(has_entries(id=channel.id, moh_uuid=self.moh_uuid)),
         )
 
     def test_put_moh_stop_success(self):
@@ -1796,8 +1926,8 @@ class TestApplicationMoh(BaseApplicationTestCase):
                                 call=has_entries(
                                     id=channel.id,
                                     moh_uuid=self.moh_uuid,
-                                )
-                            )
+                                ),
+                            ),
                         ),
                         headers=has_entry('tenant_uuid', VALID_TENANT),
                     ),
@@ -1809,19 +1939,19 @@ class TestApplicationMoh(BaseApplicationTestCase):
                                 call=has_entries(
                                     id=channel.id,
                                     moh_uuid=None,
-                                )
-                            )
+                                ),
+                            ),
                         ),
                         headers=has_entry('tenant_uuid', VALID_TENANT),
-                    )
-                )
+                    ),
+                ),
             )
 
         until.assert_(call_updated_event_received, tries=5)
 
         assert_that(
             self.calld_client.applications.list_calls(app_uuid)['items'],
-            contains_exactly(has_entries(id=channel.id, moh_uuid=None))
+            contains_exactly(has_entries(id=channel.id, moh_uuid=None)),
         )
 
     def test_confd_moh_created_event_update_cache(self):
@@ -1837,12 +1967,16 @@ class TestApplicationMoh(BaseApplicationTestCase):
 
         def music_on_hold_started_event_received():
             events = event_accumulator.accumulate()
-            assert_that(events, contains_exactly(has_entries(name='application_call_updated')))
+            assert_that(
+                events, contains_exactly(has_entries(name='application_call_updated'))
+            )
 
         until.assert_(music_on_hold_started_event_received, tries=10)
 
         calls = self.calld_client.applications.list_calls(app_uuid)['items']
-        assert_that(calls, contains_exactly(has_entries(id=channel.id, moh_uuid=moh_uuid)))
+        assert_that(
+            calls, contains_exactly(has_entries(id=channel.id, moh_uuid=moh_uuid))
+        )
 
     def test_confd_moh_deleted_event_update_cache(self):
         app_uuid = self.no_node_app_uuid
@@ -1854,7 +1988,7 @@ class TestApplicationMoh(BaseApplicationTestCase):
             calling(self.calld_client.applications.start_moh).with_args(
                 app_uuid, channel.id, self.moh_uuid
             ),
-            raises(CalldError).matching(has_properties(status_code=404))
+            raises(CalldError).matching(has_properties(status_code=404)),
         )
 
     def _hitting_moh_cache(self, app_uuid, channel_id):
@@ -1866,7 +2000,6 @@ class TestApplicationMoh(BaseApplicationTestCase):
 
 
 class TestApplicationPlayback(BaseApplicationTestCase):
-
     def test_post_call_playback(self):
         body = {'uri': 'sound:tt-weasels'}
         channel = self.call_app(self.node_app_uuid)
@@ -1875,19 +2008,19 @@ class TestApplicationPlayback(BaseApplicationTestCase):
             calling(self.calld_client.applications.send_playback).with_args(
                 self.unknown_uuid, channel.id, body
             ),
-            raises(CalldError).matching(has_properties(status_code=404))
+            raises(CalldError).matching(has_properties(status_code=404)),
         )
         assert_that(
             calling(self.calld_client.applications.send_playback).with_args(
                 self.node_app_uuid, self.unknown_uuid, body
             ),
-            raises(CalldError).matching(has_properties(status_code=404))
+            raises(CalldError).matching(has_properties(status_code=404)),
         )
         assert_that(
             calling(self.calld_client.applications.send_playback).with_args(
                 self.no_node_app_uuid, channel.id, body
             ),
-            raises(CalldError).matching(has_properties(status_code=404))
+            raises(CalldError).matching(has_properties(status_code=404)),
         )
 
         invalid_body = {'uri': 'unknown:foo'}
@@ -1895,17 +2028,13 @@ class TestApplicationPlayback(BaseApplicationTestCase):
             calling(self.calld_client.applications.send_playback).with_args(
                 self.node_app_uuid, channel.id, invalid_body
             ),
-            raises(CalldError).matching(has_properties(status_code=400))
+            raises(CalldError).matching(has_properties(status_code=400)),
         )
 
-        playback = self.calld_client.applications.send_playback(self.node_app_uuid, channel.id, body)
-        assert_that(
-            playback,
-            has_entries(
-                uuid=uuid_(),
-                **body
-            )
+        playback = self.calld_client.applications.send_playback(
+            self.node_app_uuid, channel.id, body
         )
+        assert_that(playback, has_entries(uuid=uuid_(), **body))
 
     def test_playback_created_event(self):
         app_uuid = self.node_app_uuid
@@ -1913,7 +2042,9 @@ class TestApplicationPlayback(BaseApplicationTestCase):
         channel = self.call_app(app_uuid)
         event_accumulator = self.app_event_accumulator(app_uuid)
 
-        playback = self.calld_client.applications.send_playback(app_uuid, channel.id, body)
+        playback = self.calld_client.applications.send_playback(
+            app_uuid, channel.id, body
+        )
 
         def event_received():
             events = event_accumulator.accumulate(with_headers=True)
@@ -1929,12 +2060,12 @@ class TestApplicationPlayback(BaseApplicationTestCase):
                                     uuid=playback['uuid'],
                                     language='en',
                                     uri='sound:tt-weasels',
-                                )
-                            )
+                                ),
+                            ),
                         ),
                         headers=has_entry('tenant_uuid', VALID_TENANT),
                     )
-                )
+                ),
             )
 
         until.assert_(event_received, tries=5)
@@ -1942,29 +2073,35 @@ class TestApplicationPlayback(BaseApplicationTestCase):
     def test_delete(self):
         body = {'uri': 'sound:tt-weasels'}
         channel = self.call_app(self.node_app_uuid)
-        playback = self.calld_client.applications.send_playback(self.node_app_uuid, channel.id, body)
+        playback = self.calld_client.applications.send_playback(
+            self.node_app_uuid, channel.id, body
+        )
 
         assert_that(
             calling(self.calld_client.applications.delete_playback).with_args(
                 self.unknown_uuid, playback['uuid']
             ),
-            raises(CalldError).matching(has_properties(status_code=404))
+            raises(CalldError).matching(has_properties(status_code=404)),
         )
         assert_that(
             calling(self.calld_client.applications.delete_playback).with_args(
                 self.node_app_uuid, self.unknown_uuid
             ),
-            raises(CalldError).matching(has_properties(status_code=404))
+            raises(CalldError).matching(has_properties(status_code=404)),
         )
 
-        self.calld_client.applications.delete_playback(self.node_app_uuid, playback['uuid'])
+        self.calld_client.applications.delete_playback(
+            self.node_app_uuid, playback['uuid']
+        )
 
     def test_playback_deleted_event(self):
         app_uuid = self.node_app_uuid
         body = {'uri': 'sound:tt-weasels'}
         channel = self.call_app(app_uuid)
 
-        playback = self.calld_client.applications.send_playback(app_uuid, channel.id, body)
+        playback = self.calld_client.applications.send_playback(
+            app_uuid, channel.id, body
+        )
 
         event_accumulator = self.app_event_accumulator(app_uuid)
 
@@ -1982,12 +2119,12 @@ class TestApplicationPlayback(BaseApplicationTestCase):
                                     uuid=playback['uuid'],
                                     language='en',
                                     uri='sound:tt-weasels',
-                                )
-                            )
+                                ),
+                            ),
                         ),
                         headers=has_entry('tenant_uuid', VALID_TENANT),
                     )
-                )
+                ),
             )
 
         until.assert_(event_received, tries=50)
@@ -1997,7 +2134,9 @@ class TestApplicationPlayback(BaseApplicationTestCase):
         body = {'uri': 'sound:tt-weasels'}
         channel = self.call_app(app_uuid)
 
-        playback = self.calld_client.applications.send_playback(app_uuid, channel.id, body)
+        playback = self.calld_client.applications.send_playback(
+            app_uuid, channel.id, body
+        )
 
         event_accumulator = self.app_event_accumulator(app_uuid)
 
@@ -2017,19 +2156,18 @@ class TestApplicationPlayback(BaseApplicationTestCase):
                                     uuid=playback['uuid'],
                                     language='en',
                                     uri='sound:tt-weasels',
-                                )
-                            )
+                                ),
+                            ),
                         ),
                         headers=has_entry('tenant_uuid', VALID_TENANT),
                     )
-                )
+                ),
             )
 
         until.assert_(event_received, tries=5)
 
 
 class TestApplicationAnswer(BaseApplicationTestCase):
-
     def test_answer_call(self):
         channel = self.call_app_incoming(self.node_app_uuid)
 
@@ -2037,19 +2175,19 @@ class TestApplicationAnswer(BaseApplicationTestCase):
             calling(self.calld_client.applications.answer_call).with_args(
                 self.unknown_uuid, channel.id
             ),
-            raises(CalldError).matching(has_properties(status_code=404))
+            raises(CalldError).matching(has_properties(status_code=404)),
         )
         assert_that(
             calling(self.calld_client.applications.answer_call).with_args(
                 self.node_app_uuid, self.unknown_uuid
             ),
-            raises(CalldError).matching(has_properties(status_code=404))
+            raises(CalldError).matching(has_properties(status_code=404)),
         )
         assert_that(
             calling(self.calld_client.applications.answer_call).with_args(
                 self.no_node_app_uuid, channel.id
             ),
-            raises(CalldError).matching(has_properties(status_code=404))
+            raises(CalldError).matching(has_properties(status_code=404)),
         )
 
         event_accumulator = self.app_event_accumulator(self.node_app_uuid)
@@ -2069,24 +2207,23 @@ class TestApplicationAnswer(BaseApplicationTestCase):
                                 call=has_entries(
                                     id=channel.id,
                                     status='Up',
-                                )
-                            )
+                                ),
+                            ),
                         ),
                         headers=has_entry('tenant_uuid', VALID_TENANT),
                     )
-                )
+                ),
             )
 
         until.assert_(event_received, timeout=3)
 
         assert_that(
             self.calld_client.applications.list_calls(self.node_app_uuid)['items'],
-            contains_exactly(has_entries(id=channel.id, status='Up'))
+            contains_exactly(has_entries(id=channel.id, status='Up')),
         )
 
 
 class TestApplicationProgress(BaseApplicationTestCase):
-
     def test_progress_start(self):
         channel = self.call_app_incoming(self.node_app_uuid)
 
@@ -2094,19 +2231,19 @@ class TestApplicationProgress(BaseApplicationTestCase):
             calling(self.calld_client.applications.start_progress).with_args(
                 self.unknown_uuid, channel.id
             ),
-            raises(CalldError).matching(has_properties(status_code=404))
+            raises(CalldError).matching(has_properties(status_code=404)),
         )
         assert_that(
             calling(self.calld_client.applications.start_progress).with_args(
                 self.node_app_uuid, self.unknown_uuid
             ),
-            raises(CalldError).matching(has_properties(status_code=404))
+            raises(CalldError).matching(has_properties(status_code=404)),
         )
         assert_that(
             calling(self.calld_client.applications.start_progress).with_args(
                 self.no_node_app_uuid, channel.id
             ),
-            raises(CalldError).matching(has_properties(status_code=404))
+            raises(CalldError).matching(has_properties(status_code=404)),
         )
 
         event_accumulator = self.app_event_accumulator(self.node_app_uuid)
@@ -2126,19 +2263,19 @@ class TestApplicationProgress(BaseApplicationTestCase):
                                 call=has_entries(
                                     id=channel.id,
                                     status='Progress',
-                                )
-                            )
+                                ),
+                            ),
                         ),
                         headers=has_entry('tenant_uuid', VALID_TENANT),
                     )
-                )
+                ),
             )
 
         until.assert_(event_received, timeout=3)
 
         assert_that(
             self.calld_client.applications.list_calls(self.node_app_uuid)['items'],
-            contains_exactly(has_entries(id=channel.id, status='Progress'))
+            contains_exactly(has_entries(id=channel.id, status='Progress')),
         )
 
     def test_progress_stop(self):
@@ -2148,19 +2285,19 @@ class TestApplicationProgress(BaseApplicationTestCase):
             calling(self.calld_client.applications.stop_progress).with_args(
                 self.unknown_uuid, channel.id
             ),
-            raises(CalldError).matching(has_properties(status_code=404))
+            raises(CalldError).matching(has_properties(status_code=404)),
         )
         assert_that(
             calling(self.calld_client.applications.stop_progress).with_args(
                 self.node_app_uuid, self.unknown_uuid
             ),
-            raises(CalldError).matching(has_properties(status_code=404))
+            raises(CalldError).matching(has_properties(status_code=404)),
         )
         assert_that(
             calling(self.calld_client.applications.stop_progress).with_args(
                 self.no_node_app_uuid, channel.id
             ),
-            raises(CalldError).matching(has_properties(status_code=404))
+            raises(CalldError).matching(has_properties(status_code=404)),
         )
 
         event_accumulator = self.app_event_accumulator(self.node_app_uuid)
@@ -2180,24 +2317,23 @@ class TestApplicationProgress(BaseApplicationTestCase):
                                 call=has_entries(
                                     id=channel.id,
                                     status='Ring',
-                                )
-                            )
+                                ),
+                            ),
                         ),
                         headers=has_entry('tenant_uuid', VALID_TENANT),
                     )
-                )
+                ),
             )
 
         until.assert_(event_received, timeout=3)
 
         assert_that(
             self.calld_client.applications.list_calls(self.node_app_uuid)['items'],
-            contains_exactly(has_entries(id=channel.id, status='Ring'))
+            contains_exactly(has_entries(id=channel.id, status='Ring')),
         )
 
 
 class TestApplicationNode(BaseApplicationTestCase):
-
     def test_post_unknown_app(self):
         channel = self.call_app(self.no_node_app_uuid)
 
@@ -2205,7 +2341,7 @@ class TestApplicationNode(BaseApplicationTestCase):
             calling(self.calld_client.applications.create_node).with_args(
                 self.unknown_uuid, [channel.id]
             ),
-            raises(CalldError).matching(has_properties(status_code=404))
+            raises(CalldError).matching(has_properties(status_code=404)),
         )
 
     def test_post_no_calls(self):
@@ -2213,22 +2349,24 @@ class TestApplicationNode(BaseApplicationTestCase):
             calling(self.calld_client.applications.create_node).with_args(
                 self.no_node_app_uuid, []
             ),
-            raises(CalldError).matching(has_properties(status_code=400))
+            raises(CalldError).matching(has_properties(status_code=400)),
         )
 
     def test_post_not_bridged(self):
         channel = self.call_app(self.no_node_app_uuid)
         event_accumulator = self.app_event_accumulator(self.no_node_app_uuid)
 
-        node = self.calld_client.applications.create_node(self.no_node_app_uuid, [channel.id])
+        node = self.calld_client.applications.create_node(
+            self.no_node_app_uuid, [channel.id]
+        )
         assert_that(
             node,
             has_entries(
                 uuid=uuid_(),
                 calls=contains_exactly(
                     has_entries(id=channel.id),
-                )
-            )
+                ),
+            ),
         )
 
         def event_received():
@@ -2244,8 +2382,8 @@ class TestApplicationNode(BaseApplicationTestCase):
                                 node=has_entries(
                                     uuid=node['uuid'],
                                     calls=empty(),
-                                )
-                            )
+                                ),
+                            ),
                         ),
                         headers=has_entry('tenant_uuid', VALID_TENANT),
                     ),
@@ -2257,8 +2395,8 @@ class TestApplicationNode(BaseApplicationTestCase):
                                 node=has_entries(
                                     uuid=node['uuid'],
                                     calls=contains_exactly(has_entries(id=channel.id)),
-                                )
-                            )
+                                ),
+                            ),
                         ),
                         headers=has_entry('tenant_uuid', VALID_TENANT),
                     ),
@@ -2275,12 +2413,12 @@ class TestApplicationNode(BaseApplicationTestCase):
                                     node_uuid=node['uuid'],
                                     on_hold=False,
                                     status='Up',
-                                )
-                            )
+                                ),
+                            ),
                         ),
                         headers=has_entry('tenant_uuid', VALID_TENANT),
                     ),
-                )
+                ),
             )
 
         until.assert_(event_received, tries=5)
@@ -2293,22 +2431,24 @@ class TestApplicationNode(BaseApplicationTestCase):
             calling(self.calld_client.applications.create_node).with_args(
                 self.no_node_app_uuid, [channel.id]
             ),
-            raises(CalldError).matching(has_properties(status_code=400))
+            raises(CalldError).matching(has_properties(status_code=400)),
         )
 
     def test_post_bridged_default_bridge(self):
         channel = self.call_app(self.node_app_uuid)
         event_accumulator = self.app_event_accumulator(self.node_app_uuid)
 
-        node = self.calld_client.applications.create_node(self.node_app_uuid, [channel.id])
+        node = self.calld_client.applications.create_node(
+            self.node_app_uuid, [channel.id]
+        )
         assert_that(
             node,
             has_entries(
                 uuid=uuid_(),
                 calls=contains_exactly(
                     has_entries(id=channel.id),
-                )
-            )
+                ),
+            ),
         )
 
         def event_received():
@@ -2321,7 +2461,7 @@ class TestApplicationNode(BaseApplicationTestCase):
                             name='application_node_created',
                             data=has_entries(
                                 node=has_entries(uuid=node['uuid']),
-                            )
+                            ),
                         ),
                         headers=has_entry('tenant_uuid', VALID_TENANT),
                     ),
@@ -2329,8 +2469,10 @@ class TestApplicationNode(BaseApplicationTestCase):
                         message=has_entries(
                             name='application_node_updated',
                             data=has_entries(
-                                node=has_entries(uuid=self.node_app_uuid, calls=empty()),
-                            )
+                                node=has_entries(
+                                    uuid=self.node_app_uuid, calls=empty()
+                                ),
+                            ),
                         ),
                         headers=has_entry('tenant_uuid', VALID_TENANT),
                     ),
@@ -2360,11 +2502,11 @@ class TestApplicationNode(BaseApplicationTestCase):
                                     id=channel.id,
                                     node_uuid=node['uuid'],
                                 )
-                            )
+                            ),
                         ),
                         headers=has_entry('tenant_uuid', VALID_TENANT),
                     ),
-                )
+                ),
             )
 
         until.assert_(event_received, tries=5)
@@ -2378,13 +2520,15 @@ class TestApplicationNode(BaseApplicationTestCase):
             calling(self.calld_client.applications.create_node).with_args(
                 self.node_app_uuid, [channel_id]
             ),
-            raises(CalldError).matching(has_properties(status_code=400))
+            raises(CalldError).matching(has_properties(status_code=400)),
         )
 
     def test_delete_unknown_app(self):
         channel = self.call_app(self.no_node_app_uuid)
         event_accumulator = self.app_event_accumulator(self.no_node_app_uuid)
-        node = self.calld_client.applications.create_node(self.no_node_app_uuid, [channel.id])
+        node = self.calld_client.applications.create_node(
+            self.no_node_app_uuid, [channel.id]
+        )
 
         def event_received():
             events = event_accumulator.accumulate(with_headers=True)
@@ -2392,12 +2536,10 @@ class TestApplicationNode(BaseApplicationTestCase):
                 events,
                 has_items(
                     has_entries(
-                        message=has_entries(
-                            name='application_node_created'
-                        ),
+                        message=has_entries(name='application_node_created'),
                         headers=has_entry('tenant_uuid', VALID_TENANT),
                     )
-                )
+                ),
             )
 
         until.assert_(event_received, tries=5)
@@ -2406,7 +2548,7 @@ class TestApplicationNode(BaseApplicationTestCase):
             calling(self.calld_client.applications.delete_node).with_args(
                 self.unknown_uuid, node['uuid']
             ),
-            raises(CalldError).matching(has_properties(status_code=404))
+            raises(CalldError).matching(has_properties(status_code=404)),
         )
 
     def test_delete_destination_node(self):
@@ -2414,13 +2556,15 @@ class TestApplicationNode(BaseApplicationTestCase):
             calling(self.calld_client.applications.delete_node).with_args(
                 self.node_app_uuid, self.node_app_uuid
             ),
-            raises(CalldError).matching(has_properties(status_code=400))
+            raises(CalldError).matching(has_properties(status_code=400)),
         )
 
     def test_delete(self):
         channel = self.call_app(self.no_node_app_uuid)
         event_accumulator = self.app_event_accumulator(self.no_node_app_uuid)
-        node = self.calld_client.applications.create_node(self.no_node_app_uuid, [channel.id])
+        node = self.calld_client.applications.create_node(
+            self.no_node_app_uuid, [channel.id]
+        )
 
         def event_received():
             events = event_accumulator.accumulate(with_headers=True)
@@ -2428,12 +2572,10 @@ class TestApplicationNode(BaseApplicationTestCase):
                 events,
                 has_items(
                     has_entries(
-                        message=has_entries(
-                            name='application_node_created'
-                        ),
+                        message=has_entries(name='application_node_created'),
                         headers=has_entry('tenant_uuid', VALID_TENANT),
                     )
-                )
+                ),
             )
 
         until.assert_(event_received, tries=5)
@@ -2454,8 +2596,8 @@ class TestApplicationNode(BaseApplicationTestCase):
                                 node=has_entries(
                                     uuid=node['uuid'],
                                     calls=empty(),
-                                )
-                            )
+                                ),
+                            ),
                         ),
                         headers=has_entry('tenant_uuid', VALID_TENANT),
                     ),
@@ -2469,8 +2611,8 @@ class TestApplicationNode(BaseApplicationTestCase):
                                     caller_id_name='Alice',
                                     caller_id_number='555',
                                     status='Up',
-                                )
-                            )
+                                ),
+                            ),
                         ),
                         headers=has_entry('tenant_uuid', VALID_TENANT),
                     ),
@@ -2481,8 +2623,8 @@ class TestApplicationNode(BaseApplicationTestCase):
                                 application_uuid=self.no_node_app_uuid,
                                 call=has_entries(
                                     id=channel.id,
-                                )
-                            )
+                                ),
+                            ),
                         ),
                         headers=has_entry('tenant_uuid', VALID_TENANT),
                     ),
@@ -2494,19 +2636,18 @@ class TestApplicationNode(BaseApplicationTestCase):
                                 node=has_entries(
                                     uuid=node['uuid'],
                                     calls=empty(),
-                                )
-                            )
+                                ),
+                            ),
                         ),
                         headers=has_entry('tenant_uuid', VALID_TENANT),
-                    )
-                )
+                    ),
+                ),
             )
 
         until.assert_(event_received, tries=5)
 
 
 class TestApplicationNodeCall(BaseApplicationTestCase):
-
     def test_delete(self):
         channel = self.call_app(self.node_app_uuid)
         event_accumulator = self.app_event_accumulator(self.node_app_uuid)
@@ -2515,19 +2656,19 @@ class TestApplicationNodeCall(BaseApplicationTestCase):
             calling(self.calld_client.applications.delete_call_from_node).with_args(
                 self.unknown_uuid, self.node_app_uuid, channel.id
             ),
-            raises(CalldError).matching(has_properties(status_code=404))
+            raises(CalldError).matching(has_properties(status_code=404)),
         )
         assert_that(
             calling(self.calld_client.applications.delete_call_from_node).with_args(
                 self.node_app_uuid, self.unknown_uuid, channel.id
             ),
-            raises(CalldError).matching(has_properties(status_code=404))
+            raises(CalldError).matching(has_properties(status_code=404)),
         )
         assert_that(
             calling(self.calld_client.applications.delete_call_from_node).with_args(
                 self.no_node_app_uuid, self.node_app_uuid, channel.id
             ),
-            raises(CalldError).matching(has_properties(status_code=404))
+            raises(CalldError).matching(has_properties(status_code=404)),
         )
 
         self.calld_client.applications.delete_call_from_node(
@@ -2549,8 +2690,8 @@ class TestApplicationNodeCall(BaseApplicationTestCase):
                                 node=has_entries(
                                     uuid=self.node_app_uuid,
                                     calls=empty(),
-                                )
-                            )
+                                ),
+                            ),
                         ),
                         headers=has_entry('tenant_uuid', VALID_TENANT),
                     ),
@@ -2564,12 +2705,12 @@ class TestApplicationNodeCall(BaseApplicationTestCase):
                                     caller_id_name='Alice',
                                     caller_id_number='555',
                                     status='Up',
-                                )
-                            )
+                                ),
+                            ),
                         ),
                         headers=has_entry('tenant_uuid', VALID_TENANT),
                     ),
-                )
+                ),
             )
 
         until.assert_(event_received, tries=5)
@@ -2578,7 +2719,7 @@ class TestApplicationNodeCall(BaseApplicationTestCase):
             calling(self.calld_client.applications.delete_call_from_node).with_args(
                 self.node_app_uuid, self.node_app_uuid, channel.id
             ),
-            raises(CalldError).matching(has_properties(status_code=404))
+            raises(CalldError).matching(has_properties(status_code=404)),
         )
 
         channel.hangup()
@@ -2587,40 +2728,46 @@ class TestApplicationNodeCall(BaseApplicationTestCase):
             calling(self.calld_client.applications.delete_call_from_node).with_args(
                 self.node_app_uuid, self.node_app_uuid, channel.id
             ),
-            raises(CalldError).matching(has_properties(status_code=404))
+            raises(CalldError).matching(has_properties(status_code=404)),
         )
 
     def test_put(self):
         channel_1 = self.call_app(self.no_node_app_uuid)
         channel_2 = self.call_app(self.no_node_app_uuid)
         channel_3 = self.call_app(self.no_node_app_uuid)
-        node_1 = self.calld_client.applications.create_node(self.no_node_app_uuid, [channel_1.id])
-        self.calld_client.applications.create_node(self.no_node_app_uuid, [channel_2.id])
+        node_1 = self.calld_client.applications.create_node(
+            self.no_node_app_uuid, [channel_1.id]
+        )
+        self.calld_client.applications.create_node(
+            self.no_node_app_uuid, [channel_2.id]
+        )
 
         assert_that(
             calling(self.calld_client.applications.join_node).with_args(
                 self.unknown_uuid, node_1['uuid'], channel_3.id
             ),
-            raises(CalldError).matching(has_properties(status_code=404))
+            raises(CalldError).matching(has_properties(status_code=404)),
         )
         assert_that(
             calling(self.calld_client.applications.join_node).with_args(
                 self.no_node_app_uuid, self.unknown_uuid, channel_3.id
             ),
-            raises(CalldError).matching(has_properties(status_code=404))
+            raises(CalldError).matching(has_properties(status_code=404)),
         )
         assert_that(
             calling(self.calld_client.applications.join_node).with_args(
                 self.node_app_uuid, node_1['uuid'], channel_3.id
             ),
-            raises(CalldError).matching(has_properties(status_code=404))
+            raises(CalldError).matching(has_properties(status_code=404)),
         )
 
         assert_that(
             calling(self.calld_client.applications.join_node).with_args(
-                self.no_node_app_uuid, node_1['uuid'], channel_2.id,
+                self.no_node_app_uuid,
+                node_1['uuid'],
+                channel_2.id,
             ),
-            raises(CalldError).matching(has_properties(status_code=400))
+            raises(CalldError).matching(has_properties(status_code=400)),
         )
 
         event_accumulator = self.app_event_accumulator(self.no_node_app_uuid)
@@ -2646,9 +2793,9 @@ class TestApplicationNodeCall(BaseApplicationTestCase):
                                     calls=contains_exactly(
                                         has_entries(id=channel_1.id),
                                         has_entries(id=channel_3.id),
-                                    )
-                                )
-                            )
+                                    ),
+                                ),
+                            ),
                         ),
                         headers=has_entry('tenant_uuid', VALID_TENANT),
                     ),
@@ -2659,12 +2806,12 @@ class TestApplicationNodeCall(BaseApplicationTestCase):
                                 application_uuid=self.no_node_app_uuid,
                                 call=has_entries(
                                     id=channel_3.id,
-                                )
-                            )
+                                ),
+                            ),
                         ),
                         headers=has_entry('tenant_uuid', VALID_TENANT),
                     ),
-                )
+                ),
             )
 
         until.assert_(event_received, tries=5)
@@ -2675,12 +2822,11 @@ class TestApplicationNodeCall(BaseApplicationTestCase):
             calling(self.calld_client.applications.join_node).with_args(
                 self.no_node_app_uuid, node_1['uuid'], channel_3.id
             ),
-            raises(CalldError).matching(has_properties(status_code=404))
+            raises(CalldError).matching(has_properties(status_code=404)),
         )
 
 
 class TestDTMFEvents(BaseApplicationTestCase):
-
     def test_that_events_are_received(self):
         channel = self.call_app(self.node_app_uuid)
         event_accumulator = self.app_event_accumulator(self.node_app_uuid)
@@ -2699,18 +2845,17 @@ class TestDTMFEvents(BaseApplicationTestCase):
                                 application_uuid=self.node_app_uuid,
                                 call_id=channel.id,
                                 dtmf='1',
-                            )
+                            ),
                         ),
                         headers=has_entry('tenant_uuid', VALID_TENANT),
                     )
-                )
+                ),
             )
 
         until.assert_(event_received, tries=5)
 
 
 class TestApplicationSendDTMF(BaseApplicationTestCase):
-
     def test_put_dtmf(self):
         app_uuid = self.node_app_uuid
         channel = self.call_app(app_uuid)
@@ -2720,7 +2865,7 @@ class TestApplicationSendDTMF(BaseApplicationTestCase):
             calling(self.calld_client.applications.send_dtmf_digits).with_args(
                 app_uuid, self.unknown_uuid, '1234'
             ),
-            raises(CalldError).matching(has_properties(status_code=404))
+            raises(CalldError).matching(has_properties(status_code=404)),
         )
 
         # Unknown app UUID
@@ -2728,7 +2873,7 @@ class TestApplicationSendDTMF(BaseApplicationTestCase):
             calling(self.calld_client.applications.send_dtmf_digits).with_args(
                 self.unknown_uuid, channel.id, '5678'
             ),
-            raises(CalldError).matching(has_properties(status_code=404))
+            raises(CalldError).matching(has_properties(status_code=404)),
         )
 
         # Invalid DTMF
@@ -2736,7 +2881,7 @@ class TestApplicationSendDTMF(BaseApplicationTestCase):
             calling(self.calld_client.applications.send_dtmf_digits).with_args(
                 app_uuid, channel.id, 'invalid'
             ),
-            raises(CalldError).matching(has_properties(status_code=400))
+            raises(CalldError).matching(has_properties(status_code=400)),
         )
 
         event_accumulator = self.bus.accumulator(
@@ -2754,14 +2899,16 @@ class TestApplicationSendDTMF(BaseApplicationTestCase):
             for expected_digit in test_str:
                 assert_that(
                     events,
-                    has_item(has_entries(
-                        name='DTMFEnd',
-                        data=has_entries(
-                            Direction='Received',
-                            Digit=expected_digit,
-                            Uniqueid=channel.id,
-                        ),
-                    ))
+                    has_item(
+                        has_entries(
+                            name='DTMFEnd',
+                            data=has_entries(
+                                Direction='Received',
+                                Digit=expected_digit,
+                                Uniqueid=channel.id,
+                            ),
+                        )
+                    ),
                 )
 
         until.assert_(amid_dtmf_events_received, tries=5)

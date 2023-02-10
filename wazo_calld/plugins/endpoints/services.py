@@ -1,4 +1,4 @@
-# Copyright 2019-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -39,7 +39,12 @@ class Endpoint:
     def __repr__(self):
         return '{}({})'.format(
             self.__class__.__name__,
-            ', '.join(map(str, [self.techno, self.name, self.registered, list(self._channel_ids)])),
+            ', '.join(
+                map(
+                    str,
+                    [self.techno, self.name, self.registered, list(self._channel_ids)],
+                )
+            ),
         )
 
     @classmethod
@@ -57,7 +62,6 @@ class Endpoint:
 
 
 class StatusCache:
-
     def __init__(self, ari, endpoints=None):
         self._ari = ari
         self._endpoints = endpoints or {}
@@ -81,9 +85,13 @@ class StatusCache:
             self.add_endpoint(endpoint_obj)
         logger.info(
             'Endpoint cache initialized - %s',
-            ','.join([
-                '{}: {}'.format(name, len(endpoints)) for name, endpoints in self._endpoints.items()
-            ]))
+            ','.join(
+                [
+                    '{}: {}'.format(name, len(endpoints))
+                    for name, endpoints in self._endpoints.items()
+                ]
+            ),
+        )
 
 
 class NotifyingStatusCache(StatusCache):
@@ -99,7 +107,9 @@ class NotifyingStatusCache(StatusCache):
             yield endpoint
         except Exception:
             if not endpoint:
-                logger.info('updating an endpoint that is not tracked %s %s', techno, name)
+                logger.info(
+                    'updating an endpoint that is not tracked %s %s', techno, name
+                )
             else:
                 raise
         else:
@@ -108,7 +118,6 @@ class NotifyingStatusCache(StatusCache):
 
 
 class ConfdCache:
-
     _asterisk_to_confd_techno_map = {
         'PJSIP': 'sip',
         'IAX2': 'iax',
@@ -123,7 +132,12 @@ class ConfdCache:
         self._initialization_lock = threading.Lock()
 
     def add_line(self, techno, line_id, name, username, tenant_uuid):
-        value = {'id': line_id, 'technology': techno, 'name': name, 'tenant_uuid': tenant_uuid}
+        value = {
+            'id': line_id,
+            'technology': techno,
+            'name': name,
+            'tenant_uuid': tenant_uuid,
+        }
         self._lines.setdefault(techno, {'name': {}, 'username': {}})
         self._lines[techno]['name'][name] = value
         if username:
@@ -131,7 +145,12 @@ class ConfdCache:
             self._lines[techno]['username'][username] = value
 
     def add_trunk(self, techno, trunk_id, name, username, tenant_uuid):
-        value = {'id': trunk_id, 'technology': techno, 'name': name, 'tenant_uuid': tenant_uuid}
+        value = {
+            'id': trunk_id,
+            'technology': techno,
+            'name': name,
+            'tenant_uuid': tenant_uuid,
+        }
         self._trunks.setdefault(techno, {'name': {}, 'username': {}})
         self._trunks[techno]['name'][name] = value
         if username:
@@ -169,7 +188,9 @@ class ConfdCache:
         return self._get_endpoint_by_index(techno, name, self._trunks, index='name')
 
     def get_trunk_by_username(self, techno, username):
-        return self._get_endpoint_by_index(techno, username, self._trunks, index='username')
+        return self._get_endpoint_by_index(
+            techno, username, self._trunks, index='username'
+        )
 
     def list_lines(self, tenant_uuid):
         if not self._initialized:
@@ -264,7 +285,8 @@ class ConfdCache:
                 username = name
             else:
                 logger.info(
-                    'ignoring trunk %s which is not associated to an endpoint', trunk['id']
+                    'ignoring trunk %s which is not associated to an endpoint',
+                    trunk['id'],
                 )
                 return
 
@@ -289,7 +311,6 @@ class ConfdCache:
 
 
 class EndpointsService:
-
     _techno_map = {
         'sip': 'PJSIP',
         'iax': 'IAX2',
@@ -311,7 +332,9 @@ class EndpointsService:
         results = []
         for confd_endpoint in confd_endpoints:
             endpoint = dict(confd_endpoint)
-            ast_techno = self._techno_map.get(endpoint['technology'], endpoint['technology'])
+            ast_techno = self._techno_map.get(
+                endpoint['technology'], endpoint['technology']
+            )
             ast_endpoint = self.status_cache.get(ast_techno, confd_endpoint['name'])
             if ast_endpoint:
                 endpoint['registered'] = ast_endpoint.registered

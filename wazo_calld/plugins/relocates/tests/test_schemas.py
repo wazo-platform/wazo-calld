@@ -1,4 +1,4 @@
-# Copyright 2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from hamcrest import (
@@ -18,25 +18,29 @@ VALID_RELOCATE = {
 
 
 class Testclassname(TestCase):
-
     def test_given_invalid_location_when_load_then_raise(self):
         relocate = dict(VALID_RELOCATE)
         relocate['destination'] = {'invalid': 'invalid'}
 
-        assert_that(calling(user_relocate_request_schema.load).with_args(relocate),
-                    raises(ValidationError))
+        assert_that(
+            calling(user_relocate_request_schema.load).with_args(relocate),
+            raises(ValidationError),
+        )
 
     def test_given_mobile_destination_when_load_then_location_empty(self):
         relocate = dict(VALID_RELOCATE)
         relocate['destination'] = 'mobile'
 
-        assert_that(user_relocate_request_schema.load(relocate),
-                    has_entry('location', {}))
+        assert_that(
+            user_relocate_request_schema.load(relocate), has_entry('location', {})
+        )
 
     def test_given_line_destination_when_load_then_validation_may_fail(self):
         relocate = dict(VALID_RELOCATE)
         relocate['destination'] = 'line'
         relocate['location'] = {'line_id': -12}
 
-        assert_that(calling(user_relocate_request_schema.load).with_args(relocate),
-                    raises(ValidationError))
+        assert_that(
+            calling(user_relocate_request_schema.load).with_args(relocate),
+            raises(ValidationError),
+        )

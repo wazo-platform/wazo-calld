@@ -1,4 +1,4 @@
-# Copyright 2019-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from unittest import TestCase
@@ -25,7 +25,6 @@ from ..notifier import Notifier
 
 
 class DialerTestCase(TestCase):
-
     def setUp(self):
         self.ari = Mock()
         self.future_bridge_uuid = '6e2b692a-ff56-4121-932d-d208dd5c3362'
@@ -41,25 +40,35 @@ class DialerTestCase(TestCase):
 
 
 class TestSendContactToCurrentCall(DialerTestCase):
-
     def test_sending_the_same_contact_twice(self):
-        self.poller._send_contact_to_current_call(s.contact, self.future_bridge_uuid, s.caller_id)
+        self.poller._send_contact_to_current_call(
+            s.contact, self.future_bridge_uuid, s.caller_id
+        )
 
         self.ari.reset_mock()
 
-        self.poller._send_contact_to_current_call(s.contact, self.future_bridge_uuid, s.caller_id)
+        self.poller._send_contact_to_current_call(
+            s.contact, self.future_bridge_uuid, s.caller_id
+        )
 
         self.ari.channels.originate.assert_not_called()
 
     def test_that_dialed_channels_are_tracked(self):
-        self.poller._send_contact_to_current_call(s.contact, self.future_bridge_uuid, s.caller_id)
+        self.poller._send_contact_to_current_call(
+            s.contact, self.future_bridge_uuid, s.caller_id
+        )
 
-        assert_that(self.poller._dialed_channels, has_items(
-            self.ari.channels.originate.return_value,
-        ))
+        assert_that(
+            self.poller._dialed_channels,
+            has_items(
+                self.ari.channels.originate.return_value,
+            ),
+        )
 
     def test_that_the_call_is_sent_to_dial_mobile_join(self):
-        self.poller._send_contact_to_current_call(s.contact, self.future_bridge_uuid, s.caller_id)
+        self.poller._send_contact_to_current_call(
+            s.contact, self.future_bridge_uuid, s.caller_id
+        )
 
         self.ari.channels.originate.assert_called_once_with(
             endpoint=s.contact,
@@ -71,7 +80,6 @@ class TestSendContactToCurrentCall(DialerTestCase):
 
 
 class TestChannelIsUp(DialerTestCase):
-
     def test_no_channel(self):
         self.ari.channels.get.side_effect = ARINotFound(s.ari_client, s.original_error)
 
@@ -88,7 +96,6 @@ class TestChannelIsUp(DialerTestCase):
 
 
 class TestGetContacts(DialerTestCase):
-
     def test_no_result(self):
         self.ari.channels.getChannelVar.return_value = {'value': ''}
 
@@ -97,7 +104,9 @@ class TestGetContacts(DialerTestCase):
         assert_that(result, empty())
 
     def test_no_channel(self):
-        self.ari.channels.getChannelVar.side_effect = ARINotFound(s.ari_client, s.original_error)
+        self.ari.channels.getChannelVar.side_effect = ARINotFound(
+            s.ari_client, s.original_error
+        )
 
         result = self.poller._get_contacts(self.channel_id, self.aor)
 
@@ -111,7 +120,9 @@ class TestGetContacts(DialerTestCase):
         assert_that(result, contains_exactly('contact1'))
 
     def test_multiple_values(self):
-        self.ari.channels.getChannelVar.return_value = {'value': 'contact1&contact2&contact3'}
+        self.ari.channels.getChannelVar.return_value = {
+            'value': 'contact1&contact2&contact3'
+        }
 
         result = self.poller._get_contacts(self.channel_id, self.aor)
 
@@ -119,7 +130,6 @@ class TestGetContacts(DialerTestCase):
 
 
 class TestRemoveUnansweredChannels(DialerTestCase):
-
     def test_that_hungup_channels_do_not_interrupt(self):
         channel_1 = Mock()
         channel_1.get.side_effect = ARINotFound(s.ari_client, s.original_error)
@@ -168,13 +178,14 @@ class TestRemoveUnansweredChannels(DialerTestCase):
 
 
 class DialMobileServiceTestCase(DialerTestCase):
-
     def setUp(self):
         self.ari = Mock()
         self.amid_client = Mock()
         self.auth_client = Mock()
         self.notifier = Mock(Notifier)
-        self.service = DialMobileService(self.ari, self.notifier, self.amid_client, self.auth_client)
+        self.service = DialMobileService(
+            self.ari, self.notifier, self.amid_client, self.auth_client
+        )
         self.channel_id = '1234567890.42'
         self.aor = 'foobar'
 
@@ -188,7 +199,10 @@ class DialMobileServiceTestCase(DialerTestCase):
 
         self.amid_client.action.assert_called_once_with(
             'Setvar',
-            {'Variable': 'DEVICE_STATE(Custom:<the-uuid>-mobile)', 'Value': 'UNAVAILABLE'},
+            {
+                'Variable': 'DEVICE_STATE(Custom:<the-uuid>-mobile)',
+                'Value': 'UNAVAILABLE',
+            },
         )
 
     def test_set_user_hint_with_mobile_session(self):
@@ -196,7 +210,10 @@ class DialMobileServiceTestCase(DialerTestCase):
 
         self.amid_client.action.assert_called_once_with(
             'Setvar',
-            {'Variable': 'DEVICE_STATE(Custom:<the-uuid>-mobile)', 'Value': 'NOT_INUSE'},
+            {
+                'Variable': 'DEVICE_STATE(Custom:<the-uuid>-mobile)',
+                'Value': 'NOT_INUSE',
+            },
         )
 
     def test_on_mobile_refresh_token_created(self):
@@ -205,12 +222,20 @@ class DialMobileServiceTestCase(DialerTestCase):
             mock.assert_called_once_with(s.user_uuid, True)
 
     def test_on_mobile_refresh_token_deleted(self):
-        self.auth_client.token.list.return_value = {'items': [], 'filtered': 0, 'total': 42}
+        self.auth_client.token.list.return_value = {
+            'items': [],
+            'filtered': 0,
+            'total': 42,
+        }
         with patch.object(self.service, '_set_user_hint') as mock:
             self.service.on_mobile_refresh_token_deleted(s.user_uuid)
             mock.assert_called_once_with(s.user_uuid, False)
 
-        self.auth_client.token.list.return_value = {'items': [{'uuid': 'some-uuid'}], 'filtered': 1, 'total': 42}
+        self.auth_client.token.list.return_value = {
+            'items': [{'uuid': 'some-uuid'}],
+            'filtered': 1,
+            'total': 42,
+        }
         with patch.object(self.service, '_set_user_hint') as mock:
             self.service.on_mobile_refresh_token_deleted(s.user_uuid)
             mock.assert_called_once_with(s.user_uuid, True)
@@ -222,13 +247,14 @@ class DialMobileServiceTestCase(DialerTestCase):
 
 
 class TestCancelPushNotification(TestCase):
-
     def setUp(self):
         self.ari = Mock()
         self.notifier = Mock(Notifier)
         self.amid_client = Mock()
         self.auth_client = Mock()
-        self.service = DialMobileService(self.ari, self.notifier, self.amid_client, self.auth_client)
+        self.service = DialMobileService(
+            self.ari, self.notifier, self.amid_client, self.auth_client
+        )
 
     def test_that_nothing_happens_when_not_a_pending_push(self):
         self.service.cancel_push_mobile(s.call_id)
@@ -248,4 +274,6 @@ class TestCancelPushNotification(TestCase):
 
         self.service.cancel_push_mobile(s.call_id)
 
-        self.notifier.cancel_push_notification.assert_called_once_with(payload, s.tenant_uuid, s.user_uuid)
+        self.notifier.cancel_push_notification.assert_called_once_with(
+            payload, s.tenant_uuid, s.user_uuid
+        )

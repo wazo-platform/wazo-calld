@@ -1,4 +1,4 @@
-# Copyright 2021-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2021-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from unittest import TestCase
@@ -9,7 +9,6 @@ from ..bus_consume import ConferencesBusEventHandler
 
 
 class TestBusConsume(TestCase):
-
     @patch('wazo_calld.plugins.conferences.bus_consume.Conference')
     def test_that_paging_events_are_ignored(self, ConferenceMock):
         ConferenceMock.from_id.side_effect = AssertionError('Should not get called')

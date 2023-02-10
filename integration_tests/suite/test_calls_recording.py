@@ -1,4 +1,4 @@
-# Copyright 2021-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2021-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import uuid
@@ -23,7 +23,6 @@ UNKNOWN_UUID = '00000000-0000-0000-0000-000000000000'
 
 
 class TestCallRecord(RealAsteriskIntegrationTest):
-
     asset = 'real_asterisk'
 
     def test_put_record_start(self):
@@ -46,26 +45,26 @@ class TestCallRecord(RealAsteriskIntegrationTest):
                             tenant_uuid=VALID_TENANT,
                         ),
                     )
-                )
+                ),
             )
 
         until.assert_(event_received, tries=10)
 
         assert_that(
             self.calld_client.calls.list_calls()['items'],
-            has_items(has_entries(call_id=channel_id, record_state='active'))
+            has_items(has_entries(call_id=channel_id, record_state='active')),
         )
 
         # Should not raise an error on second record start
         assert_that(
             calling(self.calld_client.calls.start_record).with_args(channel_id),
-            not_(raises(CalldError))
+            not_(raises(CalldError)),
         )
 
     def test_put_record_start_errors(self):
         assert_that(
             calling(self.calld_client.calls.start_record).with_args(UNKNOWN_UUID),
-            raises(CalldError).matching(has_properties(status_code=404))
+            raises(CalldError).matching(has_properties(status_code=404)),
         )
 
     def test_put_record_start_from_user(self):
@@ -84,30 +83,29 @@ class TestCallRecord(RealAsteriskIntegrationTest):
                     has_entries(
                         message=has_entries(
                             name='call_updated',
-                            data=has_entries(
-                                call_id=channel_id,
-                                record_state='active'
-                            ),
+                            data=has_entries(call_id=channel_id, record_state='active'),
                         ),
                         headers=has_entries(
                             name='call_updated',
                             tenant_uuid=VALID_TENANT,
                         ),
                     )
-                )
+                ),
             )
 
         until.assert_(event_received, tries=10)
 
         assert_that(
             self.calld_client.calls.list_calls_from_user()['items'],
-            has_items(has_entries(call_id=channel_id, record_state='active'))
+            has_items(has_entries(call_id=channel_id, record_state='active')),
         )
 
         # Should not raise an error on second record start
         assert_that(
-            calling(self.calld_client.calls.start_record_from_user).with_args(channel_id),
-            not_(raises(CalldError))
+            calling(self.calld_client.calls.start_record_from_user).with_args(
+                channel_id
+            ),
+            not_(raises(CalldError)),
         )
 
     def test_put_record_start_from_user_errors(self):
@@ -116,12 +114,16 @@ class TestCallRecord(RealAsteriskIntegrationTest):
         self.calld_client.set_token(token)
         other_channel_id = self.given_call_not_stasis()
         assert_that(
-            calling(self.calld_client.calls.start_record_from_user).with_args(UNKNOWN_UUID),
-            raises(CalldError).matching(has_properties(status_code=404))
+            calling(self.calld_client.calls.start_record_from_user).with_args(
+                UNKNOWN_UUID
+            ),
+            raises(CalldError).matching(has_properties(status_code=404)),
         )
         assert_that(
-            calling(self.calld_client.calls.start_record_from_user).with_args(other_channel_id),
-            raises(CalldError).matching(has_properties(status_code=403))
+            calling(self.calld_client.calls.start_record_from_user).with_args(
+                other_channel_id
+            ),
+            raises(CalldError).matching(has_properties(status_code=403)),
         )
 
     def test_put_record_stop(self):
@@ -129,7 +131,7 @@ class TestCallRecord(RealAsteriskIntegrationTest):
 
         assert_that(
             calling(self.calld_client.calls.stop_record).with_args(UNKNOWN_UUID),
-            raises(CalldError).matching(has_properties(status_code=404))
+            raises(CalldError).matching(has_properties(status_code=404)),
         )
         events = self.bus.accumulator(headers={'name': 'call_updated'})
 
@@ -143,16 +145,15 @@ class TestCallRecord(RealAsteriskIntegrationTest):
                         message=has_entries(
                             name='call_updated',
                             data=has_entries(
-                                call_id=channel_id,
-                                record_state='inactive'
-                            )
+                                call_id=channel_id, record_state='inactive'
+                            ),
                         ),
                         headers=has_entries(
                             name='call_updated',
                             tenant_uuid=VALID_TENANT,
                         ),
                     )
-                )
+                ),
             )
 
         until.assert_(event_received, tries=10)
@@ -165,7 +166,7 @@ class TestCallRecord(RealAsteriskIntegrationTest):
         # Should not raise an error on second record stop
         assert_that(
             calling(self.calld_client.calls.stop_record).with_args(channel_id),
-            not_(raises(CalldError))
+            not_(raises(CalldError)),
         )
 
     def test_put_record_stop_from_user(self):
@@ -176,12 +177,16 @@ class TestCallRecord(RealAsteriskIntegrationTest):
         other_channel_id = self.given_call_not_stasis()
 
         assert_that(
-            calling(self.calld_client.calls.stop_record_from_user).with_args(UNKNOWN_UUID),
-            raises(CalldError).matching(has_properties(status_code=404))
+            calling(self.calld_client.calls.stop_record_from_user).with_args(
+                UNKNOWN_UUID
+            ),
+            raises(CalldError).matching(has_properties(status_code=404)),
         )
         assert_that(
-            calling(self.calld_client.calls.stop_record_from_user).with_args(other_channel_id),
-            raises(CalldError).matching(has_properties(status_code=403))
+            calling(self.calld_client.calls.stop_record_from_user).with_args(
+                other_channel_id
+            ),
+            raises(CalldError).matching(has_properties(status_code=403)),
         )
 
         events = self.bus.accumulator(headers={'name': 'call_updated'})
@@ -196,29 +201,30 @@ class TestCallRecord(RealAsteriskIntegrationTest):
                         message=has_entries(
                             name='call_updated',
                             data=has_entries(
-                                call_id=channel_id,
-                                record_state='inactive'
-                            )
+                                call_id=channel_id, record_state='inactive'
+                            ),
                         ),
                         headers=has_entries(
                             name='call_updated',
                             tenant_uuid=VALID_TENANT,
-                        )
+                        ),
                     )
-                )
+                ),
             )
 
         until.assert_(event_received, tries=10)
 
         assert_that(
             self.calld_client.calls.list_calls_from_user()['items'],
-            has_items(has_entries(call_id=channel_id, record_state='inactive'))
+            has_items(has_entries(call_id=channel_id, record_state='inactive')),
         )
 
         # Should not raise an error on second record stop
         assert_that(
-            calling(self.calld_client.calls.stop_record_from_user).with_args(channel_id),
-            not_(raises(CalldError))
+            calling(self.calld_client.calls.stop_record_from_user).with_args(
+                channel_id
+            ),
+            not_(raises(CalldError)),
         )
 
     def given_call_not_stasis(self, user_uuid=None, variables=None):

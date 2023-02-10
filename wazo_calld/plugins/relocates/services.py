@@ -1,4 +1,4 @@
-# Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import re
@@ -32,7 +32,6 @@ logger = logging.getLogger(__name__)
 
 
 class DestinationFactory:
-
     def __init__(self, amid, ari):
         self.amid = amid
         self.ari = ari
@@ -62,7 +61,6 @@ class Destination:
 
 
 class InterfaceDestination(Destination):
-
     pjsip_contact_re = re.compile(r'pjsip/[a-z0-9]+/sip:[a-z0-9]+@.*', re.IGNORECASE)
 
     def __init__(self, ari, details, initiator_call):
@@ -128,11 +126,12 @@ class ExtensionDestination(Destination):
         )
 
     def ari_endpoint(self):
-        return 'Local/{exten}@{context}'.format(exten=self._exten, context=self._context)
+        return 'Local/{exten}@{context}'.format(
+            exten=self._exten, context=self._context
+        )
 
 
 class RelocatesService:
-
     def __init__(self, amid, ari, confd_client, notifier, relocates, state_factory):
         self.ari = ari
         self.confd_client = confd_client
@@ -143,9 +142,11 @@ class RelocatesService:
         self.duplicate_relocate_lock = threading.Lock()
 
     def list_from_user(self, user_uuid):
-        return [relocate
-                for relocate in self.relocates.list()
-                if relocate.initiator == user_uuid]
+        return [
+            relocate
+            for relocate in self.relocates.list()
+            if relocate.initiator == user_uuid
+        ]
 
     def get_from_user(self, relocate_uuid, user_uuid):
         try:
@@ -153,9 +154,13 @@ class RelocatesService:
         except KeyError:
             raise NoSuchRelocate(relocate_uuid)
 
-    def create(self, initiator_call, destination, location, completions, timeout, relocate=None):
+    def create(
+        self, initiator_call, destination, location, completions, timeout, relocate=None
+    ):
         try:
-            relocated_channel = Channel(initiator_call, self.ari).only_connected_channel()
+            relocated_channel = Channel(
+                initiator_call, self.ari
+            ).only_connected_channel()
         except TooManyChannels as e:
             raise TooManyChannelCandidates(e.channels)
         except NotEnoughChannels:
@@ -195,7 +200,16 @@ class RelocatesService:
 
         return relocate
 
-    def create_from_user(self, initiator_call, destination, location, completions, timeout, auto_answer, user_uuid):
+    def create_from_user(
+        self,
+        initiator_call,
+        destination,
+        location,
+        completions,
+        timeout,
+        auto_answer,
+        user_uuid,
+    ):
         initiator_channel = Channel(initiator_call, self.ari)
         user = User(user_uuid, self.confd_client)
         variables = {}
@@ -211,7 +225,10 @@ class RelocatesService:
             try:
                 destination_interface = user.line(location['line_id']).interface()
             except (InvalidUserUUID, InvalidUserLine):
-                raise RelocateCreationError('invalid line for user', details={'user_uuid': user_uuid, 'line_id': location['line_id']})
+                raise RelocateCreationError(
+                    'invalid line for user',
+                    details={'user_uuid': user_uuid, 'line_id': location['line_id']},
+                )
             destination = 'interface'
             location['interface'] = destination_interface
         elif destination == 'mobile':
@@ -220,10 +237,11 @@ class RelocatesService:
                 line_context = user.main_line().context()
             except (InvalidUserUUID, InvalidUserLine):
                 details = {'user_uuid': user_uuid}
-                raise RelocateCreationError('invalid user: could not find main line', details=details)
+                raise RelocateCreationError(
+                    'invalid user: could not find main line', details=details
+                )
             destination = 'extension'
-            location = {'exten': mobile,
-                        'context': line_context}
+            location = {'exten': mobile, 'context': line_context}
             variables['WAZO_DEREFERENCED_USERUUID'] = user_uuid
 
         if auto_answer:
@@ -232,7 +250,14 @@ class RelocatesService:
         relocate.initiator = user_uuid
         relocate.recipient_variables = variables
 
-        return self.create(initiator_call, destination, location, completions, timeout, relocate=relocate)
+        return self.create(
+            initiator_call,
+            destination,
+            location,
+            completions,
+            timeout,
+            relocate=relocate,
+        )
 
     def complete_from_user(self, relocate_uuid, user_uuid):
         try:

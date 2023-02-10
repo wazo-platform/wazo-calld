@@ -1,11 +1,10 @@
-# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from wazo_calld.exceptions import APIException
 
 
 class CallNotInApplication(APIException):
-
     def __init__(self, application_uuid, call_id):
         super().__init__(
             status_code=400,
@@ -14,12 +13,11 @@ class CallNotInApplication(APIException):
             details={
                 'application_uuid': str(application_uuid),
                 'call_id': str(call_id),
-            }
+            },
         )
 
 
 class WazoConfdUnreachable(APIException):
-
     def __init__(self):
         super().__init__(
             status_code=503,
@@ -29,7 +27,6 @@ class WazoConfdUnreachable(APIException):
 
 
 class CallAlreadyInNode(APIException):
-
     def __init__(self, application_uuid, node_uuid, call_id):
         super().__init__(
             status_code=400,
@@ -39,12 +36,11 @@ class CallAlreadyInNode(APIException):
                 'application_uuid': str(application_uuid),
                 'node_uuid': str(node_uuid),
                 'call_id': str(call_id),
-            }
+            },
         )
 
 
 class NoSuchApplication(APIException):
-
     def __init__(self, application_uuid):
         super().__init__(
             status_code=404,
@@ -52,12 +48,11 @@ class NoSuchApplication(APIException):
             error_id='no-such-application',
             details={
                 'application_uuid': str(application_uuid),
-            }
+            },
         )
 
 
 class NoSuchCall(APIException):
-
     default_status_code = 404
 
     def __init__(self, call_id, status_code=None):
@@ -66,14 +61,11 @@ class NoSuchCall(APIException):
             status_code=status_code,
             message='No such call',
             error_id='no-such-call',
-            details={
-                'call_id': call_id
-            }
+            details={'call_id': call_id},
         )
 
 
 class NoSuchMedia(APIException):
-
     def __init__(self, uri):
         super().__init__(
             status_code=400,
@@ -81,12 +73,11 @@ class NoSuchMedia(APIException):
             error_id='no-such-media',
             details={
                 'uri': uri,
-            }
+            },
         )
 
 
 class NoSuchMoh(APIException):
-
     def __init__(self, uuid):
         super().__init__(
             status_code=404,
@@ -94,51 +85,41 @@ class NoSuchMoh(APIException):
             error_id='no-such-moh',
             details={
                 'uuid': str(uuid),
-            }
+            },
         )
 
 
 class NoSuchNode(APIException):
-
     def __init__(self, node_uuid):
         super().__init__(
             status_code=404,
             message='No such node',
             error_id='no-such-node',
-            details={
-                'node_uuid': str(node_uuid)
-            }
+            details={'node_uuid': str(node_uuid)},
         )
 
 
 class NoSuchPlayback(APIException):
-
     def __init__(self, playback_uuid):
         super().__init__(
             status_code=404,
             message='No such playback',
             error_id='no-such-playback',
-            details={
-                'playback_uuid': str(playback_uuid)
-            }
+            details={'playback_uuid': str(playback_uuid)},
         )
 
 
 class NoSuchSnoop(APIException):
-
     def __init__(self, snoop_uuid):
         super().__init__(
             status_code=404,
             message='No such snoop',
             error_id='no-such-snoop',
-            details={
-                'snoop_uuid': str(snoop_uuid)
-            }
+            details={'snoop_uuid': str(snoop_uuid)},
         )
 
 
 class DeleteDestinationNode(APIException):
-
     def __init__(self, application_uuid, node_uuid):
         super().__init__(
             status_code=400,
@@ -147,5 +128,5 @@ class DeleteDestinationNode(APIException):
             details={
                 'application_uuid': str(application_uuid),
                 'node_uuid': str(node_uuid),
-            }
+            },
         )

@@ -1,4 +1,4 @@
-# Copyright 2016-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import requests
@@ -19,23 +19,20 @@ SOME_CONTEXT = 'some-context'
 
 
 class TestExtensionExists(TestCase):
-
     def setUp(self):
         self.amid = Mock()
 
     def test_given_no_amid_when_extension_exists_then_raise_exception(self):
         self.amid.action.side_effect = requests.RequestException
 
-        assert_that((calling(extension_exists)
-                     .with_args(self.amid, SOME_EXTEN, SOME_CONTEXT)),
-                    raises(WazoAmidError))
+        assert_that(
+            (calling(extension_exists).with_args(self.amid, SOME_EXTEN, SOME_CONTEXT)),
+            raises(WazoAmidError),
+        )
 
     def test_given_invalid_context_when_extension_exists_then_return_false(self):
         self.amid.action.return_value = [
-            {
-                "Message": "Did not find context unknown",
-                "Response": "Error"
-            }
+            {"Message": "Did not find context unknown", "Response": "Error"}
         ]
 
         assert_that(extension_exists(self.amid, SOME_EXTEN, SOME_CONTEXT), is_(False))
@@ -44,7 +41,7 @@ class TestExtensionExists(TestCase):
         self.amid.action.return_value = [
             {
                 "Message": "Did not find extension unknown@some-context",
-                "Response": "Error"
+                "Response": "Error",
             }
         ]
 
@@ -55,7 +52,7 @@ class TestExtensionExists(TestCase):
             {
                 "EventList": "start",
                 "Message": "DialPlan list will follow",
-                "Response": "Success"
+                "Response": "Success",
             },
             {
                 "Extension": "some-exten",
@@ -63,7 +60,7 @@ class TestExtensionExists(TestCase):
                 "Application": "PJSIP/some-sip",
                 "Registrar": "pbx_config",
                 "Context": "some-context",
-                "Event": "ListDialplan"
+                "Event": "ListDialplan",
             },
             {
                 "ListPriorities": "1",
@@ -71,8 +68,8 @@ class TestExtensionExists(TestCase):
                 "ListItems": "1",
                 "ListContexts": "1",
                 "ListExtensions": "1",
-                "Event": "ShowDialPlanComplete"
-            }
+                "Event": "ShowDialPlanComplete",
+            },
         ]
 
         assert_that(extension_exists(self.amid, SOME_EXTEN, SOME_CONTEXT), is_(False))
@@ -82,7 +79,7 @@ class TestExtensionExists(TestCase):
             {
                 "EventList": "start",
                 "Message": "DialPlan list will follow",
-                "Response": "Success"
+                "Response": "Success",
             },
             {
                 "Extension": "some-exten",
@@ -90,7 +87,7 @@ class TestExtensionExists(TestCase):
                 "Application": "PJSIP/some-sip",
                 "Registrar": "pbx_config",
                 "Context": "some-context",
-                "Event": "ListDialplan"
+                "Event": "ListDialplan",
             },
             {
                 "ListPriorities": "1",
@@ -98,8 +95,8 @@ class TestExtensionExists(TestCase):
                 "ListItems": "1",
                 "ListContexts": "1",
                 "ListExtensions": "1",
-                "Event": "ShowDialPlanComplete"
-            }
+                "Event": "ShowDialPlanComplete",
+            },
         ]
 
         assert_that(extension_exists(self.amid, SOME_EXTEN, SOME_CONTEXT), is_(True))
@@ -108,9 +105,7 @@ class TestExtensionExists(TestCase):
         amid = Mock()
         moh_class = 'default'
         amid.command.return_value = {
-            'response': ['default',
-                         'Garbage: default',
-                         'ClassGarbage: default']
+            'response': ['default', 'Garbage: default', 'ClassGarbage: default']
         }
 
         result = moh_class_exists(amid, moh_class)
@@ -120,10 +115,7 @@ class TestExtensionExists(TestCase):
     def test_given_unknown_moh_class_when_moh_class_exists_then_false(self):
         amid = Mock()
         moh_class = 'default'
-        amid.command.return_value = {
-            'response': ['Class: other',
-                         'Class: another']
-        }
+        amid.command.return_value = {'response': ['Class: other', 'Class: another']}
 
         result = moh_class_exists(amid, moh_class)
 
@@ -132,10 +124,7 @@ class TestExtensionExists(TestCase):
     def test_given_moh_class_exists_when_moh_class_exists_then_true(self):
         amid = Mock()
         moh_class = 'default'
-        amid.command.return_value = {
-            'response': ['Class: default',
-                         'Class: another']
-        }
+        amid.command.return_value = {'response': ['Class: default', 'Class: another']}
 
         result = moh_class_exists(amid, moh_class)
 

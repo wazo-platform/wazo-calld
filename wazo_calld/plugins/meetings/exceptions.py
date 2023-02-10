@@ -1,4 +1,4 @@
-# Copyright 2021-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2021-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from xivo.rest_api_helpers import APIException
@@ -40,7 +40,9 @@ class NoSuchMeetingParticipant(APIException):
     def __init__(self, tenant_uuid, meeting_id, participant_id):
         super().__init__(
             status_code=404,
-            message='No such participant in meeting {}: participant id "{}"'.format(meeting_id, participant_id),
+            message='No such participant in meeting {}: participant id "{}"'.format(
+                meeting_id, participant_id
+            ),
             error_id='no-such-participant',
             resource='meeting-participant',
             details={

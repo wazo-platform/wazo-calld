@@ -1,4 +1,4 @@
-# Copyright 2016-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from hamcrest import (
@@ -18,7 +18,6 @@ from .helpers.wait_strategy import (
 
 
 class TestStatusARIStops(IntegrationTest):
-
     asset = 'no_ari'
     wait_strategy = CalldUpWaitStrategy()
 
@@ -31,7 +30,6 @@ class TestStatusARIStops(IntegrationTest):
 
 
 class TestStatusNoRabbitMQ(IntegrationTest):
-
     asset = 'no_rabbitmq'
     wait_strategy = CalldUpWaitStrategy()
 
@@ -42,7 +40,6 @@ class TestStatusNoRabbitMQ(IntegrationTest):
 
 
 class TestStatusRabbitMQStops(IntegrationTest):
-
     asset = 'basic_rest'
     wait_strategy = CalldConnectionsOkWaitStrategy()
 
@@ -57,18 +54,19 @@ class TestStatusRabbitMQStops(IntegrationTest):
 
 
 class TestStatusAllOK(IntegrationTest):
-
     asset = 'real_asterisk'
     wait_strategy = CalldEverythingOkWaitStrategy()
 
     def test_given_auth_and_ari_and_rabbitmq_when_status_then_status_ok(self):
-
         def all_ok():
             result = self.calld.status()
-            assert_that(result, has_entries(
-                ari=has_entry('status', 'ok'),
-                bus_consumer=has_entry('status', 'ok'),
-                service_token=has_entry('status', 'ok'),
-            ))
+            assert_that(
+                result,
+                has_entries(
+                    ari=has_entry('status', 'ok'),
+                    bus_consumer=has_entry('status', 'ok'),
+                    service_token=has_entry('status', 'ok'),
+                ),
+            )
 
         until.assert_(all_ok, tries=10)

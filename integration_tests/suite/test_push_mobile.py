@@ -16,7 +16,6 @@ from .helpers.constants import VALID_TOKEN_MULTITENANT
 
 
 class TestPushMobile(RealAsteriskIntegrationTest):
-
     asset = 'real_asterisk'
 
     def setUp(self):
@@ -84,13 +83,15 @@ class TestPushMobile(RealAsteriskIntegrationTest):
                             ),
                             required_acl='events.calls.fb27eb93-d21c-483f-8068-e685c90b07e1',
                         ),
-                        headers=has_entries({
-                            'name': 'call_push_notification',
-                            'tenant_uuid': 'some-tenant-uuid',
-                            'user_uuid:fb27eb93-d21c-483f-8068-e685c90b07e1': True,
-                        })
+                        headers=has_entries(
+                            {
+                                'name': 'call_push_notification',
+                                'tenant_uuid': 'some-tenant-uuid',
+                                'user_uuid:fb27eb93-d21c-483f-8068-e685c90b07e1': True,
+                            }
+                        ),
                     )
-                )
+                ),
             )
 
         until.assert_(bus_events_received, timeout=10)
@@ -118,11 +119,18 @@ class TestPushMobile(RealAsteriskIntegrationTest):
         )
 
         def user_hint_updated():
-            result = self.amid.action('Getvar', {'Variable': f'DEVICE_STATE(Custom:{user_uuid}-mobile)'})
-            assert_that(result, contains(has_entries(
-                Response='Success',
-                Value='NOT_INUSE',
-            )))
+            result = self.amid.action(
+                'Getvar', {'Variable': f'DEVICE_STATE(Custom:{user_uuid}-mobile)'}
+            )
+            assert_that(
+                result,
+                contains(
+                    has_entries(
+                        Response='Success',
+                        Value='NOT_INUSE',
+                    )
+                ),
+            )
 
         until.assert_(user_hint_updated, timeout=10)
 
@@ -146,11 +154,18 @@ class TestPushMobile(RealAsteriskIntegrationTest):
         )
 
         def user_hint_updated():
-            result = self.amid.action('Getvar', {'Variable': f'DEVICE_STATE(Custom:{user_uuid}-mobile)'})
-            assert_that(result, contains(has_entries(
-                Response='Success',
-                Value='NOT_INUSE',
-            )))
+            result = self.amid.action(
+                'Getvar', {'Variable': f'DEVICE_STATE(Custom:{user_uuid}-mobile)'}
+            )
+            assert_that(
+                result,
+                contains(
+                    has_entries(
+                        Response='Success',
+                        Value='NOT_INUSE',
+                    )
+                ),
+            )
 
         until.assert_(user_hint_updated, timeout=10)
 
@@ -174,10 +189,17 @@ class TestPushMobile(RealAsteriskIntegrationTest):
         )
 
         def user_hint_updated():
-            result = self.amid.action('Getvar', {'Variable': f'DEVICE_STATE(Custom:{user_uuid}-mobile)'})
-            assert_that(result, contains(has_entries(
-                Response='Success',
-                Value='UNAVAILABLE',
-            )))
+            result = self.amid.action(
+                'Getvar', {'Variable': f'DEVICE_STATE(Custom:{user_uuid}-mobile)'}
+            )
+            assert_that(
+                result,
+                contains(
+                    has_entries(
+                        Response='Success',
+                        Value='UNAVAILABLE',
+                    )
+                ),
+            )
 
         until.assert_(user_hint_updated, timeout=10)

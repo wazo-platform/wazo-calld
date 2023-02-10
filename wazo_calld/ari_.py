@@ -1,4 +1,4 @@
-# Copyright 2015-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import errno
@@ -77,7 +77,6 @@ def asterisk_is_loading(error):
 
 
 class ARIClientProxy(ari.client.Client):
-
     def __init__(self, base_url, username, password):
         self._base_url = base_url
         self._username = username
@@ -127,7 +126,6 @@ class ARIClientProxy(ari.client.Client):
 
 
 class CoreARI:
-
     def __init__(self, config, bus_consumer):
         self._apps = []
         self.config = config
@@ -168,7 +166,9 @@ class CoreARI:
                 break
 
             connection_delay = self.config['startup_connection_delay']
-            logger.warning('ARI not initialized, retrying in %s seconds...', connection_delay)
+            logger.warning(
+                'ARI not initialized, retrying in %s seconds...', connection_delay
+            )
             time.sleep(connection_delay)
         self._should_delay_reconnect = False
 
@@ -223,11 +223,7 @@ class CoreARI:
         return self._is_running
 
     def provide_status(self, status):
-        expected_apps = [
-            'adhoc_conference',
-            'callcontrol',
-            'dial_mobile'
-        ]
+        expected_apps = ['adhoc_conference', 'callcontrol', 'dial_mobile']
         ok = self.client._initialized and set(expected_apps).issubset(set(self._apps))
         status['ari']['status'] = Status.ok if ok else Status.fail
 

@@ -1,4 +1,4 @@
-# Copyright 2018-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -29,7 +29,6 @@ logger = logging.getLogger(__name__)
 
 
 class ConferencesService:
-
     def __init__(self, amid, ari, confd):
         self._amid = amid
         self._ari = ari
@@ -40,7 +39,9 @@ class ConferencesService:
             raise NoSuchConference(tenant_uuid, conference_id)
 
         try:
-            participant_list = self._amid.action('ConfBridgeList', {'conference': f'wazo-conference-{conference_id}'})
+            participant_list = self._amid.action(
+                'ConfBridgeList', {'conference': f'wazo-conference-{conference_id}'}
+            )
         except AmidProtocolError as e:
             no_conf_msg = [
                 'No active conferences.',  # No conferences are taking place at this time.
@@ -72,22 +73,25 @@ class ConferencesService:
                 'admin': participant_list_item['Admin'] == 'Yes',
                 'language': participant_list_item['Language'],
                 'call_id': participant_list_item['Uniqueid'],
-                'user_uuid': Channel(participant_list_item['Uniqueid'], self._ari).user(),
+                'user_uuid': Channel(
+                    participant_list_item['Uniqueid'], self._ari
+                ).user(),
             }
             try:
                 participant = participant_schema.load(raw_participant)
             except ValidationError as e:
-                raise ConferenceParticipantError(tenant_uuid,
-                                                 conference_id,
-                                                 participant_id=None,
-                                                 message=str(e))
+                raise ConferenceParticipantError(
+                    tenant_uuid, conference_id, participant_id=None, message=str(e)
+                )
             result.append(participant)
 
         return result
 
     def user_list_participants(self, tenant_uuid, user_uuid, conference_id):
         participants = self.list_participants(tenant_uuid, conference_id)
-        user_is_participant = any(participant['user_uuid'] == user_uuid for participant in participants)
+        user_is_participant = any(
+            participant['user_uuid'] == user_uuid for participant in participants
+        )
         if not user_is_participant:
             raise UserNotParticipant(tenant_uuid, user_uuid, conference_id)
         return participants
@@ -108,10 +112,15 @@ class ConferencesService:
         try:
             self._amid.action(
                 'ConfbridgeKick',
-                {'conference': f'wazo-conference-{conference_id}', 'channel': channel.json['name']},
+                {
+                    'conference': f'wazo-conference-{conference_id}',
+                    'channel': channel.json['name'],
+                },
             )
         except AmidProtocolError as e:
-            raise ConferenceParticipantError(tenant_uuid, conference_id, participant_id, e.message)
+            raise ConferenceParticipantError(
+                tenant_uuid, conference_id, participant_id, e.message
+            )
         except RequestException as e:
             raise WazoAmidError(self._amid, e)
 
@@ -131,10 +140,15 @@ class ConferencesService:
         try:
             self._amid.action(
                 'ConfbridgeMute',
-                {'conference': f'wazo-conference-{conference_id}', 'channel': channel.json['name']},
+                {
+                    'conference': f'wazo-conference-{conference_id}',
+                    'channel': channel.json['name'],
+                },
             )
         except AmidProtocolError as e:
-            raise ConferenceParticipantError(tenant_uuid, conference_id, participant_id, e.message)
+            raise ConferenceParticipantError(
+                tenant_uuid, conference_id, participant_id, e.message
+            )
         except RequestException as e:
             raise WazoAmidError(self._amid, e)
 
@@ -154,10 +168,15 @@ class ConferencesService:
         try:
             self._amid.action(
                 'ConfbridgeUnmute',
-                {'conference': f'wazo-conference-{conference_id}', 'channel': channel.json['name']},
+                {
+                    'conference': f'wazo-conference-{conference_id}',
+                    'channel': channel.json['name'],
+                },
             )
         except AmidProtocolError as e:
-            raise ConferenceParticipantError(tenant_uuid, conference_id, participant_id, e.message)
+            raise ConferenceParticipantError(
+                tenant_uuid, conference_id, participant_id, e.message
+            )
         except RequestException as e:
             raise WazoAmidError(self._amid, e)
 
@@ -186,7 +205,10 @@ class ConferencesService:
             raise NoSuchConference(tenant_uuid, conference_id)
 
         try:
-            self._amid.action('ConfbridgeStopRecord', {'conference': f'wazo-conference-{conference_id}'})
+            self._amid.action(
+                'ConfbridgeStopRecord',
+                {'conference': f'wazo-conference-{conference_id}'},
+            )
         except AmidProtocolError as e:
             if e.message == 'Internal error while stopping recording.':
                 raise ConferenceNotRecorded(tenant_uuid, conference_id)

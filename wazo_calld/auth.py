@@ -1,4 +1,4 @@
-# Copyright 2015-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -9,12 +9,17 @@ from xivo import auth_verifier
 from xivo.auth_verifier import required_tenant
 from werkzeug.local import LocalProxy as Proxy
 
-from wazo_calld.exceptions import TokenWithUserUUIDRequiredError, MasterTenantNotInitialized
+from wazo_calld.exceptions import (
+    TokenWithUserUUIDRequiredError,
+    MasterTenantNotInitialized,
+)
 from wazo_calld.http_server import app
 
 logger = logging.getLogger(__name__)
 required_acl = auth_verifier.required_acl
-extract_token_id_from_query_or_header = auth_verifier.extract_token_id_from_query_or_header
+extract_token_id_from_query_or_header = (
+    auth_verifier.extract_token_id_from_query_or_header
+)
 Unauthorized = auth_verifier.Unauthorized
 
 

@@ -1,4 +1,4 @@
-# Copyright 2016 by Avencall
+# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -7,7 +7,6 @@ logger = logging.getLogger(__name__)
 
 
 class StateFactory:
-
     def __init__(self, ari=None, stat_sender=None):
         self._state_constructors = {}
         self._ari = ari
@@ -31,7 +30,6 @@ state_factory = StateFactory()
 
 
 class CallState:
-
     name = None
 
     def __init__(self, ari, stat_sender):
@@ -49,13 +47,11 @@ class CallState:
 
     @classmethod
     def from_state(cls, other_state):
-        return cls(other_state._ari,
-                   other_state._stat_sender)
+        return cls(other_state._ari, other_state._stat_sender)
 
 
 @state_factory.state
 class CallStateRinging(CallState):
-
     name = 'ringing'
 
     def connect(self, call):
@@ -70,7 +66,11 @@ class CallStateRinging(CallState):
         return CallStateOnHook.from_state(self)
 
     def _bridge_connect_user(self, call):
-        logger.debug('connecting originator %s with callee %s', call.originator_channel.id, call.channel.id)
+        logger.debug(
+            'connecting originator %s with callee %s',
+            call.originator_channel.id,
+            call.channel.id,
+        )
         call.channel.answer()
         call.originator_channel.answer()
         bridge = self._ari.bridges.create(type='mixing')
@@ -80,7 +80,6 @@ class CallStateRinging(CallState):
 
 @state_factory.state
 class CallStateTalking(CallState):
-
     name = 'talking'
 
     def hangup(self, call):
@@ -91,7 +90,6 @@ class CallStateTalking(CallState):
 
 @state_factory.state
 class CallStateOnHook(CallState):
-
     name = 'on_hook'
 
     def ring(self, call):

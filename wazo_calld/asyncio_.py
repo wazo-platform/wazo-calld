@@ -1,4 +1,4 @@
-# Copyright 2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2021-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import asyncio
@@ -8,7 +8,6 @@ logger = logging.getLogger(__name__)
 
 
 class CoreAsyncio:
-
     def __init__(self):
         self._loop = asyncio.new_event_loop()
 
@@ -17,7 +16,6 @@ class CoreAsyncio:
         self._loop.run_forever()
 
     def call_later(self, delay, callback, *args):
-
         # This function will run within the asyncio thread
         def delay_wrapper():
             self._loop.call_later(delay, callback, *args)

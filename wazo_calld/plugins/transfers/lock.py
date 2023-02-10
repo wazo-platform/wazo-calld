@@ -26,7 +26,9 @@ class HangupLock:
         if not self._target_id:
             return False
         try:
-            source_candidate_id = ari_helpers.get_bridge_variable(self._ari, self._target_id, 'XIVO_HANGUP_LOCK_SOURCE')
+            source_candidate_id = ari_helpers.get_bridge_variable(
+                self._ari, self._target_id, 'XIVO_HANGUP_LOCK_SOURCE'
+            )
         except ARINotFound:
             return False
         return source_candidate_id == self._source_id
@@ -46,7 +48,9 @@ class HangupLock:
     @classmethod
     def from_target(cls, ari, target_id):
         try:
-            source_id = ari_helpers.get_bridge_variable(ari, target_id, 'XIVO_HANGUP_LOCK_SOURCE')
+            source_id = ari_helpers.get_bridge_variable(
+                ari, target_id, 'XIVO_HANGUP_LOCK_SOURCE'
+            )
         except ARINotFound:
             raise InvalidLock()
         return cls(ari, source_id, target_id)
@@ -84,6 +88,8 @@ class HangupLock:
 
     def _clear(self):
         try:
-            ari_helpers.set_bridge_variable(self._ari, self._target_id, 'XIVO_HANGUP_LOCK_SOURCE', '')
+            ari_helpers.set_bridge_variable(
+                self._ari, self._target_id, 'XIVO_HANGUP_LOCK_SOURCE', ''
+            )
         except ARINotFound:
             pass

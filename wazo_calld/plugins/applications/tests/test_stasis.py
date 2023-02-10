@@ -1,4 +1,4 @@
-# Copyright 2019-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from unittest import TestCase
@@ -19,7 +19,6 @@ from ..stasis import ApplicationStasis
 
 
 class TestApplicationStasisStartHandler(TestCase):
-
     def setUp(self):
         self.ari = Mock()
         self.service = Mock()
@@ -82,10 +81,7 @@ class TestApplicationStasisStartHandler(TestCase):
 
     def test_stasis_start_originate_no_node(self):
         uuid = 'e3f9b7ef-3fa7-4240-88f1-e6f5c0945b9b'
-        event = {
-            'application': 'wazo-app-{}'.format(uuid),
-            'args': ['originate']
-        }
+        event = {'application': 'wazo-app-{}'.format(uuid), 'args': ['originate']}
 
         with patch.object(self.app, '_stasis_start_originate') as fn:
             self.app.stasis_start(s.event_object, event)

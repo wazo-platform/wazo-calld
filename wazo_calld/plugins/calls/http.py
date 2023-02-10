@@ -1,4 +1,4 @@
-# Copyright 2015-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from flask import request
@@ -19,7 +19,6 @@ user_call_request_schema = UserCallRequestSchema()
 
 
 class CallsResource(AuthResource):
-
     def __init__(self, calls_service):
         self.calls_service = calls_service
 
@@ -28,7 +27,9 @@ class CallsResource(AuthResource):
         application_filter = request.args.get('application')
         application_instance_filter = request.args.get('application_instance')
 
-        calls = self.calls_service.list_calls(application_filter, application_instance_filter)
+        calls = self.calls_service.list_calls(
+            application_filter, application_instance_filter
+        )
 
         return {
             'items': call_schema.dump(calls, many=True),
@@ -44,7 +45,6 @@ class CallsResource(AuthResource):
 
 
 class MyCallsResource(AuthResource):
-
     def __init__(self, calls_service):
         self.calls_service = calls_service
 
@@ -54,7 +54,9 @@ class MyCallsResource(AuthResource):
         application_instance_filter = request.args.get('application_instance')
         user_uuid = get_token_user_uuid_from_request()
 
-        calls = self.calls_service.list_calls_user(user_uuid, application_filter, application_instance_filter)
+        calls = self.calls_service.list_calls_user(
+            user_uuid, application_filter, application_instance_filter
+        )
 
         return {
             'items': call_schema.dump(calls, many=True),
@@ -72,7 +74,6 @@ class MyCallsResource(AuthResource):
 
 
 class CallResource(AuthResource):
-
     def __init__(self, calls_service):
         self.calls_service = calls_service
 
@@ -90,7 +91,6 @@ class CallResource(AuthResource):
 
 
 class CallMuteStartResource(AuthResource):
-
     def __init__(self, calls_service):
         self.calls_service = calls_service
 
@@ -101,7 +101,6 @@ class CallMuteStartResource(AuthResource):
 
 
 class CallMuteStopResource(AuthResource):
-
     def __init__(self, calls_service):
         self.calls_service = calls_service
 
@@ -112,7 +111,6 @@ class CallMuteStopResource(AuthResource):
 
 
 class MyCallMuteStartResource(AuthResource):
-
     def __init__(self, calls_service):
         self.calls_service = calls_service
 
@@ -124,7 +122,6 @@ class MyCallMuteStartResource(AuthResource):
 
 
 class MyCallMuteStopResource(AuthResource):
-
     def __init__(self, calls_service):
         self.calls_service = calls_service
 
@@ -136,7 +133,6 @@ class MyCallMuteStopResource(AuthResource):
 
 
 class MyCallResource(AuthResource):
-
     def __init__(self, calls_service):
         self.calls_service = calls_service
 
@@ -149,7 +145,6 @@ class MyCallResource(AuthResource):
 
 
 class CallDtmfResource(AuthResource):
-
     def __init__(self, calls_service):
         self.calls_service = calls_service
 
@@ -161,7 +156,6 @@ class CallDtmfResource(AuthResource):
 
 
 class MyCallDtmfResource(AuthResource):
-
     def __init__(self, calls_service):
         self.calls_service = calls_service
 
@@ -174,7 +168,6 @@ class MyCallDtmfResource(AuthResource):
 
 
 class CallHoldResource(AuthResource):
-
     def __init__(self, calls_service):
         self.calls_service = calls_service
 
@@ -185,7 +178,6 @@ class CallHoldResource(AuthResource):
 
 
 class CallUnholdResource(AuthResource):
-
     def __init__(self, calls_service):
         self.calls_service = calls_service
 
@@ -196,7 +188,6 @@ class CallUnholdResource(AuthResource):
 
 
 class MyCallHoldResource(AuthResource):
-
     def __init__(self, calls_service):
         self.calls_service = calls_service
 
@@ -208,7 +199,6 @@ class MyCallHoldResource(AuthResource):
 
 
 class MyCallUnholdResource(AuthResource):
-
     def __init__(self, calls_service):
         self.calls_service = calls_service
 
@@ -220,7 +210,6 @@ class MyCallUnholdResource(AuthResource):
 
 
 class CallRecordStartResource(AuthResource):
-
     def __init__(self, calls_service):
         self.calls_service = calls_service
 
@@ -231,7 +220,6 @@ class CallRecordStartResource(AuthResource):
 
 
 class CallRecordStopResource(AuthResource):
-
     def __init__(self, calls_service):
         self.calls_service = calls_service
 
@@ -242,7 +230,6 @@ class CallRecordStopResource(AuthResource):
 
 
 class MyCallRecordStopResource(AuthResource):
-
     def __init__(self, calls_service):
         self.calls_service = calls_service
 
@@ -254,7 +241,6 @@ class MyCallRecordStopResource(AuthResource):
 
 
 class MyCallRecordStartResource(AuthResource):
-
     def __init__(self, calls_service):
         self.calls_service = calls_service
 
@@ -266,7 +252,6 @@ class MyCallRecordStartResource(AuthResource):
 
 
 class CallAnswerResource(AuthResource):
-
     def __init__(self, calls_service):
         self.calls_service = calls_service
 
@@ -277,7 +262,6 @@ class CallAnswerResource(AuthResource):
 
 
 class MyCallAnswerResource(AuthResource):
-
     def __init__(self, calls_service):
         self.calls_service = calls_service
 
@@ -289,7 +273,6 @@ class MyCallAnswerResource(AuthResource):
 
 
 class ConnectCallToUserResource(AuthResource):
-
     def __init__(self, calls_service):
         self.calls_service = calls_service
 

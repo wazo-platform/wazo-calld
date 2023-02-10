@@ -1,4 +1,4 @@
-# Copyright 2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2022-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from unittest import TestCase
@@ -9,7 +9,6 @@ from ..services import DialMobileService
 
 
 class TestEventHandler(TestCase):
-
     def setUp(self):
         self.service = Mock(DialMobileService)
         self.event_handler = EventHandler(self.service)
@@ -53,8 +52,8 @@ class TestEventHandler(TestCase):
                 'WAZO_TENANT_UUID': '2c34c282-433e-4bb8-8d56-fec14ff7e1e9',
                 'XIVO_BASE_EXTEN': '1101',
                 'XIVO_ON_HOLD': '',
-                'XIVO_USERUUID': 'def42192-837a-41e0-aa4e-86390e46eb17'
-            }
+                'XIVO_USERUUID': 'def42192-837a-41e0-aa4e-86390e46eb17',
+            },
         }
 
         self.event_handler._on_user_event(event)
@@ -91,7 +90,7 @@ class TestEventHandler(TestCase):
                 'WAZO_TENANT_UUID': '2c34c282-433e-4bb8-8d56-fec14ff7e1e9',
                 'XIVO_BASE_EXTEN': '1101',
                 'XIVO_ON_HOLD': '',
-                'XIVO_USERUUID': 'def42192-837a-41e0-aa4e-86390e46eb17'
+                'XIVO_USERUUID': 'def42192-837a-41e0-aa4e-86390e46eb17',
             },
             'Channel': 'PJSIP/zcua59c9-0000001b',
             'ChannelState': '4',
@@ -150,7 +149,7 @@ class TestEventHandler(TestCase):
                 'WAZO_TENANT_UUID': '2c34c282-433e-4bb8-8d56-fec14ff7e1e9',
                 'XIVO_BASE_EXTEN': '1101',
                 'XIVO_ON_HOLD': '',
-                'XIVO_USERUUID': 'def42192-837a-41e0-aa4e-86390e46eb17'
+                'XIVO_USERUUID': 'def42192-837a-41e0-aa4e-86390e46eb17',
             },
             'Channel': 'PJSIP/zcua59c9-0000001b',
             'ChannelState': '4',
@@ -263,7 +262,9 @@ class TestEventHandler(TestCase):
         self.service.remove_pending_push_mobile.assert_called_once_with(s.linkedid)
 
     def test_on_bridge_enter_caller_hung_up(self):
-        self.service.has_a_registered_mobile_and_pending_push.side_effect = ARINotFound(Mock, Mock)
+        self.service.has_a_registered_mobile_and_pending_push.side_effect = ARINotFound(
+            Mock, Mock
+        )
 
         event = {
             'Event': 'BridgeEnter',

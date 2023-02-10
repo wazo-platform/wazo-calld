@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2020-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -35,12 +35,14 @@ def log_request():
     if request.path.startswith('/_'):
         return
 
-    log = {'method': request.method,
-           'path': request.path,
-           'query': request.args.items(multi=True),
-           'body': request.data,
-           'json': request.json,
-           'headers': dict(request.headers)}
+    log = {
+        'method': request.method,
+        'path': request.path,
+        'query': request.args.items(multi=True),
+        'body': request.data,
+        'json': request.json,
+        'headers': dict(request.headers),
+    }
     _requests.append(log)
 
 

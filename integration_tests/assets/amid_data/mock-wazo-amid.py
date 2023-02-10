@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2016-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -36,12 +36,14 @@ def log_request():
     if request.path.startswith('/_'):
         return
 
-    log = {'method': request.method,
-           'path': request.path,
-           'query': request.args.items(multi=True),
-           'body': request.data,
-           'json': request.json,
-           'headers': dict(request.headers)}
+    log = {
+        'method': request.method,
+        'path': request.path,
+        'query': request.args.items(multi=True),
+        'body': request.data,
+        'json': request.json,
+        'headers': dict(request.headers),
+    }
     _requests.append(log)
 
 
@@ -84,12 +86,16 @@ def show_dialplan():
     requested_context = body['Context']
     requested_exten = body['Extension']
 
-    result = [{'Event': 'ListDialplan',
-               'Context': context,
-               'Exten': exten,
-               'Priority': str(priority)}
-              for (context, exten, priority) in valid_extens
-              if context == requested_context and exten == requested_exten]
+    result = [
+        {
+            'Event': 'ListDialplan',
+            'Context': context,
+            'Exten': exten,
+            'Priority': str(priority),
+        }
+        for (context, exten, priority) in valid_extens
+        if context == requested_context and exten == requested_exten
+    ]
 
     return json.dumps(result), 200
 

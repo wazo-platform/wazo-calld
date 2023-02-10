@@ -1,4 +1,4 @@
-# Copyright 2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -27,7 +27,7 @@ class DialEchoManager:
     A cleaner way to solve the original problem (knowing the non-Local channel
     id of a Local originate), would be to be able to set it. A simple way to do
     that would be to patch the Dial application and add an option to set the
-    Uniqueid of the new Dial'ed channel. '''
+    Uniqueid of the new Dial'ed channel.'''
 
     def __init__(self):
         self._queues = {}
@@ -41,7 +41,10 @@ class DialEchoManager:
     def wait(self, dial_echo_request_id, timeout):
         queue = self._queues.get(dial_echo_request_id)
         if not queue:
-            logger.debug('Dial echo: ignoring dial echo wait from unknown request %s', dial_echo_request_id)
+            logger.debug(
+                'Dial echo: ignoring dial echo wait from unknown request %s',
+                dial_echo_request_id,
+            )
             return
 
         logger.debug('Waiting for dial echo request %s', dial_echo_request_id)
@@ -50,14 +53,20 @@ class DialEchoManager:
         except EmptyQueue:
             self._queues.pop(dial_echo_request_id, None)
             raise DialEchoTimeout()
-        logger.debug('Got result from dial echo request %s: %s', dial_echo_request_id, result)
+        logger.debug(
+            'Got result from dial echo request %s: %s', dial_echo_request_id, result
+        )
 
         try:
             channel_id = result['channel_id']
         except KeyError:
             self._queues.pop(dial_echo_request_id, None)
             raise DialEchoFailure(result)
-        logger.debug('Got channel ID from dial echo request %s: %s', dial_echo_request_id, channel_id)
+        logger.debug(
+            'Got channel ID from dial echo request %s: %s',
+            dial_echo_request_id,
+            channel_id,
+        )
 
         self._queues.pop(dial_echo_request_id, None)
 
@@ -66,6 +75,9 @@ class DialEchoManager:
     def set_dial_echo_result(self, dial_echo_request_id, result):
         queue = self._queues.get(dial_echo_request_id)
         if not queue:
-            logger.debug('Dial echo: ignoring dial_echo result from unknown request %s', dial_echo_request_id)
+            logger.debug(
+                'Dial echo: ignoring dial_echo result from unknown request %s',
+                dial_echo_request_id,
+            )
             return
         queue.put(result)
