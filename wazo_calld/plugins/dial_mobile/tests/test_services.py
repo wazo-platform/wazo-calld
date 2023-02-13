@@ -30,12 +30,14 @@ class DialerTestCase(TestCase):
         self.future_bridge_uuid = '6e2b692a-ff56-4121-932d-d208dd5c3362'
         self.aor = 'foobar'
         self.channel_id = '1234567890.42'
+        self.ringing_time = 42
 
         self.poller = PollingContactDialer(
             self.ari,
             self.future_bridge_uuid,
             self.channel_id,
             self.aor,
+            self.ringing_time,
         )
 
 
@@ -76,6 +78,7 @@ class TestSendContactToCurrentCall(DialerTestCase):
             appArgs=['join', self.future_bridge_uuid],
             callerId=s.caller_id,
             originator=self.channel_id,
+            timeout=self.ringing_time,
         )
 
 
@@ -188,9 +191,12 @@ class DialMobileServiceTestCase(DialerTestCase):
         )
         self.channel_id = '1234567890.42'
         self.aor = 'foobar'
+        self.origin_channel_id = '1234567890.84'
 
     def test_that_caller_channel_rings(self):
-        self.service.dial_all_contacts(self.channel_id, self.aor)
+        self.service.dial_all_contacts(
+            self.channel_id, self.origin_channel_id, self.aor
+        )
 
         self.ari.client.channels.ring.assert_called_once_with(channelId=self.channel_id)
 
@@ -268,6 +274,8 @@ class TestCancelPushNotification(TestCase):
             s.cid_name,
             s.cid_num,
             s.video_enabled,
+            s.ring_timeout,
+            s.origin_call_id,
         )
 
         payload = self.notifier.push_notification.call_args_list[0][0][0]

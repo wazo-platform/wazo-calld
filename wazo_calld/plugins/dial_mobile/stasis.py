@@ -25,11 +25,13 @@ class DialMobileStasis:
 
         action = args[0]
         channel_id = event['channel']['id']
-        logger.debug('action: %s channel_id: %s', action, channel_id)
+        logger.debug('AFDEBUG: Stasis event: %s', event)
+        logger.debug('AFDEBUG: action: %s channel_id: %s', action, channel_id)
+        origin_channel_id = event['channel']['channelvars']['CHANNEL(linkedid)']
 
         if action == 'dial':
             aor = args[1]
-            self._service.dial_all_contacts(channel_id, aor)
+            self._service.dial_all_contacts(channel_id, origin_channel_id, aor)
         elif action == 'join':
             future_bridge_uuid = args[1]
             self._service.join_bridge(channel_id, future_bridge_uuid)

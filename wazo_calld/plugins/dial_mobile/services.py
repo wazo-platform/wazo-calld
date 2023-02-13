@@ -25,7 +25,7 @@ class _NoSuchChannel(Exception):
 
 
 class _PollingContactDialer:
-    def __init__(self, ari, future_bridge_uuid, channel_id, aor):
+    def __init__(self, ari, future_bridge_uuid, channel_id, aor, ringing_time):
         self._ari = ari
         self.future_bridge_uuid = future_bridge_uuid
         self.should_stop = threading.Event()
@@ -38,6 +38,7 @@ class _PollingContactDialer:
         self.is_running = False
         self._dialed_channels = set()
         self._caller_channel_id = channel_id
+        self._ringing_time = ringing_time
 
     def start(self):
         self._thread.start()
@@ -103,6 +104,7 @@ class _PollingContactDialer:
             appArgs=['join', future_bridge_uuid],
             callerId=caller_id,
             originator=self._caller_channel_id,
+            timeout=self._ringing_time,
         )
 
         self._called_contacts.add(contact)
@@ -151,10 +153,11 @@ class DialMobileService:
         self._amid_client = amid_client
         self._contact_dialers = {}
         self._outgoing_calls = {}
+        self._call_ring_time = {}
         self._pending_push_mobile = {}
         self._notifier = notifier
 
-    def dial_all_contacts(self, caller_channel_id, aor):
+    def dial_all_contacts(self, caller_channel_id, origin_channel_id, aor):
         self._ari.channels.ring(channelId=caller_channel_id)
 
         logger.info('dial_all_contacts(%s, %s)', caller_channel_id, aor)
@@ -165,8 +168,9 @@ class DialMobileService:
             caller_channel_id,
             future_bridge_uuid,
         )
+        ringing_time = self._call_ring_time.get(origin_channel_id, 30)
         dialer = _PollingContactDialer(
-            self._ari, future_bridge_uuid, caller_channel_id, aor
+            self._ari, future_bridge_uuid, caller_channel_id, aor, ringing_time
         )
         self._contact_dialers[future_bridge_uuid] = dialer
         self._outgoing_calls[future_bridge_uuid] = caller_channel_id
@@ -273,12 +277,15 @@ class DialMobileService:
         caller_id_name,
         caller_id_number,
         video_enabled,
+        ring_timeout,
+        origin_call_id,
     ):
         payload = {
             'peer_caller_id_number': caller_id_number,
             'peer_caller_id_name': caller_id_name,
             'call_id': call_id,
             'video': video_enabled,
+            'ring_timeout': ring_timeout,
             'sip_call_id': sip_call_id,
         }
 
@@ -288,6 +295,8 @@ class DialMobileService:
             user_uuid,
             payload,
         )
+
+        self._call_ring_time[origin_call_id] = ring_timeout
 
         self._notifier.push_notification(payload, tenant_uuid, user_uuid)
 

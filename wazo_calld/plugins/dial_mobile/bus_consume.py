@@ -30,6 +30,7 @@ class EventHandler:
 
         user_uuid = event['WAZO_DST_UUID']
         video_enabled = event['WAZO_VIDEO_ENABLED'] == '1'
+        ring_timeout = event.get('WAZO_RING_TIME', 30)
         tenant_uuid = event.get('ChanVariable', {}).get('WAZO_TENANT_UUID')
 
         logger.info(
@@ -47,6 +48,8 @@ class EventHandler:
             event["CallerIDName"],
             event["CallerIDNum"],
             video_enabled,
+            ring_timeout,
+            event["Linkedid"],
         )
 
     def _on_refresh_token_created(self, event):
