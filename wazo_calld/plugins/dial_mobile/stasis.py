@@ -25,8 +25,6 @@ class DialMobileStasis:
 
         action = args[0]
         channel_id = event['channel']['id']
-        logger.debug('AFDEBUG: Stasis event: %s', event)
-        logger.debug('AFDEBUG: action: %s channel_id: %s', action, channel_id)
         origin_channel_id = event['channel']['channelvars']['CHANNEL(linkedid)']
 
         if action == 'dial':
