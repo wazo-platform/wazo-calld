@@ -30,7 +30,7 @@ class EventHandler:
 
         user_uuid = event['WAZO_DST_UUID']
         video_enabled = event['WAZO_VIDEO_ENABLED'] == '1'
-        ring_timeout = event.get('WAZO_RING_TIME', 30)
+        ring_timeout = event['WAZO_RING_TIME']
         tenant_uuid = event.get('ChanVariable', {}).get('WAZO_TENANT_UUID')
 
         logger.info(
