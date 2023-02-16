@@ -58,11 +58,16 @@ class TestStasisStart(TestCase):
             {
                 'application': DialMobileStasis._app_name,
                 'args': ['dial', s.aor],
-                'channel': {'id': s.channel_id},
+                'channel': {
+                    'id': s.channel_id,
+                    'channelvars': {'CHANNEL(linkedid)': s.linkedid},
+                },
             },
         )
 
-        self.service.dial_all_contacts.assert_called_once_with(s.channel_id, s.aor)
+        self.service.dial_all_contacts.assert_called_once_with(
+            s.channel_id, s.linkedid, s.aor
+        )
         self.service.join_bridge.assert_not_called()
 
     def test_calling_join(self):
@@ -71,7 +76,10 @@ class TestStasisStart(TestCase):
             {
                 'application': DialMobileStasis._app_name,
                 'args': ['join', s.bridge_uuid],
-                'channel': {'id': s.channel_id},
+                'channel': {
+                    'id': s.channel_id,
+                    'channelvars': {'CHANNEL(linkedid)': s.linkedid},
+                },
             },
         )
 
