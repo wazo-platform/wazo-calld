@@ -47,9 +47,9 @@ def log_request():
         log = {
             'method': request.method,
             'path': path,
-            'query': request.args.items(multi=True),
-            'body': request.data,
-            'json': request.json,
+            'query': list(request.args.items(multi=True)),
+            'body': request.data.decode('utf-8'),
+            'json': request.json if request.is_json else None,
             'headers': dict(request.headers),
         }
         _requests.append(log)
@@ -116,7 +116,7 @@ def get_application(application_name):
 
 @app.route('/ari/channels', methods=['GET'])
 def get_channels():
-    result = [channel for channel in _responses['channels'].itervalues()]
+    result = [channel for channel in _responses['channels'].values()]
     return make_response(json.dumps(result), 200, {'Content-Type': 'application/json'})
 
 
@@ -147,7 +147,7 @@ def answer(channel_id):
 
 @app.route('/ari/bridges')
 def list_bridges():
-    result = [bridge for bridge in _responses['bridges'].itervalues()]
+    result = [bridge for bridge in _responses['bridges'].values()]
     return make_response(json.dumps(result), 200, {'Content-Type': 'application/json'})
 
 

@@ -39,9 +39,9 @@ def log_request():
     log = {
         'method': request.method,
         'path': request.path,
-        'query': request.args.items(multi=True),
-        'body': request.data,
-        'json': request.json,
+        'query': list(request.args.items(multi=True)),
+        'body': request.data.decode('utf-8'),
+        'json': request.json if request.is_json else None,
         'headers': dict(request.headers),
     }
     _requests.append(log)
