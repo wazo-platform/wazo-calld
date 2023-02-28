@@ -12,4 +12,4 @@ services:
       TARGETS: "amid:9491 ari:5039 rabbitmq:5672 confd:9486 auth:9497 calld:9500"
 
   ari:
-    command: "python /usr/local/share/ari/mock_ari_fail.py 5039"
+    command: "python3 /usr/local/share/ari/mock_ari_fail.py 5039"
