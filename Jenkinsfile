@@ -12,18 +12,20 @@ pipeline {
     stage('Debian build and deploy') {
       steps {
         build job: 'build-package-no-arch', parameters: [
-          string(name: 'PACKAGE', value: "${JOB_NAME}"),
+          string(name: 'PACKAGE', value: "wazo-calld"),
+          string(name: "BRANCH", value: "bullseye"),
+          string(name: "DISTRIBUTION", value: "wazo-dev-wip-bullseye"),
         ]
       }
     }
     stage('Docker build') {
       steps {
-        sh "docker build --no-cache -t wazoplatform/${JOB_NAME}:latest ."
+        sh "docker build --no-cache -t wazoplatform/${JOB_NAME}:bullseye ."
       }
     }
     stage('Docker publish') {
       steps {
-        sh "docker push wazoplatform/${JOB_NAME}:latest"
+        sh "docker push wazoplatform/${JOB_NAME}:bullseye"
       }
     }
   }
