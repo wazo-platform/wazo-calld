@@ -24,12 +24,14 @@ from .helpers.constants import (
 from .helpers.calld import new_call_id
 from .helpers.confd import MockLine, MockUser
 from .helpers.hamcrest_ import a_timestamp
+from .helpers.wait_strategy import CalldConnectionsOkWaitStrategy
 
 STASIS_APP = 'callcontrol'
 
 
 class TestDialedFrom(IntegrationTest):
     asset = 'basic_rest'
+    wait_strategy = CalldConnectionsOkWaitStrategy()
 
     def setUp(self):
         super().setUp()
