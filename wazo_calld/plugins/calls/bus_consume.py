@@ -11,6 +11,7 @@ from wazo_calld.plugin_helpers import ami
 from wazo_calld.plugin_helpers.ari_ import Channel, set_channel_id_var_sync
 from wazo_calld.plugin_helpers.exceptions import WazoAmidError
 from .call import Call
+from .exceptions import NoSuchCall
 
 logger = logging.getLogger(__name__)
 
@@ -124,7 +125,11 @@ class CallsBusEventHandler:
             return
 
         logger.debug('Relaying to bus: channel %s answered', channel_id)
-        self.services.set_answered_time(channel_id)
+        try:
+            self.services.set_answered_time(channel_id)
+        except NoSuchCall:
+            return
+
         try:
             channel = self.ari.channels.get(channelId=channel_id)
         except ARINotFound:
