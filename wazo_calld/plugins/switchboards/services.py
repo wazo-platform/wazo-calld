@@ -42,7 +42,6 @@ class SwitchboardsService:
         self._notifier = notifier
         self.duplicate_queued_call_answer_lock = threading.Lock()
 
-
     def queued_calls(self, tenant_uuid, switchboard_uuid):
         logger.debug(
             'Listing_queued calls in tenant %s for switchboard %s',
@@ -173,7 +172,9 @@ class SwitchboardsService:
             line_id,
         )
         with self.duplicate_queued_call_answer_lock:
-            if not SwitchboardARI(switchboard_uuid, self._ari).has_queued_call(queued_call_id):
+            if not SwitchboardARI(switchboard_uuid, self._ari).has_queued_call(
+                queued_call_id
+            ):
                 logger.debug(
                     'Switchboard %s: call %s is not queued',
                     switchboard_uuid,
@@ -181,7 +182,9 @@ class SwitchboardsService:
                 )
                 raise NoSuchCall(queued_call_id)
 
-            if not SwitchboardConfd(tenant_uuid, switchboard_uuid, self._confd).exists():
+            if not SwitchboardConfd(
+                tenant_uuid, switchboard_uuid, self._confd
+            ).exists():
                 raise NoSuchSwitchboard(switchboard_uuid)
 
             try:

@@ -946,14 +946,17 @@ class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
 
         switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
-        self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]),MockUser(uuid=user_uuid2, line_ids=[line_id2]))
+        self.confd.set_users(
+            MockUser(uuid=user_uuid, line_ids=[line_id]),
+            MockUser(uuid=user_uuid2, line_ids=[line_id2]),
+        )
         self.confd.set_lines(
             MockLine(
                 id=line_id, name='switchboard-operator/autoanswer', protocol='test'
             ),
             MockLine(
                 id=line_id2, name='switchboard-operator/autoanswer2', protocol='test'
-            )
+            ),
         )
         bus_events = self.bus.accumulator(
             headers={
@@ -986,6 +989,7 @@ class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
         )
         # the call has already been taken by the first operator, so call not available
         assert_that(response.status_code, equal_to(404))
+
 
 class TestSwitchboardConfdCache(IntegrationTest):
     asset = 'basic_rest'
