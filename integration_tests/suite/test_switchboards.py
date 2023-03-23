@@ -487,7 +487,9 @@ class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
 
         with self.confd_stopped():
             result = self.calld.put_switchboard_queued_call_answer_result(
-                switchboard_uuid, queued_call_id, VALID_TOKEN,
+                switchboard_uuid,
+                queued_call_id,
+                VALID_TOKEN,
             )
 
         assert_that(result.status_code, equal_to(503))
