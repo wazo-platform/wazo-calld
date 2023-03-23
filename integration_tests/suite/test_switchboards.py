@@ -1361,9 +1361,9 @@ class TestSwitchboardHoldCall(TestSwitchboards):
                 'name': 'switchboard_queued_call_answered',
             }
         )
-        self.calld.switchboard_answer_queued_call(
+        answered_call_id = self.calld.switchboard_answer_queued_call(
             switchboard_uuid, queued_call_id, token
-        )
+        )['call_id']
         until.true(answered_bus_events.accumulate, tries=3)
 
         held_bus_events = self.bus.accumulator(
@@ -1372,17 +1372,17 @@ class TestSwitchboardHoldCall(TestSwitchboards):
                 'name': 'switchboard_held_calls_updated',
             }
         )
-        self.calld.switchboard_hold_call(switchboard_uuid, queued_call_id)
+        self.calld.switchboard_hold_call(switchboard_uuid, answered_call_id)
         until.true(held_bus_events.accumulate, tries=3)
 
         answered_bus_events = self.bus.accumulator(
             headers={
                 'switchboard_uuid': switchboard_uuid,
-                'name': 'switchboard_queued_call_answered',
+                'name': 'switchboard_held_call_answered',
             }
         )
-        self.calld.switchboard_answer_queued_call(
-            switchboard_uuid, queued_call_id, token
+        self.calld.switchboard_answer_held_call(
+            switchboard_uuid, answered_call_id, token
         )
         until.true(answered_bus_events.accumulate, tries=3)
 
@@ -1392,7 +1392,7 @@ class TestSwitchboardHoldCall(TestSwitchboards):
                 'name': 'switchboard_held_calls_updated',
             }
         )
-        self.calld.switchboard_hold_call(switchboard_uuid, queued_call_id)
+        self.calld.switchboard_hold_call(switchboard_uuid, answered_call_id)
         until.true(held_bus_events.accumulate, tries=3)
 
 
