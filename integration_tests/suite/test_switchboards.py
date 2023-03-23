@@ -28,7 +28,7 @@ from hamcrest import (
 from operator import attrgetter
 from wazo_test_helpers import until
 
-from .helpers.ari_ import MockChannel
+from .helpers.ari_ import MockChannel, MockBridge
 from .helpers.auth import MockUserToken
 from .helpers.base import IntegrationTest
 from .helpers.real_asterisk import RealAsteriskIntegrationTest
@@ -1028,6 +1028,11 @@ class TestSwitchboardConfdCache(IntegrationTest):
             creation_time='first-time',
             state='Up',
         )
+        switchboard_bridge = MockBridge(
+            id='switchboard-{switchboard_uuid}-queue',
+            channels=[queued_call._id],
+        )
+        self.ari.set_bridges(switchboard_bridge)
         self.ari.set_channels(queued_call)
         self.ari.set_originates(
             MockChannel(id=random_uuid(prefix='originate-')),
