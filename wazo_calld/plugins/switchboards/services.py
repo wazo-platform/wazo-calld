@@ -172,6 +172,11 @@ class SwitchboardsService:
             line_id,
         )
         with self.duplicate_queued_call_answer_lock:
+            if not SwitchboardConfd(
+                tenant_uuid, switchboard_uuid, self._confd
+            ).exists():
+                raise NoSuchSwitchboard(switchboard_uuid)
+
             if not SwitchboardARI(switchboard_uuid, self._ari).has_queued_call(
                 queued_call_id
             ):
@@ -181,11 +186,6 @@ class SwitchboardsService:
                     queued_call_id,
                 )
                 raise NoSuchCall(queued_call_id)
-
-            if not SwitchboardConfd(
-                tenant_uuid, switchboard_uuid, self._confd
-            ).exists():
-                raise NoSuchSwitchboard(switchboard_uuid)
 
             try:
                 queued_channel = self._ari.channels.get(channelId=queued_call_id)
