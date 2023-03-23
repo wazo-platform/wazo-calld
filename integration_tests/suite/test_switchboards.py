@@ -464,9 +464,30 @@ class TestSwitchboardCallsQueued(TestSwitchboards):
 
 class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
     def test_given_no_confd_when_answer_queued_call_then_503(self):
+        switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
+        self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
+        bus_events = self.bus.accumulator(
+            headers={
+                'switchboard_uuid': switchboard_uuid,
+                'name': 'switchboard_queued_calls_updated',
+            }
+        )
+        new_channel = self.ari.channels.originate(
+            endpoint=ENDPOINT_AUTOANSWER,
+            app=STASIS_APP,
+            appArgs=[
+                STASIS_APP_INSTANCE,
+                STASIS_APP_QUEUE,
+                VALID_TENANT,
+                switchboard_uuid,
+            ],
+        )
+        queued_call_id = new_channel.id
+        until.true(bus_events.accumulate, tries=3)
+
         with self.confd_stopped():
             result = self.calld.put_switchboard_queued_call_answer_result(
-                UUID_NOT_FOUND, CALL_ID_NOT_FOUND, token=VALID_TOKEN
+                switchboard_uuid, queued_call_id, VALID_TOKEN,
             )
 
         assert_that(result.status_code, equal_to(503))
