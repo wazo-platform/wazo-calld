@@ -4,7 +4,6 @@
 import random
 import unittest
 import uuid
-from time import sleep
 
 from ari.exceptions import (
     ARINotInStasis,
