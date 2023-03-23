@@ -1050,7 +1050,7 @@ class TestSwitchboardConfdCache(IntegrationTest):
             state='Up',
         )
         switchboard_bridge = MockBridge(
-            id='switchboard-{switchboard_uuid}-queue',
+            id=f'switchboard-{switchboard_uuid}-queue',
             channels=[queued_call._id],
         )
         self.ari.set_bridges(switchboard_bridge)
