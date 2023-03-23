@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
+import threading
 
 from ari.exceptions import ARINotFound
 
@@ -39,6 +40,8 @@ class SwitchboardsService:
         self._asyncio = asyncio
         self._confd = confd
         self._notifier = notifier
+        self.duplicate_queued_call_answer_lock = threading.Lock()
+
 
     def queued_calls(self, tenant_uuid, switchboard_uuid):
         logger.debug(
@@ -169,45 +172,60 @@ class SwitchboardsService:
             user_uuid,
             line_id,
         )
-        if not SwitchboardConfd(tenant_uuid, switchboard_uuid, self._confd).exists():
-            raise NoSuchSwitchboard(switchboard_uuid)
+        with self.duplicate_queued_call_answer_lock:
+            if not SwitchboardARI(switchboard_uuid, self._ari).has_queued_call(queued_call_id):
+                logger.debug(
+                    'Switchboard %s: call %s is not queued',
+                    switchboard_uuid,
+                    queued_call_id,
+                )
+                raise NoSuchCall(queued_call_id)
 
-        try:
-            queued_channel = self._ari.channels.get(channelId=queued_call_id)
-        except ARINotFound:
-            raise NoSuchCall(queued_call_id)
+            if not SwitchboardConfd(tenant_uuid, switchboard_uuid, self._confd).exists():
+                raise NoSuchSwitchboard(switchboard_uuid)
 
-        try:
-            user = User(user_uuid, self._confd, tenant_uuid=tenant_uuid)
-            if line_id:
-                line = user.line(line_id)
-            else:
-                line = user.main_line()
-            endpoint = line.interface_autoanswer()
-        except InvalidUserUUID as e:
-            raise NoSuchConfdUser(e.details['user_uuid'])
+            try:
+                queued_channel = self._ari.channels.get(channelId=queued_call_id)
+            except ARINotFound:
+                raise NoSuchCall(queued_call_id)
 
-        caller_id = assemble_caller_id(
-            queued_channel.json['caller']['name'],
-            queued_channel.json['caller']['number'],
-        ).encode('utf-8')
+            try:
+                user = User(user_uuid, self._confd, tenant_uuid=tenant_uuid)
+                if line_id:
+                    line = user.line(line_id)
+                else:
+                    line = user.main_line()
+                endpoint = line.interface_autoanswer()
+            except InvalidUserUUID as e:
+                raise NoSuchConfdUser(e.details['user_uuid'])
 
-        channel = self._ari.channels.originate(
-            endpoint=endpoint,
-            app=DEFAULT_APPLICATION_NAME,
-            appArgs=[
-                'switchboard',
-                'switchboard_answer',
-                tenant_uuid,
-                switchboard_uuid,
-                queued_call_id,
-            ],
-            callerId=caller_id,
-            originator=queued_call_id,
-            variables={'variables': AUTO_ANSWER_VARIABLES},
-        )
+            caller_id = assemble_caller_id(
+                queued_channel.json['caller']['name'],
+                queued_channel.json['caller']['number'],
+            ).encode('utf-8')
 
-        return channel.id
+            channel = self._ari.channels.originate(
+                endpoint=endpoint,
+                app=DEFAULT_APPLICATION_NAME,
+                appArgs=[
+                    'switchboard',
+                    'switchboard_answer',
+                    tenant_uuid,
+                    switchboard_uuid,
+                    queued_call_id,
+                ],
+                callerId=caller_id,
+                originator=queued_call_id,
+                variables={'variables': AUTO_ANSWER_VARIABLES},
+            )
+
+            try:
+                bridge = SwitchboardARI(switchboard_uuid, self._ari).get_bridge()
+                bridge.removeChannel(channel=queued_call_id)
+            except ARINotFound:
+                pass
+
+            return channel.id
 
     def hold_call(self, tenant_uuid, switchboard_uuid, call_id):
         logger.debug(

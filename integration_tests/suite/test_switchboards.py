@@ -4,6 +4,7 @@
 import random
 import unittest
 import uuid
+from time import sleep
 
 from ari.exceptions import (
     ARINotInStasis,
@@ -924,6 +925,67 @@ class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
 
         until.assert_(operator_is_hungup, tries=3)
 
+    def test_given_one_queued_call_and_two_operators_when_two_operators_answer_then_404(
+        self,
+    ):
+        # operator 1
+        token = random_uuid(prefix='my-token-')
+        user_uuid = random_uuid(prefix='my-user-uuid-')
+        line_id = random_id()
+        self.auth.set_token(
+            MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT)
+        )
+
+        # operator 2
+        token2 = random_uuid(prefix='my-token-')
+        user_uuid2 = random_uuid(prefix='my-user-uuid-')
+        line_id2 = random_id()
+        self.auth.set_token(
+            MockUserToken(token2, user_uuid=user_uuid2, tenant_uuid=VALID_TENANT)
+        )
+
+        switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
+        self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
+        self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]),MockUser(uuid=user_uuid2, line_ids=[line_id2]))
+        self.confd.set_lines(
+            MockLine(
+                id=line_id, name='switchboard-operator/autoanswer', protocol='test'
+            ),
+            MockLine(
+                id=line_id2, name='switchboard-operator/autoanswer2', protocol='test'
+            )
+        )
+        bus_events = self.bus.accumulator(
+            headers={
+                'switchboard_uuid': switchboard_uuid,
+                'name': 'switchboard_queued_calls_updated',
+            }
+        )
+        new_channel = self.ari.channels.originate(
+            endpoint=ENDPOINT_AUTOANSWER,
+            app=STASIS_APP,
+            appArgs=[
+                STASIS_APP_INSTANCE,
+                STASIS_APP_QUEUE,
+                VALID_TENANT,
+                switchboard_uuid,
+            ],
+        )
+        queued_call_id = new_channel.id
+        until.true(bus_events.accumulate, tries=3)
+
+        # operator 1 answers the call
+        response = self.calld.put_switchboard_queued_call_answer_result(
+            switchboard_uuid, queued_call_id, token, line_id
+        )
+        assert_that(response.status_code, equal_to(200))
+
+        # operator 2 answers the call
+        response = self.calld.put_switchboard_queued_call_answer_result(
+            switchboard_uuid, queued_call_id, token2, line_id2
+        )
+        # the call has already been taken by the first operator, so call not available
+        assert_that(response.status_code, equal_to(404))
 
 class TestSwitchboardConfdCache(IntegrationTest):
     asset = 'basic_rest'

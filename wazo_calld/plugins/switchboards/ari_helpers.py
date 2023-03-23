@@ -1,4 +1,4 @@
-# Copyright 2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2021-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from ari.exceptions import ARINotFound
@@ -10,11 +10,11 @@ class Switchboard:
     def __init__(self, switchboard_uuid, ari):
         self.uuid = switchboard_uuid
         self._ari = ari
+        self.bridge_id = BRIDGE_QUEUE_ID.format(uuid=self.uuid)
 
     def queued_call_ids(self):
-        bridge_id = BRIDGE_QUEUE_ID.format(uuid=self.uuid)
         try:
-            bridge = self._ari.bridges.get(bridgeId=bridge_id)
+            bridge = self._ari.bridges.get(bridgeId=self.bridge_id)
         except ARINotFound:
             return []
 
@@ -23,3 +23,6 @@ class Switchboard:
 
     def has_queued_call(self, call_id):
         return call_id in self.queued_call_ids()
+
+    def get_bridge(self):
+        return self._ari.bridges.get(bridgeId=self.bridge_id)
