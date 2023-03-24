@@ -10,11 +10,11 @@ class Switchboard:
     def __init__(self, switchboard_uuid, ari):
         self.uuid = switchboard_uuid
         self._ari = ari
-        self.bridge_id = BRIDGE_QUEUE_ID.format(uuid=self.uuid)
+        self.bridge_queue_id = BRIDGE_QUEUE_ID.format(uuid=self.uuid)
 
     def queued_call_ids(self):
         try:
-            bridge = self._ari.bridges.get(bridgeId=self.bridge_id)
+            bridge = self._ari.bridges.get(bridgeId=self.bridge_queue_id)
         except ARINotFound:
             return []
 
@@ -24,5 +24,5 @@ class Switchboard:
     def has_queued_call(self, call_id):
         return call_id in self.queued_call_ids()
 
-    def get_bridge(self):
-        return self._ari.bridges.get(bridgeId=self.bridge_id)
+    def get_bridge_queue(self):
+        return self._ari.bridges.get(bridgeId=self.bridge_queue_id)

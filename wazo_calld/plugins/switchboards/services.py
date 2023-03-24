@@ -223,7 +223,7 @@ class SwitchboardsService:
             )
 
             try:
-                bridge = SwitchboardARI(switchboard_uuid, self._ari).get_bridge()
+                bridge = SwitchboardARI(switchboard_uuid, self._ari).get_bridge_queue()
                 bridge.removeChannel(channel=queued_call_id)
             except ARINotFound:
                 pass
