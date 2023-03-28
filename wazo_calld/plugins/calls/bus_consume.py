@@ -27,6 +27,7 @@ class CallsBusEventHandler:
         xivo_uuid,
         dial_echo_manager,
         notifier,
+        channel_proxy,
     ):
         self.ami = ami
         self.ari = ari
@@ -36,6 +37,7 @@ class CallsBusEventHandler:
         self.xivo_uuid = xivo_uuid
         self.dial_echo_manager = dial_echo_manager
         self.notifier = notifier
+        self._channel_proxy = channel_proxy
 
     def subscribe(self, bus_consumer):
         bus_consumer.subscribe('Newchannel', self._add_sip_call_id)
@@ -62,7 +64,7 @@ class CallsBusEventHandler:
         if not event['Channel'].startswith('PJSIP/'):
             return
         channel_id = event['Uniqueid']
-        channel = Channel(channel_id, self.ari)
+        channel = Channel(channel_id, self.ari, self._channel_proxy)
         sip_call_id = channel.sip_call_id_unsafe()
         if not sip_call_id:
             return
@@ -89,7 +91,9 @@ class CallsBusEventHandler:
             logger.debug('channel %s not found', channel_id)
             return
 
-        call = self.services.make_call_from_channel(self.ari, channel)
+        call = self.services.make_call_from_channel(
+            self.ari, self._channel_proxy, channel
+        )
         if self._call_direction_unknown(call):
             call.direction = self.services.conversation_direction_from_channels(
                 self.ari, [channel.id]
@@ -113,7 +117,9 @@ class CallsBusEventHandler:
         except ARINotFound:
             logger.debug('channel %s not found', channel_id)
             return
-        call = self.services.make_call_from_channel(self.ari, channel)
+        call = self.services.make_call_from_channel(
+            self.ari, self._channel_proxy, channel
+        )
         self.notifier.call_updated(call)
 
     def _relay_channel_answered(self, event):
@@ -135,7 +141,9 @@ class CallsBusEventHandler:
         except ARINotFound:
             logger.debug('channel %s not found', channel_id)
             return
-        call = self.services.make_call_from_channel(self.ari, channel)
+        call = self.services.make_call_from_channel(
+            self.ari, self._channel_proxy, channel
+        )
         if self._call_direction_unknown(call):
             call.direction = self.services.conversation_direction_from_channels(
                 self.ari, [channel.id]
@@ -149,7 +157,7 @@ class CallsBusEventHandler:
         self.collectd.publish(ChannelEndedCollectdEvent())
 
     def _partial_call_from_channel_id(self, channel_id):
-        channel = Channel(channel_id, self.ari)
+        channel = Channel(channel_id, self.ari, self._channel_proxy)
         call = Call(channel.id)
         call.user_uuid = channel.user()
         call.tenant_uuid = channel.tenant_uuid()
@@ -261,7 +269,9 @@ class CallsBusEventHandler:
             self.ari, [channel.id for channel in participant_channels]
         )
         for channel in participant_channels:
-            call = self.services.make_call_from_channel(self.ari, channel)
+            call = self.services.make_call_from_channel(
+                self.ari, self._channel_proxy, channel
+            )
             if call.direction != call_direction:
                 self._set_conversation_direction_cache(channel.id, call_direction)
                 call.direction = call_direction
@@ -305,7 +315,9 @@ class CallsBusEventHandler:
             self.ari, [channel.id for channel in participant_channels]
         )
         for channel in participant_channels:
-            call = self.services.make_call_from_channel(self.ari, channel)
+            call = self.services.make_call_from_channel(
+                self.ari, self._channel_proxy, channel
+            )
             if call.direction != call_direction:
                 self._set_conversation_direction_cache(channel.id, call_direction)
                 call.direction = call_direction

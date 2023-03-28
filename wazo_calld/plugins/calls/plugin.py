@@ -45,6 +45,7 @@ class Plugin:
         collectd = dependencies['collectd']
         token_changed_subscribe = dependencies['token_changed_subscribe']
         config = dependencies['config']
+        channel_proxy = dependencies['channel_proxy']
 
         amid_client = AmidClient(**config['amid'])
         token_changed_subscribe(amid_client.set_token)
@@ -66,6 +67,7 @@ class Plugin:
             dial_echo_manager,
             phoned_client,
             notifier,
+            channel_proxy,
         )
 
         calls_stasis = CallsStasis(
@@ -76,6 +78,7 @@ class Plugin:
             notifier,
             config['uuid'],
             amid_client,
+            channel_proxy,
         )
 
         startup_callback_collector = CallbackCollector()
@@ -91,6 +94,7 @@ class Plugin:
             config['uuid'],
             dial_echo_manager,
             notifier,
+            channel_proxy,
         )
         calls_bus_event_handler.subscribe(bus_consumer)
 

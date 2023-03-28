@@ -221,7 +221,7 @@ class DialMobileService:
             del self._contact_dialers[key]
 
     def clean_bridge(self, bridge_id):
-        bridge_helper = Bridge(bridge_id, self._ari)
+        bridge_helper = Bridge(bridge_id, self._ari, self._channel_proxy)
         if bridge_helper.has_lone_channel():
             logger.debug(
                 'dial_mobile: bridge %s: only one participant left, hanging up',

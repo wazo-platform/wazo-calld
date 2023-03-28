@@ -71,18 +71,19 @@ class RelocateCompleter:
 
 
 class StateFactory:
-    def __init__(self, index, amid, ari):
+    def __init__(self, index, amid, ari, channel_proxy):
         self._index = index
-        self._state_args = [amid, ari]
+        self._state_args = [amid, ari, channel_proxy]
 
     def make(self, name):
         return self._index[name](*self._state_args)
 
 
 class RelocateState:
-    def __init__(self, amid, ari):
+    def __init__(self, amid, ari, channel_proxy):
         self._amid = amid
         self._ari = ari
+        self._channel_proxy = channel_proxy
 
 
 @state
@@ -128,7 +129,9 @@ class RelocateStateRecipientRing(RelocateState):
         relocate.events.publish('answered', relocate)
         if 'answer' in relocate.completions:
             completer = RelocateCompleter(self._amid, self._ari)
-            if Channel(relocate.relocated_channel, self._ari).is_in_stasis():
+            if Channel(
+                relocate.relocated_channel, self._ari, self._channel_proxy
+            ).is_in_stasis():
                 completer.bridge(relocate)
                 try:
                     self._ari.channels.hangup(channelId=relocate.initiator_channel)
@@ -171,7 +174,9 @@ class RelocateStateWaitingForCompletion(RelocateState):
     def complete(self, relocate):
         completer = RelocateCompleter(self._amid, self._ari)
 
-        if Channel(relocate.relocated_channel, self._ari).is_in_stasis():
+        if Channel(
+            relocate.relocated_channel, self._ari, self._channel_proxy
+        ).is_in_stasis():
             completer.bridge(relocate)
             try:
                 self._ari.channels.hangup(channelId=relocate.initiator_channel)

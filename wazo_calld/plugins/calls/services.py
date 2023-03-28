@@ -46,6 +46,7 @@ class CallsService:
         dial_echo_manager,
         phoned_client,
         notifier,
+        channel_proxy,
     ):
         self._ami = amid_client
         self._ari_config = ari_config
@@ -55,6 +56,7 @@ class CallsService:
         self._phoned_client = phoned_client
         self._notifier = notifier
         self._state_persistor = ReadOnlyStatePersistor(self._ari)
+        self._channel_proxy = channel_proxy
 
     def list_calls(self, application_filter=None, application_instance_filter=None):
         channels = self._ari.channels.list()
@@ -87,7 +89,10 @@ class CallsService:
                         app_instance_channels.append(channel)
                 channels = app_instance_channels
 
-        return [self.make_call_from_channel(self._ari, channel) for channel in channels]
+        return [
+            self.make_call_from_channel(self._ari, self._channel_proxy, channel)
+            for channel in channels
+        ]
 
     def list_calls_user(
         self, user_uuid, application_filter=None, application_instance_filter=None
@@ -97,7 +102,7 @@ class CallsService:
             call
             for call in calls
             if call.user_uuid == user_uuid
-            and not Channel(call.id_, self._ari).is_local()
+            and not Channel(call.id_, self._ari, self._channel_proxy).is_local()
         ]
 
     def originate(self, request):
@@ -221,7 +226,7 @@ class CallsService:
                 variables={'variables': variables},
             )
 
-        call = self.make_call_from_channel(self._ari, channel)
+        call = self.make_call_from_channel(self._ari, self._channel_proxy, channel)
         call.dialed_extension = request['destination']['extension']
         return call
 
@@ -257,7 +262,7 @@ class CallsService:
         except ARINotFound:
             raise NoSuchCall(channel_id)
 
-        return self.make_call_from_channel(self._ari, channel)
+        return self.make_call_from_channel(self._ari, self._channel_proxy, channel)
 
     def hangup(self, call_id):
         channel_id = call_id
@@ -279,7 +284,7 @@ class CallsService:
 
         # NOTE(fblackburn): asterisk should send back an event
         # instead of falsy pretend that channel is muted
-        call = self.make_call_from_channel(self._ari, channel)
+        call = self.make_call_from_channel(self._ari, self._channel_proxy, channel)
         self._notifier.call_updated(call)
 
     def unmute(self, call_id):
@@ -293,7 +298,7 @@ class CallsService:
 
         # NOTE(fblackburn): asterisk should send back an event
         # instead of falsy pretend that channel is unmuted
-        call = self.make_call_from_channel(self._ari, channel)
+        call = self.make_call_from_channel(self._ari, self._channel_proxy, channel)
         self._notifier.call_updated(call)
 
     def mute_user(self, call_id, user_uuid):
@@ -340,9 +345,9 @@ class CallsService:
         return new_channel.id
 
     @staticmethod
-    def make_call_from_channel(ari, channel):
+    def make_call_from_channel(ari, channel_proxy, channel):
         channel_variables = channel.json.get('channelvars', {})
-        channel_helper = Channel(channel.id, ari)
+        channel_helper = Channel(channel.id, ari, channel_proxy)
         call = Call(channel.id)
         call.conversation_id = channel_helper.conversation_id()
         call.creation_time = channel.json['creationtime']
@@ -391,10 +396,10 @@ class CallsService:
         return call
 
     @staticmethod
-    def channel_destroyed_event(ari, event):
+    def channel_destroyed_event(ari, channel_proxy, event):
         channel = event['channel']
         channel_id = channel.get('id')
-        channel_helper = Channel(channel_id, ari)
+        channel_helper = Channel(channel_id, ari, channel_proxy)
         channel_variables = event['channel']['channelvars']
         conversation_id = channel_variables.get('CHANNEL(linkedid)')
         connected = channel.get('connected')
@@ -664,7 +669,7 @@ class CallsService:
         ]
 
     def _verify_user(self, call_id, user_uuid):
-        channel = Channel(call_id, self._ari)
+        channel = Channel(call_id, self._ari, self._channel_proxy)
         if not channel.exists() or channel.is_local():
             raise NoSuchCall(call_id)
 

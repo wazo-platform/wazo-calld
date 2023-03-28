@@ -6,6 +6,8 @@ from unittest.mock import Mock
 
 from hamcrest import assert_that, calling, not_, raises
 
+from wazo_calld.helpers.channel_proxy import ChannelProxy
+
 from ..bus_consume import CallsBusEventHandler
 from ..exceptions import NoSuchCall
 
@@ -29,6 +31,7 @@ class TestCallsBusEventHandler(TestCase):
             xivo_uuid,
             dial_echo_manager,
             notifier,
+            ChannelProxy(ari),
         )
 
     def test_relay_channel_answered_channel_is_gone(self):

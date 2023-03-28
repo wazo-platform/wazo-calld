@@ -26,7 +26,15 @@ logger = logging.getLogger(__name__)
 
 class CallsStasis:
     def __init__(
-        self, ari, collectd, bus_publisher, services, notifier, xivo_uuid, amid_client
+        self,
+        ari,
+        collectd,
+        bus_publisher,
+        services,
+        notifier,
+        xivo_uuid,
+        amid_client,
+        channel_proxy,
     ):
         self.ari = ari.client
         self._core_ari = ari
@@ -40,6 +48,7 @@ class CallsStasis:
         self.state_persistor = StatePersistor(self.ari)
         self.xivo_uuid = xivo_uuid
         self.ami = amid_client
+        self._channel_proxy = channel_proxy
 
     def initialize(self):
         self._subscribe()
@@ -126,5 +135,7 @@ class CallsStasis:
             logger.debug('Ignoring local channel hangup: %s', channel_id)
             return
         logger.debug('Relaying to bus: channel %s ended', channel_id)
-        call = self.services.channel_destroyed_event(self.ari, event)
+        call = self.services.channel_destroyed_event(
+            self.ari, self._channel_proxy, event
+        )
         self.notifier.call_ended(call, event['cause'])

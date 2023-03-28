@@ -48,6 +48,7 @@ class Plugin:
         token_changed_subscribe = dependencies['token_changed_subscribe']
         next_token_changed_subscribe = dependencies['next_token_changed_subscribe']
         pubsub = dependencies['pubsub']
+        channel_proxy = dependencies['channel_proxy']
 
         auth_client = AuthClient(**config['auth'])
         confd_client = ConfdClient(**config['confd'])
@@ -70,10 +71,12 @@ class Plugin:
             notifier,
             confd_apps_cache,
             moh_cache,
+            channel_proxy,
         )
 
         stasis = ApplicationStasis(
             ari,
+            channel_proxy,
             service,
             notifier,
             confd_apps_cache,

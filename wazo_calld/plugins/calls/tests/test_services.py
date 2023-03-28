@@ -5,14 +5,24 @@ from hamcrest import assert_that, equal_to
 from unittest.mock import Mock, patch
 from unittest import TestCase
 
+from wazo_calld.helpers.channel_proxy import ChannelProxy
+
 from ..services import CallsService
 
 
 class TestServices(TestCase):
     def setUp(self):
         self.ari = Mock()
+        self.channel_proxy = ChannelProxy(self.ari)
         self.services = CallsService(
-            Mock(), Mock(), self.ari, Mock(), Mock(), Mock(), Mock()
+            Mock(),
+            Mock(),
+            self.ari,
+            Mock(),
+            Mock(),
+            Mock(),
+            Mock(),
+            self.channel_proxy,
         )
 
         self.example_to_fit = {
@@ -69,7 +79,9 @@ class TestServices(TestCase):
         event = self.example_to_fit
         event['channel']['channelvars'] = {}
 
-        call = self.services.channel_destroyed_event(self.ari, event)
+        call = self.services.channel_destroyed_event(
+            self.ari, self.channel_proxy, event
+        )
 
         assert_that(call.user_uuid, equal_to(None))
         assert_that(call.dialed_extension, equal_to(None))
@@ -84,7 +96,9 @@ class TestServices(TestCase):
         event = self.example_to_fit
         event['channel']['channelvars'] = {'XIVO_USERUUID': 'new_useruuid'}
 
-        call = self.services.channel_destroyed_event(self.ari, event)
+        call = self.services.channel_destroyed_event(
+            self.ari, self.channel_proxy, event
+        )
 
         assert_that(call.user_uuid, equal_to('new_useruuid'))
 
@@ -101,7 +115,9 @@ class TestServices(TestCase):
             'WAZO_DEREFERENCED_USERUUID': 'new-user-uuid',
         }
 
-        call = self.services.channel_destroyed_event(self.ari, event)
+        call = self.services.channel_destroyed_event(
+            self.ari, self.channel_proxy, event
+        )
 
         assert_that(call.user_uuid, equal_to('new-user-uuid'))
 
@@ -112,7 +128,9 @@ class TestServices(TestCase):
         channel_ids.return_value = []
         event = self.example_to_fit
         creation_time = event['channel']['creationtime']
-        call = self.services.channel_destroyed_event(self.ari, event)
+        call = self.services.channel_destroyed_event(
+            self.ari, self.channel_proxy, event
+        )
 
         assert_that(call.creation_time, equal_to(creation_time))
 
@@ -122,7 +140,9 @@ class TestServices(TestCase):
     def test_direction_of_call_to_who_is_caller(self, channel_ids):
         channel_ids.return_value = []
         event = self.example_to_fit
-        call = self.services.channel_destroyed_event(self.ari, event)
+        call = self.services.channel_destroyed_event(
+            self.ari, self.channel_proxy, event
+        )
 
         assert_that(call.is_caller, equal_to(True))
 

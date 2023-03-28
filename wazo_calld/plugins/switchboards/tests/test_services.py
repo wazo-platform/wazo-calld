@@ -5,6 +5,7 @@ from unittest import TestCase
 from unittest.mock import Mock, sentinel as s
 
 from wazo_calld.plugins.switchboards.services import SwitchboardsService
+from wazo_calld.helpers.channel_proxy import ChannelProxy
 
 
 class TestSwitchboardService(TestCase):
@@ -13,9 +14,14 @@ class TestSwitchboardService(TestCase):
         self.asyncio = Mock()
         self.confd = Mock()
         self.notifier = Mock()
+        self.channel_proxy = ChannelProxy(self.ari)
 
         self.service = SwitchboardsService(
-            self.ari, self.asyncio, self.confd, self.notifier
+            self.ari,
+            self.asyncio,
+            self.confd,
+            self.notifier,
+            self.channel_proxy,
         )
 
     def test_moh_on_new_queued_call_when_defined(self):

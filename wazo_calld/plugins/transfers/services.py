@@ -36,6 +36,7 @@ class TransfersService:
         state_factory,
         state_persistor,
         transfer_lock,
+        channel_proxy,
     ):
         self.amid_client = amid_client
         self.ari = ari
@@ -43,6 +44,7 @@ class TransfersService:
         self.state_persistor = state_persistor
         self.state_factory = state_factory
         self.transfer_lock = transfer_lock
+        self._channel_proxy = channel_proxy
 
     def list_from_user(self, user_uuid):
         transfers = self.state_persistor.list()
@@ -66,8 +68,8 @@ class TransfersService:
             raise TransferAlreadyStarted(initiator_call)
 
         if not (
-            Channel(transferred_call, self.ari).is_in_stasis()
-            and Channel(initiator_call, self.ari).is_in_stasis()
+            Channel(transferred_call, self.ari, self._channel_proxy).is_in_stasis()
+            and Channel(initiator_call, self.ari, self._channel_proxy).is_in_stasis()
         ):
             transfer_state = self.state_factory.make_from_class(
                 TransferStateReadyNonStasis
@@ -94,15 +96,17 @@ class TransfersService:
         return new_state.transfer
 
     def create_from_user(self, initiator_call, exten, flow, timeout, user_uuid):
-        if not Channel(initiator_call, self.ari).exists():
+        if not Channel(initiator_call, self.ari, self._channel_proxy).exists():
             raise TransferCreationError('initiator channel not found')
 
-        if Channel(initiator_call, self.ari).user() != user_uuid:
+        if Channel(initiator_call, self.ari, self._channel_proxy).user() != user_uuid:
             raise UserPermissionDenied(user_uuid, {'call': initiator_call})
 
         try:
             transferred_call = (
-                Channel(initiator_call, self.ari).only_connected_channel().id
+                Channel(initiator_call, self.ari, self._channel_proxy)
+                .only_connected_channel()
+                .id
             )
         except TooManyChannels as e:
             raise TooManyTransferredCandidates(e.channels)

@@ -24,10 +24,11 @@ logger = logging.getLogger(__name__)
 
 
 class AdhocConferencesService:
-    def __init__(self, amid_client, ari, notifier):
+    def __init__(self, amid_client, ari, notifier, channel_proxy):
         self._amid_client = amid_client
         self._ari = ari
         self._notifier = notifier
+        self._channel_proxy = channel_proxy
 
     def create_from_user(self, host_call_id, participant_call_ids, user_uuid):
         logger.debug(
@@ -36,7 +37,7 @@ class AdhocConferencesService:
             host_call_id,
             participant_call_ids,
         )
-        host_channel = Channel(host_call_id, self._ari)
+        host_channel = Channel(host_call_id, self._ari, self._channel_proxy)
         if not host_channel.exists():
             raise HostCallNotFound(host_call_id)
 
@@ -54,7 +55,9 @@ class AdhocConferencesService:
             raise HostCallAlreadyInConference(host_call_id)
 
         for participant_call_id in participant_call_ids:
-            if not Channel(participant_call_id, self._ari).exists():
+            if not Channel(
+                participant_call_id, self._ari, self._channel_proxy
+            ).exists():
                 raise ParticipantCallNotFound(participant_call_id)
 
             try:
@@ -116,7 +119,7 @@ class AdhocConferencesService:
         }
 
     def _find_peer_channel(self, call_id):
-        return Channel(call_id, self._ari).only_connected_channel()
+        return Channel(call_id, self._ari, self._channel_proxy).only_connected_channel()
 
     def _redirect_host(self, host_call_id, host_peer_channel_id, adhoc_conference_id):
         try:
@@ -215,7 +218,7 @@ class AdhocConferencesService:
         )
 
     def delete_from_user(self, adhoc_conference_id, user_uuid):
-        bridge_helper = Bridge(adhoc_conference_id, self._ari)
+        bridge_helper = Bridge(adhoc_conference_id, self._ari, self._channel_proxy)
         if not bridge_helper.exists():
             raise AdhocConferenceNotFound(adhoc_conference_id)
 
@@ -230,11 +233,11 @@ class AdhocConferencesService:
     def add_participant_from_user(
         self, adhoc_conference_id, participant_call_id, user_uuid
     ):
-        bridge_helper = Bridge(adhoc_conference_id, self._ari)
+        bridge_helper = Bridge(adhoc_conference_id, self._ari, self._channel_proxy)
         if not bridge_helper.exists():
             raise AdhocConferenceNotFound(adhoc_conference_id)
 
-        if not Channel(participant_call_id, self._ari).exists():
+        if not Channel(participant_call_id, self._ari, self._channel_proxy).exists():
             raise ParticipantCallNotFound(participant_call_id)
 
         if (
@@ -277,7 +280,7 @@ class AdhocConferencesService:
     def remove_participant_from_user(
         self, adhoc_conference_id, participant_call_id, user_uuid
     ):
-        bridge_helper = Bridge(adhoc_conference_id, self._ari)
+        bridge_helper = Bridge(adhoc_conference_id, self._ari, self._channel_proxy)
         if not bridge_helper.exists():
             raise AdhocConferenceNotFound(adhoc_conference_id)
 
@@ -287,7 +290,7 @@ class AdhocConferencesService:
         ):
             raise AdhocConferenceNotFound(adhoc_conference_id)
 
-        if not Channel(participant_call_id, self._ari).exists():
+        if not Channel(participant_call_id, self._ari, self._channel_proxy).exists():
             raise ParticipantCallNotFound(participant_call_id)
 
         participants = self._ari.bridges.get(bridgeId=adhoc_conference_id).json[

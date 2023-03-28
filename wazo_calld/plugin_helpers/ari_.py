@@ -145,20 +145,21 @@ class GlobalVariableConstantNameAdapter:
 
 
 class Channel:
-    def __init__(self, channel_id, ari):
+    def __init__(self, channel_id, ari, channel_proxy):
         self.id = channel_id
         self._ari = ari
+        self._channel_proxy = channel_proxy
 
     def __str__(self):
         return self.id
 
     def asterisk_name(self):
         try:
-            channel = self._ari.channels.get(channelId=self.id)
+            json = self._channel_proxy.get_constant_json(self.id)
         except ARINotFound:
             return False
 
-        return channel.json['name']
+        return json['name']
 
     def connected_channels(self):
         channel_ids = set(
@@ -175,11 +176,14 @@ class Channel:
             channel_ids.remove(self.id)
         except KeyError:
             pass
-        return {Channel(channel_id, self._ari) for channel_id in channel_ids}
+        return {
+            Channel(channel_id, self._ari, self._channel_proxy)
+            for channel_id in channel_ids
+        }
 
     def conversation_id(self):
         try:
-            linkedid = self._get_var('CHANNEL(linkedid)')
+            linkedid = self._get_constant('CHANNEL(linkedid)')
         except ARINotFound:
             return None
         return linkedid
@@ -192,25 +196,25 @@ class Channel:
             channel_id = connected_channels.pop().id
         except KeyError:
             raise NotEnoughChannels()
-        return Channel(channel_id, self._ari)
+        return Channel(channel_id, self._ari, self._channel_proxy)
 
     def user(self, default=None):
         if self.is_local():
             try:
-                uuid = self._get_var('WAZO_DEREFERENCED_USERUUID')
+                uuid = self._get_constant('WAZO_DEREFERENCED_USERUUID')
             except ARINotFound:
                 return default
             return uuid
 
         try:
-            uuid = self._get_var('XIVO_USERUUID')
+            uuid = self._get_constant('XIVO_USERUUID')
             return uuid
         except ARINotFound:
             return default
 
     def tenant_uuid(self, default=None):
         try:
-            tenant_uuid = self._get_var('WAZO_TENANT_UUID')
+            tenant_uuid = self._get_constant('WAZO_TENANT_UUID')
         except ARINotFound:
             return default
         return tenant_uuid
@@ -224,11 +228,11 @@ class Channel:
 
     def is_local(self):
         try:
-            channel = self._ari.channels.get(channelId=self.id)
+            json = self._channel_proxy.get_constant_json(self.id)
         except ARINotFound:
             return False
 
-        return channel.json['name'].startswith('Local/')
+        return json['name'].startswith('Local/')
 
     def is_caller(self):
         try:
@@ -238,7 +242,7 @@ class Channel:
             pass
 
         try:
-            direction = self._get_var('WAZO_CHANNEL_DIRECTION')
+            direction = self._get_constant('WAZO_CHANNEL_DIRECTION')
             return direction == 'to-wazo'
         except ARINotFound:
             pass
@@ -256,15 +260,13 @@ class Channel:
 
     def is_sip(self):
         try:
-            return self._get_var('CHANNEL(channeltype)') == 'PJSIP'
+            return self._get_constant('CHANNEL(channeltype)') == 'PJSIP'
         except ARINotFound:
             return False
 
     def dialed_extension(self):
         try:
-            return self._ari.channels.getChannelVar(
-                channelId=self.id, variable='WAZO_ENTRY_EXTEN'
-            )['value']
+            return self._channel_proxy.get_constant(self.id, 'WAZO_ENTRY_EXTEN')
         except ARINotFound:
             try:
                 channel = self._ari.channels.get(channelId=self.id)
@@ -301,13 +303,13 @@ class Channel:
     def sip_call_id_unsafe(self):
         '''This method expects a SIP channel'''
         try:
-            return self._get_var('CHANNEL(pjsip,call-id)')
+            return self._get_constant('CHANNEL(pjsip,call-id)')
         except ARINotFound:
             return
 
     def line_id(self):
         try:
-            return int(self._get_var('WAZO_LINE_ID'))
+            return int(self._get_constant('WAZO_LINE_ID'))
         except ARINotFound:
             return
         except ValueError:
@@ -345,16 +347,18 @@ class Channel:
         except ARINotFound:
             return
 
+    def _get_constant(self, var):
+        return self._channel_proxy.get_constant(self.id, var)
+
     def _get_var(self, var):
-        return self._ari.channels.getChannelVar(channelId=self.id, variable=var)[
-            'value'
-        ]
+        return self._channel_proxy.get_variable(self.id, var)
 
 
 class Bridge:
-    def __init__(self, bridge_id, ari):
+    def __init__(self, bridge_id, ari, channel_proxy):
         self.id = bridge_id
         self._ari = ari
+        self._channel_proxy = channel_proxy
         self.global_variables = GlobalVariableNameDecorator(
             GlobalVariableAdapter(self._ari),
             'WAZO_BRIDGE_{bridge_id}_VARIABLE_{{}}'.format(bridge_id=self.id),
@@ -395,7 +399,7 @@ class Bridge:
             return set()
 
         return set(
-            Channel(channel_id, self._ari).user()
+            Channel(channel_id, self._ari, self._channel_proxy).user()
             for channel_id in bridge.json['channels']
         )
 
@@ -408,12 +412,13 @@ class Bridge:
 
 
 class BridgeSnapshot(Bridge):
-    def __init__(self, snapshot, ari):
+    def __init__(self, snapshot, ari, channel_proxy):
         self._snapshot = snapshot
-        super().__init__(snapshot['id'], ari)
+        self._channel_proxy = channel_proxy
+        super().__init__(snapshot['id'], ari, channel_proxy)
 
     def valid_user_uuids(self):
         return set(
-            Channel(channel_id, self._ari).user()
+            Channel(channel_id, self._ari, self._channel_proxy).user()
             for channel_id in self._snapshot['channels']
         )
