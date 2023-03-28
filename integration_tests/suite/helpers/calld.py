@@ -4,6 +4,7 @@
 import json
 import requests
 import time
+import uuid
 
 from contextlib import contextmanager
 from hamcrest import assert_that, equal_to
@@ -402,3 +403,7 @@ class LegacyCalldClient:
 
 def new_call_id(leap=0):
     return format(time.time() + leap, '.2f')
+
+
+def new_uuid():
+    return str(uuid.uuid4())

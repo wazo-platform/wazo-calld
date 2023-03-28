@@ -28,7 +28,7 @@ from .helpers.ari_ import MockBridge
 from .helpers.ari_ import MockChannel
 from .helpers.auth import MockUserToken
 from .helpers.base import IntegrationTest
-from .helpers.calld import new_call_id
+from .helpers.calld import new_call_id, new_uuid
 from .helpers.confd import MockLine
 from .helpers.confd import MockUser
 from .helpers.constants import (
@@ -932,10 +932,13 @@ class TestCreateCall(IntegrationTest):
 
     def test_when_create_call_with_no_variables_then_default_variables_are_set(self):
         user_uuid = 'user-uuid'
+        the_tenant_uuid = new_uuid()
         priority = 1
         self.confd.set_users(
             MockUser(
-                uuid='user-uuid', line_ids=['line-id'], tenant_uuid='the-tenant-uuid'
+                uuid='user-uuid',
+                line_ids=['line-id'],
+                tenant_uuid=the_tenant_uuid,
             )
         )
         self.confd.set_lines(
@@ -963,7 +966,7 @@ class TestCreateCall(IntegrationTest):
                         json=has_entries(
                             variables={
                                 'WAZO_USERUUID': 'user-uuid',
-                                '_WAZO_TENANT_UUID': 'the-tenant-uuid',
+                                '_WAZO_TENANT_UUID': the_tenant_uuid,
                                 'CONNECTEDLINE(num)': 'my-extension',
                                 'CONNECTEDLINE(name)': 'my-extension',
                                 'CALLERID(name)': 'my-extension',
@@ -1822,11 +1825,14 @@ class TestUserCreateCall(IntegrationTest):
 
     def test_when_create_call_with_no_variables_then_default_variables_are_set(self):
         user_uuid = 'user-uuid'
+        the_tenant_uuid = new_uuid()
         token = 'my-token'
         self.auth.set_token(MockUserToken(token, user_uuid))
         self.confd.set_users(
             MockUser(
-                uuid=user_uuid, line_ids=['line-id'], tenant_uuid='the-tenant-uuid'
+                uuid=user_uuid,
+                line_ids=['line-id'],
+                tenant_uuid=the_tenant_uuid,
             )
         )
         self.confd.set_lines(
@@ -1852,7 +1858,7 @@ class TestUserCreateCall(IntegrationTest):
                         json=has_entries(
                             variables={
                                 'WAZO_USERUUID': 'user-uuid',
-                                '_WAZO_TENANT_UUID': 'the-tenant-uuid',
+                                '_WAZO_TENANT_UUID': the_tenant_uuid,
                                 'CONNECTEDLINE(name)': 'my-extension',
                                 'CONNECTEDLINE(num)': 'my-extension',
                                 'CALLERID(name)': 'my-extension',
@@ -2642,7 +2648,7 @@ class TestCallMute(RealAsteriskIntegrationTest):
             variables={
                 'variables': {
                     'XIVO_USERUUID': user_uuid,
-                    'WAZO_TENANT_UUID': VALID_TENANT,
+                    '__WAZO_TENANT_UUID': VALID_TENANT,
                 }
             },
         )
@@ -2766,7 +2772,12 @@ class TestCallSendDTMF(RealAsteriskIntegrationTest):
             endpoint=ENDPOINT_AUTOANSWER,
             context='local',
             extension='dial-autoanswer',
-            variables={'variables': {'XIVO_USERUUID': user_uuid}},
+            variables={
+                'variables': {
+                    'XIVO_USERUUID': user_uuid,
+                    '__WAZO_TENANT_UUID': VALID_TENANT,
+                }
+            },
         )
         return call.id
 
