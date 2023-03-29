@@ -58,6 +58,7 @@ class CallsStasis:
         self.ari.on_channel_event('StasisStart', self.stasis_start)
         self.ari.on_channel_event('ChannelDestroyed', self.channel_destroyed)
         self.ari.on_channel_event('ChannelDestroyed', self.relay_channel_hung_up)
+        self.ari.on_channel_event('ChannelDestroyed', self._channel_proxy.on_hang_up)
         self.ari.on_application_registered(
             DEFAULT_APPLICATION_NAME, self.subscribe_to_all_channel_events
         )
