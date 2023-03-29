@@ -239,7 +239,9 @@ class SwitchboardsService:
             switchboard_uuid,
         )
         with self.duplicate_call_hold_lock:
-            if not SwitchboardConfd(tenant_uuid, switchboard_uuid, self._confd).exists():
+            if not SwitchboardConfd(
+                tenant_uuid, switchboard_uuid, self._confd
+            ).exists():
                 raise NoSuchSwitchboard(switchboard_uuid)
 
             if SwitchboardARI(switchboard_uuid, self._ari).has_held_call(call_id):
@@ -289,7 +291,9 @@ class SwitchboardsService:
             channel_to_hold.setChannelVar(
                 variable='WAZO_SWITCHBOARD_HOLD', value=switchboard_uuid
             )
-            channel_to_hold.setChannelVar(variable='WAZO_TENANT_UUID', value=tenant_uuid)
+            channel_to_hold.setChannelVar(
+                variable='WAZO_TENANT_UUID', value=tenant_uuid
+            )
 
             held_calls = self.held_calls(tenant_uuid, switchboard_uuid)
             self._notifier.held_calls(tenant_uuid, switchboard_uuid, held_calls)
@@ -308,7 +312,8 @@ class SwitchboardsService:
                     )
                     for lone_channel_id in previous_bridge.json['channels']:
                         logger.debug(
-                            'hanging up channel %s after switchboard hold', lone_channel_id
+                            'hanging up channel %s after switchboard hold',
+                            lone_channel_id,
                         )
                         try:
                             self._ari.channels.hangup(channelId=lone_channel_id)

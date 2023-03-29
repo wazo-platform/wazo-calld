@@ -1402,8 +1402,9 @@ class TestSwitchboardHoldCall(TestSwitchboards):
         self.calld.switchboard_hold_call(switchboard_uuid, answered_call_id)
         until.true(held_bus_events.accumulate, tries=3)
 
-        response = self.calld.put_switchboard_held_call_result(switchboard_uuid, answered_call_id,
-                                                               token)
+        response = self.calld.put_switchboard_held_call_result(
+            switchboard_uuid, answered_call_id, token
+        )
         # the call is already held, so not possible to hold the call again
         assert_that(response.status_code, equal_to(404))
 
