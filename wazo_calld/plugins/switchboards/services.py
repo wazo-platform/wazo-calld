@@ -41,6 +41,7 @@ class SwitchboardsService:
         self._confd = confd
         self._notifier = notifier
         self.duplicate_queued_call_answer_lock = threading.Lock()
+        self.duplicate_call_hold_lock = threading.Lock()
 
     def queued_calls(self, tenant_uuid, switchboard_uuid):
         logger.debug(
@@ -237,73 +238,87 @@ class SwitchboardsService:
             tenant_uuid,
             switchboard_uuid,
         )
-        if not SwitchboardConfd(tenant_uuid, switchboard_uuid, self._confd).exists():
-            raise NoSuchSwitchboard(switchboard_uuid)
-
-        try:
-            channel_to_hold = self._ari.channels.get(channelId=call_id)
-        except ARINotFound:
-            raise NoSuchCall(call_id)
-
-        previous_bridges = [
-            bridge
-            for bridge in self._ari.bridges.list()
-            if channel_to_hold.id in bridge.json['channels']
-        ]
-        hold_bridge_id = BRIDGE_HOLD_ID.format(uuid=switchboard_uuid)
-        if hold_bridge_id in [bridge.id for bridge in previous_bridges]:
-            logger.debug(
-                'call %s already on hold in switchboard %s, nothing to do',
-                call_id,
-                switchboard_uuid,
-            )
-            return
-
-        try:
-            hold_bridge = self._ari.bridges.get(bridgeId=hold_bridge_id)
-        except ARINotFound:
-            hold_bridge = self._ari.bridges.createWithId(
-                type='holding', bridgeId=hold_bridge_id
-            )
-
-        if len(hold_bridge.json['channels']) == 0:
-            moh_class = SwitchboardConfd(
+        with self.duplicate_call_hold_lock:
+            if not SwitchboardConfd(
                 tenant_uuid, switchboard_uuid, self._confd
-            ).hold_moh()
-            if moh_class:
-                hold_bridge.startMoh(mohClass=moh_class)
-            else:
-                hold_bridge.startMoh()
+            ).exists():
+                raise NoSuchSwitchboard(switchboard_uuid)
 
-        hold_bridge.addChannel(channel=channel_to_hold.id)
-        channel_to_hold.setChannelVar(
-            variable='WAZO_SWITCHBOARD_HOLD', value=switchboard_uuid
-        )
-        channel_to_hold.setChannelVar(variable='WAZO_TENANT_UUID', value=tenant_uuid)
-
-        held_calls = self.held_calls(tenant_uuid, switchboard_uuid)
-        self._notifier.held_calls(tenant_uuid, switchboard_uuid, held_calls)
-
-        for previous_bridge in previous_bridges:
-            try:
-                previous_bridge = self._ari.bridges.get(bridgeId=previous_bridge.id)
-            except ARINotFound:
-                continue
-            if (
-                previous_bridge.json['bridge_type'] == 'mixing'
-                and len(previous_bridge.json['channels']) <= 1
-            ):
+            if SwitchboardARI(switchboard_uuid, self._ari).has_held_call(call_id):
                 logger.debug(
-                    'emptying bridge %s after switchboard hold', previous_bridge.id
+                    'Switchboard %s: call %s is already held',
+                    switchboard_uuid,
+                    call_id,
                 )
-                for lone_channel_id in previous_bridge.json['channels']:
+                raise NoSuchCall(call_id)
+
+            try:
+                channel_to_hold = self._ari.channels.get(channelId=call_id)
+            except ARINotFound:
+                raise NoSuchCall(call_id)
+
+            previous_bridges = [
+                bridge
+                for bridge in self._ari.bridges.list()
+                if channel_to_hold.id in bridge.json['channels']
+            ]
+            hold_bridge_id = BRIDGE_HOLD_ID.format(uuid=switchboard_uuid)
+            if hold_bridge_id in [bridge.id for bridge in previous_bridges]:
+                logger.debug(
+                    'call %s already on hold in switchboard %s, nothing to do',
+                    call_id,
+                    switchboard_uuid,
+                )
+                return
+
+            try:
+                hold_bridge = self._ari.bridges.get(bridgeId=hold_bridge_id)
+            except ARINotFound:
+                hold_bridge = self._ari.bridges.createWithId(
+                    type='holding', bridgeId=hold_bridge_id
+                )
+
+            if len(hold_bridge.json['channels']) == 0:
+                moh_class = SwitchboardConfd(
+                    tenant_uuid, switchboard_uuid, self._confd
+                ).hold_moh()
+                if moh_class:
+                    hold_bridge.startMoh(mohClass=moh_class)
+                else:
+                    hold_bridge.startMoh()
+
+            hold_bridge.addChannel(channel=channel_to_hold.id)
+            channel_to_hold.setChannelVar(
+                variable='WAZO_SWITCHBOARD_HOLD', value=switchboard_uuid
+            )
+            channel_to_hold.setChannelVar(
+                variable='WAZO_TENANT_UUID', value=tenant_uuid
+            )
+
+            held_calls = self.held_calls(tenant_uuid, switchboard_uuid)
+            self._notifier.held_calls(tenant_uuid, switchboard_uuid, held_calls)
+
+            for previous_bridge in previous_bridges:
+                try:
+                    previous_bridge = self._ari.bridges.get(bridgeId=previous_bridge.id)
+                except ARINotFound:
+                    continue
+                if (
+                    previous_bridge.json['bridge_type'] == 'mixing'
+                    and len(previous_bridge.json['channels']) <= 1
+                ):
                     logger.debug(
-                        'hanging up channel %s after switchboard hold', lone_channel_id
+                        'emptying bridge %s after switchboard hold', previous_bridge.id
                     )
-                    try:
-                        self._ari.channels.hangup(channelId=lone_channel_id)
-                    except ARINotFound:
-                        pass
+                    for lone_channel_id in previous_bridge.json['channels']:
+                        logger.debug(
+                            'hanging up channel %s after switchboard hold',
+                            lone_channel_id,
+                        )
+                        try:
+                            self._ari.channels.hangup(channelId=lone_channel_id)
+                        except ARINotFound:
+                            pass
 
     def held_calls(self, tenant_uuid, switchboard_uuid):
         logger.debug(

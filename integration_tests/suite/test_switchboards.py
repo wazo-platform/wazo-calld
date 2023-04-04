@@ -1348,7 +1348,7 @@ class TestSwitchboardHoldCall(TestSwitchboards):
 
         until.assert_(event_received, tries=10)
 
-    def test_hold_same_call_twice(self):
+    def test_hold_same_call_twice_then_404(self):
         token = random_uuid(prefix='my-token-')
         user_uuid = random_uuid(prefix='my-user-uuid-')
         line_id = random_id()
@@ -1402,15 +1402,55 @@ class TestSwitchboardHoldCall(TestSwitchboards):
         self.calld.switchboard_hold_call(switchboard_uuid, answered_call_id)
         until.true(held_bus_events.accumulate, tries=3)
 
+        response = self.calld.put_switchboard_held_call_result(
+            switchboard_uuid, answered_call_id, token
+        )
+        # the call is already held, so not possible to hold the call again
+        assert_that(response.status_code, equal_to(404))
+
+    def test_hold_and_answer_as_queued_call_then_404(self):
+        token = random_uuid(prefix='my-token-')
+        user_uuid = random_uuid(prefix='my-user-uuid-')
+        line_id = random_id()
+        self.auth.set_token(
+            MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT)
+        )
+        switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
+        self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
+        self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
+        self.confd.set_lines(
+            MockLine(
+                id=line_id, name='switchboard-operator/autoanswer', protocol='test'
+            )
+        )
+        queued_bus_events = self.bus.accumulator(
+            headers={
+                'switchboard_uuid': switchboard_uuid,
+                'name': 'switchboard_queued_calls_updated',
+            }
+        )
+        new_channel = self.ari.channels.originate(
+            endpoint=ENDPOINT_AUTOANSWER,
+            app=STASIS_APP,
+            appArgs=[
+                STASIS_APP_INSTANCE,
+                STASIS_APP_QUEUE,
+                VALID_TENANT,
+                switchboard_uuid,
+            ],
+        )
+        queued_call_id = new_channel.id
+        until.true(queued_bus_events.accumulate, tries=3)
+
         answered_bus_events = self.bus.accumulator(
             headers={
                 'switchboard_uuid': switchboard_uuid,
-                'name': 'switchboard_held_call_answered',
+                'name': 'switchboard_queued_call_answered',
             }
         )
-        self.calld.switchboard_answer_held_call(
-            switchboard_uuid, answered_call_id, token
-        )
+        answered_call_id = self.calld.switchboard_answer_queued_call(
+            switchboard_uuid, queued_call_id, token
+        )['call_id']
         until.true(answered_bus_events.accumulate, tries=3)
 
         held_bus_events = self.bus.accumulator(
@@ -1421,6 +1461,12 @@ class TestSwitchboardHoldCall(TestSwitchboards):
         )
         self.calld.switchboard_hold_call(switchboard_uuid, answered_call_id)
         until.true(held_bus_events.accumulate, tries=3)
+
+        response = self.calld.put_switchboard_queued_call_answer_result(
+            switchboard_uuid, answered_call_id, token
+        )
+        # the call is already held, so not possible to answer as a "queued" call
+        assert_that(response.status_code, equal_to(404))
 
 
 class TestSwitchboardCallsHeld(TestSwitchboards):
