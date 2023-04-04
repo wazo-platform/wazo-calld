@@ -683,9 +683,14 @@ class CallsService:
         ]
 
     def _verify_user(self, call_id, user_uuid):
-        channel = Channel(call_id, self._ari)
-        if not channel.exists() or channel.is_local():
+        try:
+            channel = self._ari.channels.get(channelId=call_id)
+        except ARINotFound:
             raise NoSuchCall(call_id)
 
-        if channel.user() != user_uuid:
+        if channel.json['name'].startswith('Local/'):
+            raise NoSuchCall(call_id)
+
+        channel_user_uuid = channel.json['channelvars'].get('XIVO_USERUUID')
+        if channel_user_uuid != user_uuid:
             raise UserPermissionDenied(user_uuid, {'call': call_id})
