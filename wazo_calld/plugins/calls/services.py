@@ -97,7 +97,7 @@ class CallsService:
             call
             for call in calls
             if call.user_uuid == user_uuid
-            and not Channel(call.id_, self._ari).is_local()
+            and not call.is_local
         ]
 
     def originate(self, request):
@@ -348,6 +348,7 @@ class CallsService:
         call.creation_time = channel.json['creationtime']
         call.answer_time = channel_variables.get('WAZO_ANSWER_TIME') or None
         call.status = channel.json['state']
+        call.is_local = channel.json['name'].startswith('Local/')
         call.caller_id_name = channel.json['caller']['name']
         call.caller_id_number = channel.json['caller']['number']
         call.peer_caller_id_name = channel.json['connected']['name']
