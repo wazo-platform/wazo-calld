@@ -56,7 +56,9 @@ class CallsService:
         self._notifier = notifier
         self._state_persistor = ReadOnlyStatePersistor(self._ari)
 
-    def list_calls(self, application_filter=None, application_instance_filter=None):
+    def _list_calls_raw_calls(
+        self, application_filter=None, application_instance_filter=None
+    ):
         channels = self._ari.channels.list()
 
         if application_filter:
@@ -86,18 +88,34 @@ class CallsService:
                     ):
                         app_instance_channels.append(channel)
                 channels = app_instance_channels
+        return channels
 
+    def list_calls(self, application_filter=None, application_instance_filter=None):
+        channels = self._list_calls_raw_calls(
+            application_filter, application_instance_filter
+        )
         return [self.make_call_from_channel(self._ari, channel) for channel in channels]
 
     def list_calls_user(
         self, user_uuid, application_filter=None, application_instance_filter=None
     ):
-        calls = self.list_calls(application_filter, application_instance_filter)
+        channels = self._list_calls_raw_calls(
+            application_filter, application_instance_filter
+        )
+
+        def filter(channel):
+            if channel.json['name'].startswith('Local/'):
+                return False
+
+            if channel.getChannelVar(variable='XIVO_USERUUID')['value'] != user_uuid:
+                return False
+
+            return True
+
+        filtered_channels = [c for c in channels if filter(c)]
         return [
-            call
-            for call in calls
-            if call.user_uuid == user_uuid
-            and not call.is_local
+            self.make_call_from_channel(self._ari, channel)
+            for channel in filtered_channels
         ]
 
     def originate(self, request):
