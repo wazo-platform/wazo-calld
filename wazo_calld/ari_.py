@@ -9,6 +9,7 @@ import urllib
 import threading
 
 from contextlib import contextmanager
+from functools import wraps
 
 import ari
 import swaggerpy.http_client
@@ -76,6 +77,91 @@ def asterisk_is_loading(error):
     return not_found(error) or service_unavailable(error)
 
 
+class CachingRepository:
+
+    cached_variables = set([
+        'CALLERID(number)',
+        'CHANNEL(channeltype)',
+        'CHANNEL(language)',
+        'CHANNEL(linkedid)',
+        'CHANNEL(pjsip,call-id)',
+        'CONNECTEDLINE(all)',
+        'WAZO_CHANNEL_DIRECTION',
+        'WAZO_DEREFERENCED_USERUUID',
+        'WAZO_ENTRY_EXTEN',
+        'WAZO_LINE_ID',
+        'WAZO_MIXMONITOR_OPTIONS',
+        'WAZO_SIP_CALL_ID',
+        'WAZO_SWITCHBOARD_FALLBACK_NOANSWER_ACTION',
+        'WAZO_SWITCHBOARD_TIMEOUT',
+        'WAZO_TENANT_UUID',
+        'WAZO_USER_OUTGOING_CALL',
+        'XIVO_ORIGINAL_CALLER_ID',
+        'XIVO_USERUUID',
+    ])
+    CHANNEL_CACHE_EXPIRATION = 60 * 60
+
+    def __init__(self, repository):
+        self._repository = repository
+        self._cache = {}
+        self._cache_lock = threading.Lock()
+        self._last_cache_cleanup = time.time()
+
+    def __getattr__(self, *args, **kwargs):
+        fn = self._repository.__getattr__(*args, **kwargs)
+        if args[0] == 'getChannelVar':
+            return self._get_channel_var_decorator(fn)
+        else:
+            return fn
+
+    def on_hang_up(self, channel, event):
+        self._remove_cached_channel(channel.id)
+        self._remove_old_calls_from_cache()
+
+    def _remove_old_calls_from_cache(self):
+        # To avoid leaking channel variables if an event ever gets missed
+        # we are going to clean the cache every once in a while
+        now = time.time()
+        threshold = now - self.CHANNEL_CACHE_EXPIRATION
+        if self._last_cache_cleanup > threshold:
+            return
+
+        to_remove = set()
+        for call_id in self._cache.keys():
+            if float(call_id) < threshold:
+                to_remove.add(call_id)
+
+        logger.debug('Removing %s calls from the cache', len(to_remove))
+        for call_id in to_remove:
+            self._remove_cached_channel(call_id)
+
+        self._last_cache_cleanup = now
+
+    def _remove_cached_channel(self, channel_id):
+        logger.debug('removing channel %s variable cache', channel_id)
+        with self._cache_lock:
+            self._cache.pop(channel_id, None)
+
+    def _get_channel_var_decorator(self, fn):
+        @wraps(fn)
+        def aux(**kwargs):
+            channel_id = kwargs.get('channelId')
+            variable = kwargs.get('variable')
+            if variable not in self.cached_variables:
+                return fn(**kwargs)
+            else:
+                return self._get_cached_variable(fn, channel_id, variable)
+        return aux
+
+    def _get_cached_variable(self, fn, channel_id, variable):
+        with self._cache_lock:
+            channel_cache = self._cache.get(channel_id) or {}
+            if variable not in channel_cache:
+                channel_cache[variable] = fn(channelId=channel_id, variable=variable)
+                self._cache[channel_id] = channel_cache
+            return channel_cache[variable]
+
+
 class ARIClientProxy(ari.client.Client):
     def __init__(self, base_url, username, password):
         self._base_url = base_url
@@ -91,6 +177,11 @@ class ARIClientProxy(ari.client.Client):
             http_client.set_basic_auth(split.hostname, self._username, self._password)
             super().__init__(self._base_url, http_client)
             self._initialized = True
+
+        channel_repository = self.repositories['channels']
+        self.repositories['channels'] = CachingRepository(channel_repository)
+        self.on_channel_event('ChannelDestroyed', self.repositories['channels'].on_hang_up)
+
         return self._initialized
 
     def close(self):
