@@ -42,6 +42,7 @@ class SwitchboardsService:
         self._notifier = notifier
         self.duplicate_queued_call_answer_lock = threading.Lock()
         self.duplicate_call_hold_lock = threading.Lock()
+        self.duplicate_held_call_answer_lock = threading.Lock()
 
     def queued_calls(self, tenant_uuid, switchboard_uuid):
         logger.debug(
@@ -351,41 +352,60 @@ class SwitchboardsService:
     def answer_held_call(
         self, tenant_uuid, switchboard_uuid, held_call_id, user_uuid, line_id=None
     ):
-        if not SwitchboardConfd(tenant_uuid, switchboard_uuid, self._confd).exists():
-            raise NoSuchSwitchboard(switchboard_uuid)
+        with self.duplicate_held_call_answer_lock:
+            if not SwitchboardConfd(
+                tenant_uuid, switchboard_uuid, self._confd
+            ).exists():
+                raise NoSuchSwitchboard(switchboard_uuid)
 
-        try:
-            held_channel = self._ari.channels.get(channelId=held_call_id)
-        except ARINotFound:
-            raise NoSuchCall(held_call_id)
+            if not SwitchboardARI(switchboard_uuid, self._ari).has_held_call(
+                held_call_id
+            ):
+                logger.debug(
+                    'Switchboard %s: call %s is not held',
+                    switchboard_uuid,
+                    held_call_id,
+                )
+                raise NoSuchCall(held_call_id)
 
-        try:
-            user = User(user_uuid, self._confd, tenant_uuid=tenant_uuid)
-            if line_id:
-                line = user.line(line_id)
-            else:
-                line = user.main_line()
-            endpoint = line.interface_autoanswer()
-        except InvalidUserUUID as e:
-            raise NoSuchConfdUser(e.details['user_uuid'])
+            try:
+                held_channel = self._ari.channels.get(channelId=held_call_id)
+            except ARINotFound:
+                raise NoSuchCall(held_call_id)
 
-        caller_id = assemble_caller_id(
-            held_channel.json['caller']['name'],
-            held_channel.json['caller']['number'],
-        ).encode('utf-8')
+            try:
+                user = User(user_uuid, self._confd, tenant_uuid=tenant_uuid)
+                if line_id:
+                    line = user.line(line_id)
+                else:
+                    line = user.main_line()
+                endpoint = line.interface_autoanswer()
+            except InvalidUserUUID as e:
+                raise NoSuchConfdUser(e.details['user_uuid'])
 
-        channel = self._ari.channels.originate(
-            endpoint=endpoint,
-            app=DEFAULT_APPLICATION_NAME,
-            appArgs=[
-                'switchboard',
-                'switchboard_unhold',
-                tenant_uuid,
-                switchboard_uuid,
-                held_call_id,
-            ],
-            callerId=caller_id,
-            variables={'variables': AUTO_ANSWER_VARIABLES},
-        )
+            caller_id = assemble_caller_id(
+                held_channel.json['caller']['name'],
+                held_channel.json['caller']['number'],
+            ).encode('utf-8')
 
-        return channel.id
+            channel = self._ari.channels.originate(
+                endpoint=endpoint,
+                app=DEFAULT_APPLICATION_NAME,
+                appArgs=[
+                    'switchboard',
+                    'switchboard_unhold',
+                    tenant_uuid,
+                    switchboard_uuid,
+                    held_call_id,
+                ],
+                callerId=caller_id,
+                variables={'variables': AUTO_ANSWER_VARIABLES},
+            )
+
+            try:
+                bridge = SwitchboardARI(switchboard_uuid, self._ari).get_bridge_hold()
+                bridge.removeChannel(channel=held_call_id)
+            except ARINotFound:
+                pass
+
+            return channel.id
