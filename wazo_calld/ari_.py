@@ -9,7 +9,6 @@ import urllib
 import threading
 
 from contextlib import contextmanager
-from functools import wraps
 
 import ari
 import swaggerpy.http_client
@@ -78,27 +77,28 @@ def asterisk_is_loading(error):
 
 
 class CachingRepository:
-
-    cached_variables = set([
-        'CALLERID(number)',
-        'CHANNEL(channeltype)',
-        'CHANNEL(language)',
-        'CHANNEL(linkedid)',
-        'CHANNEL(pjsip,call-id)',
-        'CONNECTEDLINE(all)',
-        'WAZO_CHANNEL_DIRECTION',
-        'WAZO_DEREFERENCED_USERUUID',
-        'WAZO_ENTRY_EXTEN',
-        'WAZO_LINE_ID',
-        'WAZO_MIXMONITOR_OPTIONS',
-        'WAZO_SIP_CALL_ID',
-        'WAZO_SWITCHBOARD_FALLBACK_NOANSWER_ACTION',
-        'WAZO_SWITCHBOARD_TIMEOUT',
-        'WAZO_TENANT_UUID',
-        'WAZO_USER_OUTGOING_CALL',
-        'XIVO_ORIGINAL_CALLER_ID',
-        'XIVO_USERUUID',
-    ])
+    cached_variables = set(
+        [
+            'CALLERID(number)',
+            'CHANNEL(channeltype)',
+            'CHANNEL(language)',
+            'CHANNEL(linkedid)',
+            'CHANNEL(pjsip,call-id)',
+            'CONNECTEDLINE(all)',
+            'WAZO_CHANNEL_DIRECTION',
+            'WAZO_DEREFERENCED_USERUUID',
+            'WAZO_ENTRY_EXTEN',
+            'WAZO_LINE_ID',
+            'WAZO_MIXMONITOR_OPTIONS',
+            'WAZO_SIP_CALL_ID',
+            'WAZO_SWITCHBOARD_FALLBACK_NOANSWER_ACTION',
+            'WAZO_SWITCHBOARD_TIMEOUT',
+            'WAZO_TENANT_UUID',
+            'WAZO_USER_OUTGOING_CALL',
+            'XIVO_ORIGINAL_CALLER_ID',
+            'XIVO_USERUUID',
+        ]
+    )
     CHANNEL_CACHE_EXPIRATION = 60 * 60
 
     def __init__(self, repository):
@@ -107,12 +107,15 @@ class CachingRepository:
         self._cache_lock = threading.Lock()
         self._last_cache_cleanup = time.time()
 
-    def __getattr__(self, *args, **kwargs):
-        fn = self._repository.__getattr__(*args, **kwargs)
-        if args[0] == 'getChannelVar':
-            return self._get_channel_var_decorator(fn)
+    def getChannelVar(self, channelId, variable):
+        fn = getattr(self._repository, 'getChannelVar')
+        if variable not in self.cached_variables:
+            return fn(channelId=channelId, variable=variable)
         else:
-            return fn
+            return self._get_or_fetch_cached_variable(fn, channelId, variable)
+
+    def __getattr__(self, *args, **kwargs):
+        return self._repository.__getattr__(*args, **kwargs)
 
     def on_hang_up(self, channel, event):
         self._remove_cached_channel(channel.id)
@@ -142,24 +145,29 @@ class CachingRepository:
         with self._cache_lock:
             self._cache.pop(channel_id, None)
 
-    def _get_channel_var_decorator(self, fn):
-        @wraps(fn)
-        def aux(**kwargs):
-            channel_id = kwargs.get('channelId')
-            variable = kwargs.get('variable')
-            if variable not in self.cached_variables:
-                return fn(**kwargs)
-            else:
-                return self._get_cached_variable(fn, channel_id, variable)
-        return aux
+    def _get_or_fetch_cached_variable(self, fn, channel_id, variable):
+        value = self._get_cached_variable(channel_id, variable)
+        if value is not None:
+            return value
 
-    def _get_cached_variable(self, fn, channel_id, variable):
         with self._cache_lock:
-            channel_cache = self._cache.get(channel_id) or {}
-            if variable not in channel_cache:
-                channel_cache[variable] = fn(channelId=channel_id, variable=variable)
-                self._cache[channel_id] = channel_cache
-            return channel_cache[variable]
+            value = self._get_cached_variable(channel_id, variable)
+            if value is not None:
+                return value
+            self._fetch_and_cache_variable_locked(fn, channel_id, variable)
+
+            return self._get_cached_variable(channel_id, variable)
+
+    def _fetch_and_cache_variable_locked(self, fn, channel_id, variable):
+        value = fn(channelId=channel_id, variable=variable)
+        if channel_id not in self._cache:
+            self._cache[channel_id] = {variable: value}
+        else:
+            self._cache[channel_id][variable] = value
+
+    def _get_cached_variable(self, channel_id, variable):
+        channel_cache = self._cache.get(channel_id) or {}
+        return channel_cache.get(variable, None)
 
 
 class ARIClientProxy(ari.client.Client):
@@ -180,7 +188,9 @@ class ARIClientProxy(ari.client.Client):
 
         channel_repository = self.repositories['channels']
         self.repositories['channels'] = CachingRepository(channel_repository)
-        self.on_channel_event('ChannelDestroyed', self.repositories['channels'].on_hang_up)
+        self.on_channel_event(
+            'ChannelDestroyed', self.repositories['channels'].on_hang_up
+        )
 
         return self._initialized
 
