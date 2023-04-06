@@ -380,17 +380,22 @@ class TestUserListCalls(IntegrationTest):
         self,
     ):
         user_uuid = 'user-uuid'
+        my_call_id = new_call_id()
+        my_second_call_id = new_call_id(leap=1)
+        others_call_id = new_call_id(leap=2)
+        no_user_call_id = new_call_id(leap=3)
         self.ari.set_channels(
-            MockChannel(id='my-call'),
-            MockChannel(id='my-second-call'),
-            MockChannel(id='others-call'),
-            MockChannel(id='no-user-call'),
+            MockChannel(id=my_call_id, channelvars={'XIVO_USERUUID': user_uuid}),
+            MockChannel(id=my_second_call_id, channelvars={'XIVO_USERUUID': user_uuid}),
+            MockChannel(id=others_call_id, channelvars={'XIVO_USERUUID': 'user2-uuid'}),
+            MockChannel(id=no_user_call_id),
         )
         self.ari.set_channel_variable(
             {
-                'my-call': {'XIVO_USERUUID': user_uuid},
-                'my-second-call': {'XIVO_USERUUID': user_uuid},
-                'others-call': {'XIVO_USERUUID': 'user2-uuid'},
+                my_call_id: {'XIVO_USERUUID': user_uuid},
+                my_second_call_id: {'XIVO_USERUUID': user_uuid},
+                others_call_id: {'XIVO_USERUUID': 'user2-uuid'},
+                no_user_call_id: {'XIVO_USERUUID': ''},
             }
         )
         self.confd.set_users(MockUser(uuid=user_uuid), MockUser(uuid='user2-uuid'))
@@ -402,8 +407,8 @@ class TestUserListCalls(IntegrationTest):
             calls,
             has_entries(
                 items=contains_inanyorder(
-                    has_entries(call_id='my-call', user_uuid=user_uuid),
-                    has_entries(call_id='my-second-call', user_uuid=user_uuid),
+                    has_entries(call_id=my_call_id, user_uuid=user_uuid),
+                    has_entries(call_id=my_second_call_id, user_uuid=user_uuid),
                 )
             ),
         )
@@ -719,7 +724,11 @@ class TestUserDeleteCall(IntegrationTest):
         token = 'my-token'
         self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
         self.confd.set_users(MockUser(uuid=user_uuid))
-        self.ari.set_channels(MockChannel(id=call_id, state='Up'))
+        self.ari.set_channels(
+            MockChannel(
+                id=call_id, state='Up', channelvars={'XIVO_USERUUID': user_uuid}
+            ),
+        )
         self.ari.set_channel_variable({call_id: {'XIVO_USERUUID': user_uuid}})
 
         self.calld.hangup_my_call(call_id, token)
@@ -743,7 +752,12 @@ class TestUserDeleteCall(IntegrationTest):
         self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
         self.confd.set_users(MockUser(uuid=user_uuid))
         self.ari.set_channels(
-            MockChannel(id=call_id, state='Up', name=SOME_LOCAL_CHANNEL_NAME)
+            MockChannel(
+                id=call_id,
+                state='Up',
+                name=SOME_LOCAL_CHANNEL_NAME,
+                channelvars={'XIVO_USERUUID': user_uuid},
+            ),
         )
         self.ari.set_channel_variable({call_id: {'XIVO_USERUUID': user_uuid}})
 
@@ -763,6 +777,7 @@ class TestCreateCall(IntegrationTest):
 
     def test_create_call_with_correct_values(self):
         user_uuid = 'user-uuid'
+        my_new_call_id = new_call_id()
         priority = 1
         self.confd.set_users(
             MockUser(
@@ -772,11 +787,13 @@ class TestCreateCall(IntegrationTest):
         self.confd.set_lines(
             MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL)
         )
-        self.ari.set_originates(MockChannel(id='new-call-id', connected_line_number=''))
+        self.ari.set_originates(
+            MockChannel(id=my_new_call_id, connected_line_number='')
+        )
         self.amid.set_valid_exten('my-context', 'my-extension', priority)
         self.ari.set_channel_variable(
             {
-                'new-call-id': {
+                my_new_call_id: {
                     'CHANNEL(channeltype)': 'PJSIP',
                     'CHANNEL(pjsip,call-id)': 'a-sip-call-id',
                     'WAZO_LINE_ID': str(SOME_LINE_ID),
@@ -796,7 +813,7 @@ class TestCreateCall(IntegrationTest):
         assert_that(
             result,
             has_entries(
-                call_id='new-call-id',
+                call_id=my_new_call_id,
                 dialed_extension='my-extension',
                 peer_caller_id_number='my-extension',
                 sip_call_id='a-sip-call-id',
@@ -818,6 +835,7 @@ class TestCreateCall(IntegrationTest):
     def test_create_call_with_extension_containing_whitespace(self):
         user_uuid = 'user-uuid'
         priority = 1
+        my_new_call_id = new_call_id()
         self.confd.set_users(
             MockUser(
                 uuid='user-uuid', line_ids=['line-id'], tenant_uuid='the-tenant-uuid'
@@ -826,11 +844,13 @@ class TestCreateCall(IntegrationTest):
         self.confd.set_lines(
             MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL)
         )
-        self.ari.set_originates(MockChannel(id='new-call-id', connected_line_number=''))
+        self.ari.set_originates(
+            MockChannel(id=my_new_call_id, connected_line_number='')
+        )
         self.amid.set_valid_exten('my-context', '123456', priority)
         self.ari.set_channel_variable(
             {
-                'new-call-id': {
+                my_new_call_id: {
                     'CHANNEL(channeltype)': 'PJSIP',
                     'CHANNEL(pjsip,call-id)': 'a-sip-call-id',
                     'WAZO_LINE_ID': str(SOME_LINE_ID),
@@ -850,7 +870,7 @@ class TestCreateCall(IntegrationTest):
         assert_that(
             result,
             has_entries(
-                call_id='new-call-id',
+                call_id=my_new_call_id,
                 dialed_extension='123456',
                 peer_caller_id_number='123456',
                 sip_call_id='a-sip-call-id',
@@ -871,6 +891,7 @@ class TestCreateCall(IntegrationTest):
 
     def test_when_create_call_then_ari_arguments_are_correct(self):
         user_uuid = 'user-uuid'
+        my_new_call_id = new_call_id()
         priority = 1
         self.confd.set_users(
             MockUser(
@@ -880,7 +901,7 @@ class TestCreateCall(IntegrationTest):
         self.confd.set_lines(
             MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL)
         )
-        self.ari.set_originates(MockChannel('new-call-id'))
+        self.ari.set_originates(MockChannel(my_new_call_id))
         self.amid.set_valid_exten('my-context', 'my-extension', priority)
         call_args = {
             'source': {'user': user_uuid},
@@ -932,6 +953,7 @@ class TestCreateCall(IntegrationTest):
 
     def test_when_create_call_with_no_variables_then_default_variables_are_set(self):
         user_uuid = 'user-uuid'
+        my_new_call_id = new_call_id()
         the_tenant_uuid = new_uuid()
         priority = 1
         self.confd.set_users(
@@ -944,7 +966,7 @@ class TestCreateCall(IntegrationTest):
         self.confd.set_lines(
             MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL)
         )
-        self.ari.set_originates(MockChannel(id='new-call-id'))
+        self.ari.set_originates(MockChannel(id=my_new_call_id))
         self.amid.set_valid_exten('my-context', 'my-extension', priority)
         call_args = {
             'source': {'user': user_uuid},
@@ -987,6 +1009,7 @@ class TestCreateCall(IntegrationTest):
         '''
 
         user_uuid = 'user-uuid'
+        my_new_call_id = new_call_id()
         priority = 1
         self.confd.set_users(
             MockUser(
@@ -996,7 +1019,7 @@ class TestCreateCall(IntegrationTest):
         self.confd.set_lines(
             MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL)
         )
-        self.ari.set_originates(MockChannel(id='new-call-id'))
+        self.ari.set_originates(MockChannel(id=my_new_call_id))
         self.amid.set_valid_exten('my-context', '#pound', priority)
         call_args = {
             'source': {'user': user_uuid},
@@ -1032,6 +1055,7 @@ class TestCreateCall(IntegrationTest):
 
     def test_create_call_with_multiple_lines(self):
         user_uuid = 'user-uuid'
+        my_new_call_id = new_call_id()
         priority = 1
         self.confd.set_users(
             MockUser(
@@ -1043,7 +1067,7 @@ class TestCreateCall(IntegrationTest):
         self.confd.set_lines(
             MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL)
         )
-        self.ari.set_originates(MockChannel(id='new-call-id'))
+        self.ari.set_originates(MockChannel(id=my_new_call_id))
         self.amid.set_valid_exten('my-context', 'my-extension', priority)
         call_args = {
             'source': {'user': user_uuid},
@@ -1055,7 +1079,7 @@ class TestCreateCall(IntegrationTest):
         }
         result = self.calld_client.calls.make_call(call_args)
 
-        assert_that(result, has_entries(call_id='new-call-id'))
+        assert_that(result, has_entries(call_id=my_new_call_id))
         assert_that(
             self.ari.requests(),
             has_entries(
@@ -1159,12 +1183,13 @@ class TestCreateCall(IntegrationTest):
 
     def test_create_call_with_wrong_exten(self):
         user_uuid = 'user-uuid'
+        my_new_call_id = new_call_id()
         priority = 1
         self.confd.set_users(MockUser(uuid='user-uuid', line_ids=['line-id']))
         self.confd.set_lines(
             MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL)
         )
-        self.ari.set_originates(MockChannel(id='new-call-id'))
+        self.ari.set_originates(MockChannel(id=my_new_call_id))
         self.amid.set_no_valid_exten()
         call_args = {
             'source': {'user': user_uuid},
@@ -1187,6 +1212,7 @@ class TestCreateCall(IntegrationTest):
 
     def test_create_call_with_no_content_type(self):
         user_uuid = 'user-uuid'
+        my_new_call_id = new_call_id()
         priority = 1
         self.confd.set_users(
             MockUser(
@@ -1196,7 +1222,7 @@ class TestCreateCall(IntegrationTest):
         self.confd.set_lines(
             MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL)
         )
-        self.ari.set_originates(MockChannel(id='new-call-id'))
+        self.ari.set_originates(MockChannel(id=my_new_call_id))
         self.amid.set_valid_exten('my-context', 'my-extension', priority)
         call_args = {
             'source': {'user': user_uuid},
@@ -1212,6 +1238,7 @@ class TestCreateCall(IntegrationTest):
 
     def test_create_call_with_explicit_line_not_found(self):
         user_uuid = 'user-uuid'
+        my_new_call_id = new_call_id()
         line_id_not_found = 999999999999999999
         priority = 1
         self.confd.set_users(
@@ -1226,7 +1253,7 @@ class TestCreateCall(IntegrationTest):
                 id='first-line-id', name='first-line-name', protocol=CONFD_SIP_PROTOCOL
             )
         )
-        self.ari.set_originates(MockChannel(id='new-call-id'))
+        self.ari.set_originates(MockChannel(id=my_new_call_id))
         self.amid.set_valid_exten('my-context', 'my-extension', priority)
         call_args = {
             'source': {'user': user_uuid, 'line_id': line_id_not_found},
@@ -1249,6 +1276,7 @@ class TestCreateCall(IntegrationTest):
 
     def test_create_call_with_explicit_wrong_line(self):
         user_uuid = 'user-uuid'
+        my_new_call_id = new_call_id()
         unassociated_line_id = 987654321
         priority = 1
         self.confd.set_users(
@@ -1268,7 +1296,7 @@ class TestCreateCall(IntegrationTest):
                 protocol=CONFD_SIP_PROTOCOL,
             ),
         )
-        self.ari.set_originates(MockChannel(id='new-call-id'))
+        self.ari.set_originates(MockChannel(id=my_new_call_id))
         self.amid.set_valid_exten('my-context', 'my-extension', priority)
         call_args = {
             'source': {'user': user_uuid, 'line_id': unassociated_line_id},
@@ -1292,6 +1320,7 @@ class TestCreateCall(IntegrationTest):
     def test_create_call_with_explicit_line(self):
         user_uuid = 'user-uuid'
         second_line_id = 12345
+        my_new_call_id = new_call_id()
         priority = 1
         self.confd.set_users(
             MockUser(
@@ -1308,7 +1337,7 @@ class TestCreateCall(IntegrationTest):
                 id=second_line_id, name='second-line-name', protocol=CONFD_SIP_PROTOCOL
             ),
         )
-        self.ari.set_originates(MockChannel(id='new-call-id'))
+        self.ari.set_originates(MockChannel(id=my_new_call_id))
         self.amid.set_valid_exten('my-context', 'my-extension', priority)
 
         call_args = {
@@ -1342,6 +1371,7 @@ class TestCreateCall(IntegrationTest):
     def test_create_call_all_lines(self):
         user_uuid = 'user-uuid'
         second_line_id = 12345
+        my_new_call_id = new_call_id()
         priority = 1
         self.confd.set_users(
             MockUser(
@@ -1358,7 +1388,7 @@ class TestCreateCall(IntegrationTest):
                 id=second_line_id, name='second-line-name', protocol=CONFD_SIP_PROTOCOL
             ),
         )
-        self.ari.set_originates(MockChannel(id='new-call-id'))
+        self.ari.set_originates(MockChannel(id=my_new_call_id))
         self.amid.set_valid_exten('my-context', 'my-extension', priority)
 
         call_args = {
@@ -1391,6 +1421,7 @@ class TestCreateCall(IntegrationTest):
 
     def test_create_call_all_lines_with_no_line(self):
         user_uuid = 'user-uuid'
+        my_new_call_id = new_call_id()
         context, extension, priority = 'my-context', 'my-extension', 1
         self.amid.set_valid_exten(context, extension, priority)
         self.confd.set_users(
@@ -1398,7 +1429,7 @@ class TestCreateCall(IntegrationTest):
                 uuid='user-uuid', mobile='my-mobile', tenant_uuid='the-tenant-uuid'
             )
         )
-        self.ari.set_originates(MockChannel(id='new-call-id'))
+        self.ari.set_originates(MockChannel(id=my_new_call_id))
         call_args = {
             'source': {'user': user_uuid, 'from_mobile': True},
             'destination': {
@@ -1420,6 +1451,7 @@ class TestCreateCall(IntegrationTest):
 
     def test_create_call_from_mobile_with_no_line(self):
         user_uuid = 'user-uuid'
+        my_new_call_id = new_call_id()
         context, extension, priority = 'my-context', 'my-extension', 1
         self.amid.set_valid_exten(context, extension, priority)
         self.confd.set_users(
@@ -1427,7 +1459,7 @@ class TestCreateCall(IntegrationTest):
                 uuid='user-uuid', mobile='my-mobile', tenant_uuid='the-tenant-uuid'
             )
         )
-        self.ari.set_originates(MockChannel(id='new-call-id'))
+        self.ari.set_originates(MockChannel(id=my_new_call_id))
         call_args = {
             'source': {'user': user_uuid, 'from_mobile': True},
             'destination': {
@@ -1449,6 +1481,7 @@ class TestCreateCall(IntegrationTest):
 
     def test_create_call_from_mobile_with_no_mobile(self):
         user_uuid = 'user-uuid'
+        my_new_call_id = new_call_id()
         priority = 1
         context, extension, priority = 'my-context', 'my-extension', 1
         self.amid.set_valid_exten(context, extension, priority)
@@ -1465,7 +1498,7 @@ class TestCreateCall(IntegrationTest):
                 context='my-line-context',
             )
         )
-        self.ari.set_originates(MockChannel(id='new-call-id'))
+        self.ari.set_originates(MockChannel(id=my_new_call_id))
         call_args = {
             'source': {'user': user_uuid, 'from_mobile': True},
             'destination': {
@@ -1488,6 +1521,7 @@ class TestCreateCall(IntegrationTest):
 
     def test_create_call_from_mobile_with_invalid_mobile(self):
         user_uuid = 'user-uuid'
+        my_new_call_id = new_call_id()
         context, extension, priority = 'my-context', 'my-extension', 1
         self.amid.set_valid_exten(context, extension, priority)
         self.confd.set_users(
@@ -1506,7 +1540,7 @@ class TestCreateCall(IntegrationTest):
                 context='my-line-context',
             )
         )
-        self.ari.set_originates(MockChannel(id='new-call-id'))
+        self.ari.set_originates(MockChannel(id=my_new_call_id))
         call_args = {
             'source': {'user': user_uuid, 'from_mobile': True},
             'destination': {
@@ -1529,6 +1563,7 @@ class TestCreateCall(IntegrationTest):
 
     def test_create_call_from_mobile_to_wrong_extension(self):
         user_uuid = 'user-uuid'
+        my_new_call_id = new_call_id()
         context, extension, priority = 'my-context', 'my-extension', 1
         self.amid.set_valid_exten('my-line-context', 'my-mobile', priority)
         self.confd.set_users(
@@ -1547,7 +1582,7 @@ class TestCreateCall(IntegrationTest):
                 context='my-line-context',
             )
         )
-        self.ari.set_originates(MockChannel(id='new-call-id'))
+        self.ari.set_originates(MockChannel(id=my_new_call_id))
         call_args = {
             'source': {'user': user_uuid, 'from_mobile': True},
             'destination': {
@@ -1570,6 +1605,7 @@ class TestCreateCall(IntegrationTest):
     def test_create_call_auto_answer(self):
         user_uuid = 'user-uuid'
         second_line_id = 12345
+        my_new_call_id = new_call_id()
         priority = 1
         self.confd.set_users(
             MockUser(
@@ -1583,7 +1619,7 @@ class TestCreateCall(IntegrationTest):
                 id='first-line-id', name='first-line-name', protocol=CONFD_SIP_PROTOCOL
             )
         )
-        self.ari.set_originates(MockChannel(id='new-call-id'))
+        self.ari.set_originates(MockChannel(id=my_new_call_id))
         self.amid.set_valid_exten('my-context', 'my-extension', priority)
 
         call_args = {
@@ -1678,6 +1714,7 @@ class TestUserCreateCall(IntegrationTest):
 
     def test_create_call_with_correct_values(self):
         user_uuid = 'user-uuid'
+        my_new_call_id = new_call_id()
         token = 'my-token'
         self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
         self.confd.set_users(
@@ -1693,7 +1730,9 @@ class TestUserCreateCall(IntegrationTest):
                 context='my-context',
             )
         )
-        self.ari.set_originates(MockChannel(id='new-call-id', connected_line_number=''))
+        self.ari.set_originates(
+            MockChannel(id=my_new_call_id, connected_line_number='')
+        )
         self.amid.set_valid_exten('my-context', 'my-extension')
 
         result = self.calld.originate_me(extension='my-extension', token=token)
@@ -1701,7 +1740,7 @@ class TestUserCreateCall(IntegrationTest):
         assert_that(
             result,
             has_entries(
-                call_id='new-call-id',
+                call_id=my_new_call_id,
                 dialed_extension='my-extension',
                 peer_caller_id_number='my-extension',
             ),
@@ -1721,6 +1760,7 @@ class TestUserCreateCall(IntegrationTest):
     def test_create_call_with_extension_containing_whitespace(self):
         user_uuid = 'user-uuid'
         token = 'my-token'
+        my_new_call_id = new_call_id()
         self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
         self.confd.set_users(
             MockUser(
@@ -1735,7 +1775,9 @@ class TestUserCreateCall(IntegrationTest):
                 context='my-context',
             )
         )
-        self.ari.set_originates(MockChannel(id='new-call-id', connected_line_number=''))
+        self.ari.set_originates(
+            MockChannel(id=my_new_call_id, connected_line_number='')
+        )
         self.amid.set_valid_exten('my-context', '123456')
 
         result = self.calld.originate_me(extension='12 3\n4\t5\r6', token=token)
@@ -1743,7 +1785,7 @@ class TestUserCreateCall(IntegrationTest):
         assert_that(
             result,
             has_entries(
-                call_id='new-call-id',
+                call_id=my_new_call_id,
                 dialed_extension='123456',
                 peer_caller_id_number='123456',
             ),
@@ -1763,6 +1805,7 @@ class TestUserCreateCall(IntegrationTest):
     def test_when_create_call_then_ari_arguments_are_correct(self):
         user_uuid = 'user-uuid'
         token = 'my-token'
+        my_new_call_id = new_call_id()
         self.auth.set_token(MockUserToken(token, user_uuid))
         self.confd.set_users(
             MockUser(
@@ -1777,7 +1820,7 @@ class TestUserCreateCall(IntegrationTest):
                 context='my-context',
             )
         )
-        self.ari.set_originates(MockChannel('new-call-id'))
+        self.ari.set_originates(MockChannel(my_new_call_id))
         self.amid.set_valid_exten('my-context', 'my-extension')
 
         self.calld.originate_me(
@@ -1827,6 +1870,7 @@ class TestUserCreateCall(IntegrationTest):
         user_uuid = 'user-uuid'
         the_tenant_uuid = new_uuid()
         token = 'my-token'
+        my_new_call_id = new_call_id()
         self.auth.set_token(MockUserToken(token, user_uuid))
         self.confd.set_users(
             MockUser(
@@ -1843,7 +1887,7 @@ class TestUserCreateCall(IntegrationTest):
                 context='my-context',
             )
         )
-        self.ari.set_originates(MockChannel(id='new-call-id'))
+        self.ari.set_originates(MockChannel(id=my_new_call_id))
         self.amid.set_valid_exten('my-context', 'my-extension')
 
         self.calld.originate_me(extension='my-extension', token=token)
@@ -1875,6 +1919,7 @@ class TestUserCreateCall(IntegrationTest):
     def test_create_call_with_multiple_lines(self):
         user_uuid = 'user-uuid'
         token = 'my-token'
+        my_new_call_id = new_call_id()
         self.auth.set_token(MockUserToken(token, user_uuid))
         self.confd.set_users(
             MockUser(
@@ -1891,12 +1936,12 @@ class TestUserCreateCall(IntegrationTest):
                 context='my-context',
             )
         )
-        self.ari.set_originates(MockChannel(id='new-call-id'))
+        self.ari.set_originates(MockChannel(id=my_new_call_id))
         self.amid.set_valid_exten('my-context', 'my-extension')
 
         result = self.calld.originate_me(extension='my-extension', token=token)
 
-        assert_that(result, has_entries(call_id='new-call-id'))
+        assert_that(result, has_entries(call_id=my_new_call_id))
         assert_that(
             self.ari.requests(),
             has_entries(
@@ -1938,6 +1983,7 @@ class TestUserCreateCall(IntegrationTest):
     def test_create_call_with_wrong_exten(self):
         user_uuid = 'user-uuid'
         token = 'my-token'
+        my_new_call_id = new_call_id()
         self.auth.set_token(MockUserToken(token, user_uuid))
         self.confd.set_users(
             MockUser(
@@ -1952,7 +1998,7 @@ class TestUserCreateCall(IntegrationTest):
                 context='my-context',
             )
         )
-        self.ari.set_originates(MockChannel(id='new-call-id'))
+        self.ari.set_originates(MockChannel(id=my_new_call_id))
         self.amid.set_no_valid_exten()
 
         body = {'extension': 'not-found'}
@@ -1964,6 +2010,7 @@ class TestUserCreateCall(IntegrationTest):
     def test_create_call_with_unknown_confd_context(self):
         user_uuid = 'user-uuid'
         token = 'my-token'
+        my_new_call_id = new_call_id()
         self.auth.set_token(MockUserToken(token, user_uuid))
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=['line-id']))
         self.confd.set_lines(
@@ -1974,7 +2021,7 @@ class TestUserCreateCall(IntegrationTest):
                 context='my-context',
             )
         )
-        self.ari.set_originates(MockChannel(id='new-call-id'))
+        self.ari.set_originates(MockChannel(id=my_new_call_id))
         self.amid.set_valid_exten('my-context', 'my-extension')
 
         body = {'extension': 'not-found'}
@@ -1986,6 +2033,7 @@ class TestUserCreateCall(IntegrationTest):
     def test_create_call_with_no_content_type(self):
         user_uuid = 'user-uuid'
         token = 'my-token'
+        my_new_call_id = new_call_id()
         self.auth.set_token(MockUserToken(token, user_uuid))
         self.confd.set_users(
             MockUser(
@@ -2000,7 +2048,7 @@ class TestUserCreateCall(IntegrationTest):
                 context='my-context',
             )
         )
-        self.ari.set_originates(MockChannel(id='new-call-id'))
+        self.ari.set_originates(MockChannel(id=my_new_call_id))
         self.amid.set_valid_exten('my-context', 'my-extension')
         self.calld_client.set_token(token)
 
@@ -2010,6 +2058,7 @@ class TestUserCreateCall(IntegrationTest):
     def test_create_call_with_explicit_line(self):
         user_uuid = 'user-uuid'
         second_line_id = 12345
+        my_new_call_id = new_call_id()
         token = 'my-token'
         self.auth.set_token(MockUserToken(token, user_uuid))
         self.confd.set_users(
@@ -2033,7 +2082,7 @@ class TestUserCreateCall(IntegrationTest):
                 context='second-context',
             ),
         )
-        self.ari.set_originates(MockChannel(id='new-call-id'))
+        self.ari.set_originates(MockChannel(id=my_new_call_id))
         self.amid.set_valid_exten('second-context', 'my-extension')
 
         self.calld.originate_me('my-extension', line_id=second_line_id, token=token)
@@ -2060,6 +2109,7 @@ class TestUserCreateCall(IntegrationTest):
         user_uuid = 'user-uuid'
         second_line_id = 12345
         token = 'my-token'
+        my_new_call_id = new_call_id()
         self.auth.set_token(MockUserToken(token, user_uuid))
         self.confd.set_users(
             MockUser(
@@ -2082,7 +2132,7 @@ class TestUserCreateCall(IntegrationTest):
                 context='second-context',
             ),
         )
-        self.ari.set_originates(MockChannel(id='new-call-id'))
+        self.ari.set_originates(MockChannel(id=my_new_call_id))
         self.amid.set_valid_exten('first-context', 'my-extension')
 
         self.calld.originate_me('my-extension', all_lines=True, token=token)
@@ -2109,6 +2159,7 @@ class TestUserCreateCall(IntegrationTest):
         user_uuid = 'user-uuid'
         second_line_id = 12345
         token = 'my-token'
+        my_new_call_id = new_call_id()
         self.auth.set_token(MockUserToken(token, user_uuid))
         self.confd.set_users(
             MockUser(
@@ -2125,7 +2176,7 @@ class TestUserCreateCall(IntegrationTest):
                 context='first-context',
             )
         )
-        self.ari.set_originates(MockChannel(id='new-call-id'))
+        self.ari.set_originates(MockChannel(id=my_new_call_id))
         self.amid.set_valid_exten('first-context', 'my-extension')
 
         self.calld.originate_me('my-extension', token=token, auto_answer_caller=True)
@@ -2235,16 +2286,16 @@ class TestConnectUser(IntegrationTest):
     def test_given_one_call_and_one_user_when_connect_user_then_the_two_are_talking(
         self,
     ):
+        call_id = new_call_id()
+        my_new_call_id = new_call_id(leap=1)
         self.ari.set_channels(
-            MockChannel(id='call-id'),
-            MockChannel(
-                id='new-call-id',
-            ),
+            MockChannel(id=call_id),
+            MockChannel(id=my_new_call_id),
         )
-        self.ari.set_channel_variable({'new-call-id': {'XIVO_USERUUID': 'user-uuid'}})
+        self.ari.set_channel_variable({my_new_call_id: {'XIVO_USERUUID': 'user-uuid'}})
         self.ari.set_global_variables(
             {
-                'XIVO_CHANNELS_call-id': json.dumps(
+                f'XIVO_CHANNELS_{call_id}': json.dumps(
                     {'app': 'sw', 'app_instance': 'sw1', 'state': 'ringing'}
                 )
             }
@@ -2253,11 +2304,11 @@ class TestConnectUser(IntegrationTest):
         self.confd.set_lines(
             MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL)
         )
-        self.ari.set_originates(MockChannel(id='new-call-id'))
+        self.ari.set_originates(MockChannel(id=my_new_call_id))
 
-        new_call = self.calld.connect_user('call-id', 'user-uuid')
+        new_call = self.calld.connect_user(call_id, 'user-uuid')
 
-        assert_that(new_call, has_entries({'call_id': 'new-call-id'}))
+        assert_that(new_call, has_entries(call_id=my_new_call_id))
         assert_that(
             self.ari.requests(),
             has_entries(
@@ -2268,8 +2319,8 @@ class TestConnectUser(IntegrationTest):
                         query=contains_inanyorder(
                             ['app', 'callcontrol'],
                             ['endpoint', 'pjsip/line-name'],
-                            ['appArgs', 'sw1,dialed_from,call-id'],
-                            ['originator', 'call-id'],
+                            ['appArgs', f'sw1,dialed_from,{call_id}'],
+                            ['originator', call_id],
                         ),
                     )
                 )
@@ -2285,21 +2336,23 @@ class TestConnectUser(IntegrationTest):
         assert_that(result.status_code, equal_to(503))
 
     def test_given_no_user_when_connect_user_then_400(self):
-        self.ari.set_channels(MockChannel(id='call-id'))
+        call_id = new_call_id()
+        self.ari.set_channels(MockChannel(id=call_id))
 
         result = self.calld.put_call_user_result(
-            'call-id', 'user-uuid', token=VALID_TOKEN
+            call_id, 'user-uuid', token=VALID_TOKEN
         )
 
         assert_that(result.status_code, equal_to(400))
         assert_that(result.json()['message'].lower(), contains_string('user'))
 
     def test_given_user_has_no_line_when_connect_user_then_400(self):
-        self.ari.set_channels(MockChannel(id='call-id'))
+        call_id = new_call_id()
+        self.ari.set_channels(MockChannel(id=call_id))
         self.confd.set_users(MockUser(uuid='user-uuid'))
 
         result = self.calld.put_call_user_result(
-            'call-id', 'user-uuid', token=VALID_TOKEN
+            call_id, 'user-uuid', token=VALID_TOKEN
         )
 
         assert_that(result.status_code, equal_to(400))
@@ -2905,19 +2958,29 @@ class TestCallHold(IntegrationTest):
         token = self.given_user_token(user_uuid)
         self.calld_client.set_token(token)
         self.ari.set_channels(
-            MockChannel(id=user_channel_id, state='Up', name='PJSIP/abcdef-000001'),
             MockChannel(
-                id=someone_else_channel_id, state='Up', name='PJSIP/ghijkl-000002'
+                id=user_channel_id,
+                state='Up',
+                name='PJSIP/abcdef-000001',
+                channelvars={'XIVO_USERUUID': user_uuid},
+            ),
+            MockChannel(
+                id=someone_else_channel_id,
+                state='Up',
+                name='PJSIP/ghijkl-000002',
+                channelvars={'XIVO_USERUUID': someone_else_uuid},
             ),
             MockChannel(
                 id=user_channel_id_device_no_plugin,
                 state='Up',
                 name='PJSIP/no-plugin-000003',
+                channelvars={'XIVO_USERUUID': user_uuid},
             ),
             MockChannel(
                 id=user_channel_id_no_device,
                 state='Up',
                 name='PJSIP/not-found-000004',
+                channelvars={'XIVO_USERUUID': user_uuid},
             ),
         )
         self.ari.set_channel_variable(
@@ -2986,19 +3049,29 @@ class TestCallHold(IntegrationTest):
         token = self.given_user_token(user_uuid)
         self.calld_client.set_token(token)
         self.ari.set_channels(
-            MockChannel(id=user_channel_id, state='Up', name='PJSIP/abcdef-000001'),
             MockChannel(
-                id=someone_else_channel_id, state='Up', name='PJSIP/ghijkl-000002'
+                id=user_channel_id,
+                state='Up',
+                name='PJSIP/abcdef-000001',
+                channelvars={'XIVO_USERUUID': user_uuid},
+            ),
+            MockChannel(
+                id=someone_else_channel_id,
+                state='Up',
+                name='PJSIP/ghijkl-000002',
+                channelvars={'XIVO_USERUUID': someone_else_uuid},
             ),
             MockChannel(
                 id=user_channel_id_device_no_plugin,
                 state='Up',
                 name='PJSIP/no-plugin-000003',
+                channelvars={'XIVO_USERUUID': user_uuid},
             ),
             MockChannel(
                 id=user_channel_id_no_device,
                 state='Up',
                 name='PJSIP/not-found-000004',
+                channelvars={'XIVO_USERUUID': user_uuid},
             ),
         )
         self.ari.set_channel_variable(
@@ -3124,29 +3197,43 @@ class TestCallAnswer(IntegrationTest):
         user_uuid = str(uuid.uuid4())
         someone_else_uuid = str(uuid.uuid4())
         token = self.given_user_token(user_uuid)
+        user_channel_id = new_call_id()
+        someone_else_channel_id = new_call_id(leap=1)
+        user_channel_id_device_no_plugin = new_call_id(leap=2)
+        user_channel_id_no_device = new_call_id(leap=3)
         self.calld_client.set_token(token)
         self.ari.set_channels(
-            MockChannel(id='user-channel-id', state='Up', name='PJSIP/abcdef-000001'),
             MockChannel(
-                id='someone-else-channel-id', state='Up', name='PJSIP/ghijkl-000002'
+                id=user_channel_id,
+                state='Up',
+                name='PJSIP/abcdef-000001',
+                channelvars={'XIVO_USERUUID': user_uuid},
             ),
             MockChannel(
-                id='user-channel-id-device-no-plugin',
+                id=someone_else_channel_id,
+                state='Up',
+                name='PJSIP/ghijkl-000002',
+                channelvars={'XIVO_USERUUID': someone_else_uuid},
+            ),
+            MockChannel(
+                id=user_channel_id_device_no_plugin,
                 state='Up',
                 name='PJSIP/no-plugin-000003',
+                channelvars={'XIVO_USERUUID': user_uuid},
             ),
             MockChannel(
-                id='user-channel-id-no-device',
+                id=user_channel_id_no_device,
                 state='Up',
                 name='PJSIP/not-found-000004',
+                channelvars={'XIVO_USERUUID': user_uuid},
             ),
         )
         self.ari.set_channel_variable(
             {
-                'user-channel-id': {'XIVO_USERUUID': user_uuid},
-                'someone-else-channel-id': {'XIVO_USERUUID': someone_else_uuid},
-                'user-channel-id-device-no-plugin': {'XIVO_USERUUID': user_uuid},
-                'user-channel-id-no-device': {'XIVO_USERUUID': user_uuid},
+                user_channel_id: {'XIVO_USERUUID': user_uuid},
+                someone_else_channel_id: {'XIVO_USERUUID': someone_else_uuid},
+                user_channel_id_device_no_plugin: {'XIVO_USERUUID': user_uuid},
+                user_channel_id_no_device: {'XIVO_USERUUID': user_uuid},
             }
         )
 
@@ -3159,7 +3246,7 @@ class TestCallAnswer(IntegrationTest):
         # Unauthorized channel
         assert_that(
             calling(self.calld_client.calls.answer_from_user).with_args(
-                'someone-else-channel-id'
+                someone_else_channel_id
             ),
             raises(CalldError).matching(has_properties(status_code=403)),
         )
@@ -3167,7 +3254,7 @@ class TestCallAnswer(IntegrationTest):
         # Channel device is not found on phoned
         assert_that(
             calling(self.calld_client.calls.answer_from_user).with_args(
-                'user-channel-id-no-device'
+                user_channel_id_no_device
             ),
             raises(CalldError).matching(has_properties(status_code=503)),
         )
@@ -3175,13 +3262,13 @@ class TestCallAnswer(IntegrationTest):
         # Channel device has no plugin on phoned
         assert_that(
             calling(self.calld_client.calls.answer_from_user).with_args(
-                'user-channel-id-device-no-plugin'
+                user_channel_id_device_no_plugin
             ),
             raises(CalldError).matching(has_properties(status_code=503)),
         )
 
         # Answer
-        self.calld_client.calls.answer_from_user('user-channel-id')
+        self.calld_client.calls.answer_from_user(user_channel_id)
 
         assert_that(
             self.phoned.requests(),
