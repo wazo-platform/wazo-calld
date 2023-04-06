@@ -148,12 +148,17 @@ class CachingRepository:
     def _get_or_fetch_cached_variable(self, fn, channel_id, variable):
         value = self._get_cached_variable(channel_id, variable)
         if value is not None:
+            logger.debug('channel variable cache hit on %s %s', channel_id, variable)
             return value
 
         with self._cache_lock:
             value = self._get_cached_variable(channel_id, variable)
             if value is not None:
+                logger.debug(
+                    'channel variable cache hit on %s %s', channel_id, variable
+                )
                 return value
+            logger.debug('channel variable cache miss on %s %s', channel_id, variable)
             self._fetch_and_cache_variable_locked(fn, channel_id, variable)
 
             return self._get_cached_variable(channel_id, variable)
