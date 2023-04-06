@@ -358,7 +358,7 @@ class SwitchboardsService:
             user_uuid,
             line_id,
         )
-        with self.duplicate_held_call_answer_lock:
+        with self.action_lock:
             if not SwitchboardConfd(
                 tenant_uuid, switchboard_uuid, self._confd
             ).exists():
