@@ -103,8 +103,8 @@ class CachingRepository:
 
     def __init__(self, repository):
         self._repository = repository
-        self._cache = {}
-        self._cache_lock = threading.Lock()
+        self._variable_cache = {}
+        self._variable_cache_lock = threading.Lock()
         self._last_cache_cleanup = time.time()
 
     def getChannelVar(self, channelId, variable):
@@ -130,7 +130,7 @@ class CachingRepository:
             return
 
         to_remove = set()
-        for call_id in self._cache.keys():
+        for call_id in self._variable_cache.keys():
             if float(call_id) < threshold:
                 to_remove.add(call_id)
 
@@ -142,8 +142,8 @@ class CachingRepository:
 
     def _remove_cached_channel(self, channel_id):
         logger.debug('removing channel %s variable cache', channel_id)
-        with self._cache_lock:
-            self._cache.pop(channel_id, None)
+        with self._variable_cache_lock:
+            self._variable_cache.pop(channel_id, None)
 
     def _get_or_fetch_cached_variable(self, fn, channel_id, variable):
         value = self._get_cached_variable(channel_id, variable)
@@ -151,7 +151,7 @@ class CachingRepository:
             logger.debug('channel variable cache hit on %s %s', channel_id, variable)
             return value
 
-        with self._cache_lock:
+        with self._variable_cache_lock:
             value = self._get_cached_variable(channel_id, variable)
             if value is not None:
                 logger.debug(
@@ -165,13 +165,13 @@ class CachingRepository:
 
     def _fetch_and_cache_variable_locked(self, fn, channel_id, variable):
         value = fn(channelId=channel_id, variable=variable)
-        if channel_id not in self._cache:
-            self._cache[channel_id] = {variable: value}
+        if channel_id not in self._variable_cache:
+            self._variable_cache[channel_id] = {variable: value}
         else:
-            self._cache[channel_id][variable] = value
+            self._variable_cache[channel_id][variable] = value
 
     def _get_cached_variable(self, channel_id, variable):
-        channel_cache = self._cache.get(channel_id) or {}
+        channel_cache = self._variable_cache.get(channel_id) or {}
         return channel_cache.get(variable, None)
 
 
