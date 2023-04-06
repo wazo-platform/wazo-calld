@@ -40,9 +40,7 @@ class SwitchboardsService:
         self._asyncio = asyncio
         self._confd = confd
         self._notifier = notifier
-        self.duplicate_queued_call_answer_lock = threading.Lock()
-        self.duplicate_call_hold_lock = threading.Lock()
-        self.duplicate_held_call_answer_lock = threading.Lock()
+        self.action_lock = threading.Lock()
 
     def queued_calls(self, tenant_uuid, switchboard_uuid):
         logger.debug(
@@ -173,7 +171,7 @@ class SwitchboardsService:
             user_uuid,
             line_id,
         )
-        with self.duplicate_queued_call_answer_lock:
+        with self.action_lock:
             if not SwitchboardConfd(
                 tenant_uuid, switchboard_uuid, self._confd
             ).exists():
@@ -239,7 +237,7 @@ class SwitchboardsService:
             tenant_uuid,
             switchboard_uuid,
         )
-        with self.duplicate_call_hold_lock:
+        with self.action_lock:
             if not SwitchboardConfd(
                 tenant_uuid, switchboard_uuid, self._confd
             ).exists():
@@ -352,6 +350,14 @@ class SwitchboardsService:
     def answer_held_call(
         self, tenant_uuid, switchboard_uuid, held_call_id, user_uuid, line_id=None
     ):
+        logger.debug(
+            'Answering held call %s in tenant %s for switchboard %s with user %s line %s',
+            held_call_id,
+            tenant_uuid,
+            switchboard_uuid,
+            user_uuid,
+            line_id,
+        )
         with self.duplicate_held_call_answer_lock:
             if not SwitchboardConfd(
                 tenant_uuid, switchboard_uuid, self._confd
