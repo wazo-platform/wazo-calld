@@ -3,13 +3,12 @@ Section: python
 Priority: extra
 Maintainer: Wazo Maintainers <dev@wazo.community>
 Build-Depends:
- debhelper (>= 9),
+ debhelper (>= 12),
  dh-python,
- dh-systemd (>= 1.5),
  python3-all,
  python3-setuptools
 Standards-Version: 3.9.6
-X-Python-Version: >= 3.5
+X-Python-Version: >= 3.9
 
 Package: wazo-calld
 Architecture: all
@@ -21,10 +20,10 @@ Depends:
  python3-cheroot,
  python3-flask,
  python3-flask-restful,
- python3-flask-cors (>= 3.0.2),
+ python3-flask-cors,
  python3-iso8601,
  python3-jsonpatch,
- python3-kombu (>= 4.2.1-3),
+ python3-kombu,
  python3-marshmallow,
  python3-stevedore,
  python3-werkzeug,

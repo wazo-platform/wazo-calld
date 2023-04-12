@@ -6,20 +6,19 @@ https://github.com/wazo-platform/wazo-auth-client/archive/master.zip
 https://github.com/wazo-platform/wazo-confd-client/archive/master.zip
 https://github.com/wazo-platform/xivo-bus/archive/master.zip
 https://github.com/wazo-platform/xivo-lib-python/archive/master.zip
-cheroot==6.5.4
-flask-cors==3.0.7
-flask-restful==0.3.7
-flask==1.0.2
-importlib_metadata==1.6.0  # from kombu
-iso8601==0.1.11
-itsdangerous==0.24  # from flask
-jinja2==2.10  # from flask
-jsonpatch==1.21
-kombu==4.6.11
-markupsafe==1.1.0 # from flask
+cheroot==8.5.2
+flask-cors==3.0.9
+flask-restful==0.3.8
+flask==1.1.2
+iso8601==0.1.13
+itsdangerous==1.1.0  # from flask
+jinja2==2.11.3  # from flask
+jsonpatch==1.25
+kombu==5.0.2
+markupsafe==1.1.1 # from jinja
 marshmallow==3.10.0
-python-consul==0.7.1
-pyyaml==3.13  # from xivo-lib-python
-requests==2.21.0
-stevedore==1.29.0
-werkzeug==0.14.1
+python-consul==1.1.0
+pyyaml==5.3.1  # from xivo-lib-python
+requests==2.25.1
+stevedore==3.2.2
+werkzeug==1.0.1

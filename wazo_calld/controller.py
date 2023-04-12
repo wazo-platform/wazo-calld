@@ -27,6 +27,7 @@ logger = logging.getLogger(__name__)
 class Controller:
     def __init__(self, config):
         xivo_uuid = get_xivo_uuid(logger)
+        self._stopping_thread = None
         auth_client = AuthClient(**config['auth'])
         self.asyncio = CoreAsyncio()
         self.bus_consumer = CoreBusConsumer.from_config(config['bus'])
@@ -95,8 +96,11 @@ class Controller:
             self.ari.stop()
             logger.debug('joining asyncio thread')
             asyncio_thread.join()
+            if self._stopping_thread:
+                self._stopping_thread.join()
             logger.debug('done joining')
 
     def stop(self, reason):
         logger.warning('Stopping wazo-calld: %s', reason)
-        self.http_server.stop()
+        self._stopping_thread = Thread(target=self.http_server.stop, name=reason)
+        self._stopping_thread.start()
