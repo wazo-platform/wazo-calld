@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
-import threading
 
 from ari.exceptions import ARINotFound
 
@@ -30,6 +29,7 @@ from .exceptions import (
     NoSuchSwitchboard,
     NoSuchConfdUser,
 )
+from .lock import SwitchboardsLock
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +40,7 @@ class SwitchboardsService:
         self._asyncio = asyncio
         self._confd = confd
         self._notifier = notifier
-        self.action_lock = threading.Lock()
+        self._switchboards_lock = SwitchboardsLock()
 
     def queued_calls(self, tenant_uuid, switchboard_uuid):
         logger.debug(
@@ -171,7 +171,7 @@ class SwitchboardsService:
             user_uuid,
             line_id,
         )
-        with self.action_lock:
+        with self._switchboards_lock.acquired(switchboard_uuid, queued_call_id):
             if not SwitchboardConfd(
                 tenant_uuid, switchboard_uuid, self._confd
             ).exists():
@@ -237,7 +237,7 @@ class SwitchboardsService:
             tenant_uuid,
             switchboard_uuid,
         )
-        with self.action_lock:
+        with self._switchboards_lock.acquired(switchboard_uuid, call_id):
             if not SwitchboardConfd(
                 tenant_uuid, switchboard_uuid, self._confd
             ).exists():
@@ -358,7 +358,7 @@ class SwitchboardsService:
             user_uuid,
             line_id,
         )
-        with self.action_lock:
+        with self._switchboards_lock.acquired(switchboard_uuid, held_call_id):
             if not SwitchboardConfd(
                 tenant_uuid, switchboard_uuid, self._confd
             ).exists():
