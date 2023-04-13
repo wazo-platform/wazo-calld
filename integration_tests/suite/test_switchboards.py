@@ -2348,21 +2348,42 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
         until.true(bus_events.accumulate, tries=3)
 
         # operator answers the call
+        answered_bus_events = self.bus.accumulator(
+            headers={
+                'switchboard_uuid': switchboard_uuid,
+                'name': 'switchboard_queued_call_answered',
+            }
+        )
         answered_call_id = self.calld.switchboard_answer_queued_call(
             switchboard_uuid, queued_call_id, token, line_id
         )['call_id']
+        until.true(answered_bus_events.accumulate, tries=3)
 
         # operator holds the call
+        held_bus_events = self.bus.accumulator(
+            headers={
+                'switchboard_uuid': switchboard_uuid,
+                'name': 'switchboard_held_calls_updated',
+            }
+        )
         self.calld.switchboard_hold_call(
             switchboard_uuid,
             answered_call_id,
             token,
         )
+        until.true(held_bus_events.accumulate, tries=3)
 
         # operator answers the held call
+        answered_bus_events = self.bus.accumulator(
+            headers={
+                'switchboard_uuid': switchboard_uuid,
+                'name': 'switchboard_held_call_answered',
+            }
+        )
         self.calld.switchboard_answer_held_call(
             switchboard_uuid, answered_call_id, token, line_id
         )
+        until.true(answered_bus_events.accumulate, tries=3)
 
         # operator tries to answer the held call again
         response = self.calld.put_switchboard_held_call_answer_result(
@@ -2407,7 +2428,7 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
                 id=line_id2, name='switchboard-operator/autoanswer2', protocol='test'
             ),
         )
-        bus_events = self.bus.accumulator(
+        queued_bus_events = self.bus.accumulator(
             headers={
                 'switchboard_uuid': switchboard_uuid,
                 'name': 'switchboard_queued_calls_updated',
@@ -2424,19 +2445,40 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
             ],
         )
         queued_call_id = new_channel.id
-        until.true(bus_events.accumulate, tries=3)
+        until.true(queued_bus_events.accumulate, tries=3)
 
         # operator 1 answers the queued call
+        answered_bus_events = self.bus.accumulator(
+            headers={
+                'switchboard_uuid': switchboard_uuid,
+                'name': 'switchboard_queued_call_answered',
+            }
+        )
         answer_call_id = self.calld.switchboard_answer_queued_call(
             switchboard_uuid, queued_call_id, token, line_id
         )['call_id']
+        until.true(answered_bus_events.accumulate, tries=3)
 
+        held_bus_events = self.bus.accumulator(
+            headers={
+                'switchboard_uuid': switchboard_uuid,
+                'name': 'switchboard_held_calls_updated',
+            }
+        )
         self.calld.switchboard_hold_call(switchboard_uuid, answer_call_id, token)
+        until.true(held_bus_events.accumulate, tries=3)
 
         # operator 1 answers the held call
+        answered_bus_events = self.bus.accumulator(
+            headers={
+                'switchboard_uuid': switchboard_uuid,
+                'name': 'switchboard_held_call_answered',
+            }
+        )
         self.calld.switchboard_answer_held_call(
             switchboard_uuid, answer_call_id, token, line_id
         )
+        until.true(answered_bus_events.accumulate, tries=3)
 
         # operator 2 answers the held call
         response = self.calld.put_switchboard_held_call_answer_result(
