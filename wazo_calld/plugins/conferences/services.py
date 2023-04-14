@@ -29,10 +29,11 @@ logger = logging.getLogger(__name__)
 
 
 class ConferencesService:
-    def __init__(self, amid, ari, confd):
+    def __init__(self, amid, ari, channel_proxy, confd):
         self._amid = amid
         self._ari = ari
         self._confd = confd
+        self._channel_proxy = channel_proxy
 
     def list_participants(self, tenant_uuid, conference_id):
         if not Conference(tenant_uuid, conference_id, self._confd).exists():
@@ -74,7 +75,9 @@ class ConferencesService:
                 'language': participant_list_item['Language'],
                 'call_id': participant_list_item['Uniqueid'],
                 'user_uuid': Channel(
-                    participant_list_item['Uniqueid'], self._ari
+                    participant_list_item['Uniqueid'],
+                    self._ari,
+                    self._channel_proxy,
                 ).user(),
             }
             try:

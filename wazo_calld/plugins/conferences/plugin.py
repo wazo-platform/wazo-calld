@@ -25,6 +25,7 @@ class Plugin:
         bus_publisher = dependencies['bus_publisher']
         config = dependencies['config']
         token_changed_subscribe = dependencies['token_changed_subscribe']
+        channel_proxy = dependencies['channel_proxy']
 
         amid_client = AmidClient(**config['amid'])
         confd_client = ConfdClient(**config['confd'])
@@ -32,7 +33,12 @@ class Plugin:
         token_changed_subscribe(amid_client.set_token)
         token_changed_subscribe(confd_client.set_token)
 
-        conferences_service = ConferencesService(amid_client, ari.client, confd_client)
+        conferences_service = ConferencesService(
+            amid_client,
+            ari.client,
+            channel_proxy,
+            confd_client,
+        )
         notifier = ConferencesNotifier(bus_publisher)
         bus_event_handler = ConferencesBusEventHandler(
             confd_client, notifier, conferences_service

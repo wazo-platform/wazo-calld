@@ -27,7 +27,14 @@ logger = logging.getLogger(__name__)
 
 class TransfersStasis:
     def __init__(
-        self, amid_client, ari, services, state_factory, state_persistor, xivo_uuid
+        self,
+        amid_client,
+        ari,
+        services,
+        state_factory,
+        state_persistor,
+        xivo_uuid,
+        channel_proxy,
     ):
         self.ari = ari.client
         self._core_ari = ari
@@ -40,6 +47,7 @@ class TransfersStasis:
         self.hangup_pubsub.set_exception_handler(self.invalid_event)
         self.state_factory = state_factory
         self.state_persistor = state_persistor
+        self._channel_proxy = channel_proxy
 
     def initialize(self):
         self._subscribe()
@@ -123,13 +131,19 @@ class TransfersStasis:
         logger.debug('Processing lost hangups since last stop...')
         for transfer in transfers:
             transfer_state = self.state_factory.make(transfer)
-            if not Channel(transfer.transferred_call, self.ari).exists():
+            if not Channel(
+                transfer.transferred_call, self.ari, self._channel_proxy
+            ).exists():
                 logger.debug('Transferred hangup from transfer %s', transfer.id)
                 transfer_state = transfer_state.transferred_hangup()
-            if not Channel(transfer.initiator_call, self.ari).exists():
+            if not Channel(
+                transfer.initiator_call, self.ari, self._channel_proxy
+            ).exists():
                 logger.debug('Initiator hangup from transfer %s', transfer.id)
                 transfer_state = transfer_state.initiator_hangup()
-            if not Channel(transfer.recipient_call, self.ari).exists():
+            if not Channel(
+                transfer.recipient_call, self.ari, self._channel_proxy
+            ).exists():
                 logger.debug('Recipient hangup from transfer %s', transfer.id)
                 transfer_state = transfer_state.recipient_hangup()
         logger.debug('Done.')
@@ -142,7 +156,9 @@ class TransfersStasis:
             transfer_state = self.state_factory.make(transfer)
             if (
                 transfer_state.name == TransferStatus.ringback
-                and Channel(transfer.recipient_call, self.ari).exists()
+                and Channel(
+                    transfer.recipient_call, self.ari, self._channel_proxy
+                ).exists()
             ):
                 channel = self.ari.channels.get(channelId=transfer.recipient_call)
                 if channel.json['state'] != 'Up':

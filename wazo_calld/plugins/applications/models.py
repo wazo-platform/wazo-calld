@@ -41,9 +41,10 @@ class ApplicationNode:
 
 
 class CallFormatter:
-    def __init__(self, application, ari=None):
+    def __init__(self, application, ari=None, channel_proxy=None):
         self._application = application
         self._ari = ari
+        self._channel_proxy = channel_proxy
         self._snoop_list = None
 
     def from_channel(self, channel, variables=None, node_uuid=None):
@@ -58,7 +59,7 @@ class CallFormatter:
             call.node_uuid = node_uuid
 
         if self._ari is not None:
-            channel_helper = _ChannelHelper(channel.id, self._ari)
+            channel_helper = _ChannelHelper(channel.id, self._ari, self._channel_proxy)
             call.on_hold = channel_helper.on_hold()
             call.is_caller = channel_helper.is_caller()
             call.dialed_extension = channel_helper.dialed_extension()
@@ -110,7 +111,7 @@ class CallFormatter:
             if not self._ari:
                 return {}
 
-            snoop_helper = SnoopHelper(self._ari)
+            snoop_helper = SnoopHelper(self._ari, self._channel_proxy)
             self._snoop_list = snoop_helper.list_(self._application)
 
         result = {}
@@ -197,7 +198,7 @@ class _Snoop:
         if old_snoop_channel:
             old_snoop_channel.hangup()
 
-    def new_snoop_channel(self, ari, whisper_mode):
+    def new_snoop_channel(self, ari, channel_proxy, whisper_mode):
         logger.debug('Creating new snoop channel')
         try:
             snoop_channel = ari.channels.snoopChannel(
@@ -209,7 +210,7 @@ class _Snoop:
         except ARINotFound:
             raise NoSuchCall(self.snooped_call_id)
 
-        _ChannelHelper(snoop_channel.id, ari).wait_until_in_stasis()
+        _ChannelHelper(snoop_channel.id, ari, channel_proxy).wait_until_in_stasis()
 
         snoop_channel.setChannelVar(
             variable=self._whisper_mode_chan_var,
@@ -278,8 +279,9 @@ class _Snoop:
 
 
 class SnoopHelper:
-    def __init__(self, ari):
+    def __init__(self, ari, channel_proxy):
         self._ari = ari
+        self._channel_proxy = channel_proxy
 
     def create(self, application, snooped_call_id, snooping_call_id, whisper_mode):
         self.validate_ownership(application, snooped_call_id, snooping_call_id)
@@ -287,7 +289,9 @@ class SnoopHelper:
         snoop = _Snoop(application, snooped_call_id, snooping_call_id)
         try:
             snoop.create_bridge(self._ari)
-            snoop_channel = snoop.new_snoop_channel(self._ari, whisper_mode)
+            snoop_channel = snoop.new_snoop_channel(
+                self._ari, self._channel_proxy, whisper_mode
+            )
             snoop.update_snoop_channel(snoop_channel)
         except Exception as e:
             logger.debug('Error while creating the snoop bridge, destroying it. %s', e)
@@ -303,7 +307,9 @@ class SnoopHelper:
         snoop = self.get(application, snoop_uuid)
         self.validate_ownership(application, snoop.snooped_call_id)
 
-        snoop_channel = snoop.new_snoop_channel(self._ari, whisper_mode)
+        snoop_channel = snoop.new_snoop_channel(
+            self._ari, self._channel_proxy, whisper_mode
+        )
         snoop.update_snoop_channel(snoop_channel)
         return snoop
 

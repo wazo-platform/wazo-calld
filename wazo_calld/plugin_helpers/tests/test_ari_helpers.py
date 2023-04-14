@@ -13,12 +13,14 @@ from hamcrest import (
 
 from ari.exceptions import ARINotFound
 
+from wazo_calld.helpers.channel_proxy import ChannelProxy
 from ..ari_ import Channel
 
 
 class TestChannelHelper(TestCase):
     def setUp(self):
         self.ari = Mock()
+        self.channel_proxy = ChannelProxy(self.ari)
 
     def test_dialed_extension_when_no_channel_exist(self):
         self.ari.channels.getChannelVar.side_effect = ARINotFound(
@@ -30,7 +32,7 @@ class TestChannelHelper(TestCase):
             ari_client=self.ari,
         )
 
-        channel = Channel(s.channel_id, self.ari)
+        channel = Channel(s.channel_id, self.ari, self.channel_proxy)
         result = channel.dialed_extension()
 
         assert_that(result, equal_to(None))
@@ -40,7 +42,7 @@ class TestChannelHelper(TestCase):
         mocked_channel = self.ari.channels.get.return_value = Mock()
         mocked_channel.json = {'dialplan': {'exten': 's'}}
 
-        channel = Channel(s.channel_id, self.ari)
+        channel = Channel(s.channel_id, self.ari, self.channel_proxy)
         result = channel.dialed_extension()
 
         assert_that(result, equal_to(s.exten))
@@ -53,7 +55,7 @@ class TestChannelHelper(TestCase):
         self.ari.channels.get.return_value = mocked_channel = Mock()
         mocked_channel.json = {'dialplan': {'exten': s.exten}}
 
-        channel = Channel(s.channel_id, self.ari)
+        channel = Channel(s.channel_id, self.ari, self.channel_proxy)
         result = channel.dialed_extension()
 
         assert_that(result, equal_to(s.exten))

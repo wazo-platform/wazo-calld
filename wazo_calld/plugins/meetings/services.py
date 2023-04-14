@@ -24,11 +24,12 @@ logger = logging.getLogger(__name__)
 
 
 class MeetingsService:
-    def __init__(self, amid, ari, confd, config):
+    def __init__(self, amid, ari, confd, config, channel_proxy):
         self._amid = amid
         self._ari = ari
         self._confd = confd
         self._max_participants = config['max_meeting_participants']
+        self._channel_proxy = channel_proxy
 
     def get_status(self, meeting_uuid):
         tenant_uuid = None
@@ -101,7 +102,9 @@ class MeetingsService:
                 'caller_id_number': participant_list_item['CallerIDNum'],
                 'call_id': participant_list_item['Uniqueid'],
                 'user_uuid': Channel(
-                    participant_list_item['Uniqueid'], self._ari
+                    participant_list_item['Uniqueid'],
+                    self._ari,
+                    self._channel_proxy,
                 ).user(),
             }
             try:
@@ -149,7 +152,7 @@ class MeetingsService:
         if not meeting.exists():
             raise NoSuchMeeting(tenant_uuid, meeting_uuid)
 
-        channel = Channel(participant_id, self._ari)
+        channel = Channel(participant_id, self._ari, self._channel_proxy)
         try:
             self._amid.action(
                 'ConfbridgeKick',

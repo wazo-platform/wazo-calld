@@ -132,7 +132,9 @@ class ExtensionDestination(Destination):
 
 
 class RelocatesService:
-    def __init__(self, amid, ari, confd_client, notifier, relocates, state_factory):
+    def __init__(
+        self, amid, ari, confd_client, notifier, relocates, state_factory, channel_proxy
+    ):
         self.ari = ari
         self.confd_client = confd_client
         self.notifier = notifier
@@ -140,6 +142,7 @@ class RelocatesService:
         self.destination_factory = DestinationFactory(amid, ari)
         self.relocates = relocates
         self.duplicate_relocate_lock = threading.Lock()
+        self._channel_proxy = channel_proxy
 
     def list_from_user(self, user_uuid):
         return [
@@ -159,14 +162,16 @@ class RelocatesService:
     ):
         try:
             relocated_channel = Channel(
-                initiator_call, self.ari
+                initiator_call,
+                self.ari,
+                self._channel_proxy,
             ).only_connected_channel()
         except TooManyChannels as e:
             raise TooManyChannelCandidates(e.channels)
         except NotEnoughChannels:
             raise RelocateCreationError('relocated channel not found')
 
-        initiator_channel = Channel(initiator_call, self.ari)
+        initiator_channel = Channel(initiator_call, self.ari, self._channel_proxy)
         if not initiator_channel.exists():
             details = {'initiator_call': initiator_call}
             raise RelocateCreationError('initiator call not found', details)
@@ -210,7 +215,7 @@ class RelocatesService:
         auto_answer,
         user_uuid,
     ):
-        initiator_channel = Channel(initiator_call, self.ari)
+        initiator_channel = Channel(initiator_call, self.ari, self._channel_proxy)
         user = User(user_uuid, self.confd_client)
         variables = {}
 

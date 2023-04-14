@@ -1,4 +1,4 @@
-# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from wazo_confd_client import Client as ConfdClient
@@ -32,6 +32,7 @@ class Plugin:
         config = dependencies['config']
         token_changed_subscribe = dependencies['token_changed_subscribe']
         next_token_changed_subscribe = dependencies['next_token_changed_subscribe']
+        channel_proxy = dependencies['channel_proxy']
 
         confd_client = ConfdClient(**config['confd'])
         switchboard_get_cache = ConfdClientGetUUIDCacheDecorator(
@@ -51,7 +52,11 @@ class Plugin:
 
         switchboards_notifier = SwitchboardsNotifier(bus_publisher)
         switchboards_service = SwitchboardsService(
-            ari.client, asyncio, confd_client, switchboards_notifier
+            ari.client,
+            asyncio,
+            confd_client,
+            switchboards_notifier,
+            channel_proxy,
         )
 
         switchboards_stasis = SwitchboardsStasis(

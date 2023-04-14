@@ -15,10 +15,11 @@ ADHOC_CONFERENCE_STASIS_APP = 'adhoc_conference'
 
 
 class AdhocConferencesStasis:
-    def __init__(self, ari, notifier):
+    def __init__(self, ari, notifier, channel_proxy):
         self._ari = ari.client
         self._core_ari = ari
         self._notifier = notifier
+        self._channel_proxy = channel_proxy
         self._adhoc_conference_creation_lock = threading.Lock()
 
     def _subscribe(self):
@@ -97,10 +98,10 @@ class AdhocConferencesStasis:
             )
             return
 
-        bridge_helper = BridgeSnapshot(event['bridge'], self._ari)
+        bridge_helper = BridgeSnapshot(event['bridge'], self._ari, self._channel_proxy)
 
         if is_adhoc_conference_host:
-            host_channel = Channel(channel_id, self._ari)
+            host_channel = Channel(channel_id, self._ari, self._channel_proxy)
             host_user_uuid = host_channel.user()
             host_tenant_uuid = host_channel.tenant_uuid()
             bridge_helper.global_variables.set('WAZO_HOST_CHANNEL_ID', channel_id)
@@ -118,7 +119,9 @@ class AdhocConferencesStasis:
             )
             self._set_host_connectedline(channel_id, adhoc_conference_id)
 
-        participant_call = CallsService.make_call_from_channel(self._ari, channel)
+        participant_call = CallsService.make_call_from_channel(
+            self._ari, self._channel_proxy, channel
+        )
         other_participant_uuids = bridge_helper.valid_user_uuids()
         self._notifier.participant_joined(
             adhoc_conference_id, other_participant_uuids, participant_call
@@ -138,7 +141,7 @@ class AdhocConferencesStasis:
                 )
                 continue
             other_participant_call = CallsService.make_call_from_channel(
-                self._ari, other_participant_channel
+                self._ari, self._channel_proxy, other_participant_channel
             )
             self._notifier.participant_joined(
                 adhoc_conference_id, [host_user_uuid], other_participant_call
@@ -173,7 +176,7 @@ class AdhocConferencesStasis:
             'adhoc conference %s: channel %s left', adhoc_conference_id, channel_id
         )
 
-        bridge_helper = Bridge(adhoc_conference_id, self._ari)
+        bridge_helper = Bridge(adhoc_conference_id, self._ari, self._channel_proxy)
         try:
             host_user_uuid = bridge_helper.global_variables.get('WAZO_HOST_USER_UUID')
         except KeyError:
@@ -256,7 +259,7 @@ class AdhocConferencesStasis:
             return
 
         logger.debug('adhoc conference %s: bridge was destroyed', bridge.id)
-        bridge_helper = Bridge(bridge.id, self._ari)
+        bridge_helper = Bridge(bridge.id, self._ari, self._channel_proxy)
 
         try:
             host_user_uuid = bridge_helper.global_variables.get('WAZO_HOST_USER_UUID')

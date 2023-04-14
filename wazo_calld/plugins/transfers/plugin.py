@@ -29,6 +29,7 @@ class Plugin:
         bus_publisher = dependencies['bus_publisher']
         config = dependencies['config']
         token_changed_subscribe = dependencies['token_changed_subscribe']
+        channel_proxy = dependencies['channel_proxy']
 
         amid_client = AmidClient(**config['amid'])
         confd_client = ConfdClient(**config['confd'])
@@ -46,6 +47,7 @@ class Plugin:
             state_factory,
             state_persistor,
             transfer_lock,
+            channel_proxy,
         )
 
         transfers_stasis = TransfersStasis(
@@ -55,6 +57,7 @@ class Plugin:
             state_factory,
             state_persistor,
             config['uuid'],
+            channel_proxy,
         )
 
         startup_callback_collector = CallbackCollector()
@@ -66,6 +69,7 @@ class Plugin:
         state_factory.set_dependencies(
             amid_client,
             ari.client,
+            channel_proxy,
             notifier,
             transfers_service,
             state_persistor,

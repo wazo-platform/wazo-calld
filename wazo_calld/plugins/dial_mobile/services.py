@@ -147,8 +147,9 @@ class _PollingContactDialer:
 
 
 class DialMobileService:
-    def __init__(self, ari, notifier, amid_client, auth_client):
+    def __init__(self, ari, channel_proxy, notifier, amid_client, auth_client):
         self._ari = ari.client
+        self._channel_proxy = channel_proxy
         self._auth_client = auth_client
         self._amid_client = amid_client
         self._contact_dialers = {}
@@ -221,7 +222,7 @@ class DialMobileService:
             del self._contact_dialers[key]
 
     def clean_bridge(self, bridge_id):
-        bridge_helper = Bridge(bridge_id, self._ari)
+        bridge_helper = Bridge(bridge_id, self._ari, self._channel_proxy)
         if bridge_helper.has_lone_channel():
             logger.debug(
                 'dial_mobile: bridge %s: only one participant left, hanging up',

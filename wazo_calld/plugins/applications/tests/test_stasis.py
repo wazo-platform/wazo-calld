@@ -15,6 +15,7 @@ from unittest.mock import (
 )
 from wazo_test_helpers.hamcrest.raises import raises
 
+from wazo_calld.helpers.channel_proxy import ChannelProxy
 from ..stasis import ApplicationStasis
 
 
@@ -28,6 +29,7 @@ class TestApplicationStasisStartHandler(TestCase):
 
         self.app = ApplicationStasis(
             self.ari,
+            ChannelProxy(self.ari),
             self.service,
             self.notifier,
             self.confd_apps_cache,

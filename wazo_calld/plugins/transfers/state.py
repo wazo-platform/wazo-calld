@@ -18,9 +18,10 @@ logger = logging.getLogger(__name__)
 
 
 class StateFactory:
-    def __init__(self, ari=None):
+    def __init__(self, ari=None, channel_proxy=None):
         self._state_constructors = {}
         self._ari = ari
+        self._channel_proxy = channel_proxy
         self._configured = False
 
     def set_dependencies(self, *dependencies):
@@ -69,6 +70,7 @@ class TransferState:
         self,
         amid,
         ari,
+        channel_proxy,
         notifier,
         services,
         state_persistor,
@@ -77,6 +79,7 @@ class TransferState:
     ):
         self._amid = amid
         self._ari = ari
+        self._channel_proxy = channel_proxy
         self._notifier = notifier
         self._services = services
         self._state_persistor = state_persistor
@@ -88,6 +91,7 @@ class TransferState:
         new_state = cls(
             other_state._amid,
             other_state._ari,
+            other_state._channel_proxy,
             other_state._notifier,
             other_state._services,
             other_state._state_persistor,
@@ -208,7 +212,7 @@ class TransferStateReady(TransferState):
         variables,
         timeout,
     ):
-        channel = Channel(initiator_channel.id, self._ari)
+        channel = Channel(initiator_channel.id, self._ari, self._channel_proxy)
         initiator_uuid = channel.user()
         initiator_tenant_uuid = channel.tenant_uuid()
         if initiator_uuid is None:
@@ -279,7 +283,7 @@ class TransferStateReadyNonStasis(TransferState):
         variables,
         timeout,
     ):
-        channel = Channel(initiator_channel.id, self._ari)
+        channel = Channel(initiator_channel.id, self._ari, self._channel_proxy)
         initiator_uuid = channel.user()
         initiator_tenant_uuid = channel.tenant_uuid()
         if initiator_uuid is None:

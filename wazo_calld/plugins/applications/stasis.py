@@ -32,8 +32,9 @@ class AppNameHelper:
 
 
 class ApplicationStasis:
-    def __init__(self, ari, service, notifier, confd_apps, moh):
+    def __init__(self, ari, channel_proxy, service, notifier, confd_apps, moh):
         self._ari = ari.client
+        self._channel_proxy = channel_proxy
         self._confd_apps = confd_apps
         self._moh = moh
         self._core_ari = ari
@@ -77,7 +78,7 @@ class ApplicationStasis:
         node = make_node_from_bridge_event(event.get('bridge'))
         self._notifier.node_updated(application, node)
 
-        formatter = CallFormatter(application, self._ari)
+        formatter = CallFormatter(application, self._ari, self._channel_proxy)
         call = formatter.from_channel(channel)
         self._notifier.call_updated(application, call)
 
@@ -128,7 +129,7 @@ class ApplicationStasis:
             return
 
         application = self._service.get_application(application_uuid)
-        formatter = CallFormatter(application, self._ari)
+        formatter = CallFormatter(application, self._ari, self._channel_proxy)
         call = formatter.from_channel(channel)
         self._notifier.call_deleted(application, call)
 
@@ -152,7 +153,7 @@ class ApplicationStasis:
         if moh:
             set_channel_var_sync(channel, 'WAZO_MOH_UUID', str(moh['uuid']))
 
-        formatter = CallFormatter(application, self._ari)
+        formatter = CallFormatter(application, self._ari, self._channel_proxy)
         call = formatter.from_channel(channel)
         self._notifier.call_updated(application, call)
 
@@ -164,7 +165,7 @@ class ApplicationStasis:
         application = self._service.get_application(application_uuid)
 
         set_channel_var_sync(channel, 'WAZO_MOH_UUID', '')
-        formatter = CallFormatter(application, self._ari)
+        formatter = CallFormatter(application, self._ari, self._channel_proxy)
         call = formatter.from_channel(channel)
         self._notifier.call_updated(application, call)
 
@@ -175,7 +176,7 @@ class ApplicationStasis:
 
         application = self._service.get_application(application_uuid)
 
-        formatter = CallFormatter(application, self._ari)
+        formatter = CallFormatter(application, self._ari, self._channel_proxy)
         call = formatter.from_channel(channel)
 
         if channel.json['state'] == 'Up':
@@ -189,7 +190,7 @@ class ApplicationStasis:
 
             application = self._service.get_application(application_uuid)
 
-            formatter = CallFormatter(application, self._ari)
+            formatter = CallFormatter(application, self._ari, self._channel_proxy)
             call = formatter.from_channel(channel)
 
             if event['value'] == '1':
@@ -247,7 +248,7 @@ class ApplicationStasis:
 
         application = self._service.get_application(application_uuid)
         variables = self._service.get_channel_variables(channel)
-        formatter = CallFormatter(application, self._ari)
+        formatter = CallFormatter(application, self._ari, self._channel_proxy)
         call = formatter.from_channel(channel, variables=variables)
         self._notifier.call_entered(application, call)
 

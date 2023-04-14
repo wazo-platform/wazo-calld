@@ -20,6 +20,7 @@ class Plugin:
         ari = dependencies['ari']
         bus_publisher = dependencies['bus_publisher']
         config = dependencies['config']
+        channel_proxy = dependencies['channel_proxy']
         token_changed_subscribe = dependencies['token_changed_subscribe']
 
         amid_client = AmidClient(**config['amid'])
@@ -28,11 +29,14 @@ class Plugin:
 
         notifier = AdhocConferencesNotifier(bus_publisher)
         adhoc_conferences_service = AdhocConferencesService(
-            amid_client, ari.client, notifier
+            amid_client,
+            ari.client,
+            notifier,
+            channel_proxy,
         )
 
         startup_callback_collector = CallbackCollector()
-        adhoc_conferences_stasis = AdhocConferencesStasis(ari, notifier)
+        adhoc_conferences_stasis = AdhocConferencesStasis(ari, notifier, channel_proxy)
         ari.client_initialized_subscribe(startup_callback_collector.new_source())
         startup_callback_collector.subscribe(adhoc_conferences_stasis.initialize)
 

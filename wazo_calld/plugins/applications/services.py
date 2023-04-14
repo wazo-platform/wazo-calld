@@ -29,14 +29,15 @@ logger = logging.getLogger(__name__)
 
 
 class ApplicationService:
-    def __init__(self, ari, confd, amid, notifier, confd_apps, moh):
+    def __init__(self, ari, confd, amid, notifier, confd_apps, moh, channel_proxy):
         self._ari = ari
         self._amid = amid
         self._notifier = notifier
         self._confd = confd
         self._confd_apps = confd_apps
         self._moh = moh
-        self._snoop_helper = SnoopHelper(self._ari)
+        self._channel_proxy = channel_proxy
+        self._snoop_helper = SnoopHelper(self._ari, self._channel_proxy)
 
     def call_mute(self, application, call_id):
         try:
@@ -46,7 +47,7 @@ class ApplicationService:
         except ARINotFound:
             raise NoSuchCall(call_id)
 
-        formatter = CallFormatter(application, self._ari)
+        formatter = CallFormatter(application, self._ari, self._channel_proxy)
         call = formatter.from_channel(channel)
         self._notifier.call_updated(application, call)
 
@@ -58,7 +59,7 @@ class ApplicationService:
         except ARINotFound:
             raise NoSuchCall(call_id)
 
-        formatter = CallFormatter(application, self._ari)
+        formatter = CallFormatter(application, self._ari, self._channel_proxy)
         call = formatter.from_channel(channel)
         self._notifier.call_updated(application, call)
 
@@ -73,7 +74,7 @@ class ApplicationService:
     def start_user_outgoing_call(self, application, channel):
         set_channel_var_sync(channel, 'WAZO_USER_OUTGOING_CALL', 'true')
         variables = self.get_channel_variables(channel)
-        formatter = CallFormatter(application, self._ari)
+        formatter = CallFormatter(application, self._ari, self._channel_proxy)
         call = formatter.from_channel(channel, variables=variables)
         self._notifier.user_outgoing_call_created(application, call)
 
@@ -274,7 +275,7 @@ class ApplicationService:
             name = channel.json['name']
             return name.startswith('Local/') and name.endswith(';2')
 
-        formatter = CallFormatter(application, self._ari)
+        formatter = CallFormatter(application, self._ari, self._channel_proxy)
         for channel_id in application['channel_ids']:
             try:
                 channel = self._ari.channels.get(channelId=channel_id)
@@ -341,7 +342,7 @@ class ApplicationService:
 
         channel = self._ari.channels.originate(**originate_kwargs)
         variables = self.get_channel_variables(channel)
-        formatter = CallFormatter(application, self._ari)
+        formatter = CallFormatter(application, self._ari, self._channel_proxy)
         return formatter.from_channel(channel, variables=variables, node_uuid=node_uuid)
 
     def originate_user(
@@ -374,17 +375,17 @@ class ApplicationService:
     def originate_answered(self, application, channel):
         channel.answer()
         variables = self.get_channel_variables(channel)
-        formatter = CallFormatter(application, self._ari)
+        formatter = CallFormatter(application, self._ari, self._channel_proxy)
         call = formatter.from_channel(channel, variables=variables)
         self._notifier.call_initiated(application, call)
 
     def snoop_create(
         self, application, snooped_call_id, snooping_call_id, whisper_mode
     ):
-        if not Channel(snooping_call_id, self._ari).is_in_stasis():
+        if not Channel(snooping_call_id, self._ari, self._channel_proxy).is_in_stasis():
             raise CallNotInApplication(application['uuid'], snooping_call_id)
 
-        if not Channel(snooped_call_id, self._ari).is_in_stasis():
+        if not Channel(snooped_call_id, self._ari, self._channel_proxy).is_in_stasis():
             raise CallNotInApplication(application['uuid'], snooped_call_id)
 
         snoop = self._snoop_helper.create(

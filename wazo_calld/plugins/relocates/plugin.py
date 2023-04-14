@@ -25,6 +25,7 @@ class Plugin:
         bus_publisher = dependencies['bus_publisher']
         config = dependencies['config']
         token_changed_subscribe = dependencies['token_changed_subscribe']
+        channel_proxy = dependencies['channel_proxy']
 
         amid_client = AmidClient(**config['amid'])
         confd_client = ConfdClient(**config['confd'])
@@ -33,11 +34,19 @@ class Plugin:
         token_changed_subscribe(confd_client.set_token)
 
         relocates = RelocateCollection()
-        state_factory = StateFactory(state_index, amid_client, ari.client)
+        state_factory = StateFactory(
+            state_index, amid_client, ari.client, channel_proxy
+        )
 
         notifier = RelocatesNotifier(bus_publisher)
         relocates_service = RelocatesService(
-            amid_client, ari.client, confd_client, notifier, relocates, state_factory
+            amid_client,
+            ari.client,
+            confd_client,
+            notifier,
+            relocates,
+            state_factory,
+            channel_proxy,
         )
 
         relocates_stasis = RelocatesStasis(ari, relocates)

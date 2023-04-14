@@ -34,11 +34,12 @@ logger = logging.getLogger(__name__)
 
 
 class SwitchboardsService:
-    def __init__(self, ari, asyncio, confd, notifier):
+    def __init__(self, ari, asyncio, confd, notifier, channel_proxy):
         self._ari = ari
         self._asyncio = asyncio
         self._confd = confd
         self._notifier = notifier
+        self._channel_proxy = channel_proxy
 
     def queued_calls(self, tenant_uuid, switchboard_uuid):
         logger.debug(
@@ -90,7 +91,9 @@ class SwitchboardsService:
         calls = self.queued_calls(tenant_uuid, switchboard_uuid)
         self._notifier.queued_calls(tenant_uuid, switchboard_uuid, calls)
 
-        noanswer_timeout = Channel(channel_id, self._ari).switchboard_timeout()
+        noanswer_timeout = Channel(
+            channel_id, self._ari, self._channel_proxy
+        ).switchboard_timeout()
         if not noanswer_timeout:
             logger.debug(
                 'Switchboard %s: ignoring no answer timeout = %s',
@@ -100,7 +103,9 @@ class SwitchboardsService:
             return
 
         noanswer_fallback_action = Channel(
-            channel_id, self._ari
+            channel_id,
+            self._ari,
+            self._channel_proxy,
         ).switchboard_noanswer_fallback_action()
         if not noanswer_fallback_action:
             logger.debug(

@@ -19,6 +19,7 @@ class Plugin:
         token_changed_subscribe = dependencies['token_changed_subscribe']
         config = dependencies['config']
         bus_publisher = dependencies['bus_publisher']
+        channel_proxy = dependencies['channel_proxy']
 
         amid_client = AmidClient(**config['amid'])
         token_changed_subscribe(amid_client.set_token)
@@ -27,7 +28,7 @@ class Plugin:
         token_changed_subscribe(auth_client.set_token)
 
         notifier = Notifier(bus_publisher)
-        service = DialMobileService(ari, notifier, amid_client, auth_client)
+        service = DialMobileService(ari, channel_proxy, notifier, amid_client, auth_client)
         stasis = DialMobileStasis(ari, service)
         event_handler = EventHandler(service)
 
