@@ -34,7 +34,7 @@ class SwitchboardsLock:
         result = self._lock.acquire()
         acquire_end_time = time.time()
         logger.debug(
-            'Action lock acquired after %ss '
+            'Action lock acquired after %.3f '
             '(transaction id=%s, switchboard_uuid=%s, call_id=%s)',
             acquire_end_time - acquire_start_time,
             transaction_id,
@@ -47,7 +47,7 @@ class SwitchboardsLock:
             self._lock.release()
             release_end_time = time.time()
             logger.debug(
-                'Action lock released after %ss '
+                'Action lock released after %.3f '
                 '(transaction id=%s, switchboard_uuid=%s, call_id=%s)',
                 release_end_time - acquire_end_time,
                 transaction_id,
