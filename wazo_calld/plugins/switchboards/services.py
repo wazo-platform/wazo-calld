@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
-import threading
 
 from ari.exceptions import ARINotFound
 
@@ -30,6 +29,7 @@ from .exceptions import (
     NoSuchSwitchboard,
     NoSuchConfdUser,
 )
+from .lock import SwitchboardsLock
 
 logger = logging.getLogger(__name__)
 
@@ -40,9 +40,7 @@ class SwitchboardsService:
         self._asyncio = asyncio
         self._confd = confd
         self._notifier = notifier
-        self.duplicate_queued_call_answer_lock = threading.Lock()
-        self.duplicate_call_hold_lock = threading.Lock()
-        self.duplicate_held_call_answer_lock = threading.Lock()
+        self._switchboards_lock = SwitchboardsLock()
 
     def queued_calls(self, tenant_uuid, switchboard_uuid):
         logger.debug(
@@ -173,7 +171,7 @@ class SwitchboardsService:
             user_uuid,
             line_id,
         )
-        with self.duplicate_queued_call_answer_lock:
+        with self._switchboards_lock.acquired(switchboard_uuid, queued_call_id):
             if not SwitchboardConfd(
                 tenant_uuid, switchboard_uuid, self._confd
             ).exists():
@@ -239,7 +237,7 @@ class SwitchboardsService:
             tenant_uuid,
             switchboard_uuid,
         )
-        with self.duplicate_call_hold_lock:
+        with self._switchboards_lock.acquired(switchboard_uuid, call_id):
             if not SwitchboardConfd(
                 tenant_uuid, switchboard_uuid, self._confd
             ).exists():
@@ -352,7 +350,15 @@ class SwitchboardsService:
     def answer_held_call(
         self, tenant_uuid, switchboard_uuid, held_call_id, user_uuid, line_id=None
     ):
-        with self.duplicate_held_call_answer_lock:
+        logger.debug(
+            'Answering held call %s in tenant %s for switchboard %s with user %s line %s',
+            held_call_id,
+            tenant_uuid,
+            switchboard_uuid,
+            user_uuid,
+            line_id,
+        )
+        with self._switchboards_lock.acquired(switchboard_uuid, held_call_id):
             if not SwitchboardConfd(
                 tenant_uuid, switchboard_uuid, self._confd
             ).exists():
