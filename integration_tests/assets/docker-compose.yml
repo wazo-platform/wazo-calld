@@ -10,7 +10,7 @@ services:
     ports:
       - 9491
     volumes:
-      - ./amid_data:/usr/local/share/wazo-amid
+      - ./amid_data:/usr/local/share/wazo-amid:ro
     environment:
       XIVO_UUID: 08c56466-8f29-45c7-9856-92bf1ba89b92
     command: python3 /usr/local/share/wazo-amid/mock-wazo-amid.py 9491
@@ -20,8 +20,8 @@ services:
     ports:
       - 5039
     volumes:
-      - ./ari_data:/usr/local/share/ari
-      - ./ssl/ari:/usr/local/share/ari-ssl
+      - ./ari_data:/usr/local/share/ari:ro
+      - ./ssl/ari:/usr/local/share/ari-ssl:ro
     environment:
       PYTHONPATH: /usr/local/share/ari
     command: python3 -m gunicorn -b 0.0.0.0:5039 -k flask_sockets.worker mock_ari:app
@@ -41,21 +41,21 @@ services:
     ports:
       - 9498
     volumes:
-      - ./phoned_data:/usr/local/share/wazo-phoned
+      - ./phoned_data:/usr/local/share/wazo-phoned:ro
     command: python3 /usr/local/share/wazo-phoned/mock-wazo-phoned.py 9498
 
   calld:
     image: wazo-calld-test
     volumes:
-      - ../..:/usr/src/wazo-calld
-      - ./ssl:/usr/local/share/ssl
-      - ./etc/wazo-calld/key.yml:/etc/wazo-calld/key.yml
-      - ./etc/wazo-calld/conf.d/50-base.yml:/etc/wazo-calld/conf.d/50-base.yml
-      # - "${LOCAL_GIT_REPOS}/wazo-amid-client/wazo_amid_client:/opt/venv/lib/python3.9/site-packages/wazo_amid_client"
-      # - "${LOCAL_GIT_REPOS}/wazo-confd-client/wazo_confd_client:/opt/venv/lib/python3.9/site-packages/wazo_confd_client"
-      # - "${LOCAL_GIT_REPOS}/xivo-bus/xivo_bus:/opt/venv/lib/python3.9/site-packages/xivo_bus"
-      # - "${LOCAL_GIT_REPOS}/xivo-lib-python/xivo:/opt/venv/lib/python3.9/site-packages/xivo"
-      # - "${LOCAL_GIT_REPOS}/ari-py/ari:/opt/venv/lib/python3.9/site-packages/ari"
+      - ../..:/usr/src/wazo-calld:ro
+      - ./ssl:/usr/local/share/ssl:ro
+      - ./etc/wazo-calld/key.yml:/etc/wazo-calld/key.yml:ro
+      - ./etc/wazo-calld/conf.d/50-base.yml:/etc/wazo-calld/conf.d/50-base.yml:ro
+      # - "${LOCAL_GIT_REPOS}/wazo-amid-client/wazo_amid_client:/opt/venv/lib/python3.9/site-packages/wazo_amid_client:ro"
+      # - "${LOCAL_GIT_REPOS}/wazo-confd-client/wazo_confd_client:/opt/venv/lib/python3.9/site-packages/wazo_confd_client:ro"
+      # - "${LOCAL_GIT_REPOS}/xivo-bus/xivo_bus:/opt/venv/lib/python3.9/site-packages/xivo_bus:ro"
+      # - "${LOCAL_GIT_REPOS}/xivo-lib-python/xivo:/opt/venv/lib/python3.9/site-packages/xivo:ro"
+      # - "${LOCAL_GIT_REPOS}/ari-py/ari:/opt/venv/lib/python3.9/site-packages/ari:ro"
     ports:
       - 9500
     environment:
