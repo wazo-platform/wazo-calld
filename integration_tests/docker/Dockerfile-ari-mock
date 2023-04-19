@@ -1,4 +1,6 @@
 FROM python:3.9-slim-bullseye
 
+ENV PYTHONDONTWRITEBYTECODE='true'
+
 RUN pip install -U pip
 RUN pip install flask flask-sockets gunicorn
