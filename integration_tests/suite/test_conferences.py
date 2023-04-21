@@ -51,7 +51,7 @@ class TestConferenceParticipants(TestConferences):
     def given_call_in_conference(
         self, conference_extension, caller_id_name=None, user_uuid=None
     ):
-        caller_id_name = caller_id_name or 'caller for {}'.format(conference_extension)
+        caller_id_name = caller_id_name or f'caller for {conference_extension}'
         variables = {
             'CALLERID(name)': caller_id_name,
             'WAZO_TENANT_UUID': CONFERENCE1_TENANT_UUID,
@@ -403,7 +403,7 @@ class TestConferenceParticipants(TestConferences):
             ),
         )
         bus_events = self.bus.accumulator(
-            'conferences.{}.participants.left'.format(conference_id)
+            f'conferences.{conference_id}.participants.left'
         )
         bus_events = self.bus.accumulator(headers={'conference_id': conference_id})
         user_uuid = make_user_uuid()

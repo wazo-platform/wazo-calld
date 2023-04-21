@@ -131,7 +131,7 @@ class TestTransfers(RealAsteriskIntegrationTest):
             except ARINotFound:
                 continue
         else:
-            raise Exception('No channel with linkedid {} found'.format(linkedid))
+            raise Exception(f'No channel with linkedid {linkedid} found')
 
     def given_ringing_transfer(self):
         (

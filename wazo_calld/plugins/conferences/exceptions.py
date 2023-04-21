@@ -8,7 +8,7 @@ class NoSuchConference(APIException):
     def __init__(self, tenant_uuid, conference_id):
         super().__init__(
             status_code=404,
-            message='No such conference: id "{}"'.format(conference_id),
+            message=f'No such conference: id "{conference_id}"',
             error_id='no-such-conference',
             resource='conference',
             details={
@@ -39,7 +39,7 @@ class ConferenceHasNoParticipants(APIException):
     def __init__(self, tenant_uuid, conference_id):
         super().__init__(
             status_code=400,
-            message='Conference "{}" has no participants'.format(conference_id),
+            message=f'Conference "{conference_id}" has no participants',
             error_id='conference-has-no-participants',
             resource='conference',
             details={
@@ -53,7 +53,7 @@ class ConferenceAlreadyRecorded(APIException):
     def __init__(self, tenant_uuid, conference_id):
         super().__init__(
             status_code=400,
-            message='Conference "{}" is already being recorded'.format(conference_id),
+            message=f'Conference "{conference_id}" is already being recorded',
             error_id='conference-already-recorded',
             resource='conference',
             details={
@@ -67,7 +67,7 @@ class ConferenceNotRecorded(APIException):
     def __init__(self, tenant_uuid, conference_id):
         super().__init__(
             status_code=400,
-            message='Conference "{}" is not being recorded'.format(conference_id),
+            message=f'Conference "{conference_id}" is not being recorded',
             error_id='conference-not-recorded',
             resource='conference',
             details={

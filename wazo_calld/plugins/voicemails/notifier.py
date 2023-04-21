@@ -1,4 +1,4 @@
-# Copyright 2022-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2022-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from xivo_bus.resources.voicemail.event import (
@@ -8,7 +8,7 @@ from xivo_bus.resources.voicemail.event import (
 )
 
 
-class VoicemailsNotifier(object):
+class VoicemailsNotifier:
     def __init__(self, bus_publisher):
         self._bus_publisher = bus_publisher
 

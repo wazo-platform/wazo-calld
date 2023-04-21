@@ -44,7 +44,7 @@ class TestDialedFrom(IntegrationTest):
         self.ari.set_channels(MockChannel(id=call_id), MockChannel(id=new_call_id_))
         self.ari.set_global_variables(
             {
-                'XIVO_CHANNELS_{}'.format(call_id): json.dumps(
+                f'XIVO_CHANNELS_{call_id}': json.dumps(
                     {
                         'state': 'ringing',
                         'app': SOME_STASIS_APP,
@@ -122,7 +122,7 @@ class TestDialedFrom(IntegrationTest):
         self.ari.set_channel_variable({new_call_id: {'XIVO_USERUUID': 'user-uuid'}})
         self.ari.set_global_variables(
             {
-                'XIVO_CHANNELS_{}'.format(call_id): json.dumps(
+                f'XIVO_CHANNELS_{call_id}': json.dumps(
                     {'app': 'my-app', 'app_instance': 'sw1', 'state': 'ringing'}
                 )
             }

@@ -37,7 +37,7 @@ class RelocateCompleter:
     def bridge(self, relocate):
         try:
             bridge = self._ari.bridges.create(
-                type='mixing', name='relocate:{}'.format(relocate.uuid)
+                type='mixing', name=f'relocate:{relocate.uuid}'
             )
             bridge.addChannel(channel=relocate.recipient_channel)
             bridge.addChannel(channel=relocate.relocated_channel)

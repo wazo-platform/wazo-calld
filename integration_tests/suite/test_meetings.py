@@ -55,7 +55,7 @@ class TestMeetings(RealAsteriskIntegrationTest):
     def given_call_in_meeting(
         self, meeting_extension, caller_id_name=None, user_uuid=None, tenant_uuid=None
     ):
-        caller_id_name = caller_id_name or 'caller for {}'.format(meeting_extension)
+        caller_id_name = caller_id_name or f'caller for {meeting_extension}'
         variables = {'CALLERID(name)': caller_id_name}
         if user_uuid:
             variables['XIVO_USERUUID'] = user_uuid

@@ -19,7 +19,7 @@ VERSION = 1.0
 
 logger = logging.getLogger(__name__)
 app = Flask('wazo_calld')
-api = Api(app, prefix='/{}'.format(VERSION))
+api = Api(app, prefix=f'/{VERSION}')
 
 
 class HTTPServer:

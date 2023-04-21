@@ -87,7 +87,7 @@ class StatusCache:
             'Endpoint cache initialized - %s',
             ','.join(
                 [
-                    '{}: {}'.format(name, len(endpoints))
+                    f'{name}: {len(endpoints)}'
                     for name, endpoints in self._endpoints.items()
                 ]
             ),

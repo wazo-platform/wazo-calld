@@ -83,7 +83,7 @@ class TestStatePersistor(TestCase):
         self.persistor.upsert(SOME_CHANNEL_ID, entry)
 
         self.ari.asterisk.setGlobalVar.assert_called_once_with(
-            variable='XIVO_CHANNELS_{}'.format(SOME_CHANNEL_ID),
+            variable=f'XIVO_CHANNELS_{SOME_CHANNEL_ID}',
             value=exptected_variable,
         )
 
@@ -91,7 +91,7 @@ class TestStatePersistor(TestCase):
         self.persistor.remove(SOME_CHANNEL_ID)
 
         self.ari.asterisk.setGlobalVar.assert_called_once_with(
-            variable='XIVO_CHANNELS_{}'.format(SOME_CHANNEL_ID), value=''
+            variable=f'XIVO_CHANNELS_{SOME_CHANNEL_ID}', value=''
         )
 
     def test_given_no_calls_when_get_then_raise_keyerror(self):

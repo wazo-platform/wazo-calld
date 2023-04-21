@@ -232,7 +232,7 @@ class _MessageInfoParser:
         # check that everything was parsed
         for prefix, _, _ in self._parse_table:
             if prefix not in parsed:
-                raise Exception('no line starting with {}'.format(prefix))
+                raise Exception(f'no line starting with {prefix}')
         return result
 
     @staticmethod
@@ -280,7 +280,7 @@ class _MessageAccess:
             with open(path, 'rb') as fobj:
                 self.parse_result = self._MESSAGE_INFO_PARSER.parse(fobj)
             self.id = self.parse_result['id']
-        except IOError as e:
+        except OSError as e:
             if e.errno == errno.ENOENT:
                 # probably: the message has been deleted/moved
                 logger.error('could not read voicemail message %s: no such file', path)
@@ -303,7 +303,7 @@ class _MessageAccess:
         try:
             with open(path, 'rb') as fobj:
                 return fobj.read()
-        except IOError as e:
+        except OSError as e:
             if e.errno == errno.ENOENT:
                 # probably: the message has been deleted/moved or the recording is not stored as a wav
                 logger.error(

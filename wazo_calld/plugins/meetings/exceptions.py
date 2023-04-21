@@ -26,7 +26,7 @@ class NoSuchMeeting(APIException):
     def __init__(self, tenant_uuid, meeting_id):
         super().__init__(
             status_code=404,
-            message='No such meeting: id "{}"'.format(meeting_id),
+            message=f'No such meeting: id "{meeting_id}"',
             error_id='no-such-meeting',
             resource='meeting',
             details={

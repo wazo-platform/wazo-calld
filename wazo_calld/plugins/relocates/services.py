@@ -93,17 +93,17 @@ class InterfaceDestination(Destination):
             return contact
 
         _, peer_name = interface.split('/', 1)
-        asterisk_dialplan_function = 'PJSIP_DIAL_CONTACTS({})'.format(peer_name)
+        asterisk_dialplan_function = f'PJSIP_DIAL_CONTACTS({peer_name})'
         try:
             response = self.ari.channels.getChannelVar(
                 channelId=self.initiator_call,
                 variable=asterisk_dialplan_function,
             )
         except ARINotFound as e:
-            msg = 'Cannot find result for {} {}'.format(asterisk_dialplan_function, e)
+            msg = f'Cannot find result for {asterisk_dialplan_function} {e}'
             raise RelocateCreationError(msg, details)
 
-        uri_start = 'PJSIP/{}/sip:{}'.format(peer_name, contact)
+        uri_start = f'PJSIP/{peer_name}/sip:{contact}'
         for contact_uri in response['value'].split('&'):
             if contact_uri.startswith(uri_start):
                 return contact_uri

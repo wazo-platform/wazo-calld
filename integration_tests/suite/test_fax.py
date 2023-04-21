@@ -425,7 +425,7 @@ class TestFax(RealAsteriskIntegrationTest):
                 wait_time=42,
             )
         except Exception as e:
-            raise AssertionError('Sending fax raised an exception: {}'.format(e))
+            raise AssertionError(f'Sending fax raised an exception: {e}')
 
         assert_that(
             fax,

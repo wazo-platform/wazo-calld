@@ -131,7 +131,7 @@ class ApplicationService:
             app_name = AppNameHelper.to_name(application['uuid'])
             self._ari.applications.subscribe(
                 applicationName=app_name,
-                eventSource='bridge:{}'.format(bridge.id),
+                eventSource=f'bridge:{bridge.id}',
             )
             node = make_node_from_bridge(bridge)
             self._notifier.destination_node_created(application, node)
@@ -144,7 +144,7 @@ class ApplicationService:
         bridge = self._ari.bridges.create(name=application['uuid'], type='mixing')
         self._ari.applications.subscribe(
             applicationName=stasis_app,
-            eventSource='bridge:{}'.format(bridge.id),
+            eventSource=f'bridge:{bridge.id}',
         )
         node = make_node_from_bridge(bridge)
         self._notifier.node_created(application, node)
@@ -313,7 +313,7 @@ class ApplicationService:
         if not ami.extension_exists(self._amid, context, exten, 1):
             raise InvalidExtension(context, exten)
 
-        endpoint = 'Local/{}@{}/n'.format(exten, context)
+        endpoint = f'Local/{exten}@{context}/n'
 
         app_args = ['originate']
         if node_uuid:
@@ -329,7 +329,7 @@ class ApplicationService:
         if displayed_caller_id_name or displayed_caller_id_number:
             # an empty cid number will result in "asterisk" being displayed
             number = displayed_caller_id_number or ' '
-            callerid = '"{}" <{}>'.format(displayed_caller_id_name, number)
+            callerid = f'"{displayed_caller_id_name}" <{number}>'
             originate_kwargs['callerId'] = callerid
 
         variables = variables or {}

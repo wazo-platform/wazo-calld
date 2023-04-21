@@ -35,11 +35,11 @@ class FaxesService:
             pdf_file.write(content)
             pdf_file.close()
 
-        tif_path = '{name}.tif'.format(name=pdf_path)
+        tif_path = f'{pdf_path}.tif'
         command = ['/usr/bin/wazo-pdf2fax', '-o', tif_path, pdf_path]
         logger.debug('Running command: %s', command)
         try:
-            subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            subprocess.run(command, capture_output=True)
         except subprocess.CalledProcessError as e:
             logger.debug('wazo-pdf2fax output: %s', e.stdout)
             logger.debug('wazo-pdf2fax stderr: %s', e.stderr)

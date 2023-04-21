@@ -70,7 +70,7 @@ def update_connectedline(ari, amid, channel_id, from_channel_id):
 
 
 def set_bridge_variable(ari, bridge_id, variable, value):
-    global_variable = 'XIVO_BRIDGE_VARIABLES_{}'.format(bridge_id)
+    global_variable = f'XIVO_BRIDGE_VARIABLES_{bridge_id}'
     try:
         cache_str = ari.asterisk.getGlobalVar(variable=global_variable)['value']
     except ARINotFound:
@@ -85,7 +85,7 @@ def set_bridge_variable(ari, bridge_id, variable, value):
 
 
 def get_bridge_variable(ari, bridge_id, variable):
-    global_variable = 'XIVO_BRIDGE_VARIABLES_{}'.format(bridge_id)
+    global_variable = f'XIVO_BRIDGE_VARIABLES_{bridge_id}'
     try:
         cache_str = ari.asterisk.getGlobalVar(variable=global_variable)['value']
     except ARINotFound:

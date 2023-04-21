@@ -86,7 +86,7 @@ class BaseApplicationTestCase(RealAsteriskIntegrationTest):
     def call_app(self, app_uuid, variables=None):
         kwargs = {
             'endpoint': ENDPOINT_AUTOANSWER,
-            'app': 'wazo-app-{}'.format(app_uuid),
+            'app': f'wazo-app-{app_uuid}',
             'appArgs': 'incoming',
             'variables': {
                 'variables': {
@@ -120,7 +120,7 @@ class BaseApplicationTestCase(RealAsteriskIntegrationTest):
         event_accumulator = self.app_event_accumulator(app_uuid)
 
         self.docker_exec(
-            ['asterisk', '-rx', 'test new {exten} applications'.format(exten=app_uuid)],
+            ['asterisk', '-rx', f'test new {app_uuid} applications'],
             'ari',
         )
 
@@ -138,7 +138,7 @@ class BaseApplicationTestCase(RealAsteriskIntegrationTest):
         )
 
     def call_from_user(self, app_uuid, exten):
-        context = 'stasis-wazo-app-{}'.format(app_uuid)
+        context = f'stasis-wazo-app-{app_uuid}'
         response = self.chan_test.call(context, exten)
         return response.json()['uniqueid']
 
@@ -1569,7 +1569,7 @@ class TestApplicationSnoop(BaseApplicationTestCase):
         )
 
         # Test snoop being created (snoop bridge with no channels) does not cause errors
-        self.ari.bridges.create(name='wazo-app-snoop-{}'.format(self.app_uuid))
+        self.ari.bridges.create(name=f'wazo-app-snoop-{self.app_uuid}')
 
         snoops = self.calld_client.applications.list_snoops(self.app_uuid)
         assert_that(

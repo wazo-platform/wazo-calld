@@ -24,7 +24,7 @@ class TestMessageInfoParser(TestCase):
         self.parser = _MessageInfoParser()
 
     def test_parse(self):
-        content = '''
+        content = b'''
 ;
 ; Message Information file
 ;
@@ -43,9 +43,7 @@ category=
 msg_id=1478200319-00000000
 flag=
 duration=12
-'''.encode(
-            'utf-8'
-        )  # noqa: W291
+'''  # noqa: W291
         result = self._parse(content)
         expected = {
             'id': '1478200319-00000000',
@@ -57,7 +55,7 @@ duration=12
         assert_that(result, equal_to(expected))
 
     def test_parse_with_spaces(self):
-        content = '''
+        content = b'''
 ;
 ; Message Information file
 ;
@@ -76,9 +74,7 @@ category=
 msg_id=1478200319-00000000
 flag=
 duration= 12
-'''.encode(
-            'utf-8'
-        )  # noqa: W291
+'''  # noqa: W291
         result = self._parse(content)
         expected = {
             'id': '1478200319-00000000',
@@ -90,13 +86,11 @@ duration= 12
         assert_that(result, equal_to(expected))
 
     def test_parse_missing_field(self):
-        content = '''
+        content = b'''
 callerid="Etienne" <101>
 origtime=1478200319
 msg_id=1478200319-00000000
-'''.encode(
-            'utf-8'
-        )  # noqa: W291
+'''  # noqa: W291
         assert_that(calling(self._parse).with_args(content), raises(Exception))
 
     def test_parse_callerid_unknown(self):

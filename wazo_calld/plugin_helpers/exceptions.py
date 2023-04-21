@@ -25,13 +25,13 @@ class NotEnoughChannels(Exception):
 class NoSuchConferenceID(Exception):
     def __init__(self, conference_id):
         self.conference_id = conference_id
-        super().__init__('No such conference ID "{}"'.format(conference_id))
+        super().__init__(f'No such conference ID "{conference_id}"')
 
 
 class NoSuchMeeting(Exception):
     def __init__(self, meeting_uuid):
         self.meeting_uuid = meeting_uuid
-        super().__init__('No such meeting: UUID "{}"'.format(meeting_uuid))
+        super().__init__(f'No such meeting: UUID "{meeting_uuid}"')
 
 
 class UserMissingMainLine(APIException):

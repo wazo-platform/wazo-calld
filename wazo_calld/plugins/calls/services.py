@@ -189,7 +189,7 @@ class CallsService:
             if 'line_id' in request['source']:
                 endpoint = user.line(request['source']['line_id']).interface()
             elif request['source']['all_lines']:
-                endpoint = "local/%s@usersharedlines" % (source_user,)
+                endpoint = f"local/{source_user}@usersharedlines"
             else:
                 endpoint = user.main_line().interface()
 

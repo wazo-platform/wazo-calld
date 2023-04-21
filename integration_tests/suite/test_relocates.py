@@ -271,7 +271,7 @@ class TestRelocates(RealAsteriskIntegrationTest):
             relocate_bridge = next(
                 bridge
                 for bridge in self.ari.bridges.list()
-                if bridge.json['name'] == 'relocate:{}'.format(relocate_uuid)
+                if bridge.json['name'] == f'relocate:{relocate_uuid}'
             )
         except StopIteration:
             raise AssertionError('relocate bridge not found')
