@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2015-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -15,13 +14,9 @@ logging.basicConfig(level=logging.DEBUG)
 
 @app.route('/ari/api-docs/<path:file_name>')
 def swagger(file_name):
-    with open(
-        '/usr/local/share/ari/api-docs/{file_name}'.format(file_name=file_name), 'r'
-    ) as swagger_file:
+    with open(f'/usr/local/share/ari/api-docs/{file_name}') as swagger_file:
         swagger_spec = swagger_file.read()
-        swagger_spec = swagger_spec.replace(
-            'localhost:8088', 'ari:{port}'.format(port=port)
-        )
+        swagger_spec = swagger_spec.replace('localhost:8088', f'ari:{port}')
         return make_response(swagger_spec, 200, {'Content-Type': 'application/json'})
 
 

@@ -28,7 +28,7 @@ class TestBusConsume(TestCase):
         ConferenceMock.from_id.side_effect = AssertionError('Should not get called')
         handler = ConferencesBusEventHandler(None, None, None)
 
-        event = {'Conference': 'wazo-meeting-{}-confbridge'.format(uuid4())}
+        event = {'Conference': f'wazo-meeting-{uuid4()}-confbridge'}
         result = handler._notify_participant_joined(event)
 
         assert_that(result, is_(none()))

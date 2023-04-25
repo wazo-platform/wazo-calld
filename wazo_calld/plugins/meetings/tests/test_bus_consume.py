@@ -1,4 +1,4 @@
-# Copyright 2021-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2021-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from unittest import TestCase
@@ -28,7 +28,7 @@ class TestBusConsume(TestCase):
         MeetingMock.from_uuid.side_effect = AssertionError('Should not get called')
         handler = MeetingsBusEventHandler(None, None, None)
 
-        event = {'Conference': 'wazo-conference-{}'.format(uuid4())}
+        event = {'Conference': f'wazo-conference-{uuid4()}'}
         result = handler._notify_participant_joined(event)
 
         assert_that(result, is_(none()))

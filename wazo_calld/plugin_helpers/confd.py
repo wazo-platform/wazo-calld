@@ -162,7 +162,7 @@ class Line:
     def interface_autoanswer(self):
         interface = self.interface()
         if interface.startswith('sccp/'):
-            interface = '{}/autoanswer'.format(interface)
+            interface = f'{interface}/autoanswer'
         return interface
 
 

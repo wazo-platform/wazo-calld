@@ -121,7 +121,7 @@ class _PollingContactDialer:
                 continue  # The channel has already been hung up
 
     def _get_contacts(self, channel_id, aor):
-        asterisk_dialplan_function = 'PJSIP_DIAL_CONTACTS({})'.format(aor)
+        asterisk_dialplan_function = f'PJSIP_DIAL_CONTACTS({aor})'
         try:
             response = self._ari.channels.getChannelVar(
                 channelId=channel_id,

@@ -840,8 +840,8 @@ class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
         token = random_uuid(prefix='my-token-')
         user_uuid = random_uuid(prefix='my-user-uuid-')
         line_id = random_id()
-        queued_caller_id = '"câller" <1234>'.encode('utf-8')
-        operator_caller_id = '"ôperator" <9876>'.encode('utf-8')
+        queued_caller_id = '"câller" <1234>'.encode()
+        operator_caller_id = '"ôperator" <9876>'.encode()
         self.auth.set_token(
             MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT)
         )
@@ -2185,8 +2185,8 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
         token = random_uuid(prefix='my-token-')
         user_uuid = random_uuid(prefix='my-user-uuid-')
         line_id = random_id()
-        held_caller_id = '"câller" <1234>'.encode('utf-8')
-        operator_caller_id = '"ôperator" <9876>'.encode('utf-8')
+        held_caller_id = '"câller" <1234>'.encode()
+        operator_caller_id = '"ôperator" <9876>'.encode()
         self.auth.set_token(
             MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT)
         )

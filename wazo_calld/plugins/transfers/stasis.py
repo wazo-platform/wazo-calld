@@ -317,7 +317,7 @@ class TransfersStasis:
                 pass
 
     def clean_bridge_variables(self, bridge, event):
-        global_variable = 'XIVO_BRIDGE_VARIABLES_{}'.format(bridge.id)
+        global_variable = f'XIVO_BRIDGE_VARIABLES_{bridge.id}'
         self.ari.asterisk.setGlobalVar(variable=global_variable, value='')
 
     def release_hangup_lock(self, channel, event):

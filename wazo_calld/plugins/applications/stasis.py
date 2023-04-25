@@ -28,7 +28,7 @@ class AppNameHelper:
 
     @staticmethod
     def to_name(uuid):
-        return '{}{}'.format(AppNameHelper.PREFIX, uuid)
+        return f'{AppNameHelper.PREFIX}{uuid}'
 
 
 class ApplicationStasis:
@@ -271,7 +271,7 @@ class ApplicationStasis:
             self._service.join_node(application_uuid, node_uuid, [channel.id])
 
     def _register_applications(self, applications):
-        apps_name = set([AppNameHelper.to_name(app['uuid']) for app in applications])
+        apps_name = {AppNameHelper.to_name(app['uuid']) for app in applications}
         for app_name in apps_name:
             self._core_ari.register_application(app_name)
 

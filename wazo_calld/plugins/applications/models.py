@@ -20,9 +20,7 @@ logger = logging.getLogger(__name__)
 class InvalidSnoopBridge(Exception):
     def __init__(self, bridge_id):
         self.bridge_id = bridge_id
-        super().__init__(
-            'Invalid snoop bridge id "{bridge_id}"'.format(bridge_id=bridge_id)
-        )
+        super().__init__(f'Invalid snoop bridge id "{bridge_id}"')
 
 
 class ApplicationCall:

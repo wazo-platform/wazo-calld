@@ -45,7 +45,7 @@ class TestApplicationStasisStartHandler(TestCase):
     def test_stasis_start_user_outgoing_call(self):
         uuid = 'e3f9b7ef-3fa7-4240-88f1-e6f5c0945b9b'
         event = {
-            'application': 'wazo-app-{}'.format(uuid),
+            'application': f'wazo-app-{uuid}',
             'args': [],
         }
 
@@ -57,7 +57,7 @@ class TestApplicationStasisStartHandler(TestCase):
     def test_stasis_start_incoming_call(self):
         uuid = 'e3f9b7ef-3fa7-4240-88f1-e6f5c0945b9b'
         event = {
-            'application': 'wazo-app-{}'.format(uuid),
+            'application': f'wazo-app-{uuid}',
             'args': ['incoming'],
         }
 
@@ -70,7 +70,7 @@ class TestApplicationStasisStartHandler(TestCase):
         uuid = 'e3f9b7ef-3fa7-4240-88f1-e6f5c0945b9b'
         node_uuid = 'a39a50e5-b5dc-4816-ab6a-1c5b9305e513'
         event = {
-            'application': 'wazo-app-{}'.format(uuid),
+            'application': f'wazo-app-{uuid}',
             'args': ['originate', node_uuid],
         }
 
@@ -81,7 +81,7 @@ class TestApplicationStasisStartHandler(TestCase):
 
     def test_stasis_start_originate_no_node(self):
         uuid = 'e3f9b7ef-3fa7-4240-88f1-e6f5c0945b9b'
-        event = {'application': 'wazo-app-{}'.format(uuid), 'args': ['originate']}
+        event = {'application': f'wazo-app-{uuid}', 'args': ['originate']}
 
         with patch.object(self.app, '_stasis_start_originate') as fn:
             self.app.stasis_start(s.event_object, event)

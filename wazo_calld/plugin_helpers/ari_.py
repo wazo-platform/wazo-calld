@@ -45,7 +45,7 @@ def set_channel_var_sync(channel, var, value, bypass_stasis=False):
         logger.debug('waiting for a setvar to complete')
         time.sleep(0.01)
 
-    raise Exception('failed to set channel variable {}={}'.format(var, value))
+    raise Exception(f'failed to set channel variable {var}={value}')
 
 
 def set_channel_id_var_sync(ari, channel_id, var, value, bypass_stasis=False):
@@ -73,7 +73,7 @@ def set_channel_id_var_sync(ari, channel_id, var, value, bypass_stasis=False):
         logger.debug('waiting for a setvar to complete')
         time.sleep(0.01)
 
-    raise Exception('failed to set channel variable {}={}'.format(var, value))
+    raise Exception(f'failed to set channel variable {var}={value}')
 
 
 class GlobalVariableAdapter:
@@ -357,7 +357,7 @@ class Bridge:
         self._ari = ari
         self.global_variables = GlobalVariableNameDecorator(
             GlobalVariableAdapter(self._ari),
-            'WAZO_BRIDGE_{bridge_id}_VARIABLE_{{}}'.format(bridge_id=self.id),
+            f'WAZO_BRIDGE_{self.id}_VARIABLE_{{}}',
         )
 
     def has_lone_channel(self):
@@ -394,10 +394,10 @@ class Bridge:
         except ARINotFound:
             return set()
 
-        return set(
+        return {
             Channel(channel_id, self._ari).user()
             for channel_id in bridge.json['channels']
-        )
+        }
 
     def exists(self):
         try:
@@ -413,7 +413,7 @@ class BridgeSnapshot(Bridge):
         super().__init__(snapshot['id'], ari)
 
     def valid_user_uuids(self):
-        return set(
+        return {
             Channel(channel_id, self._ari).user()
             for channel_id in self._snapshot['channels']
-        )
+        }
