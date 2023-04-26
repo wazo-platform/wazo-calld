@@ -27,3 +27,4 @@ class Call:
         self.answer_time = None
         self.hangup_time = None
         self.direction = 'unknown'
+        self.is_local = False

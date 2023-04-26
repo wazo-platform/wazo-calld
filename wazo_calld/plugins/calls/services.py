@@ -56,7 +56,9 @@ class CallsService:
         self._notifier = notifier
         self._state_persistor = ReadOnlyStatePersistor(self._ari)
 
-    def list_calls(self, application_filter=None, application_instance_filter=None):
+    def _list_calls_raw_calls(
+        self, application_filter=None, application_instance_filter=None
+    ):
         channels = self._ari.channels.list()
 
         if application_filter:
@@ -86,18 +88,34 @@ class CallsService:
                     ):
                         app_instance_channels.append(channel)
                 channels = app_instance_channels
+        return channels
 
+    def list_calls(self, application_filter=None, application_instance_filter=None):
+        channels = self._list_calls_raw_calls(
+            application_filter, application_instance_filter
+        )
         return [self.make_call_from_channel(self._ari, channel) for channel in channels]
 
     def list_calls_user(
         self, user_uuid, application_filter=None, application_instance_filter=None
     ):
-        calls = self.list_calls(application_filter, application_instance_filter)
+        channels = self._list_calls_raw_calls(
+            application_filter, application_instance_filter
+        )
+
+        def filter(channel):
+            if channel.json['name'].startswith('Local/'):
+                return False
+
+            if channel.getChannelVar(variable='XIVO_USERUUID')['value'] != user_uuid:
+                return False
+
+            return True
+
+        filtered_channels = [c for c in channels if filter(c)]
         return [
-            call
-            for call in calls
-            if call.user_uuid == user_uuid
-            and not Channel(call.id_, self._ari).is_local()
+            self.make_call_from_channel(self._ari, channel)
+            for channel in filtered_channels
         ]
 
     def originate(self, request):
@@ -348,6 +366,7 @@ class CallsService:
         call.creation_time = channel.json['creationtime']
         call.answer_time = channel_variables.get('WAZO_ANSWER_TIME') or None
         call.status = channel.json['state']
+        call.is_local = channel.json['name'].startswith('Local/')
         call.caller_id_name = channel.json['caller']['name']
         call.caller_id_number = channel.json['caller']['number']
         call.peer_caller_id_name = channel.json['connected']['name']
@@ -664,9 +683,14 @@ class CallsService:
         ]
 
     def _verify_user(self, call_id, user_uuid):
-        channel = Channel(call_id, self._ari)
-        if not channel.exists() or channel.is_local():
+        try:
+            channel = self._ari.channels.get(channelId=call_id)
+        except ARINotFound:
             raise NoSuchCall(call_id)
 
-        if channel.user() != user_uuid:
+        if channel.json['name'].startswith('Local/'):
+            raise NoSuchCall(call_id)
+
+        channel_user_uuid = channel.json['channelvars'].get('XIVO_USERUUID')
+        if channel_user_uuid != user_uuid:
             raise UserPermissionDenied(user_uuid, {'call': call_id})
