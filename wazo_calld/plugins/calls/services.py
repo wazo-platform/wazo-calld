@@ -106,8 +106,13 @@ class CallsService:
         def filter(channel):
             if channel.json['name'].startswith('Local/'):
                 return False
-
-            if channel.getChannelVar(variable='XIVO_USERUUID')['value'] != user_uuid:
+            try:
+                if (
+                    channel.getChannelVar(variable='XIVO_USERUUID')['value']
+                    != user_uuid
+                ):
+                    return False
+            except ARINotFound:
                 return False
 
             return True
