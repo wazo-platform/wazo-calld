@@ -395,7 +395,6 @@ class TestUserListCalls(IntegrationTest):
                 my_call_id: {'XIVO_USERUUID': user_uuid},
                 my_second_call_id: {'XIVO_USERUUID': user_uuid},
                 others_call_id: {'XIVO_USERUUID': 'user2-uuid'},
-                no_user_call_id: {'XIVO_USERUUID': ''},
             }
         )
         self.confd.set_users(MockUser(uuid=user_uuid), MockUser(uuid='user2-uuid'))
