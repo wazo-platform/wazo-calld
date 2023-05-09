@@ -25,6 +25,7 @@ _DEFAULT_CONFIG = {
             'enabled': True,
             'allow_headers': ['Content-Type', 'X-Auth-Token', 'Wazo-Tenant'],
         },
+        'max_threads': 10,
     },
     'amid': {
         'host': 'localhost',
