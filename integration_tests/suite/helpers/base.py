@@ -172,7 +172,7 @@ class IntegrationTest(AssetLaunchingTestCase):
     def _start_calld(cls):
         cls.start_service('calld')
         cls.reset_clients()
-        until.true(cls.calld_client.is_up, tries=5)
+        until.true(cls.calld_client.is_up, tries=10)
 
     @classmethod
     @contextmanager

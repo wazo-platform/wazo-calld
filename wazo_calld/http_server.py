@@ -47,7 +47,11 @@ class HTTPServer:
         )
 
         bind_addr = (self.config['listen'], self.config['port'])
-        self.server = wsgi.WSGIServer(bind_addr=bind_addr, wsgi_app=wsgi_app_https)
+        self.server = wsgi.WSGIServer(
+            bind_addr=bind_addr,
+            wsgi_app=wsgi_app_https,
+            numthreads=self.config['max_threads'],
+        )
         if self.config['certificate'] and self.config['private_key']:
             logger.warning(
                 'Using service SSL configuration is deprecated. Please use NGINX instead.'
