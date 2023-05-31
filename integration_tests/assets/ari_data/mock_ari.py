@@ -1,15 +1,14 @@
+#!/usr/bin/env python3
 # Copyright 2015-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
+from __future__ import annotations
 
 import json
 import logging
 import sys
 
-from flask import Flask
+from flask import Flask, jsonify, make_response, request, Response
 from flask_sockets import Sockets
-from flask import jsonify
-from flask import make_response
-from flask import request
 
 _EMPTY_RESPONSES = {
     'amqp': {},
@@ -30,17 +29,24 @@ _requests = []
 _responses = {}
 
 logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger('wazo-ari-mock')
 
 
-def _reset():
+def _reset() -> None:
     global _requests
     global _responses
     _requests = []
     _responses = dict(_EMPTY_RESPONSES)
 
 
+@app.errorhandler(500)
+def handle_generic(e: Exception) -> Response:
+    logger.error(f'Exception: {e}')
+    return jsonify({'error': str(e)})
+
+
 @app.before_request
-def log_request():
+def log_request() -> None:
     if not request.path.startswith('/_'):
         path = request.path
         log = {
@@ -55,18 +61,18 @@ def log_request():
 
 
 @app.route('/_requests', methods=['GET'])
-def list_requests():
+def list_requests() -> Response:
     return jsonify({'requests': _requests})
 
 
 @app.route('/_reset', methods=['POST'])
-def reset():
+def reset() -> tuple[str, int]:
     _reset()
     return '', 204
 
 
 @app.route('/_set_response', methods=['POST'])
-def set_response():
+def set_response() -> tuple[str, int]:
     global _responses
     request_body = json.loads(request.data)
     set_response = request_body['response']
@@ -76,13 +82,13 @@ def set_response():
 
 
 @app.route('/_send_ws_event', methods=['POST'])
-def send_event():
+def send_event() -> tuple[str, int]:
     websocket.send(request.data)
     return '', 201
 
 
 @app.route('/_websockets')
-def websockets():
+def websockets() -> Response:
     result = []
     if websocket:
         result.append(id(websocket))
@@ -90,47 +96,47 @@ def websockets():
 
 
 @app.route('/ari/amqp/<application_name>', methods=['POST'])
-def get_amqp(application_name):
+def get_amqp(application_name: str) -> Response:
     return jsonify({'foo': 'bar'})
 
 
 @app.route('/ari/api-docs/<path:file_name>')
-def swagger(file_name):
+def swagger(file_name: str) -> Response:
     with open(f'/usr/local/share/ari/api-docs/{file_name}') as swagger_file:
         swagger_spec = swagger_file.read()
         swagger_spec = swagger_spec.replace(
-            'localhost:8088', 'ari:{port}'.format(port=request.environ['SERVER_PORT'])
+            'localhost:8088', f'ari:{request.environ["SERVER_PORT"]}'
         )
         return make_response(swagger_spec, 200, {'Content-Type': 'application/json'})
 
 
 @app.route('/ari/applications/<application_name>', methods=['GET'])
-def get_application(application_name):
+def get_application(application_name: str) -> Response | tuple[str, int]:
     if application_name not in _responses['applications']:
         return '', 404
     return jsonify(_responses['applications'][application_name])
 
 
 @app.route('/ari/channels', methods=['GET'])
-def get_channels():
+def get_channels() -> Response:
     result = [channel for channel in _responses['channels'].values()]
     return make_response(json.dumps(result), 200, {'Content-Type': 'application/json'})
 
 
 @app.route('/ari/channels', methods=['POST'])
-def originate():
+def originate() -> Response:
     return jsonify(_responses['originates'].pop())
 
 
 @app.route('/ari/channels/<channel_id>', methods=['GET'])
-def get_channel(channel_id):
+def get_channel(channel_id) -> Response | tuple[str, int]:
     if channel_id not in _responses['channels']:
         return '', 404
     return jsonify(_responses['channels'][channel_id])
 
 
 @app.route('/ari/channels/<channel_id>', methods=['DELETE'])
-def delete_channel(channel_id):
+def delete_channel(channel_id) -> tuple[str, int]:
     if channel_id not in _responses['channels']:
         return '', 404
     del _responses['channels'][channel_id]
@@ -138,23 +144,23 @@ def delete_channel(channel_id):
 
 
 @app.route('/ari/channels/<channel_id>/answer', methods=['POST'])
-def answer(channel_id):
+def answer(channel_id) -> tuple[str, int]:
     return '', 204
 
 
 @app.route('/ari/bridges')
-def list_bridges():
+def list_bridges() -> Response:
     result = [bridge for bridge in _responses['bridges'].values()]
     return make_response(json.dumps(result), 200, {'Content-Type': 'application/json'})
 
 
 @app.route('/ari/bridges/<bridge_id>')
-def get_bridge(bridge_id):
+def get_bridge(bridge_id) -> Response:
     return jsonify(_responses['bridges'][bridge_id])
 
 
 @app.route('/ari/bridges', methods=['POST'])
-def post_bridge():
+def post_bridge() -> Response:
     new_bridge = {
         'id': 'bridge-id',
         'technology': 'stasis',
@@ -168,18 +174,18 @@ def post_bridge():
 
 
 @app.route('/ari/bridges/<bridge_id>/addChannel', methods=['POST'])
-def add_channel_to_bridge(bridge_id):
+def add_channel_to_bridge(bridge_id: str) -> tuple[str, int]:
     return '', 204
 
 
 @app.route('/ari/endpoints')
-def list_endpoints():
+def list_endpoints() -> Response:
     result = _responses['endpoints']
     return make_response(json.dumps(result), 200, {'Content-Type': 'application/json'})
 
 
 @app.route('/ari/channels/<channel_id>/variable', methods=['GET'])
-def channel_variable(channel_id):
+def channel_variable(channel_id: str) -> Response | tuple[str, int]:
     variable = request.args['variable']
     if channel_id not in _responses['channel_variables']:
         return '', 404
@@ -189,7 +195,7 @@ def channel_variable(channel_id):
 
 
 @app.route('/ari/channels/<channel_id>/variable', methods=['POST'])
-def post_channel_variable(channel_id):
+def post_channel_variable(channel_id: str) -> tuple[str, int]:
     variable = request.args['variable']
     value = request.args['value']
     if channel_id not in _responses['channels']:
@@ -201,12 +207,12 @@ def post_channel_variable(channel_id):
 
 
 @app.route('/ari/applications/<application_name>/subscription', methods=['POST'])
-def subscribe_application(application_name):
+def subscribe_application(application_name: str) -> Response:
     return jsonify({})
 
 
 @app.route('/ari/asterisk/variable', methods=['GET'])
-def get_global_variable():
+def get_global_variable() -> Response | tuple[str, int]:
     variable = request.args['variable']
     if variable not in _responses['global_variables']:
         return '', 404
@@ -214,7 +220,7 @@ def get_global_variable():
 
 
 @app.route('/ari/asterisk/variable', methods=['POST'])
-def set_global_variable():
+def set_global_variable() -> tuple[str, int]:
     variable = request.args['variable']
     value = request.args['value']
     _responses['global_variables'][variable] = value
@@ -222,7 +228,7 @@ def set_global_variable():
 
 
 @sockets.route('/ari/events')
-def echo_socket(ws):
+def echo_socket(ws) -> None:
     global websocket
     websocket = ws
     while True:

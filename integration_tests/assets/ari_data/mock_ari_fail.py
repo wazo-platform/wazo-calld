@@ -1,19 +1,27 @@
+#!/usr/bin/env python3
 # Copyright 2015-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
+from __future__ import annotations
 
 import logging
 import sys
 
-from flask import Flask
-from flask import make_response
+from flask import Flask, make_response, Response, jsonify
 
 app = Flask(__name__)
 
 logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger('wazo-ari-mock')
+
+
+@app.errorhandler(500)
+def handle_generic(e: Exception) -> Response:
+    logger.error(f'Exception: {e}')
+    return jsonify({'error': str(e)})
 
 
 @app.route('/ari/api-docs/<path:file_name>')
-def swagger(file_name):
+def swagger(file_name: str) -> Response:
     with open(f'/usr/local/share/ari/api-docs/{file_name}') as swagger_file:
         swagger_spec = swagger_file.read()
         swagger_spec = swagger_spec.replace('localhost:8088', f'ari:{port}')
@@ -21,7 +29,7 @@ def swagger(file_name):
 
 
 @app.route('/ari/<path:path>', methods=['GET', 'PUT', 'POST', 'DELETE'])
-def fail(path):
+def fail(path: str) -> tuple[str, int]:
     return '', 500
 
 

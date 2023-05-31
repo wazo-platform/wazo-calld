@@ -1,13 +1,13 @@
+#!/usr/bin/env python3
 # Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
+from __future__ import annotations
 
 import logging
 import json
 import sys
 
-from flask import Flask
-from flask import jsonify
-from flask import request
+from flask import Flask, jsonify, request, Response
 
 app = Flask(__name__)
 
@@ -19,13 +19,19 @@ valid_extens = []
 _requests = []
 
 
-def _reset():
+def _reset() -> None:
     global _requests
     global action_response
     global valid_extens
     _requests = []
     action_response = ''
     valid_extens = []
+
+
+@app.errorhandler(500)
+def handle_generic(e: Exception) -> Response:
+    logger.error(f'Exception: {e}')
+    return jsonify({'error': str(e)})
 
 
 @app.before_request

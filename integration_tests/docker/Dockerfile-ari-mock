@@ -1,4 +1,3 @@
 FROM python:3.9-slim-bullseye
 
-RUN pip install -U pip
-RUN pip install flask flask-sockets gunicorn
+RUN python3 -m pip install --no-cache-dir gunicorn flask flask-sockets
