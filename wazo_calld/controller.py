@@ -12,6 +12,7 @@ from xivo.config_helper import get_xivo_uuid
 from xivo.consul_helpers import ServiceCatalogRegistration
 from xivo.status import StatusAggregator, TokenStatus
 from xivo.token_renewer import TokenRenewer
+from wazo_amid_client import Client as AmidClient
 
 from .ari_ import CoreARI
 from .asyncio_ import CoreAsyncio
@@ -32,13 +33,15 @@ class Controller:
         self.asyncio = CoreAsyncio()
         self.bus_consumer = CoreBusConsumer.from_config(config['bus'])
         self.bus_publisher = CoreBusPublisher.from_config(config['uuid'], config['bus'])
-        self.ari = CoreARI(config['ari'], self.bus_consumer)
+        self.ami = AmidClient(**config['amid'])
+        self.ari = CoreARI(config['ari'], self.bus_consumer, self.ami)
         self.collectd = CollectdPublisher.from_config(
             config['uuid'], config['bus'], config['collectd']
         )
         self.http_server = HTTPServer(config)
         self.status_aggregator = StatusAggregator()
         self.token_renewer = TokenRenewer(auth_client)
+        self.token_renewer.subscribe_to_token_change(self.ami.set_token)
         self.token_status = TokenStatus()
         self._service_registration_params = [
             'wazo-calld',

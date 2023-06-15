@@ -232,7 +232,7 @@ class ARIClientProxy(ari.client.Client):
 
 
 class CoreARI:
-    def __init__(self, config, bus_consumer):
+    def __init__(self, config, bus_consumer, ami):
         self._apps = []
         self.config = config
         self._is_running = False
@@ -242,6 +242,7 @@ class CoreARI:
         self._bus_consumer = bus_consumer
         self.client = ARIClientProxy(**config['connection'])
         self._initialization_thread = threading.Thread(target=self.run)
+        self._ami = ami
 
     def init_client(self):
         self._subscribe_to_bus_events()
@@ -331,6 +332,7 @@ class CoreARI:
     def provide_status(self, status):
         expected_apps = ['adhoc_conference', 'callcontrol', 'dial_mobile']
         ok = self.client._initialized and set(expected_apps).issubset(set(self._apps))
+        self._ami.command('core waitfullybooted')
         status['ari']['status'] = Status.ok if ok else Status.fail
 
     def _connection_error(self, error):
