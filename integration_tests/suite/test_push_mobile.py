@@ -3,7 +3,7 @@
 
 from hamcrest import (
     assert_that,
-    contains,
+    contains_exactly,
     has_item,
     has_entries,
 )
@@ -126,7 +126,7 @@ class TestPushMobile(RealAsteriskIntegrationTest):
             )
             assert_that(
                 result,
-                contains(
+                contains_exactly(
                     has_entries(
                         Response='Success',
                         Value='NOT_INUSE',
@@ -161,7 +161,7 @@ class TestPushMobile(RealAsteriskIntegrationTest):
             )
             assert_that(
                 result,
-                contains(
+                contains_exactly(
                     has_entries(
                         Response='Success',
                         Value='NOT_INUSE',
@@ -196,7 +196,7 @@ class TestPushMobile(RealAsteriskIntegrationTest):
             )
             assert_that(
                 result,
-                contains(
+                contains_exactly(
                     has_entries(
                         Response='Success',
                         Value='UNAVAILABLE',
