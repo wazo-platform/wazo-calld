@@ -64,3 +64,26 @@ class CalldEverythingOkWaitStrategy(WaitStrategy):
             )
 
         until.assert_(is_ready, tries=60)
+
+
+class AsteriskReadyWaitStrategy(WaitStrategy):
+    def wait(self, integration_test):
+        def is_ready():
+            result = integration_test.docker_exec(
+                ['asterisk', '-rx', 'core waitfullybooted'], service_name='ari'
+            )
+            assert result == b'Asterisk has fully booted.\n'
+
+        until.assert_(is_ready, tries=60)
+
+
+class CalldAndAsteriskWaitStrategy(WaitStrategy):
+    def __init__(self):
+        self._strategies = [
+            AsteriskReadyWaitStrategy(),
+            CalldEverythingOkWaitStrategy(),
+        ]
+
+    def wait(self, integration_test):
+        for strategy in self._strategies:
+            strategy.wait(integration_test)
