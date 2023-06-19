@@ -280,15 +280,9 @@ class TransfersStasis:
             return
 
         logger.debug('cleaning bridge %s', bridge.id)
-        try:
-            self.ari.channels.get(channelId=channel.id)
-            channel_is_hungup = False
-        except ARINotFound:
-            logger.debug('channel who left was hungup')
-            channel_is_hungup = True
 
-        if len(bridge.json['channels']) == 1 and channel_is_hungup:
-            logger.debug('one channel left in bridge %s', bridge.id)
+        if len(bridge.json['channels']) == 1:
+            logger.debug('one channel left bridge %s', bridge.id)
             lone_channel_id = bridge.json['channels'][0]
 
             try:
