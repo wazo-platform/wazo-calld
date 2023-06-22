@@ -184,6 +184,12 @@ class Channel:
             return None
         return linkedid
 
+    def bridge(self):
+        for bridge in self._ari.bridges.list():
+            if self.id in bridge.json['channels']:
+                return BridgeSnapshot(bridge.json, self._ari)
+        raise BridgeNotFound()
+
     def only_connected_channel(self):
         connected_channels = self.connected_channels()
         if len(connected_channels) > 1:
@@ -417,3 +423,6 @@ class BridgeSnapshot(Bridge):
             Channel(channel_id, self._ari).user()
             for channel_id in self._snapshot['channels']
         }
+
+    def has_only_channel_ids(self, *channel_ids):
+        return set(self._snapshot['channels']) == set(channel_ids)
