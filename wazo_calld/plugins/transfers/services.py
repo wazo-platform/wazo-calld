@@ -17,7 +17,6 @@ from wazo_calld.plugin_helpers.exceptions import (
     UserPermissionDenied,
 )
 
-from . import ari_helpers
 from .exceptions import (
     NoSuchTransfer,
     TooManyTransferredCandidates,

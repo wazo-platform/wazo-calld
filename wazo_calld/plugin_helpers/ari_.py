@@ -5,9 +5,13 @@ import logging
 import time
 import json
 
-from ari.exceptions import ARINotFound, ARINotInStasis
+from ari.exceptions import (
+    ARINotFound,
+    ARINotInStasis,
+)
 
 from .exceptions import (
+    BridgeNotFound,
     NotEnoughChannels,
     TooManyChannels,
 )

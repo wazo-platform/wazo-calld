@@ -7,6 +7,7 @@ import uuid
 from ari.exceptions import ARINotFound
 
 from wazo_calld.plugin_helpers.ari_ import Channel
+from wazo_calld.plugin_helpers.exceptions import BridgeNotFound
 from . import ari_helpers
 from .exceptions import TransferAnswerError
 from .exceptions import TransferCreationError
