@@ -7,6 +7,7 @@ import uuid
 from ari.exceptions import ARINotFound
 
 from wazo_calld.plugin_helpers.ari_ import Channel
+from wazo_calld.plugin_helpers.exceptions import BridgeNotFound
 from . import ari_helpers
 from .exceptions import TransferAnswerError
 from .exceptions import TransferCreationError
@@ -229,6 +230,22 @@ class TransferStateReady(TransferState):
             initiator_channel.setChannelVar(
                 variable='XIVO_TRANSFER_ID', value=transfer_id
             )
+        except ARINotFound:
+            raise TransferCreationError('some channel got hung up')
+
+        try:
+            bridge = channel.bridge()
+        except BridgeNotFound:
+            pass
+        else:
+            if bridge.has_only_channel_ids(
+                transferred_channel.id, initiator_channel.id
+            ):
+                # Deleting the bridge prevents the bridge auto-cleaner to
+                # hangup one of the channels before they get transferred
+                self._ari.bridges.destroy(bridgeId=bridge.id)
+
+        try:
             transfer_bridge.addChannel(channel=transferred_channel.id)
             transfer_bridge.addChannel(channel=initiator_channel.id)
         except ARINotFound:

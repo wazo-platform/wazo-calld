@@ -17,11 +17,13 @@ from wazo_calld.plugin_helpers.exceptions import (
     UserPermissionDenied,
 )
 
-from . import ari_helpers
-from .exceptions import NoSuchTransfer
-from .exceptions import TooManyTransferredCandidates
-from .exceptions import TransferAlreadyStarted
-from .exceptions import TransferCreationError
+from .exceptions import (
+    NoSuchTransfer,
+    TooManyTransferredCandidates,
+    TransferAlreadyStarted,
+    TransferCreationError,
+)
+from .lock import HangupLock, InvalidLock
 from .state import TransferStateReadyNonStasis, TransferStateReady
 
 logger = logging.getLogger(__name__)
@@ -165,10 +167,8 @@ class TransfersService:
         recipient_call = new_channel.id
 
         try:
-            ari_helpers.set_bridge_variable(
-                self.ari, transfer_id, 'XIVO_HANGUP_LOCK_SOURCE', recipient_call
-            )
-        except ARINotFound:
+            HangupLock.acquire(self.ari, recipient_call, transfer_id)
+        except InvalidLock:
             raise TransferCreationError('bridge not found')
 
         return recipient_call

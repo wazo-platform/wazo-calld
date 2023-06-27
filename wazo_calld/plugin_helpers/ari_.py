@@ -5,9 +5,13 @@ import logging
 import time
 import json
 
-from ari.exceptions import ARINotFound, ARINotInStasis
+from ari.exceptions import (
+    ARINotFound,
+    ARINotInStasis,
+)
 
 from .exceptions import (
+    BridgeNotFound,
     NotEnoughChannels,
     TooManyChannels,
 )
@@ -183,6 +187,12 @@ class Channel:
         except ARINotFound:
             return None
         return linkedid
+
+    def bridge(self):
+        for bridge in self._ari.bridges.list():
+            if self.id in bridge.json['channels']:
+                return BridgeSnapshot(bridge.json, self._ari)
+        raise BridgeNotFound()
 
     def only_connected_channel(self):
         connected_channels = self.connected_channels()
@@ -417,3 +427,6 @@ class BridgeSnapshot(Bridge):
             Channel(channel_id, self._ari).user()
             for channel_id in self._snapshot['channels']
         }
+
+    def has_only_channel_ids(self, *channel_ids):
+        return set(self._snapshot['channels']) == set(channel_ids)

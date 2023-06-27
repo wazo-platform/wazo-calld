@@ -4,6 +4,10 @@
 from wazo_calld.exceptions import APIException
 
 
+class BridgeNotFound(Exception):
+    pass
+
+
 class CalldUninitializedError(APIException):
     def __init__(self):
         super().__init__(

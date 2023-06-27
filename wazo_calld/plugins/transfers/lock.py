@@ -12,6 +12,12 @@ class InvalidLock(ValueError):
 
 
 class HangupLock:
+    '''
+    Purpose: prevent automatic deletion of a bridge (target) while a channel
+    (source) exists but is not yet in the bridge, such as an originated
+    transfer recipient
+    '''
+
     def __init__(self, ari, source_id, target_id):
         self._source_id = source_id
         self._target_id = target_id
@@ -50,6 +56,16 @@ class HangupLock:
         try:
             source_id = ari_helpers.get_bridge_variable(
                 ari, target_id, 'XIVO_HANGUP_LOCK_SOURCE'
+            )
+        except ARINotFound:
+            raise InvalidLock()
+        return cls(ari, source_id, target_id)
+
+    @classmethod
+    def acquire(cls, ari, source_id, target_id):
+        try:
+            ari_helpers.set_bridge_variable(
+                ari, target_id, 'XIVO_HANGUP_LOCK_SOURCE', source_id
             )
         except ARINotFound:
             raise InvalidLock()
