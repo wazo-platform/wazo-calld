@@ -11,9 +11,9 @@
       - wazo-tox-linters-310
       - wazo-tox-py39
       - debian-packaging-bullseye
-    check:
+    wazo-check:
       jobs:
         - calld-tox-integration
-    gate:
+    wazo-gate:
       jobs:
         - calld-tox-integration
