@@ -4,6 +4,7 @@
 import ari
 from ari.exceptions import ARINotFound
 from ari.exceptions import ARINotInStasis
+from wazo_amid_client import Client as AmidClient
 from wazo_test_helpers import until
 
 from .base import IntegrationTest, make_user_uuid
@@ -26,6 +27,16 @@ class RealAsteriskIntegrationTest(IntegrationTest):
     def setUpClass(cls):
         super().setUpClass()
         cls.chan_test = ChanTest(cls.ari_config())
+
+    @classmethod
+    def make_amid(cls):
+        return AmidClient(
+            '127.0.0.1',
+            cls.service_port(9491, 'amid'),
+            prefix=None,
+            https=False,
+            token=VALID_TOKEN,
+        )
 
     @classmethod
     def ari_config(cls):

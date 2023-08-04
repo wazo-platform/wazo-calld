@@ -77,10 +77,30 @@ class AsteriskReadyWaitStrategy(WaitStrategy):
         until.assert_(is_ready, tries=60)
 
 
+class AmidReadyWaitStrategy(WaitStrategy):
+    def wait(self, integration_test):
+        def is_ready():
+            try:
+                status = integration_test.amid.status()
+            except requests.RequestException:
+                status = {}
+            assert_that(
+                status,
+                has_entries(
+                    {
+                        'ami_socket': has_entry('status', 'ok'),
+                    }
+                ),
+            )
+
+        until.assert_(is_ready, tries=60)
+
+
 class CalldAndAsteriskWaitStrategy(WaitStrategy):
     def __init__(self):
         self._strategies = [
             AsteriskReadyWaitStrategy(),
+            AmidReadyWaitStrategy(),
             CalldEverythingOkWaitStrategy(),
         ]
 
