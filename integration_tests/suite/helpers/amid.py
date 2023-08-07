@@ -1,10 +1,22 @@
 # Copyright 2015-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+from wazo_amid_client import Client as _AmidClient
 import requests
 
 
-class AmidClient:
+class AmidClient(_AmidClient):
+    def is_up(self):
+        try:
+            self.status()
+        except requests.HTTPError:
+            return True
+        except requests.RequestException:
+            return False
+        return True
+
+
+class MockAmidClient:
     def __init__(self, host, port):
         self.host = host
         self.port = port

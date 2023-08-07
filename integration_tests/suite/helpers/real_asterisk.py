@@ -6,6 +6,7 @@ from ari.exceptions import ARINotFound
 from ari.exceptions import ARINotInStasis
 from wazo_test_helpers import until
 
+from .amid import AmidClient
 from .base import IntegrationTest, make_user_uuid
 from .chan_test import ChanTest
 from .constants import (
@@ -15,17 +16,27 @@ from .constants import (
     VALID_TOKEN,
     VALID_TENANT,
 )
-from .wait_strategy import CalldAndAsteriskWaitStrategy
+from .wait_strategy import CalldAndAsteriskAndAmidWaitStrategy
 
 
 class RealAsteriskIntegrationTest(IntegrationTest):
     asset = 'real_asterisk'
-    wait_strategy = CalldAndAsteriskWaitStrategy()
+    wait_strategy = CalldAndAsteriskAndAmidWaitStrategy()
 
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
         cls.chan_test = ChanTest(cls.ari_config())
+
+    @classmethod
+    def make_amid(cls):
+        return AmidClient(
+            '127.0.0.1',
+            cls.service_port(9491, 'amid'),
+            prefix=None,
+            https=False,
+            token=VALID_TOKEN,
+        )
 
     @classmethod
     def ari_config(cls):

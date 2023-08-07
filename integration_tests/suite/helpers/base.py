@@ -13,7 +13,7 @@ from wazo_test_helpers.asset_launching_test_case import AssetLaunchingTestCase
 from wazo_test_helpers.asset_launching_test_case import NoSuchService
 from wazo_test_helpers.asset_launching_test_case import NoSuchPort
 
-from .amid import AmidClient
+from .amid import MockAmidClient
 from .ari_ import ARIClient
 from .auth import AuthClient, MockUserToken
 from .bus import BusClient
@@ -66,7 +66,7 @@ class IntegrationTest(AssetLaunchingTestCase):
     @classmethod
     def reset_clients(cls):
         try:
-            cls.amid = AmidClient('127.0.0.1', cls.service_port(9491, 'amid'))
+            cls.amid = cls.make_amid()
         except (NoSuchService, NoSuchPort) as e:
             logger.debug(e)
             cls.amid = WrongClient('amid')
@@ -132,6 +132,10 @@ class IntegrationTest(AssetLaunchingTestCase):
         except (NoSuchService, NoSuchPort) as e:
             logger.debug(e)
             cls.stasis = WrongClient('stasis')
+
+    @classmethod
+    def make_amid(cls):
+        return MockAmidClient('127.0.0.1', cls.service_port(9491, 'amid'))
 
     @classmethod
     def make_calld(cls, token=VALID_TOKEN):

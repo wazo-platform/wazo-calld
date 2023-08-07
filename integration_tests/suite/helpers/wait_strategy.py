@@ -77,13 +77,45 @@ class AsteriskReadyWaitStrategy(WaitStrategy):
         until.assert_(is_ready, tries=60)
 
 
-class CalldAndAsteriskWaitStrategy(WaitStrategy):
-    def __init__(self):
-        self._strategies = [
-            AsteriskReadyWaitStrategy(),
-            CalldEverythingOkWaitStrategy(),
-        ]
+class AmidReadyWaitStrategy(WaitStrategy):
+    def wait(self, integration_test):
+        def is_ready():
+            try:
+                status = integration_test.amid.status()
+            except requests.RequestException:
+                status = {}
+            assert_that(
+                status,
+                has_entries(
+                    {
+                        'ami_socket': has_entry('status', 'ok'),
+                    }
+                ),
+            )
+
+        until.assert_(is_ready, tries=60)
+
+
+class _ServicesWaitStrategy(WaitStrategy):
+    _strategies = {
+        'amid': AmidReadyWaitStrategy(),
+        'asterisk': AsteriskReadyWaitStrategy(),
+        'calld': CalldEverythingOkWaitStrategy(),
+    }
+
+    def __init__(self, services=None):
+        self._services = self._strategies.keys() if services is None else services
 
     def wait(self, integration_test):
-        for strategy in self._strategies:
-            strategy.wait(integration_test)
+        for service in self._services:
+            self._strategies[service].wait(integration_test)
+
+
+class CalldAndAsteriskAndAmidWaitStrategy(_ServicesWaitStrategy):
+    def __init__(self):
+        super().__init__(services=['calld', 'asterisk', 'amid'])
+
+
+class CalldAndAsteriskWaitStrategy(_ServicesWaitStrategy):
+    def __init__(self):
+        super().__init__(services=['calld', 'asterisk'])
