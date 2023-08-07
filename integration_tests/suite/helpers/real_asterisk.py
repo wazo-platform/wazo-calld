@@ -4,9 +4,9 @@
 import ari
 from ari.exceptions import ARINotFound
 from ari.exceptions import ARINotInStasis
-from wazo_amid_client import Client as AmidClient
 from wazo_test_helpers import until
 
+from .amid import AmidClient
 from .base import IntegrationTest, make_user_uuid
 from .chan_test import ChanTest
 from .constants import (
