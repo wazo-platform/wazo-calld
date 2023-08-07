@@ -96,26 +96,26 @@ class AmidReadyWaitStrategy(WaitStrategy):
         until.assert_(is_ready, tries=60)
 
 
-class CalldAndAsteriskAndAmidWaitStrategy(WaitStrategy):
-    def __init__(self):
-        self._strategies = [
-            AsteriskReadyWaitStrategy(),
-            AmidReadyWaitStrategy(),
-            CalldEverythingOkWaitStrategy(),
-        ]
+class _ServicesWaitStrategy(WaitStrategy):
+    _strategies = {
+        'amid': AmidReadyWaitStrategy(),
+        'asterisk': AsteriskReadyWaitStrategy(),
+        'calld': CalldEverythingOkWaitStrategy(),
+    }
+
+    def __init__(self, services=None):
+        self._services = self._strategies.keys() if services is None else services
 
     def wait(self, integration_test):
-        for strategy in self._strategies:
-            strategy.wait(integration_test)
+        for service in self._services:
+            self._strategies[service].wait(integration_test)
 
 
-class CalldAndAsteriskWaitStrategy(WaitStrategy):
+class CalldAndAsteriskAndAmidWaitStrategy(_ServicesWaitStrategy):
     def __init__(self):
-        self._strategies = [
-            AsteriskReadyWaitStrategy(),
-            CalldEverythingOkWaitStrategy(),
-        ]
+        super().__init__(services=['calld', 'asterisk', 'amid'])
 
-    def wait(self, integration_test):
-        for strategy in self._strategies:
-            strategy.wait(integration_test)
+
+class CalldAndAsteriskWaitStrategy(_ServicesWaitStrategy):
+    def __init__(self):
+        super().__init__(services=['calld', 'asterisk'])
