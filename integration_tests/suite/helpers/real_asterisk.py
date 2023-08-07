@@ -16,12 +16,12 @@ from .constants import (
     VALID_TOKEN,
     VALID_TENANT,
 )
-from .wait_strategy import CalldAndAsteriskWaitStrategy
+from .wait_strategy import CalldAndAsteriskAndAmidWaitStrategy
 
 
 class RealAsteriskIntegrationTest(IntegrationTest):
     asset = 'real_asterisk'
-    wait_strategy = CalldAndAsteriskWaitStrategy()
+    wait_strategy = CalldAndAsteriskAndAmidWaitStrategy()
 
     @classmethod
     def setUpClass(cls):

@@ -36,7 +36,10 @@ from .helpers.confd import MockLine
 from .helpers.auth import MockUserToken
 from .helpers.hamcrest_ import HamcrestARIBridge
 from .helpers.hamcrest_ import HamcrestARIChannel
-from .helpers.wait_strategy import CalldUpWaitStrategy
+from .helpers.wait_strategy import (
+    CalldUpWaitStrategy,
+    CalldAndAsteriskWaitStrategy,
+)
 
 RECIPIENT = {
     'context': 'local',
@@ -2170,6 +2173,7 @@ class TestTransferFailingARI(IntegrationTest):
 
 class TestNoAmid(TestTransfers):
     asset = 'real_asterisk_no_amid'
+    wait_strategy = CalldAndAsteriskWaitStrategy()
 
     def test_given_no_amid_when_create_transfer_from_non_stasis_then_503(self):
         (

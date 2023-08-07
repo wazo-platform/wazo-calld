@@ -96,11 +96,23 @@ class AmidReadyWaitStrategy(WaitStrategy):
         until.assert_(is_ready, tries=60)
 
 
-class CalldAndAsteriskWaitStrategy(WaitStrategy):
+class CalldAndAsteriskAndAmidWaitStrategy(WaitStrategy):
     def __init__(self):
         self._strategies = [
             AsteriskReadyWaitStrategy(),
             AmidReadyWaitStrategy(),
+            CalldEverythingOkWaitStrategy(),
+        ]
+
+    def wait(self, integration_test):
+        for strategy in self._strategies:
+            strategy.wait(integration_test)
+
+
+class CalldAndAsteriskWaitStrategy(WaitStrategy):
+    def __init__(self):
+        self._strategies = [
+            AsteriskReadyWaitStrategy(),
             CalldEverythingOkWaitStrategy(),
         ]
 
