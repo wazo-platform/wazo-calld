@@ -298,11 +298,26 @@ class TestCollectdRabbitMQRestart(IntegrationTest):
     ):
         call_id = new_call_id()
         self.ari.set_channels(MockChannel(id=call_id))
+        events = self.bus.accumulator(
+            routing_key='collectd.calls', exchange=BUS_EXCHANGE_COLLECTD
+        )
         self.stasis.event_stasis_start(
             channel_id=call_id,
             stasis_app=STASIS_APP,
             stasis_app_instance=STASIS_APP_INSTANCE,
         )
+
+        def assert_call_has_been_handled_by_calld():
+            expected_message = (
+                'PUTVAL [^/]+/calls-{app}.{app_instance}/counter-start .* N:1'
+            )
+            expected_message = expected_message.format(
+                app=STASIS_APP,
+                app_instance=STASIS_APP_INSTANCE,
+            )
+            assert_that(events.accumulate(), has_item(matches_regexp(expected_message)))
+
+        until.assert_(assert_call_has_been_handled_by_calld, tries=5)
 
         self.restart_service('rabbitmq')
         CalldEverythingOkWaitStrategy().wait(
