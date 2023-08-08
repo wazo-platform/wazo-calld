@@ -15,6 +15,12 @@ from .helpers.wait_strategy import CalldEverythingOkWaitStrategy
 
 STASIS_APP = 'callcontrol'
 STASIS_APP_INSTANCE = 'switchboard-red'
+COLLECTD_APP_START_EVENT = (
+    f'PUTVAL [^/]+/calls-{STASIS_APP}.{STASIS_APP_INSTANCE}/counter-start .* N:1'
+)
+COLLECTD_APP_END_EVENT = (
+    f'PUTVAL [^/]+/calls-{STASIS_APP}.{STASIS_APP_INSTANCE}/counter-end .* N:1'
+)
 
 
 class TestCollectd(IntegrationTest):
@@ -68,13 +74,10 @@ class TestCollectd(IntegrationTest):
         )
 
         def assert_function():
-            expected_message = (
-                'PUTVAL [^/]+/calls-{app}.{app_instance}/counter-start .* N:1'
+            assert_that(
+                events.accumulate(),
+                has_item(matches_regexp(COLLECTD_APP_START_EVENT)),
             )
-            expected_message = expected_message.format(
-                app=STASIS_APP, app_instance=STASIS_APP_INSTANCE
-            )
-            assert_that(events.accumulate(), has_item(matches_regexp(expected_message)))
 
         until.assert_(assert_function, tries=5)
 
@@ -96,13 +99,10 @@ class TestCollectd(IntegrationTest):
         )
 
         def assert_function():
-            expected_message = (
-                'PUTVAL [^/]+/calls-{app}.{app_instance}/counter-end .* N:1'
+            assert_that(
+                events.accumulate(),
+                has_item(matches_regexp(COLLECTD_APP_END_EVENT)),
             )
-            expected_message = expected_message.format(
-                app=STASIS_APP, app_instance=STASIS_APP_INSTANCE
-            )
-            assert_that(events.accumulate(), has_item(matches_regexp(expected_message)))
 
         until.assert_(assert_function, tries=5)
 
@@ -190,12 +190,7 @@ class TestCollectd(IntegrationTest):
         )
 
         def assert_function():
-            expected_message = (
-                'PUTVAL [^/]+/calls-{app}.{app_instance}/counter-abandoned .* N:1'
-            )
-            expected_message = expected_message.format(
-                app=STASIS_APP, app_instance=STASIS_APP_INSTANCE
-            )
+            expected_message = f'PUTVAL [^/]+/calls-{STASIS_APP}.{STASIS_APP_INSTANCE}/counter-abandoned .* N:1'
             assert_that(events.accumulate(), has_item(matches_regexp(expected_message)))
 
         until.assert_(assert_function, tries=5)
@@ -215,15 +210,8 @@ class TestCollectd(IntegrationTest):
         )
 
         def assert_function():
-            expected_message = (
-                'PUTVAL [^/]+/calls-{app}.{app_instance}/counter-connect .* N:1'
-            )
-            expected_message = expected_message.format(
-                app=STASIS_APP, app_instance=STASIS_APP_INSTANCE
-            )
-            assert_that(
-                events.accumulate(), not_(has_item(matches_regexp(expected_message)))
-            )
+            message = f'PUTVAL [^/]+/calls-{STASIS_APP}.{STASIS_APP_INSTANCE}/counter-connect .* N:1'
+            assert_that(events.accumulate(), not_(has_item(matches_regexp(message))))
 
         until.assert_(assert_function, tries=3)
 
@@ -251,36 +239,28 @@ class TestCollectdCalldRestart(IntegrationTest):
         )
 
         def assert_call_has_been_handled_by_calld():
-            expected_message = (
-                'PUTVAL [^/]+/calls-{app}.{app_instance}/counter-start .* N:1'
+            assert_that(
+                events.accumulate(),
+                has_item(matches_regexp(COLLECTD_APP_START_EVENT)),
             )
-            expected_message = expected_message.format(
-                app=STASIS_APP,
-                app_instance=STASIS_APP_INSTANCE,
-            )
-            assert_that(events.accumulate(), has_item(matches_regexp(expected_message)))
 
         until.assert_(assert_call_has_been_handled_by_calld, tries=5)
 
         self.restart_service('calld')
-
         self.reset_clients()
-        CalldEverythingOkWaitStrategy().wait(
-            self
-        )  # wait for calld to reconnect to rabbitmq
+        # wait for calld to reconnect to rabbitmq
+        CalldEverythingOkWaitStrategy().wait(self)
+
         self.stasis.event_channel_destroyed(
             channel_id=call_id,
             stasis_app=STASIS_APP,
         )
 
         def assert_calld_sent_end_call_stat():
-            expected_message = (
-                'PUTVAL [^/]+/calls-{app}.{app_instance}/counter-end .* N:1'
+            assert_that(
+                events.accumulate(),
+                has_item(matches_regexp(COLLECTD_APP_END_EVENT)),
             )
-            expected_message = expected_message.format(
-                app=STASIS_APP, app_instance=STASIS_APP_INSTANCE
-            )
-            assert_that(events.accumulate(), has_item(matches_regexp(expected_message)))
 
         until.assert_(assert_calld_sent_end_call_stat, tries=5)
 
@@ -308,21 +288,16 @@ class TestCollectdRabbitMQRestart(IntegrationTest):
         )
 
         def assert_call_has_been_handled_by_calld():
-            expected_message = (
-                'PUTVAL [^/]+/calls-{app}.{app_instance}/counter-start .* N:1'
+            assert_that(
+                events.accumulate(),
+                has_item(matches_regexp(COLLECTD_APP_START_EVENT)),
             )
-            expected_message = expected_message.format(
-                app=STASIS_APP,
-                app_instance=STASIS_APP_INSTANCE,
-            )
-            assert_that(events.accumulate(), has_item(matches_regexp(expected_message)))
 
         until.assert_(assert_call_has_been_handled_by_calld, tries=5)
 
         self.restart_service('rabbitmq')
-        CalldEverythingOkWaitStrategy().wait(
-            self
-        )  # wait for calld to reconnect to rabbitmq
+        # wait for calld to reconnect to rabbitmq
+        CalldEverythingOkWaitStrategy().wait(self)
         self.reset_bus_client()
         self.reset_ari_bus()
 
@@ -335,12 +310,9 @@ class TestCollectdRabbitMQRestart(IntegrationTest):
         )
 
         def assert_calld_sent_end_call_stat():
-            expected_message = (
-                'PUTVAL [^/]+/calls-{app}.{app_instance}/counter-end .* N:1'
+            assert_that(
+                events.accumulate(),
+                has_item(matches_regexp(COLLECTD_APP_END_EVENT)),
             )
-            expected_message = expected_message.format(
-                app=STASIS_APP, app_instance=STASIS_APP_INSTANCE
-            )
-            assert_that(events.accumulate(), has_item(matches_regexp(expected_message)))
 
         until.assert_(assert_calld_sent_end_call_stat, tries=5)
