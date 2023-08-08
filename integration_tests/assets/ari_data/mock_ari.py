@@ -215,7 +215,8 @@ def subscribe_application(application_name: str) -> Response:
 def get_global_variable() -> Response | tuple[str, int]:
     variable = request.args['variable']
     if variable not in _responses['global_variables']:
-        return '', 404
+        # Asterisk doesn't raise error when variable doesn't exist
+        return jsonify({'value': ''})
     return jsonify({'value': _responses['global_variables'][variable]})
 
 

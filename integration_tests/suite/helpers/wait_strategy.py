@@ -4,8 +4,10 @@
 import requests
 from hamcrest import (
     assert_that,
+    empty,
     has_entries,
     has_entry,
+    not_,
 )
 from wazo_test_helpers import until
 
@@ -59,9 +61,12 @@ class CalldEverythingOkWaitStrategy(WaitStrategy):
                         'ari': has_entry('status', 'ok'),
                         'bus_consumer': has_entry('status', 'ok'),
                         'service_token': has_entry('status', 'ok'),
+                        'plugins': not_(empty()),
                     }
                 ),
             )
+            for plugin in status['plugins'].values():
+                assert_that(plugin, has_entries({'status': 'ok'}))
 
         until.assert_(is_ready, tries=60)
 

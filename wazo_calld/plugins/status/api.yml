@@ -20,6 +20,22 @@ definitions:
         $ref: '#/definitions/ComponentWithStatus'
       service_token:
         $ref: '#/definitions/ComponentWithStatus'
+      plugins:
+        $ref: '#/definitions/PluginsStatus'
+  PluginsStatus:
+    type: object
+    properties:
+      endpoints:
+        $ref: '#/definitions/ComponentWithStatus'
+      voicemails:
+        $ref: '#/definitions/VoicemailsStatus'
+  VoicemailsStatus:
+    type: object
+    allOf:
+      - $ref: '#/definitions/ComponentWithStatus'
+      - properties:
+         cache_items:
+           type: integer
   ComponentWithStatus:
     type: object
     properties:
