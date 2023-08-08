@@ -25,6 +25,8 @@ definitions:
   PluginsStatus:
     type: object
     properties:
+      endpoints:
+        $ref: '#/definitions/ComponentWithStatus'
       voicemails:
         $ref: '#/definitions/VoicemailsStatus'
   VoicemailsStatus:
