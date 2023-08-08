@@ -4,6 +4,7 @@
 import logging
 
 from wazo_confd_client import Client as ConfdClient
+from xivo.status import Status
 
 from .bus_consume import VoicemailsBusEventHandler
 from .http import (
@@ -126,4 +127,5 @@ class Plugin:
         )
 
     def _provide_status(self, status):
+        status['plugins']['voicemails']['status'] = Status.ok
         status['plugins']['voicemails']['cache_items'] = len(self._voicemail_cache)
