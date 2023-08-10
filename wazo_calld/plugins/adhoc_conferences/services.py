@@ -3,12 +3,21 @@
 
 import uuid
 
-from ari.exceptions import ARIException, ARINotFound
+from ari.exceptions import (
+    ARIException,
+    ARINotFound,
+    ARINotInStasis,
+)
 
 from wazo_calld.plugin_helpers.ari_ import Bridge, Channel
 from wazo_calld.plugin_helpers import ami
-from wazo_calld.plugin_helpers.exceptions import NotEnoughChannels, TooManyChannels
+from wazo_calld.plugin_helpers.exceptions import (
+    BridgeNotFound,
+    NotEnoughChannels,
+    TooManyChannels,
+)
 
+from .stasis import ADHOC_CONFERENCE_STASIS_APP
 from .exceptions import (
     AdhocConferenceCreationError,
     AdhocConferenceNotFound,
@@ -136,18 +145,8 @@ class AdhocConferencesService:
         )
         try:
             host_channel.setChannelVar(
-                variable='WAZO_ADHOC_CONFERENCE_ID',
-                value=adhoc_conference_id,
-                bypassStasis=True,
-            )
-            host_channel.setChannelVar(
                 variable='WAZO_IS_ADHOC_CONFERENCE_HOST',
                 value='true',
-                bypassStasis=True,
-            )
-            host_peer_channel.setChannelVar(
-                variable='WAZO_ADHOC_CONFERENCE_ID',
-                value=adhoc_conference_id,
                 bypassStasis=True,
             )
             host_peer_channel.setChannelVar(
@@ -159,13 +158,45 @@ class AdhocConferencesService:
             logger.exception('ARI error: %s', e)
             return
 
-        ami.redirect(
-            self._amid_client,
-            host_peer_channel.json['name'],
-            context='convert_to_stasis',
-            exten='adhoc_conference',
-            extra_channel=host_channel.json['name'],
-        )
+        channel_ids = [host_channel.id, host_peer_channel.id]
+        if self._channels_are_in_stasis(*channel_ids):
+            try:
+                self._ari_redirect(
+                    host_channel.id,
+                    stasis_app=ADHOC_CONFERENCE_STASIS_APP,
+                    stasis_app_args=[adhoc_conference_id],
+                )
+                self._ari_redirect(
+                    host_peer_channel.id,
+                    stasis_app=ADHOC_CONFERENCE_STASIS_APP,
+                    stasis_app_args=[adhoc_conference_id],
+                )
+            except ARIException as e:
+                logger.exception('ARI error: %s', e)
+                return
+        else:
+            try:
+                host_channel.setChannelVar(
+                    variable='WAZO_ADHOC_CONFERENCE_ID',
+                    value=adhoc_conference_id,
+                    bypassStasis=True,
+                )
+                host_peer_channel.setChannelVar(
+                    variable='WAZO_ADHOC_CONFERENCE_ID',
+                    value=adhoc_conference_id,
+                    bypassStasis=True,
+                )
+            except ARIException as e:
+                logger.exception('ARI error: %s', e)
+                return
+
+            ami.redirect(
+                self._amid_client,
+                host_peer_channel.json['name'],
+                context='convert_to_stasis',
+                exten='adhoc_conference',
+                extra_channel=host_channel.json['name'],
+            )
 
     def _redirect_participant(
         self, participant_channel_id, discarded_host_channel_id, adhoc_conference_id
@@ -191,11 +222,6 @@ class AdhocConferencesService:
         )
         try:
             participant_channel.setChannelVar(
-                variable='WAZO_ADHOC_CONFERENCE_ID',
-                value=adhoc_conference_id,
-                bypassStasis=True,
-            )
-            participant_channel.setChannelVar(
                 variable='WAZO_IS_ADHOC_CONFERENCE_HOST',
                 value='false',
                 bypassStasis=True,
@@ -204,15 +230,73 @@ class AdhocConferencesService:
             logger.exception('ARI error: %s', e)
             return
 
-        ami.redirect(
-            self._amid_client,
-            participant_channel.json['name'],
-            context='convert_to_stasis',
-            exten='adhoc_conference',
-            extra_channel=discarded_host_channel.json['name'],
-            extra_context='convert_to_stasis',
-            extra_exten='h',
-        )
+        try:
+            participant_channel.setChannelVar(
+                variable='WAZO_ADHOC_CONFERENCE_ID',
+                value=adhoc_conference_id,
+                bypassStasis=True,
+            )
+        except ARIException as e:
+            logger.exception('ARI error: %s', e)
+            return
+
+        channel_ids = [participant_channel.id, discarded_host_channel.id]
+        if self._channels_are_in_stasis(*channel_ids):
+            try:
+                self._ari_redirect(
+                    participant_channel.id,
+                    stasis_app=ADHOC_CONFERENCE_STASIS_APP,
+                    stasis_app_args=[adhoc_conference_id],
+                )
+                self._ari.channels.hangup(channelId=discarded_host_channel.id)
+            except ARIException as e:
+                logger.exception('ARI error: %s', e)
+                return
+        else:
+            try:
+                participant_channel.setChannelVar(
+                    variable='WAZO_ADHOC_CONFERENCE_ID',
+                    value=adhoc_conference_id,
+                    bypassStasis=True,
+                )
+            except ARIException as e:
+                logger.exception('ARI error: %s', e)
+                return
+
+            ami.redirect(
+                self._amid_client,
+                participant_channel.json['name'],
+                context='convert_to_stasis',
+                exten='adhoc_conference',
+                extra_channel=discarded_host_channel.json['name'],
+                extra_context='convert_to_stasis',
+                extra_exten='h',
+            )
+
+    def _channels_are_in_stasis(self, *channel_ids):
+        for channel_id in channel_ids:
+            if not Channel(channel_id, self._ari).is_in_stasis():
+                return False
+        return True
+
+    def _ari_redirect(self, channel_id, stasis_app, stasis_app_args):
+        # NOTE: Destroy bridge before moving channels
+        #       to avoid to trigger cleanup from callcontrol
+        try:
+            bridge = Channel(channel_id, self._ari).bridge()
+            self._ari.bridges.get(bridgeId=bridge.id).destroy()
+        except (ARINotFound, BridgeNotFound):
+            pass
+
+        try:
+            self._ari.channels.move(
+                channelId=channel_id,
+                app=stasis_app,
+                appArgs=stasis_app_args,
+            )
+        except ARINotInStasis:
+            logger.warning(f'Channel {channel_id} not in stasis')
+            raise
 
     def delete_from_user(self, adhoc_conference_id, user_uuid):
         bridge_helper = Bridge(adhoc_conference_id, self._ari)
