@@ -10,16 +10,16 @@ from hamcrest import (
     not_,
 )
 from wazo_test_helpers import until
+from wazo_test_helpers.wait_strategy import (
+    NoWaitStrategy,
+    WaitStrategy,
+)
+
+__all__ = [
+    'NoWaitStrategy',
+]
 
 
-class WaitStrategy:
-    def wait(self, integration_test):
-        raise NotImplementedError()
-
-
-class NoWaitStrategy(WaitStrategy):
-    def wait(self, integration_test):
-        pass
 
 
 class CalldUpWaitStrategy(WaitStrategy):
