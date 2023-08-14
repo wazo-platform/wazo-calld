@@ -11,6 +11,7 @@ from hamcrest import (
 )
 from wazo_test_helpers import until
 from wazo_test_helpers.wait_strategy import (
+    ComponentsWaitStrategy,
     NoWaitStrategy,
     WaitStrategy,
 )
@@ -20,6 +21,9 @@ __all__ = [
 ]
 
 
+class CalldComponentsWaitStrategy(ComponentsWaitStrategy):
+    def get_status(self, integration_test):
+        return integration_test.calld.status()
 
 
 class CalldUpWaitStrategy(WaitStrategy):

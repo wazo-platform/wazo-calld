@@ -17,12 +17,12 @@ from wazo_test_helpers.hamcrest.raises import raises
 
 from .helpers.base import IntegrationTest
 from .helpers.constants import VALID_TOKEN_MULTITENANT
-from .helpers.wait_strategy import NoWaitStrategy
+from .helpers.wait_strategy import CalldComponentsWaitStrategy
 
 
 class TestConfig(IntegrationTest):
     asset = 'basic_rest'
-    wait_strategy = NoWaitStrategy()
+    wait_strategy = CalldComponentsWaitStrategy(['service_token'])
 
     def test_config(self):
         calld = self.make_calld(VALID_TOKEN_MULTITENANT)
