@@ -16,6 +16,9 @@ from hamcrest import (
     has_properties,
     not_,
 )
+
+from ari.exceptions import ARIServerError
+
 from wazo_calld_client.exceptions import CalldError
 from wazo_test_helpers import until
 from wazo_test_helpers.hamcrest.uuid_ import uuid_
@@ -449,7 +452,11 @@ class TestStasisTriggers(BaseApplicationTestCase):
         application_name = f'wazo-app-{self.no_node_app_uuid}'
 
         def application_deleted():
-            app_names = [app['name'] for app in self.ari.applications.list()]
+            try:
+                app_names = [app['name'] for app in self.ari.applications.list()]
+            except ARIServerError:
+                assert False, 'Failed to list ARI applications'
+
             assert (
                 application_name not in app_names
             ), 'Stasis application has not been deleted'
