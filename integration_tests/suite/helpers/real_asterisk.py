@@ -184,3 +184,52 @@ class RealAsterisk:
 
         callee_channel_id = until.true(bridged_channel, caller, timeout=3)
         return caller.id, callee_channel_id
+
+    def given_ringing_call_not_stasis(
+        self, caller_uuid=None, callee_uuid=None, caller_variables=None
+    ):
+        caller_uuid = caller_uuid or make_user_uuid()
+        callee_uuid = callee_uuid or make_user_uuid()
+        variables = {
+            'XIVO_USERUUID': caller_uuid,
+            '__CALLEE_XIVO_USERUUID': callee_uuid,
+            '__WAZO_TENANT_UUID': VALID_TENANT,
+        }
+        variables.update(caller_variables or {})
+        caller = self.ari.channels.originate(
+            endpoint=ENDPOINT_AUTOANSWER,
+            context='local',
+            extension='recipient',
+            variables={'variables': variables},
+        )
+
+        def ringing_channel(caller):
+            channels = self.ari.channels.list()
+            try:
+                callee_channel_id = next(
+                    channel.id
+                    for channel in channels
+                    if channel.json['state'] == 'Ringing'
+                )
+                return callee_channel_id
+            except StopIteration:
+                return False
+
+        callee_channel_id = until.true(
+            ringing_channel, caller, timeout=3, message='Could not find ringing channel'
+        )
+        return caller.id, callee_channel_id
+
+    def pickup(self, user_uuid=None):
+        user_uuid = user_uuid or make_user_uuid()
+        variables = {
+            'XIVO_USERUUID': user_uuid,
+            '__WAZO_TENANT_UUID': VALID_TENANT,
+        }
+        interceptor = self.ari.channels.originate(
+            endpoint=ENDPOINT_AUTOANSWER,
+            context='local',
+            extension='pickup',
+            variables={'variables': variables},
+        )
+        return interceptor.id
