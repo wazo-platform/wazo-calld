@@ -38,7 +38,7 @@ from .helpers.constants import (
     VALID_TENANT,
 )
 from .helpers.real_asterisk import RealAsteriskIntegrationTest
-from .helpers.wait_strategy import CalldUpWaitStrategy, CalldEverythingOkWaitStrategy
+from .helpers.wait_strategy import CalldUpWaitStrategy
 
 SOME_LOCAL_CHANNEL_NAME = 'Local/channel'
 SOME_PRIORITY = 1
@@ -2373,7 +2373,6 @@ class TestConnectUser(IntegrationTest):
 
 class TestCallerID(RealAsteriskIntegrationTest):
     asset = 'real_asterisk'
-    wait_strategy = CalldEverythingOkWaitStrategy()
 
     def test_when_create_call_and_answer1_then_connected_line_is_correct(self):
         self.confd.set_users(

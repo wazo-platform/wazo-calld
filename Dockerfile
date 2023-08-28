@@ -21,6 +21,7 @@ RUN true \
     && apt-get -yq install --no-install-recommends ghostscript \
     && adduser --quiet --system --group --home /var/lib/wazo-calld wazo-calld \
     && mkdir -p /etc/wazo-calld/conf.d \
+    && mkdir -p /var/spool/asterisk/voicemail \
     && install -o www-data -g www-data /dev/null /var/log/wazo-calld.log \
     && chown root:www-data /usr/bin/wazo-pdf2fax \
     && rm -fr /var/lib/apt/lists/*
