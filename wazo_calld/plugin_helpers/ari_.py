@@ -430,3 +430,6 @@ class BridgeSnapshot(Bridge):
 
     def has_only_channel_ids(self, *channel_ids):
         return set(self._snapshot['channels']) == set(channel_ids)
+
+    def channel_ids(self):
+        return self._snapshot['channels']

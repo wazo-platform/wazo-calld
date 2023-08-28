@@ -284,7 +284,8 @@ class AdhocConferencesService:
         #       to avoid to trigger cleanup from callcontrol
         try:
             bridge = Channel(channel_id, self._ari).bridge()
-            self._ari.bridges.get(bridgeId=bridge.id).destroy()
+            if len(bridge.channel_ids()) <= 2:
+                self._ari.bridges.destroy(bridgeId=bridge.id)
         except (ARINotFound, BridgeNotFound):
             pass
 
