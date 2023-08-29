@@ -54,6 +54,7 @@ class CallsBusEventHandler:
         bus_consumer.subscribe('BridgeLeave', self._relay_channel_left_bridge)
         bus_consumer.subscribe('MixMonitorStart', self._mix_monitor_start)
         bus_consumer.subscribe('MixMonitorStop', self._mix_monitor_stop)
+        bus_consumer.subscribe('Pickup', self._pickup_occurred)
         bus_consumer.subscribe(
             'users_services_dnd_updated', self._users_services_dnd_updated
         )
@@ -340,6 +341,21 @@ class CallsBusEventHandler:
             logger.debug('channel %s not found', channel_id)
             return
         self._relay_channel_updated(event)
+
+    def _pickup_occurred(self, event):
+        logger.debug('Received Pickup event: %s', event)
+        channel_id = event['Uniqueid']
+        try:
+            set_channel_id_var_sync(
+                self.ari,
+                channel_id,
+                'XIVO_USERUUID',
+                event['ChanVariable']['XIVO_USERUUID'],
+                bypass_stasis=True,
+            )
+        except ARINotFound:
+            logger.debug('channel %s not found', channel_id)
+            return
 
     def _users_services_dnd_updated(self, event):
         user_uuid = event['user_uuid']

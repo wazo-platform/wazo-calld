@@ -37,7 +37,8 @@ from .helpers.constants import (
     VALID_TOKEN,
     VALID_TENANT,
 )
-from .helpers.real_asterisk import RealAsteriskIntegrationTest
+from .helpers.hamcrest_ import HamcrestARIChannel
+from .helpers.real_asterisk import RealAsteriskIntegrationTest, RealAsterisk
 from .helpers.wait_strategy import CalldUpWaitStrategy
 
 SOME_LOCAL_CHANNEL_NAME = 'Local/channel'
@@ -3284,3 +3285,56 @@ class TestCallAnswer(IntegrationTest):
         token = 'my-token'
         self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
         return token
+
+
+class TestPickup(RealAsteriskIntegrationTest):
+    asset = 'real_asterisk'
+
+    def setUp(self):
+        super().setUp()
+        self.c = HamcrestARIChannel(self.ari)
+        self.real_asterisk = RealAsterisk(self.ari, self.calld_client)
+
+    def test_pickup_hangup(self):
+        caller_uuid = str(uuid.uuid4())
+        callee_uuid = str(uuid.uuid4())
+        interceptor_uuid = str(uuid.uuid4())
+        user_calld_client = self.make_user_calld(
+            interceptor_uuid, tenant_uuid=VALID_TENANT
+        )
+        (
+            caller_channel_id,
+            callee_channel_id,
+        ) = self.real_asterisk.given_ringing_call_not_stasis(caller_uuid, callee_uuid)
+
+        interceptor_channel_id = self.real_asterisk.pickup(interceptor_uuid)
+
+        def pickup_finished():
+            assert_that(caller_channel_id, self.c.is_talking(), 'caller is not talking')
+            assert_that(
+                callee_channel_id, self.c.is_hungup(), 'callee is still talking'
+            )
+            assert_that(
+                interceptor_channel_id,
+                self.c.is_talking(),
+                'interceptor is not talking',
+            )
+
+        until.assert_(pickup_finished, timeout=3, message='Pickup failed')
+
+        def hangup_pickup():
+            user_calld_client.calls.hangup_from_user(interceptor_channel_id)
+
+        # wazo-calld needs some delay before processing the Pickup event and allowing hangup
+        until.return_(hangup_pickup, timeout=3, message='Hangup failed')
+
+        assert_that(
+            caller_channel_id,
+            self.c.is_hungup(),
+            'caller channel is still talking',
+        )
+        assert_that(
+            interceptor_channel_id,
+            self.c.is_hungup(),
+            'recipient channel is still talking',
+        )
