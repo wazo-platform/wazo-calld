@@ -34,6 +34,7 @@ CALL_RECORDING_FILENAME_TEMPLATE = (
     '/var/lib/wazo/sounds/tenants/{tenant_uuid}/monitor/{recording_uuid}.wav'
 )
 LOCAL_TIMEZONE = datetime.datetime.now(datetime.timezone.utc).astimezone().tzinfo
+AUTOPROV_CONTEXT = 'xivo-provisioning'
 
 
 class CallsService:
@@ -378,6 +379,7 @@ class CallsService:
         call.peer_caller_id_number = channel.json['connected']['number']
         call.user_uuid = channel_helper.user()
         call.tenant_uuid = channel_helper.tenant_uuid()
+        call.is_autoprov = channel.json['dialplan']['context'] == AUTOPROV_CONTEXT
         call.on_hold = channel_helper.on_hold()
         call.muted = channel_helper.muted()
         call.record_state = (
@@ -443,6 +445,7 @@ class CallsService:
         call.line_id = channel_variables.get('WAZO_LINE_ID') or None
         call.creation_time = channel.get('creationtime')
         call.answer_time = channel_variables.get('WAZO_ANSWER_TIME') or None
+        call.is_autoprov = event['channel']['dialplan']['context'] == AUTOPROV_CONTEXT
         call.hangup_time = datetime.datetime.now(LOCAL_TIMEZONE).isoformat()
         call.is_video = (
             channel_variables.get('CHANNEL(videonativeformat)') != '(nothing)'

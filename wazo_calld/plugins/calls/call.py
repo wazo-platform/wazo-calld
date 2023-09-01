@@ -28,3 +28,4 @@ class Call:
         self.hangup_time = None
         self.direction = 'unknown'
         self.is_local = False
+        self.is_autoprov = False
