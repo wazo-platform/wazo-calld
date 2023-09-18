@@ -127,4 +127,9 @@ class CallsStasis:
             return
         logger.debug('Relaying to bus: channel %s ended', channel_id)
         call = self.services.channel_destroyed_event(self.ari, event)
+        if call.is_autoprov:
+            logger.debug(
+                'ignoring event %s because this is a device in autoprov', event['type']
+            )
+            return
         self.notifier.call_ended(call, event['cause'])

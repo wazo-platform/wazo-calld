@@ -91,6 +91,11 @@ class CallsBusEventHandler:
             return
 
         call = self.services.make_call_from_channel(self.ari, channel)
+        if call.is_autoprov:
+            logger.debug(
+                'ignoring event %s because this is a device in autoprov', event['Event']
+            )
+            return
         if self._call_direction_unknown(call):
             call.direction = self.services.conversation_direction_from_channels(
                 self.ari, [channel.id]
@@ -115,6 +120,11 @@ class CallsBusEventHandler:
             logger.debug('channel %s not found', channel_id)
             return
         call = self.services.make_call_from_channel(self.ari, channel)
+        if call.is_autoprov:
+            logger.debug(
+                'ignoring event %s because this is a device in autoprov', event['Event']
+            )
+            return
         self.notifier.call_updated(call)
 
     def _relay_channel_answered(self, event):
@@ -137,6 +147,11 @@ class CallsBusEventHandler:
             logger.debug('channel %s not found', channel_id)
             return
         call = self.services.make_call_from_channel(self.ari, channel)
+        if call.is_autoprov:
+            logger.debug(
+                'ignoring event %s because this is a device in autoprov', event['Event']
+            )
+            return
         if self._call_direction_unknown(call):
             call.direction = self.services.conversation_direction_from_channels(
                 self.ari, [channel.id]
