@@ -24,7 +24,7 @@ class TestStasisStart(TestCase):
         self.core_ari.client = self.ari
         self.service = Mock()
 
-        self.stasis = DialMobileStasis(self.ari, self.service)
+        self.stasis = DialMobileStasis(self.core_ari, self.service)
 
     def test_other_application(self):
         assert_that(
@@ -38,19 +38,29 @@ class TestStasisStart(TestCase):
         self.service.join_bridge.assert_not_called()
 
     def test_not_enough_arguments_does_nothing(self):
-        assert_that(
-            calling(self.stasis.stasis_start).with_args(
-                Mock(),
-                {
-                    'application': DialMobileStasis._app_name,
-                    'args': ['dial'],
-                },
-            ),
-            not_(raises(Exception)),
-        )
+        arguments = [
+            ['dial'],
+            ['join'],
+            ['pickup', 'exten'],
+        ]
+        for args in arguments:
+            event = {
+                'application': DialMobileStasis._app_name,
+                'args': args,
+                'channel': {'id': s.channel_id},
+            }
+            assert_that(
+                calling(self.stasis.stasis_start).with_args(
+                    Mock(),
+                    event,
+                ),
+                not_(raises(Exception)),
+                args,
+            )
 
-        self.service.dial_all_contacts.assert_not_called()
-        self.service.join_bridge.assert_not_called()
+            self.service.dial_all_contacts.assert_not_called()
+            self.service.join_bridge.assert_not_called()
+            self.service.find_bridge_by_exten_context.assert_not_called()
 
     def test_calling_dial(self):
         self.stasis.stasis_start(
@@ -85,6 +95,44 @@ class TestStasisStart(TestCase):
 
         self.service.dial_all_contacts.assert_not_called()
         self.service.join_bridge.called_once_with(s.channel_id, s.bridge_uuid)
+
+    def test_calling_pickup(self):
+        self.stasis.stasis_start(
+            Mock(),
+            {
+                'application': DialMobileStasis._app_name,
+                'args': ['pickup', s.exten, s.context],
+                'channel': {
+                    'id': s.channel_id,
+                    'channelvars': {'CHANNEL(linkedid)': s.linkedid},
+                },
+            },
+        )
+
+        self.service.dial_all_contacts.assert_not_called()
+        self.service.find_bridge_by_exten_context.assert_called_once_with(s.exten, s.context)
+        self.service.join_bridge.called_once_with(s.channel_id, self.service.find_bridge_by_exten_context.return_value)
+
+    def test_calling_pickup_not_found(self):
+        self.service.find_bridge_by_exten_context.return_value = None
+
+        self.stasis.stasis_start(
+            Mock(),
+            {
+                'application': DialMobileStasis._app_name,
+                'args': ['pickup', s.exten, s.context],
+                'channel': {
+                    'id': s.channel_id,
+                    'channelvars': {'CHANNEL(linkedid)': s.linkedid},
+                },
+            },
+        )
+
+        self.service.dial_all_contacts.assert_not_called()
+        self.service.find_bridge_by_exten_context.assert_called_once_with(s.exten, s.context)
+        self.service.join_bridge.assert_not_called()
+
+        self.core_ari.client.channels.continueInDialplan.assert_called_once_with(channelId=s.channel_id)
 
     def channel_left(self):
         self.stasis.on_channel_left_bridge(

@@ -5,6 +5,12 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+ARG_LEN_BY_COMMAND = {
+    'dial': 2,
+    'join': 2,
+    'pickup': 3,
+}
+
 
 class DialMobileStasis:
     _app_name = 'dial_mobile'
@@ -19,12 +25,13 @@ class DialMobileStasis:
             return
 
         args = event['args']
-        if len(args) < 2:
+        channel_id = event['channel']['id']
+
+        if not args or len(args) < ARG_LEN_BY_COMMAND[args[0]]:
             logger.info('%s called without enough arguments %s', self._app_name, args)
             return
 
         action = args[0]
-        channel_id = event['channel']['id']
         origin_channel_id = event['channel']['channelvars']['CHANNEL(linkedid)']
 
         if action == 'dial':
@@ -33,6 +40,14 @@ class DialMobileStasis:
         elif action == 'join':
             future_bridge_uuid = args[1]
             self._service.join_bridge(channel_id, future_bridge_uuid)
+        elif action == 'pickup':
+            exten, context = args[1], args[2]
+            future_bridge_uuid = self._service.find_bridge_by_exten_context(exten, context)
+            if future_bridge_uuid:
+                self._service.join_bridge(channel_id, future_bridge_uuid)
+            else:
+                logger.debug('no matching mobile pickup found')
+                self._ari.channels.continueInDialplan(channelId=channel_id)
 
     def on_channel_left_bridge(self, channel, event):
         if event['application'] != self._app_name:

@@ -158,6 +158,12 @@ class DialMobileService:
         self._pending_push_mobile = {}
         self._notifier = notifier
 
+    def find_bridge_by_exten_context(self, exten, context):
+        pickup_mark = f'{exten}%{context}'
+        for bridge_uuid, dialer in self._contact_dialers.items():
+            if dialer.pickup_mark == pickup_mark:
+                return bridge_uuid
+
     def dial_all_contacts(self, caller_channel_id, origin_channel_id, aor):
         self._ari.channels.ring(channelId=caller_channel_id)
 
