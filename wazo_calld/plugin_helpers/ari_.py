@@ -56,9 +56,9 @@ def set_channel_id_var_sync(ari, channel_id, var, value, bypass_stasis=False):
     # TODO remove this when Asterisk gets fixed to set var synchronously
     def get_value():
         try:
-            return ari.channels.getChannelVar(channelId=channel_id, variable=var, no_cache=True)[
-                'value'
-            ]
+            return ari.channels.getChannelVar(
+                channelId=channel_id, variable=var, no_cache=True
+            )['value']
         except ARINotFound as e:
             if e.original_error.response.reason == 'Variable Not Found':
                 return None

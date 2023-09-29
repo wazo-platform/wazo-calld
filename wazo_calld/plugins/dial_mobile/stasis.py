@@ -30,7 +30,8 @@ class DialMobileStasis:
             'Channel id %s (%s) entered app %s with args %s',
             channel_id,
             event['channel']['name'],
-            self._app_name, args
+            self._app_name,
+            args,
         )
 
         if not args or len(args) < ARG_LEN_BY_COMMAND[args[0]]:
@@ -48,7 +49,9 @@ class DialMobileStasis:
             self._service.join_bridge(channel_id, future_bridge_uuid)
         elif action == 'pickup':
             exten, context = args[1], args[2]
-            future_bridge_uuid = self._service.find_bridge_by_exten_context(exten, context)
+            future_bridge_uuid = self._service.find_bridge_by_exten_context(
+                exten, context
+            )
             if future_bridge_uuid:
                 self._service.join_bridge(channel_id, future_bridge_uuid)
             else:

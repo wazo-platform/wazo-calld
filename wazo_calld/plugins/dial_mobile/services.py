@@ -25,7 +25,9 @@ class _NoSuchChannel(Exception):
 
 
 class _PollingContactDialer:
-    def __init__(self, ari, future_bridge_uuid, channel_id, aor, ringing_time, pickup_mark):
+    def __init__(
+        self, ari, future_bridge_uuid, channel_id, aor, ringing_time, pickup_mark
+    ):
         self._ari = ari
         self.future_bridge_uuid = future_bridge_uuid
         self.should_stop = threading.Event()
@@ -177,8 +179,7 @@ class DialMobileService:
         )
         ringing_time = self._call_ring_time.get(origin_channel_id, 30)
         pickup_mark = self._ari.channels.getChannelVar(
-            channelId=caller_channel_id,
-            variable=f'PJSIP_ENDPOINT({aor},PICKUPMARK)'
+            channelId=caller_channel_id, variable=f'PJSIP_ENDPOINT({aor},PICKUPMARK)'
         )['value']
         dialer = _PollingContactDialer(
             self._ari,

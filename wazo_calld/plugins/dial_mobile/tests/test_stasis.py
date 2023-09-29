@@ -114,8 +114,12 @@ class TestStasisStart(TestCase):
         )
 
         self.service.dial_all_contacts.assert_not_called()
-        self.service.find_bridge_by_exten_context.assert_called_once_with(s.exten, s.context)
-        self.service.join_bridge.called_once_with(s.channel_id, self.service.find_bridge_by_exten_context.return_value)
+        self.service.find_bridge_by_exten_context.assert_called_once_with(
+            s.exten, s.context
+        )
+        self.service.join_bridge.called_once_with(
+            s.channel_id, self.service.find_bridge_by_exten_context.return_value
+        )
 
     def test_calling_pickup_not_found(self):
         self.service.find_bridge_by_exten_context.return_value = None
@@ -134,10 +138,14 @@ class TestStasisStart(TestCase):
         )
 
         self.service.dial_all_contacts.assert_not_called()
-        self.service.find_bridge_by_exten_context.assert_called_once_with(s.exten, s.context)
+        self.service.find_bridge_by_exten_context.assert_called_once_with(
+            s.exten, s.context
+        )
         self.service.join_bridge.assert_not_called()
 
-        self.core_ari.client.channels.continueInDialplan.assert_called_once_with(channelId=s.channel_id)
+        self.core_ari.client.channels.continueInDialplan.assert_called_once_with(
+            channelId=s.channel_id
+        )
 
     def channel_left(self):
         self.stasis.on_channel_left_bridge(
