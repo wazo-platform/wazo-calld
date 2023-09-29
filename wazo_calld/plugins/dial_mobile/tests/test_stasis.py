@@ -38,12 +38,13 @@ class TestStasisStart(TestCase):
         self.service.join_bridge.assert_not_called()
 
     def test_not_enough_arguments_does_nothing(self):
-        arguments = [
+        wrong_arguments = [
+            [],
             ['dial'],
             ['join'],
             ['pickup', 'exten'],
         ]
-        for args in arguments:
+        for args in wrong_arguments:
             event = {
                 'application': DialMobileStasis._app_name,
                 'args': args,
