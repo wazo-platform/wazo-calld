@@ -25,7 +25,9 @@ class _NoSuchChannel(Exception):
 
 
 class _PollingContactDialer:
-    def __init__(self, ari, future_bridge_uuid, channel_id, aor, ringing_time):
+    def __init__(
+        self, ari, future_bridge_uuid, channel_id, aor, ringing_time, pickup_mark
+    ):
         self._ari = ari
         self.future_bridge_uuid = future_bridge_uuid
         self.should_stop = threading.Event()
@@ -39,6 +41,7 @@ class _PollingContactDialer:
         self._dialed_channels = set()
         self._caller_channel_id = channel_id
         self._ringing_time = ringing_time
+        self.pickup_mark = pickup_mark
 
     def start(self):
         self._thread.start()
@@ -157,6 +160,12 @@ class DialMobileService:
         self._pending_push_mobile = {}
         self._notifier = notifier
 
+    def find_bridge_by_exten_context(self, exten, context):
+        pickup_mark = f'{exten}%{context}'
+        for bridge_uuid, dialer in self._contact_dialers.items():
+            if dialer.pickup_mark == pickup_mark:
+                return bridge_uuid
+
     def dial_all_contacts(self, caller_channel_id, origin_channel_id, aor):
         self._ari.channels.ring(channelId=caller_channel_id)
 
@@ -169,8 +178,16 @@ class DialMobileService:
             future_bridge_uuid,
         )
         ringing_time = self._call_ring_time.get(origin_channel_id, 30)
+        pickup_mark = self._ari.channels.getChannelVar(
+            channelId=caller_channel_id, variable=f'PJSIP_ENDPOINT({aor},PICKUPMARK)'
+        )['value']
         dialer = _PollingContactDialer(
-            self._ari, future_bridge_uuid, caller_channel_id, aor, ringing_time
+            self._ari,
+            future_bridge_uuid,
+            caller_channel_id,
+            aor,
+            ringing_time,
+            pickup_mark,
         )
         self._contact_dialers[future_bridge_uuid] = dialer
         self._outgoing_calls[future_bridge_uuid] = caller_channel_id

@@ -107,9 +107,9 @@ class CachingRepository:
         self._variable_cache_lock = threading.Lock()
         self._last_cache_cleanup = time.time()
 
-    def getChannelVar(self, channelId, variable):
+    def getChannelVar(self, channelId, variable, no_cache=False):
         fn = getattr(self._repository, 'getChannelVar')
-        if variable not in self.cached_variables:
+        if no_cache or variable not in self.cached_variables:
             return fn(channelId=channelId, variable=variable)
         else:
             return self._get_or_fetch_cached_variable(fn, channelId, variable)

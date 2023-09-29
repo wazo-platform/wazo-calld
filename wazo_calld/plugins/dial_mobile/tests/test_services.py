@@ -31,6 +31,7 @@ class DialerTestCase(TestCase):
         self.aor = 'foobar'
         self.channel_id = '1234567890.42'
         self.ringing_time = 42
+        self.pickup_mark = '1003%default'
 
         self.poller = PollingContactDialer(
             self.ari,
@@ -38,6 +39,7 @@ class DialerTestCase(TestCase):
             self.channel_id,
             self.aor,
             self.ringing_time,
+            self.pickup_mark,
         )
 
 
@@ -194,6 +196,8 @@ class DialMobileServiceTestCase(DialerTestCase):
         self.origin_channel_id = '1234567890.84'
 
     def test_that_caller_channel_rings(self):
+        self.ari.client.channels.getChannelVar.return_value = {'value': 'pickupmark'}
+
         self.service.dial_all_contacts(
             self.channel_id, self.origin_channel_id, self.aor
         )
