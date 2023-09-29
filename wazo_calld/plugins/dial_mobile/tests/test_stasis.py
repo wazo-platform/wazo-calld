@@ -47,7 +47,7 @@ class TestStasisStart(TestCase):
             event = {
                 'application': DialMobileStasis._app_name,
                 'args': args,
-                'channel': {'id': s.channel_id},
+                'channel': {'id': s.channel_id, 'name': s.channel_name},
             }
             assert_that(
                 calling(self.stasis.stasis_start).with_args(
@@ -70,6 +70,7 @@ class TestStasisStart(TestCase):
                 'args': ['dial', s.aor],
                 'channel': {
                     'id': s.channel_id,
+                    'name': s.channel_name,
                     'channelvars': {'CHANNEL(linkedid)': s.linkedid},
                 },
             },
@@ -88,6 +89,7 @@ class TestStasisStart(TestCase):
                 'args': ['join', s.bridge_uuid],
                 'channel': {
                     'id': s.channel_id,
+                    'name': s.channel_name,
                     'channelvars': {'CHANNEL(linkedid)': s.linkedid},
                 },
             },
@@ -104,6 +106,7 @@ class TestStasisStart(TestCase):
                 'args': ['pickup', s.exten, s.context],
                 'channel': {
                     'id': s.channel_id,
+                    'name': s.channel_name,
                     'channelvars': {'CHANNEL(linkedid)': s.linkedid},
                 },
             },
@@ -123,6 +126,7 @@ class TestStasisStart(TestCase):
                 'args': ['pickup', s.exten, s.context],
                 'channel': {
                     'id': s.channel_id,
+                    'name': s.channel_name,
                     'channelvars': {'CHANNEL(linkedid)': s.linkedid},
                 },
             },

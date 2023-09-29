@@ -26,6 +26,12 @@ class DialMobileStasis:
 
         args = event['args']
         channel_id = event['channel']['id']
+        logger.debug(
+            'Channel id %s (%s) entered app %s with args %s',
+            channel_id,
+            event['channel']['name'],
+            self._app_name, args
+        )
 
         if not args or len(args) < ARG_LEN_BY_COMMAND[args[0]]:
             logger.info('%s called without enough arguments %s', self._app_name, args)
