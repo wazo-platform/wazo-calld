@@ -1,5 +1,9 @@
 pipeline {
   agent any
+  triggers {
+    githubPush()
+    pollSCM('H H * * *')
+  }
   environment {
     MAIL_RECIPIENTS = 'dev+tests-reports@wazo.community'
   }
