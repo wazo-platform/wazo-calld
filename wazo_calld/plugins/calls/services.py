@@ -601,7 +601,21 @@ class CallsService:
         except ARINotFound:
             mix_monitor_options = None
 
-        ami.record_start(self._ami, channel.id, filename, mix_monitor_options or None)
+        try:
+            mixmonitor_command = (
+                channel.getChannelVar(variable='WAZO_MIXMONITOR_COMMAND')['value']
+                or None
+            )
+        except ARINotFound:
+            mixmonitor_command = None
+
+        ami.record_start(
+            self._ami,
+            channel.id,
+            filename,
+            mix_monitor_options or None,
+            command=mixmonitor_command,
+        )
 
     def record_start_user(self, call_id, user_uuid):
         self._verify_user(call_id, user_uuid)
