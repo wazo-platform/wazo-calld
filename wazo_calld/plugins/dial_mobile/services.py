@@ -153,18 +153,31 @@ class _PollingContactDialer:
             return []
 
     def _on_channel_gone(self, channel_id):
-        for channel in self._dialed_channels:
-            if channel.id != channel_id:
-                continue
+        self.logger.debug(
+            'Channel gone %s, dialed %d channels',
+            channel_id,
+            len(self._dialed_channels),
+        )
+        dialed_channel_ids = set(channel.id for channel in self._dialed_channels)
+        if (
+            channel_id not in dialed_channel_ids
+            and channel_id != self._caller_channel_id
+        ):
+            raise _NoSuchChannel(channel_id)
 
-            self.stop()
+        # call was refused, stop ringing and hangup
+        self.logger.debug(
+            'Caller or dialed channel %s is gone, stopping dialer...', channel_id
+        )
+        self.stop()
+        if channel_id != self._caller_channel_id:
+            self.logger.debug(
+                'Call was refused, hanging up caller channel %s', channel_id
+            )
             try:
                 self._ari.channels.hangup(channelId=self._caller_channel_id)
             except ARINotFound:
                 pass  # Already gone
-            return
-
-        raise _NoSuchChannel(channel_id)
 
 
 class DialMobileService:
@@ -248,7 +261,7 @@ class DialMobileService:
         bridge.addChannel(channel=outgoing_channel_id, inhibitConnectedLineUpdates=True)
 
     def notify_channel_gone(self, channel_id):
-        to_remove = None
+        to_remove = set()
 
         for key, dialer in self._contact_dialers.items():
             try:
@@ -256,9 +269,10 @@ class DialMobileService:
             except _NoSuchChannel:
                 continue
             else:
-                to_remove = key
+                to_remove.add(key)
 
-        if to_remove:
+        for key in to_remove:
+            logger.debug('Removing dialer: %s', str(self._contact_dialers[key]))
             del self._contact_dialers[key]
 
     def clean_bridge(self, bridge_id):
