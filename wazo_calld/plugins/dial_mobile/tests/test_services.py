@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from unittest import TestCase
+import pytest
 import requests
 
 from unittest.mock import (
@@ -19,8 +20,11 @@ from hamcrest import (
 
 from ari.exceptions import ARINotFound
 
-from ..services import _PollingContactDialer as PollingContactDialer
-from ..services import DialMobileService
+from ..services import (
+    _NoSuchChannel,
+    _PollingContactDialer as PollingContactDialer,
+    DialMobileService,
+)
 from ..notifier import Notifier
 
 
@@ -180,6 +184,37 @@ class TestRemoveUnansweredChannels(DialerTestCase):
         self.poller._remove_unanswered_channels()
 
         self.ari.channels.hangup.assert_called_with(channelId=s.channel_1_id)
+
+
+class TestChannelGone(DialerTestCase):
+    def test_unknown_channel_gone(self):
+        dialed_channel = Mock()
+        dialed_channel.id = s.dialed_channel_id
+        self.poller._dialed_channels = [dialed_channel]
+
+        with pytest.raises(_NoSuchChannel):
+            self.poller._on_channel_gone('unknown')
+
+    def test_caller_gone_before_dialed_any_channel(self):
+        self.poller._dialed_channels = []
+        self.poller.stop = Mock()
+
+        self.poller._on_channel_gone(self.poller._caller_channel_id)
+
+        self.poller.stop.assert_called_once_with()
+
+    def test_dialed_channel_gone(self):
+        dialed_channel = Mock()
+        dialed_channel.id = s.dialed_channel_id
+        self.poller._dialed_channels = [dialed_channel]
+        self.poller.stop = Mock()
+
+        self.poller._on_channel_gone(s.dialed_channel_id)
+
+        self.poller.stop.assert_called_once_with()
+        self.ari.channels.hangup.assert_called_with(
+            channelId=self.poller._caller_channel_id
+        )
 
 
 class DialMobileServiceTestCase(DialerTestCase):

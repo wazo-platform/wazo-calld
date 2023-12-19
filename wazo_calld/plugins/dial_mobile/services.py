@@ -43,24 +43,37 @@ class _PollingContactDialer:
         self._ringing_time = ringing_time
         self.pickup_mark = pickup_mark
 
+        dialer_id = str(self)
+
+        class CustomAdapter(logging.LoggerAdapter):
+            def process(self, msg, kwargs):
+                return f'{dialer_id}: {msg}', kwargs
+
+        self.logger = CustomAdapter(logging.getLogger(__name__), {})
+
+    def __str__(self) -> str:
+        return f'Dialer({self.future_bridge_uuid}, {self._caller_channel_id})'
+
     def start(self):
+        self.logger.debug('Starting')
         self._thread.start()
 
     def stop(self):
         if not self._thread.is_alive():
             return
 
+        self.logger.debug('Stopping')
         self.should_stop.set()
         self._thread.join()
+        self.logger.debug('Stopped')
 
     def _run_no_exception(self, *args, **kwargs):
         try:
             return self._run(*args, **kwargs)
         except Exception:
-            logger.exception('Unhandled exception in %s thread', self._thread.name)
+            self.logger.exception('Unhandled exception in %s thread', self._thread.name)
 
     def _run(self, channel_id, aor):
-        logger.debug('%s thread starting', self._thread.name)
         channel = self._ari.channels.get(channelId=channel_id)
         caller_id = '"{name}" <{number}>'.format(**channel.json['caller'])
 
@@ -75,8 +88,10 @@ class _PollingContactDialer:
                 )
 
             if not self._channel_is_up(channel_id):
-                logger.debug(
-                    'calling channel is gone: stopping %s thread', self._thread.name
+                self.logger.debug(
+                    'calling channel %s is gone: stopping %s thread',
+                    channel_id,
+                    self._thread.name,
                 )
                 self.should_stop.set()
                 break
@@ -100,7 +115,9 @@ class _PollingContactDialer:
         if contact in self._called_contacts:
             return
 
-        logger.debug('sending %s to the future bridge %s', contact, future_bridge_uuid)
+        self.logger.debug(
+            'sending %s to the future bridge %s', contact, future_bridge_uuid
+        )
         channel = self._ari.channels.originate(
             endpoint=contact,
             app='dial_mobile',
@@ -110,6 +127,7 @@ class _PollingContactDialer:
             timeout=self._ringing_time,
         )
 
+        self.logger.debug('Dialed channel %s', channel.id)
         self._called_contacts.add(contact)
         self._dialed_channels.add(channel)
 
@@ -135,18 +153,31 @@ class _PollingContactDialer:
             return []
 
     def _on_channel_gone(self, channel_id):
-        for channel in self._dialed_channels:
-            if channel.id != channel_id:
-                continue
+        self.logger.debug(
+            'Channel gone %s, dialed %d channels',
+            channel_id,
+            len(self._dialed_channels),
+        )
+        dialed_channel_ids = set(channel.id for channel in self._dialed_channels)
+        if (
+            channel_id not in dialed_channel_ids
+            and channel_id != self._caller_channel_id
+        ):
+            raise _NoSuchChannel(channel_id)
 
-            self.stop()
+        # call was refused, stop ringing and hangup
+        self.logger.debug(
+            'Caller or dialed channel %s is gone, stopping dialer...', channel_id
+        )
+        self.stop()
+        if channel_id != self._caller_channel_id:
+            self.logger.debug(
+                'Call was refused, hanging up caller channel %s', channel_id
+            )
             try:
                 self._ari.channels.hangup(channelId=self._caller_channel_id)
             except ARINotFound:
                 pass  # Already gone
-            return
-
-        raise _NoSuchChannel(channel_id)
 
 
 class DialMobileService:
@@ -196,6 +227,7 @@ class DialMobileService:
     def join_bridge(self, channel_id, future_bridge_uuid):
         logger.info('%s is joining bridge %s', channel_id, future_bridge_uuid)
         dialer = self._contact_dialers.pop(future_bridge_uuid, None)
+        logger.debug('Removing dialer: %s', str(dialer))
         if not dialer:
             return
 
@@ -204,13 +236,18 @@ class DialMobileService:
         try:
             self._ari.channels.answer(channelId=outgoing_channel_id)
         except ARINotFound:
-            logger.info('the caller (%s) left the call before being bridged')
+            logger.info(
+                'the caller (%s) left the call before being bridged',
+                outgoing_channel_id,
+            )
             return
 
         try:
             self._ari.channels.answer(channelId=channel_id)
         except ARINotFound:
-            logger.info('the answered (%s) left the call before being bridged')
+            logger.info(
+                'the answered (%s) left the call before being bridged', channel_id
+            )
             return
 
         bridge = self._ari.bridges.createWithId(
@@ -224,7 +261,7 @@ class DialMobileService:
         bridge.addChannel(channel=outgoing_channel_id, inhibitConnectedLineUpdates=True)
 
     def notify_channel_gone(self, channel_id):
-        to_remove = None
+        to_remove = set()
 
         for key, dialer in self._contact_dialers.items():
             try:
@@ -232,9 +269,10 @@ class DialMobileService:
             except _NoSuchChannel:
                 continue
             else:
-                to_remove = key
+                to_remove.add(key)
 
-        if to_remove:
+        for key in to_remove:
+            logger.debug('Removing dialer: %s', str(self._contact_dialers[key]))
             del self._contact_dialers[key]
 
     def clean_bridge(self, bridge_id):
