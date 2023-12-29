@@ -142,9 +142,9 @@ class TransfersService:
             variable='CHANNEL(language)'
         )['value']
         try:
-            originate_variables['XIVO_USERID'] = initiator_channel.getChannelVar(
-                variable='XIVO_USERID'
-            )['value']
+            user_id = initiator_channel.getChannelVar(variable='WAZO_USERID')['value']
+            originate_variables['XIVO_USERID'] = user_id  # Deprecated in 24.01
+            originate_variables['WAZO_USERID'] = user_id
         except ARINotFound:
             pass
         try:

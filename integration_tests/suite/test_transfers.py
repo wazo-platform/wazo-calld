@@ -1091,7 +1091,7 @@ class TestCreateTransfer(TestTransfers):
             value='my-lang',
         )
         self.ari.channels.setChannelVar(
-            channelId=initiator_channel_id, variable='XIVO_USERID', value='my-userid'
+            channelId=initiator_channel_id, variable='WAZO_USERID', value='my-userid'
         )
         self.ari.channels.setChannelVar(
             channelId=initiator_channel_id,
@@ -1111,7 +1111,7 @@ class TestCreateTransfer(TestTransfers):
         expected = {
             'TEST': 'foobar',
             'CHANNEL(language)': 'my-lang',
-            'XIVO_USERID': 'my-userid',
+            'WAZO_USERID': 'my-userid',
             'XIVO_USERUUID': 'my-useruuid',
         }
         for expected_variable, expected_value in expected.items():
@@ -1132,7 +1132,7 @@ class TestCreateTransfer(TestTransfers):
         recipient_channel_id = response['recipient_call']
         assert_that(
             calling(self.ari.channels.getChannelVar).with_args(
-                channelId=recipient_channel_id, variable='XIVO_USERID'
+                channelId=recipient_channel_id, variable='WAZO_USERID'
             ),
             raises(ARINotFound),
         )
