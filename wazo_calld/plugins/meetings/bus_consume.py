@@ -54,7 +54,7 @@ class MeetingsBusEventHandler:
             'admin': event['Admin'] == 'Yes',
             'language': event['Language'],
             'call_id': event['Uniqueid'],
-            'user_uuid': event.get('ChanVariable', {}).get('XIVO_USERUUID'),
+            'user_uuid': event.get('ChanVariable', {}).get('WAZO_USERUUID'),
         }
 
         participant = participant_schema.load(raw_participant)
@@ -93,7 +93,7 @@ class MeetingsBusEventHandler:
             'admin': event['Admin'] == 'Yes',
             'language': event['Language'],
             'call_id': event['Uniqueid'],
-            'user_uuid': event.get('ChanVariable', {}).get('XIVO_USERUUID'),
+            'user_uuid': event.get('ChanVariable', {}).get('WAZO_USERUUID'),
         }
 
         participant = participant_schema.load(raw_participant)

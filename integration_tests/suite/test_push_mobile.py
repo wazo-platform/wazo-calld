@@ -38,7 +38,7 @@ class TestPushMobile(RealAsteriskIntegrationTest):
                 'ChanVariable': {
                     'XIVO_BASE_EXTEN': '8000',
                     'WAZO_DEREFERENCED_USERUUID': '',
-                    'XIVO_USERUUID': 'eaa18a7f-3f49-419a-9abb-b445b8ba2e03',
+                    'WAZO_USERUUID': 'eaa18a7f-3f49-419a-9abb-b445b8ba2e03',
                     'WAZO_TENANT_UUID': 'some-tenant-uuid',
                     'WAZO_SIP_CALL_ID': 'de9eb39fb7585796',
                 },

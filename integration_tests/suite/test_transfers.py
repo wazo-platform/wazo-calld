@@ -682,7 +682,7 @@ class TestTransfers(RealAsteriskIntegrationTest):
 
     def set_initiator_channel(self, channel_id, initiator_uuid):
         self.ari.channels.setChannelVar(
-            channelId=channel_id, variable='XIVO_USERUUID', value=initiator_uuid
+            channelId=channel_id, variable='WAZO_USERUUID', value=initiator_uuid
         )
 
 
@@ -1095,7 +1095,7 @@ class TestCreateTransfer(TestTransfers):
         )
         self.ari.channels.setChannelVar(
             channelId=initiator_channel_id,
-            variable='XIVO_USERUUID',
+            variable='WAZO_USERUUID',
             value='my-useruuid',
         )
         custom_variables = {'TEST': 'foobar'}
@@ -1112,7 +1112,7 @@ class TestCreateTransfer(TestTransfers):
             'TEST': 'foobar',
             'CHANNEL(language)': 'my-lang',
             'WAZO_USERID': 'my-userid',
-            'XIVO_USERUUID': 'my-useruuid',
+            'WAZO_USERUUID': 'my-useruuid',
         }
         for expected_variable, expected_value in expected.items():
             actual_value = self.ari.channels.getChannelVar(
@@ -1136,7 +1136,7 @@ class TestCreateTransfer(TestTransfers):
             ),
             raises(ARINotFound),
         )
-        # we can't check for missing XIVO_USERUUID because initiator must have XIVO_USERUUID for transfers to work
+        # we can't check for missing WAZO_USERUUID because initiator must have WAZO_USERUUID for transfers to work
 
     def test_when_two_create_with_same_initiator_then_only_one_success(self):
         (

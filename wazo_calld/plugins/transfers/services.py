@@ -148,9 +148,11 @@ class TransfersService:
         except ARINotFound:
             pass
         try:
-            originate_variables['XIVO_USERUUID'] = initiator_channel.getChannelVar(
-                variable='XIVO_USERUUID'
-            )['value']
+            user_uuid = initiator_channel.getChannelVar(variable='WAZO_USERUUID')[
+                'value'
+            ]
+            originate_variables['WAZO_USERUUID'] = user_uuid
+            originate_variables['XIVO_USERUUID'] = user_uuid  # Deprecated in 24.01
         except ARINotFound:
             pass
         timeout = -1 if timeout is None else timeout

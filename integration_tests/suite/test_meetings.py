@@ -58,7 +58,7 @@ class TestMeetings(RealAsteriskIntegrationTest):
         caller_id_name = caller_id_name or f'caller for {meeting_extension}'
         variables = {'CALLERID(name)': caller_id_name}
         if user_uuid:
-            variables['XIVO_USERUUID'] = user_uuid
+            variables['WAZO_USERUUID'] = user_uuid
         if tenant_uuid:
             variables['WAZO_TENANT_UUID'] = tenant_uuid
         channel = self.ari.channels.originate(

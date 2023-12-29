@@ -96,7 +96,7 @@ class CachingRepository:
             'WAZO_TENANT_UUID',
             'WAZO_USER_OUTGOING_CALL',
             'XIVO_ORIGINAL_CALLER_ID',
-            'XIVO_USERUUID',
+            'WAZO_USERUUID',
         ]
     )
     CHANNEL_CACHE_EXPIRATION = 60 * 60

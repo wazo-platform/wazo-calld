@@ -50,7 +50,7 @@ class ConferencesBusEventHandler:
             'admin': event['Admin'] == 'Yes',
             'language': event['Language'],
             'call_id': event['Uniqueid'],
-            'user_uuid': event.get('ChanVariable', {}).get('XIVO_USERUUID'),
+            'user_uuid': event.get('ChanVariable', {}).get('WAZO_USERUUID'),
         }
 
         participant = participant_schema.load(raw_participant)
@@ -90,7 +90,7 @@ class ConferencesBusEventHandler:
             'admin': event['Admin'] == 'Yes',
             'language': event['Language'],
             'call_id': event['Uniqueid'],
-            'user_uuid': event.get('ChanVariable', {}).get('XIVO_USERUUID'),
+            'user_uuid': event.get('ChanVariable', {}).get('WAZO_USERUUID'),
         }
 
         participant = participant_schema.load(raw_participant)
@@ -121,7 +121,7 @@ class ConferencesBusEventHandler:
             'admin': event['Admin'] == 'Yes',
             'language': event['Language'],
             'call_id': event['Uniqueid'],
-            'user_uuid': event.get('ChanVariable', {}).get('XIVO_USERUUID'),
+            'user_uuid': event.get('ChanVariable', {}).get('WAZO_USERUUID'),
         }
 
         tenant_uuid = event.get('ChanVariable', {}).get('WAZO_TENANT_UUID')
@@ -143,7 +143,7 @@ class ConferencesBusEventHandler:
             'admin': event['Admin'] == 'Yes',
             'language': event['Language'],
             'call_id': event['Uniqueid'],
-            'user_uuid': event.get('ChanVariable', {}).get('XIVO_USERUUID'),
+            'user_uuid': event.get('ChanVariable', {}).get('WAZO_USERUUID'),
         }
 
         tenant_uuid = event.get('ChanVariable', {}).get('WAZO_TENANT_UUID')
@@ -203,7 +203,7 @@ class ConferencesBusEventHandler:
             'admin': event['Admin'] == 'Yes',
             'language': event['Language'],
             'call_id': event['Uniqueid'],
-            'user_uuid': event.get('ChanVariable', {}).get('XIVO_USERUUID'),
+            'user_uuid': event.get('ChanVariable', {}).get('WAZO_USERUUID'),
         }
 
         participant = participant_schema.load(raw_participant)

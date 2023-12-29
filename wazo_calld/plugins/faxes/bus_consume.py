@@ -25,7 +25,7 @@ class FaxesBusEventHandler:
             'caller_id': event['WAZO_FAX_CALLER_ID'],
             'call_id': event['Uniqueid'],
             'id': event['Uniqueid'],
-            'user_uuid': event['XIVO_USERUUID'] or None,
+            'user_uuid': event['WAZO_USERUUID'] or None,
             'tenant_uuid': event['WAZO_TENANT_UUID'] or None,
         }
         fax = fax_schema.dump(fax_infos)

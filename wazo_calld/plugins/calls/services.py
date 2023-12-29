@@ -109,7 +109,7 @@ class CallsService:
                 return False
             try:
                 if (
-                    channel.getChannelVar(variable='XIVO_USERUUID')['value']
+                    channel.getChannelVar(variable='WAZO_USERUUID')['value']
                     != user_uuid
                 ):
                     return False
@@ -163,7 +163,7 @@ class CallsService:
             endpoint = 'local/s@wazo-originate-mobile-leg1/n'
             context_name, extension, priority = 'wazo-originate-mobile-leg2', 's', 1
 
-            variables.setdefault('_XIVO_USERUUID', source_user)
+            variables.setdefault('_WAZO_USERUUID', source_user)
             variables.setdefault('_WAZO_TENANT_UUID', user.tenant_uuid)
             variables.setdefault('WAZO_DEREFERENCED_USERUUID', source_user)
             variables.setdefault('WAZO_ORIGINATE_MOBILE_PRIORITY', '1')
@@ -434,7 +434,7 @@ class CallsService:
         call.peer_caller_id_number = caller.get('number')
         call.user_uuid = (
             channel_variables.get('WAZO_DEREFERENCED_USERUUID')
-            or channel_variables.get('XIVO_USERUUID')
+            or channel_variables.get('WAZO_USERUUID')
             or None
         )
         call.tenant_uuid = channel_variables.get('WAZO_TENANT_UUID') or None
@@ -479,7 +479,7 @@ class CallsService:
         call.peer_caller_id_number = channel.json['connected']['number']
         call.user_uuid = (
             event_variables.get('WAZO_DEREFERENCED_USERUUID')
-            or event_variables.get('XIVO_USERUUID')
+            or event_variables.get('WAZO_USERUUID')
             or None
         )
         call.tenant_uuid = event_variables.get('WAZO_TENANT_UUID') or None
@@ -699,6 +699,6 @@ class CallsService:
         if channel.json['name'].startswith('Local/'):
             raise NoSuchCall(call_id)
 
-        channel_user_uuid = channel.json['channelvars'].get('XIVO_USERUUID')
+        channel_user_uuid = channel.json['channelvars'].get('WAZO_USERUUID')
         if channel_user_uuid != user_uuid:
             raise UserPermissionDenied(user_uuid, {'call': call_id})
