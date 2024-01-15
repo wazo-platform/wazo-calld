@@ -7,4 +7,4 @@ RUN install -dm777 /usr/share/asterisk/voicemail
 ADD . /usr/src/wazo-calld
 WORKDIR /usr/src/wazo-calld
 
-RUN python3 setup.py develop
+RUN python3 -m pip install -e .

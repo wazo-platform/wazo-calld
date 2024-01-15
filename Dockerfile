@@ -8,7 +8,7 @@ ENV PATH="/opt/venv/bin:$PATH"
 COPY . /usr/src/wazo-calld
 WORKDIR /usr/src/wazo-calld
 RUN pip install -r requirements.txt
-RUN python setup.py install
+RUN pip install .
 
 FROM python:3.9-slim-bullseye AS build-image
 COPY --from=compile-image /opt/venv /opt/venv
