@@ -1,13 +1,13 @@
-# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
 
-from xivo_bus.collectd.calls import CallAbandonedCollectdEvent
-from xivo_bus.collectd.calls import CallConnectCollectdEvent
-from xivo_bus.collectd.calls import CallDurationCollectdEvent
-from xivo_bus.collectd.calls import CallEndCollectdEvent
-from xivo_bus.collectd.calls import CallStartCollectdEvent
+from wazo_bus.collectd.calls import CallAbandonedCollectdEvent
+from wazo_bus.collectd.calls import CallConnectCollectdEvent
+from wazo_bus.collectd.calls import CallDurationCollectdEvent
+from wazo_bus.collectd.calls import CallEndCollectdEvent
+from wazo_bus.collectd.calls import CallStartCollectdEvent
 
 logger = logging.getLogger(__name__)
 

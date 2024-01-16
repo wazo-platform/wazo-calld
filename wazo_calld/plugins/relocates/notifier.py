@@ -1,9 +1,9 @@
-# Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
 
-from xivo_bus.resources.calls.event import (
+from wazo_bus.resources.calls.event import (
     CallRelocateAnsweredEvent,
     CallRelocateCompletedEvent,
     CallRelocateEndedEvent,

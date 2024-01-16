@@ -53,7 +53,7 @@ services:
       - ./etc/wazo-calld/conf.d/50-base.yml:/etc/wazo-calld/conf.d/50-base.yml:ro
       # - "${LOCAL_GIT_REPOS}/wazo-amid-client/wazo_amid_client:/opt/venv/lib/python3.9/site-packages/wazo_amid_client:ro"
       # - "${LOCAL_GIT_REPOS}/wazo-confd-client/wazo_confd_client:/opt/venv/lib/python3.9/site-packages/wazo_confd_client:ro"
-      # - "${LOCAL_GIT_REPOS}/xivo-bus/xivo_bus:/opt/venv/lib/python3.9/site-packages/xivo_bus:ro"
+      # - "${LOCAL_GIT_REPOS}/wazo-bus/wazo_bus:/opt/venv/lib/python3.9/site-packages/wazo_bus:ro"
       # - "${LOCAL_GIT_REPOS}/xivo-lib-python/xivo:/opt/venv/lib/python3.9/site-packages/xivo:ro"
       # - "${LOCAL_GIT_REPOS}/ari-py/ari:/opt/venv/lib/python3.9/site-packages/ari:ro"
     ports:

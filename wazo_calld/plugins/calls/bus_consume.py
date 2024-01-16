@@ -1,11 +1,11 @@
-# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
 
 from ari.exceptions import ARINotFound
-from xivo_bus.collectd.channels import ChannelCreatedCollectdEvent
-from xivo_bus.collectd.channels import ChannelEndedCollectdEvent
+from wazo_bus.collectd.channels import ChannelCreatedCollectdEvent
+from wazo_bus.collectd.channels import ChannelEndedCollectdEvent
 
 from wazo_calld.plugin_helpers import ami
 from wazo_calld.plugin_helpers.ari_ import Channel, set_channel_id_var_sync
