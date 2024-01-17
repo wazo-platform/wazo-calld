@@ -1,9 +1,9 @@
-# Copyright 2015-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from xivo.status import Status
-from xivo_bus.consumer import BusConsumer
-from xivo_bus.publisher import BusPublisher
+from wazo_bus.consumer import BusConsumer
+from wazo_bus.publisher import BusPublisher
 
 
 class CoreBusConsumer(BusConsumer):

@@ -32,7 +32,7 @@ Depends:
  wazo-amid-client-python3,
  wazo-auth-client-python3,
  wazo-confd-client-python3,
- xivo-bus-python3,
+ wazo-bus-python3,
  xivo-lib-python-python3
 Provides: xivo-ctid-ng
 Replaces: xivo-ctid-ng

@@ -1,8 +1,8 @@
-# Copyright 2015-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from xivo_bus.base import Base
-from xivo_bus.mixins import QueuePublisherMixin, ThreadableMixin, CollectdMixin
+from wazo_bus.base import Base
+from wazo_bus.mixins import QueuePublisherMixin, ThreadableMixin, CollectdMixin
 
 
 class CollectdPublisher(CollectdMixin, QueuePublisherMixin, ThreadableMixin, Base):

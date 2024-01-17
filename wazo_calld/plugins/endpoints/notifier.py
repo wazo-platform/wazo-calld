@@ -1,8 +1,8 @@
-# Copyright 2019-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from xivo_bus.resources.trunk.event import TrunkStatusUpdatedEvent
-from xivo_bus.resources.line.event import LineStatusUpdatedEvent
+from wazo_bus.resources.trunk.event import TrunkStatusUpdatedEvent
+from wazo_bus.resources.line.event import LineStatusUpdatedEvent
 
 
 class EndpointStatusNotifier:
