@@ -213,7 +213,7 @@ class Channel:
             return uuid
 
         try:
-            uuid = self._get_var('XIVO_USERUUID')
+            uuid = self._get_var('WAZO_USERUUID')
             return uuid
         except ARINotFound:
             return default

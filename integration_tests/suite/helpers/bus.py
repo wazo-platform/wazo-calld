@@ -91,7 +91,7 @@ class BusClient(bus_helper.BusClient):
                     'ConnectedLineName': 'peer-name',
                     'ConnectedLineNum': 'peer-num',
                     'ChanVariable': {
-                        'XIVO_USERUUID': 'my-uuid',
+                        'WAZO_USERUUID': 'my-uuid',
                         'WAZO_ENTRY_EXTEN': entry_exten if entry_exten else '*10',
                         'WAZO_SIP_CALL_ID': sip_call_id,
                         'WAZO_LINE_ID': line_id,

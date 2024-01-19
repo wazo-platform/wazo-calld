@@ -90,14 +90,14 @@ class TestListCalls(IntegrationTest):
         self.ari.set_channel_variable(
             {
                 first_id: {
-                    'XIVO_USERUUID': 'user1-uuid',
+                    'WAZO_USERUUID': 'user1-uuid',
                     'WAZO_CHANNEL_DIRECTION': 'to-wazo',
                     'CHANNEL(channeltype)': 'other',
                     'WAZO_LINE_ID': str(SOME_LINE_ID),
                     'CHANNEL(linkedid)': 'first-conversation-id',
                 },
                 second_id: {
-                    'XIVO_USERUUID': 'user2-uuid',
+                    'WAZO_USERUUID': 'user2-uuid',
                     'WAZO_CHANNEL_DIRECTION': 'from-wazo',
                     'CHANNEL(channeltype)': 'PJSIP',
                     'CHANNEL(pjsip,call-id)': 'a-sip-call-id',
@@ -344,8 +344,8 @@ class TestListCalls(IntegrationTest):
         self.confd.set_users(MockUser(uuid='user1-uuid'), MockUser(uuid='user2-uuid'))
         self.ari.set_channel_variable(
             {
-                first_id: {'XIVO_USERUUID': 'user1-uuid'},
-                second_id: {'XIVO_USERUUID': 'user2-uuid'},
+                first_id: {'WAZO_USERUUID': 'user1-uuid'},
+                second_id: {'WAZO_USERUUID': 'user2-uuid'},
             }
         )
 
@@ -386,16 +386,16 @@ class TestUserListCalls(IntegrationTest):
         others_call_id = new_call_id(leap=2)
         no_user_call_id = new_call_id(leap=3)
         self.ari.set_channels(
-            MockChannel(id=my_call_id, channelvars={'XIVO_USERUUID': user_uuid}),
-            MockChannel(id=my_second_call_id, channelvars={'XIVO_USERUUID': user_uuid}),
-            MockChannel(id=others_call_id, channelvars={'XIVO_USERUUID': 'user2-uuid'}),
+            MockChannel(id=my_call_id, channelvars={'WAZO_USERUUID': user_uuid}),
+            MockChannel(id=my_second_call_id, channelvars={'WAZO_USERUUID': user_uuid}),
+            MockChannel(id=others_call_id, channelvars={'WAZO_USERUUID': 'user2-uuid'}),
             MockChannel(id=no_user_call_id),
         )
         self.ari.set_channel_variable(
             {
-                my_call_id: {'XIVO_USERUUID': user_uuid},
-                my_second_call_id: {'XIVO_USERUUID': user_uuid},
-                others_call_id: {'XIVO_USERUUID': 'user2-uuid'},
+                my_call_id: {'WAZO_USERUUID': user_uuid},
+                my_second_call_id: {'WAZO_USERUUID': user_uuid},
+                others_call_id: {'WAZO_USERUUID': 'user2-uuid'},
             }
         )
         self.confd.set_users(MockUser(uuid=user_uuid), MockUser(uuid='user2-uuid'))
@@ -432,9 +432,9 @@ class TestUserListCalls(IntegrationTest):
         )
         self.ari.set_channel_variable(
             {
-                first_id: {'XIVO_USERUUID': user_uuid},
-                second_id: {'XIVO_USERUUID': user_uuid},
-                third_id: {'XIVO_USERUUID': user_uuid},
+                first_id: {'WAZO_USERUUID': user_uuid},
+                second_id: {'WAZO_USERUUID': user_uuid},
+                third_id: {'WAZO_USERUUID': user_uuid},
             }
         )
         calld_client = self.make_user_calld(user_uuid)
@@ -459,8 +459,8 @@ class TestUserListCalls(IntegrationTest):
         self.ari.set_channels(MockChannel(id=first_id), MockChannel(id=second_id))
         self.ari.set_channel_variable(
             {
-                first_id: {'XIVO_USERUUID': user_uuid},
-                second_id: {'XIVO_USERUUID': user_uuid},
+                first_id: {'WAZO_USERUUID': user_uuid},
+                second_id: {'WAZO_USERUUID': user_uuid},
             }
         )
         calld_client = self.make_user_calld(user_uuid)
@@ -487,10 +487,10 @@ class TestUserListCalls(IntegrationTest):
         )
         self.ari.set_channel_variable(
             {
-                first_id: {'XIVO_USERUUID': user_uuid},
-                second_id: {'XIVO_USERUUID': user_uuid},
-                third_id: {'XIVO_USERUUID': user_uuid},
-                fourth_id: {'XIVO_USERUUID': user_uuid},
+                first_id: {'WAZO_USERUUID': user_uuid},
+                second_id: {'WAZO_USERUUID': user_uuid},
+                third_id: {'WAZO_USERUUID': user_uuid},
+                fourth_id: {'WAZO_USERUUID': user_uuid},
             }
         )
         self.ari.set_applications(
@@ -535,8 +535,8 @@ class TestUserListCalls(IntegrationTest):
         )
         self.ari.set_channel_variable(
             {
-                first_id: {'XIVO_USERUUID': user_uuid},
-                second_id: {'XIVO_USERUUID': user_uuid},
+                first_id: {'WAZO_USERUUID': user_uuid},
+                second_id: {'WAZO_USERUUID': user_uuid},
             }
         )
         calld_client = self.make_user_calld(user_uuid)
@@ -568,8 +568,8 @@ class TestUserListCalls(IntegrationTest):
         )
         self.ari.set_channel_variable(
             {
-                my_call: {'XIVO_USERUUID': user_uuid},
-                my_second_call: {'XIVO_USERUUID': user_uuid},
+                my_call: {'WAZO_USERUUID': user_uuid},
+                my_second_call: {'WAZO_USERUUID': user_uuid},
             }
         )
         self.confd.set_users(MockUser(uuid=user_uuid), MockUser(uuid='user2-uuid'))
@@ -620,13 +620,13 @@ class TestGetCall(IntegrationTest):
         self.ari.set_channel_variable(
             {
                 first_id: {
-                    'XIVO_USERUUID': 'user1-uuid',
+                    'WAZO_USERUUID': 'user1-uuid',
                     'CHANNEL(channeltype)': 'PJSIP',
                     'CHANNEL(pjsip,call-id)': 'a-sip-call-id',
                     'CHANNEL(videonativeformat)': '(vp8|vp9)',
                     'WAZO_LINE_ID': str(SOME_LINE_ID),
                 },
-                second_id: {'XIVO_USERUUID': 'user2-uuid'},
+                second_id: {'WAZO_USERUUID': 'user2-uuid'},
             }
         )
         self.confd.set_users(MockUser(uuid='user1-uuid'), MockUser(uuid='user2-uuid'))
@@ -711,7 +711,7 @@ class TestUserDeleteCall(IntegrationTest):
         self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
         self.confd.set_users(MockUser(uuid=user_uuid))
         self.ari.set_channels(MockChannel(id=call_id, state='Up'))
-        self.ari.set_channel_variable({call_id: {'XIVO_USERUUID': 'some-other-uuid'}})
+        self.ari.set_channel_variable({call_id: {'WAZO_USERUUID': 'some-other-uuid'}})
 
         result = self.calld.delete_user_me_call_result(call_id, token=token)
 
@@ -726,10 +726,10 @@ class TestUserDeleteCall(IntegrationTest):
         self.confd.set_users(MockUser(uuid=user_uuid))
         self.ari.set_channels(
             MockChannel(
-                id=call_id, state='Up', channelvars={'XIVO_USERUUID': user_uuid}
+                id=call_id, state='Up', channelvars={'WAZO_USERUUID': user_uuid}
             ),
         )
-        self.ari.set_channel_variable({call_id: {'XIVO_USERUUID': user_uuid}})
+        self.ari.set_channel_variable({call_id: {'WAZO_USERUUID': user_uuid}})
 
         self.calld.hangup_my_call(call_id, token)
 
@@ -756,10 +756,10 @@ class TestUserDeleteCall(IntegrationTest):
                 id=call_id,
                 state='Up',
                 name=SOME_LOCAL_CHANNEL_NAME,
-                channelvars={'XIVO_USERUUID': user_uuid},
+                channelvars={'WAZO_USERUUID': user_uuid},
             ),
         )
-        self.ari.set_channel_variable({call_id: {'XIVO_USERUUID': user_uuid}})
+        self.ari.set_channel_variable({call_id: {'WAZO_USERUUID': user_uuid}})
 
         result = self.calld.delete_user_me_call_result(call_id, token=token)
 
@@ -2292,7 +2292,7 @@ class TestConnectUser(IntegrationTest):
             MockChannel(id=call_id),
             MockChannel(id=my_new_call_id),
         )
-        self.ari.set_channel_variable({my_new_call_id: {'XIVO_USERUUID': 'user-uuid'}})
+        self.ari.set_channel_variable({my_new_call_id: {'WAZO_USERUUID': 'user-uuid'}})
         self.ari.set_global_variables(
             {
                 f'XIVO_CHANNELS_{call_id}': json.dumps(
@@ -2699,7 +2699,7 @@ class TestCallMute(RealAsteriskIntegrationTest):
             extension='dial-autoanswer',
             variables={
                 'variables': {
-                    'XIVO_USERUUID': user_uuid,
+                    'WAZO_USERUUID': user_uuid,
                     '__WAZO_TENANT_UUID': VALID_TENANT,
                 }
             },
@@ -2826,7 +2826,7 @@ class TestCallSendDTMF(RealAsteriskIntegrationTest):
             extension='dial-autoanswer',
             variables={
                 'variables': {
-                    'XIVO_USERUUID': user_uuid,
+                    'WAZO_USERUUID': user_uuid,
                     '__WAZO_TENANT_UUID': VALID_TENANT,
                 }
             },
@@ -2961,33 +2961,33 @@ class TestCallHold(IntegrationTest):
                 id=user_channel_id,
                 state='Up',
                 name='PJSIP/abcdef-000001',
-                channelvars={'XIVO_USERUUID': user_uuid},
+                channelvars={'WAZO_USERUUID': user_uuid},
             ),
             MockChannel(
                 id=someone_else_channel_id,
                 state='Up',
                 name='PJSIP/ghijkl-000002',
-                channelvars={'XIVO_USERUUID': someone_else_uuid},
+                channelvars={'WAZO_USERUUID': someone_else_uuid},
             ),
             MockChannel(
                 id=user_channel_id_device_no_plugin,
                 state='Up',
                 name='PJSIP/no-plugin-000003',
-                channelvars={'XIVO_USERUUID': user_uuid},
+                channelvars={'WAZO_USERUUID': user_uuid},
             ),
             MockChannel(
                 id=user_channel_id_no_device,
                 state='Up',
                 name='PJSIP/not-found-000004',
-                channelvars={'XIVO_USERUUID': user_uuid},
+                channelvars={'WAZO_USERUUID': user_uuid},
             ),
         )
         self.ari.set_channel_variable(
             {
-                user_channel_id: {'XIVO_USERUUID': user_uuid},
-                someone_else_channel_id: {'XIVO_USERUUID': someone_else_uuid},
-                user_channel_id_device_no_plugin: {'XIVO_USERUUID': user_uuid},
-                user_channel_id_no_device: {'XIVO_USERUUID': user_uuid},
+                user_channel_id: {'WAZO_USERUUID': user_uuid},
+                someone_else_channel_id: {'WAZO_USERUUID': someone_else_uuid},
+                user_channel_id_device_no_plugin: {'WAZO_USERUUID': user_uuid},
+                user_channel_id_no_device: {'WAZO_USERUUID': user_uuid},
             }
         )
 
@@ -3052,33 +3052,33 @@ class TestCallHold(IntegrationTest):
                 id=user_channel_id,
                 state='Up',
                 name='PJSIP/abcdef-000001',
-                channelvars={'XIVO_USERUUID': user_uuid},
+                channelvars={'WAZO_USERUUID': user_uuid},
             ),
             MockChannel(
                 id=someone_else_channel_id,
                 state='Up',
                 name='PJSIP/ghijkl-000002',
-                channelvars={'XIVO_USERUUID': someone_else_uuid},
+                channelvars={'WAZO_USERUUID': someone_else_uuid},
             ),
             MockChannel(
                 id=user_channel_id_device_no_plugin,
                 state='Up',
                 name='PJSIP/no-plugin-000003',
-                channelvars={'XIVO_USERUUID': user_uuid},
+                channelvars={'WAZO_USERUUID': user_uuid},
             ),
             MockChannel(
                 id=user_channel_id_no_device,
                 state='Up',
                 name='PJSIP/not-found-000004',
-                channelvars={'XIVO_USERUUID': user_uuid},
+                channelvars={'WAZO_USERUUID': user_uuid},
             ),
         )
         self.ari.set_channel_variable(
             {
-                user_channel_id: {'XIVO_USERUUID': user_uuid},
-                someone_else_channel_id: {'XIVO_USERUUID': someone_else_uuid},
-                user_channel_id_device_no_plugin: {'XIVO_USERUUID': user_uuid},
-                user_channel_id_no_device: {'XIVO_USERUUID': user_uuid},
+                user_channel_id: {'WAZO_USERUUID': user_uuid},
+                someone_else_channel_id: {'WAZO_USERUUID': someone_else_uuid},
+                user_channel_id_device_no_plugin: {'WAZO_USERUUID': user_uuid},
+                user_channel_id_no_device: {'WAZO_USERUUID': user_uuid},
             }
         )
 
@@ -3206,33 +3206,33 @@ class TestCallAnswer(IntegrationTest):
                 id=user_channel_id,
                 state='Up',
                 name='PJSIP/abcdef-000001',
-                channelvars={'XIVO_USERUUID': user_uuid},
+                channelvars={'WAZO_USERUUID': user_uuid},
             ),
             MockChannel(
                 id=someone_else_channel_id,
                 state='Up',
                 name='PJSIP/ghijkl-000002',
-                channelvars={'XIVO_USERUUID': someone_else_uuid},
+                channelvars={'WAZO_USERUUID': someone_else_uuid},
             ),
             MockChannel(
                 id=user_channel_id_device_no_plugin,
                 state='Up',
                 name='PJSIP/no-plugin-000003',
-                channelvars={'XIVO_USERUUID': user_uuid},
+                channelvars={'WAZO_USERUUID': user_uuid},
             ),
             MockChannel(
                 id=user_channel_id_no_device,
                 state='Up',
                 name='PJSIP/not-found-000004',
-                channelvars={'XIVO_USERUUID': user_uuid},
+                channelvars={'WAZO_USERUUID': user_uuid},
             ),
         )
         self.ari.set_channel_variable(
             {
-                user_channel_id: {'XIVO_USERUUID': user_uuid},
-                someone_else_channel_id: {'XIVO_USERUUID': someone_else_uuid},
-                user_channel_id_device_no_plugin: {'XIVO_USERUUID': user_uuid},
-                user_channel_id_no_device: {'XIVO_USERUUID': user_uuid},
+                user_channel_id: {'WAZO_USERUUID': user_uuid},
+                someone_else_channel_id: {'WAZO_USERUUID': someone_else_uuid},
+                user_channel_id_device_no_plugin: {'WAZO_USERUUID': user_uuid},
+                user_channel_id_no_device: {'WAZO_USERUUID': user_uuid},
             }
         )
 

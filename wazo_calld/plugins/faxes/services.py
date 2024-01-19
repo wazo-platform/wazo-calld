@@ -62,7 +62,7 @@ class FaxesService:
             'WAZO_FAX_DESTINATION_WAIT_TIME': wait_time_str,
             'WAZO_TENANT_UUID': tenant_uuid,
             'XIVO_FAX_PATH': tif_path,
-            'XIVO_USERUUID': user_uuid or '',
+            'WAZO_USERUUID': user_uuid or '',
         }
         recipient_endpoint = 'Local/{exten}@{context}'.format(
             exten=fax_infos['extension'], context=fax_infos['context']

@@ -364,8 +364,8 @@ class CallsBusEventHandler:
             set_channel_id_var_sync(
                 self.ari,
                 channel_id,
-                'XIVO_USERUUID',
-                event['ChanVariable']['XIVO_USERUUID'],
+                'WAZO_USERUUID',
+                event['ChanVariable']['WAZO_USERUUID'],
                 bypass_stasis=True,
             )
         except ARINotFound:

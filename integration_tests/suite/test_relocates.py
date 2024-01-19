@@ -560,7 +560,7 @@ class TestCreateUserRelocate(TestRelocates):
         user_uuid = SOME_USER_UUID
         line_id = SOME_LINE_ID
         initiator_channel = self.real_asterisk.stasis_channel()
-        initiator_channel.setChannelVar(variable='XIVO_USERUUID', value=user_uuid)
+        initiator_channel.setChannelVar(variable='WAZO_USERUUID', value=user_uuid)
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
         self.confd.set_lines(
             MockLine(

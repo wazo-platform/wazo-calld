@@ -68,7 +68,7 @@ class CallFormatter:
                 call.moh_uuid = None
 
             try:
-                call.user_uuid = channel.getChannelVar(variable='XIVO_USERUUID').get(
+                call.user_uuid = channel.getChannelVar(variable='WAZO_USERUUID').get(
                     'value'
                 )
             except ARINotFound:

@@ -126,13 +126,13 @@ class RealAsterisk:
 
         caller = self.stasis_channel()
         caller_uuid = caller_uuid or make_user_uuid()
-        caller.setChannelVar(variable='XIVO_USERUUID', value=caller_uuid)
+        caller.setChannelVar(variable='WAZO_USERUUID', value=caller_uuid)
         caller.setChannelVar(variable='WAZO_TENANT_UUID', value=VALID_TENANT)
         bridge.addChannel(channel=caller.id)
 
         callee = self.stasis_channel()
         callee_uuid = callee_uuid or make_user_uuid()
-        callee.setChannelVar(variable='XIVO_USERUUID', value=callee_uuid)
+        callee.setChannelVar(variable='WAZO_USERUUID', value=callee_uuid)
         callee.setChannelVar(variable='WAZO_TENANT_UUID', value=VALID_TENANT)
         bridge.addChannel(channel=callee.id)
 
@@ -156,7 +156,7 @@ class RealAsterisk:
         caller_uuid = caller_uuid or make_user_uuid()
         callee_uuid = callee_uuid or make_user_uuid()
         variables = {
-            'XIVO_USERUUID': caller_uuid,
+            'WAZO_USERUUID': caller_uuid,
             '__CALLEE_XIVO_USERUUID': callee_uuid,
             '__WAZO_TENANT_UUID': VALID_TENANT,
         }
@@ -191,7 +191,7 @@ class RealAsterisk:
         caller_uuid = caller_uuid or make_user_uuid()
         callee_uuid = callee_uuid or make_user_uuid()
         variables = {
-            'XIVO_USERUUID': caller_uuid,
+            'WAZO_USERUUID': caller_uuid,
             '__CALLEE_XIVO_USERUUID': callee_uuid,
             '__WAZO_TENANT_UUID': VALID_TENANT,
         }
@@ -223,7 +223,7 @@ class RealAsterisk:
     def pickup(self, user_uuid=None):
         user_uuid = user_uuid or make_user_uuid()
         variables = {
-            'XIVO_USERUUID': user_uuid,
+            'WAZO_USERUUID': user_uuid,
             '__WAZO_TENANT_UUID': VALID_TENANT,
         }
         interceptor = self.ari.channels.originate(

@@ -49,7 +49,7 @@ class TestServices(TestCase):
                     'WAZO_TENANT_UUID': '6345gd34-9ac7-4337-818d-d04e606d9f74',
                     'XIVO_BASE_EXTEN': '9001',
                     'XIVO_ON_HOLD': '',
-                    'XIVO_USERUUID': '76f7fmfh-a547-4324-a521-e2e04843cfee',
+                    'WAZO_USERUUID': '76f7fmfh-a547-4324-a521-e2e04843cfee',
                     'WAZO_LOCAL_CHAN_MATCH_UUID': '',
                     'WAZO_CALL_RECORD_SIDE': 'caller',
                     'WAZO_CHANNEL_DIRECTION': 'to-wazo',
@@ -77,12 +77,12 @@ class TestServices(TestCase):
     @patch(
         'wazo_calld.plugins.calls.services.CallsService._get_connected_channel_ids_from_helper'
     )
-    def test_given_xivo_useruuid_when_make_call_from_stasis_event_then_call_has_useruuid(
+    def test_given_wazo_useruuid_when_make_call_from_stasis_event_then_call_has_useruuid(
         self, channel_ids
     ):
         channel_ids.return_value = []
         event = self.example_to_fit
-        event['channel']['channelvars'] = {'XIVO_USERUUID': 'new_useruuid'}
+        event['channel']['channelvars'] = {'WAZO_USERUUID': 'new_useruuid'}
 
         call = self.services.channel_destroyed_event(self.ari, event)
 
@@ -91,13 +91,13 @@ class TestServices(TestCase):
     @patch(
         'wazo_calld.plugins.calls.services.CallsService._get_connected_channel_ids_from_helper'
     )
-    def test_given_wazo_dereferenced_useruuid_when_make_call_from_stasis_event_then_override_xivo_useruuid(
+    def test_given_wazo_dereferenced_useruuid_when_make_call_from_stasis_event_then_override_wazo_useruuid(
         self, channel_ids
     ):
         channel_ids.return_value = []
         event = self.example_to_fit
         event['channel']['channelvars'] = {
-            'XIVO_USERUUID': 'my-user-uuid',
+            'WAZO_USERUUID': 'my-user-uuid',
             'WAZO_DEREFERENCED_USERUUID': 'new-user-uuid',
         }
 

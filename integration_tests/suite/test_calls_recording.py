@@ -230,7 +230,7 @@ class TestCallRecord(RealAsteriskIntegrationTest):
     def given_call_not_stasis(self, user_uuid=None, variables=None):
         user_uuid = user_uuid or str(uuid.uuid4())
         variables = variables or {}
-        variables.setdefault('XIVO_USERUUID', user_uuid)
+        variables.setdefault('WAZO_USERUUID', user_uuid)
         variables.setdefault('WAZO_TENANT_UUID', VALID_TENANT)
         variables.setdefault('WAZO_CALL_RECORD_SIDE', 'caller')
         call = self.ari.channels.originate(

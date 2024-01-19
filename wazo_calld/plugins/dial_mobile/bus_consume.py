@@ -73,7 +73,7 @@ class EventHandler:
             return
 
         linkedid = event['Linkedid']
-        user_uuid = event['ChanVariable']['XIVO_USERUUID']
+        user_uuid = event['ChanVariable']['WAZO_USERUUID']
 
         try:
             has_a_registered_mobile_and_pending_push = (

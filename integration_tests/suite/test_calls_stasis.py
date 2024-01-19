@@ -119,7 +119,7 @@ class TestDialedFrom(IntegrationTest):
                 id=new_call_id,
             ),
         )
-        self.ari.set_channel_variable({new_call_id: {'XIVO_USERUUID': 'user-uuid'}})
+        self.ari.set_channel_variable({new_call_id: {'WAZO_USERUUID': 'user-uuid'}})
         self.ari.set_global_variables(
             {
                 f'XIVO_CHANNELS_{call_id}': json.dumps(

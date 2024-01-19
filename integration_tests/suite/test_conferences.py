@@ -57,7 +57,7 @@ class TestConferenceParticipants(TestConferences):
             'WAZO_TENANT_UUID': CONFERENCE1_TENANT_UUID,
         }
         if user_uuid:
-            variables['XIVO_USERUUID'] = user_uuid
+            variables['WAZO_USERUUID'] = user_uuid
         channel = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             context='conferences',
