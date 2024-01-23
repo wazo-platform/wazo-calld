@@ -341,11 +341,7 @@ paths:
           schema:
             $ref: '#/definitions/ApplicationSnoop'
         '400':
-          description: No such call
-          schema:
-            $ref: '#/definitions/Error'
-        '400':
-          description: Invalid whisper mode
+          description: No such call or Invalid whisper mode
           schema:
             $ref: '#/definitions/Error'
         '404':
@@ -841,12 +837,6 @@ parameters:
     name: moh_uuid
     in: path
     description: UUID of the music on hold
-    required: true
-    type: string
-  ApplicationNodeUUID:
-    name: node_uuid
-    in: path
-    description: UUID of the node
     required: true
     type: string
   ApplicationPlaybackUUID:
