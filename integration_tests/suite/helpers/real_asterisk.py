@@ -1,9 +1,8 @@
-# Copyright 2020-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2020-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import ari
-from ari.exceptions import ARINotFound
-from ari.exceptions import ARINotInStasis
+from ari.exceptions import ARINotFound, ARINotInStasis
 from wazo_test_helpers import until
 
 from .amid import AmidClient
@@ -13,8 +12,8 @@ from .constants import (
     ENDPOINT_AUTOANSWER,
     SOME_STASIS_APP,
     SOME_STASIS_APP_INSTANCE,
-    VALID_TOKEN,
     VALID_TENANT,
+    VALID_TOKEN,
 )
 from .wait_strategy import CalldAndAsteriskAndAmidWaitStrategy
 

@@ -1,4 +1,4 @@
-# Copyright 2019-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import os
@@ -13,15 +13,12 @@ from hamcrest import (
     has_properties,
     is_not,
 )
+from wazo_calld_client.exceptions import CalldError
 from wazo_test_helpers import until
 from wazo_test_helpers.hamcrest.raises import raises
-from wazo_calld_client.exceptions import CalldError
 
-from .helpers.confd import (
-    MockLine,
-    MockUser,
-)
-from .helpers.constants import ASSET_ROOT, VALID_TOKEN, VALID_TENANT
+from .helpers.confd import MockLine, MockUser
+from .helpers.constants import ASSET_ROOT, VALID_TENANT, VALID_TOKEN
 from .helpers.real_asterisk import RealAsteriskIntegrationTest
 
 

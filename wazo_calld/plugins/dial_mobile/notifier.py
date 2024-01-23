@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from wazo_bus.resources.push_notification.events import (
-    CallPushNotificationEvent,
     CallCancelPushNotificationEvent,
+    CallPushNotificationEvent,
 )
 
 

@@ -1,24 +1,14 @@
-# Copyright 2019-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from ari.exceptions import (
-    ARIException,
-    ARIHTTPError,
-)
-
-from flask_restful import Resource
 from functools import wraps
 
-from xivo import (
-    mallow_helpers,
-    rest_api_helpers,
-)
+from ari.exceptions import ARIException, ARIHTTPError
+from flask_restful import Resource
+from xivo import mallow_helpers, rest_api_helpers
 from xivo.auth_verifier import AuthVerifier
 
-from .exceptions import (
-    AsteriskARIError,
-    AsteriskARIUnreachable,
-)
+from .exceptions import AsteriskARIError, AsteriskARIUnreachable
 
 auth_verifier = AuthVerifier()
 

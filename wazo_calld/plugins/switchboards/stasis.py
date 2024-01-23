@@ -1,9 +1,10 @@
-# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
 
 from ari.exceptions import ARINotFound
+
 from wazo_calld.ari_ import DEFAULT_APPLICATION_NAME
 
 from .exceptions import NoSuchSwitchboard

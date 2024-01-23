@@ -1,11 +1,11 @@
-# Copyright 2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2023-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from contextlib import contextmanager
 import logging
-import threading
 import random
+import threading
 import time
+from contextlib import contextmanager
 
 logger = logging.getLogger(__name__)
 

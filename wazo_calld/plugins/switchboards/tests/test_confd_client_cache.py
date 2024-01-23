@@ -1,14 +1,10 @@
-# Copyright 2019-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from hamcrest import (
-    assert_that,
-    equal_to,
-    calling,
-    raises,
-)
-from unittest.mock import Mock
 from unittest import TestCase
+from unittest.mock import Mock
+
+from hamcrest import assert_that, calling, equal_to, raises
 
 from ..confd_client_cache import ConfdClientGetUUIDCacheDecorator
 

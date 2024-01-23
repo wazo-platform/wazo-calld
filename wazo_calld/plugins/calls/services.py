@@ -1,4 +1,4 @@
-# Copyright 2015-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import datetime
@@ -6,27 +6,23 @@ import logging
 import uuid
 
 from ari.exceptions import ARINotFound
+from xivo.asterisk.protocol_interface import protocol_interface_from_channel
+
 from wazo_calld.ari_ import DEFAULT_APPLICATION_NAME
 from wazo_calld.plugin_helpers import ami
 from wazo_calld.plugin_helpers.ari_ import (
     AUTO_ANSWER_VARIABLES,
     Channel,
-    set_channel_var_sync,
     set_channel_id_var_sync,
+    set_channel_var_sync,
 )
 from wazo_calld.plugin_helpers.confd import User
-from wazo_calld.plugin_helpers.exceptions import (
-    InvalidExtension,
-    UserPermissionDenied,
-)
-from xivo.asterisk.protocol_interface import protocol_interface_from_channel
+from wazo_calld.plugin_helpers.exceptions import InvalidExtension, UserPermissionDenied
 
 from .call import Call
-from .exceptions import CallConnectError
-from .exceptions import CallCreationError
-from .exceptions import NoSuchCall
-from .state_persistor import ReadOnlyStatePersistor
 from .dial_echo import DialEchoTimeout
+from .exceptions import CallConnectError, CallCreationError, NoSuchCall
+from .state_persistor import ReadOnlyStatePersistor
 
 logger = logging.getLogger(__name__)
 

@@ -2,19 +2,19 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
+
 from wazo_bus.resources.calls.event import (
-    CallHeldEvent,
-    CallResumedEvent,
-    CallDTMFEvent,
-    MissedCallEvent,
     CallAnsweredEvent,
     CallCreatedEvent,
+    CallDTMFEvent,
     CallEndedEvent,
+    CallHeldEvent,
+    CallResumedEvent,
     CallUpdatedEvent,
+    MissedCallEvent,
 )
 
 from .schemas import call_schema
-
 
 logger = logging.getLogger(__name__)
 

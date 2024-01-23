@@ -1,4 +1,4 @@
-# Copyright 2019-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import os
@@ -15,15 +15,13 @@ from hamcrest import (
     has_properties,
     is_,
 )
-
-from wazo_test_helpers.hamcrest.raises import raises
 from wazo_calld_client.exceptions import CalldError
+from wazo_test_helpers.hamcrest.raises import raises
 
 from .helpers.confd import MockVoicemail
 from .helpers.constants import ASSET_ROOT, VALID_TENANT
 from .helpers.hamcrest_ import HamcrestARIChannel
 from .helpers.real_asterisk import RealAsteriskIntegrationTest
-
 
 VALID_GREETINGS = ('busy', 'unavailable', 'name')
 wave_file = os.path.join(ASSET_ROOT, 'voicemail_greetings', 'bunny_29.wav')

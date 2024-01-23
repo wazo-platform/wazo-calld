@@ -1,28 +1,30 @@
-# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import re
 
-from flask import request
-from flask import Response
+from flask import Response, request
 
-from wazo_calld.auth import get_token_user_uuid_from_request
-from wazo_calld.auth import required_acl
-from wazo_calld.auth import extract_token_id_from_query_or_header
+from wazo_calld.auth import (
+    extract_token_id_from_query_or_header,
+    get_token_user_uuid_from_request,
+    required_acl,
+)
 from wazo_calld.http import AuthResource
+
 from .exceptions import (
-    InvalidVoicemailID,
     InvalidVoicemailFolderID,
-    NoSuchVoicemailGreeting,
+    InvalidVoicemailID,
     InvalidVoicemailMessageID,
+    NoSuchVoicemailGreeting,
 )
 from .schemas import (
     VALID_GREETINGS,
-    voicemail_schema,
     voicemail_folder_schema,
+    voicemail_greeting_copy_schema,
     voicemail_message_schema,
     voicemail_message_update_schema,
-    voicemail_greeting_copy_schema,
+    voicemail_schema,
 )
 
 

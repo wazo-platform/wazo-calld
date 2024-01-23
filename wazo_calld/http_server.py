@@ -1,14 +1,14 @@
-# Copyright 2015-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
 import os
+from datetime import timedelta
 
 from cheroot import wsgi
-from datetime import timedelta
 from flask import Flask
-from flask_restful import Api
 from flask_cors import CORS
+from flask_restful import Api
 from werkzeug.middleware.proxy_fix import ProxyFix
 from xivo import http_helpers
 from xivo.http_helpers import ReverseProxied

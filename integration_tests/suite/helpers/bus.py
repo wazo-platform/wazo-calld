@@ -1,14 +1,12 @@
-# Copyright 2015-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
 
-from kombu import Connection
-from kombu import Producer
+from kombu import Connection, Producer
 from wazo_test_helpers import bus as bus_helper
 
-from .constants import BUS_EXCHANGE_WAZO
-from .constants import VALID_TENANT
+from .constants import BUS_EXCHANGE_WAZO, VALID_TENANT
 
 
 class BusClient(bus_helper.BusClient):

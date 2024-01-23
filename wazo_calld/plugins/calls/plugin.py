@@ -1,37 +1,38 @@
-# Copyright 2015-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from wazo_confd_client import Client as ConfdClient
 from wazo_amid_client import Client as AmidClient
+from wazo_confd_client import Client as ConfdClient
 from xivo.pubsub import CallbackCollector
+
 from wazo_calld.phoned import PhonedClient
 
 from .bus_consume import CallsBusEventHandler
-from .notifier import CallNotifier
 from .dial_echo import DialEchoManager
 from .http import (
-    CallResource,
-    CallMuteStartResource,
-    CallMuteStopResource,
+    CallAnswerResource,
     CallDtmfResource,
     CallHoldResource,
-    CallUnholdResource,
+    CallMuteStartResource,
+    CallMuteStopResource,
     CallRecordStartResource,
     CallRecordStopResource,
+    CallResource,
     CallsResource,
-    CallAnswerResource,
+    CallUnholdResource,
     ConnectCallToUserResource,
-    MyCallResource,
-    MyCallsResource,
-    MyCallMuteStartResource,
-    MyCallMuteStopResource,
+    MyCallAnswerResource,
     MyCallDtmfResource,
     MyCallHoldResource,
-    MyCallUnholdResource,
+    MyCallMuteStartResource,
+    MyCallMuteStopResource,
     MyCallRecordStartResource,
     MyCallRecordStopResource,
-    MyCallAnswerResource,
+    MyCallResource,
+    MyCallsResource,
+    MyCallUnholdResource,
 )
+from .notifier import CallNotifier
 from .services import CallsService
 from .stasis import CallsStasis
 

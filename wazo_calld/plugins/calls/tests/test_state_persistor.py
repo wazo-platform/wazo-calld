@@ -1,22 +1,15 @@
-# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
-
-from ari.exceptions import ARINotFound
-from hamcrest import assert_that
-from hamcrest import calling
-from hamcrest import equal_to
-from hamcrest import has_property
-from hamcrest import is_not
-from hamcrest import raises
+from unittest import TestCase
 from unittest.mock import Mock
 from unittest.mock import sentinel as s
-from unittest import TestCase
 
-from ..state_persistor import ChannelCacheEntry
-from ..state_persistor import ReadOnlyStatePersistor
-from ..state_persistor import StatePersistor
+from ari.exceptions import ARINotFound
+from hamcrest import assert_that, calling, equal_to, has_property, is_not, raises
+
+from ..state_persistor import ChannelCacheEntry, ReadOnlyStatePersistor, StatePersistor
 
 SOME_CHANNEL_ID = 'some-channel-id'
 

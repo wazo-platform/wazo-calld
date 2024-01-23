@@ -1,4 +1,4 @@
-# Copyright 2021-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2021-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -6,11 +6,10 @@ import logging
 from marshmallow import ValidationError
 from requests import RequestException
 from wazo_amid_client.exceptions import AmidProtocolError
-from wazo_calld.plugin_helpers.confd import Meeting
+
 from wazo_calld.plugin_helpers.ari_ import Channel
-from wazo_calld.plugin_helpers.exceptions import (
-    WazoAmidError,
-)
+from wazo_calld.plugin_helpers.confd import Meeting
+from wazo_calld.plugin_helpers.exceptions import WazoAmidError
 
 from .exceptions import (
     MeetingParticipantError,

@@ -1,12 +1,11 @@
-# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from requests import HTTPError
-from requests import RequestException
+from requests import HTTPError, RequestException
 
 from .exceptions import (
-    InvalidUserUUID,
     InvalidUserLine,
+    InvalidUserUUID,
     NoSuchConferenceID,
     NoSuchMeeting,
     NoSuchUserVoicemail,

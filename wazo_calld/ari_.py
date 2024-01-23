@@ -1,19 +1,15 @@
-# Copyright 2015-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import errno
 import logging
-import socket
+import threading
 import time
 import urllib
-import threading
-
 from contextlib import contextmanager
 
 import ari
 import swaggerpy.http_client
-
-from requests.exceptions import HTTPError
 from websocket import WebSocketException
 from xivo.pubsub import Pubsub
 from xivo.status import Status
@@ -77,28 +73,26 @@ def asterisk_is_loading(error):
 
 
 class CachingRepository:
-    cached_variables = set(
-        [
-            'CALLERID(number)',
-            'CHANNEL(channeltype)',
-            'CHANNEL(language)',
-            'CHANNEL(linkedid)',
-            'CHANNEL(pjsip,call-id)',
-            'CONNECTEDLINE(all)',
-            'WAZO_CHANNEL_DIRECTION',
-            'WAZO_DEREFERENCED_USERUUID',
-            'WAZO_ENTRY_EXTEN',
-            'WAZO_LINE_ID',
-            'WAZO_MIXMONITOR_OPTIONS',
-            'WAZO_SIP_CALL_ID',
-            'WAZO_SWITCHBOARD_FALLBACK_NOANSWER_ACTION',
-            'WAZO_SWITCHBOARD_TIMEOUT',
-            'WAZO_TENANT_UUID',
-            'WAZO_USER_OUTGOING_CALL',
-            'XIVO_ORIGINAL_CALLER_ID',
-            'WAZO_USERUUID',
-        ]
-    )
+    cached_variables = {
+        'CALLERID(number)',
+        'CHANNEL(channeltype)',
+        'CHANNEL(language)',
+        'CHANNEL(linkedid)',
+        'CHANNEL(pjsip,call-id)',
+        'CONNECTEDLINE(all)',
+        'WAZO_CHANNEL_DIRECTION',
+        'WAZO_DEREFERENCED_USERUUID',
+        'WAZO_ENTRY_EXTEN',
+        'WAZO_LINE_ID',
+        'WAZO_MIXMONITOR_OPTIONS',
+        'WAZO_SIP_CALL_ID',
+        'WAZO_SWITCHBOARD_FALLBACK_NOANSWER_ACTION',
+        'WAZO_SWITCHBOARD_TIMEOUT',
+        'WAZO_TENANT_UUID',
+        'WAZO_USER_OUTGOING_CALL',
+        'XIVO_ORIGINAL_CALLER_ID',
+        'WAZO_USERUUID',
+    }
     CHANNEL_CACHE_EXPIRATION = 60 * 60
 
     def __init__(self, repository):
@@ -283,14 +277,14 @@ class CoreARI:
         try:
             with self._running():
                 self.client.run(apps=self._apps)
-        except socket.error as e:
+        except OSError as e:
             if e.errno == errno.EPIPE:
                 # bug in ari-py when calling client.close(): ignore it and stop
                 logger.error('Error while listening for ARI events: %s', e)
                 return
             else:
                 self._connection_error(e)
-        except (WebSocketException, HTTPError) as e:
+        except WebSocketException as e:
             self._connection_error(e)
         except ValueError:
             logger.warning('Received non-JSON message from ARI... disconnecting')

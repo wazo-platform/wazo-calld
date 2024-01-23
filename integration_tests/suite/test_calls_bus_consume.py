@@ -1,20 +1,14 @@
-# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 import uuid
 
-from hamcrest import (
-    all_of,
-    assert_that,
-    has_entries,
-    has_item,
-    is_,
-)
+from hamcrest import all_of, assert_that, has_entries, has_item, is_
 from wazo_test_helpers import until
 
-from .helpers.base import IntegrationTest
 from .helpers.ari_ import MockBridge, MockChannel
+from .helpers.base import IntegrationTest
 from .helpers.calld import new_call_id
-from .helpers.constants import SOME_STASIS_APP, XIVO_UUID, VALID_TENANT
+from .helpers.constants import SOME_STASIS_APP, VALID_TENANT, XIVO_UUID
 from .helpers.hamcrest_ import a_timestamp
 from .helpers.wait_strategy import CalldEverythingOkWaitStrategy
 

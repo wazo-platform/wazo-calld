@@ -1,15 +1,11 @@
-# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from datetime import datetime
 
-from hamcrest import all_of
-from hamcrest import instance_of
-from hamcrest import is_in
-from hamcrest import not_
-from hamcrest.core.base_matcher import BaseMatcher
-
 from ari.exceptions import ARINotFound
+from hamcrest import all_of, instance_of, is_in, not_
+from hamcrest.core.base_matcher import BaseMatcher
 
 
 class HamcrestARIChannel:

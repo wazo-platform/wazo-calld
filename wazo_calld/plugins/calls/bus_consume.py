@@ -4,12 +4,15 @@
 import logging
 
 from ari.exceptions import ARINotFound
-from wazo_bus.collectd.channels import ChannelCreatedCollectdEvent
-from wazo_bus.collectd.channels import ChannelEndedCollectdEvent
+from wazo_bus.collectd.channels import (
+    ChannelCreatedCollectdEvent,
+    ChannelEndedCollectdEvent,
+)
 
 from wazo_calld.plugin_helpers import ami
 from wazo_calld.plugin_helpers.ari_ import Channel, set_channel_id_var_sync
 from wazo_calld.plugin_helpers.exceptions import WazoAmidError
+
 from .call import Call
 from .exceptions import NoSuchCall
 

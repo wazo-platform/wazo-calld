@@ -1,13 +1,13 @@
-# Copyright 2020-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2020-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from wazo_amid_client import Client as AmidClient
 from xivo.pubsub import CallbackCollector
 
 from .http import (
+    UserAdhocConferenceParticipantResource,
     UserAdhocConferenceResource,
     UserAdhocConferencesResource,
-    UserAdhocConferenceParticipantResource,
 )
 from .notifier import AdhocConferencesNotifier
 from .services import AdhocConferencesService

@@ -1,31 +1,18 @@
-# Copyright 2019-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from unittest import TestCase
+from unittest.mock import Mock, patch
+from unittest.mock import sentinel as s
+
 import pytest
 import requests
-
-from unittest.mock import (
-    Mock,
-    patch,
-    sentinel as s,
-)
-from hamcrest import (
-    assert_that,
-    contains_exactly,
-    empty,
-    equal_to,
-    has_items,
-)
-
 from ari.exceptions import ARINotFound
+from hamcrest import assert_that, contains_exactly, empty, equal_to, has_items
 
-from ..services import (
-    _NoSuchChannel,
-    _PollingContactDialer as PollingContactDialer,
-    DialMobileService,
-)
 from ..notifier import Notifier
+from ..services import DialMobileService, _NoSuchChannel
+from ..services import _PollingContactDialer as PollingContactDialer
 
 
 class DialerTestCase(TestCase):

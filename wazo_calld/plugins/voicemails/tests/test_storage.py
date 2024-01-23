@@ -1,21 +1,22 @@
-# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from unittest.mock import Mock
 from io import BytesIO
-from hamcrest import assert_that
-from hamcrest import calling
-from hamcrest import contains_exactly
-from hamcrest import empty
-from hamcrest import equal_to
-from hamcrest import has_key
-from hamcrest import not_
-from hamcrest import raises
 from unittest import TestCase
+from unittest.mock import Mock
 
-from ..storage import _MessageInfoParser
-from ..storage import _VoicemailMessagesCache
-from ..storage import _VoicemailFolder
+from hamcrest import (
+    assert_that,
+    calling,
+    contains_exactly,
+    empty,
+    equal_to,
+    has_key,
+    not_,
+    raises,
+)
+
+from ..storage import _MessageInfoParser, _VoicemailFolder, _VoicemailMessagesCache
 
 
 class TestMessageInfoParser(TestCase):

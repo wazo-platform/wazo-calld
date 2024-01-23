@@ -1,4 +1,4 @@
-# Copyright 2021-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2021-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -6,10 +6,7 @@ import logging
 from wazo_calld.plugin_helpers.confd import Meeting
 from wazo_calld.plugin_helpers.exceptions import NoSuchMeeting
 
-from .meeting import (
-    AsteriskMeeting,
-    InvalidMeetingConfbridgeName,
-)
+from .meeting import AsteriskMeeting, InvalidMeetingConfbridgeName
 from .schemas import participant_schema
 
 logger = logging.getLogger(__name__)

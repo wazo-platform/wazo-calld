@@ -1,18 +1,13 @@
-# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from xivo.tenant_flask_helpers import Tenant, token
-
 from flask import request
+from xivo.tenant_flask_helpers import Tenant, token
 
 from wazo_calld.auth import required_acl
 from wazo_calld.http import AuthResource
 
-from .schemas import (
-    answer_call_schema,
-    held_call_schema,
-    queued_call_schema,
-)
+from .schemas import answer_call_schema, held_call_schema, queued_call_schema
 
 
 class SwitchboardCallsQueuedResource(AuthResource):

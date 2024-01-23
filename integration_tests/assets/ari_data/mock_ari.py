@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright 2015-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ import json
 import logging
 import sys
 
-from flask import Flask, jsonify, make_response, request, Response
+from flask import Flask, Response, jsonify, make_response, request
 from flask_sockets import Sockets
 
 _EMPTY_RESPONSES = {

@@ -1,12 +1,7 @@
-# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from hamcrest import (
-    assert_that,
-    equal_to,
-    has_entries,
-    has_entry,
-)
+from hamcrest import assert_that, equal_to, has_entries, has_entry
 from wazo_test_helpers import until
 
 from .helpers.base import IntegrationTest

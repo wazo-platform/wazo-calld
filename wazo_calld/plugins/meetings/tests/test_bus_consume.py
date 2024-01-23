@@ -1,10 +1,12 @@
-# Copyright 2021-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2021-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from unittest import TestCase
-from uuid import uuid4
-from hamcrest import assert_that, is_, none
 from unittest.mock import patch
+from uuid import uuid4
+
+from hamcrest import assert_that, is_, none
+
 from ..bus_consume import MeetingsBusEventHandler
 
 

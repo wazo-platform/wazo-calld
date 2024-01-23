@@ -1,13 +1,10 @@
-# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import iso8601
-
 from ari.exceptions import ARINotFound
 
-from .exceptions import InvalidCallEvent
-from .exceptions import InvalidConnectCallEvent
-from .exceptions import InvalidStartCallEvent
+from .exceptions import InvalidCallEvent, InvalidConnectCallEvent, InvalidStartCallEvent
 
 
 class CallEvent:

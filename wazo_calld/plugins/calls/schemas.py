@@ -1,10 +1,8 @@
-# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from marshmallow import EXCLUDE, Schema, fields, post_dump, post_load
-from marshmallow.validate import Length
-from marshmallow.validate import Range
-from marshmallow.validate import Regexp
+from marshmallow.validate import Length, Range, Regexp
 
 from wazo_calld.plugin_helpers.mallow import StrictDict
 

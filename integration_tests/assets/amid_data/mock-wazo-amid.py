@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 from __future__ import annotations
 
-import logging
 import json
+import logging
 import sys
 
-from flask import Flask, jsonify, request, Response
+from flask import Flask, Response, jsonify, request
 
 app = Flask(__name__)
 

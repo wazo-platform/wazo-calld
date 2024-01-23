@@ -1,18 +1,18 @@
-# Copyright 2018-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from wazo_confd_client import Client as ConfdClient
 from wazo_amid_client import Client as AmidClient
+from wazo_confd_client import Client as ConfdClient
 
+from .bus_consume import ConferencesBusEventHandler
 from .http import (
     ConferenceRecordResource,
     ParticipantMuteResource,
     ParticipantResource,
-    ParticipantUnmuteResource,
     ParticipantsResource,
     ParticipantsUserResource,
+    ParticipantUnmuteResource,
 )
-from .bus_consume import ConferencesBusEventHandler
 from .notifier import ConferencesNotifier
 from .services import ConferencesService
 

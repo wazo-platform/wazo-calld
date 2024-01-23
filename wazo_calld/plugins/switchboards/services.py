@@ -1,34 +1,21 @@
-# Copyright 2017-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
 
 from ari.exceptions import ARINotFound
-
 from xivo.caller_id import assemble_caller_id
+
 from wazo_calld.ari_ import DEFAULT_APPLICATION_NAME
-from wazo_calld.plugin_helpers.ari_ import (
-    AUTO_ANSWER_VARIABLES,
-    Channel,
-)
+from wazo_calld.plugin_helpers.ari_ import AUTO_ANSWER_VARIABLES, Channel
 from wazo_calld.plugin_helpers.confd import User
 from wazo_calld.plugin_helpers.exceptions import InvalidUserUUID
 
 from .ari_helpers import Switchboard as SwitchboardARI
-from .call import (
-    HeldCall,
-    QueuedCall,
-)
+from .call import HeldCall, QueuedCall
 from .confd import Switchboard as SwitchboardConfd
-from .constants import (
-    BRIDGE_QUEUE_ID,
-    BRIDGE_HOLD_ID,
-)
-from .exceptions import (
-    NoSuchCall,
-    NoSuchSwitchboard,
-    NoSuchConfdUser,
-)
+from .constants import BRIDGE_HOLD_ID, BRIDGE_QUEUE_ID
+from .exceptions import NoSuchCall, NoSuchConfdUser, NoSuchSwitchboard
 from .lock import SwitchboardsLock
 
 logger = logging.getLogger(__name__)

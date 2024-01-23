@@ -1,18 +1,15 @@
-# Copyright 2018-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
-
 from uuid import uuid4
-from requests import HTTPError
 
 from ari.exceptions import ARINotFound
+from requests import HTTPError
+
 from wazo_calld.plugin_helpers.ari_ import Channel as _ChannelHelper
 
-from .exceptions import (
-    NoSuchCall,
-    NoSuchSnoop,
-)
+from .exceptions import NoSuchCall, NoSuchSnoop
 
 logger = logging.getLogger(__name__)
 

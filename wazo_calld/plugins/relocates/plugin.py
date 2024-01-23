@@ -1,21 +1,21 @@
-# Copyright 2017-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from wazo_confd_client import Client as ConfdClient
 from wazo_amid_client import Client as AmidClient
+from wazo_confd_client import Client as ConfdClient
 from xivo.pubsub import CallbackCollector
 
-from .notifier import RelocatesNotifier
 from .http import (
     UserRelocateCancelResource,
     UserRelocateCompleteResource,
     UserRelocateResource,
     UserRelocatesResource,
 )
+from .notifier import RelocatesNotifier
+from .relocate import RelocateCollection
 from .services import RelocatesService
 from .stasis import RelocatesStasis
 from .state import StateFactory, state_index
-from .relocate import RelocateCollection
 
 
 class Plugin:

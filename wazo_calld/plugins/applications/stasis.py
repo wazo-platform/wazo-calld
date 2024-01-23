@@ -1,18 +1,12 @@
-# Copyright 2018-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
 
-from .exceptions import (
-    NoSuchSnoop,
-)
 from wazo_calld.plugin_helpers.ari_ import set_channel_var_sync
 
-from .models import (
-    CallFormatter,
-    make_node_from_bridge,
-    make_node_from_bridge_event,
-)
+from .exceptions import NoSuchSnoop
+from .models import CallFormatter, make_node_from_bridge, make_node_from_bridge_event
 
 logger = logging.getLogger(__name__)
 

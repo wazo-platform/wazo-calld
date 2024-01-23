@@ -1,33 +1,30 @@
-# Copyright 2017-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import uuid
 
-from hamcrest import assert_that
-from hamcrest import calling
-from hamcrest import contains_exactly
-from hamcrest import contains_inanyorder
-from hamcrest import empty
-from hamcrest import has_entry
-from hamcrest import has_entries
-from hamcrest import has_items
-from hamcrest import has_item
-from hamcrest import has_properties
-from hamcrest import has_property
-from hamcrest import not_
+from hamcrest import (
+    assert_that,
+    calling,
+    contains_exactly,
+    contains_inanyorder,
+    empty,
+    has_entries,
+    has_entry,
+    has_item,
+    has_items,
+    has_properties,
+    has_property,
+    not_,
+)
+from wazo_calld_client.exceptions import CalldError
 from wazo_test_helpers import until
 from wazo_test_helpers.hamcrest.raises import raises
-from wazo_calld_client.exceptions import CalldError
 
-from .helpers.real_asterisk import RealAsteriskIntegrationTest, RealAsterisk
-from .helpers.confd import MockUser
-from .helpers.confd import MockLine
-from .helpers.constants import (
-    SOME_CALL_ID,
-    INVALID_ACL_TOKEN,
-    VALID_TENANT,
-)
+from .helpers.confd import MockLine, MockUser
+from .helpers.constants import INVALID_ACL_TOKEN, SOME_CALL_ID, VALID_TENANT
 from .helpers.hamcrest_ import HamcrestARIChannel
+from .helpers.real_asterisk import RealAsterisk, RealAsteriskIntegrationTest
 
 SOME_LINE_ID = 12
 SOME_LINE_NAME = 'line-name'

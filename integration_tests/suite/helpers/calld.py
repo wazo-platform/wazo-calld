@@ -1,14 +1,13 @@
-# Copyright 2015-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
-import requests
 import time
 import uuid
-
 from contextlib import contextmanager
-from hamcrest import assert_that, equal_to
 
+import requests
+from hamcrest import assert_that, equal_to
 from wazo_calld_client import Client
 
 from .constants import VALID_TOKEN
