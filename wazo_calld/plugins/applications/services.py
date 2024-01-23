@@ -1,18 +1,15 @@
-# Copyright 2018-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
 
-from requests import HTTPError
 from ari.exceptions import ARINotFound
+from requests import HTTPError
+
 from wazo_calld.plugin_helpers import ami, confd
 from wazo_calld.plugin_helpers.ari_ import Channel, set_channel_var_sync
 from wazo_calld.plugin_helpers.exceptions import InvalidExtension
-from .models import (
-    CallFormatter,
-    make_node_from_bridge,
-    SnoopHelper,
-)
+
 from .exceptions import (
     CallAlreadyInNode,
     CallNotInApplication,
@@ -23,6 +20,7 @@ from .exceptions import (
     NoSuchNode,
     NoSuchPlayback,
 )
+from .models import CallFormatter, SnoopHelper, make_node_from_bridge
 from .stasis import AppNameHelper
 
 logger = logging.getLogger(__name__)

@@ -1,16 +1,9 @@
-# Copyright 2021-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2021-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import uuid
 
-from hamcrest import (
-    assert_that,
-    calling,
-    has_entries,
-    has_items,
-    has_properties,
-    not_,
-)
+from hamcrest import assert_that, calling, has_entries, has_items, has_properties, not_
 from wazo_calld_client.exceptions import CalldError
 from wazo_test_helpers import until
 from wazo_test_helpers.hamcrest.raises import raises

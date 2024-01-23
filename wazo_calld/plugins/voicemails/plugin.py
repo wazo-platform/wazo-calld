@@ -1,4 +1,4 @@
-# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -21,12 +21,9 @@ from .http import (
     VoicemailRecordingResource,
     VoicemailResource,
 )
-from .services import VoicemailsService
-from .storage import (
-    new_cache,
-    new_filesystem_storage,
-)
 from .notifier import VoicemailsNotifier
+from .services import VoicemailsService
+from .storage import new_cache, new_filesystem_storage
 
 logger = logging.getLogger(__name__)
 

@@ -1,12 +1,10 @@
-# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from wazo_confd_client import Client as ConfdClient
 from wazo_amid_client import Client as AmidClient
-
+from wazo_confd_client import Client as ConfdClient
 from xivo.pubsub import CallbackCollector
 
-from .notifier import TransferNotifier
 from .http import (
     TransferCompleteResource,
     TransferResource,
@@ -15,6 +13,7 @@ from .http import (
     UserTransferResource,
     UserTransfersResource,
 )
+from .notifier import TransferNotifier
 from .services import TransfersService
 from .stasis import TransfersStasis
 from .state import state_factory

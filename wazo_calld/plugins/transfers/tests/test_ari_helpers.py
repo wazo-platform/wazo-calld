@@ -1,12 +1,10 @@
-# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from hamcrest import assert_that
-from hamcrest import is_
-from unittest.mock import Mock
-from unittest.mock import patch
-from unittest.mock import sentinel
 from unittest import TestCase
+from unittest.mock import Mock, patch, sentinel
+
+from hamcrest import assert_that, is_
 
 from wazo_calld.plugin_helpers.exceptions import WazoAmidError
 

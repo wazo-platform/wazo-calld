@@ -1,16 +1,12 @@
-# Copyright 2017-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-import re
 import logging
+import re
 import threading
 
 from wazo_calld.plugin_helpers import ami
-from wazo_calld.plugin_helpers.ari_ import (
-    AUTO_ANSWER_VARIABLES,
-    ARINotFound,
-    Channel,
-)
+from wazo_calld.plugin_helpers.ari_ import AUTO_ANSWER_VARIABLES, ARINotFound, Channel
 from wazo_calld.plugin_helpers.confd import User
 from wazo_calld.plugin_helpers.exceptions import (
     InvalidUserLine,
@@ -22,9 +18,9 @@ from wazo_calld.plugin_helpers.exceptions import (
 
 from .exceptions import (
     NoSuchRelocate,
-    TooManyChannelCandidates,
     RelocateAlreadyStarted,
     RelocateCreationError,
+    TooManyChannelCandidates,
 )
 from .relocate import Relocate
 

@@ -1,15 +1,16 @@
-# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import base64
 
-from ari.exceptions import ARIHTTPError
 import requests
+from ari.exceptions import ARIHTTPError
+
 from wazo_calld.plugin_helpers import confd
 
 from .exceptions import (
-    NoSuchVoicemailGreeting,
     InvalidVoicemailGreeting,
+    NoSuchVoicemailGreeting,
     VoicemailGreetingAlreadyExists,
 )
 from .storage import VoicemailFolderType

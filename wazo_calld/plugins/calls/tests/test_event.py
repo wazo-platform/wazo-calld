@@ -1,22 +1,19 @@
-# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from ari.exceptions import ARINotFound
-from hamcrest import assert_that
-from hamcrest import calling
-from hamcrest import equal_to
-from hamcrest import is_
-from hamcrest import raises
+from unittest import TestCase
 from unittest.mock import Mock
 from unittest.mock import sentinel as s
-from unittest import TestCase
 
-from ..exceptions import InvalidCallEvent
-from ..exceptions import InvalidConnectCallEvent
-from ..exceptions import InvalidStartCallEvent
-from ..event import CallEvent
-from ..event import ConnectCallEvent
-from ..event import StartCallEvent
+from ari.exceptions import ARINotFound
+from hamcrest import assert_that, calling, equal_to, is_, raises
+
+from ..event import CallEvent, ConnectCallEvent, StartCallEvent
+from ..exceptions import (
+    InvalidCallEvent,
+    InvalidConnectCallEvent,
+    InvalidStartCallEvent,
+)
 
 ONE_HOUR = 3600
 

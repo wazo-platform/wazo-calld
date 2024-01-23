@@ -1,43 +1,36 @@
-# Copyright 2017-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import random
 import unittest
 import uuid
+from operator import attrgetter
 
-from ari.exceptions import (
-    ARINotInStasis,
-    ARINotFound,
-)
+from ari.exceptions import ARINotFound, ARINotInStasis
 from hamcrest import (
     any_of,
     assert_that,
     contains_exactly,
-    contains_string,
     contains_inanyorder,
+    contains_string,
     empty,
     equal_to,
-    has_entry,
     has_entries,
+    has_entry,
     has_item,
     has_items,
     is_not,
     starts_with,
 )
-from operator import attrgetter
 from wazo_test_helpers import until
 
-from .helpers.ari_ import MockChannel, MockBridge
+from .helpers.ari_ import MockBridge, MockChannel
 from .helpers.auth import MockUserToken
 from .helpers.base import IntegrationTest
-from .helpers.real_asterisk import RealAsteriskIntegrationTest
-from .helpers.constants import ENDPOINT_AUTOANSWER, VALID_TOKEN, VALID_TENANT
-from .helpers.confd import (
-    MockSwitchboard,
-    MockLine,
-    MockUser,
-)
+from .helpers.confd import MockLine, MockSwitchboard, MockUser
+from .helpers.constants import ENDPOINT_AUTOANSWER, VALID_TENANT, VALID_TOKEN
 from .helpers.hamcrest_ import HamcrestARIChannel
+from .helpers.real_asterisk import RealAsteriskIntegrationTest
 
 STASIS_APP = 'callcontrol'
 STASIS_APP_INSTANCE = 'switchboard'

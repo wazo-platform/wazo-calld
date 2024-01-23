@@ -1,12 +1,11 @@
-# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from wazo_calld.plugins.switchboards.exceptions import NoSuchSwitchboard
-from requests import HTTPError
-from requests import RequestException
+from requests import HTTPError, RequestException
 
 from wazo_calld.plugin_helpers.confd import not_found
 from wazo_calld.plugin_helpers.exceptions import WazoConfdUnreachable
+from wazo_calld.plugins.switchboards.exceptions import NoSuchSwitchboard
 
 
 class Switchboard:

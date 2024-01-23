@@ -1,4 +1,4 @@
-# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -8,11 +8,14 @@ from ari.exceptions import ARINotFound
 
 from wazo_calld.plugin_helpers.ari_ import Channel
 from wazo_calld.plugin_helpers.exceptions import BridgeNotFound
+
 from . import ari_helpers
-from .exceptions import TransferAnswerError
-from .exceptions import TransferCreationError
-from .exceptions import TransferCancellationError
-from .exceptions import TransferCompletionError
+from .exceptions import (
+    TransferAnswerError,
+    TransferCancellationError,
+    TransferCompletionError,
+    TransferCreationError,
+)
 from .transfer import Transfer, TransferStatus
 
 logger = logging.getLogger(__name__)

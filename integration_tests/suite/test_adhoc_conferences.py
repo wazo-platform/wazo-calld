@@ -1,4 +1,4 @@
-# Copyright 2020-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2020-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 
@@ -16,20 +16,20 @@ from hamcrest import (
     has_length,
     has_properties,
 )
-from wazo_test_helpers.hamcrest.raises import raises
-from wazo_test_helpers import until
 from wazo_calld_client.exceptions import CalldError
+from wazo_test_helpers import until
+from wazo_test_helpers.hamcrest.raises import raises
+
 from .helpers.auth import MockUserToken
 from .helpers.base import make_user_uuid
-from .helpers.real_asterisk import RealAsteriskIntegrationTest
 from .helpers.constants import (
-    SOME_CALL_ID,
     INVALID_ACL_TOKEN,
-    VALID_TOKEN,
+    SOME_CALL_ID,
     VALID_TENANT,
+    VALID_TOKEN,
 )
 from .helpers.hamcrest_ import HamcrestARIChannel
-from .helpers.real_asterisk import RealAsterisk
+from .helpers.real_asterisk import RealAsterisk, RealAsteriskIntegrationTest
 
 SOME_ADHOC_CONFERENCE_ID = 'some-adhoc-conference-id'
 

@@ -1,10 +1,10 @@
-# Copyright 2018-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
 import uuid
-
-from queue import Queue, Empty as EmptyQueue
+from queue import Empty as EmptyQueue
+from queue import Queue
 
 logger = logging.getLogger(__name__)
 

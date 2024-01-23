@@ -1,6 +1,7 @@
-# Copyright 2018-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+from ari.exceptions import ARIServerError
 from hamcrest import (
     assert_that,
     calling,
@@ -8,27 +9,23 @@ from hamcrest import (
     contains_inanyorder,
     empty,
     equal_to,
-    has_entry,
     has_entries,
+    has_entry,
     has_item,
     has_items,
     has_length,
     has_properties,
     not_,
 )
-
-from ari.exceptions import ARIServerError
-
 from wazo_calld_client.exceptions import CalldError
 from wazo_test_helpers import until
-from wazo_test_helpers.hamcrest.uuid_ import uuid_
 from wazo_test_helpers.hamcrest.raises import raises
+from wazo_test_helpers.hamcrest.uuid_ import uuid_
 
-from .helpers.confd import MockApplication, MockUser, MockMoh
-from .helpers.constants import ENDPOINT_AUTOANSWER
+from .helpers.confd import MockApplication, MockMoh, MockUser
+from .helpers.constants import ENDPOINT_AUTOANSWER, VALID_TENANT
 from .helpers.real_asterisk import RealAsteriskIntegrationTest
 from .helpers.wait_strategy import CalldEverythingOkWaitStrategy, NoWaitStrategy
-from .helpers.constants import VALID_TENANT
 
 
 class BaseApplicationTestCase(RealAsteriskIntegrationTest):

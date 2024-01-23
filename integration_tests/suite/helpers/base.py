@@ -1,25 +1,27 @@
-# Copyright 2015-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-import os
 import logging
+import os
 import tempfile
 import uuid
-
 from contextlib import contextmanager
+
 from requests.packages import urllib3
 from wazo_test_helpers import until
-from wazo_test_helpers.asset_launching_test_case import AssetLaunchingTestCase
-from wazo_test_helpers.asset_launching_test_case import NoSuchService
-from wazo_test_helpers.asset_launching_test_case import NoSuchPort
+from wazo_test_helpers.asset_launching_test_case import (
+    AssetLaunchingTestCase,
+    NoSuchPort,
+    NoSuchService,
+)
 
 from .amid import MockAmidClient
 from .ari_ import ARIClient
 from .auth import AuthClient, MockUserToken
 from .bus import BusClient
+from .calld import CalldClient, LegacyCalldClient
 from .confd import ConfdClient
 from .constants import ASSET_ROOT, VALID_TOKEN
-from .calld import LegacyCalldClient, CalldClient
 from .phoned import PhonedClient
 from .stasis import StasisClient
 from .wait_strategy import CalldEverythingOkWaitStrategy

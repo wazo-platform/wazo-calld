@@ -1,17 +1,16 @@
-# Copyright 2019-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-import uuid
-import time
-import threading
 import logging
-import requests
-
+import threading
+import time
+import uuid
 from collections import namedtuple
 
+import requests
 from ari.exceptions import ARINotFound
-from wazo_calld.plugin_helpers.ari_ import Bridge
 
+from wazo_calld.plugin_helpers.ari_ import Bridge
 
 logger = logging.getLogger(__name__)
 
@@ -158,7 +157,7 @@ class _PollingContactDialer:
             channel_id,
             len(self._dialed_channels),
         )
-        dialed_channel_ids = set(channel.id for channel in self._dialed_channels)
+        dialed_channel_ids = {channel.id for channel in self._dialed_channels}
         if (
             channel_id not in dialed_channel_ids
             and channel_id != self._caller_channel_id

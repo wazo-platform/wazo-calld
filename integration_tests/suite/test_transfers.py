@@ -1,45 +1,38 @@
-# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
 
 from ari.exceptions import ARINotFound
-from hamcrest import all_of
-from hamcrest import anything
-from hamcrest import assert_that
-from hamcrest import calling
-from hamcrest import contains_exactly
-from hamcrest import contains_inanyorder
-from hamcrest import contains_string
-from hamcrest import equal_to
-from hamcrest import empty
-from hamcrest import has_entry
-from hamcrest import has_entries
-from hamcrest import has_item
-from hamcrest import has_items
-from hamcrest import has_key
-from hamcrest import instance_of
-from hamcrest import not_
-from hamcrest import not_none
-from hamcrest import raises
+from hamcrest import (
+    all_of,
+    anything,
+    assert_that,
+    calling,
+    contains_exactly,
+    contains_inanyorder,
+    contains_string,
+    empty,
+    equal_to,
+    has_entries,
+    has_entry,
+    has_item,
+    has_items,
+    has_key,
+    instance_of,
+    not_,
+    not_none,
+    raises,
+)
 from wazo_test_helpers import until
 
-from .helpers.base import IntegrationTest
-from .helpers.real_asterisk import RealAsteriskIntegrationTest, RealAsterisk
-from .helpers.constants import (
-    SOME_CHANNEL_ID,
-    VALID_TOKEN,
-    VALID_TENANT,
-)
-from .helpers.confd import MockUser
-from .helpers.confd import MockLine
 from .helpers.auth import MockUserToken
-from .helpers.hamcrest_ import HamcrestARIBridge
-from .helpers.hamcrest_ import HamcrestARIChannel
-from .helpers.wait_strategy import (
-    CalldUpWaitStrategy,
-    CalldAndAsteriskWaitStrategy,
-)
+from .helpers.base import IntegrationTest
+from .helpers.confd import MockLine, MockUser
+from .helpers.constants import SOME_CHANNEL_ID, VALID_TENANT, VALID_TOKEN
+from .helpers.hamcrest_ import HamcrestARIBridge, HamcrestARIChannel
+from .helpers.real_asterisk import RealAsterisk, RealAsteriskIntegrationTest
+from .helpers.wait_strategy import CalldAndAsteriskWaitStrategy, CalldUpWaitStrategy
 
 RECIPIENT = {
     'context': 'local',

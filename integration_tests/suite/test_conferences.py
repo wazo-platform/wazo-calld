@@ -1,8 +1,8 @@
-# Copyright 2018-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-import uuid
 import os
+import uuid
 
 from hamcrest import (
     assert_that,
@@ -18,9 +18,10 @@ from hamcrest import (
     is_,
     less_than,
 )
+from wazo_calld_client.exceptions import CalldError
 from wazo_test_helpers import until
 from wazo_test_helpers.hamcrest.raises import raises
-from wazo_calld_client.exceptions import CalldError
+
 from .helpers.confd import MockConference
 from .helpers.constants import ENDPOINT_AUTOANSWER
 from .helpers.hamcrest_ import HamcrestARIChannel

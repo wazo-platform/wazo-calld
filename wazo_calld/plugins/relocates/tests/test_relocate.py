@@ -1,24 +1,14 @@
-# Copyright 2017-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from hamcrest import (
-    assert_that,
-    calling,
-    contains_inanyorder,
-    equal_to,
-    is_,
-    none,
-)
-from unittest.mock import Mock
 from unittest import TestCase
-from wazo_test_helpers.hamcrest.raises import raises
-from wazo_test_helpers.hamcrest.has_callable import has_callable
+from unittest.mock import Mock
 
-from ..relocate import (
-    Relocate,
-    RelocateCollection,
-    RelocateRole,
-)
+from hamcrest import assert_that, calling, contains_inanyorder, equal_to, is_, none
+from wazo_test_helpers.hamcrest.has_callable import has_callable
+from wazo_test_helpers.hamcrest.raises import raises
+
+from ..relocate import Relocate, RelocateCollection, RelocateRole
 
 
 class TestRelocate(TestCase):

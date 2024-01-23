@@ -1,17 +1,13 @@
-# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-import requests
-
-from hamcrest import assert_that
-from hamcrest import calling
-from hamcrest import is_
-from hamcrest import raises
-from unittest.mock import Mock
 from unittest import TestCase
+from unittest.mock import Mock
 
-from ..ami import extension_exists
-from ..ami import moh_class_exists
+import requests
+from hamcrest import assert_that, calling, is_, raises
+
+from ..ami import extension_exists, moh_class_exists
 from ..exceptions import WazoAmidError
 
 SOME_EXTEN = 'some-exten'

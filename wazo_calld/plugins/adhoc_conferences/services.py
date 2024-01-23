@@ -1,33 +1,28 @@
-# Copyright 2020-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2020-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+import logging
 import uuid
 
-from ari.exceptions import (
-    ARIException,
-    ARINotFound,
-    ARINotInStasis,
-)
+from ari.exceptions import ARIException, ARINotFound, ARINotInStasis
 
-from wazo_calld.plugin_helpers.ari_ import Bridge, Channel
 from wazo_calld.plugin_helpers import ami
+from wazo_calld.plugin_helpers.ari_ import Bridge, Channel
 from wazo_calld.plugin_helpers.exceptions import (
     BridgeNotFound,
     NotEnoughChannels,
     TooManyChannels,
 )
 
-from .stasis import ADHOC_CONFERENCE_STASIS_APP
 from .exceptions import (
     AdhocConferenceCreationError,
     AdhocConferenceNotFound,
-    HostCallNotFound,
     HostCallAlreadyInConference,
+    HostCallNotFound,
     ParticipantCallAlreadyInConference,
     ParticipantCallNotFound,
 )
-
-import logging
+from .stasis import ADHOC_CONFERENCE_STASIS_APP
 
 logger = logging.getLogger(__name__)
 

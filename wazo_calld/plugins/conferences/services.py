@@ -1,4 +1,4 @@
-# Copyright 2018-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -7,20 +7,19 @@ from ari.exceptions import ARINotFound
 from marshmallow import ValidationError
 from requests import RequestException
 from wazo_amid_client.exceptions import AmidProtocolError
-from wazo_calld.plugin_helpers.confd import Conference
+
 from wazo_calld.plugin_helpers.ari_ import Channel
-from wazo_calld.plugin_helpers.exceptions import (
-    WazoAmidError,
-)
+from wazo_calld.plugin_helpers.confd import Conference
+from wazo_calld.plugin_helpers.exceptions import WazoAmidError
 
 from .exceptions import (
-    NoSuchConference,
-    NoSuchParticipant,
     ConferenceAlreadyRecorded,
-    ConferenceNotRecorded,
     ConferenceError,
     ConferenceHasNoParticipants,
+    ConferenceNotRecorded,
     ConferenceParticipantError,
+    NoSuchConference,
+    NoSuchParticipant,
     UserNotParticipant,
 )
 from .schemas import participant_schema

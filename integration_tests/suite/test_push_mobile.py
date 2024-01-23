@@ -1,18 +1,12 @@
-# Copyright 2019-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from hamcrest import (
-    assert_that,
-    contains_exactly,
-    has_item,
-    has_entries,
-)
-
+from hamcrest import assert_that, contains_exactly, has_entries, has_item
 from wazo_amid_client import Client as AmidClient
 from wazo_test_helpers import until
 
-from .helpers.real_asterisk import RealAsteriskIntegrationTest
 from .helpers.constants import VALID_TOKEN_MULTITENANT
+from .helpers.real_asterisk import RealAsteriskIntegrationTest
 
 
 class TestPushMobile(RealAsteriskIntegrationTest):

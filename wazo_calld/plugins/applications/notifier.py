@@ -31,7 +31,6 @@ from .schemas import (
     application_snoop_schema,
 )
 
-
 logger = logging.getLogger(__name__)
 
 

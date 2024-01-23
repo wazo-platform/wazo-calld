@@ -3,7 +3,7 @@
 ## 23.01
 
 * The following bus configuration keys have been changed:
-  
+
   * key `exchange_name` now defaults to `wazo-headers`
   * key `exchange_type` was removed
 
@@ -42,14 +42,14 @@
   * GET `/calls`
   * GET `/calls/<call-id>`
   * GET `/users/me/calls`
-  
+
 * The `answer_time` and `hangup_time` fields have been added to the following events:
 
   * `call_created`
   * `call_updated`
   * `call_answered`
   * `call_ended`
-  
+
 * The `ivr_extension` and `wait_time` fields have been added to the following resources:
 
   * POST `/faxes`

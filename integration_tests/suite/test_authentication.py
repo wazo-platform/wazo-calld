@@ -1,15 +1,9 @@
-# Copyright 2015-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from hamcrest import (
-    assert_that,
-    calling,
-    contains_string,
-    has_properties,
-)
-
-from wazo_test_helpers.hamcrest.raises import raises
+from hamcrest import assert_that, calling, contains_string, has_properties
 from wazo_calld_client.exceptions import CalldError
+from wazo_test_helpers.hamcrest.raises import raises
 
 from .helpers.base import IntegrationTest
 from .helpers.constants import INVALID_ACL_TOKEN, VALID_TOKEN

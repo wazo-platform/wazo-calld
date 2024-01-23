@@ -1,13 +1,12 @@
-# Copyright 2018-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+from wazo_amid_client import Client as AmidClient
 from wazo_auth_client import Client as AuthClient
 from wazo_confd_client import Client as ConfdClient
-from wazo_amid_client import Client as AmidClient
 from xivo.pubsub import CallbackCollector
 
-from .caches import ConfdApplicationsCache, MohCache, ConfdIsReadyThread
-from .notifier import ApplicationNotifier
+from .caches import ConfdApplicationsCache, ConfdIsReadyThread, MohCache
 from .http import (
     ApplicationCallAnswer,
     ApplicationCallHoldStartList,
@@ -33,6 +32,7 @@ from .http import (
     ApplicationSnoopItem,
     ApplicationSnoopList,
 )
+from .notifier import ApplicationNotifier
 from .services import ApplicationService
 from .stasis import ApplicationStasis
 

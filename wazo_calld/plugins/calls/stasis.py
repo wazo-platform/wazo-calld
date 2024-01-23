@@ -1,25 +1,15 @@
-# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
 
 from wazo_calld.ari_ import DEFAULT_APPLICATION_NAME
 
-from .event import (
-    CallEvent,
-    ConnectCallEvent,
-    StartCallEvent,
-)
+from .event import CallEvent, ConnectCallEvent, StartCallEvent
 from .exceptions import InvalidConnectCallEvent
 from .stat_sender import StatSender
-from .state import (
-    CallStateOnHook,
-    state_factory,
-)
-from .state_persistor import (
-    ChannelCacheEntry,
-    StatePersistor,
-)
+from .state import CallStateOnHook, state_factory
+from .state_persistor import ChannelCacheEntry, StatePersistor
 
 logger = logging.getLogger(__name__)
 

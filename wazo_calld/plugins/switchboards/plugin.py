@@ -1,8 +1,7 @@
-# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from wazo_confd_client import Client as ConfdClient
-
 from xivo.pubsub import CallbackCollector
 
 from .confd_client_cache import (
@@ -10,7 +9,6 @@ from .confd_client_cache import (
     ConfdClientGetUUIDCacheDecorator,
     ConfdClientUserLineGetCacheDecorator,
 )
-from .notifier import SwitchboardsNotifier
 from .http import (
     SwitchboardCallHeldAnswerResource,
     SwitchboardCallHeldResource,
@@ -18,6 +16,7 @@ from .http import (
     SwitchboardCallsHeldResource,
     SwitchboardCallsQueuedResource,
 )
+from .notifier import SwitchboardsNotifier
 from .services import SwitchboardsService
 from .stasis import SwitchboardsStasis
 

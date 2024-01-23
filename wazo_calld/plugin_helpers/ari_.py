@@ -1,20 +1,13 @@
-# Copyright 2015-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+import json
 import logging
 import time
-import json
 
-from ari.exceptions import (
-    ARINotFound,
-    ARINotInStasis,
-)
+from ari.exceptions import ARINotFound, ARINotInStasis
 
-from .exceptions import (
-    BridgeNotFound,
-    NotEnoughChannels,
-    TooManyChannels,
-)
+from .exceptions import BridgeNotFound, NotEnoughChannels, TooManyChannels
 
 logger = logging.getLogger(__name__)
 

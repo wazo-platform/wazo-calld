@@ -1,8 +1,9 @@
-# Copyright 2019-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from unittest import TestCase
-from unittest.mock import Mock, sentinel as s
+from unittest.mock import Mock
+from unittest.mock import sentinel as s
 
 from ..notifier import (
     EndpointStatusNotifier,

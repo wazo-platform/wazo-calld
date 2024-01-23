@@ -1,17 +1,17 @@
-# Copyright 2015-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
 
 from flask import request
 from requests import HTTPError
+from werkzeug.local import LocalProxy as Proxy
 from xivo import auth_verifier
 from xivo.auth_verifier import required_tenant
-from werkzeug.local import LocalProxy as Proxy
 
 from wazo_calld.exceptions import (
-    TokenWithUserUUIDRequiredError,
     MasterTenantNotInitialized,
+    TokenWithUserUUIDRequiredError,
 )
 from wazo_calld.http_server import app
 

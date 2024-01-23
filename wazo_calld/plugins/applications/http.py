@@ -1,4 +1,4 @@
-# Copyright 2018-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from flask import request
@@ -8,14 +8,14 @@ from wazo_calld.http import AuthResource
 
 from .schemas import (
     application_call_request_schema,
-    application_call_user_request_schema,
     application_call_schema,
+    application_call_user_request_schema,
     application_dtmf_schema,
     application_node_schema,
     application_playback_schema,
     application_schema,
-    application_snoop_schema,
     application_snoop_put_schema,
+    application_snoop_schema,
 )
 
 

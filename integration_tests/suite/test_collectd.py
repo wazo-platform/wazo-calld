@@ -1,16 +1,13 @@
-# Copyright 2015-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from hamcrest import assert_that
-from hamcrest import has_item
-from hamcrest import matches_regexp
-from hamcrest import not_
+from hamcrest import assert_that, has_item, matches_regexp, not_
 from wazo_test_helpers import until
 
 from .helpers.ari_ import MockChannel
 from .helpers.base import IntegrationTest
-from .helpers.constants import BUS_EXCHANGE_COLLECTD
 from .helpers.calld import new_call_id
+from .helpers.constants import BUS_EXCHANGE_COLLECTD
 from .helpers.wait_strategy import CalldEverythingOkWaitStrategy
 
 STASIS_APP = 'callcontrol'

@@ -1,15 +1,12 @@
-# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from hamcrest import assert_that
-from hamcrest import calling
-from hamcrest import instance_of
-from hamcrest import raises
-from unittest.mock import Mock
 from unittest import TestCase
+from unittest.mock import Mock
 
-from ..state import CallState
-from ..state import StateFactory
+from hamcrest import assert_that, calling, instance_of, raises
+
+from ..state import CallState, StateFactory
 
 
 class TestStateFactory(TestCase):

@@ -3,11 +3,13 @@
 
 import logging
 
-from wazo_bus.collectd.calls import CallAbandonedCollectdEvent
-from wazo_bus.collectd.calls import CallConnectCollectdEvent
-from wazo_bus.collectd.calls import CallDurationCollectdEvent
-from wazo_bus.collectd.calls import CallEndCollectdEvent
-from wazo_bus.collectd.calls import CallStartCollectdEvent
+from wazo_bus.collectd.calls import (
+    CallAbandonedCollectdEvent,
+    CallConnectCollectdEvent,
+    CallDurationCollectdEvent,
+    CallEndCollectdEvent,
+    CallStartCollectdEvent,
+)
 
 logger = logging.getLogger(__name__)
 

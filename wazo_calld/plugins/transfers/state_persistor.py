@@ -1,4 +1,4 @@
-# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -6,10 +6,11 @@ import threading
 
 from wazo_calld.plugin_helpers.ari_ import (
     GlobalVariableAdapter,
+    GlobalVariableConstantNameAdapter,
     GlobalVariableJsonAdapter,
     GlobalVariableNameDecorator,
-    GlobalVariableConstantNameAdapter,
 )
+
 from .transfer import Transfer
 
 logger = logging.getLogger(__name__)

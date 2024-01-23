@@ -1,17 +1,15 @@
-# Copyright 2019-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from hamcrest import assert_that
-from hamcrest import has_entries
-from hamcrest import has_item
+from hamcrest import assert_that, has_entries, has_item
 from wazo_test_helpers import until
 
+from .helpers.ari_ import MockEndpoint
 from .helpers.base import IntegrationTest
 from .helpers.calld import new_call_id
+from .helpers.confd import MockLine, MockTrunk
 from .helpers.constants import XIVO_UUID
 from .helpers.wait_strategy import CalldEverythingOkWaitStrategy
-from .helpers.ari_ import MockEndpoint
-from .helpers.confd import MockLine, MockTrunk
 
 
 class TestTrunkBusConsume(IntegrationTest):

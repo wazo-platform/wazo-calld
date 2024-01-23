@@ -1,13 +1,11 @@
-# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
 import logging
 
+from ari.exceptions import ARINotFound, ARINotInStasis
 from xivo.pubsub import Pubsub
-
-from ari.exceptions import ARINotFound
-from ari.exceptions import ARINotInStasis
 
 from wazo_calld.ari_ import DEFAULT_APPLICATION_NAME
 from wazo_calld.plugin_helpers.ari_ import Channel
@@ -15,10 +13,7 @@ from wazo_calld.plugin_helpers.exceptions import WazoAmidError
 
 from . import ari_helpers
 from .event import CreateTransferEvent, TransferRecipientAnsweredEvent
-from .exceptions import (
-    InvalidEvent,
-    TransferException,
-)
+from .exceptions import InvalidEvent, TransferException
 from .lock import HangupLock, InvalidLock
 from .transfer import TransferRole, TransferStatus
 

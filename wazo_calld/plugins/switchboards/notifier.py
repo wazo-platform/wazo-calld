@@ -4,15 +4,13 @@
 import logging
 
 from wazo_bus.resources.switchboard.event import (
-    SwitchboardQueuedCallsUpdatedEvent,
-    SwitchboardQueuedCallAnsweredEvent,
-    SwitchboardHeldCallsUpdatedEvent,
     SwitchboardHeldCallAnsweredEvent,
+    SwitchboardHeldCallsUpdatedEvent,
+    SwitchboardQueuedCallAnsweredEvent,
+    SwitchboardQueuedCallsUpdatedEvent,
 )
-from .http import (
-    held_call_schema,
-    queued_call_schema,
-)
+
+from .http import held_call_schema, queued_call_schema
 
 logger = logging.getLogger(__name__)
 

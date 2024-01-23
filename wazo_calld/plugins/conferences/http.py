@@ -1,10 +1,9 @@
-# Copyright 2018-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from xivo.tenant_flask_helpers import Tenant
 
-from wazo_calld.auth import get_token_user_uuid_from_request
-from wazo_calld.auth import required_acl
+from wazo_calld.auth import get_token_user_uuid_from_request, required_acl
 from wazo_calld.http import AuthResource
 
 from .schemas import participant_schema

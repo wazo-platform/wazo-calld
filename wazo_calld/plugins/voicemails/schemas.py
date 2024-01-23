@@ -1,8 +1,7 @@
-# Copyright 2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from marshmallow import Schema, fields
-
 from xivo.mallow.validate import OneOf
 
 VALID_GREETINGS = ["unavailable", "busy", "name"]

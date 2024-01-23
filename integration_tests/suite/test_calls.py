@@ -1,8 +1,8 @@
-# Copyright 2015-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-import uuid
 import json
+import uuid
 
 from hamcrest import (
     assert_that,
@@ -23,22 +23,19 @@ from wazo_calld_client.exceptions import CalldError
 from wazo_test_helpers import until
 from wazo_test_helpers.hamcrest.raises import raises
 
-from .helpers.ari_ import MockApplication
-from .helpers.ari_ import MockBridge
-from .helpers.ari_ import MockChannel
+from .helpers.ari_ import MockApplication, MockBridge, MockChannel
 from .helpers.auth import MockUserToken
 from .helpers.base import IntegrationTest
 from .helpers.calld import new_call_id, new_uuid
-from .helpers.confd import MockLine
-from .helpers.confd import MockUser
+from .helpers.confd import MockLine, MockUser
 from .helpers.constants import (
     ENDPOINT_AUTOANSWER,
     SOME_LINE_ID,
-    VALID_TOKEN,
     VALID_TENANT,
+    VALID_TOKEN,
 )
 from .helpers.hamcrest_ import HamcrestARIChannel
-from .helpers.real_asterisk import RealAsteriskIntegrationTest, RealAsterisk
+from .helpers.real_asterisk import RealAsterisk, RealAsteriskIntegrationTest
 from .helpers.wait_strategy import CalldUpWaitStrategy
 
 SOME_LOCAL_CHANNEL_NAME = 'Local/channel'

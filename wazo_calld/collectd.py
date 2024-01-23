@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from wazo_bus.base import Base
-from wazo_bus.mixins import QueuePublisherMixin, ThreadableMixin, CollectdMixin
+from wazo_bus.mixins import CollectdMixin, QueuePublisherMixin, ThreadableMixin
 
 
 class CollectdPublisher(CollectdMixin, QueuePublisherMixin, ThreadableMixin, Base):

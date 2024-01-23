@@ -1,14 +1,14 @@
-# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from hamcrest import assert_that, calling, has_entries, has_items, has_properties
+from wazo_calld_client.exceptions import CalldError
 from wazo_test_helpers import until
 from wazo_test_helpers.hamcrest.raises import raises
-from wazo_calld_client.exceptions import CalldError
 
 from .helpers.base import IntegrationTest
-from .helpers.wait_strategy import CalldUpWaitStrategy, CalldEverythingOkWaitStrategy
 from .helpers.real_asterisk import RealAsteriskIntegrationTest
+from .helpers.wait_strategy import CalldEverythingOkWaitStrategy, CalldUpWaitStrategy
 
 
 class TestNoARI(IntegrationTest):

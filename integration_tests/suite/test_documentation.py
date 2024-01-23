@@ -1,11 +1,11 @@
-# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
+
 import requests
 import yaml
-
-from openapi_spec_validator import validate_spec, openapi_v2_spec_validator
+from openapi_spec_validator import openapi_v2_spec_validator, validate_spec
 
 from .helpers.base import IntegrationTest
 from .helpers.wait_strategy import NoWaitStrategy

@@ -1,23 +1,20 @@
-# Copyright 2017-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
 
+from ari.exceptions import ARIException, ARINotFound
 from requests.exceptions import HTTPError
 
-from ari.exceptions import (
-    ARIException,
-    ARINotFound,
-)
 from wazo_calld.ari_ import DEFAULT_APPLICATION_NAME
 from wazo_calld.plugin_helpers import ami
 from wazo_calld.plugin_helpers.ari_ import Channel
 from wazo_calld.plugin_helpers.exceptions import WazoAmidError
 
 from .exceptions import (
-    RelocateCreationError,
     RelocateCancellationError,
     RelocateCompletionError,
+    RelocateCreationError,
 )
 
 logger = logging.getLogger(__name__)

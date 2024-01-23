@@ -1,8 +1,9 @@
-# Copyright 2021-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2021-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from unittest import TestCase
-from unittest.mock import Mock, sentinel as s
+from unittest.mock import Mock
+from unittest.mock import sentinel as s
 
 from wazo_calld.plugins.switchboards.services import SwitchboardsService
 

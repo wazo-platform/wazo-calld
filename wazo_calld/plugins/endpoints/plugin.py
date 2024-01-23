@@ -1,4 +1,4 @@
-# Copyright 2019-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from wazo_confd_client import Client as ConfdClient
@@ -7,8 +7,8 @@ from xivo.status import Status
 
 from .bus import EventHandler
 from .http import LineEndpoints, TrunkEndpoints
-from .services import ConfdCache, EndpointsService, NotifyingStatusCache
 from .notifier import EndpointStatusNotifier
+from .services import ConfdCache, EndpointsService, NotifyingStatusCache
 
 
 class Plugin:

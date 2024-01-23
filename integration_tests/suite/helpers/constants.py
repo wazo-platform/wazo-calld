@@ -1,8 +1,9 @@
-# Copyright 2015-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from kombu import Exchange
 import os
+
+from kombu import Exchange
 
 ASSET_ROOT = os.path.join(os.path.dirname(__file__), '..', '..', 'assets')
 

@@ -1,4 +1,4 @@
-# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -24,7 +24,7 @@ from .exceptions import (
     TransferCreationError,
 )
 from .lock import HangupLock, InvalidLock
-from .state import TransferStateReadyNonStasis, TransferStateReady
+from .state import TransferStateReady, TransferStateReadyNonStasis
 
 logger = logging.getLogger(__name__)
 
