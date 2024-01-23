@@ -10,7 +10,6 @@ from contextlib import contextmanager
 
 import ari
 import swaggerpy.http_client
-from requests.exceptions import HTTPError
 from websocket import WebSocketException
 from xivo.pubsub import Pubsub
 from xivo.status import Status
@@ -285,7 +284,7 @@ class CoreARI:
                 return
             else:
                 self._connection_error(e)
-        except (WebSocketException, HTTPError) as e:
+        except WebSocketException as e:
             self._connection_error(e)
         except ValueError:
             logger.warning('Received non-JSON message from ARI... disconnecting')
