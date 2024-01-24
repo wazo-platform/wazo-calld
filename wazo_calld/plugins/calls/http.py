@@ -11,7 +11,9 @@ from .schemas import (
     CallRequestSchema,
     UserCallRequestSchema,
     call_schema,
+    connect_call_request_body_schema,
 )
+from .services import CallsService
 
 call_request_schema = CallRequestSchema()
 call_dtmf_schema = CallDtmfSchema()
@@ -274,11 +276,25 @@ class MyCallAnswerResource(AuthResource):
 
 class ConnectCallToUserResource(AuthResource):
     def __init__(self, calls_service):
-        self.calls_service = calls_service
+        self.calls_service: CallsService = calls_service
 
     @required_acl('calld.calls.{call_id}.user.{user_uuid}.update')
     def put(self, call_id, user_uuid):
-        new_call_id = self.calls_service.connect_user(call_id, user_uuid)
+        body = None
+        if request.data:
+            body = connect_call_request_body_schema.load(request.json)
+
+        args = {
+            'call_id': call_id,
+            'user_uuid': user_uuid,
+        }
+
+        if body:
+            # NOTE(clanglois): setting the 'timeout' to null
+            # allows disabling the timeout(infinite ringing)
+            args['timeout'] = body['timeout']
+
+        new_call_id = self.calls_service.connect_user(**args)
         new_call = self.calls_service.get(new_call_id)
 
         return call_schema.dump(new_call)

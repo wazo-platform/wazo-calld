@@ -94,4 +94,14 @@ class CallSchema(CallBaseSchema):
         return call
 
 
+class ConnectCallRequestBodySchema(CallBaseSchema):
+    timeout = fields.Integer(
+        validate=Range(min=0),
+        missing=30,
+        allow_none=True,
+    )
+
+
+connect_call_request_body_schema = ConnectCallRequestBodySchema()
+
 call_schema = CallSchema()

@@ -328,7 +328,7 @@ class CallsService:
         self._verify_user(call_id, user_uuid)
         self._ari.channels.hangup(channelId=call_id)
 
-    def connect_user(self, call_id, user_uuid):
+    def connect_user(self, call_id, user_uuid, timeout=30):
         channel_id = call_id
         endpoint = User(user_uuid, self._confd).main_line().interface()
 
@@ -347,6 +347,8 @@ class CallsService:
             app=DEFAULT_APPLICATION_NAME,
             appArgs=[app_instance, 'dialed_from', channel_id],
             originator=call_id,
+            # -1 means no timeout
+            timeout=timeout or -1,
         )
 
         # if the caller hangs up, we cancel our originate
