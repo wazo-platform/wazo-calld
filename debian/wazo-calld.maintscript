@@ -1,1 +1,0 @@
-mv_conffile /etc/xivo-ctid-ng/config.yml /etc/wazo-calld/config.yml 19.07
