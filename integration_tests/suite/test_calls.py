@@ -2306,6 +2306,7 @@ class TestConnectUser(IntegrationTest):
         new_call = self.calld.connect_user(call_id, 'user-uuid')
 
         assert_that(new_call, has_entries(call_id=my_new_call_id))
+
         assert_that(
             self.ari.requests(),
             has_entries(
@@ -2317,6 +2318,52 @@ class TestConnectUser(IntegrationTest):
                             ['app', 'callcontrol'],
                             ['endpoint', 'pjsip/line-name'],
                             ['appArgs', f'sw1,dialed_from,{call_id}'],
+                            ['timeout', '30'],
+                            ['originator', call_id],
+                        ),
+                    )
+                )
+            ),
+        )
+
+    def test_one_call_one_user_with_timeout(
+        self,
+    ):
+        call_id = new_call_id()
+        my_new_call_id = new_call_id(leap=1)
+        self.ari.set_channels(
+            MockChannel(id=call_id),
+            MockChannel(id=my_new_call_id),
+        )
+        self.ari.set_channel_variable({my_new_call_id: {'XIVO_USERUUID': 'user-uuid'}})
+        self.ari.set_global_variables(
+            {
+                f'XIVO_CHANNELS_{call_id}': json.dumps(
+                    {'app': 'sw', 'app_instance': 'sw1', 'state': 'ringing'}
+                )
+            }
+        )
+        self.confd.set_users(MockUser(uuid='user-uuid', line_ids=['line-id']))
+        self.confd.set_lines(
+            MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL)
+        )
+        self.ari.set_originates(MockChannel(id=my_new_call_id))
+
+        new_call = self.calld.connect_user(call_id, 'user-uuid', timeout=1)
+
+        assert_that(new_call, has_entries(call_id=my_new_call_id))
+        assert_that(
+            self.ari.requests(),
+            has_entries(
+                requests=has_items(
+                    has_entries(
+                        method='POST',
+                        path='/ari/channels',
+                        query=contains_inanyorder(
+                            ['app', 'callcontrol'],
+                            ['endpoint', 'pjsip/line-name'],
+                            ['appArgs', f'sw1,dialed_from,{call_id}'],
+                            ['timeout', '1'],
                             ['originator', call_id],
                         ),
                     )
