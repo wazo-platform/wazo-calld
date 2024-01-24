@@ -1,6 +1,6 @@
 Source: wazo-calld
 Section: python
-Priority: extra
+Priority: optional
 Maintainer: Wazo Maintainers <dev@wazo.community>
 Build-Depends:
  debhelper (>= 12),
@@ -28,15 +28,11 @@ Depends:
  python3-stevedore,
  python3-werkzeug,
  python3-wsaccel,
- rename,
  wazo-amid-client-python3,
  wazo-auth-client-python3,
  wazo-confd-client-python3,
  wazo-bus-python3,
  xivo-lib-python-python3
-Provides: xivo-ctid-ng
-Replaces: xivo-ctid-ng
-Conflicts: xivo-ctid-ng
 Description: Wazo call server
  Wazo is a system based on a powerful IPBX, to bring an easy to
  install solution for telephony and related services.
