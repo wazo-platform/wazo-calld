@@ -12,6 +12,7 @@ from wazo_calld_client import Client
 
 from .constants import VALID_TOKEN
 
+MISSING = object()
 
 class CalldClient(Client):
     def is_up(self):
@@ -100,13 +101,19 @@ class LegacyCalldClient:
         response = self.delete_user_me_call_result(call_id, token=token)
         assert_that(response.status_code, equal_to(204))
 
-    def put_call_user_result(self, call_id, user_uuid, token):
+    def put_call_user_result(self, call_id, user_uuid, token, timeout=MISSING):
         url = self.url('calls', call_id, 'user', user_uuid)
-        result = requests.put(url, headers=self._headers(token=token))
+        body = {}
+        if timeout is not MISSING:
+            body['timeout'] = timeout
+        params = {
+            'json': body
+        } if body else {}
+        result = requests.put(url, headers=self._headers(token=token), **params)
         return result
 
-    def connect_user(self, call_id, user_uuid):
-        response = self.put_call_user_result(call_id, user_uuid, token=VALID_TOKEN)
+    def connect_user(self, call_id, user_uuid, timeout=MISSING):
+        response = self.put_call_user_result(call_id, user_uuid, token=VALID_TOKEN, timeout=timeout)
         assert_that(response.status_code, equal_to(200))
         return response.json()
 
