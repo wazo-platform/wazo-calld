@@ -328,7 +328,7 @@ class CallsService:
         self._verify_user(call_id, user_uuid)
         self._ari.channels.hangup(channelId=call_id)
 
-    def connect_user(self, call_id, user_uuid, timeout=30):
+    def connect_user(self, call_id, user_uuid, timeout):
         channel_id = call_id
         endpoint = User(user_uuid, self._confd).main_line().interface()
 

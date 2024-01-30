@@ -280,19 +280,13 @@ class ConnectCallToUserResource(AuthResource):
 
     @required_acl('calld.calls.{call_id}.user.{user_uuid}.update')
     def put(self, call_id, user_uuid):
-        body = None
-        if request.data:
-            body = connect_call_request_body_schema.load(request.json)
-
+        body = connect_call_request_body_schema.load(request.json if request.data else {})
+        assert body
         args = {
             'call_id': call_id,
             'user_uuid': user_uuid,
+            'timeout': body['timeout']
         }
-
-        if body:
-            # NOTE(clanglois): setting the 'timeout' to null
-            # allows disabling the timeout(infinite ringing)
-            args['timeout'] = body['timeout']
 
         new_call_id = self.calls_service.connect_user(**args)
         new_call = self.calls_service.get(new_call_id)
