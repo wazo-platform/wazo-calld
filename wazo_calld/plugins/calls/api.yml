@@ -254,6 +254,12 @@ paths:
         description: UUID of the user
         required: true
         type: string
+      - name: body
+        in: body
+        description: options affecting the call to the targeted user
+        required: false
+        schema:
+          $ref: '#/definitions/ConnectCallToUserRequest'
       tags:
       - calls
       responses:
@@ -508,6 +514,16 @@ paths:
         '503':
           $ref: '#/responses/AnotherServiceUnavailable'
 definitions:
+  ConnectCallToUserRequest:
+    type: object
+    properties:
+      timeout:
+        description: |
+          timeout in seconds for the dial attempt to the targeted user, 
+          or null for no timeout(infinite ring time).
+          Omission leads to a default timeout of 30s.
+        type: integer
+        nullable: true
   CallRequest:
     type: object
     properties:
