@@ -14,6 +14,7 @@ from .constants import VALID_TOKEN
 
 MISSING = object()
 
+
 class CalldClient(Client):
     def is_up(self):
         try:
@@ -106,14 +107,14 @@ class LegacyCalldClient:
         body = {}
         if timeout is not MISSING:
             body['timeout'] = timeout
-        params = {
-            'json': body
-        } if body else {}
+        params = {'json': body} if body else {}
         result = requests.put(url, headers=self._headers(token=token), **params)
         return result
 
     def connect_user(self, call_id, user_uuid, timeout=MISSING):
-        response = self.put_call_user_result(call_id, user_uuid, token=VALID_TOKEN, timeout=timeout)
+        response = self.put_call_user_result(
+            call_id, user_uuid, token=VALID_TOKEN, timeout=timeout
+        )
         assert_that(response.status_code, equal_to(200))
         return response.json()
 
