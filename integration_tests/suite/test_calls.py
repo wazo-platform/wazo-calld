@@ -4,6 +4,7 @@
 import json
 import uuid
 
+import pytest
 from hamcrest import (
     assert_that,
     calling,
@@ -2303,7 +2304,7 @@ class TestConnectUser(IntegrationTest):
         )
         self.ari.set_originates(MockChannel(id=my_new_call_id))
 
-        new_call = self.calld.connect_user(call_id, 'user-uuid')
+        new_call = self.calld_client.calls.connect_user(call_id, 'user-uuid')
 
         assert_that(new_call, has_entries(call_id=my_new_call_id))
 
@@ -2349,7 +2350,7 @@ class TestConnectUser(IntegrationTest):
         )
         self.ari.set_originates(MockChannel(id=my_new_call_id))
 
-        new_call = self.calld.connect_user(call_id, 'user-uuid', timeout=1)
+        new_call = self.calld_client.calls.connect_user(call_id, 'user-uuid', timeout=1)
 
         assert_that(new_call, has_entries(call_id=my_new_call_id))
         assert_that(
@@ -2373,34 +2374,40 @@ class TestConnectUser(IntegrationTest):
 
     def test_given_no_confd_when_connect_user_then_503(self):
         with self.confd_stopped():
-            result = self.calld.put_call_user_result(
-                call_id='call-id', user_uuid='user-uuid', token=VALID_TOKEN
-            )
+            with pytest.raises(CalldError) as exc_info:
+                self.calld_client.calls.connect_user(
+                    'call-id', 'user-uuid', token=VALID_TOKEN
+                )
 
-        assert_that(result.status_code, equal_to(503))
+        calld_error = exc_info.value
+        assert_that(calld_error.status_code, equal_to(503))
 
     def test_given_no_user_when_connect_user_then_400(self):
         call_id = new_call_id()
         self.ari.set_channels(MockChannel(id=call_id))
 
-        result = self.calld.put_call_user_result(
-            call_id, 'user-uuid', token=VALID_TOKEN
-        )
+        with pytest.raises(CalldError) as exc_info:
+            self.calld_client.calls.connect_user(
+                call_id, 'user-uuid', token=VALID_TOKEN
+            )
 
-        assert_that(result.status_code, equal_to(400))
-        assert_that(result.json()['message'].lower(), contains_string('user'))
+        calld_error = exc_info.value
+        assert_that(calld_error.status_code, equal_to(400))
+        assert_that(calld_error.message.lower(), contains_string('user'))
 
     def test_given_user_has_no_line_when_connect_user_then_400(self):
         call_id = new_call_id()
         self.ari.set_channels(MockChannel(id=call_id))
         self.confd.set_users(MockUser(uuid='user-uuid'))
 
-        result = self.calld.put_call_user_result(
-            call_id, 'user-uuid', token=VALID_TOKEN
-        )
+        with pytest.raises(CalldError) as exc_info:
+            self.calld_client.calls.connect_user(
+                call_id, 'user-uuid', token=VALID_TOKEN
+            )
 
-        assert_that(result.status_code, equal_to(400))
-        assert_that(result.json()['message'].lower(), contains_string('user'))
+        calld_error = exc_info.value
+        assert_that(calld_error.status_code, equal_to(400))
+        assert_that(calld_error.message.lower(), contains_string('user'))
 
     def test_given_no_call_when_connect_user_then_404(self):
         self.confd.set_users(MockUser(uuid='user-uuid', line_ids=['line-id']))
@@ -2408,12 +2415,14 @@ class TestConnectUser(IntegrationTest):
             MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL)
         )
 
-        result = self.calld.put_call_user_result(
-            'call-id', 'user-uuid', token=VALID_TOKEN
-        )
+        with pytest.raises(CalldError) as exc_info:
+            self.calld_client.calls.connect_user(
+                'call-id', 'user-uuid', token=VALID_TOKEN
+            )
 
-        assert_that(result.status_code, equal_to(404))
-        assert_that(result.json()['message'].lower(), contains_string('call'))
+        calld_error = exc_info.value
+        assert_that(calld_error.status_code, equal_to(404))
+        assert_that(calld_error.message.lower(), contains_string('call'))
 
 
 class TestCallerID(RealAsteriskIntegrationTest):
