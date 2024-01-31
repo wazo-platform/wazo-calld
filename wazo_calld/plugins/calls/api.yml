@@ -523,7 +523,6 @@ definitions:
           or null for no timeout(infinite ring time).
           Omission leads to a default timeout of 30s.
         type: integer
-        nullable: true
   CallRequest:
     type: object
     properties:
