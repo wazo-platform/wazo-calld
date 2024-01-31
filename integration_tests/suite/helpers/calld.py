@@ -100,16 +100,6 @@ class LegacyCalldClient:
         response = self.delete_user_me_call_result(call_id, token=token)
         assert_that(response.status_code, equal_to(204))
 
-    def put_call_user_result(self, call_id, user_uuid, token):
-        url = self.url('calls', call_id, 'user', user_uuid)
-        result = requests.put(url, headers=self._headers(token=token))
-        return result
-
-    def connect_user(self, call_id, user_uuid):
-        response = self.put_call_user_result(call_id, user_uuid, token=VALID_TOKEN)
-        assert_that(response.status_code, equal_to(200))
-        return response.json()
-
     def get_users_me_transfers_result(self, token=None):
         url = self.url('users', 'me', 'transfers')
         result = requests.get(url, headers=self._headers(token=token))

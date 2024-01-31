@@ -1,5 +1,11 @@
 # Changelog
 
+## 24.02
+
+* The `timeout` field has been added to the following resources:
+
+  * PUT `/calls/<call-id>/user/<user-uuid>`
+
 ## 23.01
 
 * The following bus configuration keys have been changed:

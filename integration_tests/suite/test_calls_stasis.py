@@ -124,7 +124,7 @@ class TestDialedFrom(IntegrationTest):
         self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='pjsip'))
         self.ari.set_originates(MockChannel(id=new_call_id))
 
-        self.calld.connect_user(call_id, 'user-uuid')
+        self.calld_client.calls.connect_user(call_id, 'user-uuid')
 
         self.stasis.event_hangup(call_id)
 
