@@ -161,6 +161,7 @@ class CallsBusEventHandler:
     def _partial_call_from_channel_id(self, channel_id):
         channel = Channel(channel_id, self.ari)
         call = Call(channel.id)
+        call.channel_name = channel.asterisk_name()
         call.user_uuid = channel.user()
         call.tenant_uuid = channel.tenant_uuid()
         return call
@@ -197,7 +198,6 @@ class CallsBusEventHandler:
 
         payload = {
             'user_uuid': user_uuid,
-            'tenant_uuid': tenant_uuid,
             'caller_user_uuid': event['caller_user_uuid'] or None,
             'caller_id_name': event['caller_id_name'],
             'caller_id_number': event['caller_id_number'],
@@ -205,7 +205,7 @@ class CallsBusEventHandler:
             'conversation_id': event['conversation_id'],
             'reason': reason,
         }
-        self.notifier.user_missed_call(payload)
+        self.notifier.user_missed_call(payload, tenant_uuid, user_uuid)
 
     def _set_dial_echo_result(self, event):
         if event['UserEvent'] != 'dial_echo':
