@@ -5,6 +5,7 @@
 class Call:
     def __init__(self, id_):
         self.id_ = id_
+        self.channel_name = ''
         self.conversation_id = None
         self.creation_time = None
         self.bridges = []
