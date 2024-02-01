@@ -15,6 +15,7 @@ from wazo_calld.plugin_helpers.exceptions import WazoAmidError
 
 from .call import Call
 from .exceptions import NoSuchCall
+from .notifier import CallNotifier
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +30,7 @@ class CallsBusEventHandler:
         services,
         xivo_uuid,
         dial_echo_manager,
-        notifier,
+        notifier: CallNotifier,
     ):
         self.ami = ami
         self.ari = ari
@@ -83,7 +84,8 @@ class CallsBusEventHandler:
 
     def _relay_channel_created(self, event):
         channel_id = event['Uniqueid']
-        if event['Channel'].startswith('Local/'):
+        channel_name = event['Channel']
+        if channel_name.startswith('Local/'):
             logger.debug('Ignoring local channel creation: %s', channel_id)
             return
         logger.debug('Relaying to bus: channel %s created', channel_id)
@@ -104,7 +106,7 @@ class CallsBusEventHandler:
                 self.ari, [channel.id]
             )
             self._set_conversation_direction_cache(channel_id, call.direction)
-        self.notifier.call_created(call)
+        self.notifier.call_created(channel_name, call)
 
     def _collectd_channel_created(self, event):
         channel_id = event['Uniqueid']
@@ -113,7 +115,8 @@ class CallsBusEventHandler:
 
     def _relay_channel_updated(self, event):
         channel_id = event['Uniqueid']
-        if event['Channel'].startswith('Local/'):
+        channel_name = event['Channel']
+        if channel_name.startswith('Local/'):
             logger.debug('Ignoring local channel update: %s', channel_id)
             return
         logger.debug('Relaying to bus: channel %s updated', channel_id)
@@ -128,13 +131,14 @@ class CallsBusEventHandler:
                 'ignoring event %s because this is a device in autoprov', event['Event']
             )
             return
-        self.notifier.call_updated(call)
+        self.notifier.call_updated(channel_name, call)
 
     def _relay_channel_answered(self, event):
         if event['ChannelStateDesc'] != 'Up':
             return
         channel_id = event['Uniqueid']
-        if event['Channel'].startswith('Local/'):
+        channel_name = event['Channel']
+        if channel_name.startswith('Local/'):
             logger.debug('Ignoring local channel answer: %s', channel_id)
             return
 
@@ -160,7 +164,7 @@ class CallsBusEventHandler:
                 self.ari, [channel.id]
             )
             self._set_conversation_direction_cache(channel_id, call.direction)
-        self.notifier.call_answered(call)
+        self.notifier.call_answered(channel_name, call)
 
     def _collectd_channel_ended(self, event):
         channel_id = event['Uniqueid']
@@ -176,19 +180,21 @@ class CallsBusEventHandler:
 
     def _channel_hold(self, event):
         channel_id = event['Uniqueid']
+        channel_name = event['Channel']
         logger.debug('marking channel %s on hold', channel_id)
         ami.set_variable_ami(self.ami, channel_id, 'XIVO_ON_HOLD', '1')
 
         call = self._partial_call_from_channel_id(channel_id)
-        self.notifier.call_hold(call)
+        self.notifier.call_hold(channel_name, call)
 
     def _channel_unhold(self, event):
         channel_id = event['Uniqueid']
+        channel_name = event['Channel']
         logger.debug('marking channel %s not on hold', channel_id)
         ami.unset_variable_ami(self.ami, channel_id, 'XIVO_ON_HOLD')
 
         call = self._partial_call_from_channel_id(channel_id)
-        self.notifier.call_resume(call)
+        self.notifier.call_resume(channel_name, call)
 
     def _relay_user_missed_call(self, event):
         if event['UserEvent'] != 'user_missed_call':
@@ -214,7 +220,7 @@ class CallsBusEventHandler:
             'conversation_id': event['conversation_id'],
             'reason': reason,
         }
-        self.notifier.user_missed_call(payload)
+        self.notifier.user_missed_call(payload, tenant_uuid, user_uuid)
 
     def _set_dial_echo_result(self, event):
         if event['UserEvent'] != 'dial_echo':
@@ -227,10 +233,11 @@ class CallsBusEventHandler:
 
     def _relay_dtmf(self, event):
         channel_id = event['Uniqueid']
+        channel_name = event['Channel']
         digit = event['Digit']
         logger.debug('Relaying to bus: channel %s DTMF digit %s', channel_id, digit)
         call = self._partial_call_from_channel_id(channel_id)
-        self.notifier.call_dtmf(call, digit)
+        self.notifier.call_dtmf(channel_name, call, digit)
 
     def _set_conversation_direction_cache(self, channel_id, direction):
         set_channel_id_var_sync(
@@ -246,6 +253,7 @@ class CallsBusEventHandler:
 
     def _relay_channel_entered_bridge(self, event):
         channel_id = event['Uniqueid']
+        channel_name = event['Channel']
         bridge_id = event['BridgeUniqueid']
         logger.debug(
             'Relaying to bus: channel %s entered bridge %s', channel_id, bridge_id
@@ -284,10 +292,11 @@ class CallsBusEventHandler:
             if call.direction != call_direction:
                 self._set_conversation_direction_cache(channel.id, call_direction)
                 call.direction = call_direction
-            self.notifier.call_updated(call)
+            self.notifier.call_updated(channel_name, call)
 
     def _relay_channel_left_bridge(self, event):
         channel_id = event['Uniqueid']
+        channel_name = event['Channel']
         bridge_id = event['BridgeUniqueid']
         channels_in_bridge = int(event['BridgeNumChannels'])
         if channels_in_bridge == 0:
@@ -328,7 +337,7 @@ class CallsBusEventHandler:
             if call.direction != call_direction:
                 self._set_conversation_direction_cache(channel.id, call_direction)
                 call.direction = call_direction
-            self.notifier.call_updated(call)
+            self.notifier.call_updated(channel_name, call)
 
     def _mix_monitor_start(self, event):
         channel_id = event['Uniqueid']
