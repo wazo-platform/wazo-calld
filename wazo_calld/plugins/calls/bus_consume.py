@@ -150,9 +150,10 @@ class CallsBusEventHandler:
         logger.debug('sending stat for channel ended %s', channel_id)
         self.collectd.publish(ChannelEndedCollectdEvent())
 
-    def _partial_call_from_channel_id(self, channel_id):
+    def _partial_call_from_channel_id(self, channel_id, channel_name):
         channel = Channel(channel_id, self.ari)
         call = Call(channel.id)
+        call.channel_name = channel_name
         call.user_uuid = channel.user()
         call.tenant_uuid = channel.tenant_uuid()
         return call
@@ -162,7 +163,7 @@ class CallsBusEventHandler:
         logger.debug('marking channel %s on hold', channel_id)
         ami.set_variable_ami(self.ami, channel_id, 'XIVO_ON_HOLD', '1')
 
-        call = self._partial_call_from_channel_id(channel_id)
+        call = self._partial_call_from_channel_id(channel_id, event['Channel'])
         self.notifier.call_hold(call)
 
     def _channel_unhold(self, event):
@@ -170,7 +171,7 @@ class CallsBusEventHandler:
         logger.debug('marking channel %s not on hold', channel_id)
         ami.unset_variable_ami(self.ami, channel_id, 'XIVO_ON_HOLD')
 
-        call = self._partial_call_from_channel_id(channel_id)
+        call = self._partial_call_from_channel_id(channel_id, event['Channel'])
         self.notifier.call_resume(call)
 
     def _relay_user_missed_call(self, event):
@@ -212,7 +213,7 @@ class CallsBusEventHandler:
         channel_id = event['Uniqueid']
         digit = event['Digit']
         logger.debug('Relaying to bus: channel %s DTMF digit %s', channel_id, digit)
-        call = self._partial_call_from_channel_id(channel_id)
+        call = self._partial_call_from_channel_id(channel_id, event['Channel'])
         self.notifier.call_dtmf(call, digit)
 
     def _set_conversation_direction_cache(self, channel_id, direction):
