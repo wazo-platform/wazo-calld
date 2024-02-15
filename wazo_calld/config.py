@@ -99,6 +99,7 @@ _DEFAULT_CONFIG = {
         'endpoints': True,
         'faxes': True,
         'meetings': True,
+        'parking_lots': True,
         'relocates': True,
         'status': True,
         'switchboards': True,
