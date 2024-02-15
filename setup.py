@@ -30,6 +30,7 @@ setup(
             'endpoints = wazo_calld.plugins.endpoints.plugin:Plugin',
             'faxes = wazo_calld.plugins.faxes.plugin:Plugin',
             'meetings = wazo_calld.plugins.meetings.plugin:Plugin',
+            'parking_lots = wazo_calld.plugins.parking_lots.plugin:Plugin',
             'relocates = wazo_calld.plugins.relocates.plugin:Plugin',
             'status = wazo_calld.plugins.status.plugin:Plugin',
             'switchboards = wazo_calld.plugins.switchboards.plugin:Plugin',
