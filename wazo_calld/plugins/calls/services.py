@@ -595,11 +595,18 @@ class CallsService:
         )
 
         try:
-            mix_monitor_options = channel.getChannelVar(
-                variable='WAZO_MIXMONITOR_OPTIONS'
-            )['value']
+            mix_monitor_options = (
+                channel.getChannelVar(variable='WAZO_MIXMONITOR_OPTIONS')['value']
+                or None
+            )
         except ARINotFound:
             mix_monitor_options = None
+        except Exception:
+            logger.exception(
+                "Error getting variable WAZO_MIXMONITOR_OPTIONS from channel %s",
+                channel,
+            )
+            raise
 
         try:
             mixmonitor_command = (
@@ -608,6 +615,12 @@ class CallsService:
             )
         except ARINotFound:
             mixmonitor_command = None
+        except Exception:
+            logger.exception(
+                "Error getting variable WAZO_MIXMONITOR_COMMAND from channel %s",
+                channel,
+            )
+            raise
 
         ami.record_start(
             self._ami,
