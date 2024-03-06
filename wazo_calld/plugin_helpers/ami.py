@@ -1,5 +1,6 @@
-# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
+from __future__ import annotations
 
 import logging
 import re
@@ -123,13 +124,21 @@ def dtmf(amid, channel, digit):
         raise WazoAmidError(amid, e)
 
 
-def record_start(amid, channel, filename, options=None):
+def record_start(
+    amid,
+    channel: str,
+    filename: str,
+    options: str | None = None,
+    command: str | None = None,
+):
     destination = {
         'Channel': channel,
         'File': filename,
     }
     if options:
         destination['options'] = options
+    if command:
+        destination['command'] = command
     try:
         amid.action('MixMonitor', destination)
     except RequestException as e:
