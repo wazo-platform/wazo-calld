@@ -619,6 +619,9 @@ definitions:
       is_caller:
         type: boolean
         description: This value is only correct when the destination of the call is a user or outgoing call. In other cases, it is always False.
+      parked:
+        type: boolean
+        description: If this call is currently parked
       is_video:
         type: boolean
         description: If this call has a video track
