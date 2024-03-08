@@ -289,6 +289,13 @@ class Channel:
         except ARINotFound:
             return False
 
+    def parked(self):
+        try:
+            parked = self._get_var('WAZO_CALL_PARKED')
+            return parked == '1'
+        except ARINotFound:
+            return False
+
     def is_progress(self):
         try:
             progress = self._get_var('WAZO_CALL_PROGRESS')

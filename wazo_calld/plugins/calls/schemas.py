@@ -86,6 +86,7 @@ class CallSchema(CallBaseSchema):
     answer_time = fields.String()
     hangup_time = fields.String()
     direction = fields.String()
+    parked = fields.Boolean()
 
     @post_dump()
     def default_peer_caller_id_number(self, call, **kwargs):
