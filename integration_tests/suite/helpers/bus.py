@@ -313,3 +313,17 @@ class BusClient(bus_helper.BusClient):
 
     def send_stasis_non_json_event(self):
         self.send_event('', headers={'category': 'stasis', 'name': 'StasisStart'})
+
+    def send_confd_parking_created(self, id: int):
+        payload = {
+            'name': 'parking_lot_created',
+            'data': {'id': id},
+        }
+        self.send_event(payload, headers={'name': 'parking_lot_created'})
+
+    def send_confd_parking_deleted(self, id: int):
+        payload = {
+            'name': 'parking_lot_deleted',
+            'data': {'id': id},
+        }
+        self.send_event(payload, headers={'name': 'parking_lot_deleted'})
