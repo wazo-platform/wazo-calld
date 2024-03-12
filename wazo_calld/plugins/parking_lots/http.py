@@ -39,10 +39,7 @@ class ParkCallResource(_Base):
         request_data = park_call_request_schema.load(request.get_json(force=True))
 
         parked_call = self._service.park_call(
-            request_data.pop('parking_id'),
-            call_id,
-            tenant_uuid=tenant.uuid,
-            **request_data,
+            request_data.pop('parking_id'), call_id, tenant.uuid, **request_data
         )
 
         return parked_call_put_response_schema.dump(parked_call), 200
@@ -53,10 +50,7 @@ class UserCallParkResource(_Base):
     def put(self, call_id: str):
         request_data = park_call_request_schema.load(request.get_json(force=True))
 
-        parked_call = self._service.park_peer_call(
-            request.user_uuid,
-            request_data.pop('parking_id'),
-            call_id,
-            **request_data,
+        parked_call = self._service.park_collocutor_call(
+            request.user_uuid, request_data.pop('parking_id'), call_id, **request_data
         )
         return parked_call_put_response_schema.dump(parked_call), 200

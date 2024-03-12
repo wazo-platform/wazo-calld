@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+from ari.exceptions import ARINotFound
 from datetime import datetime, timedelta, timezone
 from functools import wraps
 from hamcrest import (
@@ -104,7 +105,10 @@ class BaseParkingTest(RealAsteriskIntegrationTest):
         super().tearDown()
         for bridge in self.ari.bridges.list():
             for channel_id in bridge.json['channels']:
-                self.ari.channels.get(channelId=channel_id).hangup()
+                try:
+                    self.ari.channels.get(channelId=channel_id).hangup()
+                except ARINotFound:
+                    pass
 
     def given_parked_call(
         self,
@@ -239,6 +243,57 @@ class TestParkings(BaseParkingTest):
                 data=has_entries(
                     call_id=caller, slot=response['slot'], parking_id=str(parking['id'])
                 ),
+            ),
+        )
+
+    @Fixture.parkinglot(**PARKINGLOT_2)
+    def test_park_error_when_parking_is_in_another_tenant(
+        self, parking: ParkingLotSchema
+    ) -> None:
+        caller, _ = self.real_asterisk.given_bridged_call_not_stasis()
+
+        assert_that(
+            calling(self.calld_client.calls.park).with_args(caller, parking['id']),
+            raises(CalldError).matching(
+                has_properties(status_code=404, error_id='no-such-parking')
+            ),
+        )
+
+    @Fixture.parkinglot(**PARKINGLOT_1)
+    def test_park_error_when_user_is_in_another_tenant(
+        self, parking: ParkingLotSchema
+    ) -> None:
+        user_uuid = random_uuid()
+        other_tenant_uuid = random_uuid()
+        caller, _ = self.real_asterisk.given_bridged_call_not_stasis(
+            caller_uuid=user_uuid,
+            caller_variables={'WAZO_TENANT_UUID': other_tenant_uuid},
+        )
+
+        assert_that(
+            calling(self.calld_client.calls.park).with_args(caller, parking['id']),
+            raises(CalldError).matching(
+                has_properties(status_code=404, error_id="no-such-call")
+            ),
+        )
+
+    @Fixture.parkinglot(**PARKINGLOT_1)
+    def test_error_when_trying_to_park_before_call_connected(
+        self, parking: ParkingLotSchema
+    ) -> None:
+        caller, callee = self.real_asterisk.given_ringing_call_not_stasis()
+
+        assert_that(
+            calling(self.calld_client.calls.park).with_args(caller, parking['id']),
+            raises(CalldError).matching(
+                has_properties(status_code=400, error_id='cannot-park-call')
+            ),
+        )
+
+        assert_that(
+            calling(self.calld_client.calls.park).with_args(callee, parking['id']),
+            raises(CalldError).matching(
+                has_properties(status_code=400, error_id='cannot-park-call')
             ),
         )
 
