@@ -6,7 +6,7 @@ from __future__ import annotations
 import logging
 
 from requests import RequestException
-from typing import cast, TypedDict, TYPE_CHECKING
+from typing import TypedDict, TYPE_CHECKING
 from typing_extensions import NotRequired
 
 from wazo_calld.plugin_helpers.ari_ import Channel
@@ -64,13 +64,55 @@ class ParkingService:
         self._notifier = notifier
         self._parkings = ParkingLotCache(bus, confd)
 
-    def _get_peer_channel(self, channel: Channel) -> Channel:
+    def _get_connected_channel(self, channel: Channel) -> Channel:
         try:
             return channel.only_connected_channel()
         except NotEnoughChannels:
             raise InvalidCall(channel.id, 'no parkable peer call found')
         except TooManyChannels:
             raise InvalidCall(channel.id, 'cannot park a conference call')
+
+    def _park_channel(
+        self,
+        parkee: Channel,
+        parking: ConfdParkingLot,
+        tenant_uuid: str,
+        preferred_slot: str | None = None,
+        timeout: int | None = None,
+    ) -> AsteriskParkedCall:
+        park_payload: ParkActionDict = {
+            'Channel': parkee.asterisk_name(),
+            'Parkinglot': f'parkinglot-{parking.id}',
+        }
+
+        if timeout:
+            # Convert to milliseconds for AMI action
+            park_payload['Timeout'] = timeout * 1000
+
+        if preferred_slot:
+            # Attempt to use slot if it can, else it wil be auto-attributed
+            park_payload['ParkingSpace'] = preferred_slot
+
+        parked_call = self.find_parked_call(tenant_uuid, parking.id, parkee.id)
+        if not parked_call:
+            callback_channel = self._get_connected_channel(parkee)
+            park_payload['TimeoutChannel'] = callback_channel.asterisk_name()
+        else:
+            # If call is already parked, preserve callback
+            park_payload['TimeoutChannel'] = parked_call.parker_dial_string
+
+        try:
+            self._amid.action('park', park_payload)
+        except RequestException as e:
+            raise WazoAmidError(self._amid, e)
+
+        # NOTE: Should probably wait for ParkedCall event to happen instead of polling
+        try:
+            return self.get_parked_call(tenant_uuid, parking.id, parkee.id)
+        except NoSuchParkedCall:
+            if self.is_parking_full(tenant_uuid, parking.id):
+                raise ParkingFull(tenant_uuid, parking.id, parkee.id)
+            raise
 
     def find_parked_call(
         self, tenant_uuid: str, parking_id: int, call_id: str
@@ -138,62 +180,29 @@ class ParkingService:
         self,
         parking_id: int,
         call_id: str,
-        *,
-        tenant_uuid: str | None = None,
+        tenant_uuid: str,
         preferred_slot: str | None = None,
         timeout: int | None = None,
     ) -> AsteriskParkedCall:
         channel = Channel(call_id, self._ari.client)
+
         if not channel.exists():
             raise NoSuchCall(call_id)
 
-        if not tenant_uuid:
-            tenant_uuid = cast(str, channel.tenant_uuid())
-            if not tenant_uuid:
-                raise InvalidCall(call_id, 'call has no tenant_uuid')
+        if tenant_uuid != channel.tenant_uuid():
+            raise NoSuchCall(call_id)
 
         parking = self.get_parking(tenant_uuid, parking_id)
 
-        park_payload: ParkActionDict = {
-            'Channel': channel.asterisk_name(),
-            'Parkinglot': f'parkinglot-{parking.id}',
-        }
+        return self._park_channel(
+            channel, parking, tenant_uuid, preferred_slot, timeout
+        )
 
-        if timeout:
-            # convert to milliseconds for AMI action
-            park_payload['Timeout'] = timeout * 1000
-
-        if preferred_slot:
-            # Attempt to use slot if it can, else it wil be auto-attributed
-            park_payload['ParkingSpace'] = preferred_slot
-
-        parked_call = self.find_parked_call(tenant_uuid, parking.id, call_id)
-        if not parked_call:
-            callback_channel = self._get_peer_channel(channel)
-            park_payload['TimeoutChannel'] = callback_channel.asterisk_name()
-        else:
-            # If call is already parked, preserve callback
-            park_payload['TimeoutChannel'] = parked_call.parker_dial_string
-
-        try:
-            self._amid.action('park', park_payload)
-        except RequestException as e:
-            raise WazoAmidError(self._amid, e)
-
-        # NOTE: Should probably wait for ParkedCall event to happen instead of polling
-        try:
-            return self.get_parked_call(tenant_uuid, parking.id, call_id)
-        except NoSuchParkedCall:
-            if self.is_parking_full(tenant_uuid, parking_id):
-                raise ParkingFull(tenant_uuid, parking_id, call_id)
-            raise
-
-    def park_peer_call(
+    def park_collocutor_call(
         self,
         user_uuid: str,
         parking_id: int,
         call_id: str,
-        *,
         preferred_slot: str | None = None,
         timeout: int | None = None,
     ) -> AsteriskParkedCall:
@@ -209,7 +218,9 @@ class ParkingService:
         if not tenant_uuid:
             raise InvalidCall(call_id, 'call has no tenant_uuid')
 
-        peer_channel = self._get_peer_channel(user_channel)
-        return self.park_call(
-            parking_id, peer_channel.id, preferred_slot=preferred_slot, timeout=timeout
+        parking = self.get_parking(tenant_uuid, parking_id)
+        collocutor = self._get_connected_channel(user_channel)
+
+        return self._park_channel(
+            collocutor, parking, tenant_uuid, preferred_slot, timeout
         )
