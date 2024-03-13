@@ -12,6 +12,7 @@ from wazo_bus.resources.calls.parking import (
     ParkedCallTimedOutEvent,
 )
 
+from .helpers import split_parking_id_from_name
 
 if TYPE_CHECKING:
     from wazo_calld.bus import CoreBusPublisher
@@ -21,12 +22,6 @@ if TYPE_CHECKING:
 class ParkingNotifier:
     def __init__(self, bus_publisher: CoreBusPublisher):
         self._publisher = bus_publisher
-
-    def _get_parking_id(self, parkinglot_name: str) -> str | None:
-        _, *id_ = parkinglot_name.split('-', 1)
-        if not id_:
-            return None
-        return str(*id_)
 
     def _to_timestamp(self, value: str) -> str:
         now = datetime.now(timezone.utc)
@@ -41,7 +36,7 @@ class ParkingNotifier:
     def call_parked(self, parked_call: AsteriskParkedCall, tenant_uuid: str) -> None:
         event = CallParkedEvent(
             parked_call.parkee_uniqueid,
-            self._get_parking_id(parked_call.parkinglot),
+            split_parking_id_from_name(parked_call.parkinglot),
             parked_call.parking_space,
             self._to_timestamp(parked_call.parking_timeout),
             tenant_uuid,
@@ -53,7 +48,7 @@ class ParkingNotifier:
     ) -> None:
         event = CallUnparkedEvent(
             parked_call.parkee_uniqueid,
-            self._get_parking_id(parked_call.parkinglot),
+            split_parking_id_from_name(parked_call.parkinglot),
             parked_call.parking_space,
             retriever_call,
             tenant_uuid,
@@ -65,7 +60,7 @@ class ParkingNotifier:
     ) -> None:
         event = ParkedCallTimedOutEvent(
             parked_call.parkee_uniqueid,
-            self._get_parking_id(parked_call.parkinglot),
+            split_parking_id_from_name(parked_call.parkinglot),
             parked_call.parker_dial_string,
             self._since_timestamp(parked_call.parking_duration),
             tenant_uuid,
@@ -77,7 +72,7 @@ class ParkingNotifier:
     ) -> None:
         event = ParkedCallHungupEvent(
             parked_call.parkee_uniqueid,
-            self._get_parking_id(parked_call.parkinglot),
+            split_parking_id_from_name(parked_call.parkinglot),
             parked_call.parking_space,
             self._since_timestamp(parked_call.parking_duration),
             tenant_uuid,
