@@ -16,7 +16,7 @@ class InvalidCall(APIException):
         )
 
 
-class NoSuchParkingException(APIException):
+class NoSuchParking(APIException):
     def __init__(self, parking_id: int):
         super().__init__(
             status_code=404,

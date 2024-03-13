@@ -13,7 +13,7 @@ from typing import TypedDict, TYPE_CHECKING
 from wazo_calld.plugin_helpers.exceptions import WazoConfdUnreachable
 
 from .dataclasses_ import ConfdParkingLot
-from .exceptions import NoSuchParkingException
+from .exceptions import NoSuchParking
 
 if TYPE_CHECKING:
     from wazo_calld.bus import CoreBusConsumer as BusConsumer
@@ -59,7 +59,7 @@ class ParkingLotCache:
         if parking_id in self._invalid_ids:
             with self._lock:
                 self._invalid_ids[parking_id].refresh()
-            raise NoSuchParkingException(parking_id)
+            raise NoSuchParking(parking_id)
 
         if parking_id not in self._cache:
             try:
@@ -91,7 +91,7 @@ class ParkingLotCache:
             result = self._confd.parking_lots.get(parking_id)
         except HTTPError as e:
             if e.response.status_code == 404:
-                raise NoSuchParkingException(parking_id)
+                raise NoSuchParking(parking_id)
             raise
         except RequestException as e:
             raise WazoConfdUnreachable(self._confd, e)
