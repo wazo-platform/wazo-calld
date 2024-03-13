@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from ari.exceptions import ARINotFound
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from functools import wraps
 from hamcrest import (
     assert_that,
@@ -66,7 +66,7 @@ PARKINGLOT_2: ParkingLotArgs = {
 
 class Fixture:
     @staticmethod
-    def parkinglot(**parking_lot: Unpack[ParkingLotArgs]) -> Callable[..., None]:
+    def parking_lot(**parking_lot: Unpack[ParkingLotArgs]) -> Callable[..., None]:
         def decorator(decorated: Callable):
             @wraps(decorated)
             def wrapper(test: RealAsteriskIntegrationTest, *args, **kwargs):
@@ -138,7 +138,7 @@ class BaseParkingTest(RealAsteriskIntegrationTest):
 
 
 class TestParkings(BaseParkingTest):
-    @Fixture.parkinglot(**PARKINGLOT_1)
+    @Fixture.parking_lot(**PARKINGLOT_1)
     def test_get_parking(self, parking: ParkingLotSchema):
         parking_extension = parking['extensions'][0]['exten']
 
@@ -157,7 +157,7 @@ class TestParkings(BaseParkingTest):
             ),
         )
 
-    @Fixture.parkinglot(**PARKINGLOT_1)
+    @Fixture.parking_lot(**PARKINGLOT_1)
     def test_get_parking_no_confd(self, parking: ParkingLotSchema):
         with self.confd_stopped():
             assert_that(
@@ -167,7 +167,7 @@ class TestParkings(BaseParkingTest):
                 ),
             )
 
-    @Fixture.parkinglot(**PARKINGLOT_1)
+    @Fixture.parking_lot(**PARKINGLOT_1)
     def test_get_parking_no_amid(self, parking: ParkingLotSchema):
         with self.amid_stopped():
             assert_that(
@@ -177,7 +177,7 @@ class TestParkings(BaseParkingTest):
                 ),
             )
 
-    @Fixture.parkinglot(**PARKINGLOT_1)
+    @Fixture.parking_lot(**PARKINGLOT_1)
     def test_get_parking_wrong_parking_id(self, _: ParkingLotSchema):
         assert_that(
             calling(self.calld_client.parking_lots.get).with_args(0),
@@ -186,7 +186,7 @@ class TestParkings(BaseParkingTest):
             ),
         )
 
-    @Fixture.parkinglot(**PARKINGLOT_1)
+    @Fixture.parking_lot(**PARKINGLOT_1)
     def test_get_wrong_tenant_uuid(self, parking: ParkingLotSchema):
         calld = self.make_user_calld(
             user_uuid=random_uuid(), tenant_uuid='eeeeeeee-eeee-eeee-eeee-eeeeeeeeeee1'
@@ -199,7 +199,7 @@ class TestParkings(BaseParkingTest):
             ),
         )
 
-    @Fixture.parkinglot(**PARKINGLOT_1)
+    @Fixture.parking_lot(**PARKINGLOT_1)
     def test_call_park_updates_call_object(self, parking: ParkingLotSchema) -> None:
         caller, callee = self.real_asterisk.given_bridged_call_not_stasis()
         parked_event = self.bus.accumulator(headers={'name': 'call_parked'})
@@ -222,7 +222,7 @@ class TestParkings(BaseParkingTest):
         response = self.calld_client.calls.get_call(caller)
         assert_that(response, has_entries(call_id=caller, parked=True))
 
-    @Fixture.parkinglot(**PARKINGLOT_1)
+    @Fixture.parking_lot(**PARKINGLOT_1)
     def test_park_call(self, parking: ParkingLotSchema) -> None:
         parked_events = self.bus.accumulator(headers={'name': 'call_parked'})
 
@@ -241,12 +241,12 @@ class TestParkings(BaseParkingTest):
             has_entries(
                 name='call_parked',
                 data=has_entries(
-                    call_id=caller, slot=response['slot'], parking_id=str(parking['id'])
+                    call_id=caller, slot=response['slot'], parking_id=parking['id']
                 ),
             ),
         )
 
-    @Fixture.parkinglot(**PARKINGLOT_2)
+    @Fixture.parking_lot(**PARKINGLOT_2)
     def test_park_error_when_parking_is_in_another_tenant(
         self, parking: ParkingLotSchema
     ) -> None:
@@ -259,7 +259,7 @@ class TestParkings(BaseParkingTest):
             ),
         )
 
-    @Fixture.parkinglot(**PARKINGLOT_1)
+    @Fixture.parking_lot(**PARKINGLOT_1)
     def test_park_error_when_user_is_in_another_tenant(
         self, parking: ParkingLotSchema
     ) -> None:
@@ -277,7 +277,7 @@ class TestParkings(BaseParkingTest):
             ),
         )
 
-    @Fixture.parkinglot(**PARKINGLOT_1)
+    @Fixture.parking_lot(**PARKINGLOT_1)
     def test_error_when_trying_to_park_before_call_connected(
         self, parking: ParkingLotSchema
     ) -> None:
@@ -297,7 +297,7 @@ class TestParkings(BaseParkingTest):
             ),
         )
 
-    @Fixture.parkinglot(**PARKINGLOT_1)
+    @Fixture.parking_lot(**PARKINGLOT_1)
     def test_503_when_parking_is_full(self, parking: ParkingLotSchema) -> None:
         for _ in range(10):
             self.given_parked_call(parking['extensions'][0]['exten'])
@@ -314,7 +314,7 @@ class TestParkings(BaseParkingTest):
             ),
         )
 
-    @Fixture.parkinglot(**PARKINGLOT_1)
+    @Fixture.parking_lot(**PARKINGLOT_1)
     def test_park_call_with_preferred_slot(self, parking: ParkingLotSchema) -> None:
         parked_events = self.bus.accumulator(headers={'name': 'call_parked'})
 
@@ -336,13 +336,11 @@ class TestParkings(BaseParkingTest):
             parked_event,
             has_entries(
                 name='call_parked',
-                data=has_entries(
-                    call_id=caller, parking_id=str(parking['id']), slot='505'
-                ),
+                data=has_entries(call_id=caller, parking_id=parking['id'], slot='505'),
             ),
         )
 
-    @Fixture.parkinglot(**PARKINGLOT_1)
+    @Fixture.parking_lot(**PARKINGLOT_1)
     def test_park_call_with_preferred_slot_already_taken_takes_next_slot(
         self, parking: ParkingLotSchema
     ) -> None:
@@ -357,7 +355,7 @@ class TestParkings(BaseParkingTest):
 
         assert_that(response, not_(has_entries(slot=parking_slot)))
 
-    @Fixture.parkinglot(**PARKINGLOT_1)
+    @Fixture.parking_lot(**PARKINGLOT_1)
     def test_call_park_while_already_parked_with_same_preferred_slot_keeps_same_slot(
         self, parking: ParkingLotSchema
     ) -> None:
@@ -371,7 +369,7 @@ class TestParkings(BaseParkingTest):
         )
         assert_that(response, has_entries(slot=parking_slot))
 
-    @Fixture.parkinglot(**PARKINGLOT_1)
+    @Fixture.parking_lot(**PARKINGLOT_1)
     def test_call_park_while_already_parked_reparks_in_another_slot(
         self, parking: ParkingLotSchema
     ) -> None:
@@ -383,7 +381,7 @@ class TestParkings(BaseParkingTest):
         response = self.calld_client.calls.park(caller, parking['id'])
         assert_that(response, not_(has_entries(slot=parking_slot)))
 
-    @Fixture.parkinglot(**PARKINGLOT_1)
+    @Fixture.parking_lot(**PARKINGLOT_1)
     def test_call_park_timeout_callback(self, parking: ParkingLotSchema) -> None:
         parked_events = self.bus.accumulator(headers={'name': 'call_parked'})
         timeout_events = self.bus.accumulator(headers={'name': 'parked_call_timed_out'})
@@ -395,9 +393,7 @@ class TestParkings(BaseParkingTest):
                     has_entries(
                         name='call_parked',
                         tenant_uuid=VALID_TENANT,
-                        data=has_entries(
-                            call_id=call_id, parking_id=str(parking['id'])
-                        ),
+                        data=has_entries(call_id=call_id, parking_id=parking['id']),
                     )
                 ),
             )
@@ -408,7 +404,7 @@ class TestParkings(BaseParkingTest):
                 has_item(
                     has_entries(
                         name='parked_call_timed_out',
-                        data=has_entries(call_id=caller, parking_id=str(parking['id'])),
+                        data=has_entries(call_id=caller, parking_id=parking['id']),
                     )
                 ),
             )
@@ -446,7 +442,7 @@ class TestParkings(BaseParkingTest):
         until.assert_(parked_call_timed_out, timeout=3)
         until.assert_(call_created, timeout=3)
 
-    @Fixture.parkinglot(**PARKINGLOT_1)
+    @Fixture.parking_lot(**PARKINGLOT_1)
     def test_call_parked_hangup_event(self, parking: ParkingLotSchema) -> None:
         caller, callee = self.real_asterisk.given_bridged_call_not_stasis()
         parked_events = self.bus.accumulator(headers={'name': 'call_parked'})
@@ -480,7 +476,7 @@ class TestParkings(BaseParkingTest):
 
         until.assert_(parked_call_is_hungup, timeout=10)
 
-    @Fixture.parkinglot(**PARKINGLOT_1)
+    @Fixture.parking_lot(**PARKINGLOT_1)
     def test_call_park_timeout_values(self, parking: ParkingLotSchema) -> None:
         caller, _ = self.real_asterisk.given_bridged_call_not_stasis()
         parked_events = self.bus.accumulator(headers={'name': 'call_parked'})
@@ -502,7 +498,7 @@ class TestParkings(BaseParkingTest):
 
         assert floor((timeout_at - now).total_seconds()) == 7
 
-    @Fixture.parkinglot(**PARKINGLOT_1)
+    @Fixture.parking_lot(**PARKINGLOT_1)
     def test_reparking_call_updates_timeout(self, parking: ParkingLotSchema) -> None:
         caller, _ = self.real_asterisk.given_bridged_call_not_stasis()
 
@@ -525,7 +521,7 @@ class TestParkings(BaseParkingTest):
         timeout_at = datetime.fromisoformat(event['data']['timeout_at'])
         assert floor((timeout_at - now).total_seconds()) == 12345
 
-    @Fixture.parkinglot(**PARKINGLOT_1)
+    @Fixture.parking_lot(**PARKINGLOT_1)
     def test_park_stasis(self, parking: ParkingLotSchema) -> None:
         caller, _ = self.real_asterisk.given_bridged_call_stasis()
         parked_events = self.bus.accumulator(headers={'name': 'call_parked'})
@@ -542,13 +538,11 @@ class TestParkings(BaseParkingTest):
         assert_that(
             event,
             has_entries(
-                data=has_entries(
-                    call_id=caller, parking_id=str(parking['id']), slot='510'
-                )
+                data=has_entries(call_id=caller, parking_id=parking['id'], slot='510')
             ),
         )
 
-    @Fixture.parkinglot(**PARKINGLOT_1)
+    @Fixture.parking_lot(**PARKINGLOT_1)
     def test_user_call_park(self, parking: ParkingLotSchema) -> None:
         user_uuid = random_uuid()
         calld = self.make_user_calld(user_uuid)
@@ -570,7 +564,7 @@ class TestParkings(BaseParkingTest):
 
         assert_that(event, has_entries(data=has_entries(call_id=callee)))
 
-    @Fixture.parkinglot(**PARKINGLOT_1)
+    @Fixture.parking_lot(**PARKINGLOT_1)
     def test_user_call_park_invalid_call(self, parking: ParkingLotSchema):
         user_uuid = random_uuid()
         calld = self.make_user_calld(user_uuid)
@@ -588,7 +582,7 @@ class TestParkings(BaseParkingTest):
             ),
         )
 
-    @Fixture.parkinglot(**PARKINGLOT_1)
+    @Fixture.parking_lot(**PARKINGLOT_1)
     def test_user_call_park_permissions(self, parking: ParkingLotSchema) -> None:
         user_uuid = random_uuid()
         some_other_user_uuid = random_uuid()
