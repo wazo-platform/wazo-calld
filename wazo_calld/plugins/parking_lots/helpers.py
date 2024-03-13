@@ -56,3 +56,10 @@ def dataclass_from_dict(dataclass: type[T], dict_: dict) -> T:
             args[key] = value
 
     return dataclass(**args)
+
+
+def split_parking_id_from_name(parking_name: str) -> int:
+    prefix, *id_ = parking_name.split('-', 1)
+    if not id_ or prefix != 'parkinglot':
+        raise ValueError('invalid parking lot name')
+    return int(id_.pop(0))
