@@ -44,7 +44,7 @@ class Plugin:
 
         notifier = ParkingNotifier(bus_publisher)
         service = ParkingService(amid_client, ari, bus_consumer, confd_client, notifier)
-        ParkingLotEventsHandler(ari, bus_consumer, notifier)
+        ParkingLotEventsHandler(ari, bus_consumer, notifier, service)
 
         self.set_resources(api, service)
 
