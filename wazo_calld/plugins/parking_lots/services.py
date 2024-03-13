@@ -23,7 +23,7 @@ from .exceptions import (
     InvalidCall,
     NoSuchCall,
     NoSuchParkedCall,
-    NoSuchParkingException,
+    NoSuchParking,
     ParkingFull,
 )
 from .notifier import ParkingNotifier
@@ -130,10 +130,10 @@ class ParkingService:
             raise NoSuchParkedCall(tenant_uuid, parking_id, call_id)
         return parked_call
 
-    def get_parking(self, tenant_uuid: str, parking_id: int) -> ConfdParkingLot:
+    def get_parking(self, tenant_uuid: str | None, parking_id: int) -> ConfdParkingLot:
         parking = self._parkings[parking_id]
-        if parking.tenant_uuid != tenant_uuid:
-            raise NoSuchParkingException(parking_id)
+        if tenant_uuid and parking.tenant_uuid != tenant_uuid:
+            raise NoSuchParking(parking_id)
         return parking
 
     def list_parked_calls(

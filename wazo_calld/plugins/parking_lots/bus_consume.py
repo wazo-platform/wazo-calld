@@ -11,11 +11,14 @@ from typing import Callable, TYPE_CHECKING
 
 from wazo_calld.plugin_helpers.ari_ import set_channel_id_var_sync, Channel
 from .dataclasses_ import AsteriskParkedCall
+from .exceptions import NoSuchParking
+from .helpers import split_parking_id_from_name
 
 if TYPE_CHECKING:
     from wazo_calld.bus import CoreBusConsumer
     from wazo_calld.ari_ import CoreARI
     from .notifier import ParkingNotifier
+    from .services import ParkingService
 
 
 logger = logging.getLogger(__name__)
@@ -44,9 +47,11 @@ class ParkingLotEventsHandler:
         ari: CoreARI,
         consumer: CoreBusConsumer,
         notifier: ParkingNotifier,
+        service: ParkingService,
     ):
         self._ari = ari
         self._notifier = notifier
+        self._service = service
         consumer.subscribe('ParkedCall', self.on_ami_call_parked)
         consumer.subscribe('ParkedCallGiveUp', self.on_ami_parked_call_hangup)
         consumer.subscribe('ParkedCallSwap', self.on_ami_parked_call_swap)
@@ -104,16 +109,24 @@ class ParkingLotEventsHandler:
     ) -> None:
         '''A parked call has been hungup before being answered'''
 
-        vars = parked_call.parkee_chan_variable.split('=')
-        if vars[0] == 'WAZO_TENANT_UUID':
-            tenant_uuid = vars.pop()
+        # Since channel is closed at this point, we must find the tenant_uuid some other way
+        tenant_uuid = None
+        try:
+            id_ = split_parking_id_from_name(parked_call.parkinglot)
+            parking = self._service.get_parking(None, id_)
+        except (ValueError, NoSuchParking):
+            logger.debug(
+                'parked call hangup handler failed: couldn\'t determine tenant_uuid'
+            )
+        else:
+            tenant_uuid = parking.tenant_uuid
 
         if tenant_uuid:
             self._notifier.parked_call_hangup(parked_call, tenant_uuid)
 
     @convert_ami_event
     def on_ami_parked_call_swap(
-        self, parked_call: AsteriskParkedCall, parked_channel: Channel
+        self, _: AsteriskParkedCall, parked_channel: Channel
     ) -> None:
         '''A parked call has been swaped'''
 
