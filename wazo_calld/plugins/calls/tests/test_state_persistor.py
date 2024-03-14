@@ -80,11 +80,11 @@ class TestStatePersistor(TestCase):
             value=exptected_variable,
         )
 
-    def test_when_remove_then_variable_unset(self):
+    def test_when_remove_then_variable_is_deleted(self):
         self.persistor.remove(SOME_CHANNEL_ID)
 
         self.ari.asterisk.setGlobalVar.assert_called_once_with(
-            variable=f'XIVO_CHANNELS_{SOME_CHANNEL_ID}', value=''
+            variable=f'GLOBAL_DELETE(XIVO_CHANNELS_{SOME_CHANNEL_ID})', value=''
         )
 
     def test_given_no_calls_when_get_then_raise_keyerror(self):
