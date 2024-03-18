@@ -3,24 +3,22 @@
 
 from __future__ import annotations
 
-from typing import Callable, TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 
 from wazo_amid_client import Client as AmidClient
 from wazo_confd_client import Client as ConfdClient
 
-from .http import (
-    ParkingLotResource,
-    ParkCallResource,
-    UserCallParkResource,
-)
 from .bus_consume import ParkingLotEventsHandler
+from .http import ParkCallResource, ParkingLotResource, UserCallParkResource
 from .notifier import ParkingNotifier
 from .services import ParkingService
 
 if TYPE_CHECKING:
-    from collections import Mapping
+    from collections.abc import Mapping
+
     from flask_restful import Api
     from xivo.token_renewer import Callback
+
     from wazo_calld.ari_ import CoreARI as AriClient
     from wazo_calld.bus import CoreBusConsumer, CoreBusPublisher
 

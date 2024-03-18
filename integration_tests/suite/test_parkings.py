@@ -3,9 +3,14 @@
 
 from __future__ import annotations
 
-from ari.exceptions import ARINotFound
+from collections.abc import Generator
 from datetime import datetime, timezone
 from functools import wraps
+from math import floor
+from typing import TYPE_CHECKING, Callable, TypedDict, cast
+from uuid import uuid4
+
+from ari.exceptions import ARINotFound
 from hamcrest import (
     assert_that,
     calling,
@@ -16,16 +21,13 @@ from hamcrest import (
     has_properties,
     not_,
 )
-from math import floor
-from typing import Callable, cast, Generator, TYPE_CHECKING, TypedDict
-from typing_extensions import Unpack, NotRequired, Required
+from typing_extensions import NotRequired, Required, Unpack
 from wazo_calld_client.exceptions import CalldError
 from wazo_test_helpers import until
 from wazo_test_helpers.hamcrest.raises import raises
-from uuid import uuid4
 
-from .helpers.constants import ENDPOINT_AUTOANSWER, VALID_TENANT
 from .helpers.confd import MockParkinglot
+from .helpers.constants import ENDPOINT_AUTOANSWER, VALID_TENANT
 from .helpers.hamcrest_ import HamcrestARIBridge, HamcrestARIChannel
 from .helpers.real_asterisk import RealAsterisk, RealAsteriskIntegrationTest
 

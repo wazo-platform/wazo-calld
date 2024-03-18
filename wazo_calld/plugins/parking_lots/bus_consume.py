@@ -4,19 +4,21 @@
 from __future__ import annotations
 
 import logging
+from functools import wraps
+from typing import TYPE_CHECKING, Callable
 
 from ari.exceptions import ARINotFound
-from functools import wraps
-from typing import Callable, TYPE_CHECKING
 
-from wazo_calld.plugin_helpers.ari_ import set_channel_id_var_sync, Channel
+from wazo_calld.plugin_helpers.ari_ import Channel, set_channel_id_var_sync
+
 from .dataclasses_ import AsteriskParkedCall
 from .exceptions import NoSuchParking
-from .helpers import split_parking_id_from_name, DONT_CHECK_TENANT
+from .helpers import DONT_CHECK_TENANT, split_parking_id_from_name
 
 if TYPE_CHECKING:
-    from wazo_calld.bus import CoreBusConsumer
     from wazo_calld.ari_ import CoreARI
+    from wazo_calld.bus import CoreBusConsumer
+
     from .notifier import ParkingNotifier
     from .services import ParkingService
 
