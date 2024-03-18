@@ -6,8 +6,16 @@ from __future__ import annotations
 import re
 
 from dataclasses import is_dataclass
+from enum import auto, Enum
 from inspect import signature
 from typing import Any, get_args, get_origin, get_type_hints, TypeVar
+
+
+class DontCheckTenant(Enum):
+    DONT_CHECK_TENANT = auto()
+
+
+DONT_CHECK_TENANT = DontCheckTenant.DONT_CHECK_TENANT
 
 T = TypeVar('T')
 

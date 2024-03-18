@@ -26,6 +26,7 @@ from .exceptions import (
     NoSuchParking,
     ParkingFull,
 )
+from .helpers import DontCheckTenant, DONT_CHECK_TENANT
 from .notifier import ParkingNotifier
 
 if TYPE_CHECKING:
@@ -130,9 +131,11 @@ class ParkingService:
             raise NoSuchParkedCall(tenant_uuid, parking_id, call_id)
         return parked_call
 
-    def get_parking(self, tenant_uuid: str | None, parking_id: int) -> ConfdParkingLot:
+    def get_parking(
+        self, tenant_uuid: str | DontCheckTenant, parking_id: int
+    ) -> ConfdParkingLot:
         parking = self._parkings[parking_id]
-        if tenant_uuid and parking.tenant_uuid != tenant_uuid:
+        if tenant_uuid is not DONT_CHECK_TENANT and parking.tenant_uuid != tenant_uuid:
             raise NoSuchParking(parking_id)
         return parking
 
