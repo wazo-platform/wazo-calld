@@ -5,6 +5,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING
+
 from wazo_bus.resources.calls.parking import (
     CallParkedEvent,
     CallUnparkedEvent,
@@ -16,6 +17,7 @@ from .helpers import split_parking_id_from_name
 
 if TYPE_CHECKING:
     from wazo_calld.bus import CoreBusPublisher
+
     from .dataclasses_ import AsteriskParkedCall
 
 

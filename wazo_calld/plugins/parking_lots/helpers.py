@@ -4,11 +4,10 @@
 from __future__ import annotations
 
 import re
-
 from dataclasses import is_dataclass
-from enum import auto, Enum
+from enum import Enum, auto
 from inspect import signature
-from typing import Any, get_args, get_origin, get_type_hints, TypeVar
+from typing import Any, TypeVar, get_args, get_origin, get_type_hints
 
 
 class DontCheckTenant(Enum):

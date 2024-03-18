@@ -4,17 +4,17 @@
 from __future__ import annotations
 
 import logging
+from typing import TYPE_CHECKING, TypedDict
 
 from requests import RequestException
-from typing import TypedDict, TYPE_CHECKING
 from typing_extensions import NotRequired
 
 from wazo_calld.plugin_helpers.ari_ import Channel
 from wazo_calld.plugin_helpers.exceptions import (
-    WazoAmidError,
     NotEnoughChannels,
     TooManyChannels,
     UserPermissionDenied,
+    WazoAmidError,
 )
 
 from .cache import ParkingLotCache
@@ -26,14 +26,16 @@ from .exceptions import (
     NoSuchParking,
     ParkingFull,
 )
-from .helpers import DontCheckTenant, DONT_CHECK_TENANT
+from .helpers import DONT_CHECK_TENANT, DontCheckTenant
 from .notifier import ParkingNotifier
 
 if TYPE_CHECKING:
     from wazo_amid_client import Client as AmidClient
+    from wazo_confd_client import Client as ConfdClient
+
     from wazo_calld.ari_ import CoreARI as AriClient
     from wazo_calld.bus import CoreBusConsumer as BusConsumer
-    from wazo_confd_client import Client as ConfdClient
+
     from .dataclasses_ import ConfdParkingLot
 
 

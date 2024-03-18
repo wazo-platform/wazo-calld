@@ -3,11 +3,11 @@
 
 from __future__ import annotations
 
-import requests
-
 from random import choice
 from string import ascii_uppercase, digits
 from typing import TYPE_CHECKING
+
+import requests
 
 if TYPE_CHECKING:
     from .schemas import ParkingLotSchema

@@ -4,11 +4,11 @@
 from __future__ import annotations
 
 import logging
+from threading import Lock
+from time import monotonic_ns
+from typing import TYPE_CHECKING, TypedDict
 
 from requests import HTTPError, RequestException
-from time import monotonic_ns
-from threading import Lock
-from typing import TypedDict, TYPE_CHECKING
 
 from wazo_calld.plugin_helpers.exceptions import WazoConfdUnreachable
 
@@ -16,8 +16,9 @@ from .dataclasses_ import ConfdParkingLot
 from .exceptions import NoSuchParking
 
 if TYPE_CHECKING:
-    from wazo_calld.bus import CoreBusConsumer as BusConsumer
     from wazo_confd_client import Client as ConfdClient
+
+    from wazo_calld.bus import CoreBusConsumer as BusConsumer
 
 
 logger = logging.getLogger(__name__)

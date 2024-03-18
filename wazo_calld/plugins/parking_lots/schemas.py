@@ -6,7 +6,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING
 
-from marshmallow import EXCLUDE, pre_dump, post_dump, Schema
+from marshmallow import EXCLUDE, Schema, post_dump, pre_dump
 from marshmallow.fields import Method
 from marshmallow.validate import Predicate
 from xivo.mallow.fields import Integer, List, Nested, String
