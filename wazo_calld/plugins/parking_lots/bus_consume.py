@@ -12,7 +12,7 @@ from typing import Callable, TYPE_CHECKING
 from wazo_calld.plugin_helpers.ari_ import set_channel_id_var_sync, Channel
 from .dataclasses_ import AsteriskParkedCall
 from .exceptions import NoSuchParking
-from .helpers import split_parking_id_from_name
+from .helpers import split_parking_id_from_name, DONT_CHECK_TENANT
 
 if TYPE_CHECKING:
     from wazo_calld.bus import CoreBusConsumer
@@ -113,7 +113,7 @@ class ParkingLotEventsHandler:
         tenant_uuid = None
         try:
             id_ = split_parking_id_from_name(parked_call.parkinglot)
-            parking = self._service.get_parking(None, id_)
+            parking = self._service.get_parking(DONT_CHECK_TENANT, id_)
         except (ValueError, NoSuchParking):
             logger.debug(
                 'parked call hangup handler failed: couldn\'t determine tenant_uuid'
