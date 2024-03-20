@@ -115,4 +115,4 @@ class ParkingLotCache:
     def _subscribe(self, bus: BusConsumer) -> None:
         bus.subscribe('parking_lot_created', self._on_parking_created)
         bus.subscribe('parking_lot_deleted', self._on_parking_deleted)
-        bus.subscribe('parking_lot_updated', self._on_parking_updated)
+        bus.subscribe('parking_lot_edited', self._on_parking_updated)
