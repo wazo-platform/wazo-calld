@@ -1,7 +1,10 @@
-# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+from __future__ import annotations
+
 import logging
+from typing import ClassVar
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +33,7 @@ state_factory = StateFactory()
 
 
 class CallState:
-    name = None
+    name: ClassVar[str] = None  # type: ignore[assignment]
 
     def __init__(self, ari, stat_sender):
         self._ari = ari

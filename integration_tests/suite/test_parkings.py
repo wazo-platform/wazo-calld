@@ -40,8 +40,8 @@ class ParkingLotArgs(TypedDict, total=False):
     tenant_uuid: NotRequired[str]
     name: NotRequired[str]
     extension: NotRequired[int]
-    slots_start: NotRequired[int]
-    slots_end: NotRequired[int]
+    slots_start: NotRequired[str]
+    slots_end: NotRequired[str]
     timeout: NotRequired[int]
 
 
@@ -51,8 +51,8 @@ PARKINGLOT_1: ParkingLotArgs = {
     'tenant_uuid': VALID_TENANT,
     'name': 'First Parking',
     'extension': 500,
-    'slots_start': 501,
-    'slots_end': 510,
+    'slots_start': '501',
+    'slots_end': '510',
     'timeout': 5,
 }
 PARKINGLOT_2: ParkingLotArgs = {
@@ -60,8 +60,8 @@ PARKINGLOT_2: ParkingLotArgs = {
     'tenant_uuid': 'b93892f0-5300-4682-aede-3104b449ba69',
     'name': 'Second Parking',
     'extension': 600,
-    'slots_start': 601,
-    'slots_end': 602,
+    'slots_start': '601',
+    'slots_end': '602',
     'timeout': 5,
 }
 

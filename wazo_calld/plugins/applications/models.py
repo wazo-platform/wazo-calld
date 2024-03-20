@@ -1,6 +1,8 @@
 # Copyright 2018-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+from __future__ import annotations
+
 import logging
 from uuid import uuid4
 
@@ -21,6 +23,17 @@ class InvalidSnoopBridge(Exception):
 
 
 class ApplicationCall:
+    creation_time: str
+    status: str
+    caller_id_name: str
+    caller_id_number: str
+    snoops: dict
+    node_uuid: str | None
+    on_hold: bool
+    is_caller: bool
+    dialed_extension: str
+    variables: dict | None
+
     def __init__(self, id_):
         self.id_ = id_
         self.moh_uuid = None
@@ -188,7 +201,7 @@ class _Snoop:
         old_snoop_channel = self._snoop_channel
         self._snoop_channel = snoop_channel
         logger.debug('adding the new snoop channel %s', self._snoop_channel)
-        self._bridge.addChannel(channel=self._snoop_channel.id)
+        self._bridge.addChannel(channel=self._snoop_channel.id)  # type: ignore[union-attr]
         if old_snoop_channel:
             old_snoop_channel.hangup()
 

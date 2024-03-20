@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
+from typing import TYPE_CHECKING
 
-from flask import request
 from requests import HTTPError
 from werkzeug.local import LocalProxy as Proxy
 from xivo import auth_verifier
@@ -14,6 +14,15 @@ from wazo_calld.exceptions import (
     TokenWithUserUUIDRequiredError,
 )
 from wazo_calld.http_server import app
+
+if TYPE_CHECKING:
+    from flask import request as _request
+    from xivo.auth_verifier import Request
+
+    request: Request = _request  # type: ignore[assignment]
+else:
+    from flask import request
+
 
 logger = logging.getLogger(__name__)
 required_acl = auth_verifier.required_acl

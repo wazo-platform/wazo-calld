@@ -4,6 +4,7 @@
 import logging
 import re
 import threading
+from abc import abstractmethod
 
 from wazo_calld.plugin_helpers import ami
 from wazo_calld.plugin_helpers.ari_ import AUTO_ANSWER_VARIABLES, ARINotFound, Channel
@@ -54,6 +55,10 @@ class Destination:
     def assert_is_valid(self):
         if not self.is_valid():
             raise InvalidDestination(self._details)
+
+    @abstractmethod
+    def is_valid(self) -> bool:
+        ...
 
 
 class InterfaceDestination(Destination):

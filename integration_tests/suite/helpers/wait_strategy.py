@@ -100,7 +100,7 @@ class AmidReadyWaitStrategy(WaitStrategy):
 
 
 class _ServicesWaitStrategy(WaitStrategy):
-    _strategies = {
+    _strategies: dict[str, WaitStrategy] = {
         'amid': AmidReadyWaitStrategy(),
         'asterisk': AsteriskReadyWaitStrategy(),
         'calld': CalldEverythingOkWaitStrategy(),

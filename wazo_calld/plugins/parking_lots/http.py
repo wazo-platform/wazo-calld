@@ -6,7 +6,7 @@ from __future__ import annotations
 from flask import request
 from xivo.tenant_flask_helpers import Tenant
 
-from wazo_calld.auth import required_acl
+from wazo_calld.auth import get_token_user_uuid_from_request, required_acl
 from wazo_calld.http import AuthResource
 
 from .schemas import (
@@ -48,9 +48,10 @@ class ParkCallResource(_Base):
 class UserCallParkResource(_Base):
     @required_acl('calld.users.me.calls.{call_id}.park.update')
     def put(self, call_id: str):
+        user_uuid: str = get_token_user_uuid_from_request()
         request_data = park_call_request_schema.load(request.get_json(force=True))
 
         parked_call = self._service.park_collocutor_call(
-            request.user_uuid, request_data.pop('parking_id'), call_id, **request_data
+            user_uuid, request_data.pop('parking_id'), call_id, **request_data
         )
         return parked_call_put_response_schema.dump(parked_call), 200

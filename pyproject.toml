@@ -36,4 +36,3 @@ module = [
 disable_error_code = [
   "assignment",
 ]
-
