@@ -1,4 +1,4 @@
-# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -47,7 +47,7 @@ def moh_class_exists(amid, moh_class):
 
     raw_body = response['response']
     classes = [
-        MOH_CLASS_RE.match(line).group(1)
+        MOH_CLASS_RE.match(line).group(1)  # type: ignore[union-attr]
         for line in raw_body
         if line.startswith('Class:')
     ]

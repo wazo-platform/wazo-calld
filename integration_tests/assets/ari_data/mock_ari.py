@@ -6,11 +6,16 @@ from __future__ import annotations
 import json
 import logging
 import sys
+from typing import TYPE_CHECKING
 
 from flask import Flask, Response, jsonify, make_response, request
 from flask_sockets import Sockets
 
-_EMPTY_RESPONSES = {
+if TYPE_CHECKING:
+    from geventwebsocket.websocket import WebSocket
+
+
+_EMPTY_RESPONSES: dict[str, dict | list] = {
     'amqp': {},
     'applications': {},
     'bridges': {},
@@ -23,10 +28,10 @@ _EMPTY_RESPONSES = {
 
 app = Flask(__name__)
 sockets = Sockets(app)
-websocket = None
+websocket: WebSocket = None  # type: ignore[assignment]
 
-_requests = []
-_responses = {}
+_requests: list = []
+_responses: dict = {}
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('wazo-ari-mock')

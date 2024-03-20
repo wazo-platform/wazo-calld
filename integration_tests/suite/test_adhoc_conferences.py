@@ -57,11 +57,11 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
 
     def given_adhoc_conference(self, *user_uuids, participant_count):
         participant_call_ids = []
-        user_uuids = list(user_uuids)
+        uuids = list(user_uuids)
 
-        host_uuid = user_uuids.pop(0)
+        host_uuid = uuids.pop(0)
         try:
-            participant_uuid = user_uuids.pop(0)
+            participant_uuid = uuids.pop(0)
         except IndexError:
             participant_uuid = None
         call_ids = self.real_asterisk.given_bridged_call_stasis(
@@ -73,7 +73,7 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
 
         for _ in range(participant_count - 1):
             try:
-                participant_uuid = user_uuids.pop(0)
+                participant_uuid = uuids.pop(0)
             except IndexError:
                 participant_uuid = None
             _, participant_call_id = self.real_asterisk.given_bridged_call_stasis(

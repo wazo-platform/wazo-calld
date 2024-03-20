@@ -192,7 +192,7 @@ class BusClient(bus_helper.BusClient):
         )
 
     def send_application_created_event(self, application_uuid, destination=None):
-        payload = {
+        payload: dict = {
             'data': {
                 'uuid': application_uuid,
                 'tenant_uuid': VALID_TENANT,
@@ -214,7 +214,7 @@ class BusClient(bus_helper.BusClient):
         )
 
     def send_application_edited_event(self, application_uuid, destination=None):
-        payload = {
+        payload: dict = {
             'data': {
                 'uuid': application_uuid,
                 'tenant_uuid': VALID_TENANT,

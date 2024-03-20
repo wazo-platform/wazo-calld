@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING
 import requests
 
 if TYPE_CHECKING:
-    from .schemas import ParkingLotSchema
+    from .schemas import ExtensionSchema, ParkingLotSchema
 
 
 class ConfdClient:
@@ -361,8 +361,8 @@ class MockParkinglot:
         self,
         id: int,
         name: str | None = None,
-        slots_start: int | None = None,
-        slots_end: int | None = None,
+        slots_start: str | None = None,
+        slots_end: str | None = None,
         timeout: int | None = None,
         tenant_uuid: str | None = None,
         extension: int = 500,
@@ -371,9 +371,9 @@ class MockParkinglot:
         self._name = name or ''.join(
             choice(ascii_uppercase + digits) for _ in range(10)
         )
-        self._slots_start = slots_start or extension + 1
-        self._slots_end = slots_end or extension + 2
-        self._timeout = timeout
+        self._slots_start = slots_start or str(extension + 1)
+        self._slots_end = slots_end or str(extension + 2)
+        self._timeout = timeout or 45
         self._tenant_uuid = tenant_uuid or ''
         self._extension = extension
 
@@ -381,13 +381,13 @@ class MockParkinglot:
         return self._id
 
     def to_dict(self) -> ParkingLotSchema:
-        extensions = []
+        extensions: list[ExtensionSchema] = []
         if self._extension:
             extensions = [
                 {
                     'id': 1000,
                     'context': 'some-ctx',
-                    'exten': self._extension,
+                    'exten': str(self._extension),
                 }
             ]
 

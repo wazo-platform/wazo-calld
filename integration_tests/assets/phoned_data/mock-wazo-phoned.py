@@ -14,8 +14,8 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 action_response = ''
-valid_extens = []
-_requests = []
+valid_extens: list = []
+_requests: list = []
 
 
 def _reset() -> None:

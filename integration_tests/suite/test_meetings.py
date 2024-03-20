@@ -884,7 +884,7 @@ class TestMeetingParticipants(TestMeetings):
             no_more_participants, timeout=10, message='Participant was not kicked'
         )
 
-    @unittest.skip
+    @unittest.skip('')
     def test_mute_participant_with_no_confd(self):
         meeting_uuid = 14
         participant_id = '12345.67'
@@ -917,7 +917,7 @@ class TestMeetingParticipants(TestMeetings):
                 ),
             )
 
-    @unittest.skip
+    @unittest.skip('')
     def test_mute_participant_with_no_amid(self):
         meeting_uuid = MEETING1_UUID
         self.confd.set_meetings(
@@ -955,7 +955,7 @@ class TestMeetingParticipants(TestMeetings):
                 ),
             )
 
-    @unittest.skip
+    @unittest.skip('')
     def test_mute_participant_with_no_meetings(self):
         meeting_uuid = 14
         participant_id = '12345.67'
@@ -987,7 +987,7 @@ class TestMeetingParticipants(TestMeetings):
             ),
         )
 
-    @unittest.skip
+    @unittest.skip('')
     def test_mute_participant_with_no_participants(self):
         meeting_uuid = MEETING1_UUID
         participant_id = '12345.67'
@@ -1022,7 +1022,7 @@ class TestMeetingParticipants(TestMeetings):
             ),
         )
 
-    @unittest.skip
+    @unittest.skip('')
     def test_mute_unmute_participant(self):
         meeting_uuid = MEETING1_UUID
         self.confd.set_meetings(
@@ -1062,7 +1062,7 @@ class TestMeetingParticipants(TestMeetings):
             participant_is_not_muted, timeout=10, message='Participant is still muted'
         )
 
-    @unittest.skip
+    @unittest.skip('')
     def test_mute_unmute_participant_twice(self):
         meeting_uuid = MEETING1_UUID
         self.confd.set_meetings(
@@ -1082,7 +1082,7 @@ class TestMeetingParticipants(TestMeetings):
 
         # no error
 
-    @unittest.skip
+    @unittest.skip('')
     def test_mute_unmute_participant_send_events(self):
         meeting_uuid = MEETING1_UUID
         tenant_uuid = MEETING1_TENANT_UUID
@@ -1146,7 +1146,7 @@ class TestMeetingParticipants(TestMeetings):
             message='Unmute event was not received',
         )
 
-    @unittest.skip
+    @unittest.skip('')
     def test_record_with_no_confd(self):
         meeting_uuid = 14
 
@@ -1174,7 +1174,7 @@ class TestMeetingParticipants(TestMeetings):
                 ),
             )
 
-    @unittest.skip
+    @unittest.skip('')
     def test_record_with_no_amid(self):
         meeting_uuid = MEETING1_UUID
         self.confd.set_meetings(
@@ -1206,7 +1206,7 @@ class TestMeetingParticipants(TestMeetings):
                 ),
             )
 
-    @unittest.skip
+    @unittest.skip('')
     def test_record_with_no_meetings(self):
         meeting_uuid = 14
 
@@ -1233,7 +1233,7 @@ class TestMeetingParticipants(TestMeetings):
             ),
         )
 
-    @unittest.skip
+    @unittest.skip('')
     def test_record_participant_with_no_participants(self):
         meeting_uuid = MEETING1_UUID
         self.confd.set_meetings(
@@ -1252,7 +1252,7 @@ class TestMeetingParticipants(TestMeetings):
             ),
         )
 
-    @unittest.skip
+    @unittest.skip('')
     def test_record(self):
         meeting_uuid = MEETING1_UUID
         self.confd.set_meetings(
@@ -1288,7 +1288,7 @@ class TestMeetingParticipants(TestMeetings):
         self.calld_client.meetings.stop_record(meeting_uuid)
         assert_that(record_file_is_closed(), is_(True))
 
-    @unittest.skip
+    @unittest.skip('')
     def test_record_twice(self):
         meeting_uuid = MEETING1_UUID
         self.confd.set_meetings(
@@ -1324,7 +1324,7 @@ class TestMeetingParticipants(TestMeetings):
             ),
         )
 
-    @unittest.skip
+    @unittest.skip('')
     def test_record_send_events(self):
         meeting_uuid = MEETING1_UUID
         tenant_uuid = MEETING1_TENANT_UUID
@@ -1383,7 +1383,7 @@ class TestMeetingParticipants(TestMeetings):
             message='Record stop event was not received',
         )
 
-    @unittest.skip
+    @unittest.skip('')
     def test_participant_talking_sends_event(self):
         meeting_uuid = MEETING1_UUID
         self.confd.set_meetings(

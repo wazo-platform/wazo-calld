@@ -1,14 +1,11 @@
-# Copyright 2015-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
 
-from xivo import rest_api_helpers
+from xivo.rest_api_helpers import APIException
 
 logger = logging.getLogger(__name__)
-
-
-APIException = rest_api_helpers.APIException
 
 
 class ARIUnreachable(Exception):
