@@ -8,14 +8,6 @@ definitions:
     title: Parking lot
     type: object
     properties:
-      name:
-        description: Parking lot's name
-        type: string
-        example: Some Parking Lot
-      exten:
-        description: Parking lot's extension
-        type: string
-        example: '500'
       slots_start:
         type: string
         example: '501'
