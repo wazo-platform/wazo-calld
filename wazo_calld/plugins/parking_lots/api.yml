@@ -143,7 +143,7 @@ paths:
   /users/me/calls/{call_id}/collocutor/park:
     put:
       summary: Park the user's collocutor (talking to) call
-      description: '**Required ACL:** `calld.users.me.calls.{call_id}.park.update`'
+      description: '**Required ACL:** `calld.users.me.calls.{call_id}.collocutor.park.update`'
       parameters:
       - $ref: '#/parameters/TenantUUID'
       - $ref: '#/parameters/CallID'
