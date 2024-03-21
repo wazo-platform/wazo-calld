@@ -13,7 +13,7 @@ from wazo_bus.resources.calls.parking import (
     ParkedCallTimedOutEvent,
 )
 
-from .helpers import split_parking_id_from_name
+from .helpers import split_parking_id_from_name, timestamp, timestamp_since
 
 if TYPE_CHECKING:
     from wazo_calld.bus import CoreBusPublisher
@@ -40,7 +40,7 @@ class ParkingNotifier:
             parked_call.parkee_uniqueid,
             split_parking_id_from_name(parked_call.parkinglot),
             parked_call.parking_space,
-            self._to_timestamp(parked_call.parking_timeout),
+            timestamp(parked_call.parking_timeout),
             tenant_uuid,
         )
         self._publisher.publish(event)
@@ -64,7 +64,7 @@ class ParkingNotifier:
             parked_call.parkee_uniqueid,
             split_parking_id_from_name(parked_call.parkinglot),
             parked_call.parker_dial_string,
-            self._since_timestamp(parked_call.parking_duration),
+            timestamp_since(parked_call.parking_duration),
             tenant_uuid,
         )
         self._publisher.publish(event)
@@ -76,7 +76,7 @@ class ParkingNotifier:
             parked_call.parkee_uniqueid,
             split_parking_id_from_name(parked_call.parkinglot),
             parked_call.parking_space,
-            self._since_timestamp(parked_call.parking_duration),
+            timestamp_since(parked_call.parking_duration),
             tenant_uuid,
         )
         self._publisher.publish(event)
