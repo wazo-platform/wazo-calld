@@ -131,7 +131,7 @@ paths:
   /calls/{call_id}/park:
     put:
       summary: Park a call
-      description: '**Required ACL:** calld.parkings.{parking_id}.update`'
+      description: '**Required ACL:** calld.calls.{call_id}.park.update`'
       parameters:
       - $ref: '#/parameters/TenantUUID'
       - $ref: '#/parameters/CallID'
@@ -151,7 +151,7 @@ paths:
   /users/me/calls/{call_id}/collocutor/park:
     put:
       summary: Park the user's collocutor (talking to) call
-      description: '**Required ACL:** `calld.users.me.calls.{call_id}.update`'
+      description: '**Required ACL:** `calld.users.me.calls.{call_id}.park.update`'
       parameters:
       - $ref: '#/parameters/TenantUUID'
       - $ref: '#/parameters/CallID'
