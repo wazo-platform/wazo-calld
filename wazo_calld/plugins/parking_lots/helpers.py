@@ -73,10 +73,9 @@ def split_parking_id_from_name(parking_name: str) -> int:
     return int(id_.pop(0))
 
 
-def timestamp(seconds: str) -> str | None:
-    '''Helper to convert seconds to a timestamp in the future'''
-    value = int(seconds)
-    if not value:
+def timestamp(seconds: int | str) -> str | None:
+    '''Helper to convert seconds to a timestamp'''
+    if not (value := int(seconds or 0)):
         return None
 
     now = datetime.now(timezone.utc)
@@ -88,9 +87,9 @@ def timestamp(seconds: str) -> str | None:
     return timestamp.replace(microsecond=0).isoformat()
 
 
-def timestamp_since(seconds_ago: str) -> str:
+def timestamp_since(seconds_ago: int | str) -> str:
     '''Helper to convert seconds to a timestamp in the past'''
-    value = int(seconds_ago)
-    now = datetime.now(timezone.utc)
+    value = abs(int(seconds_ago or 0))
+    now = datetime.now(timezone.utc).replace(microsecond=0)
     timestamp = now - timedelta(seconds=value)
-    return timestamp.replace(microsecond=0).isoformat()
+    return timestamp.isoformat()

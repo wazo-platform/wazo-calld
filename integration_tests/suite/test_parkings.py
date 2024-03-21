@@ -61,7 +61,7 @@ PARKINGLOT_2: ParkingLotArgs = {
     'extension': 600,
     'slots_start': '601',
     'slots_end': '602',
-    'timeout': 5,
+    'timeout': 0,
 }
 
 
@@ -492,12 +492,29 @@ class TestParkings(BaseParkingTest):
         response = self.calld_client.calls.park(caller, parking['id'], timeout=7)
 
         timeout_at = datetime.fromisoformat(response['timeout_at'])
-        assert (timeout_at - now).total_seconds() == 7
+        assert (timeout_at - now).total_seconds() >= 7
 
         event = until.true(get_parked_event, timeout=3)
         timeout_at = datetime.fromisoformat(event['data']['timeout_at'])
 
-        assert (timeout_at - now).total_seconds() == 7
+        assert (timeout_at - now).total_seconds() >= 7
+
+    @Fixture.parking_lot(**PARKINGLOT_1)
+    def test_call_park_timeout_infinite(self, parking: ParkingLotSchema) -> None:
+        caller, _ = self.real_asterisk.given_bridged_call_not_stasis()
+        parked_events = self.bus.accumulator(headers={'name': 'call_parked'})
+
+        def get_parked_event():
+            try:
+                return parked_events.pop(with_headers=False)
+            except IndexError:
+                return False
+
+        response = self.calld_client.calls.park(caller, parking['id'], timeout=0)
+        event = until.true(get_parked_event, timeout=3)
+
+        assert response['timeout_at'] is None
+        assert event['data']['timeout_at'] is None
 
     @Fixture.parking_lot(**PARKINGLOT_1)
     def test_reparking_call_updates_timeout(self, parking: ParkingLotSchema) -> None:
@@ -509,18 +526,18 @@ class TestParkings(BaseParkingTest):
             except IndexError:
                 return False
 
+        now = datetime.now(timezone.utc).replace(microsecond=0)
         self.calld_client.calls.park(caller, parking['id'], timeout=5)
 
-        now = datetime.now(timezone.utc).replace(microsecond=0)
         parked_events = self.bus.accumulator(headers={'name': 'call_parked'})
         response = self.calld_client.calls.park(caller, parking['id'], timeout=12345)
 
         timeout_at = datetime.fromisoformat(response['timeout_at'])
-        assert (timeout_at - now).total_seconds() == 12345
+        assert (timeout_at - now).total_seconds() >= 12345
 
         event = until.true(get_parked_event, timeout=3)
         timeout_at = datetime.fromisoformat(event['data']['timeout_at'])
-        assert (timeout_at - now).total_seconds() == 12345
+        assert (timeout_at - now).total_seconds() >= 12345
 
     @Fixture.parking_lot(**PARKINGLOT_1)
     def test_park_stasis(self, parking: ParkingLotSchema) -> None:

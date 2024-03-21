@@ -4,10 +4,10 @@
 from __future__ import annotations
 
 import logging
+from time import sleep
 from typing import TYPE_CHECKING, TypedDict
 
 from requests import RequestException
-from time import sleep
 from typing_extensions import NotRequired
 
 from wazo_calld.plugin_helpers.ari_ import Channel
@@ -90,7 +90,7 @@ class ParkingService:
             'Parkinglot': f'parkinglot-{parking.id}',
         }
 
-        if timeout:
+        if timeout is not None:
             # Convert to milliseconds for AMI action
             park_payload['Timeout'] = timeout * 1000
 
