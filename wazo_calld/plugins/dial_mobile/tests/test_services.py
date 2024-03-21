@@ -134,7 +134,7 @@ class TestRemoveUnansweredChannels(DialerTestCase):
         channel_2.id = s.channel_2_id
         channel_2.get.return_value = Mock(json={'state': 'Ringing'})
 
-        self.poller._dialed_channels = {channel_1, channel_2}
+        self.poller._dialed_channels = [channel_1, channel_2]
 
         self.poller._remove_unanswered_channels()
 
@@ -149,7 +149,7 @@ class TestRemoveUnansweredChannels(DialerTestCase):
         channel_2.id = s.channel_2_id
         channel_2.get.return_value = Mock(json={'state': 'Ringing'})
 
-        self.poller._dialed_channels = {channel_1, channel_2}
+        self.poller._dialed_channels = [channel_1, channel_2]
 
         def hangup_mock(channelId):
             if channelId == s.channel_1_id:
@@ -166,7 +166,7 @@ class TestRemoveUnansweredChannels(DialerTestCase):
         channel_1.id = s.channel_1_id
         channel_1.get.return_value = Mock(json={'state': 'Down'})
 
-        self.poller._dialed_channels = {channel_1}
+        self.poller._dialed_channels = [channel_1]
 
         self.poller._remove_unanswered_channels()
 
@@ -177,13 +177,13 @@ class TestChannelGone(DialerTestCase):
     def test_unknown_channel_gone(self):
         dialed_channel = Mock()
         dialed_channel.id = s.dialed_channel_id
-        self.poller._dialed_channels = {dialed_channel}
+        self.poller._dialed_channels = [dialed_channel]
 
         with pytest.raises(_NoSuchChannel):
             self.poller._on_channel_gone('unknown')
 
     def test_caller_gone_before_dialed_any_channel(self):
-        self.poller._dialed_channels = set()
+        self.poller._dialed_channels = []
         self.poller.stop = Mock()
 
         self.poller._on_channel_gone(self.poller._caller_channel_id)
@@ -193,7 +193,7 @@ class TestChannelGone(DialerTestCase):
     def test_dialed_channel_gone(self):
         dialed_channel = Mock()
         dialed_channel.id = s.dialed_channel_id
-        self.poller._dialed_channels = {dialed_channel}
+        self.poller._dialed_channels = [dialed_channel]
         self.poller.stop = Mock()
 
         self.poller._on_channel_gone(s.dialed_channel_id)
