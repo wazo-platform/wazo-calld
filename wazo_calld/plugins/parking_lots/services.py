@@ -7,6 +7,7 @@ import logging
 from typing import TYPE_CHECKING, TypedDict
 
 from requests import RequestException
+from time import sleep
 from typing_extensions import NotRequired
 
 from wazo_calld.plugin_helpers.ari_ import Channel
@@ -39,6 +40,7 @@ if TYPE_CHECKING:
     from .dataclasses_ import ConfdParkingLot
 
 
+RETRIES = 5
 PARKED_CHANNEL_VAR = 'WAZO_CALL_PARKED'
 logger = logging.getLogger(__name__)
 
@@ -109,13 +111,16 @@ class ParkingService:
         except RequestException as e:
             raise WazoAmidError(self._amid, e)
 
-        # NOTE: Should probably wait for ParkedCall event to happen instead of polling
-        try:
-            return self.get_parked_call(tenant_uuid, parking.id, parkee.id)
-        except NoSuchParkedCall:
-            if self.is_parking_full(tenant_uuid, parking.id):
-                raise ParkingFull(tenant_uuid, parking.id, parkee.id)
-            raise
+        check_full: bool | None = None
+        for _ in range(RETRIES):
+            try:
+                return self.get_parked_call(tenant_uuid, parking.id, parkee.id)
+            except NoSuchParkedCall:
+                if check_full is None:
+                    if check_full := self.is_parking_full(tenant_uuid, parking.id):
+                        raise ParkingFull(tenant_uuid, parking.id, parkee.id)
+                sleep(0.2)  # wait 200 ms between attempts
+        raise NoSuchParkedCall(tenant_uuid, parking.id, parkee.id)
 
     def find_parked_call(
         self, tenant_uuid: str, parking_id: int, call_id: str
