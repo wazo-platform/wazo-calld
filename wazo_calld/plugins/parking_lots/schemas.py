@@ -3,7 +3,6 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING
 
 from marshmallow import EXCLUDE, Schema, post_dump, pre_dump
@@ -11,8 +10,10 @@ from marshmallow.fields import Method
 from marshmallow.validate import Predicate
 from xivo.mallow.fields import Integer, List, Nested, String
 
+from .helpers import timestamp, timestamp_since
+
 if TYPE_CHECKING:
-    from .dataclasses_ import AsteriskParkedCall, ConfdParkingLot
+    from .dataclasses_ import AsteriskParkedCall
 
 
 class _Base(Schema):
@@ -42,29 +43,18 @@ class ParkingLotSchema(_Base):
         obj['slots_remaining'] = total - len(obj['calls'])
         return obj
 
-    @post_dump(pass_original=True)
-    def extract_exten(self, data: dict, original_obj: ConfdParkingLot, **kwargs):
-        if original_obj.extensions:
-            data['exten'] = original_obj.extensions[0].exten
-
-        return data
-
 
 class ParkedCallGetResponseSchema(_Base):
     call_id = String(attribute='parkee_uniqueid', dump_only=True)
     slot = String(attribute='parking_space', dump_only=True)
     parked_at = Method('compute_park_time', dump_only=True)
-    timeout_at = Method('compute_timeout', dump_only=True)
+    timeout_at = Method('compute_timeout', allow_none=True, dump_only=True)
 
     def compute_park_time(self, parked_call: AsteriskParkedCall) -> str:
-        now = datetime.now(timezone.utc)
-        parked_at = now - timedelta(seconds=int(parked_call.parking_duration))
-        return parked_at.isoformat()
+        return timestamp_since(parked_call.parking_duration)
 
-    def compute_timeout(self, parked_call: AsteriskParkedCall) -> str:
-        now = datetime.now(timezone.utc)
-        timeout_at = now + timedelta(seconds=int(parked_call.parking_timeout))
-        return timeout_at.isoformat()
+    def compute_timeout(self, parked_call: AsteriskParkedCall) -> str | None:
+        return timestamp(parked_call.parking_timeout)
 
 
 class ParkCallRequestSchema(_Base):
@@ -77,12 +67,10 @@ class ParkCallRequestSchema(_Base):
 
 class ParkedCallPutResponseSchema(_Base):
     slot = String(attribute='parking_space', dump_only=True)
-    timeout_at = Method('compute_timeout', dump_only=True)
+    timeout_at = Method('compute_timeout', allow_none=True, dump_only=True)
 
-    def compute_timeout(self, parked_call: AsteriskParkedCall) -> str:
-        now = datetime.now(timezone.utc)
-        timeout_at = now + timedelta(seconds=int(parked_call.parking_timeout))
-        return timeout_at.isoformat()
+    def compute_timeout(self, parked_call: AsteriskParkedCall) -> str | None:
+        return timestamp(parked_call.parking_timeout)
 
 
 park_call_request_schema = ParkCallRequestSchema()

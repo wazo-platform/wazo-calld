@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import is_dataclass
+from datetime import datetime, timedelta, timezone
 from enum import Enum, auto
 from inspect import signature
 from typing import Any, TypeVar, get_args, get_origin, get_type_hints
@@ -70,3 +71,26 @@ def split_parking_id_from_name(parking_name: str) -> int:
     if not id_ or prefix != 'parkinglot':
         raise ValueError('invalid parking lot name')
     return int(id_.pop(0))
+
+
+def timestamp(seconds: str) -> str | None:
+    '''Helper to convert seconds to a timestamp in the future'''
+    value = int(seconds)
+    if not value:
+        return None
+
+    now = datetime.now(timezone.utc)
+
+    try:
+        timestamp = now + timedelta(seconds=value)
+    except OverflowError:
+        return None
+    return timestamp.replace(microsecond=0).isoformat()
+
+
+def timestamp_since(seconds_ago: str) -> str:
+    '''Helper to convert seconds to a timestamp in the past'''
+    value = int(seconds_ago)
+    now = datetime.now(timezone.utc)
+    timestamp = now - timedelta(seconds=value)
+    return timestamp.replace(microsecond=0).isoformat()
