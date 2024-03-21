@@ -3,7 +3,6 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING
 
 from wazo_bus.resources.calls.parking import (
@@ -24,16 +23,6 @@ if TYPE_CHECKING:
 class ParkingNotifier:
     def __init__(self, bus_publisher: CoreBusPublisher):
         self._publisher = bus_publisher
-
-    def _to_timestamp(self, value: str) -> str:
-        now = datetime.now(timezone.utc)
-        timestamp = now + timedelta(seconds=int(value))
-        return timestamp.isoformat()
-
-    def _since_timestamp(self, value: str) -> str:
-        now = datetime.now(timezone.utc)
-        timestamp = now - timedelta(seconds=int(value))
-        return timestamp.isoformat()
 
     def call_parked(self, parked_call: AsteriskParkedCall, tenant_uuid: str) -> None:
         event = CallParkedEvent(
