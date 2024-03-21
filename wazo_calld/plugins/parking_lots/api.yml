@@ -74,6 +74,7 @@ definitions:
           parker.  If unspecified, it will defaults to the parking's timeout value.
           (A value of 0 disables the timeout feature)
         type: integer
+        minimum: 0
         example: 30
   ParkedCallInfo:
     description: Information returned when a call has been parked

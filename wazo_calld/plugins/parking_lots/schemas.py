@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 
 from marshmallow import EXCLUDE, Schema, post_dump, pre_dump
 from marshmallow.fields import Method
-from marshmallow.validate import Predicate
+from marshmallow.validate import Predicate, Range
 from xivo.mallow.fields import Integer, List, Nested, String
 
 from .helpers import timestamp, timestamp_since
@@ -62,7 +62,12 @@ class ParkCallRequestSchema(_Base):
     preferred_slot = String(
         validate=Predicate('isdigit'), allow_none=True, missing=None, load_only=True
     )
-    timeout = Integer(allow_none=True, missing=None, load_only=True)
+    timeout = Integer(
+        validate=Range(min=0, error='Must be a positive integer or 0'),
+        allow_none=True,
+        missing=None,
+        load_only=True,
+    )
 
 
 class ParkedCallPutResponseSchema(_Base):
