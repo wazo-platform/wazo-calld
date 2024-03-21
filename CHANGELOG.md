@@ -1,12 +1,16 @@
 # Changelog
 
-## 24.03
+## 24.05
 
 * New API to manage a call parking
 
   * GET `/parking_lots/<parking-id>`
   * PUT `/calls/<call-id>/park`
-  * PUT `/users/me/calls/<call-id>/park_peer`
+  * PUT `/users/me/calls/<call-id>/collocutor/park`
+
+* New attribute for `calls` objects (API and events):
+
+  * `parked`
 
 ## 24.02
 
