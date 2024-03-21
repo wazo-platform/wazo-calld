@@ -105,7 +105,7 @@ class ParkingService:
             park_payload['TimeoutChannel'] = parked_call.parker_dial_string
 
         try:
-            self._amid.action('park', park_payload)
+            self._amid.action('Park', park_payload)
         except RequestException as e:
             raise WazoAmidError(self._amid, e)
 
@@ -148,7 +148,7 @@ class ParkingService:
 
         try:
             results: list[dict] = self._amid.action(
-                'parkedcalls', {'ParkingLot': f'parkinglot-{parking.id}'}
+                'ParkedCalls', {'ParkingLot': f'parkinglot-{parking.id}'}
             )
         except RequestException as e:
             raise WazoAmidError(self._amid, e)
@@ -165,7 +165,7 @@ class ParkingService:
 
         try:
             results: list[dict] = self._amid.action(
-                'parkedcalls', {'ParkingLot': f'parkinglot-{parking.id}'}
+                'ParkedCalls', {'ParkingLot': f'parkinglot-{parking.id}'}
             )
         except RequestException as e:
             raise WazoAmidError(self._amid, e)
