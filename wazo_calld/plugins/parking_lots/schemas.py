@@ -22,8 +22,6 @@ class _Base(Schema):
 
 
 class ParkingLotSchema(_Base):
-    name = String(dump_only=True)
-    exten = String(dump_only=True, default='')
     slots_start = Integer(dump_only=True)
     slots_end = Integer(dump_only=True)
     slots_total = Integer(dump_only=True, default=0)
