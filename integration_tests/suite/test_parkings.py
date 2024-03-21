@@ -6,7 +6,6 @@ from __future__ import annotations
 from collections.abc import Generator
 from datetime import datetime, timezone
 from functools import wraps
-from math import floor
 from typing import TYPE_CHECKING, Callable, TypedDict, cast
 from uuid import uuid4
 
@@ -489,16 +488,16 @@ class TestParkings(BaseParkingTest):
             except IndexError:
                 return False
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(timezone.utc).replace(microsecond=0)
         response = self.calld_client.calls.park(caller, parking['id'], timeout=7)
 
         timeout_at = datetime.fromisoformat(response['timeout_at'])
-        assert floor((timeout_at - now).total_seconds()) == 7
+        assert (timeout_at - now).total_seconds() == 7
 
         event = until.true(get_parked_event, timeout=3)
         timeout_at = datetime.fromisoformat(event['data']['timeout_at'])
 
-        assert floor((timeout_at - now).total_seconds()) == 7
+        assert (timeout_at - now).total_seconds() == 7
 
     @Fixture.parking_lot(**PARKINGLOT_1)
     def test_reparking_call_updates_timeout(self, parking: ParkingLotSchema) -> None:
@@ -512,16 +511,16 @@ class TestParkings(BaseParkingTest):
 
         self.calld_client.calls.park(caller, parking['id'], timeout=5)
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(timezone.utc).replace(microsecond=0)
         parked_events = self.bus.accumulator(headers={'name': 'call_parked'})
         response = self.calld_client.calls.park(caller, parking['id'], timeout=12345)
 
         timeout_at = datetime.fromisoformat(response['timeout_at'])
-        assert floor((timeout_at - now).total_seconds()) == 12345
+        assert (timeout_at - now).total_seconds() == 12345
 
         event = until.true(get_parked_event, timeout=3)
         timeout_at = datetime.fromisoformat(event['data']['timeout_at'])
-        assert floor((timeout_at - now).total_seconds()) == 12345
+        assert (timeout_at - now).total_seconds() == 12345
 
     @Fixture.parking_lot(**PARKINGLOT_1)
     def test_park_stasis(self, parking: ParkingLotSchema) -> None:
