@@ -202,7 +202,7 @@ class TestParkings(BaseParkingTest):
 
     @Fixture.parking_lot(**PARKINGLOT_1)
     def test_call_park_updates_call_object(self, parking: ParkingLotSchema) -> None:
-        caller, callee = self.real_asterisk.given_bridged_call_not_stasis()
+        caller, _ = self.real_asterisk.given_bridged_call_not_stasis()
         parked_event = self.bus.accumulator(headers={'name': 'call_parked'})
 
         response = self.calld_client.calls.get_call(caller)
