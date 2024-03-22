@@ -29,8 +29,8 @@ class TestSplitParkingID(TestCase):
         )
 
         with raises(ValueError):
-            assert helpers.split_parking_id_from_name('default')
-            assert helpers.split_parking_id_from_name('parking_lot-1')
+            helpers.split_parking_id_from_name('default')
+            helpers.split_parking_id_from_name('parking_lot-1')
 
 
 @patch(f'{DATETIME}', Mock(now=Mock(return_value=datetime(2000, 1, 1, 0, 0))))
