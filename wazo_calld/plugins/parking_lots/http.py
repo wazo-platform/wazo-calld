@@ -46,7 +46,7 @@ class ParkCallResource(_Base):
 
 
 class UserCallParkResource(_Base):
-    @required_acl('calld.users.me.calls.{call_id}.collocutor.park.update')
+    @required_acl('calld.users.me.calls.{call_id}.park.update')
     def put(self, call_id: str):
         user_uuid: str = get_token_user_uuid_from_request()
         request_data = park_call_request_schema.load(request.get_json(force=True))
