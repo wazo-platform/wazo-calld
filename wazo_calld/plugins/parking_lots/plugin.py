@@ -49,7 +49,7 @@ class Plugin:
     def set_resources(self, api: Api, service: ParkingService) -> None:
         api.add_resource(
             ParkingLotResource,
-            '/parking_lots/<int:parking_id>',
+            '/parkinglots/<int:parking_id>',
             resource_class_args=[service],
         )
 
@@ -61,6 +61,6 @@ class Plugin:
 
         api.add_resource(
             UserCallParkResource,
-            '/users/me/calls/<call_id>/collocutor/park',
+            '/users/me/calls/<call_id>/park',
             resource_class_args=[service],
         )

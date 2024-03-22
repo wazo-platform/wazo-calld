@@ -108,7 +108,7 @@ parameters:
     schema:
       $ref: '#/definitions/ParkCallBody'
 paths:
-  /parking_lots/{parking_id}:
+  /parkinglots/{parking_id}:
     get:
       summary: Retrieve parked calls for parking
       description: '**Required ACL:** `calld.parkings.{parking_id}.read`'
@@ -142,10 +142,10 @@ paths:
           $ref: '#/responses/NotFoundError'
         '503':
           $ref: '#/responses/FullOrServiceUnavailable'
-  /users/me/calls/{call_id}/collocutor/park:
+  /users/me/calls/{call_id}/park:
     put:
       summary: Park the user's collocutor (talking to) call
-      description: '**Required ACL:** `calld.users.me.calls.{call_id}.collocutor.park.update`'
+      description: '**Required ACL:** `calld.users.me.calls.{call_id}.park.update`'
       parameters:
       - $ref: '#/parameters/TenantUUID'
       - $ref: '#/parameters/CallID'
