@@ -14,9 +14,9 @@ from hamcrest import (
     assert_that,
     calling,
     empty,
-    equal_to,
     has_entries,
     has_item,
+    has_length,
     has_properties,
     not_,
 )
@@ -303,9 +303,21 @@ class TestParkings(BaseParkingTest):
         for _ in range(10):
             self.given_parked_call(parking['extensions'][0]['exten'])
 
-        response = self.calld_client.parking_lots.get(parking['id'])
-        assert_that(response, has_entries('slots_remaining', equal_to(0)))
+        def assert_bridge_full():
+            bridges = [bridge.json for bridge in self.ari.bridges.list()]
+            assert_that(
+                bridges,
+                has_item(
+                    has_entries(
+                        bridge_type='holding',
+                        bridge_class='parking',
+                        name=f'parkinglot-{parking["id"]}',
+                        channels=has_length(10),
+                    )
+                ),
+            )
 
+        until.assert_(assert_bridge_full, timeout=10)
         caller, _ = self.real_asterisk.given_bridged_call_not_stasis()
 
         assert_that(
@@ -519,6 +531,7 @@ class TestParkings(BaseParkingTest):
     @Fixture.parking_lot(**PARKINGLOT_1)
     def test_reparking_call_updates_timeout(self, parking: ParkingLotSchema) -> None:
         caller, _ = self.real_asterisk.given_bridged_call_not_stasis()
+        parked_events = self.bus.accumulator(headers={'name': 'call_parked'})
 
         def get_parked_event():
             try:
@@ -528,8 +541,8 @@ class TestParkings(BaseParkingTest):
 
         now = datetime.now(timezone.utc).replace(microsecond=0)
         self.calld_client.calls.park(caller, parking['id'], timeout=5)
+        until.true(get_parked_event, timeout=3)
 
-        parked_events = self.bus.accumulator(headers={'name': 'call_parked'})
         response = self.calld_client.calls.park(caller, parking['id'], timeout=12345)
 
         timeout_at = datetime.fromisoformat(response['timeout_at'])
