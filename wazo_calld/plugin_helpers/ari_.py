@@ -89,7 +89,7 @@ class GlobalVariableAdapter:
         self._ari.asterisk.setGlobalVar(variable=variable, value=value)
 
     def unset(self, variable):
-        self._ari.asterisk.setGlobalVar(variable=variable, value='')
+        self._ari.asterisk.setGlobalVar(variable=f'GLOBAL_DELETE({variable})', value='')
 
 
 class GlobalVariableJsonAdapter:
