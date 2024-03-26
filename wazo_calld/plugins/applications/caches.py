@@ -1,8 +1,11 @@
 # Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+from __future__ import annotations
+
 import logging
 import threading
+from typing import Callable
 
 import requests
 
@@ -22,7 +25,7 @@ class ConfdIsReadyThread:
         self._started = False
         self._should_stop = threading.Event()
         self._retry_time = 1
-        self.callback = None
+        self.callback: Callable | None = None
 
     def start(self):
         if self._started:
@@ -44,7 +47,8 @@ class ConfdIsReadyThread:
     def _run(self):
         while not self._should_stop.is_set():
             if self._is_ready():
-                self.callback()
+                if self.callback:
+                    self.callback()
                 return
             logger.info(
                 'wazo-confd is not ready yet, retrying in %s seconds...',
@@ -67,7 +71,7 @@ class ConfdApplicationsCache:
         self._confd = confd
         self._cache = None
         self._cache_lock = threading.Lock()
-        self._triggers = {'created': [], 'updated': [], 'deleted': []}
+        self._triggers: dict[str, list] = {'created': [], 'updated': [], 'deleted': []}
 
     @property
     def _applications(self):

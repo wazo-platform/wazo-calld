@@ -84,7 +84,7 @@ class BaseApplicationTestCase(RealAsteriskIntegrationTest):
         )
 
     def call_app(self, app_uuid, variables=None):
-        kwargs = {
+        kwargs: dict = {
             'endpoint': ENDPOINT_AUTOANSWER,
             'app': f'wazo-app-{app_uuid}',
             'appArgs': 'incoming',
@@ -337,7 +337,7 @@ class TestStasisTriggers(BaseApplicationTestCase):
 
         self.bus.send_application_created_event(app_uuid, destination='node')
 
-        def event_received():
+        def event_received():  # type: ignore
             events = event_accumulator.accumulate(with_headers=True)
             assert_that(
                 events,
@@ -362,7 +362,7 @@ class TestStasisTriggers(BaseApplicationTestCase):
 
         self.call_app(self.no_node_app_uuid)
 
-        def event_received():
+        def event_received():  # type: ignore
             events = event_accumulator.accumulate()
             assert_that(events, has_length(1))
 
@@ -2587,7 +2587,7 @@ class TestApplicationNode(BaseApplicationTestCase):
 
         self.calld_client.applications.delete_node(self.no_node_app_uuid, node['uuid'])
 
-        def event_received():
+        def event_received():  # type: ignore
             events = event_accumulator.accumulate(with_headers=True)
             assert_that(
                 events,

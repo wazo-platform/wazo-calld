@@ -221,7 +221,7 @@ class _MessageInfoParser:
         ]
 
     def parse(self, fobj):
-        result = {}
+        result: dict = {}
         parsed = set()
         for line in fobj:
             line = b'='.join([x.strip() for x in line.split(b'=')])
@@ -233,7 +233,7 @@ class _MessageInfoParser:
         # check that everything was parsed
         for prefix, _, _ in self._parse_table:
             if prefix not in parsed:
-                raise Exception(f'no line starting with {prefix}')
+                raise Exception(f'no line starting with {prefix.decode("utf-8")}')
         return result
 
     @staticmethod
@@ -315,7 +315,7 @@ class _MessageAccess:
 
 
 class _VoicemailMessagesCache:
-    _EMPTY_CACHE_ENTRY = {}
+    _EMPTY_CACHE_ENTRY: dict = {}
 
     def __init__(self, voicemail_storage, cache_cleanup_counter_max=1500):
         self._storage = voicemail_storage

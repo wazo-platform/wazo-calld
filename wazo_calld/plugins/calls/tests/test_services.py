@@ -16,7 +16,7 @@ class TestServices(TestCase):
             Mock(), Mock(), self.ari, Mock(), Mock(), Mock(), Mock()
         )
 
-        self.example_to_fit = {
+        self.example_to_fit: dict = {
             'type': 'ChannelDestroyed',
             'timestamp': '2021-06-15T11:06:46.331-0400',
             'cause': 3,

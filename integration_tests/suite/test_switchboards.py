@@ -443,7 +443,7 @@ class TestSwitchboardCallsQueued(TestSwitchboards):
 
         until.assert_(call_was_forwarded, timeout=4)
 
-    @unittest.skip
+    @unittest.skip(reason='')
     def test_given_one_call_queued_answered_held_when_unhold_then_no_queued_calls_updated_bus_event(
         self,
     ):

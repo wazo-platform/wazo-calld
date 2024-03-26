@@ -3,6 +3,7 @@
 
 import logging
 import uuid
+from typing import ClassVar
 
 from ari.exceptions import ARINotFound
 
@@ -69,6 +70,8 @@ def transition(decorated):
 
 
 class TransferState:
+    name: ClassVar[str]
+
     def __init__(
         self,
         amid,

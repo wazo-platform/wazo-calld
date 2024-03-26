@@ -22,6 +22,19 @@ repos:
     hooks:
       - id: isort
         args: [--filter-files]
+# Automatically check typing via MyPy
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v0.991
+    hooks:
+      - id: mypy
+        language_version: '3.10'
+        exclude: 'integration_tests/setup.py'
+        additional_dependencies:
+          - 'types-flask'
+          - 'types-pyyaml'
+          - 'types-requests'
+          - 'types-setuptools'
+          - 'types-werkzeug'
 # See https://pre-commit.com for more information
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0
