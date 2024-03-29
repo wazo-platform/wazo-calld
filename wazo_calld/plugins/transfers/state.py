@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
-import uuid
 from typing import ClassVar
 
 from ari.exceptions import ARINotFound
@@ -17,7 +16,7 @@ from .exceptions import (
     TransferCompletionError,
     TransferCreationError,
 )
-from .transfer import Transfer, TransferStatus
+from .transfer import TransferStatus
 
 logger = logging.getLogger(__name__)
 
@@ -38,10 +37,13 @@ class StateFactory:
         dependencies = list(self._dependencies) + [transfer]
         return self._state_constructors[transfer.status](*dependencies)
 
-    def make_from_class(self, state_class):
+    def make_from_class(self, state_class, transfer=None):
         if not self._configured:
             raise RuntimeError('StateFactory is not configured')
         dependencies = list(self._dependencies)
+        if transfer:
+            transfer.status = state_class.name
+            dependencies.append(transfer)
         return state_class(*dependencies)
 
     def state(self, wrapped_class):
@@ -118,10 +120,6 @@ class TransferState:
 
     @transition
     def recipient_answer(self):
-        raise NotImplementedError(self.name)
-
-    @transition
-    def create(self):
         raise NotImplementedError(self.name)
 
     @transition
@@ -205,26 +203,6 @@ class TransferStateReady(TransferState):
     name = TransferStatus.ready
 
     @transition
-    def create(
-        self,
-        transferred_channel,
-        initiator_channel,
-        flow,
-    ):
-        channel = Channel(initiator_channel.id, self._ari)
-        initiator_uuid = channel.user()
-        initiator_tenant_uuid = channel.tenant_uuid()
-        transfer_bridge = self._ari.bridges.create(type='mixing', name='transfer')
-        transfer_id = transfer_bridge.id
-        self.transfer = Transfer(transfer_id, initiator_uuid, initiator_tenant_uuid)
-        self.transfer.transferred_call = transferred_channel.id
-        self.transfer.initiator_call = initiator_channel.id
-        self.transfer.status = self.name
-        self.transfer.flow = flow
-
-        return TransferStateReady.from_state(self)
-
-    @transition
     def start(
         self,
         context,
@@ -238,7 +216,9 @@ class TransferStateReady(TransferState):
         initiator_uuid = initiator_channel.user()
         if initiator_uuid is None:
             raise TransferCreationError('initiator has no user UUID')
-        transfer_bridge = self._ari.bridges.get(bridgeId=transfer_id)
+        transfer_bridge = self._ari.bridges.create(
+            type='mixing', name='transfer', bridgeId=transfer_id
+        )
 
         try:
             self._ari.channels.setChannelVar(
@@ -309,27 +289,6 @@ class TransferStateReady(TransferState):
 @state_factory.state
 class TransferStateNonStasis(TransferState):
     name = 'non_stasis'
-
-    @transition
-    def create(
-        self,
-        transferred_channel,
-        initiator_channel,
-        flow,
-    ):
-        transfer_id = str(uuid.uuid4())
-        channel = Channel(initiator_channel.id, self._ari)
-        initiator_uuid = channel.user()
-        if initiator_uuid is None:
-            raise TransferCreationError('initiator has no user UUID')
-        initiator_tenant_uuid = channel.tenant_uuid()
-        self.transfer = Transfer(transfer_id, initiator_uuid, initiator_tenant_uuid)
-        self.transfer.initiator_call = initiator_channel.id
-        self.transfer.transferred_call = transferred_channel.id
-        self.transfer.status = self.name
-        self.transfer.flow = flow
-
-        return TransferStateNonStasis.from_state(self)
 
     @transition
     def start(
