@@ -299,7 +299,6 @@ class TransferStateReady(TransferState):
         )
 
         self.transfer.recipient_call = recipient_call
-        self._notifier.created(self.transfer)
 
         return TransferStateRingback.from_state(self)
 
@@ -354,7 +353,6 @@ class TransferStateNonStasis(TransferState):
             )
         except ARINotFound:
             raise TransferCreationError('channel not found')
-        self._notifier.created(self.transfer)
 
         return TransferStateMovingToStasis.from_state(self)
 

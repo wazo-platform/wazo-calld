@@ -35,6 +35,7 @@ class TransfersService:
         amid_client,
         ari,
         confd_client,
+        notifier,
         state_factory,
         state_persistor,
         transfer_lock,
@@ -42,6 +43,7 @@ class TransfersService:
         self.amid_client = amid_client
         self.ari = ari
         self.confd_client = confd_client
+        self.notifier = notifier
         self.state_persistor = state_persistor
         self.state_factory = state_factory
         self.transfer_lock = transfer_lock
@@ -85,6 +87,9 @@ class TransfersService:
         except Exception:
             self.transfer_lock.release(initiator_call)
             raise
+
+        self.notifier.created(new_state.transfer)
+
         if flow == 'blind':
             new_state = new_state.complete()
 
