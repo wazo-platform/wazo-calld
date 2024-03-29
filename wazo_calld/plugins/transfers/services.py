@@ -24,7 +24,7 @@ from .exceptions import (
     TransferCreationError,
 )
 from .lock import HangupLock, InvalidLock
-from .state import TransferStateReady, TransferStateReadyNonStasis
+from .state import TransferStateNonStasis, TransferStateReady
 
 logger = logging.getLogger(__name__)
 
@@ -71,9 +71,7 @@ class TransfersService:
             Channel(transferred_call, self.ari).is_in_stasis()
             and Channel(initiator_call, self.ari).is_in_stasis()
         ):
-            transfer_state = self.state_factory.make_from_class(
-                TransferStateReadyNonStasis
-            )
+            transfer_state = self.state_factory.make_from_class(TransferStateNonStasis)
         else:
             transfer_state = self.state_factory.make_from_class(TransferStateReady)
 

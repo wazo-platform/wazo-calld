@@ -308,8 +308,8 @@ class TransferStateReady(TransferState):
 
 
 @state_factory.state
-class TransferStateReadyNonStasis(TransferState):
-    name = 'ready_non_stasis'
+class TransferStateNonStasis(TransferState):
+    name = 'non_stasis'
 
     @transition
     def create(
@@ -330,7 +330,7 @@ class TransferStateReadyNonStasis(TransferState):
         self.transfer.status = self.name
         self.transfer.flow = flow
 
-        return TransferStateReadyNonStasis.from_state(self)
+        return TransferStateNonStasis.from_state(self)
 
     @transition
     def start(
@@ -356,14 +356,14 @@ class TransferStateReadyNonStasis(TransferState):
             raise TransferCreationError('channel not found')
         self._notifier.created(self.transfer)
 
-        return TransferStateStarting.from_state(self)
+        return TransferStateMovingToStasis.from_state(self)
 
     def update_cache(self):
         self._state_persistor.upsert(self.transfer)
 
 
 @state_factory.state
-class TransferStateStarting(TransferState):
+class TransferStateMovingToStasis(TransferState):
     name = TransferStatus.starting
 
     @transition
