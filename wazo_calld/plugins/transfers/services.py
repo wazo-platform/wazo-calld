@@ -81,12 +81,9 @@ class TransfersService:
             new_state = transfer_state.create(
                 transferred_channel,
                 initiator_channel,
-                context,
-                exten,
                 flow,
-                variables,
-                timeout,
             )
+            new_state = new_state.start(context, exten, flow, variables, timeout)
         except Exception:
             self.transfer_lock.release(initiator_call)
             raise

@@ -209,38 +209,63 @@ class TransferStateReady(TransferState):
         self,
         transferred_channel,
         initiator_channel,
-        context,
-        exten,
         flow,
-        variables,
-        timeout,
     ):
         channel = Channel(initiator_channel.id, self._ari)
         initiator_uuid = channel.user()
         initiator_tenant_uuid = channel.tenant_uuid()
-        if initiator_uuid is None:
-            raise TransferCreationError('initiator has no user UUID')
-
         transfer_bridge = self._ari.bridges.create(type='mixing', name='transfer')
         transfer_id = transfer_bridge.id
+        self.transfer = Transfer(transfer_id, initiator_uuid, initiator_tenant_uuid)
+        self.transfer.transferred_call = transferred_channel.id
+        self.transfer.initiator_call = initiator_channel.id
+        self.transfer.status = self.name
+        self.transfer.flow = flow
+
+        return TransferStateReady.from_state(self)
+
+    @transition
+    def start(
+        self,
+        context,
+        exten,
+        variables,
+        timeout,
+    ):
+        transfer_id = self.transfer.id
+        initiator_channel = Channel(self.transfer.initiator_call, self._ari)
+        transferred_channel = Channel(self.transfer.transferred_call, self._ari)
+        initiator_uuid = initiator_channel.user()
+        if initiator_uuid is None:
+            raise TransferCreationError('initiator has no user UUID')
+        transfer_bridge = self._ari.bridges.get(bridgeId=transfer_id)
+
         try:
-            transferred_channel.setChannelVar(
-                variable='XIVO_TRANSFER_ROLE', value='transferred'
+            self._ari.channels.setChannelVar(
+                channelId=transferred_channel.id,
+                variable='XIVO_TRANSFER_ROLE',
+                value='transferred',
             )
-            transferred_channel.setChannelVar(
-                variable='XIVO_TRANSFER_ID', value=transfer_id
+            self._ari.channels.setChannelVar(
+                channelId=transferred_channel.id,
+                variable='XIVO_TRANSFER_ID',
+                value=transfer_id,
             )
-            initiator_channel.setChannelVar(
-                variable='XIVO_TRANSFER_ROLE', value='initiator'
+            self._ari.channels.setChannelVar(
+                channelId=initiator_channel.id,
+                variable='XIVO_TRANSFER_ROLE',
+                value='initiator',
             )
-            initiator_channel.setChannelVar(
-                variable='XIVO_TRANSFER_ID', value=transfer_id
+            self._ari.channels.setChannelVar(
+                channelId=initiator_channel.id,
+                variable='XIVO_TRANSFER_ID',
+                value=transfer_id,
             )
         except ARINotFound:
             raise TransferCreationError('some channel got hung up')
 
         try:
-            bridge = channel.bridge()
+            bridge = initiator_channel.bridge()
         except BridgeNotFound:
             pass
         else:
@@ -273,18 +298,13 @@ class TransferStateReady(TransferState):
             initiator_channel.id, context, exten, transfer_id, variables, timeout
         )
 
-        self.transfer = Transfer(transfer_id, initiator_uuid, initiator_tenant_uuid)
-        self.transfer.transferred_call = transferred_channel.id
-        self.transfer.initiator_call = initiator_channel.id
         self.transfer.recipient_call = recipient_call
-        self.transfer.status = self.name
-        self.transfer.flow = flow
         self._notifier.created(self.transfer)
 
         return TransferStateRingback.from_state(self)
 
-    def from_state(self, other_state):
-        raise NotImplementedError('This state cannot be transitioned to')
+    def update_cache(self):
+        self._state_persistor.upsert(self.transfer)
 
 
 @state_factory.state
@@ -296,44 +316,50 @@ class TransferStateReadyNonStasis(TransferState):
         self,
         transferred_channel,
         initiator_channel,
-        context,
-        exten,
         flow,
-        variables,
-        timeout,
     ):
+        transfer_id = str(uuid.uuid4())
         channel = Channel(initiator_channel.id, self._ari)
         initiator_uuid = channel.user()
-        initiator_tenant_uuid = channel.tenant_uuid()
         if initiator_uuid is None:
             raise TransferCreationError('initiator has no user UUID')
-
-        transfer_id = str(uuid.uuid4())
-        try:
-            ari_helpers.convert_transfer_to_stasis(
-                self._ari,
-                self._amid,
-                transferred_channel.id,
-                initiator_channel.id,
-                context,
-                exten,
-                transfer_id,
-                variables,
-                timeout,
-            )
-        except ARINotFound:
-            raise TransferCreationError('channel not found')
+        initiator_tenant_uuid = channel.tenant_uuid()
         self.transfer = Transfer(transfer_id, initiator_uuid, initiator_tenant_uuid)
         self.transfer.initiator_call = initiator_channel.id
         self.transfer.transferred_call = transferred_channel.id
         self.transfer.status = self.name
         self.transfer.flow = flow
+
+        return TransferStateReadyNonStasis.from_state(self)
+
+    @transition
+    def start(
+        self,
+        context,
+        exten,
+        variables,
+        timeout,
+    ):
+        try:
+            ari_helpers.convert_transfer_to_stasis(
+                self._ari,
+                self._amid,
+                self.transfer.transferred_call,
+                self.transfer.initiator_call,
+                context,
+                exten,
+                self.transfer.id,
+                variables,
+                timeout,
+            )
+        except ARINotFound:
+            raise TransferCreationError('channel not found')
         self._notifier.created(self.transfer)
 
         return TransferStateStarting.from_state(self)
 
-    def from_state(self, other_state):
-        raise NotImplementedError('This state cannot be transitioned to')
+    def update_cache(self):
+        self._state_persistor.upsert(self.transfer)
 
 
 @state_factory.state
