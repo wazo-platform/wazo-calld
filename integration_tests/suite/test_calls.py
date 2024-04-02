@@ -3,6 +3,7 @@
 
 import json
 import uuid
+from typing import Any
 
 import pytest
 from hamcrest import (
@@ -1692,7 +1693,7 @@ class TestUserCreateCall(IntegrationTest):
         valid_call_request = {'extension': '1234', 'variables': {'key': 'value'}}
 
         for key in ('extension', 'variables'):
-            body = dict(valid_call_request)
+            body: dict[str, Any] = dict(valid_call_request)
             body[key] = None
             yield body
             body[key] = 1234

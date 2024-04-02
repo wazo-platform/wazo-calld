@@ -150,7 +150,7 @@ class TestTrunkBusConsume(IntegrationTest):
         self.wait_strategy.wait(self)
         self.bus.send_ami_peerstatus_event('PJSIP', 'PJSIP/abcdef', 'Reachable')
 
-        def assert_function():
+        def assert_registered():
             assert_that(
                 events.accumulate(),
                 has_item(
@@ -167,11 +167,11 @@ class TestTrunkBusConsume(IntegrationTest):
                 ),
             )
 
-        until.assert_(assert_function, tries=5)
+        until.assert_(assert_registered, tries=5)
 
         self.bus.send_ami_peerstatus_event('PJSIP', 'PJSIP/abcdef', 'Unreachable')
 
-        def assert_function():
+        def assert_not_registered():
             assert_that(
                 events.accumulate(),
                 has_item(
@@ -188,7 +188,7 @@ class TestTrunkBusConsume(IntegrationTest):
                 ),
             )
 
-        until.assert_(assert_function, tries=5)
+        until.assert_(assert_not_registered, tries=5)
 
     def test_when_ami_registry_then_bus_event(self):
         trunk_id = 42
@@ -222,7 +222,7 @@ class TestTrunkBusConsume(IntegrationTest):
             client_uri,
         )
 
-        def assert_function():
+        def assert_registered():
             assert_that(
                 events.accumulate(),
                 has_item(
@@ -239,7 +239,7 @@ class TestTrunkBusConsume(IntegrationTest):
                 ),
             )
 
-        until.assert_(assert_function, tries=5)
+        until.assert_(assert_registered, tries=5)
 
         self.bus.send_ami_registry_event(
             'PJSIP',
@@ -248,7 +248,7 @@ class TestTrunkBusConsume(IntegrationTest):
             client_uri,
         )
 
-        def assert_function():
+        def assert_not_registered():
             assert_that(
                 events.accumulate(),
                 has_item(
@@ -265,7 +265,7 @@ class TestTrunkBusConsume(IntegrationTest):
                 ),
             )
 
-        until.assert_(assert_function, tries=5)
+        until.assert_(assert_not_registered, tries=5)
 
     def test_when_trunk_associated_events_can_be_published(self):
         trunk_id = 42
@@ -461,7 +461,7 @@ class TestLineBusConsume(IntegrationTest):
         self.wait_strategy.wait(self)
         self.bus.send_ami_peerstatus_event('PJSIP', 'PJSIP/abcdef', 'Reachable')
 
-        def assert_function():
+        def assert_registered():
             assert_that(
                 events.accumulate(),
                 has_item(
@@ -478,11 +478,11 @@ class TestLineBusConsume(IntegrationTest):
                 ),
             )
 
-        until.assert_(assert_function, tries=5)
+        until.assert_(assert_registered, tries=5)
 
         self.bus.send_ami_peerstatus_event('PJSIP', 'PJSIP/abcdef', 'Unreachable')
 
-        def assert_function():
+        def assert_not_registered():
             assert_that(
                 events.accumulate(),
                 has_item(
@@ -499,4 +499,4 @@ class TestLineBusConsume(IntegrationTest):
                 ),
             )
 
-        until.assert_(assert_function, tries=5)
+        until.assert_(assert_not_registered, tries=5)

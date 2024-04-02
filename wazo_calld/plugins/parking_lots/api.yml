@@ -1,0 +1,165 @@
+responses:
+  FullOrServiceUnavailable:
+    description: Parking is full or another service is unavailable (e.g. wazo-auth, wazo-confd, Asterisk, ...)
+    schema:
+      $ref: '#/definitions/Error'
+definitions:
+  ParkingLot:
+    title: Parking lot
+    type: object
+    properties:
+      slots_start:
+        type: string
+        example: '501'
+      slots_end:
+        type: string
+        example: '510'
+      slots_total:
+        description: Total number of slots available for parking
+        type: integer
+        example: 10
+      slots_remaining:
+        description: Remaining slots to park a call in this lot
+        type: integer
+        example: 9
+      default_timeout:
+        description: Default timeout to assign if a timeout value was
+         unspecified when a call was parked
+        type: integer
+        example: 45
+      calls:
+        type: array
+        items:
+          $ref: '#/definitions/ParkedCallItem'
+  ParkedCallItem:
+    title: Parked Call
+    type: object
+    properties:
+      call_id:
+        type: string
+        example: 123456789.1
+      slot:
+        description: Slots where this call has been parked
+        type: string
+        example: 508
+      parked_at:
+        description: Timestamp when the call was parked
+        type: string
+        format: date-time
+      timeout_at:
+        description: |
+          Timestamp when the call will timeout (null if timeout is disabled)
+        type: string
+        format: date-time
+  ParkCallBody:
+    title: Information needed to park the call
+    required:
+    - parking_id
+    type: object
+    properties:
+      parking_id:
+        description: Parking lot ID in which to park the call
+        type: integer
+        minimum: 1
+        example: 2
+      preferred_slot:
+        description: |
+         Preferred slot in which to park the call.  If slots is already
+         occupied, another slot will be automatically chosen
+        type: string
+        example: '501'
+      timeout:
+        description: |
+          A timeout specified in seconds after which the call will redial the
+          parker.  If unspecified, it will defaults to the parking's timeout value.
+          (A value of 0 disables the timeout feature)
+        type: integer
+        minimum: 0
+        example: 30
+  ParkedCallInfo:
+    description: Information returned when a call has been parked
+    properties:
+      slot:
+        description: Parking slot where this call has been parked
+        type: string
+        example: 501
+      timeout_at:
+        description: Timestamp when the call will timeout
+        type: string
+        format: date-time
+parameters:
+  CallID:
+    name: call_id
+    in: path
+    description: Call ID
+    required: true
+    type: string
+  ParkingLotID:
+    name: parking_id
+    in: path
+    description: Parking lot's ID
+    required: true
+    type: string
+  ParkCall:
+    name: park_call
+    in: body
+    description: Payload required to park a call
+    required: true
+    schema:
+      $ref: '#/definitions/ParkCallBody'
+paths:
+  /parkinglots/{parking_id}:
+    get:
+      summary: Retrieve parked calls for parking
+      description: '**Required ACL:** `calld.parkings.{parking_id}.read`'
+      parameters:
+      - $ref: '#/parameters/TenantUUID'
+      - $ref: '#/parameters/ParkingLotID'
+      tags:
+      - parking_lots
+      responses:
+        '200':
+          description: List of parked calls in parking lot
+          schema:
+            $ref: '#/definitions/ParkingLot'
+  /calls/{call_id}/park:
+    put:
+      summary: Park a call
+      description: '**Required ACL:** calld.calls.{call_id}.park.update`'
+      parameters:
+      - $ref: '#/parameters/TenantUUID'
+      - $ref: '#/parameters/CallID'
+      - $ref: '#/parameters/ParkCall'
+      tags:
+      - calls
+      - parking_lots
+      responses:
+        '200':
+          description: Parked call
+          schema:
+            $ref: '#/definitions/ParkedCallInfo'
+        '404':
+          $ref: '#/responses/NotFoundError'
+        '503':
+          $ref: '#/responses/FullOrServiceUnavailable'
+  /users/me/calls/{call_id}/park:
+    put:
+      summary: Park the user's connected (talking to) call
+      description: '**Required ACL:** `calld.users.me.calls.{call_id}.park.update`'
+      parameters:
+      - $ref: '#/parameters/TenantUUID'
+      - $ref: '#/parameters/CallID'
+      - $ref: '#/parameters/ParkCall'
+      tags:
+      - calls
+      - parking_lots
+      - users
+      responses:
+        '200':
+          description: Parked call
+          schema:
+            $ref: '#/definitions/ParkedCallInfo'
+        '404':
+          $ref: '#/responses/NotFoundError'
+        '503':
+          $ref: '#/responses/FullOrServiceUnavailable'

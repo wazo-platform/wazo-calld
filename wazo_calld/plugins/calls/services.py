@@ -380,6 +380,7 @@ class CallsService:
         call.is_autoprov = channel.json['dialplan']['context'] == AUTOPROV_CONTEXT
         call.on_hold = channel_helper.on_hold()
         call.muted = channel_helper.muted()
+        call.parked = channel_helper.parked()
         call.record_state = (
             'active'
             if channel_variables.get('WAZO_CALL_RECORD_ACTIVE') == '1'

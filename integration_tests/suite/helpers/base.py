@@ -7,7 +7,7 @@ import tempfile
 import uuid
 from contextlib import contextmanager
 
-from requests.packages import urllib3
+import urllib3
 from wazo_test_helpers import until
 from wazo_test_helpers.asset_launching_test_case import (
     AssetLaunchingTestCase,

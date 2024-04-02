@@ -149,7 +149,7 @@ class TestPushMobile(RealAsteriskIntegrationTest):
             },
         )
 
-        def user_hint_updated():
+        def user_hint_updated():  # type: ignore
             result = self.amid.action(
                 'Getvar', {'Variable': f'DEVICE_STATE(Custom:{user_uuid}-mobile)'}
             )
@@ -184,7 +184,7 @@ class TestPushMobile(RealAsteriskIntegrationTest):
             },
         )
 
-        def user_hint_updated():
+        def user_hint_updated():  # type: ignore
             result = self.amid.action(
                 'Getvar', {'Variable': f'DEVICE_STATE(Custom:{user_uuid}-mobile)'}
             )

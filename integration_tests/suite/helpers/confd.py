@@ -1,7 +1,16 @@
-# Copyright 2015-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+from __future__ import annotations
+
+from random import choice
+from string import ascii_uppercase, digits
+from typing import TYPE_CHECKING
+
 import requests
+
+if TYPE_CHECKING:
+    from .schemas import ExtensionSchema, ParkingLotSchema
 
 
 class ConfdClient:
@@ -121,6 +130,16 @@ class ConfdClient:
         body = {
             'response': 'moh',
             'content': {moh.uuid(): moh.to_dict() for moh in mock_mohs},
+        }
+
+        response = requests.post(url, json=body)
+        response.raise_for_status()
+
+    def set_parkinglots(self, *mock_parkings: MockParkinglot):
+        url = self.url('_set_response')
+        body = {
+            'response': 'parkinglots',
+            'content': {parking.id(): parking.to_dict() for parking in mock_parkings},
         }
 
         response = requests.post(url, json=body)
@@ -334,6 +353,53 @@ class MockMeeting:
             'name': self._name,
             'owner_uuids': self._owner_uuids,
             'tenant_uuid': self._tenant_uuid,
+        }
+
+
+class MockParkinglot:
+    def __init__(
+        self,
+        id: int,
+        name: str | None = None,
+        slots_start: str | None = None,
+        slots_end: str | None = None,
+        timeout: int | None = None,
+        tenant_uuid: str | None = None,
+        extension: str = '500',
+    ):
+        self._id = id
+        self._name = name or ''.join(
+            choice(ascii_uppercase + digits) for _ in range(10)
+        )
+        self._slots_start = slots_start or str(int(extension) + 1)
+        self._slots_end = slots_end or str(int(extension) + 2)
+        self._timeout = timeout or 45
+        self._tenant_uuid = tenant_uuid or ''
+        self._extension = extension
+
+    def id(self):
+        return self._id
+
+    def to_dict(self) -> ParkingLotSchema:
+        extensions: list[ExtensionSchema] = []
+        if self._extension:
+            extensions = [
+                {
+                    'id': 1000,
+                    'context': 'some-ctx',
+                    'exten': self._extension,
+                }
+            ]
+
+        return {
+            'id': self._id,
+            'tenant_uuid': self._tenant_uuid,
+            'name': self._name,
+            'slots_start': self._slots_start,
+            'slots_end': self._slots_end,
+            'timeout': self._timeout,
+            'music_on_hold': 'default',
+            'extensions': extensions,
         }
 
 

@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
+from typing import Any
 
 from ari.exceptions import ARINotFound
 from hamcrest import (
@@ -816,8 +817,10 @@ class TestCreateTransfer(TestTransfers):
         }
 
         for key in ('transferred_call', 'initiator_call', 'context', 'exten'):
-            body = dict(valid_transfer_request)
+            body: dict[str, Any] = dict(valid_transfer_request)
             body.pop(key)
+
+            invalid: Any
             for invalid in (None, 1234, True, '', [], {}):
                 body[key] = invalid
                 yield body
@@ -1221,6 +1224,8 @@ class TestUserCreateTransfer(TestTransfers):
             body = dict(valid_transfer_request)
             body.pop(key)
             yield body
+
+            value: Any
             for value in (None, 1234, True, '', [], {}):
                 body[key] = value
                 yield body

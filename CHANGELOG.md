@@ -1,5 +1,17 @@
 # Changelog
 
+## 24.05
+
+* New API to manage a call parking
+
+  * GET `/parking_lots/<parking-id>`
+  * PUT `/calls/<call-id>/park`
+  * PUT `/users/me/calls/<call-id>/park`
+
+* New attribute for `calls` objects (API and events):
+
+  * `parked`
+
 ## 24.02
 
 * The `timeout` field has been added to the following resources:

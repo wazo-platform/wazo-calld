@@ -1,6 +1,7 @@
 # Copyright 2017-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+from typing import Any
 from unittest import TestCase
 
 from hamcrest import assert_that, calling, has_entry, raises
@@ -16,7 +17,7 @@ VALID_RELOCATE = {
 
 class Testclassname(TestCase):
     def test_given_invalid_location_when_load_then_raise(self):
-        relocate = dict(VALID_RELOCATE)
+        relocate: dict[str, Any] = dict(VALID_RELOCATE)
         relocate['destination'] = {'invalid': 'invalid'}
 
         assert_that(
@@ -33,7 +34,7 @@ class Testclassname(TestCase):
         )
 
     def test_given_line_destination_when_load_then_validation_may_fail(self):
-        relocate = dict(VALID_RELOCATE)
+        relocate: dict[str, Any] = dict(VALID_RELOCATE)
         relocate['destination'] = 'line'
         relocate['location'] = {'line_id': -12}
 
