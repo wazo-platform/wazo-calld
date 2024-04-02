@@ -51,7 +51,7 @@ class UserCallParkResource(_Base):
         user_uuid: str = get_token_user_uuid_from_request()
         request_data = park_call_request_schema.load(request.get_json(force=True))
 
-        parked_call = self._service.park_collocutor_call(
+        parked_call = self._service.user_park_call(
             user_uuid, request_data.pop('parking_id'), call_id, **request_data
         )
         return parked_call_put_response_schema.dump(parked_call), 200

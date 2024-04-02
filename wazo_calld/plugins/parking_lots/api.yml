@@ -144,7 +144,7 @@ paths:
           $ref: '#/responses/FullOrServiceUnavailable'
   /users/me/calls/{call_id}/park:
     put:
-      summary: Park the user's collocutor (talking to) call
+      summary: Park the user's connected (talking to) call
       description: '**Required ACL:** `calld.users.me.calls.{call_id}.park.update`'
       parameters:
       - $ref: '#/parameters/TenantUUID'

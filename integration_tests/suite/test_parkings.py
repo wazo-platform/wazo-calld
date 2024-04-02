@@ -3,7 +3,6 @@
 
 from __future__ import annotations
 
-from collections.abc import Generator
 from datetime import datetime, timezone
 from functools import wraps
 from typing import TYPE_CHECKING, Callable, TypedDict, cast
@@ -31,6 +30,8 @@ from .helpers.hamcrest_ import HamcrestARIBridge, HamcrestARIChannel
 from .helpers.real_asterisk import RealAsterisk, RealAsteriskIntegrationTest
 
 if TYPE_CHECKING:
+    from collections.abc import Generator
+
     from .helpers.schemas import ParkingLotSchema
 
 
@@ -589,7 +590,7 @@ class TestParkings(BaseParkingTest):
             except IndexError:
                 return False
 
-        calld.calls.park_collocutor_from_user(caller, parking['id'])
+        calld.calls.park_from_user(caller, parking['id'])
 
         event = until.true(get_call_parked_event, timeout=3)
 
@@ -605,9 +606,7 @@ class TestParkings(BaseParkingTest):
         )
 
         assert_that(
-            calling(calld.calls.park_collocutor_from_user).with_args(
-                caller, parking['id']
-            ),
+            calling(calld.calls.park_from_user).with_args(caller, parking['id']),
             raises(CalldError).matching(
                 has_properties(status_code=400, error_id='cannot-park-call')
             ),
@@ -625,17 +624,13 @@ class TestParkings(BaseParkingTest):
         )
 
         assert_that(
-            calling(calld.calls.park_collocutor_from_user).with_args(
-                not_user_call, parking['id']
-            ),
+            calling(calld.calls.park_from_user).with_args(not_user_call, parking['id']),
             raises(CalldError).matching(
                 has_properties(status_code=403, error_id='user-permission-denied')
             ),
         )
 
         assert_that(
-            calling(calld.calls.park_collocutor_from_user).with_args(
-                user_call, parking['id']
-            ),
+            calling(calld.calls.park_from_user).with_args(user_call, parking['id']),
             not_(raises(CalldError)),
         )

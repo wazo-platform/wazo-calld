@@ -6,7 +6,7 @@
 
   * GET `/parking_lots/<parking-id>`
   * PUT `/calls/<call-id>/park`
-  * PUT `/users/me/calls/<call-id>/collocutor/park`
+  * PUT `/users/me/calls/<call-id>/park`
 
 * New attribute for `calls` objects (API and events):
 

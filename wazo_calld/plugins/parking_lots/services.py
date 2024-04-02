@@ -208,7 +208,7 @@ class ParkingService:
             channel, parking, tenant_uuid, preferred_slot, timeout
         )
 
-    def park_collocutor_call(
+    def user_park_call(
         self,
         user_uuid: str,
         parking_id: int,
