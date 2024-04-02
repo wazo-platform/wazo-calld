@@ -39,7 +39,7 @@ class ParkingLotArgs(TypedDict, total=False):
     id: Required[int]
     tenant_uuid: NotRequired[str]
     name: NotRequired[str]
-    extension: NotRequired[int]
+    extension: NotRequired[str]
     slots_start: NotRequired[str]
     slots_end: NotRequired[str]
     timeout: NotRequired[int]
@@ -50,16 +50,16 @@ PARKINGLOT_1: ParkingLotArgs = {
     'id': 1,
     'tenant_uuid': VALID_TENANT,
     'name': 'First Parking',
-    'extension': 500,
+    'extension': '500',
     'slots_start': '501',
     'slots_end': '510',
-    'timeout': 5,
+    'timeout': 45,
 }
 PARKINGLOT_2: ParkingLotArgs = {
     'id': 2,
     'tenant_uuid': 'b93892f0-5300-4682-aede-3104b449ba69',
     'name': 'Second Parking',
-    'extension': 600,
+    'extension': '600',
     'slots_start': '601',
     'slots_end': '602',
     'timeout': 0,
@@ -116,14 +116,13 @@ class BaseParkingTest(RealAsteriskIntegrationTest):
         self,
         parking_extension: str,
         *,
-        tenant_uuid: str | None = VALID_TENANT,
+        tenant_uuid: str | None = None,
         user_uuid: str | None = None,
     ) -> Generator[str, None, None]:
-        variables = {}
-        if tenant_uuid:
-            variables['WAZO_TENANT_UUID'] = tenant_uuid
-        if user_uuid:
-            variables['WAZO_USERUUID'] = user_uuid
+        variables = {
+            'WAZO_TENANT_UUID': tenant_uuid or VALID_TENANT,
+            'WAZO_USERUUID': user_uuid or random_uuid(),
+        }
 
         channel = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,

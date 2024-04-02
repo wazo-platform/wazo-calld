@@ -365,14 +365,14 @@ class MockParkinglot:
         slots_end: str | None = None,
         timeout: int | None = None,
         tenant_uuid: str | None = None,
-        extension: int = 500,
+        extension: str = '500',
     ):
         self._id = id
         self._name = name or ''.join(
             choice(ascii_uppercase + digits) for _ in range(10)
         )
-        self._slots_start = slots_start or str(extension + 1)
-        self._slots_end = slots_end or str(extension + 2)
+        self._slots_start = slots_start or str(int(extension) + 1)
+        self._slots_end = slots_end or str(int(extension) + 2)
         self._timeout = timeout or 45
         self._tenant_uuid = tenant_uuid or ''
         self._extension = extension
@@ -387,7 +387,7 @@ class MockParkinglot:
                 {
                     'id': 1000,
                     'context': 'some-ctx',
-                    'exten': str(self._extension),
+                    'exten': self._extension,
                 }
             ]
 
