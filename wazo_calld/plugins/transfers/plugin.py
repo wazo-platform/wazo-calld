@@ -38,10 +38,13 @@ class Plugin:
         state_persistor = StatePersistor(ari.client)
         transfer_lock = TransferLock()
 
+        notifier = TransferNotifier(bus_publisher)
+
         transfers_service = TransfersService(
             amid_client,
             ari.client,
             confd_client,
+            notifier,
             state_factory,
             state_persistor,
             transfer_lock,
@@ -59,8 +62,6 @@ class Plugin:
         startup_callback_collector = CallbackCollector()
         ari.client_initialized_subscribe(startup_callback_collector.new_source())
         startup_callback_collector.subscribe(transfers_stasis.initialize)
-
-        notifier = TransferNotifier(bus_publisher)
 
         state_factory.set_dependencies(
             amid_client,
