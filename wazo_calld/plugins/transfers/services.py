@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
-import uuid
 
 from ari.exceptions import ARINotFound
 from xivo.caller_id import assemble_caller_id
@@ -25,8 +24,7 @@ from .exceptions import (
     TransferCreationError,
 )
 from .lock import HangupLock, InvalidLock
-from .state import TransferStateNonStasis, TransferStateReady
-from .transfer import Transfer
+from .state import TransferStateReady, TransferStateReadyNonStasis
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +35,6 @@ class TransfersService:
         amid_client,
         ari,
         confd_client,
-        notifier,
         state_factory,
         state_persistor,
         transfer_lock,
@@ -45,7 +42,6 @@ class TransfersService:
         self.amid_client = amid_client
         self.ari = ari
         self.confd_client = confd_client
-        self.notifier = notifier
         self.state_persistor = state_persistor
         self.state_factory = state_factory
         self.transfer_lock = transfer_lock
@@ -71,37 +67,29 @@ class TransfersService:
         if not self.transfer_lock.acquire(initiator_call):
             raise TransferAlreadyStarted(initiator_call)
 
-        channel = Channel(initiator_channel.id, self.ari)
-        initiator_uuid = channel.user()
-        if initiator_uuid is None:
-            raise TransferCreationError('initiator has no user UUID')
-        initiator_tenant_uuid = channel.tenant_uuid()
-        transfer_id = str(uuid.uuid4())
-        transfer = Transfer(transfer_id, initiator_uuid, initiator_tenant_uuid)
-        transfer.transferred_call = transferred_channel.id
-        transfer.initiator_call = initiator_channel.id
-        transfer.flow = flow
-
         if not (
             Channel(transferred_call, self.ari).is_in_stasis()
             and Channel(initiator_call, self.ari).is_in_stasis()
         ):
             transfer_state = self.state_factory.make_from_class(
-                TransferStateNonStasis, transfer
+                TransferStateReadyNonStasis
             )
         else:
-            transfer_state = self.state_factory.make_from_class(
-                TransferStateReady, transfer
-            )
+            transfer_state = self.state_factory.make_from_class(TransferStateReady)
 
         try:
-            new_state = transfer_state.start(context, exten, variables, timeout)
+            new_state = transfer_state.create(
+                transferred_channel,
+                initiator_channel,
+                context,
+                exten,
+                flow,
+                variables,
+                timeout,
+            )
         except Exception:
             self.transfer_lock.release(initiator_call)
             raise
-
-        self.notifier.created(new_state.transfer)
-
         if flow == 'blind':
             new_state = new_state.complete()
 
