@@ -701,9 +701,12 @@ class TestUserListTransfers(TestTransfers):
         user_uuid = 'user-uuid'
         self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
 
-        result = self.calld.list_my_transfers(token)
+        def list_is_empty():
+            result = self.calld.list_my_transfers(token)
+            assert_that(result['items'], empty())
 
-        assert_that(result['items'], empty())
+        # previous tests may take some time before channels are hungup and processed
+        until.assert_(list_is_empty, tries=5)
 
     def test_given_one_transfer_when_list_then_all_fields_are_listed(self):
         token = 'my-token'
