@@ -125,7 +125,7 @@ paths:
   /calls/{call_id}/park:
     put:
       summary: Park a call
-      description: '**Required ACL:** calld.calls.{call_id}.park.update`'
+      description: '**Required ACL:** calld.calls.{call_id}.park.update`. Use the `POST /calls` API to unpark the call.'
       parameters:
       - $ref: '#/parameters/TenantUUID'
       - $ref: '#/parameters/CallID'
@@ -145,7 +145,7 @@ paths:
   /users/me/calls/{call_id}/park:
     put:
       summary: Park the user's connected (talking to) call
-      description: '**Required ACL:** `calld.users.me.calls.{call_id}.park.update`'
+      description: '**Required ACL:** `calld.users.me.calls.{call_id}.park.update` Use the `POST /users/me/calls` API to unpark the call.'
       parameters:
       - $ref: '#/parameters/TenantUUID'
       - $ref: '#/parameters/CallID'
