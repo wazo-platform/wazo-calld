@@ -3,7 +3,7 @@
 
 import logging
 
-from ari.exceptions import ARINotFound
+from ari.exceptions import ARINotFound, ARIUnprocessable
 from requests import HTTPError
 
 from wazo_calld.plugin_helpers import ami, confd
@@ -260,10 +260,13 @@ class ApplicationService:
             self._ari.bridges.removeChannel(bridgeId=node_uuid, channel=call_id)
         except ARINotFound:
             raise NoSuchNode(node_uuid)
+        except ARIUnprocessable:
+            # the channel was not in the bridge
+            raise NoSuchCall(call_id)
         except HTTPError as e:
             response = getattr(e, 'response', None)
             status_code = getattr(response, 'status_code', None)
-            if status_code in (400, 422):
+            if status_code == 400:
                 raise NoSuchCall(call_id)
             raise
 

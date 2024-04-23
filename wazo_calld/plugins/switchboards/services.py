@@ -3,7 +3,7 @@
 
 import logging
 
-from ari.exceptions import ARINotFound
+from ari.exceptions import ARINotFound, ARIUnprocessable
 from xivo.caller_id import assemble_caller_id
 
 from wazo_calld.ari_ import DEFAULT_APPLICATION_NAME
@@ -213,6 +213,10 @@ class SwitchboardsService:
                 bridge = SwitchboardARI(switchboard_uuid, self._ari).get_bridge_queue()
                 bridge.removeChannel(channel=queued_call_id)
             except ARINotFound:
+                # the bridge does not exist
+                pass
+            except ARIUnprocessable:
+                # the channel was already moved to another bridge
                 pass
 
             return channel.id

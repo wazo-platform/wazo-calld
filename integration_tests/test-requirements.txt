@@ -1,5 +1,5 @@
 https://github.com/rsichny/swagger-py/archive/master.zip  # the digium release does not support python3
-https://github.com/wazo-platform/ari-py/archive/0.4.0.zip
+https://github.com/wazo-platform/ari-py/archive/master.zip
 https://github.com/wazo-platform/wazo-lib-rest-client/archive/master.zip
 https://github.com/wazo-platform/wazo-calld-client/archive/master.zip
 https://github.com/wazo-platform/wazo-test-helpers/archive/master.zip
