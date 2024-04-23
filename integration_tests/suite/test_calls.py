@@ -3373,22 +3373,26 @@ class TestPickup(RealAsteriskIntegrationTest):
                 self.c.is_talking(),
                 'interceptor is not talking',
             )
+            assert_that(
+                interceptor_channel_id,
+                self.c.has_variable('WAZO_USERUUID', interceptor_uuid),
+            )
 
+        # wazo-calld needs some delay to process the Pickup event and allowing hangup
         until.assert_(pickup_finished, timeout=3, message='Pickup failed')
 
-        def hangup_pickup():
-            user_calld_client.calls.hangup_from_user(interceptor_channel_id)
+        user_calld_client.calls.hangup_from_user(interceptor_channel_id)
 
-        # wazo-calld needs some delay before processing the Pickup event and allowing hangup
-        until.return_(hangup_pickup, timeout=3, message='Hangup failed')
+        def pickup_hungup():
+            assert_that(
+                caller_channel_id,
+                self.c.is_hungup(),
+                'caller channel is still talking',
+            )
+            assert_that(
+                interceptor_channel_id,
+                self.c.is_hungup(),
+                'interceptor channel is still talking',
+            )
 
-        assert_that(
-            caller_channel_id,
-            self.c.is_hungup(),
-            'caller channel is still talking',
-        )
-        assert_that(
-            interceptor_channel_id,
-            self.c.is_hungup(),
-            'recipient channel is still talking',
-        )
+        until.assert_(pickup_hungup, timeout=3, message='Hangup failed')
