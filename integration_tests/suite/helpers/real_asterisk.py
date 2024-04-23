@@ -208,7 +208,8 @@ class RealAsterisk:
                 callee_channel_id = next(
                     channel.id
                     for channel in channels
-                    if channel.json['state'] == 'Ringing'
+                    # the caller is in ringing state for a short time due to originate
+                    if channel.json['state'] == 'Ringing' and channel.id != caller.id
                 )
                 return callee_channel_id
             except StopIteration:
