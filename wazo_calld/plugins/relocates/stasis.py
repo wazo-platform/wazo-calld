@@ -24,7 +24,14 @@ class RelocatesStasis:
         self._core_ari.register_application(DEFAULT_APPLICATION_NAME)
 
     def on_stasis_start(self, event_objects, event):
-        logger.debug('on_stasis_start: %(id)s (%(name)s)', event['channel'])
+        try:
+            sub_app, *_ = event['args']
+        except ValueError:
+            return
+
+        if sub_app != 'relocate':
+            return
+
         try:
             sub_app, relocate_uuid, role = event['args']
         except ValueError:
@@ -34,9 +41,6 @@ class RelocatesStasis:
                 event['application'],
                 event['args'],
             )
-            return
-
-        if sub_app != 'relocate':
             return
 
         relocate = self.relocates.get(relocate_uuid)

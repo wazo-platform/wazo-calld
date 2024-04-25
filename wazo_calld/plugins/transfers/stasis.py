@@ -148,10 +148,17 @@ class TransfersStasis:
         logger.debug('Done.')
 
     def stasis_start(self, event_objects, event):
-        channel = event_objects['channel']
         try:
-            app_action = event['args'][1]
-        except IndexError:
+            sub_app, *_ = event['args']
+        except ValueError:
+            return
+
+        if sub_app != 'transfer':
+            return
+
+        try:
+            sub_app_transfer, transfer_action, *_ = event['args']
+        except ValueError:
             logger.debug(
                 'ignoring StasisStart event: channel %s, app %s, args %s',
                 event['channel']['name'],
@@ -159,7 +166,9 @@ class TransfersStasis:
                 event['args'],
             )
             return
-        self.stasis_start_pubsub.publish(app_action, (channel, event))
+
+        channel = event_objects['channel']
+        self.stasis_start_pubsub.publish(transfer_action, (channel, event))
 
     def hangup(self, channel, event):
         try:
