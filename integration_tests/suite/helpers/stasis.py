@@ -101,6 +101,34 @@ class StasisClient:
         }
         return self._send_stasis_event(body)
 
+    def event_stasis_start_from_non_api_blind_transfer(
+        self, channel_id, stasis_app, tenant_uuid
+    ):
+        body = {
+            "application": stasis_app,
+            "args": [],
+            "channel": {
+                "accountcode": "code",
+                "caller": {"name": "my-name", "number": "my-number"},
+                "connected": {"name": "", "number": ""},
+                "creationtime": "2016-02-04T14:25:00.007-0500",
+                "dialplan": {"context": "default", "exten": "my-exten", "priority": 1},
+                "id": channel_id,
+                "language": "fr_FR",
+                "name": "my-name",
+                "state": "Ring",
+            },
+            "replace_channel": {
+                "id": "channel id being replaced by the blind transfer",
+                "channelvars": {
+                    "WAZO_TENANT_UUID": tenant_uuid,
+                },
+            },
+            "timestamp": "2016-02-04T14:25:00.408-0500",
+            "type": "StasisStart",
+        }
+        return self._send_stasis_event(body)
+
     def event_channel_destroyed(
         self,
         channel_id,

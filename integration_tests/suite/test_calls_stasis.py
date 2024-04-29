@@ -148,6 +148,34 @@ class TestDialedFrom(IntegrationTest):
 
         until.assert_(assert_function, tries=5)
 
+    def test_when_stasis_channel_coming_from_non_api_blind_transfer(self):
+        call_id = new_call_id()
+
+        self.stasis.event_stasis_start_from_non_api_blind_transfer(
+            channel_id=call_id,
+            stasis_app=STASIS_APP,
+            tenant_uuid=VALID_TENANT,
+        )
+
+        def assert_function():
+            assert_that(
+                self.ari.requests(),
+                has_entries(
+                    requests=has_item(
+                        has_entries(
+                            method='POST',
+                            path=f'/ari/channels/{call_id}/variable',
+                            query=has_items(
+                                ['variable', '__WAZO_TENANT_UUID'],
+                                ['value', VALID_TENANT],
+                            ),
+                        )
+                    )
+                ),
+            )
+
+        until.assert_(assert_function, tries=5)
+
     def test_when_stasis_channel_destroyed(self):
         call_id = new_call_id()
         events = self.bus.accumulator(headers={'name': 'call_ended'})

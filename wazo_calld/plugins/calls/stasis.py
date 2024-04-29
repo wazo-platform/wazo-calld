@@ -59,10 +59,32 @@ class CallsStasis:
 
     def stasis_start(self, event_objects, event):
         channel = event_objects['channel']
+
+        if self._is_blind_transfer_channel(event):
+            self._stasis_start_blind_transfer_channel(event_objects, event)
+
         if ConnectCallEvent.is_connect_event(event):
             self._stasis_start_connect(channel, event)
         else:
             self._stasis_start_new_call(channel, event)
+
+    def _is_blind_transfer_channel(self, event):
+        return 'replace_channel' in event
+
+    def _stasis_start_blind_transfer_channel(self, event_objects, event):
+        # Asterisk received a SIP REFER and triggered a blind transfer
+        # This creates two Local channels, where:
+        # * ;1 goes to Stasis in the same application as the transfer initiator
+        # channel. This channel has no variables set, and will send events when
+        # being bridged/unbridged.
+        # * ;2 goes to the dialplan in the transfer extension/context.
+        logger.debug('Setting variables on non-API blind transfer local channel')
+        transfer_recipient_channel = event_objects['channel']
+        transfer_initiator_channel_dict = event['replace_channel']
+        tenant_uuid = transfer_initiator_channel_dict['channelvars']['WAZO_TENANT_UUID']
+        transfer_recipient_channel.setChannelVar(
+            variable='__WAZO_TENANT_UUID', value=tenant_uuid
+        )
 
     def _stasis_start_connect(self, channel, event):
         try:
