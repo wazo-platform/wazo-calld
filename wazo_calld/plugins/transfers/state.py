@@ -44,7 +44,10 @@ class StateFactory:
         if transfer:
             transfer.status = state_class.name
             dependencies.append(transfer)
-        return state_class(*dependencies)
+
+        new_object = state_class(*dependencies)
+        new_object.update_cache()  # ensure the transfer is stored in Asterisk vars cache
+        return new_object
 
     def state(self, wrapped_class):
         self._state_constructors[wrapped_class.name] = wrapped_class
