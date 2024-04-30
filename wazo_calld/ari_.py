@@ -5,7 +5,7 @@ import errno
 import logging
 import threading
 import time
-import urllib
+import urllib.parse
 from contextlib import contextmanager
 
 import ari
@@ -246,10 +246,18 @@ class CoreARI:
         for event_name in ALL_STASIS_EVENTS:
             self._bus_consumer.subscribe(
                 event_name,
+                self._log_incoming_stasis_event,
+                headers={'category': 'stasis'},
+            )
+            self._bus_consumer.subscribe(
+                event_name,
                 self.client.on_stasis_event,
                 headers={'category': 'stasis'},
             )
         self._bus_consumer.subscribe('FullyBooted', self.reregister_applications)
+
+    def _log_incoming_stasis_event(self, event):
+        logger.debug('Received Stasis event: %s', event)
 
     def client_initialized_subscribe(self, callback):
         self._pubsub.subscribe('client_initialized', callback)

@@ -54,7 +54,23 @@ class SwitchboardsStasis:
             )
 
     def stasis_start(self, event_objects, event):
-        if len(event['args']) < 2:
+        try:
+            sub_app, *_ = event['args']
+        except ValueError:
+            return
+
+        if sub_app != 'switchboard':
+            return
+
+        try:
+            sub_app_switchboard, switchboard_action, *_ = event['args']
+        except ValueError:
+            logger.debug(
+                'ignoring StasisStart event: channel %s, app %s, args %s',
+                event['channel']['name'],
+                event['application'],
+                event['args'],
+            )
             return
 
         try:
