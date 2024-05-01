@@ -1,16 +1,13 @@
 # Copyright 2015-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-import errno
 import logging
 import threading
 import time
 import urllib.parse
-from contextlib import contextmanager
 
 import ari
 import swaggerpy.http_client
-from websocket import WebSocketException
 from xivo.pubsub import Pubsub
 from xivo.status import Status
 
@@ -280,32 +277,6 @@ class CoreARI:
             time.sleep(connection_delay)
         self._should_delay_reconnect = False
 
-    def _connect(self):
-        logger.debug('ARI client listening...')
-        try:
-            with self._running():
-                self.client.run(apps=self._apps)
-        except OSError as e:
-            if e.errno == errno.EPIPE:
-                # bug in ari-py when calling client.close(): ignore it and stop
-                logger.error('Error while listening for ARI events: %s', e)
-                return
-            else:
-                self._connection_error(e)
-        except WebSocketException as e:
-            self._connection_error(e)
-        except ValueError:
-            logger.warning('Received non-JSON message from ARI... disconnecting')
-            self.client.close()
-
-    @contextmanager
-    def _running(self):
-        self._is_running = True
-        try:
-            yield
-        finally:
-            self._is_running = False
-
     def reregister_applications(self, _event):
         logger.info('Asterisk started, registering all stasis applications')
         self.client.execute_app_deregistered_callbacks(self._apps)
@@ -327,37 +298,11 @@ class CoreARI:
             self.client.execute_app_deregistered_callbacks([app])
             self.client.amqp.stasisUnsubscribe(applicationName=app)
 
-    def is_running(self):
-        return self._is_running
-
     def provide_status(self, status):
         expected_apps = ['adhoc_conference', 'callcontrol', 'dial_mobile']
         ok = self.client._initialized and set(expected_apps).issubset(set(self._apps))
         status['ari']['status'] = Status.ok if ok else Status.fail
 
-    def _connection_error(self, error):
-        logger.warning('ARI connection error: %s...', error)
-
-    def _sync(self):
-        '''self.sync() should be called before calling self.stop(), in case the
-        ari client does not have the websocket yet'''
-
-        while self._is_running:
-            try:
-                ari_websockets = self.client.websockets
-            except AsteriskARINotInitialized:
-                ari_websockets = None
-            if ari_websockets:
-                return
-            time.sleep(0.1)
-
     def stop(self):
         self._should_stop = True
         self._initialization_thread.join()
-
-    def _trigger_disconnect(self):
-        self._sync()
-        try:
-            self.client.close()
-        except RuntimeError:
-            pass  # bug in ari-py when calling client.close()
