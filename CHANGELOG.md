@@ -1,5 +1,9 @@
 # Changelog
 
+## 24.08
+
+* The `conversation_id` attribute has been added to the `application_call` object
+
 ## 24.05
 
 * New API to manage a call parking
