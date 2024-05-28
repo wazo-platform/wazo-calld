@@ -36,6 +36,7 @@ class ApplicationCall:
 
     def __init__(self, id_):
         self.id_ = id_
+        self.conversation_id: str | None = None
         self.moh_uuid = None
         self.muted = False
         self.user_uuid = None
@@ -61,6 +62,7 @@ class CallFormatter:
         call.caller_id_name = channel.json['caller']['name']
         call.caller_id_number = channel.json['caller']['number']
         call.snoops = self._get_snoops(channel)
+        call.conversation_id = channel.json['channelvars'].get('CHANNEL(linkedid)')
 
         if node_uuid:
             call.node_uuid = node_uuid
@@ -70,6 +72,7 @@ class CallFormatter:
             call.on_hold = channel_helper.on_hold()
             call.is_caller = channel_helper.is_caller()
             call.dialed_extension = channel_helper.dialed_extension()
+
             try:
                 call.moh_uuid = (
                     channel.getChannelVar(variable='WAZO_MOH_UUID').get('value') or None
