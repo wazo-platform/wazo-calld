@@ -2894,6 +2894,29 @@ class TestApplicationNodeCall(BaseApplicationTestCase):
             raises(CalldError).matching(has_properties(status_code=404)),
         )
 
+    def test_node_conversation_id(self):
+        calls = self.calld_client.applications.list_calls(self.no_node_app_uuid)[
+            'items'
+        ]
+        assert_that(calls, empty())
+
+        channel1 = self.call_app(self.node_app_uuid)
+        channel2 = self.call_app(self.node_app_uuid)
+        channel3 = self.call_app(self.node_app_uuid)
+        self.calld_client.applications.create_node(
+            self.node_app_uuid, [channel1.id, channel2.id, channel3.id]
+        )
+
+        calls = self.calld_client.applications.list_calls(self.node_app_uuid)['items']
+        assert_that(
+            calls,
+            has_items(
+                has_entries(id=channel1.id, conversation_id=channel1.id),
+                has_entries(id=channel2.id, conversation_id=channel1.id),
+                has_entries(id=channel3.id, conversation_id=channel1.id),
+            ),
+        )
+
 
 class TestDTMFEvents(BaseApplicationTestCase):
     def test_that_events_are_received(self):
