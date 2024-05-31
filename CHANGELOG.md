@@ -4,6 +4,22 @@
 
 * The `conversation_id` attribute has been added to the `application_call` object
 
+* New API to list parkings and parked calls
+
+  * GET `/parking_lots`
+
+* The following attributes have been added to the `parking_lot` object:
+
+  * `id`
+  * `name`
+
+* The following attributes have been added to the `parked_call` object:
+
+  * `caller_id_name`
+  * `caller_id_num`
+  * `parker_name`
+  * `parker_num`
+
 ## 24.05
 
 * New API to manage a call parking
