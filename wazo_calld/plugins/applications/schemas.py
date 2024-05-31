@@ -49,6 +49,7 @@ class ApplicationCallSchema(BaseSchema):
     caller_id_name = fields.String()
     caller_id_number = fields.String()
     creation_time = fields.String()
+    conversation_id = fields.String(dump_only=True)
     status = fields.String()
     on_hold = fields.Boolean()
     is_caller = fields.Boolean()

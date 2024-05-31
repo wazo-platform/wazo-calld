@@ -694,6 +694,8 @@ definitions:
         type: string
       caller_id_number:
         type: string
+      conversation_id:
+        type: string
       creation_time:
         type: string
       node_uuid:
