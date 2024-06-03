@@ -59,12 +59,13 @@ class ParkedCallGetResponseSchema(_Base):
     conversation_id = String(attribute='parkee_linkedid', dump_only=True)
     caller_id_name = String(attribute='parkee_caller_id_name', dump_only=True)
     caller_id_num = String(attribute='parkee_caller_id_num', dump_only=True)
-    connected_line_name = String(attribute='parkee_connected_line_name', dump_only=True)
-    connected_line_num = String(attribute='parkee_connected_line_num', dump_only=True)
+    parker_caller_id_name = String(
+        attribute='parkee_connected_line_name', dump_only=True
+    )
+    parker_caller_id_num = String(attribute='parkee_connected_line_num', dump_only=True)
     slot = String(attribute='parking_space', dump_only=True)
     parked_at = Method('compute_park_time', dump_only=True)
     timeout_at = Method('compute_timeout', allow_none=True, dump_only=True)
-    timeout = Integer(attribute='parking_timeout', dump_only=True)
 
     def compute_park_time(self, parked_call: AsteriskParkedCall) -> str:
         return timestamp_since(parked_call.parking_duration)

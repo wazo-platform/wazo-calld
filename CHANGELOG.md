@@ -18,8 +18,8 @@
   * `conversation_id`
   * `caller_id_name`
   * `caller_id_num`
-  * `parker_name`
-  * `parker_num`
+  * `parker_caller_id_name`
+  * `parker_caller_id_num`
 
 ## 24.05
 

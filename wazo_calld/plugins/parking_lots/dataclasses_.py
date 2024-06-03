@@ -70,3 +70,22 @@ class AsteriskParkedCall(_FromDictMixin):
     parking_space: str
     parking_timeout: str
     parking_duration: str
+
+
+@dataclass(frozen=True)
+class AsteriskUnparkedCall(AsteriskParkedCall):
+    retriever_channel: str
+    retriever_channel_state: str
+    retriever_channel_state_desc: ChannelStateDesc
+    retriever_caller_id_num: str
+    retriever_caller_id_name: str
+    retriever_connected_line_num: str
+    retriever_connected_line_name: str
+    retriever_language: str
+    retriever_account_code: str
+    retriever_context: str
+    retriever_exten: str
+    retriever_priority: str
+    retriever_uniqueid: str
+    retriever_linkedid: str
+    retriever_chan_variable: str
