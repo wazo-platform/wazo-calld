@@ -142,10 +142,12 @@ paths:
         '200':
           description: List of parkings and associated parked calls
           schema:
-            items:
-              type: array
+            type: object
+            properties:
               items:
-                $ref: '#/definitions/ParkingLot'
+                type: array
+                items:
+                  $ref: '#/definitions/ParkingLot'
   /parkinglots/{parking_id}:
     get:
       summary: Retrieve parked calls for parking
