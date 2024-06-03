@@ -45,22 +45,22 @@ definitions:
         type: string
         example: 123456789.1
       caller_id_name:
-        description: parkee Caller ID name
+        description: Caller ID name of the person who's call was parked
         type: string
         example: Alice
       caller_id_num:
-        description: parkee Caller ID num (phone number, extension, etc...)
+        description: Caller ID num of the person who's call was parked
         type: string
         example: 1001
       conversation_id:
         type: string
         example: 123456789.0
-      parker_name:
-        description: Parker's Caller ID name
+      parker_caller_id_name:
+        description: Caller ID name of the person who parked the call
         type: string
         example: Bob
-      parker_num:
-        description: Parkes' Caller ID num (phone number, extension, etc...)
+      parker_caller_id_num:
+        description: Caller ID num of the person who parked the call
         type: string
         example: 1002
       slot:
