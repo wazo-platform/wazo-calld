@@ -15,6 +15,7 @@
 
 * The following attributes have been added to the `parked_call` object:
 
+  * `conversation_id`
   * `caller_id_name`
   * `caller_id_num`
   * `parker_name`

@@ -52,6 +52,9 @@ definitions:
         description: parkee Caller ID num (phone number, extension, etc...)
         type: string
         example: 1001
+      conversation_id:
+        type: string
+        example: 123456789.0
       parker_name:
         description: Parker's Caller ID name
         type: string

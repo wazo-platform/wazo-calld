@@ -56,6 +56,7 @@ class ParkingLotListSchema(ParkingLotSchema):
 
 class ParkedCallGetResponseSchema(_Base):
     call_id = String(attribute='parkee_uniqueid', dump_only=True)
+    conversation_id = String(attribute='parkee_linkedid', dump_only=True)
     caller_id_name = String(attribute='parkee_caller_id_name', dump_only=True)
     caller_id_num = String(attribute='parkee_caller_id_num', dump_only=True)
     connected_line_name = String(attribute='parkee_connected_line_name', dump_only=True)
