@@ -25,8 +25,8 @@ class _Base(Schema):
 class ParkingLotSchema(_Base):
     id = Integer(dump_only=True)
     name = String(dump_only=True)
-    slots_start = Integer(dump_only=True)
-    slots_end = Integer(dump_only=True)
+    slots_start = String(dump_only=True)
+    slots_end = String(dump_only=True)
     slots_total = Integer(dump_only=True, default=0)
     slots_remaining = Integer(dump_only=True, default=0)
     default_timeout = Integer(attribute='timeout', dump_only=True)
@@ -40,7 +40,7 @@ class ParkingLotSchema(_Base):
 
     @post_dump
     def compute_slots(self, obj, **kwargs):
-        total = 1 + (obj['slots_end'] - obj['slots_start'])
+        total = 1 + (int(obj['slots_end']) - int(obj['slots_start']))
         obj['slots_total'] = total
         obj['slots_remaining'] = total - len(obj['calls'])
         return obj
