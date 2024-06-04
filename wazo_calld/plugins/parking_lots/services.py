@@ -165,7 +165,7 @@ class ParkingService:
 
     def is_parking_full(self, tenant_uuid: str, parking_id: int) -> bool:
         parking = self.get_parking(tenant_uuid, parking_id)
-        total_slots = int(parking.slots_end) - int(parking.slots_start)
+        total_slots = 1 + int(parking.slots_end) - int(parking.slots_start)
         count = self.count_parked_calls(tenant_uuid, parking_id)
         return count >= total_slots
 
