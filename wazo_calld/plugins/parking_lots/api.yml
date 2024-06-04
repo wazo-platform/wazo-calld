@@ -8,6 +8,12 @@ definitions:
     title: Parking lot
     type: object
     properties:
+      id:
+        type: integer
+        example: 3
+      name:
+        type: string
+        example: My Parking Lot
       slots_start:
         type: string
         example: '501'
@@ -38,6 +44,25 @@ definitions:
       call_id:
         type: string
         example: 123456789.1
+      caller_id_name:
+        description: Caller ID name of the person who's call was parked
+        type: string
+        example: Alice
+      caller_id_num:
+        description: Caller ID num of the person who's call was parked
+        type: string
+        example: 1001
+      conversation_id:
+        type: string
+        example: 123456789.0
+      parker_caller_id_name:
+        description: Caller ID name of the person who parked the call
+        type: string
+        example: Bob
+      parker_caller_id_num:
+        description: Caller ID num of the person who parked the call
+        type: string
+        example: 1002
       slot:
         description: Slots where this call has been parked
         type: string
@@ -108,6 +133,24 @@ parameters:
     schema:
       $ref: '#/definitions/ParkCallBody'
 paths:
+  /parkinglots:
+    get:
+      summary: Retrieve the list of parkings and park calls
+      description: '**Required ACL:** `calld.parkings.read`'
+      parameters:
+      - $ref: '#/parameters/TenantUUID'
+      tags:
+      - parking_lots
+      responses:
+        '200':
+          description: List of parkings and associated parked calls
+          schema:
+            type: object
+            properties:
+              items:
+                type: array
+                items:
+                  $ref: '#/definitions/ParkingLot'
   /parkinglots/{parking_id}:
     get:
       summary: Retrieve parked calls for parking
@@ -122,6 +165,8 @@ paths:
           description: List of parked calls in parking lot
           schema:
             $ref: '#/definitions/ParkingLot'
+        '404':
+          $ref: '#/responses/NotFoundError'
   /calls/{call_id}/park:
     put:
       summary: Park a call

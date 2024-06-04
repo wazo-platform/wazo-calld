@@ -10,6 +10,7 @@ from wazo_calld.auth import get_token_user_uuid_from_request, required_acl
 from wazo_calld.http import AuthResource
 
 from .schemas import (
+    ParkingLotListSchema,
     ParkingLotSchema,
     park_call_request_schema,
     parked_call_put_response_schema,
@@ -22,14 +23,30 @@ class _Base(AuthResource):
         self._service = parking_service
 
 
+class ParkingLotListResource(_Base):
+    @required_acl('calld.parkings.read')
+    def get(self):
+        tenant = Tenant.autodetect()
+        parkinglots = self._service.list_parkings(tenant.uuid)
+        data = [
+            (parkinglot, self._service.list_parked_calls(tenant.uuid, parkinglot.id))
+            for parkinglot in parkinglots
+        ]
+        return {'items': ParkingLotListSchema().dump(data, many=True)}, 200
+
+
 class ParkingLotResource(_Base):
     @required_acl('calld.parkings.{parking_id}.read')
     def get(self, parking_id: int) -> tuple[dict, int]:
         tenant = Tenant.autodetect()
         parking_lot = self._service.get_parking(tenant.uuid, parking_id)
         calls = self._service.list_parked_calls(tenant.uuid, parking_id)
+        context = {'calls': calls}
 
-        return ParkingLotSchema(context={'calls': calls}).dump(parking_lot), 200
+        return (
+            ParkingLotSchema(context=context, exclude=('id',)).dump(parking_lot),
+            200,
+        )
 
 
 class ParkCallResource(_Base):

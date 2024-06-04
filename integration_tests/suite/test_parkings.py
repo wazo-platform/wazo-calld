@@ -15,6 +15,7 @@ from hamcrest import (
     empty,
     has_entries,
     has_item,
+    has_items,
     has_length,
     has_properties,
     not_,
@@ -197,6 +198,42 @@ class TestParkings(BaseParkingTest):
             calling(calld.parking_lots.get).with_args(parking['id']),
             raises(CalldError).matching(
                 has_properties(status_code=404, error_id='no-such-parking')
+            ),
+        )
+
+    def test_list_parkings(self):
+        parking_data2 = PARKINGLOT_2.copy()
+        parking_data2['tenant_uuid'] = VALID_TENANT
+
+        parking_lot1 = MockParkinglot(**PARKINGLOT_1)
+        parking_lot2 = MockParkinglot(**parking_data2)
+        self.confd.set_parkinglots(parking_lot1, parking_lot2)
+        parkee_1 = self.given_parked_call(PARKINGLOT_1['extension'])
+        parkee_2 = self.given_parked_call(PARKINGLOT_2['extension'])
+        parker, parkee_3 = self.real_asterisk.given_bridged_call_not_stasis()
+        self.calld_client.calls.park(parkee_3, PARKINGLOT_2['id'])
+
+        results = self.calld_client.parking_lots.list_()['items']
+
+        assert_that(
+            results,
+            has_items(
+                has_entries(
+                    id=PARKINGLOT_1['id'],
+                    calls=has_items(
+                        has_entries(call_id=parkee_1),
+                    ),
+                ),
+                has_entries(
+                    id=PARKINGLOT_2['id'],
+                    calls=has_items(
+                        has_entries(call_id=parkee_2),
+                        has_entries(
+                            call_id=parkee_3,
+                            conversation_id=parker,
+                        ),
+                    ),
+                ),
             ),
         )
 

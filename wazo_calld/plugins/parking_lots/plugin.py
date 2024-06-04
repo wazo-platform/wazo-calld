@@ -9,7 +9,12 @@ from wazo_amid_client import Client as AmidClient
 from wazo_confd_client import Client as ConfdClient
 
 from .bus_consume import ParkingLotEventsHandler
-from .http import ParkCallResource, ParkingLotResource, UserCallParkResource
+from .http import (
+    ParkCallResource,
+    ParkingLotListResource,
+    ParkingLotResource,
+    UserCallParkResource,
+)
 from .notifier import ParkingNotifier
 from .services import ParkingService
 
@@ -48,19 +53,25 @@ class Plugin:
 
     def set_resources(self, api: Api, service: ParkingService) -> None:
         api.add_resource(
+            ParkingLotListResource,
+            '/parkinglots',
+            resource_class_args=(service,),
+        )
+
+        api.add_resource(
             ParkingLotResource,
             '/parkinglots/<int:parking_id>',
-            resource_class_args=[service],
+            resource_class_args=(service,),
         )
 
         api.add_resource(
             ParkCallResource,
             '/calls/<call_id>/park',
-            resource_class_args=[service],
+            resource_class_args=(service,),
         )
 
         api.add_resource(
             UserCallParkResource,
             '/users/me/calls/<call_id>/park',
-            resource_class_args=[service],
+            resource_class_args=(service,),
         )

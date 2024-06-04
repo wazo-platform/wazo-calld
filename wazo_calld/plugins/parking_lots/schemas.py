@@ -23,12 +23,14 @@ class _Base(Schema):
 
 
 class ParkingLotSchema(_Base):
-    slots_start = Integer(dump_only=True)
-    slots_end = Integer(dump_only=True)
+    id = Integer(dump_only=True)
+    name = String(dump_only=True)
+    slots_start = String(dump_only=True)
+    slots_end = String(dump_only=True)
     slots_total = Integer(dump_only=True, default=0)
     slots_remaining = Integer(dump_only=True, default=0)
     default_timeout = Integer(attribute='timeout', dump_only=True)
-    calls = List(Nested("ParkedCallGetResponseSchema"))
+    calls = List(Nested("ParkedCallGetResponseSchema"), default=list)
 
     @pre_dump
     def calls_from_context(self, obj, **kwargs):
@@ -38,14 +40,29 @@ class ParkingLotSchema(_Base):
 
     @post_dump
     def compute_slots(self, obj, **kwargs):
-        total = 1 + (obj['slots_end'] - obj['slots_start'])
+        total = 1 + (int(obj['slots_end']) - int(obj['slots_start']))
         obj['slots_total'] = total
         obj['slots_remaining'] = total - len(obj['calls'])
         return obj
 
 
+class ParkingLotListSchema(ParkingLotSchema):
+    @pre_dump
+    def unwrap_calls(self, obj, **kwargs):
+        parkinglot, calls = obj
+        parkinglot.calls = calls
+        return parkinglot
+
+
 class ParkedCallGetResponseSchema(_Base):
     call_id = String(attribute='parkee_uniqueid', dump_only=True)
+    conversation_id = String(attribute='parkee_linkedid', dump_only=True)
+    caller_id_name = String(attribute='parkee_caller_id_name', dump_only=True)
+    caller_id_num = String(attribute='parkee_caller_id_num', dump_only=True)
+    parker_caller_id_name = String(
+        attribute='parkee_connected_line_name', dump_only=True
+    )
+    parker_caller_id_num = String(attribute='parkee_connected_line_num', dump_only=True)
     slot = String(attribute='parking_space', dump_only=True)
     parked_at = Method('compute_park_time', dump_only=True)
     timeout_at = Method('compute_timeout', allow_none=True, dump_only=True)

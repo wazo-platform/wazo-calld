@@ -5,13 +5,13 @@ from __future__ import annotations
 
 import logging
 from functools import wraps
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING, Callable, Union
 
 from ari.exceptions import ARINotFound
 
 from wazo_calld.plugin_helpers.ari_ import Channel, set_channel_id_var_sync
 
-from .dataclasses_ import AsteriskParkedCall
+from .dataclasses_ import AsteriskParkedCall, AsteriskUnparkedCall
 from .exceptions import NoSuchParking
 from .helpers import DONT_CHECK_TENANT, split_parking_id_from_name
 
@@ -23,24 +23,41 @@ if TYPE_CHECKING:
     from .services import ParkingService
 
 
+AvailableModels = Union[AsteriskParkedCall, AsteriskUnparkedCall]
+
 logger = logging.getLogger(__name__)
 PARKED_CHANNEL_VAR = 'WAZO_CALL_PARKED'
 
 
-def convert_ami_event(
-    fn: Callable[[ParkingLotEventsHandler, AsteriskParkedCall, Channel], None],
-) -> Callable[[ParkingLotEventsHandler, dict], None]:
+def _convert_ami_event(
+    fn: (
+        Callable[[ParkingLotEventsHandler, AvailableModels, Channel], None] | None
+    ) = None,
+    *,
+    model: type[AvailableModels] = AsteriskParkedCall,
+):
     '''Helper decorator to convert AMI event dict to call and channel objects'''
 
-    @wraps(fn)
-    def wrapper(handler: ParkingLotEventsHandler, event: dict) -> None:
-        if not isinstance(event, dict):
-            raise ValueError('received invalid data')
-        call = AsteriskParkedCall.from_dict(event)
-        channel = handler._get_channel(call)
-        return fn(handler, call, channel)
+    def decorated(
+        fn: Callable[[ParkingLotEventsHandler, AvailableModels, Channel], None]
+    ) -> Callable[[ParkingLotEventsHandler, dict], None]:
+        @wraps(fn)
+        def wrapper(handler: ParkingLotEventsHandler, event: dict) -> None:
+            if not isinstance(event, dict):
+                raise ValueError('received invalid data')
+            call = model.from_dict(event)
+            channel = handler._get_channel(call)
+            return fn(handler, call, channel)
 
-    return wrapper
+        return wrapper
+
+    if fn:
+        return decorated(fn)
+    return decorated
+
+
+parked_call_from_event = _convert_ami_event(model=AsteriskParkedCall)
+unparked_call_from_event = _convert_ami_event(model=AsteriskUnparkedCall)
 
 
 class ParkingLotEventsHandler:
@@ -58,6 +75,7 @@ class ParkingLotEventsHandler:
         consumer.subscribe('ParkedCallGiveUp', self.on_ami_parked_call_hangup)
         consumer.subscribe('ParkedCallSwap', self.on_ami_parked_call_swap)
         consumer.subscribe('ParkedCallTimeOut', self.on_ami_parked_call_timed_out)
+        consumer.subscribe('UnParkedCall', self.on_ami_call_unparked)
 
     def _get_channel(self, call: AsteriskParkedCall) -> Channel:
         return Channel(call.parkee_uniqueid, self._ari.client)
@@ -82,7 +100,7 @@ class ParkingLotEventsHandler:
                 channel.id,
             )
 
-    @convert_ami_event
+    @parked_call_from_event
     def on_ami_call_parked(
         self, parked_call: AsteriskParkedCall, parked_channel: Channel
     ) -> None:
@@ -93,19 +111,18 @@ class ParkingLotEventsHandler:
         if tenant_uuid := parked_channel.tenant_uuid():
             self._notifier.call_parked(parked_call, tenant_uuid)
 
-    @convert_ami_event
+    @unparked_call_from_event
     def on_ami_call_unparked(
-        self, parked_call: AsteriskParkedCall, parked_channel: Channel
+        self, unparked_call: AsteriskUnparkedCall, unparked_channel: Channel
     ) -> None:
         '''A call has been unparked'''
 
-        self._set_parked_status(parked_channel, False)
-        retriever_channel = parked_channel.only_connected_channel()
+        self._set_parked_status(unparked_channel, False)
 
-        if tenant_uuid := parked_channel.tenant_uuid():
-            self._notifier.call_unparked(parked_call, retriever_channel.id, tenant_uuid)
+        if tenant_uuid := unparked_channel.tenant_uuid():
+            self._notifier.call_unparked(unparked_call, tenant_uuid)
 
-    @convert_ami_event
+    @parked_call_from_event
     def on_ami_parked_call_hangup(
         self, parked_call: AsteriskParkedCall, _: Channel
     ) -> None:
@@ -126,7 +143,7 @@ class ParkingLotEventsHandler:
         if tenant_uuid:
             self._notifier.parked_call_hangup(parked_call, tenant_uuid)
 
-    @convert_ami_event
+    @parked_call_from_event
     def on_ami_parked_call_swap(
         self, _: AsteriskParkedCall, parked_channel: Channel
     ) -> None:
@@ -134,7 +151,7 @@ class ParkingLotEventsHandler:
 
         self._set_parked_status(parked_channel, False)
 
-    @convert_ami_event
+    @parked_call_from_event
     def on_ami_parked_call_timed_out(
         self, parked_call: AsteriskParkedCall, parked_channel: Channel
     ) -> None:
