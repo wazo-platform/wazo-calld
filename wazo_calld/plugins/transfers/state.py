@@ -3,6 +3,8 @@
 
 import json
 import logging
+import threading
+from contextlib import contextmanager
 from typing import ClassVar
 
 from ari.exceptions import ARINotFound
@@ -20,6 +22,8 @@ from .exceptions import (
 from .transfer import TransferStatus
 
 logger = logging.getLogger(__name__)
+state_machine_lock = threading.RLock()
+state_machine_locked = False  # RLock has no method .locked()
 
 
 class StateFactory:
@@ -36,21 +40,60 @@ class StateFactory:
         self._dependencies = dependencies
         self._configured = True
 
-    def make(self, transfer):
+    def set_state_persistor(self, state_persistor):
+        self._state_persistor = state_persistor
+
+    @contextmanager
+    def make(self, transfer_id):
+        global state_machine_locked
         if not self._configured:
             raise RuntimeError('StateFactory is not configured')
-        dependencies = list(self._dependencies) + [transfer]
-        return self._state_constructors[transfer.status](*dependencies)
 
+        logger.debug(
+            'Acquiring state machine lock from transfer %s',
+            transfer_id,
+        )
+        state_machine_lock.acquire(timeout=10)
+        state_machine_locked = True
+        try:
+            transfer = self._state_persistor.get(transfer_id)
+            dependencies = list(self._dependencies) + [transfer]
+            yield self._state_constructors[transfer.status](*dependencies)
+        finally:
+            logger.debug(
+                'Releasing state machine lock from transfer %s',
+                transfer_id,
+            )
+            state_machine_locked = False
+            state_machine_lock.release()
+
+    @contextmanager
     def make_from_class(self, state_class, transfer):
+        global state_machine_locked
         if not self._configured:
             raise RuntimeError('StateFactory is not configured')
         dependencies = list(self._dependencies) + [transfer]
         transfer.status = state_class.name
 
-        new_object = state_class(*dependencies)
-        new_object.update_cache()  # ensure the transfer is stored in Asterisk vars cache
-        return new_object
+        logger.debug(
+            'Acquiring state machine lock from transfer %s for state %s',
+            transfer.id,
+            state_class.__name__,
+        )
+        state_machine_lock.acquire(timeout=10)
+        state_machine_locked = True
+        try:
+            new_object = state_class(*dependencies)
+            new_object.update_cache()  # ensure the transfer is stored in Asterisk vars cache
+            yield new_object
+        finally:
+            logger.debug(
+                'Releasing state machine lock from transfer %s for state %s',
+                transfer.id,
+                state_class.__name__,
+            )
+            state_machine_locked = False
+            state_machine_lock.release()
 
     def state(self, wrapped_class):
         self._state_constructors[wrapped_class.name] = wrapped_class
@@ -62,16 +105,22 @@ state_factory = StateFactory()
 
 def transition(decorated):
     def decorator(state, *args, **kwargs):
+        assert (
+            state_machine_locked
+        ), 'Transfer state machine was not locked before transition'
         try:
             result = decorated(state, *args, **kwargs)
         except Exception:
-            if state.transfer:
-                state._transfer_lock.release(state.transfer.initiator_call)
+            state._transfer_lock.release(state.transfer.initiator_call)
             raise
         logger.info(
-            'Transition: %s -> %s -> %s', state.name, decorated.__name__, result.name
+            'Transition: %s -> %s -> %s',
+            state.name,
+            decorated.__name__,
+            result.name,
         )
         result.update_cache()
+
         return result
 
     return decorator
@@ -549,7 +598,8 @@ class TransferStateRingback(TransferState):
 
     @transition
     def recipient_hangup(self):
-        return self.cancel()
+        self._cancel()
+        return TransferStateEnded.from_state(self)
 
     @transition
     def complete(self):
@@ -680,7 +730,8 @@ class TransferStateAnswered(TransferState):
 
     @transition
     def recipient_hangup(self):
-        return self.cancel()
+        self._cancel()
+        return TransferStateEnded.from_state(self)
 
     @transition
     def complete(self):
