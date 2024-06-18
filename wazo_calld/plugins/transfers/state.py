@@ -22,6 +22,10 @@ logger = logging.getLogger(__name__)
 
 
 class StateFactory:
+    '''
+    Purpose: inject static dependencies in states
+    '''
+
     def __init__(self, ari=None):
         self._state_constructors = {}
         self._ari = ari
