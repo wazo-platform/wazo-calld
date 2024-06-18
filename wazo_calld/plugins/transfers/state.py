@@ -327,9 +327,7 @@ class TransferStateMovingToStasis(TransferState):
     name = TransferStatus.starting
 
     @transition
-    def start(self, transfer, context, exten, variables, timeout):
-        self.transfer = transfer
-
+    def start(self, context, exten, variables, timeout):
         try:
             ari_helpers.hold_transferred_call(
                 self._ari, self._amid, self.transfer.transferred_call

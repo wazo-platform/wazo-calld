@@ -251,9 +251,7 @@ class TransfersStasis:
             timeout = None if timeout_str == 'None' else int(timeout_str)
 
             transfer_state = self.state_factory.make(transfer)
-            new_state = transfer_state.start(
-                transfer, context, exten, variables, timeout
-            )
+            new_state = transfer_state.start(context, exten, variables, timeout)
             if new_state.transfer.flow == 'blind':
                 new_state.complete()
 
