@@ -41,13 +41,11 @@ class StateFactory:
         dependencies = list(self._dependencies) + [transfer]
         return self._state_constructors[transfer.status](*dependencies)
 
-    def make_from_class(self, state_class, transfer=None):
+    def make_from_class(self, state_class, transfer):
         if not self._configured:
             raise RuntimeError('StateFactory is not configured')
-        dependencies = list(self._dependencies)
-        if transfer:
-            transfer.status = state_class.name
-            dependencies.append(transfer)
+        dependencies = list(self._dependencies) + [transfer]
+        transfer.status = state_class.name
 
         new_object = state_class(*dependencies)
         new_object.update_cache()  # ensure the transfer is stored in Asterisk vars cache
@@ -89,7 +87,7 @@ class TransferState:
         services,
         state_persistor,
         transfer_lock,
-        transfer=None,
+        transfer,
     ):
         self._amid = amid
         self._ari = ari
