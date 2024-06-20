@@ -228,6 +228,11 @@ class DialMobileService:
         dialer = self._contact_dialers.pop(future_bridge_uuid, None)
         logger.debug('Removing dialer: %s', str(dialer))
         if not dialer:
+            try:
+                self._ari.channels.hangup(channelId=channel_id)
+            except ARINotFound:
+                # If its already gone do nothing
+                pass
             return
 
         dialer.stop()
@@ -239,6 +244,11 @@ class DialMobileService:
                 'the caller (%s) left the call before being bridged',
                 outgoing_channel_id,
             )
+            try:
+                self._ari.channels.hangup(channelId=channel_id)
+            except ARINotFound:
+                # If its already gone do nothing
+                pass
             return
 
         try:

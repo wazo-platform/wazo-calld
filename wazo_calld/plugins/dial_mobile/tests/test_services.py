@@ -207,6 +207,7 @@ class TestChannelGone(DialerTestCase):
 class DialMobileServiceTestCase(DialerTestCase):
     def setUp(self):
         self.ari = Mock()
+        self.ari.client = self.ari_client = Mock()
         self.amid_client = Mock()
         self.auth_client = Mock()
         self.notifier = Mock(Notifier)
@@ -276,6 +277,25 @@ class DialMobileServiceTestCase(DialerTestCase):
         with patch.object(self.service, '_set_user_hint') as mock:
             self.service.on_mobile_refresh_token_deleted(s.user_uuid)
             mock.assert_not_called()
+
+    def test_join_bridge_unknown_future_bridge_will_hangup(self):
+        self.service.join_bridge(s.channel_id, s.bridge_uuid)
+
+        self.ari_client.channels.hangup.assert_called_once_with(channelId=s.channel_id)
+
+    def test_join_bridge_caller_gone_will_hangup(self):
+        dialer = Mock()
+        self.service._contact_dialers = {s.bridge_uuid: dialer}
+        self.service._outgoing_calls = {s.bridge_uuid: s.caller_channel}
+        self.ari_client.channels.answer.side_effect = ARINotFound(
+            self.ari_client, s.error
+        )
+
+        self.service.join_bridge(s.channel_id, s.bridge_uuid)
+
+        dialer.stop.assert_called_once_with()
+
+        self.ari_client.channels.hangup.assert_called_once_with(channelId=s.channel_id)
 
 
 class TestCancelPushNotification(TestCase):
