@@ -46,7 +46,7 @@ class StatePersistor:
     def upsert(self, transfer):
         logger.debug('transfer: %s upsert starting', transfer.id)
         with self._lock:
-            self._transfers.set(transfer.id, transfer.to_dict())
+            self._transfers.set(transfer.id, transfer.to_internal_dict())
             index = set(self._index.get(default=[]))
             index.add(transfer.id)
             self._index.set(list(index))

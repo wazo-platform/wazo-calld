@@ -1,7 +1,6 @@
 # Copyright 2016-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-import json
 import logging
 
 from ari.exceptions import ARINotFound, ARINotInStasis
@@ -212,48 +211,17 @@ class TransfersStasis:
     def create_transfer(self, channel_event):
         channel, event = channel_event
         event = CreateTransferEvent(event)
-        try:
-            bridge = self.ari.bridges.get(bridgeId=event.transfer_id)
-        except ARINotFound:
-            bridge = self.ari.bridges.createWithId(
-                type='mixing', name='transfer', bridgeId=event.transfer_id
-            )
+        transfer = self.state_persistor.get(event.transfer_id)
+        transfer_role = transfer.role(channel.id)
+        transfer_state = self.state_factory.make(transfer.id)
 
-        bridge.addChannel(channel=channel.id)
-        channel_ids = bridge.get().json['channels']
-        if len(channel_ids) == 2:
-            transfer = self.state_persistor.get(event.transfer_id)
-            try:
-                context = self.ari.channels.getChannelVar(
-                    channelId=transfer.initiator_call,
-                    variable='XIVO_TRANSFER_RECIPIENT_CONTEXT',
-                )['value']
-                exten = self.ari.channels.getChannelVar(
-                    channelId=transfer.initiator_call,
-                    variable='XIVO_TRANSFER_RECIPIENT_EXTEN',
-                )['value']
-                variables_str = self.ari.channels.getChannelVar(
-                    channelId=transfer.initiator_call,
-                    variable='XIVO_TRANSFER_VARIABLES',
-                )['value']
-                timeout_str = self.ari.channels.getChannelVar(
-                    channelId=transfer.initiator_call, variable='XIVO_TRANSFER_TIMEOUT'
-                )['value']
-            except ARINotFound:
-                logger.error('initiator hung up while creating transfer')
-            try:
-                variables = json.loads(variables_str)
-            except ValueError:
-                logger.warning(
-                    'could not decode transfer variables "%s"', variables_str
-                )
-                variables = {}
-            timeout = None if timeout_str == 'None' else int(timeout_str)
+        if transfer_role == TransferRole.initiator:
+            new_state = transfer_state.initiator_joined_stasis()
+        elif transfer_role == TransferRole.transferred:
+            new_state = transfer_state.transferred_joined_stasis()
 
-            transfer_state = self.state_factory.make(transfer)
-            new_state = transfer_state.start(context, exten, variables, timeout)
-            if new_state.transfer.flow == 'blind':
-                new_state.complete()
+        if new_state.transfer.flow == 'blind':
+            new_state.complete()
 
     def recipient_hangup(self, transfer):
         logger.debug('recipient hangup = cancel transfer %s', transfer.id)
