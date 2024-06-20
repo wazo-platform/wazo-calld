@@ -22,42 +22,56 @@ class TransferNotifier:
 
     def created(self, transfer):
         event = CallTransferCreatedEvent(
-            transfer.to_dict(), transfer.initiator_tenant_uuid, transfer.initiator_uuid
+            transfer.to_public_dict(),
+            transfer.initiator_tenant_uuid,
+            transfer.initiator_uuid,
         )
         self._bus_producer.publish(event)
 
     def updated(self, transfer):
         event = CallTransferUpdatedEvent(
-            transfer.to_dict(), transfer.initiator_tenant_uuid, transfer.initiator_uuid
+            transfer.to_public_dict(),
+            transfer.initiator_tenant_uuid,
+            transfer.initiator_uuid,
         )
         self._bus_producer.publish(event)
 
     def answered(self, transfer):
         event = CallTransferAnsweredEvent(
-            transfer.to_dict(), transfer.initiator_tenant_uuid, transfer.initiator_uuid
+            transfer.to_public_dict(),
+            transfer.initiator_tenant_uuid,
+            transfer.initiator_uuid,
         )
         self._bus_producer.publish(event)
 
     def cancelled(self, transfer):
         event = CallTransferCancelledEvent(
-            transfer.to_dict(), transfer.initiator_tenant_uuid, transfer.initiator_uuid
+            transfer.to_public_dict(),
+            transfer.initiator_tenant_uuid,
+            transfer.initiator_uuid,
         )
         self._bus_producer.publish(event)
 
     def completed(self, transfer):
         event = CallTransferCompletedEvent(
-            transfer.to_dict(), transfer.initiator_tenant_uuid, transfer.initiator_uuid
+            transfer.to_public_dict(),
+            transfer.initiator_tenant_uuid,
+            transfer.initiator_uuid,
         )
         self._bus_producer.publish(event)
 
     def abandoned(self, transfer):
         event = CallTransferAbandonedEvent(
-            transfer.to_dict(), transfer.initiator_tenant_uuid, transfer.initiator_uuid
+            transfer.to_public_dict(),
+            transfer.initiator_tenant_uuid,
+            transfer.initiator_uuid,
         )
         self._bus_producer.publish(event)
 
     def ended(self, transfer):
         event = CallTransferEndedEvent(
-            transfer.to_dict(), transfer.initiator_tenant_uuid, transfer.initiator_uuid
+            transfer.to_public_dict(),
+            transfer.initiator_tenant_uuid,
+            transfer.initiator_uuid,
         )
         self._bus_producer.publish(event)

@@ -1,7 +1,6 @@
 # Copyright 2016-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-import json
 import logging
 
 from ari.exceptions import ARINotFound, ARINotInStasis
@@ -95,8 +94,8 @@ class TransfersStasis:
             )
             return
 
-        transfer_state = self.state_factory.make(transfer)
-        transfer_state.transferred_moh_stop()
+        with self.state_factory.make(transfer.id) as transfer_state:
+            transfer_state.transferred_moh_stop()
 
     def invalid_event(self, _, __, exception):
         if isinstance(exception, InvalidEvent):
@@ -117,16 +116,16 @@ class TransfersStasis:
 
         logger.debug('Processing lost hangups since last stop...')
         for transfer in transfers:
-            transfer_state = self.state_factory.make(transfer)
-            if not Channel(transfer.transferred_call, self.ari).exists():
-                logger.debug('Transferred hangup from transfer %s', transfer.id)
-                transfer_state = transfer_state.transferred_hangup()
-            if not Channel(transfer.initiator_call, self.ari).exists():
-                logger.debug('Initiator hangup from transfer %s', transfer.id)
-                transfer_state = transfer_state.initiator_hangup()
-            if not Channel(transfer.recipient_call, self.ari).exists():
-                logger.debug('Recipient hangup from transfer %s', transfer.id)
-                transfer_state = transfer_state.recipient_hangup()
+            with self.state_factory.make(transfer.id) as transfer_state:
+                if not Channel(transfer.transferred_call, self.ari).exists():
+                    logger.debug('Transferred hangup from transfer %s', transfer.id)
+                    transfer_state = transfer_state.transferred_hangup()
+                if not Channel(transfer.initiator_call, self.ari).exists():
+                    logger.debug('Initiator hangup from transfer %s', transfer.id)
+                    transfer_state = transfer_state.initiator_hangup()
+                if not Channel(transfer.recipient_call, self.ari).exists():
+                    logger.debug('Recipient hangup from transfer %s', transfer.id)
+                    transfer_state = transfer_state.recipient_hangup()
         logger.debug('Done.')
 
     def process_answered_calls(self):
@@ -134,17 +133,17 @@ class TransfersStasis:
 
         logger.debug('Processing lost answered calls since last stop...')
         for transfer in transfers:
-            transfer_state = self.state_factory.make(transfer)
-            if (
-                transfer_state.name == TransferStatus.ringback
-                and Channel(transfer.recipient_call, self.ari).exists()
-            ):
-                channel = self.ari.channels.get(channelId=transfer.recipient_call)
-                if channel.json['state'] != 'Up':
-                    logger.debug('Recipiend answered from transfer %s', transfer.id)
-                    continue
-                event = {'args': ['', '', transfer.id]}
-                self.transfer_recipient_answered((channel, event))
+            with self.state_factory.make(transfer.id) as transfer_state:
+                if (
+                    transfer_state.name == TransferStatus.ringback
+                    and Channel(transfer.recipient_call, self.ari).exists()
+                ):
+                    channel = self.ari.channels.get(channelId=transfer.recipient_call)
+                    if channel.json['state'] != 'Up':
+                        logger.debug('Recipiend answered from transfer %s', transfer.id)
+                        continue
+                    event = {'args': ['', '', transfer.id]}
+                    self.transfer_recipient_answered((channel, event))
         logger.debug('Done.')
 
     def stasis_start(self, event_objects, event):
@@ -194,8 +193,11 @@ class TransfersStasis:
             logger.error('recipient answered, but transfer was hung up')
             return
 
+        transfer_id = event.transfer_bridge
         try:
-            transfer = self.state_persistor.get(event.transfer_bridge)
+            with self.state_factory.make(transfer_id) as transfer_state:
+                logger.debug('recipient answered, transfer continues normally')
+                transfer_state.recipient_answer()
         except KeyError:
             logger.debug('recipient answered, but transfer was abandoned')
 
@@ -204,73 +206,35 @@ class TransfersStasis:
                     ari_helpers.unring_initiator_call(self.ari, channel_id)
                 except ARINotFound:
                     pass
-        else:
-            logger.debug('recipient answered, transfer continues normally')
-            transfer_state = self.state_factory.make(transfer)
-            transfer_state.recipient_answer()
 
     def create_transfer(self, channel_event):
         channel, event = channel_event
         event = CreateTransferEvent(event)
-        try:
-            bridge = self.ari.bridges.get(bridgeId=event.transfer_id)
-        except ARINotFound:
-            bridge = self.ari.bridges.createWithId(
-                type='mixing', name='transfer', bridgeId=event.transfer_id
-            )
+        transfer = self.state_persistor.get(event.transfer_id)
+        transfer_role = transfer.role(channel.id)
+        with self.state_factory.make(transfer.id) as transfer_state:
+            if transfer_role == TransferRole.initiator:
+                new_state = transfer_state.initiator_joined_stasis()
+            elif transfer_role == TransferRole.transferred:
+                new_state = transfer_state.transferred_joined_stasis()
 
-        bridge.addChannel(channel=channel.id)
-        channel_ids = bridge.get().json['channels']
-        if len(channel_ids) == 2:
-            transfer = self.state_persistor.get(event.transfer_id)
-            try:
-                context = self.ari.channels.getChannelVar(
-                    channelId=transfer.initiator_call,
-                    variable='XIVO_TRANSFER_RECIPIENT_CONTEXT',
-                )['value']
-                exten = self.ari.channels.getChannelVar(
-                    channelId=transfer.initiator_call,
-                    variable='XIVO_TRANSFER_RECIPIENT_EXTEN',
-                )['value']
-                variables_str = self.ari.channels.getChannelVar(
-                    channelId=transfer.initiator_call,
-                    variable='XIVO_TRANSFER_VARIABLES',
-                )['value']
-                timeout_str = self.ari.channels.getChannelVar(
-                    channelId=transfer.initiator_call, variable='XIVO_TRANSFER_TIMEOUT'
-                )['value']
-            except ARINotFound:
-                logger.error('initiator hung up while creating transfer')
-            try:
-                variables = json.loads(variables_str)
-            except ValueError:
-                logger.warning(
-                    'could not decode transfer variables "%s"', variables_str
-                )
-                variables = {}
-            timeout = None if timeout_str == 'None' else int(timeout_str)
-
-            transfer_state = self.state_factory.make(transfer)
-            new_state = transfer_state.start(
-                transfer, context, exten, variables, timeout
-            )
             if new_state.transfer.flow == 'blind':
                 new_state.complete()
 
     def recipient_hangup(self, transfer):
         logger.debug('recipient hangup = cancel transfer %s', transfer.id)
-        transfer_state = self.state_factory.make(transfer)
-        transfer_state.recipient_hangup()
+        with self.state_factory.make(transfer.id) as transfer_state:
+            transfer_state.recipient_hangup()
 
     def initiator_hangup(self, transfer):
         logger.debug('initiator hangup = complete transfer %s', transfer.id)
-        transfer_state = self.state_factory.make(transfer)
-        transfer_state.initiator_hangup()
+        with self.state_factory.make(transfer.id) as transfer_state:
+            transfer_state.initiator_hangup()
 
     def transferred_hangup(self, transfer):
         logger.debug('transferred hangup = abandon transfer %s', transfer.id)
-        transfer_state = self.state_factory.make(transfer)
-        transfer_state.transferred_hangup()
+        with self.state_factory.make(transfer.id) as transfer_state:
+            transfer_state.transferred_hangup()
 
     def clean_bridge(self, channel, event):
         if event['application'] != 'callcontrol':

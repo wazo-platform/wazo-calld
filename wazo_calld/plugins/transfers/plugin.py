@@ -63,6 +63,7 @@ class Plugin:
         ari.client_initialized_subscribe(startup_callback_collector.new_source())
         startup_callback_collector.subscribe(transfers_stasis.initialize)
 
+        state_factory.set_state_persistor(state_persistor)
         state_factory.set_dependencies(
             amid_client,
             ari.client,

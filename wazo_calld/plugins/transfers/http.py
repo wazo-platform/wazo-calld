@@ -25,7 +25,7 @@ class TransfersResource(AuthResource):
             request_body['variables'],
             request_body['timeout'],
         )
-        return transfer.to_dict(), 201
+        return transfer.to_public_dict(), 201
 
 
 class UserTransfersResource(AuthResource):
@@ -37,7 +37,7 @@ class UserTransfersResource(AuthResource):
         user_uuid = get_token_user_uuid_from_request()
         transfers = self._transfers_service.list_from_user(user_uuid)
 
-        return {'items': [transfer.to_dict() for transfer in transfers]}, 200
+        return {'items': [transfer.to_public_dict() for transfer in transfers]}, 200
 
     @required_acl('calld.users.me.transfers.create')
     def post(self):
@@ -50,7 +50,7 @@ class UserTransfersResource(AuthResource):
             request_body['timeout'],
             user_uuid,
         )
-        return transfer.to_dict(), 201
+        return transfer.to_public_dict(), 201
 
 
 class TransferResource(AuthResource):
@@ -60,7 +60,7 @@ class TransferResource(AuthResource):
     @required_acl('calld.transfers.{transfer_id}.read')
     def get(self, transfer_id):
         transfer = self._transfers_service.get(transfer_id)
-        return transfer.to_dict(), 200
+        return transfer.to_public_dict(), 200
 
     @required_acl('calld.transfers.{transfer_id}.delete')
     def delete(self, transfer_id):

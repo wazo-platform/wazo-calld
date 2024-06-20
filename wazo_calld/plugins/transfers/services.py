@@ -3,6 +3,7 @@
 
 import logging
 import uuid
+from typing import cast
 
 from ari.exceptions import ARINotFound
 from xivo.caller_id import assemble_caller_id
@@ -25,7 +26,7 @@ from .exceptions import (
     TransferCreationError,
 )
 from .lock import HangupLock, InvalidLock
-from .state import TransferStateNonStasis, TransferStateReady
+from .state import TransferState, TransferStateNonStasis, TransferStateReady
 from .transfer import Transfer
 
 logger = logging.getLogger(__name__)
@@ -82,28 +83,28 @@ class TransfersService:
         transfer.initiator_call = initiator_channel.id
         transfer.flow = flow
 
+        transfer_state: TransferState
         if not (
             Channel(transferred_call, self.ari).is_in_stasis()
             and Channel(initiator_call, self.ari).is_in_stasis()
         ):
-            transfer_state = self.state_factory.make_from_class(
-                TransferStateNonStasis, transfer
-            )
+            transfer_state_class = cast(TransferState, TransferStateNonStasis)
         else:
-            transfer_state = self.state_factory.make_from_class(
-                TransferStateReady, transfer
-            )
+            transfer_state_class = cast(TransferState, TransferStateReady)
 
-        try:
-            new_state = transfer_state.start(context, exten, variables, timeout)
-        except Exception:
-            self.transfer_lock.release(initiator_call)
-            raise
+        with self.state_factory.make_from_class(
+            transfer_state_class, transfer
+        ) as transfer_state:
+            try:
+                new_state = transfer_state.start(context, exten, variables, timeout)
+            except Exception:
+                self.transfer_lock.release(initiator_call)
+                raise
 
-        self.notifier.created(new_state.transfer)
+            self.notifier.created(new_state.transfer)
 
-        if flow == 'blind':
-            new_state = new_state.complete()
+            if flow == 'blind':
+                new_state = new_state.complete()
 
         return new_state.transfer
 
@@ -194,28 +195,34 @@ class TransfersService:
             raise NoSuchTransfer(transfer_id)
 
     def complete(self, transfer_id):
-        transfer = self.get(transfer_id)
-
-        transfer_state = self.state_factory.make(transfer)
-        transfer_state.complete()
+        try:
+            with self.state_factory.make(transfer_id) as transfer_state:
+                transfer_state.complete()
+        except KeyError:
+            raise NoSuchTransfer(transfer_id)
 
     def complete_from_user(self, transfer_id, user_uuid):
         transfer = self.get(transfer_id)
         if transfer.initiator_uuid != user_uuid:
             raise UserPermissionDenied(user_uuid, {'transfer': transfer_id})
 
-        transfer_state = self.state_factory.make(transfer)
-        transfer_state.complete()
+        with self.state_factory.make(transfer_id) as transfer_state:
+            transfer_state.complete()
 
     def cancel(self, transfer_id):
-        transfer = self.get(transfer_id)
-        transfer_state = self.state_factory.make(transfer)
-        transfer_state.cancel()
+        try:
+            with self.state_factory.make(transfer_id) as transfer_state:
+                transfer_state.cancel()
+        except KeyError:
+            raise NoSuchTransfer(transfer_id)
 
     def cancel_from_user(self, transfer_id, user_uuid):
         transfer = self.get(transfer_id)
         if transfer.initiator_uuid != user_uuid:
             raise UserPermissionDenied(user_uuid, {'transfer': transfer_id})
 
-        transfer_state = self.state_factory.make(transfer)
-        transfer_state.cancel()
+        try:
+            with self.state_factory.make(transfer_id) as transfer_state:
+                transfer_state.cancel()
+        except KeyError:
+            raise NoSuchTransfer(transfer_id)

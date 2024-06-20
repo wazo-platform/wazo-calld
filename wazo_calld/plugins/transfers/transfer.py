@@ -1,4 +1,4 @@
-# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 
@@ -13,7 +13,7 @@ class Transfer:
         self.status = 'invalid'
         self.flow = 'attended'
 
-    def to_dict(self):
+    def to_internal_dict(self):
         return {
             'id': self.id,
             'initiator_uuid': self.initiator_uuid,
@@ -24,6 +24,28 @@ class Transfer:
             'status': self.status,
             'flow': self.flow,
         }
+
+    def to_public_dict(self):
+        return {
+            'id': self.id,
+            'initiator_uuid': self.initiator_uuid,
+            'initiator_tenant_uuid': self.initiator_tenant_uuid,
+            'transferred_call': self.transferred_call,
+            'initiator_call': self.initiator_call,
+            'recipient_call': self.recipient_call,
+            'status': self.public_status(),
+            'flow': self.flow,
+        }
+
+    def public_status(self):
+        # we don't want to expose stasis-related statuses
+        if self.status in (
+            'none_moved_to_stasis',
+            'initiator_moved_to_stasis',
+            'transferred_moved_to_stasis',
+        ):
+            return 'starting'
+        return self.status
 
     @classmethod
     def from_dict(cls, dict_):

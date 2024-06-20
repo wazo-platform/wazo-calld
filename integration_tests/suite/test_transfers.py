@@ -228,6 +228,7 @@ class TestTransfers(RealAsteriskIntegrationTest):
                     recipient_channel_id,
                 ),
             ),
+            'transfer bridge is missing one channel',
         )
 
         assert_that(
@@ -292,6 +293,7 @@ class TestTransfers(RealAsteriskIntegrationTest):
                     ),
                 )
             ),
+            'transfer_answered event wrong or missing',
         )
 
     def assert_transfer_is_cancelled(
@@ -2093,6 +2095,7 @@ class TestTransferFromNonStasis(TestTransfers):
                         ),
                     ),
                 ),
+                'transfer_updated event is wrong or missing',
             )
 
         until.assert_(transfer_was_updated, events, timeout=30)
