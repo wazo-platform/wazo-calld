@@ -30,8 +30,9 @@ Depends:
  python3-wsaccel,
  wazo-amid-client-python3,
  wazo-auth-client-python3,
- wazo-confd-client-python3,
  wazo-bus-python3,
+ wazo-confd-client-python3,
+ wazo-uuid,
  xivo-lib-python-python3
 Description: Wazo call server
  Wazo is a system based on a powerful IPBX, to bring an easy to
