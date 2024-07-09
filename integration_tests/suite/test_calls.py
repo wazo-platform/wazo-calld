@@ -26,7 +26,7 @@ from wazo_test_helpers import until
 from wazo_test_helpers.auth import MockUserToken
 from wazo_test_helpers.hamcrest.raises import raises
 
-from .helpers.ari_ import MockApplication, MockBridge, MockChannel
+from .helpers.ari_ import MockApplication, MockBridge, MockChannel, MockEndpoint
 from .helpers.base import IntegrationTest
 from .helpers.calld import new_call_id, new_uuid
 from .helpers.confd import MockLine, MockUser
@@ -953,6 +953,7 @@ class TestCreateCall(_BaseTestCalls):
                 }
             }
         )
+        self.ari.set_endpoints(MockEndpoint('pjsip', 'line-name', 'online'))
         call_args = {
             'source': {'user': user_uuid},
             'destination': {
@@ -1000,6 +1001,7 @@ class TestCreateCall(_BaseTestCalls):
         self.ari.set_originates(
             MockChannel(id=my_new_call_id, connected_line_number='')
         )
+        self.ari.set_endpoints(MockEndpoint('pjsip', 'line-name', 'online'))
         self.amid.set_valid_exten('my-context', '123456', priority)
         self._set_channel_variable(
             {
@@ -1055,9 +1057,12 @@ class TestCreateCall(_BaseTestCalls):
             MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL)
         )
         self.ari.set_originates(MockChannel(my_new_call_id))
+        self.ari.set_endpoints(MockEndpoint('pjsip', 'line-name', 'online'))
         self.amid.set_valid_exten('my-context', 'my-extension', priority)
         call_args = {
-            'source': {'user': user_uuid},
+            'source': {
+                'user': user_uuid,
+            },
             'destination': {
                 'priority': priority,
                 'extension': 'my-extension',
@@ -1120,6 +1125,7 @@ class TestCreateCall(_BaseTestCalls):
             MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL)
         )
         self.ari.set_originates(MockChannel(id=my_new_call_id))
+        self.ari.set_endpoints(MockEndpoint('pjsip', 'line-name', 'online'))
         self.amid.set_valid_exten('my-context', 'my-extension', priority)
         call_args = {
             'source': {'user': user_uuid},
@@ -1173,6 +1179,7 @@ class TestCreateCall(_BaseTestCalls):
             MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL)
         )
         self.ari.set_originates(MockChannel(id=my_new_call_id))
+        self.ari.set_endpoints(MockEndpoint('pjsip', 'line-name', 'online'))
         self.amid.set_valid_exten('my-context', '#pound', priority)
         call_args = {
             'source': {'user': user_uuid},
@@ -1221,6 +1228,7 @@ class TestCreateCall(_BaseTestCalls):
             MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL)
         )
         self.ari.set_originates(MockChannel(id=my_new_call_id))
+        self.ari.set_endpoints(MockEndpoint('pjsip', 'line-name', 'online'))
         self.amid.set_valid_exten('my-context', 'my-extension', priority)
         call_args = {
             'source': {'user': user_uuid},
@@ -1376,6 +1384,7 @@ class TestCreateCall(_BaseTestCalls):
             MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL)
         )
         self.ari.set_originates(MockChannel(id=my_new_call_id))
+        self.ari.set_endpoints(MockEndpoint('pjsip', 'line-name', 'online'))
         self.amid.set_valid_exten('my-context', 'my-extension', priority)
         call_args = {
             'source': {'user': user_uuid},
@@ -1491,6 +1500,10 @@ class TestCreateCall(_BaseTestCalls):
             ),
         )
         self.ari.set_originates(MockChannel(id=my_new_call_id))
+        self.ari.set_endpoints(
+            MockEndpoint('pjsip', 'first-line-name', 'online'),
+            MockEndpoint('pjsip', 'second-line-name', 'online'),
+        )
         self.amid.set_valid_exten('my-context', 'my-extension', priority)
 
         call_args = {
@@ -1542,6 +1555,7 @@ class TestCreateCall(_BaseTestCalls):
             ),
         )
         self.ari.set_originates(MockChannel(id=my_new_call_id))
+        self.ari.set_endpoints(MockEndpoint('pjsip', 'line-name', 'online'))
         self.amid.set_valid_exten('my-context', 'my-extension', priority)
 
         call_args = {
@@ -1613,6 +1627,7 @@ class TestCreateCall(_BaseTestCalls):
             )
         )
         self.ari.set_originates(MockChannel(id=my_new_call_id))
+        self.ari.set_endpoints(MockEndpoint('pjsip', 'line-name', 'online'))
         call_args = {
             'source': {'user': user_uuid, 'from_mobile': True},
             'destination': {
@@ -1652,6 +1667,7 @@ class TestCreateCall(_BaseTestCalls):
             )
         )
         self.ari.set_originates(MockChannel(id=my_new_call_id))
+        self.ari.set_endpoints(MockEndpoint('pjsip', 'line-name', 'online'))
         call_args = {
             'source': {'user': user_uuid, 'from_mobile': True},
             'destination': {
@@ -1694,6 +1710,7 @@ class TestCreateCall(_BaseTestCalls):
             )
         )
         self.ari.set_originates(MockChannel(id=my_new_call_id))
+        self.ari.set_endpoints(MockEndpoint('pjsip', 'line-name', 'online'))
         call_args = {
             'source': {'user': user_uuid, 'from_mobile': True},
             'destination': {
@@ -1736,6 +1753,7 @@ class TestCreateCall(_BaseTestCalls):
             )
         )
         self.ari.set_originates(MockChannel(id=my_new_call_id))
+        self.ari.set_endpoints(MockEndpoint('pjsip', 'line-name', 'online'))
         call_args = {
             'source': {'user': user_uuid, 'from_mobile': True},
             'destination': {
@@ -1773,6 +1791,7 @@ class TestCreateCall(_BaseTestCalls):
             )
         )
         self.ari.set_originates(MockChannel(id=my_new_call_id))
+        self.ari.set_endpoints(MockEndpoint('pjsip', 'first-line-name', 'online'))
         self.amid.set_valid_exten('my-context', 'my-extension', priority)
 
         call_args = {
@@ -1886,6 +1905,7 @@ class TestUserCreateCall(_BaseTestCalls):
         self.ari.set_originates(
             MockChannel(id=my_new_call_id, connected_line_number='')
         )
+        self.ari.set_endpoints(MockEndpoint('pjsip', 'line-name', 'online'))
         self.amid.set_valid_exten('my-context', 'my-extension')
 
         result = self.calld.originate_me(extension='my-extension', token=token)
@@ -1931,6 +1951,7 @@ class TestUserCreateCall(_BaseTestCalls):
         self.ari.set_originates(
             MockChannel(id=my_new_call_id, connected_line_number='')
         )
+        self.ari.set_endpoints(MockEndpoint('pjsip', 'line-name', 'online'))
         self.amid.set_valid_exten('my-context', '123456')
 
         result = self.calld.originate_me(extension='12 3\n4\t5\r6', token=token)
@@ -1974,6 +1995,7 @@ class TestUserCreateCall(_BaseTestCalls):
             )
         )
         self.ari.set_originates(MockChannel(my_new_call_id))
+        self.ari.set_endpoints(MockEndpoint('pjsip', 'line-name', 'online'))
         self.amid.set_valid_exten('my-context', 'my-extension')
 
         self.calld.originate_me(
@@ -2041,6 +2063,7 @@ class TestUserCreateCall(_BaseTestCalls):
             )
         )
         self.ari.set_originates(MockChannel(id=my_new_call_id))
+        self.ari.set_endpoints(MockEndpoint('pjsip', 'line-name', 'online'))
         self.amid.set_valid_exten('my-context', 'my-extension')
 
         self.calld.originate_me(extension='my-extension', token=token)
@@ -2090,6 +2113,7 @@ class TestUserCreateCall(_BaseTestCalls):
             )
         )
         self.ari.set_originates(MockChannel(id=my_new_call_id))
+        self.ari.set_endpoints(MockEndpoint('pjsip', 'line-name', 'online'))
         self.amid.set_valid_exten('my-context', 'my-extension')
 
         result = self.calld.originate_me(extension='my-extension', token=token)
@@ -2152,6 +2176,7 @@ class TestUserCreateCall(_BaseTestCalls):
             )
         )
         self.ari.set_originates(MockChannel(id=my_new_call_id))
+        self.ari.set_endpoints(MockEndpoint('pjsip', 'line-name', 'online'))
         self.amid.set_no_valid_exten()
 
         body = {'extension': 'not-found'}
@@ -2175,6 +2200,7 @@ class TestUserCreateCall(_BaseTestCalls):
             )
         )
         self.ari.set_originates(MockChannel(id=my_new_call_id))
+        self.ari.set_endpoints(MockEndpoint('pjsip', 'line-name', 'online'))
         self.amid.set_valid_exten('my-context', 'my-extension')
 
         body = {'extension': 'not-found'}
@@ -2202,6 +2228,7 @@ class TestUserCreateCall(_BaseTestCalls):
             )
         )
         self.ari.set_originates(MockChannel(id=my_new_call_id))
+        self.ari.set_endpoints(MockEndpoint('pjsip', 'line-name', 'online'))
         self.amid.set_valid_exten('my-context', 'my-extension')
         self.calld_client.set_token(token)
 
@@ -2236,6 +2263,10 @@ class TestUserCreateCall(_BaseTestCalls):
             ),
         )
         self.ari.set_originates(MockChannel(id=my_new_call_id))
+        self.ari.set_endpoints(
+            MockEndpoint('pjsip', 'first-line-name', 'online'),
+            MockEndpoint('pjsip', 'second-line-name', 'online'),
+        )
         self.amid.set_valid_exten('second-context', 'my-extension')
 
         self.calld.originate_me('my-extension', line_id=second_line_id, token=token)
@@ -2286,6 +2317,10 @@ class TestUserCreateCall(_BaseTestCalls):
             ),
         )
         self.ari.set_originates(MockChannel(id=my_new_call_id))
+        self.ari.set_endpoints(
+            MockEndpoint('pjsip', 'first-line-name', 'online'),
+            MockEndpoint('pjsip', 'second-line-name', 'online'),
+        )
         self.amid.set_valid_exten('first-context', 'my-extension')
 
         self.calld.originate_me('my-extension', all_lines=True, token=token)
@@ -2330,6 +2365,7 @@ class TestUserCreateCall(_BaseTestCalls):
             )
         )
         self.ari.set_originates(MockChannel(id=my_new_call_id))
+        self.ari.set_endpoints(MockEndpoint('pjsip', 'first-line-name', 'online'))
         self.amid.set_valid_exten('first-context', 'my-extension')
 
         self.calld.originate_me('my-extension', token=token, auto_answer_caller=True)
@@ -2458,6 +2494,7 @@ class TestConnectUser(_BaseTestCalls):
             MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL)
         )
         self.ari.set_originates(MockChannel(id=my_new_call_id))
+        self.ari.set_endpoints(MockEndpoint('pjsip', 'line-name', 'online'))
 
         new_call = self.calld_client.calls.connect_user(call_id, 'user-uuid')
 
@@ -2504,6 +2541,7 @@ class TestConnectUser(_BaseTestCalls):
             MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL)
         )
         self.ari.set_originates(MockChannel(id=my_new_call_id))
+        self.ari.set_endpoints(MockEndpoint('pjsip', 'line-name', 'online'))
 
         new_call = self.calld_client.calls.connect_user(call_id, 'user-uuid', timeout=1)
 

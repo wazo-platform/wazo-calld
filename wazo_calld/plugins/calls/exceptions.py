@@ -32,6 +32,19 @@ class CallConnectError(APIException):
         )
 
 
+class CallOriginUnavailableError(APIException):
+    def __init__(self, line_id, source_interface=None):
+        super().__init__(
+            status_code=400,
+            message="Could not connect call: Could not dial caller's requested line",
+            error_id='call-origin-unavailable',
+            details={
+                'line_id': line_id,
+                'source_interface': source_interface,
+            },
+        )
+
+
 class InvalidCallEvent(RuntimeError):
     pass
 
