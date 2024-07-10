@@ -1,4 +1,4 @@
-# Copyright 2013-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2013-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import requests
@@ -34,12 +34,11 @@ class MockUserToken:
         result = {
             'token': self._token,
             'auth_id': self._user_uuid,
-            'metadata': {},
+            'metadata': {
+                'tenant_uuid': self._tenant_uuid,
+                'uuid': self._user_uuid,
+            },
         }
         if self._acl:
             result['acl'] = self._acl
-        if self._tenant_uuid:
-            result['metadata']['tenant_uuid'] = self._tenant_uuid
-        if self._user_uuid:
-            result['metadata']['uuid'] = self._user_uuid
         return result
