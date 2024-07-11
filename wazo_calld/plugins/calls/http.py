@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from flask import request
+from xivo.tenant_flask_helpers import Tenant
 
 from wazo_calld.auth import get_token_user_uuid_from_request, required_acl
 from wazo_calld.http import AuthResource
@@ -26,11 +27,12 @@ class CallsResource(AuthResource):
 
     @required_acl('calld.calls.read')
     def get(self):
+        tenant = Tenant.autodetect()
         application_filter = request.args.get('application')
         application_instance_filter = request.args.get('application_instance')
 
         calls = self.calls_service.list_calls(
-            application_filter, application_instance_filter
+            tenant.uuid, application_filter, application_instance_filter
         )
 
         return {
@@ -81,7 +83,8 @@ class CallResource(AuthResource):
 
     @required_acl('calld.calls.{call_id}.read')
     def get(self, call_id):
-        call = self.calls_service.get(call_id)
+        tenant = Tenant.autodetect()
+        call = self.calls_service.get(call_id, tenant.uuid)
 
         return call_schema.dump(call)
 

@@ -87,10 +87,23 @@ class CallsService:
                 channels = app_instance_channels
         return channels
 
-    def list_calls(self, application_filter=None, application_instance_filter=None):
+    def list_calls(
+        self,
+        tenant_uuid=None,
+        application_filter=None,
+        application_instance_filter=None,
+    ):
         channels = self._list_calls_raw_calls(
             application_filter, application_instance_filter
         )
+
+        def in_tenant(channel, tenant):
+            channel_helper = Channel(channel.id, self._ari)
+            return channel_helper.tenant_uuid() == tenant
+
+        if tenant_uuid:
+            channels = [c for c in channels if in_tenant(c, tenant_uuid)]
+
         return [self.make_call_from_channel(self._ari, channel) for channel in channels]
 
     def list_calls_user(
@@ -270,11 +283,15 @@ class CallsService:
             new_request['source']['auto_answer'] = request['auto_answer_caller']
         return self.originate(new_request)
 
-    def get(self, call_id):
+    def get(self, call_id, tenant_uuid=None):
         channel_id = call_id
         try:
             channel = self._ari.channels.get(channelId=channel_id)
         except ARINotFound:
+            raise NoSuchCall(channel_id)
+
+        channel_helper = Channel(channel.id, self._ari)
+        if tenant_uuid and channel_helper.tenant_uuid() != tenant_uuid:
             raise NoSuchCall(channel_id)
 
         return self.make_call_from_channel(self._ari, channel)

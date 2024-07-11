@@ -360,6 +360,44 @@ class TestListCalls(IntegrationTest):
             ),
         )
 
+    def test_list_calls_tenant_isolation(
+        self,
+    ):
+        user_uuid_1 = str(uuid.uuid4())
+        user_uuid_2 = str(uuid.uuid4())
+        tenant_uuid_1 = str(uuid.uuid4())
+        tenant_uuid_2 = str(uuid.uuid4())
+        first_id, second_id = new_call_id(), new_call_id(leap=1)
+        self.ari.set_channels(MockChannel(id=first_id), MockChannel(id=second_id))
+        self.ari.set_channel_variable(
+            {
+                first_id: {'WAZO_TENANT_UUID': tenant_uuid_1},
+                second_id: {'WAZO_TENANT_UUID': tenant_uuid_2},
+            }
+        )
+        calld_1 = self.make_user_calld(user_uuid_1, tenant_uuid=tenant_uuid_1)
+        calld_2 = self.make_user_calld(user_uuid_2, tenant_uuid=tenant_uuid_2)
+
+        calls_1 = calld_1.calls.list_calls()
+        calls_2 = calld_2.calls.list_calls()
+
+        assert_that(
+            calls_1,
+            has_entries(
+                items=contains_exactly(
+                    has_entries(call_id=first_id),
+                )
+            ),
+        )
+        assert_that(
+            calls_2,
+            has_entries(
+                items=contains_exactly(
+                    has_entries(call_id=second_id),
+                )
+            ),
+        )
+
 
 class TestUserListCalls(IntegrationTest):
     asset = 'basic_rest'
@@ -648,6 +686,41 @@ class TestGetCall(IntegrationTest):
                 is_video=True,
             ),
         )
+
+    def test_get_calls_tenant_isolation(
+        self,
+    ):
+        user_uuid_1 = str(uuid.uuid4())
+        user_uuid_2 = str(uuid.uuid4())
+        tenant_uuid_1 = str(uuid.uuid4())
+        tenant_uuid_2 = str(uuid.uuid4())
+        first_id, second_id = new_call_id(), new_call_id(leap=1)
+        self.ari.set_channels(MockChannel(id=first_id), MockChannel(id=second_id))
+        self.ari.set_channel_variable(
+            {
+                first_id: {'WAZO_TENANT_UUID': tenant_uuid_1},
+                second_id: {'WAZO_TENANT_UUID': tenant_uuid_2},
+            }
+        )
+        calld_1 = self.make_user_calld(user_uuid_1, tenant_uuid=tenant_uuid_1)
+        calld_2 = self.make_user_calld(user_uuid_2, tenant_uuid=tenant_uuid_2)
+
+        # tenant 1 call 1 = OK
+        call = calld_1.calls.get_call(first_id)
+        assert call['call_id'] == first_id
+        # tenant 1 call 2 = NOK
+        assert_that(
+            calling(calld_1.calls.get_call).with_args(second_id),
+            raises(CalldError).matching(has_properties(status_code=404)),
+        )
+        # tenant 2 call 1 = NOK
+        assert_that(
+            calling(calld_2.calls.get_call).with_args(first_id),
+            raises(CalldError).matching(has_properties(status_code=404)),
+        )
+        # tenant 2 call 2 = OK
+        call = calld_2.calls.get_call(second_id)
+        assert call['call_id'] == second_id
 
 
 class TestDeleteCall(IntegrationTest):
