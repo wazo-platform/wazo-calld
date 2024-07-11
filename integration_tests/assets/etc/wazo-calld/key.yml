@@ -1,2 +1,4 @@
-service_id: wazo-calld
+# *-service usernames will be rejected by wazo-auth-mock
+# until we setup a valid token for those credentials
+service_id: wazo-calld-service
 service_key: opensesame

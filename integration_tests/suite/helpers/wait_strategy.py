@@ -42,7 +42,7 @@ class CalldConnectionsOkWaitStrategy(WaitStrategy):
                 ),
             )
 
-        until.assert_(is_ready, tries=10)
+        until.assert_(is_ready, timeout=60)
 
 
 class CalldEverythingOkWaitStrategy(WaitStrategy):
@@ -66,7 +66,7 @@ class CalldEverythingOkWaitStrategy(WaitStrategy):
             for plugin in status['plugins'].values():
                 assert_that(plugin, has_entries({'status': 'ok'}))
 
-        until.assert_(is_ready, tries=60)
+        until.assert_(is_ready, timeout=60)
 
 
 class AsteriskReadyWaitStrategy(WaitStrategy):
@@ -77,7 +77,7 @@ class AsteriskReadyWaitStrategy(WaitStrategy):
             )
             assert result == b'Asterisk has fully booted.\n'
 
-        until.assert_(is_ready, tries=60)
+        until.assert_(is_ready, timeout=60)
 
 
 class AmidReadyWaitStrategy(WaitStrategy):
@@ -96,7 +96,7 @@ class AmidReadyWaitStrategy(WaitStrategy):
                 ),
             )
 
-        until.assert_(is_ready, tries=60)
+        until.assert_(is_ready, timeout=60)
 
 
 class _ServicesWaitStrategy(WaitStrategy):

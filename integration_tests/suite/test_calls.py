@@ -23,10 +23,10 @@ from hamcrest import (
 )
 from wazo_calld_client.exceptions import CalldError
 from wazo_test_helpers import until
+from wazo_test_helpers.auth import MockUserToken
 from wazo_test_helpers.hamcrest.raises import raises
 
 from .helpers.ari_ import MockApplication, MockBridge, MockChannel
-from .helpers.auth import MockUserToken
 from .helpers.base import IntegrationTest
 from .helpers.calld import new_call_id, new_uuid
 from .helpers.confd import MockLine, MockUser

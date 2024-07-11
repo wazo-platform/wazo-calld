@@ -12,6 +12,10 @@ VALID_TOKEN = 'valid-token'
 VALID_TENANT = 'ffffffff-ffff-ffff-ffff-ffffffffffff'
 VALID_TOKEN_MULTITENANT = 'valid-token-multitenant'
 
+CALLD_SERVICE_TOKEN = 'wazo-calld-service-token'
+CALLD_SERVICE_TENANT = '61b625fa-82d0-44df-8134-f07792e67401'
+CALLD_SERVICE_USER_UUID = '0dd433d9-545c-493b-9875-0fe7758a81fb'
+
 BUS_EXCHANGE_WAZO = Exchange('wazo-headers', type='headers')
 BUS_EXCHANGE_COLLECTD = Exchange('collectd', type='topic', durable=False)
 BUS_QUEUE_NAME = 'integration'
