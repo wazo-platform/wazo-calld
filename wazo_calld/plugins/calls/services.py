@@ -9,6 +9,7 @@ from ari.exceptions import ARINotFound
 from xivo.asterisk.protocol_interface import protocol_interface_from_channel
 
 from wazo_calld.ari_ import DEFAULT_APPLICATION_NAME
+from wazo_calld.auth import master_tenant_uuid
 from wazo_calld.plugin_helpers import ami
 from wazo_calld.plugin_helpers.ari_ import (
     AUTO_ANSWER_VARIABLES,
@@ -92,6 +93,7 @@ class CallsService:
         tenant_uuid=None,
         application_filter=None,
         application_instance_filter=None,
+        recurse=False,
     ):
         channels = self._list_calls_raw_calls(
             application_filter, application_instance_filter
@@ -101,7 +103,10 @@ class CallsService:
             channel_helper = Channel(channel.id, self._ari)
             return channel_helper.tenant_uuid() == tenant
 
-        if tenant_uuid:
+        if recurse and tenant_uuid and tenant_uuid == master_tenant_uuid:
+            # recurse from master tenant = list all calls
+            channels = channels
+        elif tenant_uuid:
             channels = [c for c in channels if in_tenant(c, tenant_uuid)]
 
         return [self.make_call_from_channel(self._ari, channel) for channel in channels]

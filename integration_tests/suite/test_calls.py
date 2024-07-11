@@ -31,6 +31,7 @@ from .helpers.base import IntegrationTest
 from .helpers.calld import new_call_id, new_uuid
 from .helpers.confd import MockLine, MockUser
 from .helpers.constants import (
+    CALLD_SERVICE_TENANT,
     ENDPOINT_AUTOANSWER,
     SOME_LINE_ID,
     VALID_TENANT,
@@ -391,6 +392,71 @@ class TestListCalls(IntegrationTest):
         )
         assert_that(
             calls_2,
+            has_entries(
+                items=contains_exactly(
+                    has_entries(call_id=second_id),
+                )
+            ),
+        )
+
+    def test_list_calls_recurse(
+        self,
+    ):
+        user_uuid_1 = str(uuid.uuid4())
+        user_uuid_2 = str(uuid.uuid4())
+        top_tenant_uuid = CALLD_SERVICE_TENANT
+        subtenant_uuid = VALID_TENANT
+        first_id, second_id = new_call_id(), new_call_id(leap=1)
+        self.ari.set_channels(MockChannel(id=first_id), MockChannel(id=second_id))
+        self.ari.set_channel_variable(
+            {
+                first_id: {'WAZO_TENANT_UUID': top_tenant_uuid},
+                second_id: {'WAZO_TENANT_UUID': subtenant_uuid},
+            }
+        )
+        calld_top_tenant = self.make_user_calld(
+            user_uuid_1, tenant_uuid=top_tenant_uuid
+        )
+        calld_subtenant = self.make_user_calld(user_uuid_2, tenant_uuid=subtenant_uuid)
+
+        # top tenant without recurse
+        calls = calld_top_tenant.calls.list_calls(recurse=False)
+        assert_that(
+            calls,
+            has_entries(
+                items=contains_exactly(
+                    has_entries(call_id=first_id),
+                )
+            ),
+        )
+
+        # top tenant with recurse
+        calls = calld_top_tenant.calls.list_calls(recurse=True)
+        assert_that(
+            calls,
+            has_entries(
+                items=contains_exactly(
+                    has_entries(call_id=first_id),
+                    has_entries(call_id=second_id),
+                )
+            ),
+        )
+
+        # sub tenant without recurse
+        calls = calld_subtenant.calls.list_calls(recurse=False)
+        assert_that(
+            calls,
+            has_entries(
+                items=contains_exactly(
+                    has_entries(call_id=second_id),
+                )
+            ),
+        )
+
+        # sub tenant with recurse
+        calls = calld_subtenant.calls.list_calls(recurse=True)
+        assert_that(
+            calls,
             has_entries(
                 items=contains_exactly(
                     has_entries(call_id=second_id),

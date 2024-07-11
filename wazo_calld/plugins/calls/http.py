@@ -30,9 +30,10 @@ class CallsResource(AuthResource):
         tenant = Tenant.autodetect()
         application_filter = request.args.get('application')
         application_instance_filter = request.args.get('application_instance')
+        recurse = bool(request.args.get('recurse', False))
 
         calls = self.calls_service.list_calls(
-            tenant.uuid, application_filter, application_instance_filter
+            tenant.uuid, application_filter, application_instance_filter, recurse
         )
 
         return {

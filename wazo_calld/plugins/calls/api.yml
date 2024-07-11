@@ -15,6 +15,12 @@ paths:
           is not set.
         in: query
         type: string
+      - name: recurse
+        description: |
+          Should the list include results from sub-tenants?
+          This option is only supported for the tenant `master`.
+        in: query
+        type: boolean
       tags:
       - calls
       responses:
