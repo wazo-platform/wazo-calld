@@ -6,9 +6,9 @@ import uuid
 from hamcrest import assert_that, calling, has_entries, has_items, has_properties, not_
 from wazo_calld_client.exceptions import CalldError
 from wazo_test_helpers import until
+from wazo_test_helpers.auth import MockUserToken
 from wazo_test_helpers.hamcrest.raises import raises
 
-from .helpers.auth import MockUserToken
 from .helpers.constants import ENDPOINT_AUTOANSWER, VALID_TENANT
 from .helpers.real_asterisk import RealAsteriskIntegrationTest
 

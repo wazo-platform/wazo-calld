@@ -4,6 +4,7 @@ paths:
       summary: List calls
       description: '**Required ACL:** `calld.calls.read`'
       parameters:
+      - $ref: '#/parameters/TenantUUID'
       - name: application
         description: Filter calls by Stasis application, e.g. switchboard.
         in: query
@@ -14,6 +15,12 @@ paths:
           is not set.
         in: query
         type: string
+      - name: recurse
+        description: |
+          Should the list include results from sub-tenants?
+          This option is only supported for the tenant `master`.
+        in: query
+        type: boolean
       tags:
       - calls
       responses:
@@ -61,6 +68,7 @@ paths:
       summary: Show a call
       description: '**Required ACL:** `calld.calls.{call_id}.read`'
       parameters:
+      - $ref: '#/parameters/TenantUUID'
       - $ref: '#/parameters/CallID'
       tags:
       - calls

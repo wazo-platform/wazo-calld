@@ -26,8 +26,8 @@ from hamcrest import (
     raises,
 )
 from wazo_test_helpers import until
+from wazo_test_helpers.auth import MockUserToken
 
-from .helpers.auth import MockUserToken
 from .helpers.base import IntegrationTest
 from .helpers.confd import MockLine, MockUser
 from .helpers.constants import SOME_CHANNEL_ID, VALID_TENANT, VALID_TOKEN

@@ -14,7 +14,9 @@ ajam:
 
 auth:
   host: auth
-  username: wazo-amid
+  # *-service usernames will be rejected by wazo-auth-mock
+  # until we setup a valid token for those credentials
+  username: wazo-amid-service
   password: opensesame
 
 publish_ami_events: True

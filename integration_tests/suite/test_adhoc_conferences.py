@@ -18,9 +18,9 @@ from hamcrest import (
 )
 from wazo_calld_client.exceptions import CalldError
 from wazo_test_helpers import until
+from wazo_test_helpers.auth import MockUserToken
 from wazo_test_helpers.hamcrest.raises import raises
 
-from .helpers.auth import MockUserToken
 from .helpers.base import make_user_uuid
 from .helpers.constants import (
     INVALID_ACL_TOKEN,
@@ -43,12 +43,15 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
         calld_client = self.make_calld(token=VALID_TOKEN)
         self.real_asterisk = RealAsterisk(self.ari, calld_client)
 
-    def make_user_token(self, user_uuid, tenant_uuid=None):
+    def make_user_token(self, user_uuid, tenant_uuid=VALID_TENANT):
         token_id = str(uuid.uuid4())
         tenant_uuid = tenant_uuid or str(uuid.uuid4())
-        self.auth.set_token(
-            MockUserToken(token_id, tenant_uuid=tenant_uuid, user_uuid=user_uuid)
+        mock_token = MockUserToken(
+            token_id,
+            metadata={'tenant_uuid': tenant_uuid},
+            user_uuid=user_uuid,
         )
+        self.auth.set_token(mock_token)
         return token_id
 
     def adhoc_conference_events_for_user(self, user_uuid):

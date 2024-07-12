@@ -14,14 +14,23 @@ from wazo_test_helpers.asset_launching_test_case import (
     NoSuchPort,
     NoSuchService,
 )
+from wazo_test_helpers.auth import AuthClient, MockCredentials, MockUserToken
 
 from .amid import MockAmidClient
 from .ari_ import ARIClient
-from .auth import AuthClient, MockUserToken
 from .bus import BusClient
 from .calld import CalldClient, LegacyCalldClient
 from .confd import ConfdClient
-from .constants import ASSET_ROOT, VALID_TOKEN
+from .constants import (
+    AMID_SERVICE_TOKEN,
+    AMID_SERVICE_USER_UUID,
+    ASSET_ROOT,
+    CALLD_SERVICE_TENANT,
+    CALLD_SERVICE_TOKEN,
+    CALLD_SERVICE_USER_UUID,
+    VALID_TENANT,
+    VALID_TOKEN,
+)
 from .phoned import PhonedClient
 from .stasis import StasisClient
 from .wait_strategy import CalldEverythingOkWaitStrategy
@@ -57,6 +66,7 @@ class IntegrationTest(AssetLaunchingTestCase):
         try:
             cls.reset_clients()
             cls.reset_bus_client()
+            cls.setup_tokens()
             cls.wait_strategy.wait(cls)
         except Exception:
             with tempfile.NamedTemporaryFile(delete=False) as logfile:
@@ -64,6 +74,46 @@ class IntegrationTest(AssetLaunchingTestCase):
                 logger.debug('Container logs dumped to %s', logfile.name)
             cls.tearDownClass()
             raise
+
+    @classmethod
+    def setup_tokens(cls):
+        if isinstance(cls.auth, WrongClient):
+            return
+
+        calld_token = MockUserToken(
+            str(CALLD_SERVICE_TOKEN),
+            str(CALLD_SERVICE_USER_UUID),
+            metadata={
+                'uuid': str(CALLD_SERVICE_TOKEN),
+                'tenant_uuid': str(CALLD_SERVICE_TENANT),
+            },
+        )
+        amid_token = MockUserToken(
+            str(AMID_SERVICE_TOKEN),
+            str(AMID_SERVICE_USER_UUID),
+            metadata={
+                'uuid': str(AMID_SERVICE_TOKEN),
+                'tenant_uuid': str(CALLD_SERVICE_TENANT),
+            },
+        )
+        cls.auth.set_token(calld_token)
+        cls.auth.set_token(amid_token)
+        calld_credential = MockCredentials('wazo-calld-service', 'opensesame')
+        amid_credential = MockCredentials('wazo-amid-service', 'opensesame')
+        cls.auth.set_valid_credentials(calld_credential, str(CALLD_SERVICE_TOKEN))
+        cls.auth.set_valid_credentials(amid_credential, str(AMID_SERVICE_TOKEN))
+        cls.auth.set_tenants(
+            {
+                'uuid': str(CALLD_SERVICE_TENANT),
+                'name': 'wazo-calld-service-tenant',
+                'parent_uuid': str(CALLD_SERVICE_TENANT),
+            },
+            {
+                'uuid': str(VALID_TENANT),
+                'name': 'valid-tenant',
+                'parent_uuid': str(CALLD_SERVICE_TENANT),
+            },
+        )
 
     @classmethod
     def reset_clients(cls):
@@ -154,7 +204,9 @@ class IntegrationTest(AssetLaunchingTestCase):
         token_id = str(uuid.uuid4())
         tenant_uuid = tenant_uuid or str(uuid.uuid4())
         cls.auth.set_token(
-            MockUserToken(token_id, tenant_uuid=tenant_uuid, user_uuid=user_uuid)
+            MockUserToken(
+                token_id, metadata={'tenant_uuid': tenant_uuid}, user_uuid=user_uuid
+            )
         )
         return cls.make_calld(token=token_id)
 

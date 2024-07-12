@@ -9,6 +9,7 @@ from ari.exceptions import ARINotFound
 from xivo.asterisk.protocol_interface import protocol_interface_from_channel
 
 from wazo_calld.ari_ import DEFAULT_APPLICATION_NAME
+from wazo_calld.auth import master_tenant_uuid
 from wazo_calld.plugin_helpers import ami
 from wazo_calld.plugin_helpers.ari_ import (
     AUTO_ANSWER_VARIABLES,
@@ -87,10 +88,27 @@ class CallsService:
                 channels = app_instance_channels
         return channels
 
-    def list_calls(self, application_filter=None, application_instance_filter=None):
+    def list_calls(
+        self,
+        tenant_uuid=None,
+        application_filter=None,
+        application_instance_filter=None,
+        recurse=False,
+    ):
         channels = self._list_calls_raw_calls(
             application_filter, application_instance_filter
         )
+
+        def in_tenant(channel, tenant):
+            channel_helper = Channel(channel.id, self._ari)
+            return channel_helper.tenant_uuid() == tenant
+
+        if recurse and tenant_uuid and tenant_uuid == master_tenant_uuid:
+            # recurse from master tenant = list all calls
+            channels = channels
+        elif tenant_uuid:
+            channels = [c for c in channels if in_tenant(c, tenant_uuid)]
+
         return [self.make_call_from_channel(self._ari, channel) for channel in channels]
 
     def list_calls_user(
@@ -270,11 +288,15 @@ class CallsService:
             new_request['source']['auto_answer'] = request['auto_answer_caller']
         return self.originate(new_request)
 
-    def get(self, call_id):
+    def get(self, call_id, tenant_uuid=None):
         channel_id = call_id
         try:
             channel = self._ari.channels.get(channelId=channel_id)
         except ARINotFound:
+            raise NoSuchCall(channel_id)
+
+        channel_helper = Channel(channel.id, self._ari)
+        if tenant_uuid and channel_helper.tenant_uuid() != tenant_uuid:
             raise NoSuchCall(channel_id)
 
         return self.make_call_from_channel(self._ari, channel)

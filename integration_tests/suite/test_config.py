@@ -8,7 +8,7 @@ from wazo_calld_client.exceptions import CalldError
 from wazo_test_helpers.hamcrest.raises import raises
 
 from .helpers.base import IntegrationTest
-from .helpers.constants import VALID_TOKEN_MULTITENANT
+from .helpers.constants import CALLD_SERVICE_TOKEN
 from .helpers.wait_strategy import CalldComponentsWaitStrategy
 
 
@@ -17,14 +17,14 @@ class TestConfig(IntegrationTest):
     wait_strategy = CalldComponentsWaitStrategy(['service_token'])
 
     def test_config(self):
-        calld = self.make_calld(VALID_TOKEN_MULTITENANT)
+        calld = self.make_calld(CALLD_SERVICE_TOKEN)
 
         result = calld.config.get()
 
         assert_that(result, has_key('rest_api'))
 
     def test_update_config(self):
-        calld = self.make_calld(VALID_TOKEN_MULTITENANT)
+        calld = self.make_calld(CALLD_SERVICE_TOKEN)
 
         debug_true_config = [
             {
