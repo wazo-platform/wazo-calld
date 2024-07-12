@@ -77,6 +77,9 @@ class IntegrationTest(AssetLaunchingTestCase):
 
     @classmethod
     def setup_tokens(cls):
+        if isinstance(cls.auth, WrongClient):
+            return
+
         calld_token = MockUserToken(
             str(CALLD_SERVICE_TOKEN),
             str(CALLD_SERVICE_USER_UUID),
