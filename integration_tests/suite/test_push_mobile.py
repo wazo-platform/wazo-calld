@@ -130,7 +130,8 @@ class TestPushMobile(RealAsteriskIntegrationTest):
 
         until.assert_(user_hint_updated, timeout=10)
 
-        self.auth.set_refresh_tokens([{'user_uuid': user_uuid, 'mobile': True}])
+        refresh_token = {'user_uuid': user_uuid, 'mobile': True}
+        self.auth.set_refresh_tokens(refresh_token)
 
         self.bus.publish(
             {
@@ -165,7 +166,7 @@ class TestPushMobile(RealAsteriskIntegrationTest):
 
         until.assert_(user_hint_updated, timeout=10)
 
-        self.auth.set_refresh_tokens([])
+        self.auth.set_refresh_tokens()
 
         self.bus.publish(
             {
