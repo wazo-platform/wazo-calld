@@ -1944,7 +1944,7 @@ class TestUserCreateCall(IntegrationTest):
         user_uuid = 'user-uuid'
         token = 'my-token'
         my_new_call_id = new_call_id()
-        self.auth.set_token(MockUserToken(token, user_uuid))
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
         self.confd.set_users(
             MockUser(
                 uuid=user_uuid, line_ids=['line-id'], tenant_uuid='the-tenant-uuid'
@@ -2009,7 +2009,7 @@ class TestUserCreateCall(IntegrationTest):
         the_tenant_uuid = new_uuid()
         token = 'my-token'
         my_new_call_id = new_call_id()
-        self.auth.set_token(MockUserToken(token, user_uuid))
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
         self.confd.set_users(
             MockUser(
                 uuid=user_uuid,
@@ -2058,7 +2058,7 @@ class TestUserCreateCall(IntegrationTest):
         user_uuid = 'user-uuid'
         token = 'my-token'
         my_new_call_id = new_call_id()
-        self.auth.set_token(MockUserToken(token, user_uuid))
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
         self.confd.set_users(
             MockUser(
                 uuid=user_uuid,
@@ -2109,7 +2109,7 @@ class TestUserCreateCall(IntegrationTest):
     def test_create_call_with_invalid_user(self):
         user_uuid = 'user-uuid-not-found'
         token = 'my-token'
-        self.auth.set_token(MockUserToken(token, user_uuid))
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
         self.amid.set_valid_exten('my-context', 'my-extension')
 
         body = {'extension': 'my-extension'}
@@ -2122,7 +2122,7 @@ class TestUserCreateCall(IntegrationTest):
         user_uuid = 'user-uuid'
         token = 'my-token'
         my_new_call_id = new_call_id()
-        self.auth.set_token(MockUserToken(token, user_uuid))
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
         self.confd.set_users(
             MockUser(
                 uuid=user_uuid, line_ids=['line-id'], tenant_uuid='the-tenant-uuid'
@@ -2149,7 +2149,7 @@ class TestUserCreateCall(IntegrationTest):
         user_uuid = 'user-uuid'
         token = 'my-token'
         my_new_call_id = new_call_id()
-        self.auth.set_token(MockUserToken(token, user_uuid))
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=['line-id']))
         self.confd.set_lines(
             MockLine(
@@ -2172,7 +2172,7 @@ class TestUserCreateCall(IntegrationTest):
         user_uuid = 'user-uuid'
         token = 'my-token'
         my_new_call_id = new_call_id()
-        self.auth.set_token(MockUserToken(token, user_uuid))
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
         self.confd.set_users(
             MockUser(
                 uuid=user_uuid, line_ids=['line-id'], tenant_uuid='the-tenant-uuid'
@@ -2198,7 +2198,7 @@ class TestUserCreateCall(IntegrationTest):
         second_line_id = 12345
         my_new_call_id = new_call_id()
         token = 'my-token'
-        self.auth.set_token(MockUserToken(token, user_uuid))
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
         self.confd.set_users(
             MockUser(
                 uuid='user-uuid',
@@ -2248,7 +2248,7 @@ class TestUserCreateCall(IntegrationTest):
         second_line_id = 12345
         token = 'my-token'
         my_new_call_id = new_call_id()
-        self.auth.set_token(MockUserToken(token, user_uuid))
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
         self.confd.set_users(
             MockUser(
                 uuid='user-uuid',
@@ -2298,7 +2298,7 @@ class TestUserCreateCall(IntegrationTest):
         second_line_id = 12345
         token = 'my-token'
         my_new_call_id = new_call_id()
-        self.auth.set_token(MockUserToken(token, user_uuid))
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
         self.confd.set_users(
             MockUser(
                 uuid='user-uuid',
@@ -2619,7 +2619,7 @@ class TestUserCreateCallFromMobile(RealAsteriskIntegrationTest):
         user_uuid = 'user-uuid'
         mobile_context, mobile_extension = 'local', 'mobile'
         token = 'my-token'
-        self.auth.set_token(MockUserToken(token, user_uuid))
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
         self.confd.set_users(
             MockUser(
                 uuid='user-uuid',
@@ -2648,7 +2648,7 @@ class TestUserCreateCallFromMobile(RealAsteriskIntegrationTest):
         user_uuid = 'user-uuid'
         mobile_context, mobile_extension = 'local', 'mobile-no-dial'
         token = 'my-token'
-        self.auth.set_token(MockUserToken(token, user_uuid))
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
         self.confd.set_users(
             MockUser(
                 uuid='user-uuid',
@@ -2677,7 +2677,7 @@ class TestUserCreateCallFromMobile(RealAsteriskIntegrationTest):
         user_uuid = 'user-uuid'
         mobile_context, mobile_extension = 'local', 'mobile'
         token = 'my-token'
-        self.auth.set_token(MockUserToken(token, user_uuid))
+        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
         self.confd.set_users(
             MockUser(
                 uuid='user-uuid',

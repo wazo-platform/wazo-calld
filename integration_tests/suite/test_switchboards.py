@@ -23,9 +23,9 @@ from hamcrest import (
     starts_with,
 )
 from wazo_test_helpers import until
+from wazo_test_helpers.auth import MockUserToken
 
 from .helpers.ari_ import MockBridge, MockChannel
-from .helpers.auth import MockUserToken
 from .helpers.base import IntegrationTest
 from .helpers.confd import MockLine, MockSwitchboard, MockUser
 from .helpers.constants import ENDPOINT_AUTOANSWER, VALID_TENANT, VALID_TOKEN
@@ -490,9 +490,12 @@ class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
         token = random_uuid(prefix='my-token-')
         user_uuid = random_uuid(prefix='my-user-uuid-')
         line_id = random_id()
-        self.auth.set_token(
-            MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT)
+        mock_token = MockUserToken(
+            token,
+            user_uuid=user_uuid,
+            metadata={'tenant_uuid': VALID_TENANT},
         )
+        self.auth.set_token(mock_token)
         switchboard_uuid = UUID_NOT_FOUND
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
         line = MockLine(
@@ -522,9 +525,12 @@ class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
         token = random_uuid(prefix='my-token-')
         user_uuid = random_uuid(prefix='my-user-uuid-')
         line_id = random_id()
-        self.auth.set_token(
-            MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT)
+        mock_token = MockUserToken(
+            token,
+            user_uuid=user_uuid,
+            metadata={'tenant_uuid': VALID_TENANT},
         )
+        self.auth.set_token(mock_token)
         switchboard_uuid = 'my-switchboard-uuid'
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
@@ -544,9 +550,12 @@ class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
     def test_given_token_with_no_user_when_answer_then_400(self):
         token = random_uuid(prefix='my-token-')
         user_uuid = random_uuid(prefix='my-user-uuid-')
-        self.auth.set_token(
-            MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT)
+        mock_token = MockUserToken(
+            token,
+            user_uuid=user_uuid,
+            metadata={'tenant_uuid': VALID_TENANT},
         )
+        self.auth.set_token(mock_token)
         switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         bus_events = self.bus.accumulator(
@@ -575,9 +584,12 @@ class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
     def test_given_operator_has_no_line_when_answer_then_400(self):
         token = random_uuid(prefix='my-token-')
         user_uuid = random_uuid(prefix='my-user-uuid-')
-        self.auth.set_token(
-            MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT)
+        mock_token = MockUserToken(
+            token,
+            user_uuid=user_uuid,
+            metadata={'tenant_uuid': VALID_TENANT},
         )
+        self.auth.set_token(mock_token)
         switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         self.confd.set_users(MockUser(uuid=user_uuid))
@@ -610,9 +622,12 @@ class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
         token = random_uuid(prefix='my-token-')
         user_uuid = random_uuid(prefix='my-user-uuid-')
         line_id = random_id()
-        self.auth.set_token(
-            MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT)
+        mock_token = MockUserToken(
+            token,
+            user_uuid=user_uuid,
+            metadata={'tenant_uuid': VALID_TENANT},
         )
+        self.auth.set_token(mock_token)
         switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
@@ -652,9 +667,12 @@ class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
         user_uuid = random_uuid(prefix='my-user-uuid-')
         first_line_id = random_id()
         second_line_id = random_id()
-        self.auth.set_token(
-            MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT)
+        mock_token = MockUserToken(
+            token,
+            user_uuid=user_uuid,
+            metadata={'tenant_uuid': VALID_TENANT},
         )
+        self.auth.set_token(mock_token)
         switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         self.confd.set_users(
@@ -743,9 +761,12 @@ class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
         user_uuid = random_uuid(prefix='my-user-uuid-')
         first_line_id = random_id()
         second_line_id = random_id()
-        self.auth.set_token(
-            MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT)
+        mock_token = MockUserToken(
+            token,
+            user_uuid=user_uuid,
+            metadata={'tenant_uuid': VALID_TENANT},
         )
+        self.auth.set_token(mock_token)
         switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         self.confd.set_users(
@@ -835,9 +856,12 @@ class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
         line_id = random_id()
         queued_caller_id = '"câller" <1234>'.encode()
         operator_caller_id = '"ôperator" <9876>'.encode()
-        self.auth.set_token(
-            MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT)
+        mock_token = MockUserToken(
+            token,
+            user_uuid=user_uuid,
+            metadata={'tenant_uuid': VALID_TENANT},
         )
+        self.auth.set_token(mock_token)
         switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
@@ -900,9 +924,12 @@ class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
         token = random_uuid(prefix='my-token-')
         user_uuid = random_uuid(prefix='my-user-uuid-')
         line_id = random_id()
-        self.auth.set_token(
-            MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT)
+        mock_token = MockUserToken(
+            token,
+            user_uuid=user_uuid,
+            metadata={'tenant_uuid': VALID_TENANT},
         )
+        self.auth.set_token(mock_token)
         switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
@@ -947,17 +974,23 @@ class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
         token = random_uuid(prefix='my-token-')
         user_uuid = random_uuid(prefix='my-user-uuid-')
         line_id = random_id()
-        self.auth.set_token(
-            MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT)
+        mock_token = MockUserToken(
+            token,
+            user_uuid=user_uuid,
+            metadata={'tenant_uuid': VALID_TENANT},
         )
+        self.auth.set_token(mock_token)
 
         # operator 2
         token2 = random_uuid(prefix='my-token-')
         user_uuid2 = random_uuid(prefix='my-user-uuid-')
         line_id2 = random_id()
-        self.auth.set_token(
-            MockUserToken(token2, user_uuid=user_uuid2, tenant_uuid=VALID_TENANT)
+        mock_token = MockUserToken(
+            token2,
+            user_uuid=user_uuid2,
+            metadata={'tenant_uuid': VALID_TENANT},
         )
+        self.auth.set_token(mock_token)
 
         switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
@@ -1030,9 +1063,12 @@ class TestSwitchboardConfdCache(IntegrationTest):
                 )
             )
 
-        self.auth.set_token(
-            MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT)
+        mock_token = MockUserToken(
+            token,
+            user_uuid=user_uuid,
+            metadata={'tenant_uuid': VALID_TENANT},
         )
+        self.auth.set_token(mock_token)
         reset_confd()
         queued_call = MockChannel(
             id=random_uuid(prefix='first-call-'),
@@ -1211,9 +1247,12 @@ class TestSwitchboardHoldCall(TestSwitchboards):
         token = random_uuid(prefix='my-token-')
         user_uuid = random_uuid(prefix='my-user-uuid-')
         line_id = random_id()
-        self.auth.set_token(
-            MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT)
+        mock_token = MockUserToken(
+            token,
+            user_uuid=user_uuid,
+            metadata={'tenant_uuid': VALID_TENANT},
         )
+        self.auth.set_token(mock_token)
         switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
@@ -1264,9 +1303,12 @@ class TestSwitchboardHoldCall(TestSwitchboards):
         token = random_uuid(prefix='my-token-')
         user_uuid = random_uuid(prefix='my-user-uuid-')
         line_id = random_id()
-        self.auth.set_token(
-            MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT)
+        mock_token = MockUserToken(
+            token,
+            user_uuid=user_uuid,
+            metadata={'tenant_uuid': VALID_TENANT},
         )
+        self.auth.set_token(mock_token)
         switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
@@ -1345,9 +1387,12 @@ class TestSwitchboardHoldCall(TestSwitchboards):
         token = random_uuid(prefix='my-token-')
         user_uuid = random_uuid(prefix='my-user-uuid-')
         line_id = random_id()
-        self.auth.set_token(
-            MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT)
+        mock_token = MockUserToken(
+            token,
+            user_uuid=user_uuid,
+            metadata={'tenant_uuid': VALID_TENANT},
         )
+        self.auth.set_token(mock_token)
         switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
@@ -1405,9 +1450,12 @@ class TestSwitchboardHoldCall(TestSwitchboards):
         token = random_uuid(prefix='my-token-')
         user_uuid = random_uuid(prefix='my-user-uuid-')
         line_id = random_id()
-        self.auth.set_token(
-            MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT)
+        mock_token = MockUserToken(
+            token,
+            user_uuid=user_uuid,
+            metadata={'tenant_uuid': VALID_TENANT},
         )
+        self.auth.set_token(mock_token)
         switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
@@ -1787,9 +1835,12 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
         token = random_uuid(prefix='my-token-')
         user_uuid = random_uuid(prefix='my-user-uuid-')
         line_id = random_id()
-        self.auth.set_token(
-            MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT)
+        mock_token = MockUserToken(
+            token,
+            user_uuid=user_uuid,
+            metadata={'tenant_uuid': VALID_TENANT},
         )
+        self.auth.set_token(mock_token)
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
         self.confd.set_lines(
             MockLine(
@@ -1819,9 +1870,12 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
         token = random_uuid(prefix='my-token-')
         user_uuid = random_uuid(prefix='my-user-uuid-')
         line_id = random_id()
-        self.auth.set_token(
-            MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT)
+        mock_token = MockUserToken(
+            token,
+            user_uuid=user_uuid,
+            metadata={'tenant_uuid': VALID_TENANT},
         )
+        self.auth.set_token(mock_token)
         switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
@@ -1841,9 +1895,12 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
     def test_given_token_with_no_user_when_answer_then_400(self):
         token = random_uuid(prefix='my-token-')
         user_uuid = random_uuid(prefix='my-user-uuid-')
-        self.auth.set_token(
-            MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT)
+        mock_token = MockUserToken(
+            token,
+            user_uuid=user_uuid,
+            metadata={'tenant_uuid': VALID_TENANT},
         )
+        self.auth.set_token(mock_token)
         switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         queued_bus_events = self.bus.accumulator(
@@ -1883,9 +1940,12 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
     def test_given_operator_has_no_line_when_answer_then_400(self):
         token = random_uuid(prefix='my-token-')
         user_uuid = random_uuid(prefix='my-user-uuid-')
-        self.auth.set_token(
-            MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT)
+        mock_token = MockUserToken(
+            token,
+            user_uuid=user_uuid,
+            metadata={'tenant_uuid': VALID_TENANT},
         )
+        self.auth.set_token(mock_token)
         switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         self.confd.set_users(MockUser(uuid=user_uuid))
@@ -1929,9 +1989,12 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
         token = random_uuid(prefix='my-token-')
         user_uuid = random_uuid(prefix='my-user-uuid-')
         line_id = random_id()
-        self.auth.set_token(
-            MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT)
+        mock_token = MockUserToken(
+            token,
+            user_uuid=user_uuid,
+            metadata={'tenant_uuid': VALID_TENANT},
         )
+        self.auth.set_token(mock_token)
         switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
@@ -1979,9 +2042,12 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
         user_uuid = random_uuid(prefix='my-user-uuid-')
         first_line_id = random_id()
         second_line_id = random_id()
-        self.auth.set_token(
-            MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT)
+        mock_token = MockUserToken(
+            token,
+            user_uuid=user_uuid,
+            metadata={'tenant_uuid': VALID_TENANT},
         )
+        self.auth.set_token(mock_token)
         switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         self.confd.set_users(
@@ -2080,9 +2146,12 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
         user_uuid = random_uuid(prefix='my-user-uuid-')
         first_line_id = random_id()
         second_line_id = random_id()
-        self.auth.set_token(
-            MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT)
+        mock_token = MockUserToken(
+            token,
+            user_uuid=user_uuid,
+            metadata={'tenant_uuid': VALID_TENANT},
         )
+        self.auth.set_token(mock_token)
         switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         self.confd.set_users(
@@ -2180,9 +2249,12 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
         line_id = random_id()
         held_caller_id = '"câller" <1234>'.encode()
         operator_caller_id = '"ôperator" <9876>'.encode()
-        self.auth.set_token(
-            MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT)
+        mock_token = MockUserToken(
+            token,
+            user_uuid=user_uuid,
+            metadata={'tenant_uuid': VALID_TENANT},
         )
+        self.auth.set_token(mock_token)
         switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
@@ -2253,9 +2325,12 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
         token = random_uuid(prefix='my-token-')
         user_uuid = random_uuid(prefix='my-user-uuid-')
         line_id = random_id()
-        self.auth.set_token(
-            MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT)
+        mock_token = MockUserToken(
+            token,
+            user_uuid=user_uuid,
+            metadata={'tenant_uuid': VALID_TENANT},
         )
+        self.auth.set_token(mock_token)
         switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
@@ -2307,9 +2382,12 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
         token = random_uuid(prefix='my-token-')
         user_uuid = random_uuid(prefix='my-user-uuid-')
         line_id = random_id()
-        self.auth.set_token(
-            MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT)
+        mock_token = MockUserToken(
+            token,
+            user_uuid=user_uuid,
+            metadata={'tenant_uuid': VALID_TENANT},
         )
+        self.auth.set_token(mock_token)
 
         switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
@@ -2395,17 +2473,23 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
         token = random_uuid(prefix='my-token-')
         user_uuid = random_uuid(prefix='my-user-uuid-')
         line_id = random_id()
-        self.auth.set_token(
-            MockUserToken(token, user_uuid=user_uuid, tenant_uuid=VALID_TENANT)
+        mock_token = MockUserToken(
+            token,
+            user_uuid=user_uuid,
+            metadata={'tenant_uuid': VALID_TENANT},
         )
+        self.auth.set_token(mock_token)
 
         # operator 2
         token2 = random_uuid(prefix='my-token-')
         user_uuid2 = random_uuid(prefix='my-user-uuid-')
         line_id2 = random_id()
-        self.auth.set_token(
-            MockUserToken(token2, user_uuid=user_uuid2, tenant_uuid=VALID_TENANT)
+        mock_token2 = MockUserToken(
+            token2,
+            user_uuid=user_uuid2,
+            metadata={'tenant_uuid': VALID_TENANT},
         )
+        self.auth.set_token(mock_token2)
 
         switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
