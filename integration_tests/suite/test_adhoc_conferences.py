@@ -43,7 +43,7 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
         calld_client = self.make_calld(token=VALID_TOKEN)
         self.real_asterisk = RealAsterisk(self.ari, calld_client)
 
-    def make_user_token(self, user_uuid, tenant_uuid=None):
+    def make_user_token(self, user_uuid, tenant_uuid=VALID_TENANT):
         token_id = str(uuid.uuid4())
         tenant_uuid = tenant_uuid or str(uuid.uuid4())
         mock_token = MockUserToken(
