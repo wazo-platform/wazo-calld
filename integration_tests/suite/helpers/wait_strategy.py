@@ -92,6 +92,9 @@ class AmidReadyWaitStrategy(WaitStrategy):
                 has_entries(
                     {
                         'ami_socket': has_entry('status', 'ok'),
+                        'bus_publisher': has_entry('status', 'ok'),
+                        'rest_api': has_entry('status', 'ok'),
+                        'service_token': has_entry('status', 'ok'),
                     }
                 ),
             )
