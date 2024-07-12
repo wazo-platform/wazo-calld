@@ -5,7 +5,7 @@ from hamcrest import assert_that, contains_exactly, has_entries, has_item
 from wazo_amid_client import Client as AmidClient
 from wazo_test_helpers import until
 
-from .helpers.constants import VALID_TOKEN_MULTITENANT
+from .helpers.constants import CALLD_SERVICE_TOKEN
 from .helpers.real_asterisk import RealAsteriskIntegrationTest
 
 
@@ -19,7 +19,7 @@ class TestPushMobile(RealAsteriskIntegrationTest):
             port=self.service_port(9491, 'amid'),
             https=False,
             prefix=None,
-            token=VALID_TOKEN_MULTITENANT,
+            token=CALLD_SERVICE_TOKEN,
         )
 
     def test_send_push_mobile(self):
