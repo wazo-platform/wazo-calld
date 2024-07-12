@@ -2,27 +2,18 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
-from typing import TYPE_CHECKING
 
 from requests import HTTPError
 from werkzeug.local import LocalProxy as Proxy
 from xivo import auth_verifier
 from xivo.auth_verifier import required_tenant
+from xivo.tenant_flask_helpers import user
 
 from wazo_calld.exceptions import (
     MasterTenantNotInitialized,
     TokenWithUserUUIDRequiredError,
 )
 from wazo_calld.http_server import app
-
-if TYPE_CHECKING:
-    from flask import request as _request
-    from xivo.auth_verifier import Request
-
-    request: Request = _request  # type: ignore[assignment]
-else:
-    from flask import request
-
 
 logger = logging.getLogger(__name__)
 required_acl = auth_verifier.required_acl
@@ -34,7 +25,7 @@ Unauthorized = auth_verifier.Unauthorized
 
 def get_token_user_uuid_from_request():
     try:
-        user_uuid = request.user_uuid
+        user_uuid = user.uuid
     except HTTPError as e:
         logger.warning('HTTP error from wazo-auth while getting token: %s', e)
         raise TokenWithUserUUIDRequiredError()
