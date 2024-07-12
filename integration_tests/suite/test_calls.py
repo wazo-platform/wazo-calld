@@ -48,7 +48,14 @@ UNKNOWN_UUID = '00000000-0000-0000-0000-000000000000'
 CONFD_SIP_PROTOCOL = 'sip'
 
 
-class TestListCalls(IntegrationTest):
+class _BaseTestCalls(IntegrationTest):
+    def _set_channel_variable(self, variables):
+        for _, values in variables.items():
+            values.setdefault('WAZO_TENANT_UUID', VALID_TENANT)
+        self.ari.set_channel_variable(variables)
+
+
+class TestListCalls(_BaseTestCalls):
     asset = 'basic_rest'
 
     def setUp(self):
@@ -87,7 +94,7 @@ class TestListCalls(IntegrationTest):
                 channelvars={'CHANNEL(videonativeformat)': '(nothing)'},
             ),
         )
-        self.ari.set_channel_variable(
+        self._set_channel_variable(
             {
                 first_id: {
                     'WAZO_USERUUID': 'user1-uuid',
@@ -156,7 +163,7 @@ class TestListCalls(IntegrationTest):
     def test_call_direction(self):
         first_id, second_id = new_call_id(), new_call_id(leap=1)
         self.ari.set_channels(MockChannel(id=first_id), MockChannel(id=second_id))
-        self.ari.set_channel_variable(
+        self._set_channel_variable(
             {
                 first_id: {'WAZO_CALL_DIRECTION': 'internal'},
                 second_id: {'WAZO_CALL_DIRECTION': 'outbound'},
@@ -181,6 +188,7 @@ class TestListCalls(IntegrationTest):
     ):
         first_id, second_id = new_call_id(), new_call_id(leap=1)
         self.ari.set_channels(MockChannel(id=first_id), MockChannel(id=second_id))
+        self._set_channel_variable({first_id: {}, second_id: {}})
 
         calls = self.calld_client.calls.list_calls()
 
@@ -207,6 +215,7 @@ class TestListCalls(IntegrationTest):
             MockChannel(id=second_id),
             MockChannel(id=third_id),
         )
+        self._set_channel_variable({first_id: {}, second_id: {}, third_id: {}})
         self.ari.set_applications(
             MockApplication(name='my-app', channels=[first_id, third_id])
         )
@@ -228,6 +237,7 @@ class TestListCalls(IntegrationTest):
     ):
         first_id, second_id = new_call_id(), new_call_id(leap=1)
         self.ari.set_channels(MockChannel(id=first_id), MockChannel(id=second_id))
+        self._set_channel_variable({first_id: {}, second_id: {}})
 
         calls = self.calld_client.calls.list_calls(application='my-app')
 
@@ -247,6 +257,9 @@ class TestListCalls(IntegrationTest):
             MockChannel(id=second_id),
             MockChannel(id=third_id),
             MockChannel(id=fourth_id),
+        )
+        self._set_channel_variable(
+            {first_id: {}, second_id: {}, third_id: {}, fourth_id: {}}
         )
         self.ari.set_applications(
             MockApplication(name='my-app', channels=[first_id, second_id, third_id])
@@ -285,6 +298,7 @@ class TestListCalls(IntegrationTest):
     ):
         first_id, second_id = new_call_id(), new_call_id(leap=1)
         self.ari.set_channels(MockChannel(id=first_id), MockChannel(id=second_id))
+        self._set_channel_variable({first_id: {}, second_id: {}})
         self.ari.set_applications(
             MockApplication(name='my-app', channels=['__AST_CHANNEL_ALL_TOPIC'])
         )
@@ -306,6 +320,7 @@ class TestListCalls(IntegrationTest):
     ):
         first_id, second_id = new_call_id(), new_call_id(leap=1)
         self.ari.set_channels(MockChannel(id=first_id), MockChannel(id=second_id))
+        self._set_channel_variable({first_id: {}, second_id: {}})
         self.ari.set_global_variables(
             {
                 f'XIVO_CHANNELS_{first_id}': json.dumps(
@@ -342,7 +357,7 @@ class TestListCalls(IntegrationTest):
         )
         self.ari.set_bridges(MockBridge(id='bridge-id', channels=[first_id, second_id]))
         self.confd.set_users(MockUser(uuid='user1-uuid'), MockUser(uuid='user2-uuid'))
-        self.ari.set_channel_variable(
+        self._set_channel_variable(
             {
                 first_id: {'WAZO_USERUUID': 'user1-uuid'},
                 second_id: {'WAZO_USERUUID': 'user2-uuid'},
@@ -370,7 +385,7 @@ class TestListCalls(IntegrationTest):
         tenant_uuid_2 = str(uuid.uuid4())
         first_id, second_id = new_call_id(), new_call_id(leap=1)
         self.ari.set_channels(MockChannel(id=first_id), MockChannel(id=second_id))
-        self.ari.set_channel_variable(
+        self._set_channel_variable(
             {
                 first_id: {'WAZO_TENANT_UUID': tenant_uuid_1},
                 second_id: {'WAZO_TENANT_UUID': tenant_uuid_2},
@@ -408,7 +423,7 @@ class TestListCalls(IntegrationTest):
         subtenant_uuid = VALID_TENANT
         first_id, second_id = new_call_id(), new_call_id(leap=1)
         self.ari.set_channels(MockChannel(id=first_id), MockChannel(id=second_id))
-        self.ari.set_channel_variable(
+        self._set_channel_variable(
             {
                 first_id: {'WAZO_TENANT_UUID': top_tenant_uuid},
                 second_id: {'WAZO_TENANT_UUID': subtenant_uuid},
@@ -465,7 +480,7 @@ class TestListCalls(IntegrationTest):
         )
 
 
-class TestUserListCalls(IntegrationTest):
+class TestUserListCalls(_BaseTestCalls):
     asset = 'basic_rest'
 
     def setUp(self):
@@ -494,7 +509,7 @@ class TestUserListCalls(IntegrationTest):
             MockChannel(id=others_call_id, channelvars={'WAZO_USERUUID': 'user2-uuid'}),
             MockChannel(id=no_user_call_id),
         )
-        self.ari.set_channel_variable(
+        self._set_channel_variable(
             {
                 my_call_id: {'WAZO_USERUUID': user_uuid},
                 my_second_call_id: {'WAZO_USERUUID': user_uuid},
@@ -533,7 +548,7 @@ class TestUserListCalls(IntegrationTest):
         self.ari.set_applications(
             MockApplication(name='my-app', channels=[first_id, third_id])
         )
-        self.ari.set_channel_variable(
+        self._set_channel_variable(
             {
                 first_id: {'WAZO_USERUUID': user_uuid},
                 second_id: {'WAZO_USERUUID': user_uuid},
@@ -560,7 +575,7 @@ class TestUserListCalls(IntegrationTest):
         first_id, second_id = new_call_id(), new_call_id(leap=1)
         user_uuid = 'user-uuid'
         self.ari.set_channels(MockChannel(id=first_id), MockChannel(id=second_id))
-        self.ari.set_channel_variable(
+        self._set_channel_variable(
             {
                 first_id: {'WAZO_USERUUID': user_uuid},
                 second_id: {'WAZO_USERUUID': user_uuid},
@@ -588,7 +603,7 @@ class TestUserListCalls(IntegrationTest):
             MockChannel(id=third_id),
             MockChannel(id=fourth_id),
         )
-        self.ari.set_channel_variable(
+        self._set_channel_variable(
             {
                 first_id: {'WAZO_USERUUID': user_uuid},
                 second_id: {'WAZO_USERUUID': user_uuid},
@@ -636,7 +651,7 @@ class TestUserListCalls(IntegrationTest):
             MockChannel(id=first_id),
             MockChannel(id=second_id, name=SOME_LOCAL_CHANNEL_NAME),
         )
-        self.ari.set_channel_variable(
+        self._set_channel_variable(
             {
                 first_id: {'WAZO_USERUUID': user_uuid},
                 second_id: {'WAZO_USERUUID': user_uuid},
@@ -669,7 +684,7 @@ class TestUserListCalls(IntegrationTest):
                 channelvars={'CHANNEL(videonativeformat)': '(nothing)'},
             ),
         )
-        self.ari.set_channel_variable(
+        self._set_channel_variable(
             {
                 my_call: {'WAZO_USERUUID': user_uuid},
                 my_second_call: {'WAZO_USERUUID': user_uuid},
@@ -693,7 +708,7 @@ class TestUserListCalls(IntegrationTest):
         )
 
 
-class TestGetCall(IntegrationTest):
+class TestGetCall(_BaseTestCalls):
     asset = 'basic_rest'
 
     def setUp(self):
@@ -720,7 +735,7 @@ class TestGetCall(IntegrationTest):
             MockChannel(id=second_id),
         )
         self.ari.set_bridges(MockBridge(id='bridge-id', channels=[first_id, second_id]))
-        self.ari.set_channel_variable(
+        self._set_channel_variable(
             {
                 first_id: {
                     'WAZO_USERUUID': 'user1-uuid',
@@ -762,7 +777,7 @@ class TestGetCall(IntegrationTest):
         tenant_uuid_2 = str(uuid.uuid4())
         first_id, second_id = new_call_id(), new_call_id(leap=1)
         self.ari.set_channels(MockChannel(id=first_id), MockChannel(id=second_id))
-        self.ari.set_channel_variable(
+        self._set_channel_variable(
             {
                 first_id: {'WAZO_TENANT_UUID': tenant_uuid_1},
                 second_id: {'WAZO_TENANT_UUID': tenant_uuid_2},
@@ -789,7 +804,7 @@ class TestGetCall(IntegrationTest):
         assert call['call_id'] == second_id
 
 
-class TestDeleteCall(IntegrationTest):
+class TestDeleteCall(_BaseTestCalls):
     asset = 'basic_rest'
 
     def setUp(self):
@@ -823,7 +838,7 @@ class TestDeleteCall(IntegrationTest):
         )
 
 
-class TestUserDeleteCall(IntegrationTest):
+class TestUserDeleteCall(_BaseTestCalls):
     asset = 'basic_rest'
 
     def setUp(self):
@@ -849,7 +864,7 @@ class TestUserDeleteCall(IntegrationTest):
         self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
         self.confd.set_users(MockUser(uuid=user_uuid))
         self.ari.set_channels(MockChannel(id=call_id, state='Up'))
-        self.ari.set_channel_variable({call_id: {'WAZO_USERUUID': 'some-other-uuid'}})
+        self._set_channel_variable({call_id: {'WAZO_USERUUID': 'some-other-uuid'}})
 
         result = self.calld.delete_user_me_call_result(call_id, token=token)
 
@@ -867,7 +882,7 @@ class TestUserDeleteCall(IntegrationTest):
                 id=call_id, state='Up', channelvars={'WAZO_USERUUID': user_uuid}
             ),
         )
-        self.ari.set_channel_variable({call_id: {'WAZO_USERUUID': user_uuid}})
+        self._set_channel_variable({call_id: {'WAZO_USERUUID': user_uuid}})
 
         self.calld.hangup_my_call(call_id, token)
 
@@ -897,14 +912,14 @@ class TestUserDeleteCall(IntegrationTest):
                 channelvars={'WAZO_USERUUID': user_uuid},
             ),
         )
-        self.ari.set_channel_variable({call_id: {'WAZO_USERUUID': user_uuid}})
+        self._set_channel_variable({call_id: {'WAZO_USERUUID': user_uuid}})
 
         result = self.calld.delete_user_me_call_result(call_id, token=token)
 
         assert_that(result.status_code, equal_to(404))
 
 
-class TestCreateCall(IntegrationTest):
+class TestCreateCall(_BaseTestCalls):
     asset = 'basic_rest'
 
     def setUp(self):
@@ -929,7 +944,7 @@ class TestCreateCall(IntegrationTest):
             MockChannel(id=my_new_call_id, connected_line_number='')
         )
         self.amid.set_valid_exten('my-context', 'my-extension', priority)
-        self.ari.set_channel_variable(
+        self._set_channel_variable(
             {
                 my_new_call_id: {
                     'CHANNEL(channeltype)': 'PJSIP',
@@ -986,7 +1001,7 @@ class TestCreateCall(IntegrationTest):
             MockChannel(id=my_new_call_id, connected_line_number='')
         )
         self.amid.set_valid_exten('my-context', '123456', priority)
-        self.ari.set_channel_variable(
+        self._set_channel_variable(
             {
                 my_new_call_id: {
                     'CHANNEL(channeltype)': 'PJSIP',
@@ -1794,7 +1809,7 @@ class TestCreateCall(IntegrationTest):
         )
 
 
-class TestUserCreateCall(IntegrationTest):
+class TestUserCreateCall(_BaseTestCalls):
     asset = 'basic_rest'
 
     def setUp(self):
@@ -2343,7 +2358,7 @@ class TestUserCreateCall(IntegrationTest):
         )
 
 
-class TestFailingARI(IntegrationTest):
+class TestFailingARI(_BaseTestCalls):
     asset = 'failing_ari'
     wait_strategy = CalldUpWaitStrategy()
 
@@ -2413,7 +2428,7 @@ class TestFailingARI(IntegrationTest):
         )
 
 
-class TestConnectUser(IntegrationTest):
+class TestConnectUser(_BaseTestCalls):
     asset = 'basic_rest'
 
     def setUp(self):
@@ -2430,7 +2445,7 @@ class TestConnectUser(IntegrationTest):
             MockChannel(id=call_id),
             MockChannel(id=my_new_call_id),
         )
-        self.ari.set_channel_variable({my_new_call_id: {'WAZO_USERUUID': 'user-uuid'}})
+        self._set_channel_variable({my_new_call_id: {'WAZO_USERUUID': 'user-uuid'}})
         self.ari.set_global_variables(
             {
                 f'XIVO_CHANNELS_{call_id}': json.dumps(
@@ -2476,7 +2491,7 @@ class TestConnectUser(IntegrationTest):
             MockChannel(id=call_id),
             MockChannel(id=my_new_call_id),
         )
-        self.ari.set_channel_variable({my_new_call_id: {'WAZO_USERUUID': 'user-uuid'}})
+        self._set_channel_variable({my_new_call_id: {'WAZO_USERUUID': 'user-uuid'}})
         self.ari.set_global_variables(
             {
                 f'XIVO_CHANNELS_{call_id}': json.dumps(
@@ -3032,7 +3047,7 @@ class TestCallSendDTMF(RealAsteriskIntegrationTest):
         return token
 
 
-class TestCallHold(IntegrationTest):
+class TestCallHold(_BaseTestCalls):
     asset = 'basic_rest'
 
     def setUp(self):
@@ -3175,7 +3190,7 @@ class TestCallHold(IntegrationTest):
                 channelvars={'WAZO_USERUUID': user_uuid},
             ),
         )
-        self.ari.set_channel_variable(
+        self._set_channel_variable(
             {
                 user_channel_id: {'WAZO_USERUUID': user_uuid},
                 someone_else_channel_id: {'WAZO_USERUUID': someone_else_uuid},
@@ -3266,7 +3281,7 @@ class TestCallHold(IntegrationTest):
                 channelvars={'WAZO_USERUUID': user_uuid},
             ),
         )
-        self.ari.set_channel_variable(
+        self._set_channel_variable(
             {
                 user_channel_id: {'WAZO_USERUUID': user_uuid},
                 someone_else_channel_id: {'WAZO_USERUUID': someone_else_uuid},
@@ -3328,7 +3343,7 @@ class TestCallHold(IntegrationTest):
         return token
 
 
-class TestCallAnswer(IntegrationTest):
+class TestCallAnswer(_BaseTestCalls):
     asset = 'basic_rest'
 
     def setUp(self):
@@ -3420,7 +3435,7 @@ class TestCallAnswer(IntegrationTest):
                 channelvars={'WAZO_USERUUID': user_uuid},
             ),
         )
-        self.ari.set_channel_variable(
+        self._set_channel_variable(
             {
                 user_channel_id: {'WAZO_USERUUID': user_uuid},
                 someone_else_channel_id: {'WAZO_USERUUID': someone_else_uuid},
