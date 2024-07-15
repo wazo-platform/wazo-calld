@@ -1,5 +1,16 @@
 # Changelog
 
+## 24.10
+
+* The following endpoints now have Wazo-Tenant header to support multi-tenant
+
+  * `GET /1.0/calls`
+  * `GET /1.0/calls/<call-id>`
+
+* The following endpoints have a new query parameter `recurse`:
+
+  * `GET /1.0/calls`
+
 ## 24.08
 
 * The `conversation_id` attribute has been added to the `application_call` object
