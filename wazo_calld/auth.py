@@ -5,8 +5,8 @@ import logging
 
 from requests import HTTPError
 from werkzeug.local import LocalProxy as Proxy
-from xivo import auth_verifier
-from xivo.auth_verifier import required_tenant
+from xivo.auth_verifier import Unauthorized, required_acl, required_tenant
+from xivo.flask.headers import extract_token_id_from_query_or_header
 from xivo.tenant_flask_helpers import user
 
 from wazo_calld.exceptions import (
@@ -16,11 +16,12 @@ from wazo_calld.exceptions import (
 from wazo_calld.http_server import app
 
 logger = logging.getLogger(__name__)
-required_acl = auth_verifier.required_acl
-extract_token_id_from_query_or_header = (
-    auth_verifier.extract_token_id_from_query_or_header
-)
-Unauthorized = auth_verifier.Unauthorized
+
+__all__ = [
+    'Unauthorized',
+    'extract_token_id_from_query_or_header',
+    'required_acl',
+]
 
 
 def get_token_user_uuid_from_request():
