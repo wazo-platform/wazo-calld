@@ -25,7 +25,11 @@ from wazo_test_helpers.hamcrest.uuid_ import uuid_
 from .helpers.confd import MockApplication, MockMoh, MockUser
 from .helpers.constants import ENDPOINT_AUTOANSWER, VALID_TENANT
 from .helpers.real_asterisk import RealAsteriskIntegrationTest
-from .helpers.wait_strategy import CalldEverythingOkWaitStrategy, NoWaitStrategy
+from .helpers.wait_strategy import (
+    CalldAndAsteriskAndAmidWaitStrategy,
+    CalldEverythingOkWaitStrategy,
+    NoWaitStrategy,
+)
 
 
 class BaseApplicationTestCase(RealAsteriskIntegrationTest):
@@ -62,7 +66,7 @@ class BaseApplicationTestCase(RealAsteriskIntegrationTest):
 
         # TODO: add a way to load new apps without restarting
         self._restart_calld()
-        CalldEverythingOkWaitStrategy().wait(self)
+        CalldAndAsteriskAndAmidWaitStrategy().wait(self)
 
         def applications_created():
             try:
