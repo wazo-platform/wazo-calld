@@ -6,11 +6,11 @@ from functools import wraps
 from ari.exceptions import ARIException, ARIHTTPError
 from flask_restful import Resource
 from xivo import mallow_helpers, rest_api_helpers
-from xivo.auth_verifier import AuthVerifier
+from xivo.flask.auth_verifier import AuthVerifierFlask
 
 from .exceptions import AsteriskARIError, AsteriskARIUnreachable
 
-auth_verifier = AuthVerifier()
+auth_verifier = AuthVerifierFlask()
 
 
 def handle_ari_exception(func):
@@ -40,6 +40,6 @@ class ErrorCatchingResource(Resource):
 
 class AuthResource(ErrorCatchingResource):
     method_decorators = [
-        auth_verifier.verify_token,
         auth_verifier.verify_tenant,
+        auth_verifier.verify_token,
     ] + ErrorCatchingResource.method_decorators

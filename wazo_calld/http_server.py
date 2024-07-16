@@ -13,8 +13,6 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from xivo import http_helpers
 from xivo.http_helpers import ReverseProxied
 
-from .http import auth_verifier
-
 VERSION = 1.0
 
 logger = logging.getLogger(__name__)
@@ -31,7 +29,6 @@ class HTTPServer:
         app.secret_key = os.urandom(24)
         app.permanent_session_lifetime = timedelta(minutes=5)
         app.config['auth'] = global_config['auth']
-        auth_verifier.set_config(global_config['auth'])
         self._load_cors()
         self.server = None
 
