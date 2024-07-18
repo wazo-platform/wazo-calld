@@ -1827,6 +1827,144 @@ class TestCreateCall(_BaseTestCalls):
             ),
         )
 
+    def test_unregistered_main_line(self):
+        user_uuid = 'user-uuid'
+        my_new_call_id = new_call_id()
+        priority = 1
+        self.confd.set_users(
+            MockUser(
+                uuid='user-uuid', line_ids=['line-id'], tenant_uuid='the-tenant-uuid'
+            )
+        )
+        self.confd.set_lines(
+            MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL)
+        )
+        self.amid.set_valid_exten('my-context', 'my-extension', priority)
+        self._set_channel_variable(
+            {
+                my_new_call_id: {
+                    'CHANNEL(channeltype)': 'PJSIP',
+                    'CHANNEL(pjsip,call-id)': 'a-sip-call-id',
+                    'WAZO_LINE_ID': str(SOME_LINE_ID),
+                }
+            }
+        )
+        self.ari.set_endpoints(MockEndpoint('pjsip', 'line-name', 'offline'))
+        call_args = {
+            'source': {'user': user_uuid},
+            'destination': {
+                'priority': priority,
+                'extension': 'my-extension',
+                'context': 'my-context',
+            },
+        }
+
+        assert_that(
+            calling(self.calld_client.calls.make_call).with_args(call_args),
+            raises(CalldError).matching(
+                has_properties(
+                    error_id='call-origin-unavailable',
+                )
+            ),
+        )
+
+    def test_unregistered_requested_line(self):
+        user_uuid = 'user-uuid'
+        my_new_call_id = new_call_id()
+        priority = 1
+        self.confd.set_users(
+            MockUser(
+                uuid='user-uuid', line_ids=['line-id', 2], tenant_uuid='the-tenant-uuid'
+            )
+        )
+        self.confd.set_lines(
+            MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL),
+            MockLine(id=2, name='line-two', protocol=CONFD_SIP_PROTOCOL),
+        )
+        self.amid.set_valid_exten('my-context', 'my-extension', priority)
+        self._set_channel_variable(
+            {
+                my_new_call_id: {
+                    'CHANNEL(channeltype)': 'PJSIP',
+                    'CHANNEL(pjsip,call-id)': 'a-sip-call-id',
+                    'WAZO_LINE_ID': str(SOME_LINE_ID),
+                }
+            }
+        )
+        self.ari.set_endpoints(MockEndpoint('pjsip', 'line-two', 'offline'))
+        call_args = {
+            'source': {'user': user_uuid, 'line_id': 2},
+            'destination': {
+                'priority': priority,
+                'extension': 'my-extension',
+                'context': 'my-context',
+            },
+        }
+
+        assert_that(
+            calling(self.calld_client.calls.make_call).with_args(call_args),
+            raises(CalldError).matching(
+                has_properties(
+                    error_id='call-origin-unavailable',
+                )
+            ),
+        )
+
+    def test_unregistered_all_lines(self):
+        user_uuid = 'user-uuid'
+        my_new_call_id = new_call_id()
+        priority = 1
+        self.confd.set_users(
+            MockUser(
+                uuid='user-uuid', line_ids=['line-id', 2], tenant_uuid='the-tenant-uuid'
+            )
+        )
+        self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='test'))
+        self.ari.set_originates(
+            MockChannel(id=my_new_call_id, connected_line_number='')
+        )
+        self.amid.set_valid_exten('my-context', 'my-extension', priority)
+        self._set_channel_variable(
+            {
+                my_new_call_id: {
+                    'CHANNEL(channeltype)': 'test',
+                    'CHANNEL(pjsip,call-id)': 'a-sip-call-id',
+                    'WAZO_LINE_ID': str(SOME_LINE_ID),
+                }
+            }
+        )
+        self.ari.set_endpoints(MockEndpoint('test', 'line-two', 'offline'))
+        call_args = {
+            'source': {'user': user_uuid, 'all_lines': True},
+            'destination': {
+                'priority': priority,
+                'extension': 'my-extension',
+                'context': 'my-context',
+            },
+        }
+
+        result = self.calld_client.calls.make_call(call_args)
+
+        assert_that(
+            result,
+            has_entries(
+                call_id=my_new_call_id,
+                dialed_extension='my-extension',
+                peer_caller_id_number='my-extension',
+            ),
+        )
+        assert_that(
+            self.ari.requests(),
+            has_entries(
+                requests=has_item(
+                    has_entries(
+                        method='POST',
+                        path='/ari/channels',
+                    )
+                )
+            ),
+        )
+
 
 class TestUserCreateCall(_BaseTestCalls):
     asset = 'basic_rest'
