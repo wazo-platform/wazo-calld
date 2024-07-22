@@ -71,7 +71,7 @@ class TestListCalls(_BaseTestCalls):
     def test_given_some_calls_with_user_id_when_list_calls_then_calls_are_complete(
         self,
     ):
-        first_id, second_id = new_call_id(), new_call_id(leap=1)
+        first_id, second_id = new_call_id(), new_call_id()
         self.ari.set_channels(
             MockChannel(
                 id=first_id,
@@ -161,7 +161,7 @@ class TestListCalls(_BaseTestCalls):
         )
 
     def test_call_direction(self):
-        first_id, second_id = new_call_id(), new_call_id(leap=1)
+        first_id, second_id = new_call_id(), new_call_id()
         self.ari.set_channels(MockChannel(id=first_id), MockChannel(id=second_id))
         self._set_channel_variable(
             {
@@ -186,7 +186,7 @@ class TestListCalls(_BaseTestCalls):
     def test_given_some_calls_and_no_user_id_when_list_calls_then_list_calls_with_no_user_uuid(
         self,
     ):
-        first_id, second_id = new_call_id(), new_call_id(leap=1)
+        first_id, second_id = new_call_id(), new_call_id()
         self.ari.set_channels(MockChannel(id=first_id), MockChannel(id=second_id))
         self._set_channel_variable({first_id: {}, second_id: {}})
 
@@ -207,8 +207,8 @@ class TestListCalls(_BaseTestCalls):
     ):
         first_id, second_id, third_id = (
             new_call_id(),
-            new_call_id(leap=1),
-            new_call_id(leap=2),
+            new_call_id(),
+            new_call_id(),
         )
         self.ari.set_channels(
             MockChannel(id=first_id),
@@ -235,7 +235,7 @@ class TestListCalls(_BaseTestCalls):
     def test_given_some_calls_and_no_applications_when_list_calls_by_application_then_no_calls(
         self,
     ):
-        first_id, second_id = new_call_id(), new_call_id(leap=1)
+        first_id, second_id = new_call_id(), new_call_id()
         self.ari.set_channels(MockChannel(id=first_id), MockChannel(id=second_id))
         self._set_channel_variable({first_id: {}, second_id: {}})
 
@@ -248,9 +248,9 @@ class TestListCalls(_BaseTestCalls):
     ):
         first_id, second_id, third_id, fourth_id = (
             new_call_id(),
-            new_call_id(leap=1),
-            new_call_id(leap=2),
-            new_call_id(leap=3),
+            new_call_id(),
+            new_call_id(),
+            new_call_id(),
         )
         self.ari.set_channels(
             MockChannel(id=first_id),
@@ -296,7 +296,7 @@ class TestListCalls(_BaseTestCalls):
     def test_given_some_calls_and_application_bound_to_all_channels_when_list_calls_by_application_then_all_calls(
         self,
     ):
-        first_id, second_id = new_call_id(), new_call_id(leap=1)
+        first_id, second_id = new_call_id(), new_call_id()
         self.ari.set_channels(MockChannel(id=first_id), MockChannel(id=second_id))
         self._set_channel_variable({first_id: {}, second_id: {}})
         self.ari.set_applications(
@@ -318,7 +318,7 @@ class TestListCalls(_BaseTestCalls):
     def test_given_some_calls_and_application_bound_to_all_channels_when_list_calls_by_application_instance_then_calls_are_still_filtered_by_application(
         self,
     ):
-        first_id, second_id = new_call_id(), new_call_id(leap=1)
+        first_id, second_id = new_call_id(), new_call_id()
         self.ari.set_channels(MockChannel(id=first_id), MockChannel(id=second_id))
         self._set_channel_variable({first_id: {}, second_id: {}})
         self.ari.set_global_variables(
@@ -350,7 +350,7 @@ class TestListCalls(_BaseTestCalls):
         )
 
     def test_given_local_channels_when_list_then_talking_to_is_none(self):
-        first_id, second_id = new_call_id(), new_call_id(leap=1)
+        first_id, second_id = new_call_id(), new_call_id()
         self.ari.set_channels(
             MockChannel(id=first_id),
             MockChannel(id=second_id, name=SOME_LOCAL_CHANNEL_NAME),
@@ -383,7 +383,7 @@ class TestListCalls(_BaseTestCalls):
         user_uuid_2 = str(uuid.uuid4())
         tenant_uuid_1 = str(uuid.uuid4())
         tenant_uuid_2 = str(uuid.uuid4())
-        first_id, second_id = new_call_id(), new_call_id(leap=1)
+        first_id, second_id = new_call_id(), new_call_id()
         self.ari.set_channels(MockChannel(id=first_id), MockChannel(id=second_id))
         self._set_channel_variable(
             {
@@ -421,7 +421,7 @@ class TestListCalls(_BaseTestCalls):
         user_uuid_2 = str(uuid.uuid4())
         top_tenant_uuid = CALLD_SERVICE_TENANT
         subtenant_uuid = VALID_TENANT
-        first_id, second_id = new_call_id(), new_call_id(leap=1)
+        first_id, second_id = new_call_id(), new_call_id()
         self.ari.set_channels(MockChannel(id=first_id), MockChannel(id=second_id))
         self._set_channel_variable(
             {
@@ -500,9 +500,9 @@ class TestUserListCalls(_BaseTestCalls):
     ):
         user_uuid = 'user-uuid'
         my_call_id = new_call_id()
-        my_second_call_id = new_call_id(leap=1)
-        others_call_id = new_call_id(leap=2)
-        no_user_call_id = new_call_id(leap=3)
+        my_second_call_id = new_call_id()
+        others_call_id = new_call_id()
+        no_user_call_id = new_call_id()
         self.ari.set_channels(
             MockChannel(id=my_call_id, channelvars={'WAZO_USERUUID': user_uuid}),
             MockChannel(id=my_second_call_id, channelvars={'WAZO_USERUUID': user_uuid}),
@@ -536,8 +536,8 @@ class TestUserListCalls(_BaseTestCalls):
     ):
         first_id, second_id, third_id = (
             new_call_id(),
-            new_call_id(leap=1),
-            new_call_id(leap=2),
+            new_call_id(),
+            new_call_id(),
         )
         user_uuid = 'user-uuid'
         self.ari.set_channels(
@@ -572,7 +572,7 @@ class TestUserListCalls(_BaseTestCalls):
     def test_given_some_calls_and_no_applications_when_list_calls_by_application_then_no_calls(
         self,
     ):
-        first_id, second_id = new_call_id(), new_call_id(leap=1)
+        first_id, second_id = new_call_id(), new_call_id()
         user_uuid = 'user-uuid'
         self.ari.set_channels(MockChannel(id=first_id), MockChannel(id=second_id))
         self._set_channel_variable(
@@ -592,9 +592,9 @@ class TestUserListCalls(_BaseTestCalls):
     ):
         first_id, second_id, third_id, fourth_id = (
             new_call_id(),
-            new_call_id(leap=1),
-            new_call_id(leap=2),
-            new_call_id(leap=3),
+            new_call_id(),
+            new_call_id(),
+            new_call_id(),
         )
         user_uuid = 'user-uuid'
         self.ari.set_channels(
@@ -645,7 +645,7 @@ class TestUserListCalls(_BaseTestCalls):
         )
 
     def test_given_local_channels_when_list_then_local_channels_are_ignored(self):
-        first_id, second_id = new_call_id(), new_call_id(leap=1)
+        first_id, second_id = new_call_id(), new_call_id()
         user_uuid = 'user-uuid'
         self.ari.set_channels(
             MockChannel(id=first_id),
@@ -673,7 +673,7 @@ class TestUserListCalls(_BaseTestCalls):
     def test_extra_fields_on_user_calls(self):
         user_uuid = 'user-uuid'
         my_call = new_call_id()
-        my_second_call = new_call_id(leap=1)
+        my_second_call = new_call_id()
         self.ari.set_channels(
             MockChannel(
                 id=my_call,
@@ -723,7 +723,7 @@ class TestGetCall(_BaseTestCalls):
         )
 
     def test_given_one_call_when_get_call_then_get_call(self):
-        first_id, second_id = new_call_id(), new_call_id(leap=1)
+        first_id, second_id = new_call_id(), new_call_id()
         self.ari.set_channels(
             MockChannel(
                 id=first_id,
@@ -775,7 +775,7 @@ class TestGetCall(_BaseTestCalls):
         user_uuid_2 = str(uuid.uuid4())
         tenant_uuid_1 = str(uuid.uuid4())
         tenant_uuid_2 = str(uuid.uuid4())
-        first_id, second_id = new_call_id(), new_call_id(leap=1)
+        first_id, second_id = new_call_id(), new_call_id()
         self.ari.set_channels(MockChannel(id=first_id), MockChannel(id=second_id))
         self._set_channel_variable(
             {
@@ -2440,7 +2440,7 @@ class TestConnectUser(_BaseTestCalls):
         self,
     ):
         call_id = new_call_id()
-        my_new_call_id = new_call_id(leap=1)
+        my_new_call_id = new_call_id()
         self.ari.set_channels(
             MockChannel(id=call_id),
             MockChannel(id=my_new_call_id),
@@ -2486,7 +2486,7 @@ class TestConnectUser(_BaseTestCalls):
         self,
     ):
         call_id = new_call_id()
-        my_new_call_id = new_call_id(leap=1)
+        my_new_call_id = new_call_id()
         self.ari.set_channels(
             MockChannel(id=call_id),
             MockChannel(id=my_new_call_id),
@@ -3157,9 +3157,9 @@ class TestCallHold(_BaseTestCalls):
 
     def test_user_hold(self):
         user_channel_id = new_call_id()
-        someone_else_channel_id = new_call_id(leap=1)
-        user_channel_id_device_no_plugin = new_call_id(leap=2)
-        user_channel_id_no_device = new_call_id(leap=3)
+        someone_else_channel_id = new_call_id()
+        user_channel_id_device_no_plugin = new_call_id()
+        user_channel_id_no_device = new_call_id()
         user_uuid = str(uuid.uuid4())
         someone_else_uuid = str(uuid.uuid4())
         token = self.given_user_token(user_uuid)
@@ -3248,9 +3248,9 @@ class TestCallHold(_BaseTestCalls):
 
     def test_user_unhold(self):
         user_channel_id = new_call_id()
-        someone_else_channel_id = new_call_id(leap=1)
-        user_channel_id_device_no_plugin = new_call_id(leap=2)
-        user_channel_id_no_device = new_call_id(leap=3)
+        someone_else_channel_id = new_call_id()
+        user_channel_id_device_no_plugin = new_call_id()
+        user_channel_id_no_device = new_call_id()
         user_uuid = str(uuid.uuid4())
         someone_else_uuid = str(uuid.uuid4())
         token = self.given_user_token(user_uuid)
@@ -3405,9 +3405,9 @@ class TestCallAnswer(_BaseTestCalls):
         someone_else_uuid = str(uuid.uuid4())
         token = self.given_user_token(user_uuid)
         user_channel_id = new_call_id()
-        someone_else_channel_id = new_call_id(leap=1)
-        user_channel_id_device_no_plugin = new_call_id(leap=2)
-        user_channel_id_no_device = new_call_id(leap=3)
+        someone_else_channel_id = new_call_id()
+        user_channel_id_device_no_plugin = new_call_id()
+        user_channel_id_no_device = new_call_id()
         self.calld_client.set_token(token)
         self.ari.set_channels(
             MockChannel(

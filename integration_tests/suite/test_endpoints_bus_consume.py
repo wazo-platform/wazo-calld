@@ -29,9 +29,7 @@ class TestTrunkBusConsume(IntegrationTest):
         name = 'abcdef'
 
         self.ari.set_endpoints(
-            MockEndpoint(
-                'PJSIP', name, 'online', channel_ids=[call_id, new_call_id(leap=1)]
-            )
+            MockEndpoint('PJSIP', name, 'online', channel_ids=[call_id, new_call_id()])
         )
         self.confd.set_trunks(
             MockTrunk(
@@ -82,7 +80,7 @@ class TestTrunkBusConsume(IntegrationTest):
                 'PJSIP',
                 name,
                 'online',
-                channel_ids=[new_call_id(), new_call_id(leap=1)],
+                channel_ids=[new_call_id(), new_call_id()],
             )
         )
         self.confd.set_trunks(
@@ -102,7 +100,7 @@ class TestTrunkBusConsume(IntegrationTest):
         self.reset_clients()
         self.wait_strategy.wait(self)
         self.bus.send_ami_newchannel_event(
-            new_call_id(leap=2), channel='PJSIP/abcdef-00000001'
+            new_call_id(), channel='PJSIP/abcdef-00000001'
         )
 
         def assert_function():
@@ -336,9 +334,7 @@ class TestLineBusConsume(IntegrationTest):
         name = 'abcdef'
 
         self.ari.set_endpoints(
-            MockEndpoint(
-                'PJSIP', name, 'online', channel_ids=[call_id, new_call_id(leap=1)]
-            )
+            MockEndpoint('PJSIP', name, 'online', channel_ids=[call_id, new_call_id()])
         )
         self.confd.set_lines(
             MockLine(
@@ -389,7 +385,7 @@ class TestLineBusConsume(IntegrationTest):
                 'PJSIP',
                 name,
                 'online',
-                channel_ids=[new_call_id(), new_call_id(leap=1)],
+                channel_ids=[new_call_id(), new_call_id()],
             )
         )
         self.confd.set_lines(
@@ -411,7 +407,7 @@ class TestLineBusConsume(IntegrationTest):
         self.reset_clients()
         self.wait_strategy.wait(self)
         self.bus.send_ami_newchannel_event(
-            new_call_id(leap=2), channel='PJSIP/abcdef-00000001'
+            new_call_id(), channel='PJSIP/abcdef-00000001'
         )
 
         def assert_function():
