@@ -390,8 +390,14 @@ class LegacyCalldClient:
         requests.put = old_put
 
 
-def new_call_id(leap=0):
-    return format(time.time() + leap, '.2f')
+call_id_counter = 0
+
+
+def new_call_id():
+    current_time = int(time.time())
+    global call_id_counter
+    call_id_counter += 1
+    return f'{current_time}.{call_id_counter}'
 
 
 def new_uuid():

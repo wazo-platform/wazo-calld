@@ -151,6 +151,12 @@ class TestBusConsume(IntegrationTest):
                 },
             }
         )
+        self.ari.set_bridges(
+            MockBridge(
+                first_channel_id,
+                channels=[first_channel_id, second_channel_id],
+            )
+        )
 
         events = self.bus.accumulator(headers={'name': 'call_updated'})
 
@@ -210,9 +216,9 @@ class TestBusConsume(IntegrationTest):
         until.assert_(assert_function, tries=5)
 
     def test_when_channel_leaves_bridge_call_direction_updated(self):
-        first_channel_id = new_call_id(1)
-        second_channel_id = new_call_id(2)
-        third_channel_id = new_call_id(3)
+        first_channel_id = new_call_id()
+        second_channel_id = new_call_id()
+        third_channel_id = new_call_id()
         self.ari.set_bridges(
             MockBridge(
                 first_channel_id,
