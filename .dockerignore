@@ -1,5 +1,6 @@
 *.pyc
 .git
+.mypy_cache
 .tox
 debian
 integration_tests
