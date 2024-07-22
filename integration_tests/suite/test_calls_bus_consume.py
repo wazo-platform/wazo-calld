@@ -151,6 +151,12 @@ class TestBusConsume(IntegrationTest):
                 },
             }
         )
+        self.ari.set_bridges(
+            MockBridge(
+                first_channel_id,
+                channels=[first_channel_id, second_channel_id],
+            )
+        )
 
         events = self.bus.accumulator(headers={'name': 'call_updated'})
 
