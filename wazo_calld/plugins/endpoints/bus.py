@@ -1,4 +1,4 @@
-# Copyright 2019-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -155,6 +155,9 @@ class EventHandler:
             event['endpoint_sip']['name'],
             sip_username,
             event['trunk']['tenant_uuid'],
+        )
+        self._endpoint_status_cache.add_new_sip_endpoint(
+            event['endpoint_sip']['name'],
         )
 
     def on_trunk_endpoint_iax_associated(self, event):

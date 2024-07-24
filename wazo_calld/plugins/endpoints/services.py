@@ -72,6 +72,9 @@ class StatusCache:
 
         self._endpoints[endpoint.techno][endpoint.name] = endpoint
 
+    def add_new_sip_endpoint(self, endpoint_name):
+        self.add_endpoint(Endpoint('PJSIP', endpoint_name, None, []))
+
     def get(self, techno, name):
         if self._endpoints is None:
             raise CalldUninitializedError()
