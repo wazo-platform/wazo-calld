@@ -22,7 +22,12 @@ from wazo_calld.plugin_helpers.exceptions import InvalidExtension, UserPermissio
 
 from .call import Call
 from .dial_echo import DialEchoTimeout
-from .exceptions import CallConnectError, CallCreationError, NoSuchCall
+from .exceptions import (
+    CallConnectError,
+    CallCreationError,
+    CallOriginUnavailableError,
+    NoSuchCall,
+)
 from .state_persistor import ReadOnlyStatePersistor
 
 logger = logging.getLogger(__name__)
@@ -224,12 +229,20 @@ class CallsService:
             channel = self._ari.channels.get(channelId=channel_id)
 
         else:
-            if 'line_id' in request['source']:
-                endpoint = user.line(request['source']['line_id']).interface()
-            elif request['source']['all_lines']:
+            if request['source']['all_lines']:
                 endpoint = f"local/{source_user}@usersharedlines"
             else:
-                endpoint = user.main_line().interface()
+                user_line = (
+                    user.main_line()
+                    if 'line_id' not in request['source']
+                    else user.line(request['source']['line_id'])
+                )
+                endpoint = user_line.interface()
+                if user_line.protocol() == 'sip' and not user_line.is_online(self._ari):
+                    raise CallOriginUnavailableError(
+                        user_line.id,
+                        source_interface=endpoint,
+                    )
 
             context_name, extension, priority = (
                 requested_context,

@@ -189,6 +189,17 @@ def list_endpoints() -> Response:
     return make_response(json.dumps(result), 200, {'Content-Type': 'application/json'})
 
 
+@app.route('/ari/endpoints/<tech>/<resource>', methods=['GET'])
+def get_endpoint(tech: str, resource: str) -> Response | tuple[str, int]:
+    for endpoint in _responses['endpoints']:
+        if endpoint['technology'] == tech and endpoint['resource'] == resource:
+            result = endpoint
+            return make_response(
+                json.dumps(result), 200, {'Content-Type': 'application/json'}
+            )
+    return '', 404
+
+
 @app.route('/ari/channels/<channel_id>/variable', methods=['GET'])
 def channel_variable(channel_id: str) -> Response | tuple[str, int]:
     variable = request.args['variable']

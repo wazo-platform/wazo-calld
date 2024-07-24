@@ -27,8 +27,21 @@ class CallConnectError(APIException):
         super().__init__(
             status_code=400,
             message='Could not connect call: call has no application instance',
-            error_id='call-connect-error',
+            error_id='call-connect',
             details={'call_id': call_id},
+        )
+
+
+class CallOriginUnavailableError(APIException):
+    def __init__(self, line_id, source_interface=None):
+        super().__init__(
+            status_code=400,
+            message="Could not connect call: Could not dial caller's requested line",
+            error_id='call-origin-unavailable',
+            details={
+                'line_id': line_id,
+                'source_interface': source_interface,
+            },
         )
 
 

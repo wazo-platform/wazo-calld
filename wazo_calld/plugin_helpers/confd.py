@@ -164,6 +164,19 @@ class Line:
             interface = f'{interface}/autoanswer'
         return interface
 
+    def protocol(self):
+        line = self._get()
+        return line['protocol']
+
+    def is_online(self, ari):
+        line = self._get()
+        name = line['name']
+        tech = line['protocol']
+        if tech == 'sip':
+            tech = 'pjsip'
+
+        return ari.endpoints.get(tech=tech, resource=name).json['state'] == 'online'
+
 
 class Conference:
     def __init__(self, tenant_uuid, conference_id, confd_client):
