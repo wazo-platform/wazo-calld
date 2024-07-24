@@ -87,6 +87,7 @@ paths:
       summary: Hangup a call
       description: '**Required ACL:** `calld.calls.{call_id}.delete`'
       parameters:
+      - $ref: '#/parameters/TenantUUID'
       - $ref: '#/parameters/CallID'
       tags:
       - calls

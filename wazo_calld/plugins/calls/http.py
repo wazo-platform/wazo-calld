@@ -91,7 +91,8 @@ class CallResource(AuthResource):
 
     @required_acl('calld.calls.{call_id}.delete')
     def delete(self, call_id):
-        self.calls_service.hangup(call_id)
+        tenant = Tenant.autodetect()
+        self.calls_service.hangup(call_id, tenant.uuid)
 
         return None, 204
 

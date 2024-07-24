@@ -314,8 +314,13 @@ class CallsService:
 
         return self.make_call_from_channel(self._ari, channel)
 
-    def hangup(self, call_id):
+    def hangup(self, call_id, tenant_uuid=None):
         channel_id = call_id
+
+        channel_helper = Channel(channel_id, self._ari)
+        if tenant_uuid and channel_helper.tenant_uuid() != tenant_uuid:
+            raise NoSuchCall(channel_id)
+
         try:
             self._ari.channels.get(channelId=channel_id)
         except ARINotFound:

@@ -822,8 +822,13 @@ class TestDeleteCall(_BaseTestCalls):
     def test_given_one_call_when_delete_call_then_call_hungup(self):
         call_id = 'call-id'
         self.ari.set_channels(MockChannel(id=call_id, state='Up'))
+        self._set_channel_variable(
+            {
+                call_id: {'WAZO_TENANT_UUID': VALID_TENANT},
+            }
+        )
 
-        self.calld.hangup_call(call_id)
+        self.calld_client.calls.hangup(call_id)
 
         assert_that(
             self.ari.requests(),
@@ -835,6 +840,30 @@ class TestDeleteCall(_BaseTestCalls):
                     )
                 )
             ),
+        )
+
+    def test_delete_call_tenant_isolation(self):
+        user_uuid_1 = str(uuid.uuid4())
+        tenant_uuid_1 = str(uuid.uuid4())
+        tenant_uuid_2 = str(uuid.uuid4())
+        first_id, second_id = new_call_id(), new_call_id()
+        self.ari.set_channels(MockChannel(id=first_id), MockChannel(id=second_id))
+        self._set_channel_variable(
+            {
+                first_id: {'WAZO_TENANT_UUID': tenant_uuid_1},
+                second_id: {'WAZO_TENANT_UUID': tenant_uuid_2},
+            }
+        )
+        calld_1 = self.make_user_calld(user_uuid_1, tenant_uuid=tenant_uuid_1)
+
+        # call in same tenant = OK
+        calld_1.calls.hangup(first_id)
+        assert True  # no error
+
+        # call in different tenant = NOK
+        assert_that(
+            calling(calld_1.calls.hangup).with_args(second_id),
+            raises(CalldError).matching(has_properties(status_code=404)),
         )
 
 

@@ -2,10 +2,14 @@
 
 ## 24.11
 
-*  the following endpoints are now performing additional validation before starting a call, which introduces a different behavior for existing error conditions:
+* The following endpoints are now performing additional validation before starting a call, which introduces a different behavior for existing error conditions:
   * `POST /1.0/calls`
   * `POST /1.0/users/me/calls`
   If the requested source line is of type SIP, and is not registered nor available, the API will respond with a 400 status and error id `call-origin-unavailable`
+
+* The following endpoints now have Wazo-Tenant header to support multi-tenant
+
+  * `DELETE /1.0/calls/<call-id>`
 
 ## 24.10
 
