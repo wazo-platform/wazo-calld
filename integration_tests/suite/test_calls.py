@@ -1994,6 +1994,64 @@ class TestCreateCall(_BaseTestCalls):
             ),
         )
 
+    def test_create_call_tenant_isolation(self):
+        user_uuid_1 = str(uuid.uuid4())
+        user_uuid_2 = str(uuid.uuid4())
+        tenant_uuid_1 = str(uuid.uuid4())
+        tenant_uuid_2 = str(uuid.uuid4())
+
+        my_new_call_id = new_call_id()
+        self.confd.set_users(
+            MockUser(
+                uuid=user_uuid_1,
+                line_ids=['first-line-id'],
+                tenant_uuid=tenant_uuid_1,
+            ),
+            MockUser(
+                uuid=user_uuid_2,
+                line_ids=['first-line-id'],
+                tenant_uuid=tenant_uuid_2,
+            ),
+        )
+        self.confd.set_lines(
+            MockLine(
+                id='first-line-id', name='first-line-name', protocol=CONFD_SIP_PROTOCOL
+            )
+        )
+        self.ari.set_originates(MockChannel(id=my_new_call_id))
+        self.ari.set_endpoints(MockEndpoint('pjsip', 'first-line-name', 'online'))
+        self.amid.set_valid_exten('my-context', 'my-extension', 1)
+        calld_1 = self.make_user_calld(user_uuid_1, tenant_uuid=tenant_uuid_1)
+
+        call_args = {
+            'source': {'user': user_uuid_2},
+            'destination': {
+                'priority': 1,
+                'extension': 'my-extension',
+                'context': 'my-context',
+            },
+        }
+
+        # originate from user in different tenant = NOK
+        assert_that(
+            calling(calld_1.calls.make_call).with_args(call_args),
+            raises(CalldError).matching(
+                has_properties(status_code=400, error_id='invalid-user')
+            ),
+        )
+
+        call_args = {
+            'source': {'user': user_uuid_1},
+            'destination': {
+                'priority': 1,
+                'extension': 'my-extension',
+                'context': 'my-context',
+            },
+        }
+        # originate from user in same tenant = OK
+        result = calld_1.calls.make_call(call_args)
+        assert result['call_id'] == my_new_call_id
+
 
 class TestUserCreateCall(_BaseTestCalls):
     asset = 'basic_rest'

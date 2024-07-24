@@ -44,6 +44,7 @@ paths:
 
         '
       parameters:
+      - $ref: '#/parameters/TenantUUID'
       - name: body
         in: body
         description: Call parameters

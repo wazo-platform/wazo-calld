@@ -75,6 +75,10 @@ class User:
 
         return self._tenant_uuid
 
+    def assert_in_tenant_uuid(self, tenant_uuid):
+        if self.tenant_uuid != tenant_uuid:
+            raise InvalidUserUUID(self.uuid)
+
     def main_line(self):
         try:
             lines = self._confd.users.get(self.uuid, tenant_uuid=self.tenant_uuid)[

@@ -143,7 +143,7 @@ class CallsService:
             for channel in filtered_channels
         ]
 
-    def originate(self, request):
+    def originate(self, tenant_uuid, request):
         requested_context = request['destination']['context']
         requested_extension = request['destination']['extension']
         requested_priority = request['destination']['priority']
@@ -155,9 +155,11 @@ class CallsService:
             raise InvalidExtension(requested_context, requested_extension)
 
         source_user = request['source']['user']
+        user = User(source_user, self._confd)
+        user.assert_in_tenant_uuid(tenant_uuid)
+
         variables = request.get('variables', {})
         dial_echo_request_id = None
-        user = User(source_user, self._confd)
 
         if request['source']['from_mobile']:
             source_mobile = user.mobile_phone_number()
@@ -276,7 +278,7 @@ class CallsService:
         call.dialed_extension = request['destination']['extension']
         return call
 
-    def originate_user(self, request, user_uuid):
+    def originate_user(self, tenant_uuid, request, user_uuid):
         if 'line_id' in request and not request['from_mobile']:
             context = User(user_uuid, self._confd).line(request['line_id']).context()
         else:
@@ -299,7 +301,7 @@ class CallsService:
             new_request['source']['line_id'] = request['line_id']
         if 'auto_answer_caller' in request:
             new_request['source']['auto_answer'] = request['auto_answer_caller']
-        return self.originate(new_request)
+        return self.originate(tenant_uuid, new_request)
 
     def get(self, call_id, tenant_uuid=None):
         channel_id = call_id

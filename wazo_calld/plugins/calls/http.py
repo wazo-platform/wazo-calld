@@ -42,9 +42,10 @@ class CallsResource(AuthResource):
 
     @required_acl('calld.calls.create')
     def post(self):
+        tenant = Tenant.autodetect()
         request_body = call_request_schema.load(request.get_json(force=True))
 
-        call = self.calls_service.originate(request_body)
+        call = self.calls_service.originate(tenant.uuid, request_body)
 
         return call_schema.dump(call), 201
 
@@ -69,11 +70,12 @@ class MyCallsResource(AuthResource):
 
     @required_acl('calld.users.me.calls.create')
     def post(self):
+        tenant = Tenant.autodetect()
         request_body = user_call_request_schema.load(request.get_json(force=True))
 
         user_uuid = get_token_user_uuid_from_request()
 
-        call = self.calls_service.originate_user(request_body, user_uuid)
+        call = self.calls_service.originate_user(tenant.uuid, request_body, user_uuid)
 
         return call_schema.dump(call), 201
 
