@@ -9,14 +9,14 @@ from unittest.mock import sentinel as s
 from hamcrest import assert_that, calling, has_properties, not_, raises
 
 from ..bus import EventHandler
-from ..services import ConfdCache, Endpoint
+from ..services import ConfdCache, Endpoint, StatusCache
 
 
 class TestBusEvent(TestCase):
     def setUp(self):
         endpoint = self.updated_endpoint = Mock(Endpoint)
 
-        class StatusCacheMock:
+        class StatusCacheMock(Mock):
             call_count = 0
 
             def assert_not_called(self):
@@ -29,7 +29,7 @@ class TestBusEvent(TestCase):
                 endpoint.name = name
                 yield endpoint
 
-        self.endpoint_status_cache = StatusCacheMock()
+        self.endpoint_status_cache = StatusCacheMock(StatusCache)
         self.confd_cache = Mock(ConfdCache)
         self.handler = EventHandler(self.endpoint_status_cache, self.confd_cache)
 
@@ -315,6 +315,10 @@ class TestBusEvent(TestCase):
             name,
             username,
             tenant_uuid,
+        )
+
+        self.endpoint_status_cache.add_new_sip_endpoint.assert_called_once_with(
+            event['endpoint_sip']['name']
         )
 
     def test_on_line_endpoint_sccp_associated(self):
