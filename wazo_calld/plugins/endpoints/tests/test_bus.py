@@ -316,7 +316,6 @@ class TestBusEvent(TestCase):
             username,
             tenant_uuid,
         )
-
         self.endpoint_status_cache.add_new_sip_endpoint.assert_called_once_with(
             event['endpoint_sip']['name']
         )
@@ -374,7 +373,6 @@ class TestBusEvent(TestCase):
             None,
             tenant_uuid,
         )
-
         self.endpoint_status_cache.add_new_iax_endpoint.assert_called_once_with(
             event['endpoint_iax']['name']
         )
@@ -489,11 +487,17 @@ class TestBusEvent(TestCase):
         self.confd_cache.delete_line.assert_called_once_with(42)
 
     def test_on_trunk_deleted(self):
+        self.confd_cache.get_trunk_by_id.return_value = {
+            'technology': 'sip',
+            'name': 'foobar',
+        }
         event = {'id': 42}
 
         self.handler.on_trunk_endpoint_deleted(event)
 
         self.confd_cache.delete_trunk.assert_called_once_with(42)
+        self.confd_cache.get_trunk_by_id.assert_called_once_with(42)
+        self.endpoint_status_cache.pop.assert_called_once_with('PJSIP', 'foobar')
 
     def test_on_line_edited(self):
         event = {
