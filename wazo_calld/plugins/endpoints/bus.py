@@ -208,9 +208,10 @@ class EventHandler:
     def on_trunk_endpoint_deleted(self, event):
         trunk = self._confd_cache.get_trunk_by_id(event['id'])
         self._confd_cache.delete_trunk(event['id'])
-        self._endpoint_status_cache.pop(
-            self.techno_map[trunk['technology']], trunk['name']
-        )
+        if trunk:
+            self._endpoint_status_cache.pop(
+                self.techno_map[trunk['technology']], trunk['name']
+            )
 
     def on_endpoint_sip_updated(self, event):
         trunk = event['trunk']
