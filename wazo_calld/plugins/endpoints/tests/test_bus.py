@@ -375,6 +375,10 @@ class TestBusEvent(TestCase):
             tenant_uuid,
         )
 
+        self.endpoint_status_cache.add_new_iax_endpoint.assert_called_once_with(
+            event['endpoint_iax']['name']
+        )
+
     def test_on_line_endpoint_custom_associated(self):
         line_id = 42
         tenant_uuid = '2c34c282-433e-4bb8-8d56-fec14ff7e1e9'

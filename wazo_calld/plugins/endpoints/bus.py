@@ -168,6 +168,9 @@ class EventHandler:
             None,
             event['trunk']['tenant_uuid'],
         )
+        self._endpoint_status_cache.add_new_iax_endpoint(
+            event['endpoint_iax']['name'],
+        )
 
     def on_line_endpoint_custom_associated(self, event):
         self._confd_cache.add_line(
