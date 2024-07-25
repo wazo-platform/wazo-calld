@@ -112,7 +112,16 @@ class TestDialedFrom(IntegrationTest):
                 id=new_call_id,
             ),
         )
-        self.ari.set_channel_variable({new_call_id: {'WAZO_USERUUID': 'user-uuid'}})
+        self.ari.set_channel_variable(
+            {
+                call_id: {
+                    'WAZO_TENANT_UUID': VALID_TENANT,
+                },
+                new_call_id: {
+                    'WAZO_USERUUID': 'user-uuid',
+                },
+            }
+        )
         self.ari.set_global_variables(
             {
                 f'XIVO_CHANNELS_{call_id}': json.dumps(
@@ -120,7 +129,9 @@ class TestDialedFrom(IntegrationTest):
                 )
             }
         )
-        self.confd.set_users(MockUser(uuid='user-uuid', line_ids=['line-id']))
+        self.confd.set_users(
+            MockUser(uuid='user-uuid', line_ids=['line-id'], tenant_uuid=VALID_TENANT)
+        )
         self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='pjsip'))
         self.ari.set_originates(MockChannel(id=new_call_id))
 
