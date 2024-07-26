@@ -704,9 +704,15 @@ class CallsService:
         self._verify_user(call_id, user_uuid)
         self.record_stop(call_id)
 
-    def answer(self, call_id):
+    def answer(self, tenant_uuid, call_id):
+        channel_id = call_id
+
+        channel_helper = Channel(channel_id, self._ari)
+        if tenant_uuid and channel_helper.tenant_uuid() != tenant_uuid:
+            raise NoSuchCall(call_id)
+
         try:
-            channel = self._ari.channels.get(channelId=call_id)
+            channel = self._ari.channels.get(channelId=channel_id)
         except ARINotFound:
             raise NoSuchCall(call_id)
 
@@ -714,9 +720,9 @@ class CallsService:
 
         self._phoned_client.answer_endpoint(protocol_interface.interface)
 
-    def answer_user(self, call_id, user_uuid):
+    def answer_user(self, tenant_uuid, call_id, user_uuid):
         self._verify_user(call_id, user_uuid)
-        self.answer(call_id)
+        self.answer(tenant_uuid, call_id)
 
     def set_answered_time(self, channel_id):
         try:

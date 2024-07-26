@@ -227,6 +227,7 @@ paths:
       to handle the event.
       '
       parameters:
+      - $ref: '#/parameters/TenantUUID'
       - $ref: '#/parameters/CallID'
       tags:
       - calls

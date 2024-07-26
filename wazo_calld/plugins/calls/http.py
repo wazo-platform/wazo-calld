@@ -278,7 +278,8 @@ class CallAnswerResource(AuthResource):
 
     @required_acl('calld.calls.{call_id}.answer.update')
     def put(self, call_id):
-        self.calls_service.answer(call_id)
+        tenant = Tenant.autodetect()
+        self.calls_service.answer(tenant.uuid, call_id)
         return '', 204
 
 
@@ -288,8 +289,9 @@ class MyCallAnswerResource(AuthResource):
 
     @required_acl('calld.users.me.calls.{call_id}.answer.update')
     def put(self, call_id):
+        tenant = Tenant.autodetect()
         user_uuid = get_token_user_uuid_from_request()
-        self.calls_service.answer_user(call_id, user_uuid)
+        self.calls_service.answer_user(tenant.uuid, call_id, user_uuid)
         return '', 204
 
 

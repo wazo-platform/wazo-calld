@@ -12,6 +12,7 @@
   * `POST /1.0/calls`
   * `DELETE /1.0/calls/<call-id>`
   * `PUT /1.0/calls/<call_id>/user/<user_uuid>`
+  * `PUT /1.0/calls/{call_id}/answer`
   * `PUT /1.0/calls/{call_id}/dtmf`
   * `PUT /1.0/calls/{call_id}/hold/start`
   * `PUT /1.0/calls/{call_id}/hold/stop`
