@@ -72,11 +72,23 @@ class StatusCache:
 
         self._endpoints[endpoint.techno][endpoint.name] = endpoint
 
+    def add_new_sip_endpoint(self, endpoint_name):
+        self.add_endpoint(Endpoint('PJSIP', endpoint_name, None, []))
+
+    def add_new_iax_endpoint(self, endpoint_name):
+        self.add_endpoint(Endpoint('IAX2', endpoint_name, None, []))
+
     def get(self, techno, name):
         if self._endpoints is None:
             raise CalldUninitializedError()
 
         return self._endpoints.get(techno, {}).get(name)
+
+    def pop(self, techno, name):
+        if self._endpoints is None:
+            raise CalldUninitializedError()
+
+        return self._endpoints.get(techno, {}).pop(name, None)
 
     def initialize(self):
         logger.debug('initializing endpoint status...')
@@ -151,8 +163,9 @@ class ConfdCache:
             'name': name,
             'tenant_uuid': tenant_uuid,
         }
-        self._trunks.setdefault(techno, {'name': {}, 'username': {}})
+        self._trunks.setdefault(techno, {'id': {}, 'name': {}, 'username': {}})
         self._trunks[techno]['name'][name] = value
+        self._trunks[techno]['id'][trunk_id] = value
         if username:
             self._trunks[techno].setdefault('username', {})
             self._trunks[techno]['username'][username] = value
@@ -186,6 +199,14 @@ class ConfdCache:
 
     def get_trunk(self, techno, name):
         return self._get_endpoint_by_index(techno, name, self._trunks, index='name')
+
+    def get_trunk_by_id(self, trunk_id):
+        for techno in self._trunks.keys():
+            if trunk := self._get_endpoint_by_index(
+                techno, trunk_id, self._trunks, index='id'
+            ):
+                return trunk
+        return None
 
     def get_trunk_by_username(self, techno, username):
         return self._get_endpoint_by_index(
@@ -297,8 +318,9 @@ class ConfdCache:
                 'tenant_uuid': trunk['tenant_uuid'],
             }
 
-            self._trunks.setdefault(techno, {'name': {}, 'username': {}})
+            self._trunks.setdefault(techno, {'id': {}, 'name': {}, 'username': {}})
             self._trunks[techno]['name'][name] = value
+            self._trunks[techno]['id'][trunk['id']] = value
             self._trunks[techno]['username'][username] = value
 
         for trunk in trunks:

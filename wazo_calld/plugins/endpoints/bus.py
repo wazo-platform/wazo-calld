@@ -1,4 +1,4 @@
-# Copyright 2019-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -7,6 +7,12 @@ logger = logging.getLogger(__name__)
 
 
 class EventHandler:
+    techno_map = {
+        'sip': 'PJSIP',
+        'iax': 'IAX2',
+        'custom': 'custom',
+    }
+
     def __init__(self, endpoint_status_cache, confd_cache):
         self._endpoint_status_cache = endpoint_status_cache
         self._confd_cache = confd_cache
@@ -156,6 +162,9 @@ class EventHandler:
             sip_username,
             event['trunk']['tenant_uuid'],
         )
+        self._endpoint_status_cache.add_new_sip_endpoint(
+            event['endpoint_sip']['name'],
+        )
 
     def on_trunk_endpoint_iax_associated(self, event):
         self._confd_cache.add_trunk(
@@ -164,6 +173,9 @@ class EventHandler:
             event['endpoint_iax']['name'],
             None,
             event['trunk']['tenant_uuid'],
+        )
+        self._endpoint_status_cache.add_new_iax_endpoint(
+            event['endpoint_iax']['name'],
         )
 
     def on_line_endpoint_custom_associated(self, event):
@@ -194,7 +206,12 @@ class EventHandler:
         self._confd_cache.delete_line(event['id'])
 
     def on_trunk_endpoint_deleted(self, event):
+        trunk = self._confd_cache.get_trunk_by_id(event['id'])
         self._confd_cache.delete_trunk(event['id'])
+        if trunk:
+            self._endpoint_status_cache.pop(
+                self.techno_map[trunk['technology']], trunk['name']
+            )
 
     def on_endpoint_sip_updated(self, event):
         trunk = event['trunk']

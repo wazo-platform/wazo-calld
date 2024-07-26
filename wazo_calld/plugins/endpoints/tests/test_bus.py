@@ -9,14 +9,14 @@ from unittest.mock import sentinel as s
 from hamcrest import assert_that, calling, has_properties, not_, raises
 
 from ..bus import EventHandler
-from ..services import ConfdCache, Endpoint
+from ..services import ConfdCache, Endpoint, StatusCache
 
 
 class TestBusEvent(TestCase):
     def setUp(self):
         endpoint = self.updated_endpoint = Mock(Endpoint)
 
-        class StatusCacheMock:
+        class StatusCacheMock(Mock):
             call_count = 0
 
             def assert_not_called(self):
@@ -29,7 +29,7 @@ class TestBusEvent(TestCase):
                 endpoint.name = name
                 yield endpoint
 
-        self.endpoint_status_cache = StatusCacheMock()
+        self.endpoint_status_cache = StatusCacheMock(StatusCache)
         self.confd_cache = Mock(ConfdCache)
         self.handler = EventHandler(self.endpoint_status_cache, self.confd_cache)
 
@@ -316,6 +316,9 @@ class TestBusEvent(TestCase):
             username,
             tenant_uuid,
         )
+        self.endpoint_status_cache.add_new_sip_endpoint.assert_called_once_with(
+            event['endpoint_sip']['name']
+        )
 
     def test_on_line_endpoint_sccp_associated(self):
         line_id = 42
@@ -369,6 +372,9 @@ class TestBusEvent(TestCase):
             name,
             None,
             tenant_uuid,
+        )
+        self.endpoint_status_cache.add_new_iax_endpoint.assert_called_once_with(
+            event['endpoint_iax']['name']
         )
 
     def test_on_line_endpoint_custom_associated(self):
@@ -481,11 +487,17 @@ class TestBusEvent(TestCase):
         self.confd_cache.delete_line.assert_called_once_with(42)
 
     def test_on_trunk_deleted(self):
+        self.confd_cache.get_trunk_by_id.return_value = {
+            'technology': 'sip',
+            'name': 'foobar',
+        }
         event = {'id': 42}
 
         self.handler.on_trunk_endpoint_deleted(event)
 
         self.confd_cache.delete_trunk.assert_called_once_with(42)
+        self.confd_cache.get_trunk_by_id.assert_called_once_with(42)
+        self.endpoint_status_cache.pop.assert_called_once_with('PJSIP', 'foobar')
 
     def test_on_line_edited(self):
         event = {
