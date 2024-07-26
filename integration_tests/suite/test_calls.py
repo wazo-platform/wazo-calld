@@ -3534,6 +3534,41 @@ class TestCallHold(_BaseTestCalls):
             ),
         )
 
+    def test_hold_unhold_tenant_isolation(self):
+        user_uuid_1 = str(uuid.uuid4())
+        tenant_uuid_1 = str(uuid.uuid4())
+        tenant_uuid_2 = str(uuid.uuid4())
+        call_id_1 = new_call_id()
+        call_id_2 = new_call_id()
+        self.ari.set_channels(
+            MockChannel(id=call_id_1, state='Up', name='PJSIP/abcdef-000001'),
+            MockChannel(id=call_id_2, state='Up', name='PJSIP/abcdeg-000002'),
+        )
+        self._set_channel_variable(
+            {
+                call_id_1: {'WAZO_TENANT_UUID': tenant_uuid_1},
+                call_id_2: {'WAZO_TENANT_UUID': tenant_uuid_2},
+            }
+        )
+        user_calld = self.make_user_calld(user_uuid_1, tenant_uuid=tenant_uuid_1)
+
+        # hold/unhold channel from other tenant = NOK
+        with pytest.raises(CalldError) as exc_info:
+            user_calld.calls.start_hold(call_id_2)
+
+        calld_error = exc_info.value
+        assert calld_error.status_code == 404, calld_error
+
+        with pytest.raises(CalldError) as exc_info:
+            user_calld.calls.stop_hold(call_id_2)
+
+        calld_error = exc_info.value
+        assert calld_error.status_code == 404, calld_error
+
+        # hold/unhold channel from same tenant = OK
+        user_calld.calls.start_hold(call_id_1)
+        user_calld.calls.stop_hold(call_id_1)
+
     def test_user_hold(self):
         user_channel_id = new_call_id()
         someone_else_channel_id = new_call_id()

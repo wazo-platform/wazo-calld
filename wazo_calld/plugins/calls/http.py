@@ -190,7 +190,8 @@ class CallHoldResource(AuthResource):
 
     @required_acl('calld.calls.{call_id}.hold.start.update')
     def put(self, call_id):
-        self.calls_service.hold(call_id)
+        tenant = Tenant.autodetect()
+        self.calls_service.hold(tenant.uuid, call_id)
         return '', 204
 
 
@@ -200,7 +201,8 @@ class CallUnholdResource(AuthResource):
 
     @required_acl('calld.calls.{call_id}.hold.stop.update')
     def put(self, call_id):
-        self.calls_service.unhold(call_id)
+        tenant = Tenant.autodetect()
+        self.calls_service.unhold(tenant.uuid, call_id)
         return '', 204
 
 
@@ -210,8 +212,9 @@ class MyCallHoldResource(AuthResource):
 
     @required_acl('calld.users.me.calls.{call_id}.hold.start.update')
     def put(self, call_id):
+        tenant = Tenant.autodetect()
         user_uuid = get_token_user_uuid_from_request()
-        self.calls_service.hold_user(call_id, user_uuid)
+        self.calls_service.hold_user(tenant.uuid, call_id, user_uuid)
         return '', 204
 
 
@@ -221,8 +224,9 @@ class MyCallUnholdResource(AuthResource):
 
     @required_acl('calld.users.me.calls.{call_id}.hold.stop.update')
     def put(self, call_id):
+        tenant = Tenant.autodetect()
         user_uuid = get_token_user_uuid_from_request()
-        self.calls_service.unhold_user(call_id, user_uuid)
+        self.calls_service.unhold_user(tenant.uuid, call_id, user_uuid)
         return '', 204
 
 

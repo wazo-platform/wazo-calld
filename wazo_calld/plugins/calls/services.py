@@ -571,9 +571,15 @@ class CallsService:
         self._verify_user(call_id, user_uuid)
         self.send_dtmf(tenant_uuid, call_id, digits)
 
-    def hold(self, call_id):
+    def hold(self, tenant_uuid, call_id):
+        channel_id = call_id
+
+        channel_helper = Channel(channel_id, self._ari)
+        if tenant_uuid and channel_helper.tenant_uuid() != tenant_uuid:
+            raise NoSuchCall(call_id)
+
         try:
-            channel = self._ari.channels.get(channelId=call_id)
+            channel = self._ari.channels.get(channelId=channel_id)
         except ARINotFound:
             raise NoSuchCall(call_id)
 
@@ -581,13 +587,19 @@ class CallsService:
 
         self._phoned_client.hold_endpoint(protocol_interface.interface)
 
-    def hold_user(self, call_id, user_uuid):
+    def hold_user(self, tenant_uuid, call_id, user_uuid):
         self._verify_user(call_id, user_uuid)
-        self.hold(call_id)
+        self.hold(tenant_uuid, call_id)
 
-    def unhold(self, call_id):
+    def unhold(self, tenant_uuid, call_id):
+        channel_id = call_id
+
+        channel_helper = Channel(channel_id, self._ari)
+        if tenant_uuid and channel_helper.tenant_uuid() != tenant_uuid:
+            raise NoSuchCall(call_id)
+
         try:
-            channel = self._ari.channels.get(channelId=call_id)
+            channel = self._ari.channels.get(channelId=channel_id)
         except ARINotFound:
             raise NoSuchCall(call_id)
 
@@ -595,9 +607,9 @@ class CallsService:
 
         self._phoned_client.unhold_endpoint(protocol_interface.interface)
 
-    def unhold_user(self, call_id, user_uuid):
+    def unhold_user(self, tenant_uuid, call_id, user_uuid):
         self._verify_user(call_id, user_uuid)
-        self.unhold(call_id)
+        self.unhold(tenant_uuid, call_id)
 
     def _find_channel_to_record(self, call_id):
         try:
