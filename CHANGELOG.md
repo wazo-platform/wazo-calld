@@ -16,6 +16,8 @@
   * `PUT /1.0/calls/{call_id}/dtmf`
   * `PUT /1.0/calls/{call_id}/hold/start`
   * `PUT /1.0/calls/{call_id}/hold/stop`
+  * `PUT /1.0/calls/{call_id}/record/start`
+  * `PUT /1.0/calls/{call_id}/record/stop`
   * `PUT /1.0/calls/{call_id}/mute/start`
   * `PUT /1.0/calls/{call_id}/mute/stop`
 

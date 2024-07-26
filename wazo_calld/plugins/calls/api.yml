@@ -188,6 +188,7 @@ paths:
       summary: Start recording a call
       description: '**Required ACL:** `calld.calls.{call_id}.record.start.update`'
       parameters:
+      - $ref: '#/parameters/TenantUUID'
       - $ref: '#/parameters/CallID'
       tags:
       - calls
@@ -205,6 +206,7 @@ paths:
       summary: Stop recording a call
       description: '**Required ACL:** `calld.calls.{call_id}.record.stop.update`'
       parameters:
+      - $ref: '#/parameters/TenantUUID'
       - $ref: '#/parameters/CallID'
       tags:
       - calls

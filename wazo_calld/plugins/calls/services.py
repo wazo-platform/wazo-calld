@@ -663,8 +663,14 @@ class CallsService:
 
         return channel
 
-    def record_start(self, call_id):
-        channel = self._find_channel_to_record(call_id)
+    def record_start(self, tenant_uuid, call_id):
+        channel_id = call_id
+
+        channel_helper = Channel(channel_id, self._ari)
+        if tenant_uuid and channel_helper.tenant_uuid() != tenant_uuid:
+            raise NoSuchCall(call_id)
+
+        channel = self._find_channel_to_record(channel_id)
         channel_variables = channel.json['channelvars']
 
         if channel_variables['WAZO_CALL_RECORD_ACTIVE'] == '1':
@@ -684,13 +690,19 @@ class CallsService:
 
         ami.record_start(self._ami, channel.id, filename, mix_monitor_options or None)
 
-    def record_start_user(self, call_id, user_uuid):
+    def record_start_user(self, tenant_uuid, call_id, user_uuid):
         self._verify_user(call_id, user_uuid)
-        self.record_start(call_id)
+        self.record_start(tenant_uuid, call_id)
 
-    def record_stop(self, call_id):
+    def record_stop(self, tenant_uuid, call_id):
+        channel_id = call_id
+
+        channel_helper = Channel(channel_id, self._ari)
+        if tenant_uuid and channel_helper.tenant_uuid() != tenant_uuid:
+            raise NoSuchCall(call_id)
+
         try:
-            channel = self._ari.channels.get(channelId=call_id)
+            channel = self._ari.channels.get(channelId=channel_id)
         except ARINotFound:
             raise NoSuchCall(call_id)
 
@@ -698,11 +710,11 @@ class CallsService:
         if not call_record_active or call_record_active == '0':
             return
 
-        ami.record_stop(self._ami, call_id)
+        ami.record_stop(self._ami, channel_id)
 
-    def record_stop_user(self, call_id, user_uuid):
+    def record_stop_user(self, tenant_uuid, call_id, user_uuid):
         self._verify_user(call_id, user_uuid)
-        self.record_stop(call_id)
+        self.record_stop(tenant_uuid, call_id)
 
     def answer(self, tenant_uuid, call_id):
         channel_id = call_id

@@ -236,7 +236,8 @@ class CallRecordStartResource(AuthResource):
 
     @required_acl('calld.calls.{call_id}.record.start.update')
     def put(self, call_id):
-        self.calls_service.record_start(call_id)
+        tenant = Tenant.autodetect()
+        self.calls_service.record_start(tenant.uuid, call_id)
         return '', 204
 
 
@@ -246,7 +247,8 @@ class CallRecordStopResource(AuthResource):
 
     @required_acl('calld.calls.{call_id}.record.stop.update')
     def put(self, call_id):
-        self.calls_service.record_stop(call_id)
+        tenant = Tenant.autodetect()
+        self.calls_service.record_stop(tenant.uuid, call_id)
         return '', 204
 
 
@@ -256,8 +258,9 @@ class MyCallRecordStopResource(AuthResource):
 
     @required_acl('calld.users.me.calls.{call_id}.record.stop.update')
     def put(self, call_id):
+        tenant = Tenant.autodetect()
         user_uuid = get_token_user_uuid_from_request()
-        self.calls_service.record_stop_user(call_id, user_uuid)
+        self.calls_service.record_stop_user(tenant.uuid, call_id, user_uuid)
         return '', 204
 
 
@@ -267,8 +270,9 @@ class MyCallRecordStartResource(AuthResource):
 
     @required_acl('calld.users.me.calls.{call_id}.record.start.update')
     def put(self, call_id):
+        tenant = Tenant.autodetect()
         user_uuid = get_token_user_uuid_from_request()
-        self.calls_service.record_start_user(call_id, user_uuid)
+        self.calls_service.record_start_user(tenant.uuid, call_id, user_uuid)
         return '', 204
 
 

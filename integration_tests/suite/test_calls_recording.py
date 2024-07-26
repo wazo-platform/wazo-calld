@@ -3,6 +3,7 @@
 
 import uuid
 
+import pytest
 from hamcrest import assert_that, calling, has_entries, has_items, has_properties, not_
 from wazo_calld_client.exceptions import CalldError
 from wazo_test_helpers import until
@@ -220,11 +221,37 @@ class TestCallRecord(RealAsteriskIntegrationTest):
             not_(raises(CalldError)),
         )
 
-    def given_call_not_stasis(self, user_uuid=None, variables=None):
+    def test_put_record_tenant_isolation(self):
+        user_uuid_1 = str(uuid.uuid4())
+        tenant_uuid_1 = str(uuid.uuid4())
+        tenant_uuid_2 = str(uuid.uuid4())
+        channel_id_1 = self.given_call_not_stasis(tenant_uuid=tenant_uuid_1)
+        channel_id_2 = self.given_call_not_stasis(tenant_uuid=tenant_uuid_2)
+        user_calld = self.make_user_calld(user_uuid_1, tenant_uuid=tenant_uuid_1)
+
+        # record channel from other tenant = NOK
+        with pytest.raises(CalldError) as exc_info:
+            user_calld.calls.start_record(channel_id_2)
+
+        calld_error = exc_info.value
+        assert calld_error.status_code == 404, calld_error
+
+        with pytest.raises(CalldError) as exc_info:
+            user_calld.calls.stop_record(channel_id_2)
+
+        calld_error = exc_info.value
+        assert calld_error.status_code == 404, calld_error
+
+        # record channel from same tenant = OK
+        user_calld.calls.start_record(channel_id_1)
+        user_calld.calls.stop_record(channel_id_1)
+
+    def given_call_not_stasis(self, user_uuid=None, variables=None, tenant_uuid=None):
         user_uuid = user_uuid or str(uuid.uuid4())
+        tenant_uuid = tenant_uuid or VALID_TENANT
         variables = variables or {}
         variables.setdefault('WAZO_USERUUID', user_uuid)
-        variables.setdefault('WAZO_TENANT_UUID', VALID_TENANT)
+        variables.setdefault('WAZO_TENANT_UUID', tenant_uuid)
         variables.setdefault('WAZO_CALL_RECORD_SIDE', 'caller')
         call = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
