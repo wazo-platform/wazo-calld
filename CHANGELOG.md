@@ -14,6 +14,7 @@
   * `PUT /1.0/calls/<call_id>/user/<user_uuid>`
   * `PUT /1.0/calls/{call_id}/mute/start`
   * `PUT /1.0/calls/{call_id}/mute/stop`
+  * `PUT /1.0/calls/{call_id}/dtmf`
 
   In order to make an action in another tenant, you need to specify the `Wazo-Tenant` HTTP header.
 

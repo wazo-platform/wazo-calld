@@ -163,8 +163,9 @@ class CallDtmfResource(AuthResource):
 
     @required_acl('calld.calls.{call_id}.dtmf.update')
     def put(self, call_id):
+        tenant = Tenant.autodetect()
         request_args = call_dtmf_schema.load(request.args)
-        self.calls_service.send_dtmf(call_id, request_args['digits'])
+        self.calls_service.send_dtmf(tenant.uuid, call_id, request_args['digits'])
         return '', 204
 
 
@@ -174,9 +175,12 @@ class MyCallDtmfResource(AuthResource):
 
     @required_acl('calld.users.me.calls.{call_id}.dtmf.update')
     def put(self, call_id):
+        tenant = Tenant.autodetect()
         request_args = call_dtmf_schema.load(request.args)
         user_uuid = get_token_user_uuid_from_request()
-        self.calls_service.send_dtmf_user(call_id, user_uuid, request_args['digits'])
+        self.calls_service.send_dtmf_user(
+            tenant.uuid, call_id, user_uuid, request_args['digits']
+        )
         return '', 204
 
 

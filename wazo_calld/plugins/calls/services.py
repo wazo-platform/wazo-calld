@@ -552,17 +552,24 @@ class CallsService:
 
         return call
 
-    def send_dtmf(self, call_id, digits):
+    def send_dtmf(self, tenant_uuid, call_id, digits):
+        channel_id = call_id
+
+        channel_helper = Channel(channel_id, self._ari)
+        if tenant_uuid and channel_helper.tenant_uuid() != tenant_uuid:
+            raise NoSuchCall(call_id)
+
         try:
-            self._ari.channels.get(channelId=call_id)
+            self._ari.channels.get(channelId=channel_id)
         except ARINotFound:
             raise NoSuchCall(call_id)
-        for digit in digits:
-            ami.dtmf(self._ami, call_id, digit)
 
-    def send_dtmf_user(self, call_id, user_uuid, digits):
+        for digit in digits:
+            ami.dtmf(self._ami, channel_id, digit)
+
+    def send_dtmf_user(self, tenant_uuid, call_id, user_uuid, digits):
         self._verify_user(call_id, user_uuid)
-        self.send_dtmf(call_id, digits)
+        self.send_dtmf(tenant_uuid, call_id, digits)
 
     def hold(self, call_id):
         try:

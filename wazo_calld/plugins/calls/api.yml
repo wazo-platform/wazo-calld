@@ -242,6 +242,7 @@ paths:
       summary: Simulate a user pressing DTMF keys
       description: '**Required ACL:** `calld.calls.{call_id}.dtmf.update'
       parameters:
+      - $ref: '#/parameters/TenantUUID'
       - $ref: '#/parameters/CallID'
       - $ref: '#/parameters/DTMFDigits'
       tags:
