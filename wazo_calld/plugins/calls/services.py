@@ -330,23 +330,35 @@ class CallsService:
 
         self._ari.channels.hangup(channelId=channel_id)
 
-    def mute(self, call_id):
+    def mute(self, tenant_uuid, call_id):
+        channel_id = call_id
+
+        channel_helper = Channel(channel_id, self._ari)
+        if tenant_uuid and channel_helper.tenant_uuid() != tenant_uuid:
+            raise NoSuchCall(call_id)
+
         try:
-            channel = self._ari.channels.get(channelId=call_id)
+            channel = self._ari.channels.get(channelId=channel_id)
             set_channel_var_sync(channel, 'WAZO_CALL_MUTED', '1', bypass_stasis=True)
         except ARINotFound:
             raise NoSuchCall(call_id)
 
-        ami.mute(self._ami, call_id)
+        ami.mute(self._ami, channel_id)
 
         # NOTE(fblackburn): asterisk should send back an event
         # instead of falsy pretend that channel is muted
         call = self.make_call_from_channel(self._ari, channel)
         self._notifier.call_updated(call)
 
-    def unmute(self, call_id):
+    def unmute(self, tenant_uuid, call_id):
+        channel_id = call_id
+
+        channel_helper = Channel(channel_id, self._ari)
+        if tenant_uuid and channel_helper.tenant_uuid() != tenant_uuid:
+            raise NoSuchCall(call_id)
+
         try:
-            channel = self._ari.channels.get(channelId=call_id)
+            channel = self._ari.channels.get(channelId=channel_id)
             set_channel_var_sync(channel, 'WAZO_CALL_MUTED', '', bypass_stasis=True)
         except ARINotFound:
             raise NoSuchCall(call_id)
@@ -358,13 +370,13 @@ class CallsService:
         call = self.make_call_from_channel(self._ari, channel)
         self._notifier.call_updated(call)
 
-    def mute_user(self, call_id, user_uuid):
+    def mute_user(self, tenant_uuid, call_id, user_uuid):
         self._verify_user(call_id, user_uuid)
-        self.mute(call_id)
+        self.mute(tenant_uuid, call_id)
 
-    def unmute_user(self, call_id, user_uuid):
+    def unmute_user(self, tenant_uuid, call_id, user_uuid):
         self._verify_user(call_id, user_uuid)
-        self.unmute(call_id)
+        self.unmute(tenant_uuid, call_id)
 
     def hangup_user(self, call_id, user_uuid):
         self._verify_user(call_id, user_uuid)

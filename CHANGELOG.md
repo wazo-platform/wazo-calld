@@ -7,11 +7,15 @@
   * `POST /1.0/users/me/calls`
   If the requested source line is of type SIP, and is not registered nor available, the API will respond with a 400 status and error id `call-origin-unavailable`
 
-* The following endpoints now require the `Wazo-Tenant` header and enforce tenant isolation:
+* The following endpoints now enforce tenant isolation:
 
   * `POST /1.0/calls`
   * `DELETE /1.0/calls/<call-id>`
   * `PUT /1.0/calls/<call_id>/user/<user_uuid>`
+  * `PUT /1.0/calls/{call_id}/mute/start`
+  * `PUT /1.0/calls/{call_id}/mute/stop`
+
+  In order to make an action in another tenant, you need to specify the `Wazo-Tenant` HTTP header.
 
 ## 24.10
 

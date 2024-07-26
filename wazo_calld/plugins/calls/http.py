@@ -105,7 +105,8 @@ class CallMuteStartResource(AuthResource):
 
     @required_acl('calld.calls.{call_id}.mute.start.update')
     def put(self, call_id):
-        self.calls_service.mute(call_id)
+        tenant = Tenant.autodetect()
+        self.calls_service.mute(tenant.uuid, call_id)
         return '', 204
 
 
@@ -115,7 +116,8 @@ class CallMuteStopResource(AuthResource):
 
     @required_acl('calld.calls.{call_id}.mute.stop.update')
     def put(self, call_id):
-        self.calls_service.unmute(call_id)
+        tenant = Tenant.autodetect()
+        self.calls_service.unmute(tenant.uuid, call_id)
         return '', 204
 
 
@@ -125,8 +127,9 @@ class MyCallMuteStartResource(AuthResource):
 
     @required_acl('calld.users.me.calls.{call_id}.mute.start.update')
     def put(self, call_id):
+        tenant = Tenant.autodetect()
         user_uuid = get_token_user_uuid_from_request()
-        self.calls_service.mute_user(call_id, user_uuid)
+        self.calls_service.mute_user(tenant.uuid, call_id, user_uuid)
         return '', 204
 
 
@@ -136,8 +139,9 @@ class MyCallMuteStopResource(AuthResource):
 
     @required_acl('calld.users.me.calls.{call_id}.mute.stop.update')
     def put(self, call_id):
+        tenant = Tenant.autodetect()
         user_uuid = get_token_user_uuid_from_request()
-        self.calls_service.unmute_user(call_id, user_uuid)
+        self.calls_service.unmute_user(tenant.uuid, call_id, user_uuid)
         return '', 204
 
 

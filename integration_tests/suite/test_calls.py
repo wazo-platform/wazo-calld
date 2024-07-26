@@ -3181,6 +3181,31 @@ class TestCallMute(RealAsteriskIntegrationTest):
             has_items(has_entries(call_id=channel_id, muted=False)),
         )
 
+    def test_mute_tenant_isolation(self):
+        user_uuid_1 = str(uuid.uuid4())
+        tenant_uuid_1 = str(uuid.uuid4())
+        tenant_uuid_2 = str(uuid.uuid4())
+        channel_id_1 = self.given_call_not_stasis(tenant_uuid=tenant_uuid_1)
+        channel_id_2 = self.given_call_not_stasis(tenant_uuid=tenant_uuid_2)
+        user_calld = self.make_user_calld(user_uuid_1, tenant_uuid=tenant_uuid_1)
+
+        # mute/unmute channel from other tenant = NOK
+        with pytest.raises(CalldError) as exc_info:
+            user_calld.calls.start_mute(channel_id_2)
+
+        calld_error = exc_info.value
+        assert calld_error.status_code == 404, calld_error
+
+        with pytest.raises(CalldError) as exc_info:
+            user_calld.calls.stop_mute(channel_id_2)
+
+        calld_error = exc_info.value
+        assert calld_error.status_code == 404, calld_error
+
+        # mute/unmute channel from same tenant = OK
+        user_calld.calls.start_mute(channel_id_1)
+        user_calld.calls.stop_mute(channel_id_1)
+
     def test_put_mute_stop_from_user(self):
         user_uuid = str(uuid.uuid4())
         token = self.given_user_token(user_uuid)
@@ -3232,8 +3257,9 @@ class TestCallMute(RealAsteriskIntegrationTest):
             has_items(has_entries(call_id=channel_id, muted=False)),
         )
 
-    def given_call_not_stasis(self, user_uuid=None):
+    def given_call_not_stasis(self, user_uuid=None, tenant_uuid=None):
         user_uuid = user_uuid or str(uuid.uuid4())
+        tenant_uuid = tenant_uuid or VALID_TENANT
         call = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
             context='local',
@@ -3241,7 +3267,7 @@ class TestCallMute(RealAsteriskIntegrationTest):
             variables={
                 'variables': {
                     'WAZO_USERUUID': user_uuid,
-                    '__WAZO_TENANT_UUID': VALID_TENANT,
+                    '__WAZO_TENANT_UUID': tenant_uuid,
                 }
             },
         )

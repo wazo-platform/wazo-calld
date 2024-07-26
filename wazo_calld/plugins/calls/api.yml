@@ -106,6 +106,7 @@ paths:
       summary: Mute a call
       description: '**Required ACL:** `calld.calls.{call_id}.mute.start.update`'
       parameters:
+      - $ref: '#/parameters/TenantUUID'
       - $ref: '#/parameters/CallID'
       tags:
       - calls
@@ -123,6 +124,7 @@ paths:
       summary: Unmute a call
       description: '**Required ACL:** `calld.calls.{call_id}.mute.stop.update`'
       parameters:
+      - $ref: '#/parameters/TenantUUID'
       - $ref: '#/parameters/CallID'
       tags:
       - calls
