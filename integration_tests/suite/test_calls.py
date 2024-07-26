@@ -2842,6 +2842,76 @@ class TestConnectUser(_BaseTestCalls):
         assert_that(calld_error.status_code, equal_to(404))
         assert_that(calld_error.message.lower(), contains_string('call'))
 
+    def test_connect_user_tenant_isolation(self):
+        user_uuid_1 = str(uuid.uuid4())
+        user_uuid_2 = str(uuid.uuid4())
+        tenant_uuid_1 = str(uuid.uuid4())
+        tenant_uuid_2 = str(uuid.uuid4())
+
+        call_id_1 = new_call_id()
+        call_id_2 = new_call_id()
+        my_new_call_id = new_call_id()
+        self.ari.set_channels(
+            MockChannel(id=call_id_1),
+            MockChannel(id=call_id_2),
+            MockChannel(id=my_new_call_id),
+        )
+        self._set_channel_variable(
+            {
+                call_id_1: {'WAZO_TENANT_UUID': tenant_uuid_1},
+                call_id_2: {'WAZO_TENANT_UUID': tenant_uuid_2},
+                my_new_call_id: {'WAZO_USERUUID': 'user-uuid'},
+            }
+        )
+        self.ari.set_global_variables(
+            {
+                f'XIVO_CHANNELS_{call_id_1}': json.dumps(
+                    {'app': 'sw', 'app_instance': 'sw1', 'state': 'ringing'}
+                ),
+                f'XIVO_CHANNELS_{call_id_2}': json.dumps(
+                    {'app': 'sw', 'app_instance': 'sw1', 'state': 'ringing'}
+                ),
+            }
+        )
+        self.confd.set_users(
+            MockUser(
+                uuid=user_uuid_1, line_ids=['line-id-1'], tenant_uuid=tenant_uuid_1
+            ),
+            MockUser(
+                uuid=user_uuid_2, line_ids=['line-id-2'], tenant_uuid=tenant_uuid_2
+            ),
+        )
+        self.confd.set_lines(
+            MockLine(id='line-id-1', name='line-name-1', protocol=CONFD_SIP_PROTOCOL),
+            MockLine(id='line-id-2', name='line-name-2', protocol=CONFD_SIP_PROTOCOL),
+        )
+        self.ari.set_originates(MockChannel(id=my_new_call_id))
+        self.ari.set_endpoints(
+            MockEndpoint('pjsip', 'line-name-1', 'online'),
+            MockEndpoint('pjsip', 'line-name-2', 'online'),
+        )
+        user_calld = self.make_user_calld(user_uuid_1, tenant_uuid=tenant_uuid_1)
+
+        # connect call from other tenant = NOK
+        with pytest.raises(CalldError) as exc_info:
+            user_calld.calls.connect_user(call_id_2, user_uuid_1)
+
+        calld_error = exc_info.value
+        assert calld_error.status_code == 404, calld_error
+        assert 'call' in calld_error.message.lower(), calld_error
+
+        # connect user from other tenant = NOK
+        with pytest.raises(CalldError) as exc_info:
+            user_calld.calls.connect_user(call_id_1, user_uuid_2)
+
+        calld_error = exc_info.value
+        assert calld_error.status_code == 400, calld_error
+        assert 'user' in calld_error.message.lower(), calld_error
+
+        # connect user from same tenant = OK
+        result = user_calld.calls.connect_user(call_id_1, user_uuid_1)
+        assert result['call_id'] == my_new_call_id
+
 
 class TestCallerID(RealAsteriskIntegrationTest):
     asset = 'real_asterisk'

@@ -370,9 +370,16 @@ class CallsService:
         self._verify_user(call_id, user_uuid)
         self._ari.channels.hangup(channelId=call_id)
 
-    def connect_user(self, call_id, user_uuid, timeout):
+    def connect_user(self, tenant_uuid, call_id, user_uuid, timeout):
         channel_id = call_id
-        endpoint = User(user_uuid, self._confd).main_line().interface()
+
+        channel_helper = Channel(channel_id, self._ari)
+        if tenant_uuid and channel_helper.tenant_uuid() != tenant_uuid:
+            raise NoSuchCall(channel_id)
+
+        user = User(user_uuid, self._confd)
+        user.assert_in_tenant_uuid(tenant_uuid)
+        endpoint = user.main_line().interface()
 
         try:
             channel = self._ari.channels.get(channelId=channel_id)

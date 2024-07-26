@@ -258,6 +258,7 @@ paths:
       summary: Connect a call to a user
       description: '**Required ACL:** `calld.calls.{call_id}.user.{user_uuid}.update`'
       parameters:
+      - $ref: '#/parameters/TenantUUID'
       - $ref: '#/parameters/CallID'
       - name: user_uuid
         in: path

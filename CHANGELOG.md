@@ -11,6 +11,7 @@
 
   * `POST /1.0/calls`
   * `DELETE /1.0/calls/<call-id>`
+  * `PUT /1.0/calls/<call_id>/user/<user_uuid>`
 
 ## 24.10
 
