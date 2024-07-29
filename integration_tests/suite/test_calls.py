@@ -3,7 +3,6 @@
 
 import json
 import uuid
-from typing import Any
 
 import pytest
 from hamcrest import (
@@ -23,7 +22,6 @@ from hamcrest import (
 )
 from wazo_calld_client.exceptions import CalldError
 from wazo_test_helpers import until
-from wazo_test_helpers.auth import MockUserToken
 from wazo_test_helpers.hamcrest.raises import raises
 
 from .helpers.ari_ import MockApplication, MockBridge, MockChannel, MockEndpoint
@@ -815,9 +813,11 @@ class TestDeleteCall(_BaseTestCalls):
     def test_given_no_calls_when_delete_call_then_404(self):
         call_id = 'not-found'
 
-        result = self.calld.delete_call_result(call_id, token=VALID_TOKEN)
+        with pytest.raises(CalldError) as exc_info:
+            self.calld_client.calls.hangup(call_id)
 
-        assert_that(result.status_code, equal_to(404))
+        calld_error = exc_info.value
+        assert calld_error.status_code == 404
 
     def test_given_one_call_when_delete_call_then_call_hungup(self):
         call_id = 'call-id'
@@ -878,33 +878,32 @@ class TestUserDeleteCall(_BaseTestCalls):
 
     def test_given_no_calls_when_delete_call_then_404(self):
         call_id = 'not-found'
-        user_uuid = 'user-uuid'
-        token = 'my-token'
-        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
+        user_calld = self.make_user_calld('user-uuid', tenant_uuid=VALID_TENANT)
 
-        result = self.calld.delete_user_me_call_result(call_id, token=token)
+        with pytest.raises(CalldError) as exc_info:
+            user_calld.calls.hangup_from_user(call_id)
 
-        assert_that(result.status_code, equal_to(404))
+        calld_error = exc_info.value
+        assert calld_error.status_code == 404, calld_error
 
     def test_given_another_call_when_delete_call_then_403(self):
         call_id = new_call_id()
         user_uuid = 'user-uuid'
-        token = 'my-token'
-        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
         self.confd.set_users(MockUser(uuid=user_uuid))
         self.ari.set_channels(MockChannel(id=call_id, state='Up'))
         self._set_channel_variable({call_id: {'WAZO_USERUUID': 'some-other-uuid'}})
+        user_calld = self.make_user_calld(user_uuid, tenant_uuid=VALID_TENANT)
 
-        result = self.calld.delete_user_me_call_result(call_id, token=token)
+        with pytest.raises(CalldError) as exc_info:
+            user_calld.calls.hangup_from_user(call_id)
 
-        assert_that(result.status_code, equal_to(403))
-        assert_that(result.json(), has_entries(message=contains_string('user')))
+        calld_error = exc_info.value
+        assert calld_error.status_code == 403, calld_error
+        assert 'user' in calld_error.message.lower(), calld_error
 
     def test_given_my_call_when_delete_call_then_call_hungup(self):
         call_id = new_call_id()
         user_uuid = 'user-uuid'
-        token = 'my-token'
-        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
         self.confd.set_users(MockUser(uuid=user_uuid))
         self.ari.set_channels(
             MockChannel(
@@ -912,8 +911,9 @@ class TestUserDeleteCall(_BaseTestCalls):
             ),
         )
         self._set_channel_variable({call_id: {'WAZO_USERUUID': user_uuid}})
+        user_calld = self.make_user_calld(user_uuid, tenant_uuid=VALID_TENANT)
 
-        self.calld.hangup_my_call(call_id, token)
+        user_calld.calls.hangup_from_user(call_id)
 
         assert_that(
             self.ari.requests(),
@@ -930,8 +930,6 @@ class TestUserDeleteCall(_BaseTestCalls):
     def test_local_channel_when_delete_call_then_call_hungup(self):
         call_id = new_call_id()
         user_uuid = 'user-uuid'
-        token = 'my-token'
-        self.auth.set_token(MockUserToken(token, user_uuid=user_uuid))
         self.confd.set_users(MockUser(uuid=user_uuid))
         self.ari.set_channels(
             MockChannel(
@@ -942,10 +940,13 @@ class TestUserDeleteCall(_BaseTestCalls):
             ),
         )
         self._set_channel_variable({call_id: {'WAZO_USERUUID': user_uuid}})
+        user_calld = self.make_user_calld(user_uuid, tenant_uuid=VALID_TENANT)
 
-        result = self.calld.delete_user_me_call_result(call_id, token=token)
+        with pytest.raises(CalldError) as exc_info:
+            user_calld.calls.hangup_from_user(call_id)
 
-        assert_that(result.status_code, equal_to(404))
+        calld_error = exc_info.value
+        assert calld_error.status_code == 404, calld_error
 
 
 class TestCreateCall(_BaseTestCalls):
@@ -2058,39 +2059,38 @@ class TestUserCreateCall(_BaseTestCalls):
             )
 
     def test_given_invalid_input_when_create_then_error_400(self):
-        for invalid_body in self.invalid_call_requests():
-            response = self.calld.post_user_me_call_result(invalid_body, VALID_TOKEN)
-
-            assert_that(response.status_code, equal_to(400))
-            assert_that(
-                response.json(),
-                has_entries(
-                    message=contains_string('invalid'),
-                    error_id=equal_to('invalid-data'),
-                ),
+        user_uuid = 'user-uuid'
+        self.confd.set_users(
+            MockUser(uuid=user_uuid, line_ids=['line-id'], tenant_uuid=VALID_TENANT)
+        )
+        self.confd.set_lines(
+            MockLine(
+                id='line-id',
+                name='line-name',
+                protocol=CONFD_SIP_PROTOCOL,
+                context='my-context',
             )
+        )
+        user_calld = self.make_user_calld(user_uuid, tenant_uuid=VALID_TENANT)
+
+        for invalid_body in self.invalid_call_requests():
+
+            with pytest.raises(CalldError) as exc_info:
+                user_calld.calls.make_call_from_user(**invalid_body)
+
+            calld_error = exc_info.value
+            assert calld_error.status_code == 400, calld_error
+            assert 'invalid' in calld_error.message.lower()
+            assert calld_error.error_id == 'invalid-data', invalid_body
 
     def invalid_call_requests(self):
-        valid_call_request = {'extension': '1234', 'variables': {'key': 'value'}}
-
-        for key in ('extension', 'variables'):
-            body: dict[str, Any] = dict(valid_call_request)
-            body[key] = None
-            yield body
-            body[key] = 1234
-            yield body
-            body[key] = True
-            yield body
-            body[key] = ''
-            yield body
-
-        body = dict(valid_call_request)
-        body.pop('extension')
-        yield body
-
-        body = dict(valid_call_request)
-        body['variables'] = 'abcd'
-        yield body
+        yield {'extension': None, 'variables': {'key': 'value'}}
+        yield {'extension': 1234, 'variables': {'key': 'value'}}
+        yield {'extension': True, 'variables': {'key': 'value'}}
+        yield {'extension': '', 'variables': {'key': 'value'}}
+        yield {'extension': '1234', 'variables': 1234}
+        yield {'extension': '1234', 'variables': True}
+        yield {'extension': '1234', 'variables': 'abcd'}
 
     def test_create_call_with_correct_values(self):
         user_uuid = 'user-uuid'
