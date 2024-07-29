@@ -62,7 +62,7 @@ class Meeting:
 
 
 class User:
-    # TODO set tenant_uuid mandatory when calls plugin will be multi-tenant
+    # TODO set tenant_uuid mandatory when transfers plugin will be multi-tenant
     def __init__(self, user_uuid, confd_client, tenant_uuid=None):
         self.uuid = user_uuid
         self._tenant_uuid = tenant_uuid
@@ -75,9 +75,15 @@ class User:
 
         return self._tenant_uuid
 
-    def assert_in_tenant_uuid(self, tenant_uuid):
-        if self.tenant_uuid != tenant_uuid:
-            raise InvalidUserUUID(self.uuid)
+    def assert_exists(self):
+        try:
+            self._confd.users.get(self.uuid, tenant_uuid=self._tenant_uuid)
+        except HTTPError as e:
+            if not_found(e):
+                raise InvalidUserUUID(self.uuid)
+            raise
+        except RequestException as e:
+            raise WazoConfdUnreachable(self._confd, e)
 
     def main_line(self):
         try:
@@ -139,7 +145,7 @@ class User:
 
 
 class Line:
-    # TODO set tenant_uuid mandatory when calls plugin will be multi-tenant
+    # TODO set tenant_uuid mandatory when transfers plugin will be multi-tenant
     def __init__(self, line_id, confd_client, tenant_uuid=None):
         self.id = line_id
         self._confd = confd_client

@@ -155,8 +155,8 @@ class CallsService:
             raise InvalidExtension(requested_context, requested_extension)
 
         source_user = request['source']['user']
-        user = User(source_user, self._confd)
-        user.assert_in_tenant_uuid(tenant_uuid)
+        user = User(source_user, self._confd, tenant_uuid=tenant_uuid)
+        user.assert_exists()
 
         variables = request.get('variables', {})
         dial_echo_request_id = None
@@ -279,10 +279,12 @@ class CallsService:
         return call
 
     def originate_user(self, tenant_uuid, request, user_uuid):
+        user = User(user_uuid, self._confd, tenant_uuid=tenant_uuid)
+
         if 'line_id' in request and not request['from_mobile']:
-            context = User(user_uuid, self._confd).line(request['line_id']).context()
+            context = user.line(request['line_id']).context()
         else:
-            context = User(user_uuid, self._confd).main_line().context()
+            context = user.main_line().context()
 
         new_request = {
             'destination': {
@@ -389,8 +391,7 @@ class CallsService:
         if tenant_uuid and channel_helper.tenant_uuid() != tenant_uuid:
             raise NoSuchCall(channel_id)
 
-        user = User(user_uuid, self._confd)
-        user.assert_in_tenant_uuid(tenant_uuid)
+        user = User(user_uuid, self._confd, tenant_uuid=tenant_uuid)
         endpoint = user.main_line().interface()
 
         try:
