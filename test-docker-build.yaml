@@ -1,0 +1,22 @@
+---
+- hosts: all
+  tasks:
+  - name: Install docker Python lib
+    ansible.builtin.pip:
+      name: docker
+      state: present
+
+  - name: Build sibling mock docker images
+    when: docker_install_siblings and 'github.com/wazo-platform/wazo-test-helpers' in zuul.projects
+    community.docker.docker_image:
+      build:
+        path: "{{ zuul.projects['github.com/wazo-platform/wazo-test-helpers'].src_dir }}/contribs/docker/{{ item }}"
+      name: "wazoplatform/{{ item }}"
+      source: build
+    loop:
+      - flask
+      - wait
+      - wazo-amid-mock
+      - wazo-auth-mock
+      - wazo-confd-mock
+      - wazo-sysconfd-mock

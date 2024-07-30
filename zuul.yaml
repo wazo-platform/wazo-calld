@@ -6,14 +6,14 @@
       - wazo-platform/chan-test
     timeout: 10800
 
+- job:
+    name: calld-test-docker-build
+    vars:
+      docker_install_siblings: true
+    run: test-docker-build.yaml
+    nodeset: vm-debian-11-m1s
+
 - project:
-    templates:
-      - wazo-tox-linters-310
-      - wazo-tox-py39
-      - debian-packaging-bullseye
     wazo-check:
       jobs:
-        - calld-tox-integration
-    wazo-gate:
-      jobs:
-        - calld-tox-integration
+        - calld-test-docker-build
