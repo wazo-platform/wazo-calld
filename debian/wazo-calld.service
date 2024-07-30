@@ -10,6 +10,7 @@ Environment=PYTHONUNBUFFERED=TRUE
 ExecStart=/usr/bin/wazo-calld
 Restart=on-failure
 RestartSec=5
+SyslogIdentifier=wazo-calld
 
 [Install]
 WantedBy=multi-user.target
