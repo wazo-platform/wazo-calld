@@ -132,7 +132,14 @@ class TestDialedFrom(IntegrationTest):
         self.confd.set_users(
             MockUser(uuid='user-uuid', line_ids=['line-id'], tenant_uuid=VALID_TENANT)
         )
-        self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='pjsip'))
+        self.confd.set_lines(
+            MockLine(
+                id='line-id',
+                name='line-name',
+                protocol='pjsip',
+                tenant_uuid=VALID_TENANT,
+            )
+        )
         self.ari.set_originates(MockChannel(id=new_call_id))
 
         self.calld_client.calls.connect_user(call_id, 'user-uuid')

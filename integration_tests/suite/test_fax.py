@@ -378,9 +378,12 @@ class TestFax(RealAsteriskIntegrationTest):
         )
 
     def test_send_fax_from_user_without_line(self):
+        tenant_uuid = 'some-tenant-uuid'
         user_uuid = 'some-user-id'
-        self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[]))
-        calld_client = self.make_user_calld(user_uuid)
+        self.confd.set_users(
+            MockUser(uuid=user_uuid, line_ids=[], tenant_uuid=tenant_uuid)
+        )
+        calld_client = self.make_user_calld(user_uuid, tenant_uuid=tenant_uuid)
 
         with open(os.path.join(ASSET_ROOT, 'fax', 'fax.pdf'), 'rb') as fax_file:
             fax_content = fax_file.read()
@@ -400,15 +403,22 @@ class TestFax(RealAsteriskIntegrationTest):
         )
 
     def test_send_fax_pdf_from_user(self):
+        tenant_uuid = 'some-tenant-uuid'
         user_uuid = 'some-user-id'
         context = 'user-context'
-        self.confd.set_users(MockUser(uuid=user_uuid, line_ids=['some-line-id']))
+        self.confd.set_users(
+            MockUser(uuid=user_uuid, line_ids=['some-line-id'], tenant_uuid=tenant_uuid)
+        )
         self.confd.set_lines(
             MockLine(
-                id='some-line-id', name='line-name', protocol='pjsip', context=context
+                id='some-line-id',
+                name='line-name',
+                protocol='pjsip',
+                context=context,
+                tenant_uuid=tenant_uuid,
             )
         )
-        calld_client = self.make_user_calld(user_uuid)
+        calld_client = self.make_user_calld(user_uuid, tenant_uuid=tenant_uuid)
 
         with open(os.path.join(ASSET_ROOT, 'fax', 'fax.pdf'), 'rb') as fax_file:
             fax_content = fax_file.read()
@@ -444,15 +454,22 @@ class TestFax(RealAsteriskIntegrationTest):
         until.assert_(one_fax_channel, timeout=3)
 
     def test_send_fax_from_user_events_success(self):
+        tenant_uuid = 'my-tenant'
         user_uuid = 'some-user-id'
         context = 'user-context'
-        self.confd.set_users(MockUser(uuid=user_uuid, line_ids=['some-line-id']))
+        self.confd.set_users(
+            MockUser(uuid=user_uuid, line_ids=['some-line-id'], tenant_uuid=tenant_uuid)
+        )
         self.confd.set_lines(
             MockLine(
-                id='some-line-id', name='line-name', protocol='pjsip', context=context
+                id='some-line-id',
+                name='line-name',
+                protocol='pjsip',
+                context=context,
+                tenant_uuid=tenant_uuid,
             )
         )
-        calld_client = self.make_user_calld(user_uuid, tenant_uuid='my-tenant')
+        calld_client = self.make_user_calld(user_uuid, tenant_uuid=tenant_uuid)
 
         with open(os.path.join(ASSET_ROOT, 'fax', 'fax.pdf'), 'rb') as fax_file:
             fax_content = fax_file.read()
@@ -478,7 +495,7 @@ class TestFax(RealAsteriskIntegrationTest):
                                         'context': 'user-context',
                                         'extension': 'recipient-fax',
                                         'user_uuid': 'some-user-id',
-                                        'tenant_uuid': 'my-tenant',
+                                        'tenant_uuid': tenant_uuid,
                                     }
                                 ),
                             }
@@ -486,7 +503,7 @@ class TestFax(RealAsteriskIntegrationTest):
                         headers=has_entries(
                             {
                                 'name': 'fax_outbound_user_created',
-                                'tenant_uuid': 'my-tenant',
+                                'tenant_uuid': tenant_uuid,
                             }
                         ),
                     ),
@@ -508,7 +525,7 @@ class TestFax(RealAsteriskIntegrationTest):
                         headers=has_entries(
                             {
                                 'name': 'fax_outbound_user_succeeded',
-                                'tenant_uuid': 'my-tenant',
+                                'tenant_uuid': tenant_uuid,
                             }
                         ),
                     ),
@@ -518,15 +535,22 @@ class TestFax(RealAsteriskIntegrationTest):
         until.assert_(bus_events_received, timeout=10)
 
     def test_send_fax_from_user_events_success_when_extension_contains_whitespace(self):
+        tenant_uuid = 'my-tenant'
         user_uuid = 'some-user-id'
         context = 'user-context'
-        self.confd.set_users(MockUser(uuid=user_uuid, line_ids=['some-line-id']))
+        self.confd.set_users(
+            MockUser(uuid=user_uuid, line_ids=['some-line-id'], tenant_uuid=tenant_uuid)
+        )
         self.confd.set_lines(
             MockLine(
-                id='some-line-id', name='line-name', protocol='pjsip', context=context
+                id='some-line-id',
+                name='line-name',
+                protocol='pjsip',
+                context=context,
+                tenant_uuid=tenant_uuid,
             )
         )
-        calld_client = self.make_user_calld(user_uuid, tenant_uuid='my-tenant')
+        calld_client = self.make_user_calld(user_uuid, tenant_uuid=tenant_uuid)
 
         with open(os.path.join(ASSET_ROOT, 'fax', 'fax.pdf'), 'rb') as fax_file:
             fax_content = fax_file.read()
@@ -552,7 +576,7 @@ class TestFax(RealAsteriskIntegrationTest):
                                         'context': 'user-context',
                                         'extension': 'recipient-fax',
                                         'user_uuid': 'some-user-id',
-                                        'tenant_uuid': 'my-tenant',
+                                        'tenant_uuid': tenant_uuid,
                                     }
                                 ),
                             }
@@ -560,7 +584,7 @@ class TestFax(RealAsteriskIntegrationTest):
                         headers=has_entries(
                             {
                                 'name': 'fax_outbound_user_created',
-                                'tenant_uuid': 'my-tenant',
+                                'tenant_uuid': tenant_uuid,
                             }
                         ),
                     ),
@@ -574,7 +598,7 @@ class TestFax(RealAsteriskIntegrationTest):
                                         'context': 'user-context',
                                         'extension': 'recipient-fax',
                                         'user_uuid': 'some-user-id',
-                                        'tenant_uuid': 'my-tenant',
+                                        'tenant_uuid': tenant_uuid,
                                     }
                                 ),
                             }
@@ -582,7 +606,7 @@ class TestFax(RealAsteriskIntegrationTest):
                         headers=has_entries(
                             {
                                 'name': 'fax_outbound_user_succeeded',
-                                'tenant_uuid': 'my-tenant',
+                                'tenant_uuid': tenant_uuid,
                             }
                         ),
                     ),

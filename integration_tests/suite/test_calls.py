@@ -966,7 +966,12 @@ class TestCreateCall(_BaseTestCalls):
             MockUser(uuid='user-uuid', line_ids=['line-id'], tenant_uuid=VALID_TENANT)
         )
         self.confd.set_lines(
-            MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL)
+            MockLine(
+                id='line-id',
+                name='line-name',
+                protocol=CONFD_SIP_PROTOCOL,
+                tenant_uuid=VALID_TENANT,
+            )
         )
         self.ari.set_originates(
             MockChannel(id=my_new_call_id, connected_line_number='')
@@ -1022,7 +1027,12 @@ class TestCreateCall(_BaseTestCalls):
             MockUser(uuid=user_uuid, line_ids=['line-id'], tenant_uuid=VALID_TENANT)
         )
         self.confd.set_lines(
-            MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL)
+            MockLine(
+                id='line-id',
+                name='line-name',
+                protocol=CONFD_SIP_PROTOCOL,
+                tenant_uuid=VALID_TENANT,
+            )
         )
         self.ari.set_originates(
             MockChannel(id=my_new_call_id, connected_line_number='')
@@ -1078,7 +1088,12 @@ class TestCreateCall(_BaseTestCalls):
             MockUser(uuid='user-uuid', line_ids=['line-id'], tenant_uuid=VALID_TENANT)
         )
         self.confd.set_lines(
-            MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL)
+            MockLine(
+                id='line-id',
+                name='line-name',
+                protocol=CONFD_SIP_PROTOCOL,
+                tenant_uuid=VALID_TENANT,
+            )
         )
         self.ari.set_originates(MockChannel(my_new_call_id))
         self.ari.set_endpoints(MockEndpoint('pjsip', 'line-name', 'online'))
@@ -1145,7 +1160,12 @@ class TestCreateCall(_BaseTestCalls):
             )
         )
         self.confd.set_lines(
-            MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL)
+            MockLine(
+                id='line-id',
+                name='line-name',
+                protocol=CONFD_SIP_PROTOCOL,
+                tenant_uuid=VALID_TENANT,
+            )
         )
         self.ari.set_originates(MockChannel(id=my_new_call_id))
         self.ari.set_endpoints(MockEndpoint('pjsip', 'line-name', 'online'))
@@ -1197,7 +1217,12 @@ class TestCreateCall(_BaseTestCalls):
             MockUser(uuid='user-uuid', line_ids=['line-id'], tenant_uuid=VALID_TENANT)
         )
         self.confd.set_lines(
-            MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL)
+            MockLine(
+                id='line-id',
+                name='line-name',
+                protocol=CONFD_SIP_PROTOCOL,
+                tenant_uuid=VALID_TENANT,
+            )
         )
         self.ari.set_originates(MockChannel(id=my_new_call_id))
         self.ari.set_endpoints(MockEndpoint('pjsip', 'line-name', 'online'))
@@ -1246,7 +1271,12 @@ class TestCreateCall(_BaseTestCalls):
             )
         )
         self.confd.set_lines(
-            MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL)
+            MockLine(
+                id='line-id',
+                name='line-name',
+                protocol=CONFD_SIP_PROTOCOL,
+                tenant_uuid=VALID_TENANT,
+            )
         )
         self.ari.set_originates(MockChannel(id=my_new_call_id))
         self.ari.set_endpoints(MockEndpoint('pjsip', 'line-name', 'online'))
@@ -1369,7 +1399,12 @@ class TestCreateCall(_BaseTestCalls):
         priority = 1
         self.confd.set_users(MockUser(uuid='user-uuid', line_ids=['line-id']))
         self.confd.set_lines(
-            MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL)
+            MockLine(
+                id='line-id',
+                name='line-name',
+                protocol=CONFD_SIP_PROTOCOL,
+                tenant_uuid=VALID_TENANT,
+            )
         )
         self.ari.set_originates(MockChannel(id=my_new_call_id))
         self.amid.set_no_valid_exten()
@@ -1400,7 +1435,12 @@ class TestCreateCall(_BaseTestCalls):
             MockUser(uuid='user-uuid', line_ids=['line-id'], tenant_uuid=VALID_TENANT)
         )
         self.confd.set_lines(
-            MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL)
+            MockLine(
+                id='line-id',
+                name='line-name',
+                protocol=CONFD_SIP_PROTOCOL,
+                tenant_uuid=VALID_TENANT,
+            )
         )
         self.ari.set_originates(MockChannel(id=my_new_call_id))
         self.ari.set_endpoints(MockEndpoint('pjsip', 'line-name', 'online'))
@@ -1431,7 +1471,10 @@ class TestCreateCall(_BaseTestCalls):
         )
         self.confd.set_lines(
             MockLine(
-                id='first-line-id', name='first-line-name', protocol=CONFD_SIP_PROTOCOL
+                id='first-line-id',
+                name='first-line-name',
+                protocol=CONFD_SIP_PROTOCOL,
+                tenant_uuid=VALID_TENANT,
             )
         )
         self.ari.set_originates(MockChannel(id=my_new_call_id))
@@ -1469,12 +1512,16 @@ class TestCreateCall(_BaseTestCalls):
         )
         self.confd.set_lines(
             MockLine(
-                id='first-line-id', name='first-line-name', protocol=CONFD_SIP_PROTOCOL
+                id='first-line-id',
+                name='first-line-name',
+                protocol=CONFD_SIP_PROTOCOL,
+                tenant_uuid=VALID_TENANT,
             ),
             MockLine(
                 id=unassociated_line_id,
                 name='unassociated-line-name',
                 protocol=CONFD_SIP_PROTOCOL,
+                tenant_uuid=VALID_TENANT,
             ),
         )
         self.ari.set_originates(MockChannel(id=my_new_call_id))
@@ -1512,10 +1559,16 @@ class TestCreateCall(_BaseTestCalls):
         )
         self.confd.set_lines(
             MockLine(
-                id='first-line-id', name='first-line-name', protocol=CONFD_SIP_PROTOCOL
+                id='first-line-id',
+                name='first-line-name',
+                protocol=CONFD_SIP_PROTOCOL,
+                tenant_uuid=VALID_TENANT,
             ),
             MockLine(
-                id=second_line_id, name='second-line-name', protocol=CONFD_SIP_PROTOCOL
+                id=second_line_id,
+                name='second-line-name',
+                protocol=CONFD_SIP_PROTOCOL,
+                tenant_uuid=VALID_TENANT,
             ),
         )
         self.ari.set_originates(MockChannel(id=my_new_call_id))
@@ -1567,10 +1620,16 @@ class TestCreateCall(_BaseTestCalls):
         )
         self.confd.set_lines(
             MockLine(
-                id='first-line-id', name='first-line-name', protocol=CONFD_SIP_PROTOCOL
+                id='first-line-id',
+                name='first-line-name',
+                protocol=CONFD_SIP_PROTOCOL,
+                tenant_uuid=VALID_TENANT,
             ),
             MockLine(
-                id=second_line_id, name='second-line-name', protocol=CONFD_SIP_PROTOCOL
+                id=second_line_id,
+                name='second-line-name',
+                protocol=CONFD_SIP_PROTOCOL,
+                tenant_uuid=VALID_TENANT,
             ),
         )
         self.ari.set_originates(MockChannel(id=my_new_call_id))
@@ -1677,6 +1736,7 @@ class TestCreateCall(_BaseTestCalls):
                 name='line-name',
                 protocol=CONFD_SIP_PROTOCOL,
                 context='my-line-context',
+                tenant_uuid=VALID_TENANT,
             )
         )
         self.ari.set_originates(MockChannel(id=my_new_call_id))
@@ -1720,6 +1780,7 @@ class TestCreateCall(_BaseTestCalls):
                 name='line-name',
                 protocol=CONFD_SIP_PROTOCOL,
                 context='my-line-context',
+                tenant_uuid=VALID_TENANT,
             )
         )
         self.ari.set_originates(MockChannel(id=my_new_call_id))
@@ -1763,6 +1824,7 @@ class TestCreateCall(_BaseTestCalls):
                 name='line-name',
                 protocol=CONFD_SIP_PROTOCOL,
                 context='my-line-context',
+                tenant_uuid=VALID_TENANT,
             )
         )
         self.ari.set_originates(MockChannel(id=my_new_call_id))
@@ -1800,7 +1862,10 @@ class TestCreateCall(_BaseTestCalls):
         )
         self.confd.set_lines(
             MockLine(
-                id='first-line-id', name='first-line-name', protocol=CONFD_SIP_PROTOCOL
+                id='first-line-id',
+                name='first-line-name',
+                protocol=CONFD_SIP_PROTOCOL,
+                tenant_uuid=VALID_TENANT,
             )
         )
         self.ari.set_originates(MockChannel(id=my_new_call_id))
@@ -1848,7 +1913,12 @@ class TestCreateCall(_BaseTestCalls):
             MockUser(uuid='user-uuid', line_ids=['line-id'], tenant_uuid=VALID_TENANT)
         )
         self.confd.set_lines(
-            MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL)
+            MockLine(
+                id='line-id',
+                name='line-name',
+                protocol=CONFD_SIP_PROTOCOL,
+                tenant_uuid=VALID_TENANT,
+            )
         )
         self.amid.set_valid_exten('my-context', 'my-extension', priority)
         self._set_channel_variable(
@@ -1889,8 +1959,18 @@ class TestCreateCall(_BaseTestCalls):
             )
         )
         self.confd.set_lines(
-            MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL),
-            MockLine(id=2, name='line-two', protocol=CONFD_SIP_PROTOCOL),
+            MockLine(
+                id='line-id',
+                name='line-name',
+                protocol=CONFD_SIP_PROTOCOL,
+                tenant_uuid=VALID_TENANT,
+            ),
+            MockLine(
+                id=2,
+                name='line-two',
+                protocol=CONFD_SIP_PROTOCOL,
+                tenant_uuid=VALID_TENANT,
+            ),
         )
         self.amid.set_valid_exten('my-context', 'my-extension', priority)
         self._set_channel_variable(
@@ -1930,7 +2010,14 @@ class TestCreateCall(_BaseTestCalls):
                 uuid='user-uuid', line_ids=['line-id', 2], tenant_uuid=VALID_TENANT
             )
         )
-        self.confd.set_lines(MockLine(id='line-id', name='line-name', protocol='test'))
+        self.confd.set_lines(
+            MockLine(
+                id='line-id',
+                name='line-name',
+                protocol='test',
+                tenant_uuid=VALID_TENANT,
+            )
+        )
         self.ari.set_originates(
             MockChannel(id=my_new_call_id, connected_line_number='')
         )
@@ -2107,6 +2194,7 @@ class TestUserCreateCall(_BaseTestCalls):
                 name='line-name',
                 protocol=CONFD_SIP_PROTOCOL,
                 context='my-context',
+                tenant_uuid=VALID_TENANT,
             )
         )
         self.ari.set_originates(
@@ -2150,6 +2238,7 @@ class TestUserCreateCall(_BaseTestCalls):
                 name='line-name',
                 protocol=CONFD_SIP_PROTOCOL,
                 context='my-context',
+                tenant_uuid=VALID_TENANT,
             )
         )
         self.ari.set_originates(
@@ -2193,6 +2282,7 @@ class TestUserCreateCall(_BaseTestCalls):
                 name='line-name',
                 protocol=CONFD_SIP_PROTOCOL,
                 context='my-context',
+                tenant_uuid=VALID_TENANT,
             )
         )
         self.ari.set_originates(MockChannel(my_new_call_id))
@@ -2258,6 +2348,7 @@ class TestUserCreateCall(_BaseTestCalls):
                 name='line-name',
                 protocol=CONFD_SIP_PROTOCOL,
                 context='my-context',
+                tenant_uuid=VALID_TENANT,
             )
         )
         self.ari.set_originates(MockChannel(id=my_new_call_id))
@@ -2307,6 +2398,7 @@ class TestUserCreateCall(_BaseTestCalls):
                 name='line-name',
                 protocol=CONFD_SIP_PROTOCOL,
                 context='my-context',
+                tenant_uuid=VALID_TENANT,
             )
         )
         self.ari.set_originates(MockChannel(id=my_new_call_id))
@@ -2373,6 +2465,7 @@ class TestUserCreateCall(_BaseTestCalls):
                 name='line-name',
                 protocol=CONFD_SIP_PROTOCOL,
                 context='my-context',
+                tenant_uuid=VALID_TENANT,
             )
         )
         self.ari.set_originates(MockChannel(id=my_new_call_id))
@@ -2402,6 +2495,7 @@ class TestUserCreateCall(_BaseTestCalls):
                 name='line-name',
                 protocol=CONFD_SIP_PROTOCOL,
                 context='my-context',
+                tenant_uuid=VALID_TENANT,
             )
         )
         self.ari.set_originates(MockChannel(id=my_new_call_id))
@@ -2433,6 +2527,7 @@ class TestUserCreateCall(_BaseTestCalls):
                 name='line-name',
                 protocol=CONFD_SIP_PROTOCOL,
                 context='my-context',
+                tenant_uuid=VALID_TENANT,
             )
         )
         self.ari.set_originates(MockChannel(id=my_new_call_id))
@@ -2460,12 +2555,14 @@ class TestUserCreateCall(_BaseTestCalls):
                 name='first-line-name',
                 protocol=CONFD_SIP_PROTOCOL,
                 context='first-context',
+                tenant_uuid=VALID_TENANT,
             ),
             MockLine(
                 id=second_line_id,
                 name='second-line-name',
                 protocol=CONFD_SIP_PROTOCOL,
                 context='second-context',
+                tenant_uuid=VALID_TENANT,
             ),
         )
         self.ari.set_originates(MockChannel(id=my_new_call_id))
@@ -2513,12 +2610,14 @@ class TestUserCreateCall(_BaseTestCalls):
                 name='first-line-name',
                 protocol=CONFD_SIP_PROTOCOL,
                 context='first-context',
+                tenant_uuid=VALID_TENANT,
             ),
             MockLine(
                 id=second_line_id,
                 name='second-line-name',
                 protocol=CONFD_SIP_PROTOCOL,
                 context='second-context',
+                tenant_uuid=VALID_TENANT,
             ),
         )
         self.ari.set_originates(MockChannel(id=my_new_call_id))
@@ -2566,6 +2665,7 @@ class TestUserCreateCall(_BaseTestCalls):
                 name='first-line-name',
                 protocol=CONFD_SIP_PROTOCOL,
                 context='first-context',
+                tenant_uuid=VALID_TENANT,
             )
         )
         self.ari.set_originates(MockChannel(id=my_new_call_id))
@@ -2634,7 +2734,12 @@ class TestFailingARI(_BaseTestCalls):
             MockUser(uuid='user-uuid', line_ids=['line-id'], tenant_uuid=VALID_TENANT)
         )
         self.confd.set_lines(
-            MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL)
+            MockLine(
+                id='line-id',
+                name='line-name',
+                protocol=CONFD_SIP_PROTOCOL,
+                tenant_uuid=VALID_TENANT,
+            )
         )
         self.amid.set_valid_exten('context', 'extension')
         call_args = {
@@ -2703,7 +2808,12 @@ class TestConnectUser(_BaseTestCalls):
             MockUser(uuid='user-uuid', line_ids=['line-id'], tenant_uuid=VALID_TENANT)
         )
         self.confd.set_lines(
-            MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL)
+            MockLine(
+                id='line-id',
+                name='line-name',
+                protocol=CONFD_SIP_PROTOCOL,
+                tenant_uuid=VALID_TENANT,
+            )
         )
         self.ari.set_originates(MockChannel(id=my_new_call_id))
         self.ari.set_endpoints(MockEndpoint('pjsip', 'line-name', 'online'))
@@ -2759,7 +2869,12 @@ class TestConnectUser(_BaseTestCalls):
             MockUser(uuid='user-uuid', line_ids=['line-id'], tenant_uuid=VALID_TENANT)
         )
         self.confd.set_lines(
-            MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL)
+            MockLine(
+                id='line-id',
+                name='line-name',
+                protocol=CONFD_SIP_PROTOCOL,
+                tenant_uuid=VALID_TENANT,
+            )
         )
         self.ari.set_originates(MockChannel(id=my_new_call_id))
         self.ari.set_endpoints(MockEndpoint('pjsip', 'line-name', 'online'))
@@ -2859,7 +2974,12 @@ class TestConnectUser(_BaseTestCalls):
     def test_given_no_call_when_connect_user_then_404(self):
         self.confd.set_users(MockUser(uuid='user-uuid', line_ids=['line-id']))
         self.confd.set_lines(
-            MockLine(id='line-id', name='line-name', protocol=CONFD_SIP_PROTOCOL)
+            MockLine(
+                id='line-id',
+                name='line-name',
+                protocol=CONFD_SIP_PROTOCOL,
+                tenant_uuid=VALID_TENANT,
+            )
         )
 
         with pytest.raises(CalldError) as exc_info:
@@ -2959,7 +3079,14 @@ class TestCallerID(RealAsteriskIntegrationTest):
         self.confd.set_users(
             MockUser(uuid='user-uuid', line_ids=['line-id'], tenant_uuid=VALID_TENANT)
         )
-        self.confd.set_lines(MockLine(id='line-id', name='originator', protocol='test'))
+        self.confd.set_lines(
+            MockLine(
+                id='line-id',
+                name='originator',
+                protocol='test',
+                tenant_uuid=VALID_TENANT,
+            )
+        )
         call_args = {
             'source': {'user': 'user-uuid'},
             'destination': {
@@ -3017,6 +3144,7 @@ class TestUserCreateCallFromMobile(RealAsteriskIntegrationTest):
                 name='line-name',
                 protocol=CONFD_SIP_PROTOCOL,
                 context=mobile_context,
+                tenant_uuid=VALID_TENANT,
             )
         )
         user_calld = self.make_user_calld(user_uuid, tenant_uuid=VALID_TENANT)
@@ -3047,6 +3175,7 @@ class TestUserCreateCallFromMobile(RealAsteriskIntegrationTest):
                 name='line-name',
                 protocol=CONFD_SIP_PROTOCOL,
                 context=mobile_context,
+                tenant_uuid=VALID_TENANT,
             )
         )
         user_calld = self.make_user_calld(user_uuid, tenant_uuid=VALID_TENANT)
@@ -3080,6 +3209,7 @@ class TestUserCreateCallFromMobile(RealAsteriskIntegrationTest):
                 name='line-name',
                 protocol=CONFD_SIP_PROTOCOL,
                 context=mobile_context,
+                tenant_uuid=VALID_TENANT,
             )
         )
         user_calld = self.make_user_calld(user_uuid, tenant_uuid=VALID_TENANT)
