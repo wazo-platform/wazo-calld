@@ -44,6 +44,7 @@ paths:
 
         '
       parameters:
+      - $ref: '#/parameters/TenantUUID'
       - name: body
         in: body
         description: Call parameters
@@ -87,6 +88,7 @@ paths:
       summary: Hangup a call
       description: '**Required ACL:** `calld.calls.{call_id}.delete`'
       parameters:
+      - $ref: '#/parameters/TenantUUID'
       - $ref: '#/parameters/CallID'
       tags:
       - calls
@@ -104,6 +106,7 @@ paths:
       summary: Mute a call
       description: '**Required ACL:** `calld.calls.{call_id}.mute.start.update`'
       parameters:
+      - $ref: '#/parameters/TenantUUID'
       - $ref: '#/parameters/CallID'
       tags:
       - calls
@@ -121,6 +124,7 @@ paths:
       summary: Unmute a call
       description: '**Required ACL:** `calld.calls.{call_id}.mute.stop.update`'
       parameters:
+      - $ref: '#/parameters/TenantUUID'
       - $ref: '#/parameters/CallID'
       tags:
       - calls
@@ -143,6 +147,7 @@ paths:
       to handle the event.
       '
       parameters:
+      - $ref: '#/parameters/TenantUUID'
       - $ref: '#/parameters/CallID'
       tags:
       - calls
@@ -165,6 +170,7 @@ paths:
       to handle the event.
       '
       parameters:
+      - $ref: '#/parameters/TenantUUID'
       - $ref: '#/parameters/CallID'
       tags:
       - calls
@@ -182,6 +188,7 @@ paths:
       summary: Start recording a call
       description: '**Required ACL:** `calld.calls.{call_id}.record.start.update`'
       parameters:
+      - $ref: '#/parameters/TenantUUID'
       - $ref: '#/parameters/CallID'
       tags:
       - calls
@@ -199,6 +206,7 @@ paths:
       summary: Stop recording a call
       description: '**Required ACL:** `calld.calls.{call_id}.record.stop.update`'
       parameters:
+      - $ref: '#/parameters/TenantUUID'
       - $ref: '#/parameters/CallID'
       tags:
       - calls
@@ -221,6 +229,7 @@ paths:
       to handle the event.
       '
       parameters:
+      - $ref: '#/parameters/TenantUUID'
       - $ref: '#/parameters/CallID'
       tags:
       - calls
@@ -238,6 +247,7 @@ paths:
       summary: Simulate a user pressing DTMF keys
       description: '**Required ACL:** `calld.calls.{call_id}.dtmf.update'
       parameters:
+      - $ref: '#/parameters/TenantUUID'
       - $ref: '#/parameters/CallID'
       - $ref: '#/parameters/DTMFDigits'
       tags:
@@ -256,6 +266,7 @@ paths:
       summary: Connect a call to a user
       description: '**Required ACL:** `calld.calls.{call_id}.user.{user_uuid}.update`'
       parameters:
+      - $ref: '#/parameters/TenantUUID'
       - $ref: '#/parameters/CallID'
       - name: user_uuid
         in: path

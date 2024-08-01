@@ -42,9 +42,10 @@ class CallsResource(AuthResource):
 
     @required_acl('calld.calls.create')
     def post(self):
+        tenant = Tenant.autodetect()
         request_body = call_request_schema.load(request.get_json(force=True))
 
-        call = self.calls_service.originate(request_body)
+        call = self.calls_service.originate(tenant.uuid, request_body)
 
         return call_schema.dump(call), 201
 
@@ -69,11 +70,12 @@ class MyCallsResource(AuthResource):
 
     @required_acl('calld.users.me.calls.create')
     def post(self):
+        tenant = Tenant.autodetect()
         request_body = user_call_request_schema.load(request.get_json(force=True))
 
         user_uuid = get_token_user_uuid_from_request()
 
-        call = self.calls_service.originate_user(request_body, user_uuid)
+        call = self.calls_service.originate_user(tenant.uuid, request_body, user_uuid)
 
         return call_schema.dump(call), 201
 
@@ -91,7 +93,8 @@ class CallResource(AuthResource):
 
     @required_acl('calld.calls.{call_id}.delete')
     def delete(self, call_id):
-        self.calls_service.hangup(call_id)
+        tenant = Tenant.autodetect()
+        self.calls_service.hangup(call_id, tenant.uuid)
 
         return None, 204
 
@@ -102,7 +105,8 @@ class CallMuteStartResource(AuthResource):
 
     @required_acl('calld.calls.{call_id}.mute.start.update')
     def put(self, call_id):
-        self.calls_service.mute(call_id)
+        tenant = Tenant.autodetect()
+        self.calls_service.mute(tenant.uuid, call_id)
         return '', 204
 
 
@@ -112,7 +116,8 @@ class CallMuteStopResource(AuthResource):
 
     @required_acl('calld.calls.{call_id}.mute.stop.update')
     def put(self, call_id):
-        self.calls_service.unmute(call_id)
+        tenant = Tenant.autodetect()
+        self.calls_service.unmute(tenant.uuid, call_id)
         return '', 204
 
 
@@ -122,8 +127,9 @@ class MyCallMuteStartResource(AuthResource):
 
     @required_acl('calld.users.me.calls.{call_id}.mute.start.update')
     def put(self, call_id):
+        tenant = Tenant.autodetect()
         user_uuid = get_token_user_uuid_from_request()
-        self.calls_service.mute_user(call_id, user_uuid)
+        self.calls_service.mute_user(tenant.uuid, call_id, user_uuid)
         return '', 204
 
 
@@ -133,8 +139,9 @@ class MyCallMuteStopResource(AuthResource):
 
     @required_acl('calld.users.me.calls.{call_id}.mute.stop.update')
     def put(self, call_id):
+        tenant = Tenant.autodetect()
         user_uuid = get_token_user_uuid_from_request()
-        self.calls_service.unmute_user(call_id, user_uuid)
+        self.calls_service.unmute_user(tenant.uuid, call_id, user_uuid)
         return '', 204
 
 
@@ -156,8 +163,9 @@ class CallDtmfResource(AuthResource):
 
     @required_acl('calld.calls.{call_id}.dtmf.update')
     def put(self, call_id):
+        tenant = Tenant.autodetect()
         request_args = call_dtmf_schema.load(request.args)
-        self.calls_service.send_dtmf(call_id, request_args['digits'])
+        self.calls_service.send_dtmf(tenant.uuid, call_id, request_args['digits'])
         return '', 204
 
 
@@ -167,9 +175,12 @@ class MyCallDtmfResource(AuthResource):
 
     @required_acl('calld.users.me.calls.{call_id}.dtmf.update')
     def put(self, call_id):
+        tenant = Tenant.autodetect()
         request_args = call_dtmf_schema.load(request.args)
         user_uuid = get_token_user_uuid_from_request()
-        self.calls_service.send_dtmf_user(call_id, user_uuid, request_args['digits'])
+        self.calls_service.send_dtmf_user(
+            tenant.uuid, call_id, user_uuid, request_args['digits']
+        )
         return '', 204
 
 
@@ -179,7 +190,8 @@ class CallHoldResource(AuthResource):
 
     @required_acl('calld.calls.{call_id}.hold.start.update')
     def put(self, call_id):
-        self.calls_service.hold(call_id)
+        tenant = Tenant.autodetect()
+        self.calls_service.hold(tenant.uuid, call_id)
         return '', 204
 
 
@@ -189,7 +201,8 @@ class CallUnholdResource(AuthResource):
 
     @required_acl('calld.calls.{call_id}.hold.stop.update')
     def put(self, call_id):
-        self.calls_service.unhold(call_id)
+        tenant = Tenant.autodetect()
+        self.calls_service.unhold(tenant.uuid, call_id)
         return '', 204
 
 
@@ -199,8 +212,9 @@ class MyCallHoldResource(AuthResource):
 
     @required_acl('calld.users.me.calls.{call_id}.hold.start.update')
     def put(self, call_id):
+        tenant = Tenant.autodetect()
         user_uuid = get_token_user_uuid_from_request()
-        self.calls_service.hold_user(call_id, user_uuid)
+        self.calls_service.hold_user(tenant.uuid, call_id, user_uuid)
         return '', 204
 
 
@@ -210,8 +224,9 @@ class MyCallUnholdResource(AuthResource):
 
     @required_acl('calld.users.me.calls.{call_id}.hold.stop.update')
     def put(self, call_id):
+        tenant = Tenant.autodetect()
         user_uuid = get_token_user_uuid_from_request()
-        self.calls_service.unhold_user(call_id, user_uuid)
+        self.calls_service.unhold_user(tenant.uuid, call_id, user_uuid)
         return '', 204
 
 
@@ -221,7 +236,8 @@ class CallRecordStartResource(AuthResource):
 
     @required_acl('calld.calls.{call_id}.record.start.update')
     def put(self, call_id):
-        self.calls_service.record_start(call_id)
+        tenant = Tenant.autodetect()
+        self.calls_service.record_start(tenant.uuid, call_id)
         return '', 204
 
 
@@ -231,7 +247,8 @@ class CallRecordStopResource(AuthResource):
 
     @required_acl('calld.calls.{call_id}.record.stop.update')
     def put(self, call_id):
-        self.calls_service.record_stop(call_id)
+        tenant = Tenant.autodetect()
+        self.calls_service.record_stop(tenant.uuid, call_id)
         return '', 204
 
 
@@ -241,8 +258,9 @@ class MyCallRecordStopResource(AuthResource):
 
     @required_acl('calld.users.me.calls.{call_id}.record.stop.update')
     def put(self, call_id):
+        tenant = Tenant.autodetect()
         user_uuid = get_token_user_uuid_from_request()
-        self.calls_service.record_stop_user(call_id, user_uuid)
+        self.calls_service.record_stop_user(tenant.uuid, call_id, user_uuid)
         return '', 204
 
 
@@ -252,8 +270,9 @@ class MyCallRecordStartResource(AuthResource):
 
     @required_acl('calld.users.me.calls.{call_id}.record.start.update')
     def put(self, call_id):
+        tenant = Tenant.autodetect()
         user_uuid = get_token_user_uuid_from_request()
-        self.calls_service.record_start_user(call_id, user_uuid)
+        self.calls_service.record_start_user(tenant.uuid, call_id, user_uuid)
         return '', 204
 
 
@@ -263,7 +282,8 @@ class CallAnswerResource(AuthResource):
 
     @required_acl('calld.calls.{call_id}.answer.update')
     def put(self, call_id):
-        self.calls_service.answer(call_id)
+        tenant = Tenant.autodetect()
+        self.calls_service.answer(tenant.uuid, call_id)
         return '', 204
 
 
@@ -273,8 +293,9 @@ class MyCallAnswerResource(AuthResource):
 
     @required_acl('calld.users.me.calls.{call_id}.answer.update')
     def put(self, call_id):
+        tenant = Tenant.autodetect()
         user_uuid = get_token_user_uuid_from_request()
-        self.calls_service.answer_user(call_id, user_uuid)
+        self.calls_service.answer_user(tenant.uuid, call_id, user_uuid)
         return '', 204
 
 
@@ -284,13 +305,17 @@ class ConnectCallToUserResource(AuthResource):
 
     @required_acl('calld.calls.{call_id}.user.{user_uuid}.update')
     def put(self, call_id, user_uuid):
+        tenant = Tenant.autodetect()
         body = connect_call_request_body_schema.load(
             request.json if request.data else {}
         )
-        assert body
-        args = {'call_id': call_id, 'user_uuid': user_uuid, 'timeout': body['timeout']}
 
-        new_call_id = self.calls_service.connect_user(**args)
+        new_call_id = self.calls_service.connect_user(
+            call_id=call_id,
+            user_uuid=user_uuid,
+            timeout=body['timeout'],
+            tenant_uuid=tenant.uuid,
+        )
         new_call = self.calls_service.get(new_call_id)
 
         return call_schema.dump(new_call)

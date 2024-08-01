@@ -497,9 +497,14 @@ class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
         )
         self.auth.set_token(mock_token)
         switchboard_uuid = UUID_NOT_FOUND
-        self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
+        self.confd.set_users(
+            MockUser(uuid=user_uuid, line_ids=[line_id], tenant_uuid=VALID_TENANT)
+        )
         line = MockLine(
-            id=line_id, name='switchboard-operator/autoanswer', protocol='test'
+            id=line_id,
+            name='switchboard-operator/autoanswer',
+            protocol='test',
+            tenant_uuid=VALID_TENANT,
         )
         self.confd.set_lines(line)
         new_channel = self.ari.channels.originate(
@@ -533,10 +538,15 @@ class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
         self.auth.set_token(mock_token)
         switchboard_uuid = 'my-switchboard-uuid'
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
-        self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
+        self.confd.set_users(
+            MockUser(uuid=user_uuid, line_ids=[line_id], tenant_uuid=VALID_TENANT)
+        )
         self.confd.set_lines(
             MockLine(
-                id=line_id, name='switchboard-operator/autoanswer', protocol='test'
+                id=line_id,
+                name='switchboard-operator/autoanswer',
+                protocol='test',
+                tenant_uuid=VALID_TENANT,
             )
         )
 
@@ -592,7 +602,7 @@ class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
         self.auth.set_token(mock_token)
         switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
-        self.confd.set_users(MockUser(uuid=user_uuid))
+        self.confd.set_users(MockUser(uuid=user_uuid, tenant_uuid=VALID_TENANT))
         bus_events = self.bus.accumulator(
             headers={'switchboard_uuid': switchboard_uuid}
         )
@@ -630,10 +640,15 @@ class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
         self.auth.set_token(mock_token)
         switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
-        self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
+        self.confd.set_users(
+            MockUser(uuid=user_uuid, line_ids=[line_id], tenant_uuid=VALID_TENANT)
+        )
         self.confd.set_lines(
             MockLine(
-                id=line_id, name='switchboard-operator/autoanswer', protocol='test'
+                id=line_id,
+                name='switchboard-operator/autoanswer',
+                protocol='test',
+                tenant_uuid=VALID_TENANT,
             )
         )
         bus_events = self.bus.accumulator(
@@ -676,18 +691,24 @@ class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
         switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         self.confd.set_users(
-            MockUser(uuid=user_uuid, line_ids=[first_line_id, second_line_id])
+            MockUser(
+                uuid=user_uuid,
+                line_ids=[first_line_id, second_line_id],
+                tenant_uuid=VALID_TENANT,
+            )
         )
         self.confd.set_lines(
             MockLine(
                 id=first_line_id,
                 name='switchboard-first-line/autoanswer',
                 protocol='test',
+                tenant_uuid=VALID_TENANT,
             ),
             MockLine(
                 id=second_line_id,
                 name='switchboard-second-line/autoanswer',
                 protocol='test',
+                tenant_uuid=VALID_TENANT,
             ),
         )
         queued_bus_events = self.bus.accumulator(
@@ -770,18 +791,24 @@ class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
         switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         self.confd.set_users(
-            MockUser(uuid=user_uuid, line_ids=[first_line_id, second_line_id])
+            MockUser(
+                uuid=user_uuid,
+                line_ids=[first_line_id, second_line_id],
+                tenant_uuid=VALID_TENANT,
+            )
         )
         self.confd.set_lines(
             MockLine(
                 id=first_line_id,
                 name='switchboard-first-line/autoanswer',
                 protocol='test',
+                tenant_uuid=VALID_TENANT,
             ),
             MockLine(
                 id=second_line_id,
                 name='switchboard-second-line/autoanswer',
                 protocol='test',
+                tenant_uuid=VALID_TENANT,
             ),
         )
         queued_bus_events = self.bus.accumulator(
@@ -864,9 +891,16 @@ class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
         self.auth.set_token(mock_token)
         switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
-        self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
+        self.confd.set_users(
+            MockUser(uuid=user_uuid, line_ids=[line_id], tenant_uuid=VALID_TENANT)
+        )
         self.confd.set_lines(
-            MockLine(id=line_id, name='switchboard-operator', protocol='test')
+            MockLine(
+                id=line_id,
+                name='switchboard-operator',
+                protocol='test',
+                tenant_uuid=VALID_TENANT,
+            )
         )
         queued_bus_events = self.bus.accumulator(
             headers={
@@ -932,9 +966,16 @@ class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
         self.auth.set_token(mock_token)
         switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
-        self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
+        self.confd.set_users(
+            MockUser(uuid=user_uuid, line_ids=[line_id], tenant_uuid=VALID_TENANT)
+        )
         self.confd.set_lines(
-            MockLine(id=line_id, name='switchboard-operator', protocol='test')
+            MockLine(
+                id=line_id,
+                name='switchboard-operator',
+                protocol='test',
+                tenant_uuid=VALID_TENANT,
+            )
         )
         bus_events = self.bus.accumulator(
             headers={
@@ -995,15 +1036,21 @@ class TestSwitchboardCallsQueuedAnswer(TestSwitchboards):
         switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         self.confd.set_users(
-            MockUser(uuid=user_uuid, line_ids=[line_id]),
-            MockUser(uuid=user_uuid2, line_ids=[line_id2]),
+            MockUser(uuid=user_uuid, line_ids=[line_id], tenant_uuid=VALID_TENANT),
+            MockUser(uuid=user_uuid2, line_ids=[line_id2], tenant_uuid=VALID_TENANT),
         )
         self.confd.set_lines(
             MockLine(
-                id=line_id, name='switchboard-operator/autoanswer', protocol='test'
+                id=line_id,
+                name='switchboard-operator/autoanswer',
+                protocol='test',
+                tenant_uuid=VALID_TENANT,
             ),
             MockLine(
-                id=line_id2, name='switchboard-operator/autoanswer2', protocol='test'
+                id=line_id2,
+                name='switchboard-operator/autoanswer2',
+                protocol='test',
+                tenant_uuid=VALID_TENANT,
             ),
         )
         bus_events = self.bus.accumulator(
@@ -1056,10 +1103,15 @@ class TestSwitchboardConfdCache(IntegrationTest):
         def reset_confd():
             self.confd.reset()
             self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
-            self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
+            self.confd.set_users(
+                MockUser(uuid=user_uuid, line_ids=[line_id], tenant_uuid=VALID_TENANT)
+            )
             self.confd.set_lines(
                 MockLine(
-                    id=line_id, name='switchboard-operator/autoanswer', protocol='test'
+                    id=line_id,
+                    name='switchboard-operator/autoanswer',
+                    protocol='test',
+                    tenant_uuid=VALID_TENANT,
                 )
             )
 
@@ -1255,10 +1307,15 @@ class TestSwitchboardHoldCall(TestSwitchboards):
         self.auth.set_token(mock_token)
         switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
-        self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
+        self.confd.set_users(
+            MockUser(uuid=user_uuid, line_ids=[line_id], tenant_uuid=VALID_TENANT)
+        )
         self.confd.set_lines(
             MockLine(
-                id=line_id, name='switchboard-operator/autoanswer', protocol='test'
+                id=line_id,
+                name='switchboard-operator/autoanswer',
+                protocol='test',
+                tenant_uuid=VALID_TENANT,
             )
         )
         queued_bus_events = self.bus.accumulator(
@@ -1311,10 +1368,15 @@ class TestSwitchboardHoldCall(TestSwitchboards):
         self.auth.set_token(mock_token)
         switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
-        self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
+        self.confd.set_users(
+            MockUser(uuid=user_uuid, line_ids=[line_id], tenant_uuid=VALID_TENANT)
+        )
         self.confd.set_lines(
             MockLine(
-                id=line_id, name='switchboard-operator/autoanswer', protocol='test'
+                id=line_id,
+                name='switchboard-operator/autoanswer',
+                protocol='test',
+                tenant_uuid=VALID_TENANT,
             )
         )
         queued_bus_events = self.bus.accumulator(
@@ -1395,10 +1457,15 @@ class TestSwitchboardHoldCall(TestSwitchboards):
         self.auth.set_token(mock_token)
         switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
-        self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
+        self.confd.set_users(
+            MockUser(uuid=user_uuid, line_ids=[line_id], tenant_uuid=VALID_TENANT)
+        )
         self.confd.set_lines(
             MockLine(
-                id=line_id, name='switchboard-operator/autoanswer', protocol='test'
+                id=line_id,
+                name='switchboard-operator/autoanswer',
+                protocol='test',
+                tenant_uuid=VALID_TENANT,
             )
         )
         queued_bus_events = self.bus.accumulator(
@@ -1458,10 +1525,15 @@ class TestSwitchboardHoldCall(TestSwitchboards):
         self.auth.set_token(mock_token)
         switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
-        self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
+        self.confd.set_users(
+            MockUser(uuid=user_uuid, line_ids=[line_id], tenant_uuid=VALID_TENANT)
+        )
         self.confd.set_lines(
             MockLine(
-                id=line_id, name='switchboard-operator/autoanswer', protocol='test'
+                id=line_id,
+                name='switchboard-operator/autoanswer',
+                protocol='test',
+                tenant_uuid=VALID_TENANT,
             )
         )
         queued_bus_events = self.bus.accumulator(
@@ -1841,10 +1913,15 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
             metadata={'tenant_uuid': VALID_TENANT},
         )
         self.auth.set_token(mock_token)
-        self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
+        self.confd.set_users(
+            MockUser(uuid=user_uuid, line_ids=[line_id], tenant_uuid=VALID_TENANT)
+        )
         self.confd.set_lines(
             MockLine(
-                id=line_id, name='switchboard-operator/autoanswer', protocol='test'
+                id=line_id,
+                name='switchboard-operator/autoanswer',
+                protocol='test',
+                tenant_uuid=VALID_TENANT,
             )
         )
         switchboard_uuid = UUID_NOT_FOUND
@@ -1878,10 +1955,15 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
         self.auth.set_token(mock_token)
         switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
-        self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
+        self.confd.set_users(
+            MockUser(uuid=user_uuid, line_ids=[line_id], tenant_uuid=VALID_TENANT)
+        )
         self.confd.set_lines(
             MockLine(
-                id=line_id, name='switchboard-operator/autoanswer', protocol='test'
+                id=line_id,
+                name='switchboard-operator/autoanswer',
+                protocol='test',
+                tenant_uuid=VALID_TENANT,
             )
         )
 
@@ -1948,7 +2030,7 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
         self.auth.set_token(mock_token)
         switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
-        self.confd.set_users(MockUser(uuid=user_uuid))
+        self.confd.set_users(MockUser(uuid=user_uuid, tenant_uuid=VALID_TENANT))
         queued_bus_events = self.bus.accumulator(
             headers={
                 'switchboard_uuid': switchboard_uuid,
@@ -1997,10 +2079,15 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
         self.auth.set_token(mock_token)
         switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
-        self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
+        self.confd.set_users(
+            MockUser(uuid=user_uuid, line_ids=[line_id], tenant_uuid=VALID_TENANT)
+        )
         self.confd.set_lines(
             MockLine(
-                id=line_id, name='switchboard-operator/autoanswer', protocol='test'
+                id=line_id,
+                name='switchboard-operator/autoanswer',
+                protocol='test',
+                tenant_uuid=VALID_TENANT,
             )
         )
         queued_bus_events = self.bus.accumulator(
@@ -2051,18 +2138,24 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
         switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         self.confd.set_users(
-            MockUser(uuid=user_uuid, line_ids=[first_line_id, second_line_id])
+            MockUser(
+                uuid=user_uuid,
+                line_ids=[first_line_id, second_line_id],
+                tenant_uuid=VALID_TENANT,
+            )
         )
         self.confd.set_lines(
             MockLine(
                 id=first_line_id,
                 name='switchboard-first-line/autoanswer',
                 protocol='test',
+                tenant_uuid=VALID_TENANT,
             ),
             MockLine(
                 id=second_line_id,
                 name='switchboard-second-line/autoanswer',
                 protocol='test',
+                tenant_uuid=VALID_TENANT,
             ),
         )
         queued_bus_events = self.bus.accumulator(
@@ -2155,18 +2248,24 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
         switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         self.confd.set_users(
-            MockUser(uuid=user_uuid, line_ids=[first_line_id, second_line_id])
+            MockUser(
+                uuid=user_uuid,
+                line_ids=[first_line_id, second_line_id],
+                tenant_uuid=VALID_TENANT,
+            )
         )
         self.confd.set_lines(
             MockLine(
                 id=first_line_id,
                 name='switchboard-first-line/autoanswer',
                 protocol='test',
+                tenant_uuid=VALID_TENANT,
             ),
             MockLine(
                 id=second_line_id,
                 name='switchboard-second-line/autoanswer',
                 protocol='test',
+                tenant_uuid=VALID_TENANT,
             ),
         )
         queued_bus_events = self.bus.accumulator(
@@ -2257,9 +2356,16 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
         self.auth.set_token(mock_token)
         switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
-        self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
+        self.confd.set_users(
+            MockUser(uuid=user_uuid, line_ids=[line_id], tenant_uuid=VALID_TENANT)
+        )
         self.confd.set_lines(
-            MockLine(id=line_id, name='switchboard-operator', protocol='test')
+            MockLine(
+                id=line_id,
+                name='switchboard-operator',
+                protocol='test',
+                tenant_uuid=VALID_TENANT,
+            )
         )
         queued_bus_events = self.bus.accumulator(
             headers={
@@ -2333,9 +2439,16 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
         self.auth.set_token(mock_token)
         switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
-        self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
+        self.confd.set_users(
+            MockUser(uuid=user_uuid, line_ids=[line_id], tenant_uuid=VALID_TENANT)
+        )
         self.confd.set_lines(
-            MockLine(id=line_id, name='switchboard-operator', protocol='test')
+            MockLine(
+                id=line_id,
+                name='switchboard-operator',
+                protocol='test',
+                tenant_uuid=VALID_TENANT,
+            )
         )
         queued_bus_events = self.bus.accumulator(
             headers={
@@ -2392,11 +2505,14 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
         switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         self.confd.set_users(
-            MockUser(uuid=user_uuid, line_ids=[line_id]),
+            MockUser(uuid=user_uuid, line_ids=[line_id], tenant_uuid=VALID_TENANT),
         )
         self.confd.set_lines(
             MockLine(
-                id=line_id, name='switchboard-operator/autoanswer', protocol='test'
+                id=line_id,
+                name='switchboard-operator/autoanswer',
+                protocol='test',
+                tenant_uuid=VALID_TENANT,
             ),
         )
         bus_events = self.bus.accumulator(
@@ -2494,15 +2610,21 @@ class TestSwitchboardCallsHeldAnswer(TestSwitchboards):
         switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
         self.confd.set_users(
-            MockUser(uuid=user_uuid, line_ids=[line_id]),
-            MockUser(uuid=user_uuid2, line_ids=[line_id2]),
+            MockUser(uuid=user_uuid, line_ids=[line_id], tenant_uuid=VALID_TENANT),
+            MockUser(uuid=user_uuid2, line_ids=[line_id2], tenant_uuid=VALID_TENANT),
         )
         self.confd.set_lines(
             MockLine(
-                id=line_id, name='switchboard-operator/autoanswer', protocol='test'
+                id=line_id,
+                name='switchboard-operator/autoanswer',
+                protocol='test',
+                tenant_uuid=VALID_TENANT,
             ),
             MockLine(
-                id=line_id2, name='switchboard-operator/autoanswer2', protocol='test'
+                id=line_id2,
+                name='switchboard-operator/autoanswer2',
+                protocol='test',
+                tenant_uuid=VALID_TENANT,
             ),
         )
         queued_bus_events = self.bus.accumulator(

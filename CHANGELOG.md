@@ -2,10 +2,26 @@
 
 ## 24.11
 
-*  the following endpoints are now performing additional validation before starting a call, which introduces a different behavior for existing error conditions:
+* The following endpoints are now performing additional validation before starting a call, which introduces a different behavior for existing error conditions:
   * `POST /1.0/calls`
   * `POST /1.0/users/me/calls`
   If the requested source line is of type SIP, and is not registered nor available, the API will respond with a 400 status and error id `call-origin-unavailable`
+
+* The following endpoints now enforce tenant isolation:
+
+  * `POST /1.0/calls`
+  * `DELETE /1.0/calls/<call-id>`
+  * `PUT /1.0/calls/<call_id>/user/<user_uuid>`
+  * `PUT /1.0/calls/{call_id}/answer`
+  * `PUT /1.0/calls/{call_id}/dtmf`
+  * `PUT /1.0/calls/{call_id}/hold/start`
+  * `PUT /1.0/calls/{call_id}/hold/stop`
+  * `PUT /1.0/calls/{call_id}/record/start`
+  * `PUT /1.0/calls/{call_id}/record/stop`
+  * `PUT /1.0/calls/{call_id}/mute/start`
+  * `PUT /1.0/calls/{call_id}/mute/stop`
+
+  In order to make an action in another tenant, you need to specify the `Wazo-Tenant` HTTP header.
 
 ## 24.10
 

@@ -28,6 +28,7 @@ from .helpers.real_asterisk import RealAsterisk, RealAsteriskIntegrationTest
 
 SOME_LINE_ID = 12
 SOME_LINE_NAME = 'line-name'
+SOME_TENANT_UUID = '5bca84f9-831f-470b-8c04-5a6ad584697e'
 SOME_USER_UUID = '68b884c3-515b-4acf-9034-c77896877acb'
 SOME_CONTEXT = 'some-context'
 
@@ -41,6 +42,7 @@ class TestRelocates(RealAsteriskIntegrationTest):
         self.real_asterisk = RealAsterisk(self.ari, self.calld_client)
 
     def given_mobile_call(self):
+        tenant_uuid = 'my-tenant-uuid'
         user_uuid = str(uuid.uuid4())
         line_id = SOME_LINE_ID
         self.confd.set_users(
@@ -48,13 +50,19 @@ class TestRelocates(RealAsteriskIntegrationTest):
                 uuid=user_uuid,
                 line_ids=[line_id],
                 mobile='mobile-autoanswer',
-                tenant_uuid='my-tenant-uuid',
+                tenant_uuid=tenant_uuid,
             )
         )
         self.confd.set_lines(
-            MockLine(id=line_id, name=SOME_LINE_NAME, protocol='local', context='local')
+            MockLine(
+                id=line_id,
+                name=SOME_LINE_NAME,
+                protocol='local',
+                context='local',
+                tenant_uuid=tenant_uuid,
+            )
         )
-        calld_client = self.make_user_calld(user_uuid)
+        calld_client = self.make_user_calld(user_uuid, tenant_uuid=tenant_uuid)
 
         call = calld_client.calls.make_call_from_user(
             extension='dial-autoanswer',
@@ -76,9 +84,10 @@ class TestRelocates(RealAsteriskIntegrationTest):
 
         callee = until.true(bridged_channel, call['call_id'], timeout=3)
 
-        return call['call_id'], callee, user_uuid
+        return call['call_id'], callee, user_uuid, tenant_uuid
 
     def given_ringing_user_relocate(self):
+        tenant_uuid = 'my-tenant-uuid'
         user_uuid = str(uuid.uuid4())
         (
             relocated_channel_id,
@@ -86,7 +95,7 @@ class TestRelocates(RealAsteriskIntegrationTest):
         ) = self.real_asterisk.given_bridged_call_stasis(callee_uuid=user_uuid)
         line_id = SOME_LINE_ID
         self.confd.set_users(
-            MockUser(uuid=user_uuid, line_ids=[line_id], tenant_uuid='my-tenant-uuid')
+            MockUser(uuid=user_uuid, line_ids=[line_id], tenant_uuid=tenant_uuid)
         )
         self.confd.set_lines(
             MockLine(
@@ -94,6 +103,7 @@ class TestRelocates(RealAsteriskIntegrationTest):
                 name='recipient@local',
                 protocol='local',
                 context=SOME_CONTEXT,
+                tenant_uuid=tenant_uuid,
             )
         )
         destination = 'line'
@@ -106,6 +116,7 @@ class TestRelocates(RealAsteriskIntegrationTest):
         return relocate, user_uuid, destination, location
 
     def given_waiting_relocated_user_relocate(self):
+        tenant_uuid = 'my-tenant-uuid'
         user_uuid = str(uuid.uuid4())
         (
             relocated_channel_id,
@@ -115,7 +126,11 @@ class TestRelocates(RealAsteriskIntegrationTest):
         )
         line_id = SOME_LINE_ID
         self.confd.set_users(
-            MockUser(uuid=user_uuid, line_ids=[line_id], tenant_uuid='my-tenant-uuid')
+            MockUser(
+                uuid=user_uuid,
+                line_ids=[line_id],
+                tenant_uuid=tenant_uuid,
+            )
         )
         self.confd.set_lines(
             MockLine(
@@ -123,6 +138,7 @@ class TestRelocates(RealAsteriskIntegrationTest):
                 name='recipient_autoanswer@local',
                 protocol='local',
                 context=SOME_CONTEXT,
+                tenant_uuid=tenant_uuid,
             )
         )
         destination = 'line'
@@ -154,6 +170,7 @@ class TestRelocates(RealAsteriskIntegrationTest):
         return relocate, user_uuid
 
     def given_answered_user_relocate(self):
+        tenant_uuid = 'my-tenant-uuid'
         user_uuid = SOME_USER_UUID
         (
             relocated_channel_id,
@@ -161,7 +178,7 @@ class TestRelocates(RealAsteriskIntegrationTest):
         ) = self.real_asterisk.given_bridged_call_stasis(callee_uuid=user_uuid)
         line_id = SOME_LINE_ID
         self.confd.set_users(
-            MockUser(uuid=user_uuid, line_ids=[line_id], tenant_uuid='my-tenant-uuid')
+            MockUser(uuid=user_uuid, line_ids=[line_id], tenant_uuid=tenant_uuid)
         )
         self.confd.set_lines(
             MockLine(
@@ -169,6 +186,7 @@ class TestRelocates(RealAsteriskIntegrationTest):
                 name='recipient_autoanswer@local',
                 protocol='local',
                 context=SOME_CONTEXT,
+                tenant_uuid=tenant_uuid,
             )
         )
         events = self.bus.accumulator(headers={'name': 'relocate_answered'})
@@ -222,6 +240,7 @@ class TestRelocates(RealAsteriskIntegrationTest):
         return relocate, user_uuid
 
     def given_completed_user_relocate(self):
+        tenant_uuid = 'my-tenant-uuid'
         user_uuid = SOME_USER_UUID
         (
             relocated_channel_id,
@@ -229,7 +248,7 @@ class TestRelocates(RealAsteriskIntegrationTest):
         ) = self.real_asterisk.given_bridged_call_stasis(callee_uuid=user_uuid)
         line_id = SOME_LINE_ID
         self.confd.set_users(
-            MockUser(uuid=user_uuid, line_ids=[line_id], tenant_uuid='my-tenant-uuid')
+            MockUser(uuid=user_uuid, line_ids=[line_id], tenant_uuid=tenant_uuid)
         )
         self.confd.set_lines(
             MockLine(
@@ -237,6 +256,7 @@ class TestRelocates(RealAsteriskIntegrationTest):
                 name='recipient_autoanswer@local',
                 protocol='local',
                 context=SOME_CONTEXT,
+                tenant_uuid=tenant_uuid,
             )
         )
         destination = 'line'
@@ -554,20 +574,24 @@ class TestCreateUserRelocate(TestRelocates):
         )
 
     def test_given_only_one_channel_when_relocate_then_400(self):
+        tenant_uuid = SOME_TENANT_UUID
         user_uuid = SOME_USER_UUID
         line_id = SOME_LINE_ID
         initiator_channel = self.real_asterisk.stasis_channel()
         initiator_channel.setChannelVar(variable='WAZO_USERUUID', value=user_uuid)
-        self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
+        self.confd.set_users(
+            MockUser(uuid=user_uuid, line_ids=[line_id], tenant_uuid=tenant_uuid)
+        )
         self.confd.set_lines(
             MockLine(
                 id=line_id,
                 name='recipient_autoanswer@local',
                 protocol='local',
                 context=SOME_CONTEXT,
+                tenant_uuid=tenant_uuid,
             )
         )
-        calld_client = self.make_user_calld(user_uuid)
+        calld_client = self.make_user_calld(user_uuid, tenant_uuid=SOME_TENANT_UUID)
 
         assert_that(
             calling(calld_client.relocates.create_from_user).with_args(
@@ -604,15 +628,19 @@ class TestCreateUserRelocate(TestRelocates):
         )
 
     def test_given_stasis_channels_a_b_when_b_relocate_to_c_and_answer_then_a_c(self):
+        tenant_uuid = SOME_TENANT_UUID
         user_uuid = SOME_USER_UUID
         line_id = 12
-        self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
+        self.confd.set_users(
+            MockUser(uuid=user_uuid, line_ids=[line_id], tenant_uuid=tenant_uuid)
+        )
         self.confd.set_lines(
             MockLine(
                 id=line_id,
                 name='recipient_autoanswer@local',
                 protocol='local',
                 context=SOME_CONTEXT,
+                tenant_uuid=tenant_uuid,
             )
         )
         (
@@ -620,7 +648,7 @@ class TestCreateUserRelocate(TestRelocates):
             initiator_channel_id,
         ) = self.real_asterisk.given_bridged_call_stasis(callee_uuid=user_uuid)
         events = self.bus.accumulator(headers={f'user_uuid:{user_uuid}': True})
-        calld_client = self.make_user_calld(user_uuid)
+        calld_client = self.make_user_calld(user_uuid, tenant_uuid=tenant_uuid)
 
         relocate = calld_client.relocates.create_from_user(
             initiator_channel_id, 'line', {'line_id': line_id}
@@ -707,15 +735,19 @@ class TestCreateUserRelocate(TestRelocates):
     def test_given_non_stasis_channels_a_b_when_b_relocate_to_c_and_answer_then_a_c(
         self,
     ):
+        tenant_uuid = SOME_TENANT_UUID
         user_uuid = SOME_USER_UUID
         line_id = 12
-        self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
+        self.confd.set_users(
+            MockUser(uuid=user_uuid, line_ids=[line_id], tenant_uuid=tenant_uuid)
+        )
         self.confd.set_lines(
             MockLine(
                 id=line_id,
                 name='recipient_autoanswer@local',
                 protocol='local',
                 context=SOME_CONTEXT,
+                tenant_uuid=tenant_uuid,
             )
         )
         (
@@ -723,7 +755,7 @@ class TestCreateUserRelocate(TestRelocates):
             initiator_channel_id,
         ) = self.real_asterisk.given_bridged_call_not_stasis(callee_uuid=user_uuid)
         events = self.bus.accumulator(headers={f'user_uuid:{user_uuid}': True})
-        calld_client = self.make_user_calld(user_uuid)
+        calld_client = self.make_user_calld(user_uuid, tenant_uuid=tenant_uuid)
 
         relocate = calld_client.relocates.create_from_user(
             initiator_channel_id, 'line', {'line_id': line_id}
@@ -808,15 +840,22 @@ class TestCreateUserRelocate(TestRelocates):
         until.assert_(relocate_events_received)
 
     def test_given_b_has_no_mobile_when_b_relocate_to_mobile_then_400(self):
+        tenant_uuid = SOME_TENANT_UUID
         user_uuid = SOME_USER_UUID
         line_id = 12
-        self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id], mobile=None))
-        self.confd.set_lines(MockLine(id=line_id, context='local'))
+        self.confd.set_users(
+            MockUser(
+                uuid=user_uuid, line_ids=[line_id], mobile=None, tenant_uuid=tenant_uuid
+            )
+        )
+        self.confd.set_lines(
+            MockLine(id=line_id, context='local', tenant_uuid=tenant_uuid)
+        )
         (
             relocated_channel_id,
             initiator_channel_id,
         ) = self.real_asterisk.given_bridged_call_stasis(callee_uuid=user_uuid)
-        calld_client = self.make_user_calld(user_uuid)
+        calld_client = self.make_user_calld(user_uuid, tenant_uuid=tenant_uuid)
 
         assert_that(
             calling(calld_client.relocates.create_from_user).with_args(
@@ -836,17 +875,25 @@ class TestCreateUserRelocate(TestRelocates):
     def test_given_stasis_channels_a_b_when_b_relocate_to_mobile_and_answer_then_a_talks_with_mobile(
         self,
     ):
+        tenant_uuid = SOME_TENANT_UUID
         user_uuid = SOME_USER_UUID
         line_id = 12
         self.confd.set_users(
-            MockUser(uuid=user_uuid, line_ids=[line_id], mobile='recipient_autoanswer')
+            MockUser(
+                uuid=user_uuid,
+                line_ids=[line_id],
+                mobile='recipient_autoanswer',
+                tenant_uuid=tenant_uuid,
+            )
         )
-        self.confd.set_lines(MockLine(id=line_id, context='local'))
+        self.confd.set_lines(
+            MockLine(id=line_id, context='local', tenant_uuid=tenant_uuid)
+        )
         (
             relocated_channel_id,
             initiator_channel_id,
         ) = self.real_asterisk.given_bridged_call_stasis(callee_uuid=user_uuid)
-        calld_client = self.make_user_calld(user_uuid)
+        calld_client = self.make_user_calld(user_uuid, tenant_uuid=tenant_uuid)
 
         relocate = calld_client.relocates.create_from_user(
             initiator_channel_id, 'mobile'
@@ -1111,20 +1158,28 @@ class TestCreateUserRelocate(TestRelocates):
         )
 
     def test_given_mobile_call_when_relocate_to_line_then_relocate_completed(self):
-        mobile_channel, other_channel, mobile_user_uuid = self.given_mobile_call()
+        (
+            mobile_channel,
+            other_channel,
+            mobile_user_uuid,
+            tenant_uuid,
+        ) = self.given_mobile_call()
         line_id = SOME_LINE_ID
-        self.confd.set_users(MockUser(uuid=mobile_user_uuid, line_ids=[line_id]))
+        self.confd.set_users(
+            MockUser(uuid=mobile_user_uuid, line_ids=[line_id], tenant_uuid=tenant_uuid)
+        )
         self.confd.set_lines(
             MockLine(
                 id=line_id,
                 name='recipient_autoanswer@local',
                 protocol='local',
                 context=SOME_CONTEXT,
+                tenant_uuid=tenant_uuid,
             )
         )
         destination = 'line'
         location = {'line_id': line_id}
-        calld_client = self.make_user_calld(mobile_user_uuid)
+        calld_client = self.make_user_calld(mobile_user_uuid, tenant_uuid=tenant_uuid)
 
         relocate = calld_client.relocates.create_from_user(
             mobile_channel, destination, location
@@ -1142,6 +1197,7 @@ class TestCreateUserRelocate(TestRelocates):
     def test_given_call_when_relocate_to_mobile_and_relocate_to_line_then_relocate_completed(
         self,
     ):
+        tenant_uuid = SOME_TENANT_UUID
         user_uuid = SOME_USER_UUID
         (
             initiator_channel,
@@ -1149,7 +1205,12 @@ class TestCreateUserRelocate(TestRelocates):
         ) = self.real_asterisk.given_bridged_call_stasis(caller_uuid=user_uuid)
         line_id = SOME_LINE_ID
         self.confd.set_users(
-            MockUser(uuid=user_uuid, line_ids=[line_id], mobile='recipient_autoanswer')
+            MockUser(
+                uuid=user_uuid,
+                line_ids=[line_id],
+                mobile='recipient_autoanswer',
+                tenant_uuid=tenant_uuid,
+            )
         )
         self.confd.set_lines(
             MockLine(
@@ -1157,9 +1218,10 @@ class TestCreateUserRelocate(TestRelocates):
                 name='recipient_autoanswer@local',
                 protocol='local',
                 context='local',
+                tenant_uuid=tenant_uuid,
             )
         )
-        calld_client = self.make_user_calld(user_uuid)
+        calld_client = self.make_user_calld(user_uuid, tenant_uuid=tenant_uuid)
 
         relocate = calld_client.relocates.create_from_user(
             initiator_channel, destination='mobile'
@@ -1204,19 +1266,26 @@ class TestCreateUserRelocate(TestRelocates):
         )
 
     def test_given_timeout_when_relocate_noanswer_then_relocate_cancelled(self):
+        tenant_uuid = SOME_TENANT_UUID
         user_uuid = SOME_USER_UUID
         line_id = 12
-        self.confd.set_users(MockUser(uuid=user_uuid, line_ids=[line_id]))
+        self.confd.set_users(
+            MockUser(uuid=user_uuid, line_ids=[line_id], tenant_uuid=tenant_uuid)
+        )
         self.confd.set_lines(
             MockLine(
-                id=line_id, name='ring@local', protocol='local', context=SOME_CONTEXT
+                id=line_id,
+                name='ring@local',
+                protocol='local',
+                context=SOME_CONTEXT,
+                tenant_uuid=tenant_uuid,
             )
         )
         (
             relocated_channel_id,
             initiator_channel_id,
         ) = self.real_asterisk.given_bridged_call_stasis(callee_uuid=user_uuid)
-        calld_client = self.make_user_calld(user_uuid)
+        calld_client = self.make_user_calld(user_uuid, tenant_uuid=tenant_uuid)
 
         relocate = calld_client.relocates.create_from_user(
             initiator_channel_id, 'line', {'line_id': line_id}, timeout=1

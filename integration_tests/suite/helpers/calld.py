@@ -3,7 +3,6 @@
 
 import json
 import time
-import uuid
 from contextlib import contextmanager
 
 import requests
@@ -398,7 +397,3 @@ def new_call_id():
     global call_id_counter
     call_id_counter += 1
     return f'{current_time}.{call_id_counter}'
-
-
-def new_uuid():
-    return str(uuid.uuid4())

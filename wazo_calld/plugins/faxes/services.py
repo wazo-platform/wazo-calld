@@ -89,7 +89,9 @@ class FaxesService:
         return fax
 
     def send_fax_from_user(self, tenant_uuid, user_uuid, content, fax_infos):
-        context = User(user_uuid, self._confd).main_line().context()
+        context = (
+            User(user_uuid, self._confd, tenant_uuid=tenant_uuid).main_line().context()
+        )
 
         fax_infos['context'] = context
 

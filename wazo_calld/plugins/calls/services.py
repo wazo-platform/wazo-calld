@@ -143,7 +143,7 @@ class CallsService:
             for channel in filtered_channels
         ]
 
-    def originate(self, request):
+    def originate(self, tenant_uuid, request):
         requested_context = request['destination']['context']
         requested_extension = request['destination']['extension']
         requested_priority = request['destination']['priority']
@@ -155,9 +155,11 @@ class CallsService:
             raise InvalidExtension(requested_context, requested_extension)
 
         source_user = request['source']['user']
+        user = User(source_user, self._confd, tenant_uuid=tenant_uuid)
+        user.assert_exists()
+
         variables = request.get('variables', {})
         dial_echo_request_id = None
-        user = User(source_user, self._confd)
 
         if request['source']['from_mobile']:
             source_mobile = user.mobile_phone_number()
@@ -276,11 +278,13 @@ class CallsService:
         call.dialed_extension = request['destination']['extension']
         return call
 
-    def originate_user(self, request, user_uuid):
+    def originate_user(self, tenant_uuid, request, user_uuid):
+        user = User(user_uuid, self._confd, tenant_uuid=tenant_uuid)
+
         if 'line_id' in request and not request['from_mobile']:
-            context = User(user_uuid, self._confd).line(request['line_id']).context()
+            context = user.line(request['line_id']).context()
         else:
-            context = User(user_uuid, self._confd).main_line().context()
+            context = user.main_line().context()
 
         new_request = {
             'destination': {
@@ -299,7 +303,7 @@ class CallsService:
             new_request['source']['line_id'] = request['line_id']
         if 'auto_answer_caller' in request:
             new_request['source']['auto_answer'] = request['auto_answer_caller']
-        return self.originate(new_request)
+        return self.originate(tenant_uuid, new_request)
 
     def get(self, call_id, tenant_uuid=None):
         channel_id = call_id
@@ -314,8 +318,13 @@ class CallsService:
 
         return self.make_call_from_channel(self._ari, channel)
 
-    def hangup(self, call_id):
+    def hangup(self, call_id, tenant_uuid=None):
         channel_id = call_id
+
+        channel_helper = Channel(channel_id, self._ari)
+        if tenant_uuid and channel_helper.tenant_uuid() != tenant_uuid:
+            raise NoSuchCall(channel_id)
+
         try:
             self._ari.channels.get(channelId=channel_id)
         except ARINotFound:
@@ -323,23 +332,35 @@ class CallsService:
 
         self._ari.channels.hangup(channelId=channel_id)
 
-    def mute(self, call_id):
+    def mute(self, tenant_uuid, call_id):
+        channel_id = call_id
+
+        channel_helper = Channel(channel_id, self._ari)
+        if tenant_uuid and channel_helper.tenant_uuid() != tenant_uuid:
+            raise NoSuchCall(call_id)
+
         try:
-            channel = self._ari.channels.get(channelId=call_id)
+            channel = self._ari.channels.get(channelId=channel_id)
             set_channel_var_sync(channel, 'WAZO_CALL_MUTED', '1', bypass_stasis=True)
         except ARINotFound:
             raise NoSuchCall(call_id)
 
-        ami.mute(self._ami, call_id)
+        ami.mute(self._ami, channel_id)
 
         # NOTE(fblackburn): asterisk should send back an event
         # instead of falsy pretend that channel is muted
         call = self.make_call_from_channel(self._ari, channel)
         self._notifier.call_updated(call)
 
-    def unmute(self, call_id):
+    def unmute(self, tenant_uuid, call_id):
+        channel_id = call_id
+
+        channel_helper = Channel(channel_id, self._ari)
+        if tenant_uuid and channel_helper.tenant_uuid() != tenant_uuid:
+            raise NoSuchCall(call_id)
+
         try:
-            channel = self._ari.channels.get(channelId=call_id)
+            channel = self._ari.channels.get(channelId=channel_id)
             set_channel_var_sync(channel, 'WAZO_CALL_MUTED', '', bypass_stasis=True)
         except ARINotFound:
             raise NoSuchCall(call_id)
@@ -351,21 +372,27 @@ class CallsService:
         call = self.make_call_from_channel(self._ari, channel)
         self._notifier.call_updated(call)
 
-    def mute_user(self, call_id, user_uuid):
+    def mute_user(self, tenant_uuid, call_id, user_uuid):
         self._verify_user(call_id, user_uuid)
-        self.mute(call_id)
+        self.mute(tenant_uuid, call_id)
 
-    def unmute_user(self, call_id, user_uuid):
+    def unmute_user(self, tenant_uuid, call_id, user_uuid):
         self._verify_user(call_id, user_uuid)
-        self.unmute(call_id)
+        self.unmute(tenant_uuid, call_id)
 
     def hangup_user(self, call_id, user_uuid):
         self._verify_user(call_id, user_uuid)
         self._ari.channels.hangup(channelId=call_id)
 
-    def connect_user(self, call_id, user_uuid, timeout):
+    def connect_user(self, tenant_uuid, call_id, user_uuid, timeout):
         channel_id = call_id
-        endpoint = User(user_uuid, self._confd).main_line().interface()
+
+        channel_helper = Channel(channel_id, self._ari)
+        if tenant_uuid and channel_helper.tenant_uuid() != tenant_uuid:
+            raise NoSuchCall(channel_id)
+
+        user = User(user_uuid, self._confd, tenant_uuid=tenant_uuid)
+        endpoint = user.main_line().interface()
 
         try:
             channel = self._ari.channels.get(channelId=channel_id)
@@ -526,21 +553,34 @@ class CallsService:
 
         return call
 
-    def send_dtmf(self, call_id, digits):
+    def send_dtmf(self, tenant_uuid, call_id, digits):
+        channel_id = call_id
+
+        channel_helper = Channel(channel_id, self._ari)
+        if tenant_uuid and channel_helper.tenant_uuid() != tenant_uuid:
+            raise NoSuchCall(call_id)
+
         try:
-            self._ari.channels.get(channelId=call_id)
+            self._ari.channels.get(channelId=channel_id)
         except ARINotFound:
             raise NoSuchCall(call_id)
+
         for digit in digits:
-            ami.dtmf(self._ami, call_id, digit)
+            ami.dtmf(self._ami, channel_id, digit)
 
-    def send_dtmf_user(self, call_id, user_uuid, digits):
+    def send_dtmf_user(self, tenant_uuid, call_id, user_uuid, digits):
         self._verify_user(call_id, user_uuid)
-        self.send_dtmf(call_id, digits)
+        self.send_dtmf(tenant_uuid, call_id, digits)
 
-    def hold(self, call_id):
+    def hold(self, tenant_uuid, call_id):
+        channel_id = call_id
+
+        channel_helper = Channel(channel_id, self._ari)
+        if tenant_uuid and channel_helper.tenant_uuid() != tenant_uuid:
+            raise NoSuchCall(call_id)
+
         try:
-            channel = self._ari.channels.get(channelId=call_id)
+            channel = self._ari.channels.get(channelId=channel_id)
         except ARINotFound:
             raise NoSuchCall(call_id)
 
@@ -548,13 +588,19 @@ class CallsService:
 
         self._phoned_client.hold_endpoint(protocol_interface.interface)
 
-    def hold_user(self, call_id, user_uuid):
+    def hold_user(self, tenant_uuid, call_id, user_uuid):
         self._verify_user(call_id, user_uuid)
-        self.hold(call_id)
+        self.hold(tenant_uuid, call_id)
 
-    def unhold(self, call_id):
+    def unhold(self, tenant_uuid, call_id):
+        channel_id = call_id
+
+        channel_helper = Channel(channel_id, self._ari)
+        if tenant_uuid and channel_helper.tenant_uuid() != tenant_uuid:
+            raise NoSuchCall(call_id)
+
         try:
-            channel = self._ari.channels.get(channelId=call_id)
+            channel = self._ari.channels.get(channelId=channel_id)
         except ARINotFound:
             raise NoSuchCall(call_id)
 
@@ -562,9 +608,9 @@ class CallsService:
 
         self._phoned_client.unhold_endpoint(protocol_interface.interface)
 
-    def unhold_user(self, call_id, user_uuid):
+    def unhold_user(self, tenant_uuid, call_id, user_uuid):
         self._verify_user(call_id, user_uuid)
-        self.unhold(call_id)
+        self.unhold(tenant_uuid, call_id)
 
     def _find_channel_to_record(self, call_id):
         try:
@@ -618,8 +664,14 @@ class CallsService:
 
         return channel
 
-    def record_start(self, call_id):
-        channel = self._find_channel_to_record(call_id)
+    def record_start(self, tenant_uuid, call_id):
+        channel_id = call_id
+
+        channel_helper = Channel(channel_id, self._ari)
+        if tenant_uuid and channel_helper.tenant_uuid() != tenant_uuid:
+            raise NoSuchCall(call_id)
+
+        channel = self._find_channel_to_record(channel_id)
         channel_variables = channel.json['channelvars']
 
         if channel_variables['WAZO_CALL_RECORD_ACTIVE'] == '1':
@@ -639,13 +691,19 @@ class CallsService:
 
         ami.record_start(self._ami, channel.id, filename, mix_monitor_options or None)
 
-    def record_start_user(self, call_id, user_uuid):
+    def record_start_user(self, tenant_uuid, call_id, user_uuid):
         self._verify_user(call_id, user_uuid)
-        self.record_start(call_id)
+        self.record_start(tenant_uuid, call_id)
 
-    def record_stop(self, call_id):
+    def record_stop(self, tenant_uuid, call_id):
+        channel_id = call_id
+
+        channel_helper = Channel(channel_id, self._ari)
+        if tenant_uuid and channel_helper.tenant_uuid() != tenant_uuid:
+            raise NoSuchCall(call_id)
+
         try:
-            channel = self._ari.channels.get(channelId=call_id)
+            channel = self._ari.channels.get(channelId=channel_id)
         except ARINotFound:
             raise NoSuchCall(call_id)
 
@@ -653,15 +711,21 @@ class CallsService:
         if not call_record_active or call_record_active == '0':
             return
 
-        ami.record_stop(self._ami, call_id)
+        ami.record_stop(self._ami, channel_id)
 
-    def record_stop_user(self, call_id, user_uuid):
+    def record_stop_user(self, tenant_uuid, call_id, user_uuid):
         self._verify_user(call_id, user_uuid)
-        self.record_stop(call_id)
+        self.record_stop(tenant_uuid, call_id)
 
-    def answer(self, call_id):
+    def answer(self, tenant_uuid, call_id):
+        channel_id = call_id
+
+        channel_helper = Channel(channel_id, self._ari)
+        if tenant_uuid and channel_helper.tenant_uuid() != tenant_uuid:
+            raise NoSuchCall(call_id)
+
         try:
-            channel = self._ari.channels.get(channelId=call_id)
+            channel = self._ari.channels.get(channelId=channel_id)
         except ARINotFound:
             raise NoSuchCall(call_id)
 
@@ -669,9 +733,9 @@ class CallsService:
 
         self._phoned_client.answer_endpoint(protocol_interface.interface)
 
-    def answer_user(self, call_id, user_uuid):
+    def answer_user(self, tenant_uuid, call_id, user_uuid):
         self._verify_user(call_id, user_uuid)
-        self.answer(call_id)
+        self.answer(tenant_uuid, call_id)
 
     def set_answered_time(self, channel_id):
         try:
