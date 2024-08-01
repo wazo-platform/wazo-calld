@@ -1997,7 +1997,10 @@ class TestCreateCall(_BaseTestCalls):
         )
         self.confd.set_lines(
             MockLine(
-                id='first-line-id', name='first-line-name', protocol=CONFD_SIP_PROTOCOL
+                id='first-line-id',
+                name='first-line-name',
+                protocol=CONFD_SIP_PROTOCOL,
+                tenant_uuid=tenant_uuid_1,
             )
         )
         self.ari.set_originates(MockChannel(id=my_new_call_id))
@@ -2908,8 +2911,18 @@ class TestConnectUser(_BaseTestCalls):
             ),
         )
         self.confd.set_lines(
-            MockLine(id='line-id-1', name='line-name-1', protocol=CONFD_SIP_PROTOCOL),
-            MockLine(id='line-id-2', name='line-name-2', protocol=CONFD_SIP_PROTOCOL),
+            MockLine(
+                id='line-id-1',
+                name='line-name-1',
+                protocol=CONFD_SIP_PROTOCOL,
+                tenant_uuid=tenant_uuid_1,
+            ),
+            MockLine(
+                id='line-id-2',
+                name='line-name-2',
+                protocol=CONFD_SIP_PROTOCOL,
+                tenant_uuid=tenant_uuid_2,
+            ),
         )
         self.ari.set_originates(MockChannel(id=my_new_call_id))
         self.ari.set_endpoints(
