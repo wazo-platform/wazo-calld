@@ -6,6 +6,7 @@ from wazo_amid_client import Client as AmidClient
 from wazo_test_helpers import until
 
 from .helpers.constants import CALLD_SERVICE_TOKEN
+from .helpers.hamcrest_ import a_timestamp
 from .helpers.real_asterisk import RealAsteriskIntegrationTest
 
 
@@ -76,6 +77,7 @@ class TestPushMobile(RealAsteriskIntegrationTest):
                                 video=True,
                                 sip_call_id='de9eb39fb7585796',
                                 ring_timeout='42',
+                                creation_time=a_timestamp(),
                             ),
                             required_acl='events.calls.fb27eb93-d21c-483f-8068-e685c90b07e1',
                         ),

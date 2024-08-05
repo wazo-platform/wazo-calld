@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from unittest import TestCase
-from unittest.mock import Mock
+from unittest.mock import ANY, Mock
 from unittest.mock import sentinel as s
 
 from ..bus_consume import ARINotFound, EventHandler
@@ -70,6 +70,7 @@ class TestEventHandler(TestCase):
             False,
             '42',
             '1647612626.39',
+            ANY,
         )
 
     def test_cancel_push_on_dial_end(self):
