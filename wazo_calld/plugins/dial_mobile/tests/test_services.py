@@ -322,7 +322,7 @@ class TestCancelPushNotification(TestCase):
             s.video_enabled,
             s.ring_timeout,
             s.origin_call_id,
-            s.creation_time,
+            s.push_mobile_timestamp,
         )
 
         payload = self.notifier.push_notification.call_args_list[0][0][0]

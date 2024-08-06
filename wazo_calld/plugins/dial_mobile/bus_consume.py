@@ -53,7 +53,7 @@ class EventHandler:
             video_enabled,
             ring_timeout,
             event["Linkedid"],
-            creation_time=timestamp,
+            timestamp,
         )
 
     def _on_refresh_token_created(self, event):
