@@ -4,12 +4,12 @@ import uuid
 
 from hamcrest import all_of, assert_that, has_entries, has_item, is_
 from wazo_test_helpers import until
+from wazo_test_helpers.hamcrest.timestamp import an_iso_timestamp
 
 from .helpers.ari_ import MockBridge, MockChannel
 from .helpers.base import IntegrationTest
 from .helpers.calld import new_call_id
 from .helpers.constants import SOME_STASIS_APP, VALID_TENANT, XIVO_UUID
-from .helpers.hamcrest_ import a_timestamp
 from .helpers.wait_strategy import CalldEverythingOkWaitStrategy
 
 
@@ -116,7 +116,7 @@ class TestBusConsume(IntegrationTest):
                                         'call_id': call_id,
                                         'status': 'Up',
                                         'hangup_time': None,
-                                        'answer_time': is_(a_timestamp()),
+                                        'answer_time': is_(an_iso_timestamp()),
                                         'is_video': True,
                                         'direction': 'outbound',
                                     }
@@ -383,7 +383,7 @@ class TestBusConsume(IntegrationTest):
                                         'call_id': call_id,
                                         'status': 'Up',
                                         'hangup_time': None,
-                                        'answer_time': is_(a_timestamp()),
+                                        'answer_time': is_(an_iso_timestamp()),
                                         'direction': 'internal',
                                     }
                                 ),
