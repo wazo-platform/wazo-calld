@@ -1,4 +1,4 @@
-# Copyright 2022-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2022-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -6,12 +6,14 @@ import logging
 from ari.exceptions import ARINotFound
 from xivo.asterisk.protocol_interface import protocol_interface_from_channel
 
+from wazo_calld.plugins.dial_mobile.services import DialMobileService
+
 logger = logging.getLogger(__name__)
 
 
 class EventHandler:
     def __init__(self, service):
-        self._service = service
+        self._service: DialMobileService = service
 
     def subscribe(self, bus_consumer):
         bus_consumer.subscribe('BridgeEnter', self._on_bridge_enter)
@@ -32,6 +34,7 @@ class EventHandler:
         video_enabled = event['WAZO_VIDEO_ENABLED'] == '1'
         ring_timeout = event['WAZO_RING_TIME']
         tenant_uuid = event.get('ChanVariable', {}).get('WAZO_TENANT_UUID')
+        timestamp = event['WAZO_TIMESTAMP']
 
         logger.info(
             'Received push notification request for user %s from %s <%s>',
@@ -50,6 +53,7 @@ class EventHandler:
             video_enabled,
             ring_timeout,
             event["Linkedid"],
+            timestamp,
         )
 
     def _on_refresh_token_created(self, event):
