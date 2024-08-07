@@ -5,6 +5,7 @@ import json
 
 from hamcrest import assert_that, has_entries, has_entry, has_item, has_items, is_
 from wazo_test_helpers import until
+from wazo_test_helpers.hamcrest.timestamp import an_iso_timestamp
 
 from .helpers.ari_ import MockChannel
 from .helpers.base import IntegrationTest
@@ -16,7 +17,6 @@ from .helpers.constants import (
     VALID_TENANT,
     XIVO_UUID,
 )
-from .helpers.hamcrest_ import a_timestamp
 from .helpers.wait_strategy import CalldConnectionsOkWaitStrategy
 
 STASIS_APP = 'callcontrol'
@@ -225,8 +225,8 @@ class TestDialedFrom(IntegrationTest):
                                         'line_id': 2,
                                         'reason_code': 0,
                                         'is_caller': True,
-                                        'answer_time': is_(a_timestamp()),
-                                        'hangup_time': is_(a_timestamp()),
+                                        'answer_time': is_(an_iso_timestamp()),
+                                        'hangup_time': is_(an_iso_timestamp()),
                                     }
                                 ),
                             }
@@ -271,7 +271,7 @@ class TestDialedFrom(IntegrationTest):
                                         'line_id': 2,
                                         'reason_code': 0,
                                         'is_caller': False,
-                                        'hangup_time': is_(a_timestamp()),
+                                        'hangup_time': is_(an_iso_timestamp()),
                                     }
                                 ),
                             }
@@ -312,7 +312,7 @@ class TestDialedFrom(IntegrationTest):
                                         'creation_time': '2016-02-01T15:00:00.000-0500',
                                         'sip_call_id': '',
                                         'line_id': None,
-                                        'hangup_time': is_(a_timestamp()),
+                                        'hangup_time': is_(an_iso_timestamp()),
                                     }
                                 ),
                             }
