@@ -1,8 +1,12 @@
 # Copyright 2017-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+from __future__ import annotations
+
 from wazo_confd_client import Client as ConfdClient
 from xivo.pubsub import CallbackCollector
+
+from wazo_calld.types import PluginDependencies
 
 from .confd_client_cache import (
     ConfdClientGetIDCacheDecorator,
@@ -22,7 +26,7 @@ from .stasis import SwitchboardsStasis
 
 
 class Plugin:
-    def load(self, dependencies):
+    def load(self, dependencies: PluginDependencies) -> None:
         api = dependencies['api']
         ari = dependencies['ari']
         asyncio = dependencies['asyncio']

@@ -1,9 +1,13 @@
 # Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+from __future__ import annotations
+
 from wazo_confd_client import Client as ConfdClient
 from xivo.pubsub import CallbackCollector
 from xivo.status import Status
+
+from wazo_calld.types import PluginDependencies, StatusDict
 
 from .bus import EventHandler
 from .http import LineEndpoints, TrunkEndpoints
@@ -12,7 +16,7 @@ from .services import ConfdCache, EndpointsService, NotifyingStatusCache
 
 
 class Plugin:
-    def load(self, dependencies):
+    def load(self, dependencies: PluginDependencies) -> None:
         api = dependencies['api']
         ari = dependencies['ari']
         config = dependencies['config']
@@ -57,9 +61,9 @@ class Plugin:
             ],
         )
 
-    def _set_async_tasks_completed(self):
+    def _set_async_tasks_completed(self) -> None:
         self._async_tasks_completed = True
 
-    def _provide_status(self, status):
+    def _provide_status(self, status: StatusDict) -> None:
         value = Status.ok if self._async_tasks_completed else Status.fail
         status['plugins']['endpoints']['status'] = value

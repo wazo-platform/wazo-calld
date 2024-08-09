@@ -1,10 +1,14 @@
 # Copyright 2016-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+from __future__ import annotations
+
 import logging
 
 from wazo_confd_client import Client as ConfdClient
 from xivo.status import Status
+
+from wazo_calld.types import PluginDependencies, StatusDict
 
 from .bus_consume import VoicemailsBusEventHandler
 from .http import (
@@ -29,7 +33,7 @@ logger = logging.getLogger(__name__)
 
 
 class Plugin:
-    def load(self, dependencies):
+    def load(self, dependencies: PluginDependencies) -> None:
         api = dependencies['api']
         ari = dependencies['ari']
         bus_consumer = dependencies['bus_consumer']
@@ -123,6 +127,6 @@ class Plugin:
             resource_class_args=[voicemails_service],
         )
 
-    def _provide_status(self, status):
+    def _provide_status(self, status: StatusDict) -> None:
         status['plugins']['voicemails']['status'] = Status.ok
         status['plugins']['voicemails']['cache_items'] = len(self._voicemail_cache)
