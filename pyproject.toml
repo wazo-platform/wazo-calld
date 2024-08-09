@@ -26,12 +26,3 @@ check_untyped_defs = true
 warn_unused_configs = true
 ignore_missing_imports = true
 enable_incomplete_feature = "Unpack"
-
-[[tool.mypy.overrides]]
-module = [
-  "*.tests.*",
-  "integration_tests.suite.*",
-]
-disable_error_code = [
-  "assignment",
-]
