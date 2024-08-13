@@ -1,10 +1,13 @@
 # Copyright 2015-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+from __future__ import annotations
+
 import logging
 import signal
 import sys
 from functools import partial
+from types import FrameType
 
 from xivo import xivo_logging
 from xivo.config_helper import set_xivo_uuid
@@ -16,7 +19,7 @@ from wazo_calld.controller import Controller
 logger = logging.getLogger(__name__)
 
 
-def main(argv=None):
+def main(argv: list[str] | None = None) -> None:
     argv = argv or sys.argv[1:]
     config = load_config(argv)
 
@@ -51,7 +54,9 @@ def main(argv=None):
     controller.run()
 
 
-def _signal_handler(controller, signum, frame):
+def _signal_handler(
+    controller: Controller, signum: int, frame: FrameType | None
+) -> None:
     controller.stop(reason=signal.Signals(signum).name)
 
 
