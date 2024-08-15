@@ -32,6 +32,8 @@ from .state_persistor import ReadOnlyStatePersistor
 
 logger = logging.getLogger(__name__)
 
+# The recording file name template must be kept synced with RECORDING_PATH_REGEX
+# in wazo-call-logd
 CALL_RECORDING_FILENAME_TEMPLATE = (
     '/var/lib/wazo/sounds/tenants/{tenant_uuid}/monitor/{recording_uuid}.wav'
 )
