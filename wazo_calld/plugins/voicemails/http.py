@@ -4,6 +4,7 @@
 import re
 
 from flask import Response, request
+from xivo.tenant_flask_helpers import Tenant
 
 from wazo_calld.auth import (
     extract_token_id_from_query_or_header,
@@ -34,8 +35,11 @@ class VoicemailResource(AuthResource):
 
     @required_acl('calld.voicemails.{voicemail_id}.read')
     def get(self, voicemail_id):
+        tenant = Tenant.autodetect()
         voicemail_id = _validate_voicemail_id(voicemail_id)
-        voicemail = self._voicemails_service.get_voicemail(voicemail_id)
+        voicemail = self._voicemails_service.get_voicemail_tenant(
+            tenant.uuid, voicemail_id
+        )
         return voicemail_schema.dump(voicemail)
 
 

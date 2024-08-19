@@ -19,7 +19,12 @@ from wazo_calld_client.exceptions import CalldError
 from wazo_test_helpers.hamcrest.raises import raises
 
 from .helpers.confd import MockVoicemail
-from .helpers.constants import ASSET_ROOT, VALID_TENANT
+from .helpers.constants import (
+    ASSET_ROOT,
+    VALID_TENANT,
+    VALID_TENANT_MULTITENANT_1,
+    VALID_TENANT_MULTITENANT_2,
+)
 from .helpers.hamcrest_ import HamcrestARIChannel
 from .helpers.real_asterisk import RealAsteriskIntegrationTest
 
@@ -50,6 +55,7 @@ class TestVoicemails(RealAsteriskIntegrationTest):
             'voicemail-name',
             'default',
             user_uuids=[self._user_uuid],
+            tenant_uuid=VALID_TENANT,
         )
         self.confd.set_user_voicemails({self._user_uuid: [voicemail]})
         self.confd.set_voicemails(voicemail)
@@ -80,6 +86,65 @@ class TestVoicemails(RealAsteriskIntegrationTest):
                 )
             ),
         )
+
+    def test_voicemail_get_tenant_isolation(self):
+        user_uuid_1 = str(uuid.uuid4())
+        user_uuid_2 = str(uuid.uuid4())
+        voicemail_id_1 = 111
+        voicemail_id_2 = 22
+        voicemail_1 = MockVoicemail(
+            voicemail_id_1,
+            '8000',
+            'voicemail-name',
+            'multitenant-1',
+            tenant_uuid=VALID_TENANT_MULTITENANT_1,
+        )
+        voicemail_2 = MockVoicemail(
+            voicemail_id_2,
+            '8000',
+            'voicemail-name',
+            'multitenant-2',
+            tenant_uuid=VALID_TENANT_MULTITENANT_2,
+        )
+        self.confd.set_voicemails(voicemail_1, voicemail_2)
+        calld_1 = self.make_user_calld(
+            user_uuid_1, tenant_uuid=VALID_TENANT_MULTITENANT_1
+        )
+        calld_2 = self.make_user_calld(
+            user_uuid_2, tenant_uuid=VALID_TENANT_MULTITENANT_2
+        )
+
+        # tenant 1, voicemail 1 = OK
+        voicemail = calld_1.voicemails.get_voicemail(voicemail_id_1)
+        assert voicemail['id'] == voicemail_id_1
+
+        # tenant 1, voicemail 2 = NOK
+        assert_that(
+            calling(calld_1.voicemails.get_voicemail).with_args(voicemail_id_2),
+            raises(CalldError).matching(
+                has_properties(
+                    status_code=404,
+                    message=contains_string('No such voicemail'),
+                    details=has_entry('voicemail_id', voicemail_id_2),
+                )
+            ),
+        )
+
+        # tenant 2, voicemail 1 = NOK
+        assert_that(
+            calling(calld_2.voicemails.get_voicemail).with_args(voicemail_id_1),
+            raises(CalldError).matching(
+                has_properties(
+                    status_code=404,
+                    message=contains_string('No such voicemail'),
+                    details=has_entry('voicemail_id', voicemail_id_1),
+                )
+            ),
+        )
+
+        # tenant 2, voicemail 2 = OK
+        voicemail = calld_2.voicemails.get_voicemail(voicemail_id_2)
+        assert voicemail['id'] == voicemail_id_2
 
     def test_voicemail_get(self):
         voicemail = self.calld_client.voicemails.get_voicemail(self._voicemail_id)

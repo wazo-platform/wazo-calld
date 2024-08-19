@@ -26,6 +26,12 @@ class VoicemailsService:
         vm_conf = confd.get_voicemail(voicemail_id, self._confd_client)
         return self._storage.get_voicemail_info(vm_conf)
 
+    def get_voicemail_tenant(self, tenant_uuid, voicemail_id):
+        vm_conf = confd.get_voicemail_tenant(
+            tenant_uuid, voicemail_id, self._confd_client
+        )
+        return self._storage.get_voicemail_info(vm_conf)
+
     def get_user_voicemail(self, user_uuid):
         vm_conf = confd.get_user_voicemail(user_uuid, self._confd_client)
         return self._storage.get_voicemail_info(vm_conf)

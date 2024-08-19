@@ -4,6 +4,7 @@ paths:
       summary: Get details of a voicemail
       description: '**Required ACL:** `calld.voicemails.{voicemail_id}.read`'
       parameters:
+      - $ref: '#/parameters/TenantUUID'
       - $ref: '#/parameters/VoicemailID'
       tags:
       - voicemails

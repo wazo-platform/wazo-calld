@@ -225,6 +225,17 @@ def get_voicemail(voicemail_id, confd_client):
         raise WazoConfdUnreachable(confd_client, e)
 
 
+def get_voicemail_tenant(tenant_uuid, voicemail_id, confd_client):
+    try:
+        return confd_client.voicemails.get(voicemail_id, tenant_uuid=tenant_uuid)
+    except HTTPError as e:
+        if not_found(e):
+            raise NoSuchVoicemail(voicemail_id)
+        raise
+    except RequestException as e:
+        raise WazoConfdUnreachable(confd_client, e)
+
+
 def get_user_voicemail(user_uuid, confd_client):
     try:
         voicemail = confd_client.users(user_uuid).get_voicemail()
