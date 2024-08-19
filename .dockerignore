@@ -3,4 +3,4 @@
 .mypy_cache
 .tox
 debian
-integration_tests
+suite

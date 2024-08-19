@@ -63,6 +63,9 @@ class TestVoicemails(RealAsteriskIntegrationTest):
             self._user_uuid, tenant_uuid=VALID_TENANT
         )
 
+        self._folder_id = 1  # INBOX folder. Present in Docker image
+        self._message_id = '1724107750-00000001'  # Present in Docker image
+
     def test_voicemail_get_invalid(self):
         assert_that(
             calling(self.calld_client.voicemails.get_voicemail).with_args('not-found'),
@@ -163,6 +166,72 @@ class TestVoicemails(RealAsteriskIntegrationTest):
                 )
             ),
         )
+
+    def test_voicemail_get_folder_invalid(self):
+        # invalid voicemail
+        assert_that(
+            calling(self.calld_client.voicemails.get_voicemail_folder).with_args(
+                'invalid', 123
+            ),
+            raises(CalldError).matching(
+                has_properties(
+                    status_code=400,
+                    message=contains_string('Invalid voicemail ID'),
+                    details=has_entry('voicemail_id', 'invalid'),
+                )
+            ),
+        )
+
+        # invalid folder
+        assert_that(
+            calling(self.calld_client.voicemails.get_voicemail_folder).with_args(
+                123, 'invalid'
+            ),
+            raises(CalldError).matching(
+                has_properties(
+                    status_code=400,
+                    message=contains_string('Invalid voicemail folder ID'),
+                    details=has_entry('folder_id', 'invalid'),
+                )
+            ),
+        )
+
+    def test_voicemail_get_folder_not_found(self):
+        # voicemail not found
+        assert_that(
+            calling(self.calld_client.voicemails.get_voicemail_folder).with_args(
+                123, 123
+            ),
+            raises(CalldError).matching(
+                has_properties(
+                    status_code=404,
+                    message=contains_string('No such voicemail'),
+                    details=has_entry('voicemail_id', 123),
+                )
+            ),
+        )
+
+        # folder not found
+        assert_that(
+            calling(self.calld_client.voicemails.get_voicemail_folder).with_args(
+                self._voicemail_id, 123
+            ),
+            raises(CalldError).matching(
+                has_properties(
+                    status_code=404,
+                    message=contains_string('No such voicemail folder'),
+                    details=has_entry('folder_id', 123),
+                )
+            ),
+        )
+
+    def test_voicemail_get_folder(self):
+        folder = self.calld_client.voicemails.get_voicemail_folder(
+            self._voicemail_id, self._folder_id
+        )
+        assert folder['id'] == self._folder_id
+        assert folder['name'] == 'inbox'
+        assert folder['messages'][0]['id'] == self._message_id
 
     def test_voicemail_head_greeting_invalid_voicemail(self):
         exists = self.calld_client.voicemails.voicemail_greeting_exists(
