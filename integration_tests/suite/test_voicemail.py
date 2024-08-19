@@ -57,6 +57,19 @@ class TestVoicemails(RealAsteriskIntegrationTest):
             self._user_uuid, tenant_uuid=VALID_TENANT
         )
 
+    def test_voicemail_get_from_user_no_voicemail(self):
+        self.confd.set_user_voicemails({self._user_uuid: []})
+        assert_that(
+            calling(self.calld_client.voicemails.get_voicemail_from_user),
+            raises(CalldError).matching(
+                has_properties(
+                    status_code=404,
+                    message=contains_string("No such user voicemail"),
+                    details=has_entry("user_uuid", self._user_uuid),
+                )
+            ),
+        )
+
     def test_voicemail_head_greeting_invalid_voicemail(self):
         exists = self.calld_client.voicemails.voicemail_greeting_exists(
             "not-exists", "busy"
@@ -98,6 +111,20 @@ class TestVoicemails(RealAsteriskIntegrationTest):
             ),
         )
 
+    def test_voicemail_get_greeting_unset(self):
+        assert_that(
+            calling(self.calld_client.voicemails.get_voicemail_greeting).with_args(
+                self._voicemail_id, "busy"
+            ),
+            raises(CalldError).matching(
+                has_properties(
+                    status_code=404,
+                    message=contains_string("No such voicemail greeting"),
+                    details=has_entry("greeting", "busy"),
+                )
+            ),
+        )
+
     def test_voicemail_copy_greeting_invalid_dest_greeting(self):
         assert_that(
             calling(self.calld_client.voicemails.copy_voicemail_greeting).with_args(
@@ -122,13 +149,19 @@ class TestVoicemails(RealAsteriskIntegrationTest):
             ),
         )
 
-    def test_voicemail_head_greeting_invalid_greeting_from_user(self):
+    def test_voicemail_head_greeting_from_user_invalid_greeting(self):
         exists = self.calld_client.voicemails.voicemail_greeting_from_user_exists(
             "not-exists"
         )
         assert_that(exists, is_(False))
 
-    def test_voicemail_get_greeting_invalid_greeting_from_user(self):
+    def test_voicemail_head_greeting_from_user_unset_greeting(self):
+        exists = self.calld_client.voicemails.voicemail_greeting_from_user_exists(
+            "busy"
+        )
+        assert_that(exists, is_(False))
+
+    def test_voicemail_get_greeting_from_user_invalid_greeting(self):
         assert_that(
             calling(
                 self.calld_client.voicemails.get_voicemail_greeting_from_user
@@ -142,7 +175,21 @@ class TestVoicemails(RealAsteriskIntegrationTest):
             ),
         )
 
-    def test_voicemail_put_unset_greeting(self):
+    def test_voicemail_get_greeting_from_user_unset_greeting(self):
+        assert_that(
+            calling(
+                self.calld_client.voicemails.get_voicemail_greeting_from_user
+            ).with_args("busy"),
+            raises(CalldError).matching(
+                has_properties(
+                    status_code=404,
+                    message=contains_string("No such voicemail greeting"),
+                    details=has_entry("greeting", "busy"),
+                )
+            ),
+        )
+
+    def test_voicemail_put_greeting_unset(self):
         assert_that(
             calling(self.calld_client.voicemails.update_voicemail_greeting).with_args(
                 self._voicemail_id, "busy", WAVE_DATA_1
@@ -156,7 +203,28 @@ class TestVoicemails(RealAsteriskIntegrationTest):
             ),
         )
 
-    def test_voicemail_put_unset_greeting_from_user(self):
+    def test_voicemail_put_greeting_invalid_body(self):
+        self.calld_client.voicemails.create_voicemail_greeting(
+            self._voicemail_id, "busy", WAVE_DATA_1
+        )
+        assert_that(
+            calling(self.calld_client.voicemails.update_voicemail_greeting).with_args(
+                self._voicemail_id, "busy", ""
+            ),
+            raises(CalldError).matching(
+                has_properties(
+                    status_code=400,
+                    message=contains_string("Invalid voicemail greeting"),
+                    details=has_entry("greeting", "busy"),
+                )
+            ),
+        )
+
+        self.calld_client.voicemails.delete_voicemail_greeting(
+            self._voicemail_id, "busy"
+        )
+
+    def test_voicemail_put_greeting_from_user_unset(self):
         assert_that(
             calling(
                 self.calld_client.voicemails.update_voicemail_greeting_from_user
@@ -170,45 +238,24 @@ class TestVoicemails(RealAsteriskIntegrationTest):
             ),
         )
 
-    def test_voicemail_head_unset_greeting(self):
-        exists = self.calld_client.voicemails.voicemail_greeting_exists(
-            self._voicemail_id, "busy"
+    def test_voicemail_put_greeting_from_user_invalid_body(self):
+        self.calld_client.voicemails.create_voicemail_greeting_from_user(
+            "busy", WAVE_DATA_1
         )
-        assert_that(exists, is_(False))
-
-    def test_voicemail_get_unset_greeting(self):
-        assert_that(
-            calling(self.calld_client.voicemails.get_voicemail_greeting).with_args(
-                self._voicemail_id, "busy"
-            ),
-            raises(CalldError).matching(
-                has_properties(
-                    status_code=404,
-                    message=contains_string("No such voicemail greeting"),
-                    details=has_entry("greeting", "busy"),
-                )
-            ),
-        )
-
-    def test_voicemail_head_unset_greeting_from_user(self):
-        exists = self.calld_client.voicemails.voicemail_greeting_from_user_exists(
-            "busy"
-        )
-        assert_that(exists, is_(False))
-
-    def test_voicemail_get_unset_greeting_from_user(self):
         assert_that(
             calling(
-                self.calld_client.voicemails.get_voicemail_greeting_from_user
-            ).with_args("busy"),
+                self.calld_client.voicemails.update_voicemail_greeting_from_user
+            ).with_args("busy", ""),
             raises(CalldError).matching(
                 has_properties(
-                    status_code=404,
-                    message=contains_string("No such voicemail greeting"),
+                    status_code=400,
+                    message=contains_string("Invalid voicemail greeting"),
                     details=has_entry("greeting", "busy"),
                 )
             ),
         )
+
+        self.calld_client.voicemails.delete_voicemail_greeting_from_user("busy")
 
     def test_voicemail_delete_unset_greeting(self):
         self.calld_client.voicemails.delete_voicemail_greeting(
@@ -246,60 +293,7 @@ class TestVoicemails(RealAsteriskIntegrationTest):
             ),
         )
 
-    def test_voicemail_put_invalid_body(self):
-        self.calld_client.voicemails.create_voicemail_greeting(
-            self._voicemail_id, "busy", WAVE_DATA_1
-        )
-        assert_that(
-            calling(self.calld_client.voicemails.update_voicemail_greeting).with_args(
-                self._voicemail_id, "busy", ""
-            ),
-            raises(CalldError).matching(
-                has_properties(
-                    status_code=400,
-                    message=contains_string("Invalid voicemail greeting"),
-                    details=has_entry("greeting", "busy"),
-                )
-            ),
-        )
-
-        self.calld_client.voicemails.delete_voicemail_greeting(
-            self._voicemail_id, "busy"
-        )
-
-    def test_voicemail_put_invalid_body_from_user(self):
-        self.calld_client.voicemails.create_voicemail_greeting_from_user(
-            "busy", WAVE_DATA_1
-        )
-        assert_that(
-            calling(
-                self.calld_client.voicemails.update_voicemail_greeting_from_user
-            ).with_args("busy", ""),
-            raises(CalldError).matching(
-                has_properties(
-                    status_code=400,
-                    message=contains_string("Invalid voicemail greeting"),
-                    details=has_entry("greeting", "busy"),
-                )
-            ),
-        )
-
-        self.calld_client.voicemails.delete_voicemail_greeting_from_user("busy")
-
-    def test_voicemail_user_has_no_voicemail(self):
-        self.confd.set_user_voicemails({self._user_uuid: []})
-        assert_that(
-            calling(self.calld_client.voicemails.get_voicemail_from_user),
-            raises(CalldError).matching(
-                has_properties(
-                    status_code=404,
-                    message=contains_string("No such user voicemail"),
-                    details=has_entry("user_uuid", self._user_uuid),
-                )
-            ),
-        )
-
-    def test_voicemail_workflow(self):
+    def test_voicemail_greeting_workflow(self):
         self.calld_client.voicemails.create_voicemail_greeting(
             self._voicemail_id, "busy", WAVE_DATA_1
         )
@@ -361,7 +355,7 @@ class TestVoicemails(RealAsteriskIntegrationTest):
                 ),
             )
 
-    def test_voicemail_workflow_from_user(self):
+    def test_voicemail_greeting_workflow_from_user(self):
         self.calld_client.voicemails.create_voicemail_greeting_from_user(
             "busy", WAVE_DATA_1
         )
