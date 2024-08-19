@@ -57,6 +57,35 @@ class TestVoicemails(RealAsteriskIntegrationTest):
             self._user_uuid, tenant_uuid=VALID_TENANT
         )
 
+    def test_voicemail_get_invalid(self):
+        assert_that(
+            calling(self.calld_client.voicemails.get_voicemail).with_args('not-found'),
+            raises(CalldError).matching(
+                has_properties(
+                    status_code=400,
+                    message=contains_string('Invalid voicemail ID'),
+                    details=has_entry('voicemail_id', 'not-found'),
+                )
+            ),
+        )
+
+    def test_voicemail_get_not_found(self):
+        assert_that(
+            calling(self.calld_client.voicemails.get_voicemail).with_args(123),
+            raises(CalldError).matching(
+                has_properties(
+                    status_code=404,
+                    message=contains_string('No such voicemail'),
+                    details=has_entry('voicemail_id', 123),
+                )
+            ),
+        )
+
+    def test_voicemail_get(self):
+        voicemail = self.calld_client.voicemails.get_voicemail(self._voicemail_id)
+        assert voicemail['id'] == self._voicemail_id
+        assert voicemail['name'] == 'voicemail-name'
+
     def test_voicemail_get_from_user_no_voicemail(self):
         self.confd.set_user_voicemails({self._user_uuid: []})
         assert_that(
