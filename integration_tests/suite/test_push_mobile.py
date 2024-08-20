@@ -4,9 +4,9 @@
 from hamcrest import assert_that, contains_exactly, has_entries, has_item
 from wazo_amid_client import Client as AmidClient
 from wazo_test_helpers import until
+from wazo_test_helpers.hamcrest.timestamp import an_iso_timestamp
 
 from .helpers.constants import CALLD_SERVICE_TOKEN
-from .helpers.hamcrest_ import a_timestamp
 from .helpers.real_asterisk import RealAsteriskIntegrationTest
 
 
@@ -78,7 +78,7 @@ class TestPushMobile(RealAsteriskIntegrationTest):
                                 video=True,
                                 sip_call_id='de9eb39fb7585796',
                                 ring_timeout='42',
-                                mobile_wakeup_timestamp=a_timestamp(),
+                                mobile_wakeup_timestamp=an_iso_timestamp(),
                             ),
                             required_acl='events.calls.fb27eb93-d21c-483f-8068-e685c90b07e1',
                         ),
