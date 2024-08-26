@@ -225,6 +225,70 @@ class TestVoicemails(RealAsteriskIntegrationTest):
             ),
         )
 
+    def test_voicemail_get_folder_tenant_isolation(self):
+        user_uuid_1 = str(uuid.uuid4())
+        user_uuid_2 = str(uuid.uuid4())
+        voicemail_id_1 = 111
+        voicemail_id_2 = 222
+        folder_id = 1
+        voicemail_1 = MockVoicemail(
+            voicemail_id_1,
+            '8001',
+            'voicemail-name',
+            'multitenant-1',
+            tenant_uuid=VALID_TENANT_MULTITENANT_1,
+        )
+        voicemail_2 = MockVoicemail(
+            voicemail_id_2,
+            '8002',
+            'voicemail-name',
+            'multitenant-2',
+            tenant_uuid=VALID_TENANT_MULTITENANT_2,
+        )
+        self.confd.set_voicemails(voicemail_1, voicemail_2)
+        calld_1 = self.make_user_calld(
+            user_uuid_1, tenant_uuid=VALID_TENANT_MULTITENANT_1
+        )
+        calld_2 = self.make_user_calld(
+            user_uuid_2, tenant_uuid=VALID_TENANT_MULTITENANT_2
+        )
+
+        # tenant 1, voicemail 1 = OK
+        folder = calld_1.voicemails.get_voicemail_folder(voicemail_id_1, folder_id)
+        assert folder['id'] == folder_id
+
+        # tenant 1, voicemail 2 = NOK
+        assert_that(
+            calling(calld_1.voicemails.get_voicemail_folder).with_args(
+                voicemail_id_2, folder_id
+            ),
+            raises(CalldError).matching(
+                has_properties(
+                    status_code=404,
+                    message=contains_string('No such voicemail'),
+                    details=has_entry('voicemail_id', voicemail_id_2),
+                )
+            ),
+        )
+
+        # tenant 2, voicemail 1 = NOK
+        assert_that(
+            calling(calld_2.voicemails.get_voicemail_folder).with_args(
+                voicemail_id_1, folder_id
+            ),
+            raises(CalldError).matching(
+                has_properties(
+                    status_code=404,
+                    message=contains_string('No such voicemail'),
+                    details=has_entry('voicemail_id', voicemail_id_1),
+                )
+            ),
+        )
+
+        # tenant 2, voicemail 2 = OK
+        folder = calld_2.voicemails.get_voicemail_folder(voicemail_id_2, folder_id)
+        assert folder['id'] == folder_id
+
     def test_voicemail_get_folder(self):
         folder = self.calld_client.voicemails.get_voicemail_folder(
             self._voicemail_id, self._folder_id

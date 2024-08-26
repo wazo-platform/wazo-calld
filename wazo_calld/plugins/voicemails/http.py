@@ -60,9 +60,12 @@ class VoicemailFolderResource(AuthResource):
 
     @required_acl('calld.voicemails.{voicemail_id}.folders.{folder_id}.read')
     def get(self, voicemail_id, folder_id):
+        tenant = Tenant.autodetect()
         voicemail_id = _validate_voicemail_id(voicemail_id)
         folder_id = _validate_folder_id(folder_id)
-        folder = self._voicemails_service.get_folder(voicemail_id, folder_id)
+        folder = self._voicemails_service.get_folder_tenant(
+            tenant.uuid, voicemail_id, folder_id
+        )
         return voicemail_folder_schema.dump(folder)
 
 
