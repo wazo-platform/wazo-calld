@@ -69,8 +69,10 @@ class VoicemailsService:
             self._move_message(vm_conf, message_info, dest_folder)
         return recording
 
-    def move_message(self, voicemail_id, message_id, dest_folder_id):
-        vm_conf = confd.get_voicemail(voicemail_id, self._confd_client)
+    def move_message(self, tenant_uuid, voicemail_id, message_id, dest_folder_id):
+        vm_conf = confd.get_voicemail_tenant(
+            tenant_uuid, voicemail_id, self._confd_client
+        )
         dest_folder = self._storage.get_folder_by_id(dest_folder_id)
         message_info = self._storage.get_message_info(vm_conf, message_id)
         self._move_message(vm_conf, message_info, dest_folder)

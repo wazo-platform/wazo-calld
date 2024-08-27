@@ -95,11 +95,12 @@ class VoicemailMessageResource(AuthResource):
 
     @required_acl('calld.voicemails.{voicemail_id}.messages.{message_id}.update')
     def put(self, voicemail_id, message_id):
+        tenant = Tenant.autodetect()
         voicemail_id = _validate_voicemail_id(voicemail_id)
         message_id = _validate_message_id(message_id)
         data = voicemail_message_update_schema.load(request.get_json(force=True))
         self._voicemails_service.move_message(
-            voicemail_id, message_id, data['folder_id']
+            tenant.uuid, voicemail_id, message_id, data['folder_id']
         )
         return '', 204
 
