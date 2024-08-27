@@ -214,18 +214,7 @@ class Conference:
         return cls(conference['tenant_uuid'], conference['id'], confd_client)
 
 
-def get_voicemail(voicemail_id, confd_client):
-    try:
-        return confd_client.voicemails.get(voicemail_id)
-    except HTTPError as e:
-        if not_found(e):
-            raise NoSuchVoicemail(voicemail_id)
-        raise
-    except RequestException as e:
-        raise WazoConfdUnreachable(confd_client, e)
-
-
-def get_voicemail_tenant(tenant_uuid, voicemail_id, confd_client):
+def get_voicemail(tenant_uuid, voicemail_id, confd_client):
     try:
         return confd_client.voicemails.get(voicemail_id, tenant_uuid=tenant_uuid)
     except HTTPError as e:

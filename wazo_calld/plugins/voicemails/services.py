@@ -23,9 +23,7 @@ class VoicemailsService:
         self._storage = voicemail_storage
 
     def get_voicemail(self, tenant_uuid, voicemail_id):
-        vm_conf = confd.get_voicemail_tenant(
-            tenant_uuid, voicemail_id, self._confd_client
-        )
+        vm_conf = confd.get_voicemail(tenant_uuid, voicemail_id, self._confd_client)
         return self._storage.get_voicemail_info(vm_conf)
 
     def get_user_voicemail(self, user_uuid):
@@ -33,9 +31,7 @@ class VoicemailsService:
         return self._storage.get_voicemail_info(vm_conf)
 
     def get_folder(self, tenant_uuid, voicemail_id, folder_id):
-        vm_conf = confd.get_voicemail_tenant(
-            tenant_uuid, voicemail_id, self._confd_client
-        )
+        vm_conf = confd.get_voicemail(tenant_uuid, voicemail_id, self._confd_client)
         return self._storage.get_folder_info(vm_conf, folder_id)
 
     def get_user_folder(self, user_uuid, folder_id):
@@ -43,9 +39,7 @@ class VoicemailsService:
         return self._storage.get_folder_info(vm_conf, folder_id)
 
     def get_message(self, tenant_uuid, voicemail_id, message_id):
-        vm_conf = confd.get_voicemail_tenant(
-            tenant_uuid, voicemail_id, self._confd_client
-        )
+        vm_conf = confd.get_voicemail(tenant_uuid, voicemail_id, self._confd_client)
         return self._storage.get_message_info(vm_conf, message_id)
 
     def get_user_message(self, user_uuid, message_id):
@@ -53,9 +47,7 @@ class VoicemailsService:
         return self._storage.get_message_info(vm_conf, message_id)
 
     def get_message_recording(self, tenant_uuid, voicemail_id, message_id):
-        vm_conf = confd.get_voicemail_tenant(
-            tenant_uuid, voicemail_id, self._confd_client
-        )
+        vm_conf = confd.get_voicemail(tenant_uuid, voicemail_id, self._confd_client)
         return self._get_message_recording(vm_conf, message_id)
 
     def get_user_message_recording(self, user_uuid, message_id):
@@ -72,9 +64,7 @@ class VoicemailsService:
         return recording
 
     def move_message(self, tenant_uuid, voicemail_id, message_id, dest_folder_id):
-        vm_conf = confd.get_voicemail_tenant(
-            tenant_uuid, voicemail_id, self._confd_client
-        )
+        vm_conf = confd.get_voicemail(tenant_uuid, voicemail_id, self._confd_client)
         dest_folder = self._storage.get_folder_by_id(dest_folder_id)
         message_info = self._storage.get_message_info(vm_conf, message_id)
         self._move_message(vm_conf, message_info, dest_folder)
@@ -96,9 +86,7 @@ class VoicemailsService:
         self._ari.wazo.moveVoicemailMessage(body=body)
 
     def delete_message(self, tenant_uuid, voicemail_id, message_id):
-        vm_conf = confd.get_voicemail_tenant(
-            tenant_uuid, voicemail_id, self._confd_client
-        )
+        vm_conf = confd.get_voicemail(tenant_uuid, voicemail_id, self._confd_client)
         return self._delete_message(vm_conf, message_id)
 
     def delete_user_message(self, user_uuid, message_id):
@@ -116,9 +104,7 @@ class VoicemailsService:
         self._ari.wazo.deleteVoicemailMessage(body=body)
 
     def get_greeting(self, tenant_uuid, voicemail_id, greeting):
-        vm_conf = confd.get_voicemail_tenant(
-            tenant_uuid, voicemail_id, self._confd_client
-        )
+        vm_conf = confd.get_voicemail(tenant_uuid, voicemail_id, self._confd_client)
         return self._get_greeting(vm_conf, greeting)
 
     def get_user_greeting(self, user_uuid, greeting):
@@ -140,9 +126,7 @@ class VoicemailsService:
             raise
 
     def validate_greeting_exists(self, tenant_uuid, voicemail_id, greeting):
-        vm_conf = confd.get_voicemail_tenant(
-            tenant_uuid, voicemail_id, self._confd_client
-        )
+        vm_conf = confd.get_voicemail(tenant_uuid, voicemail_id, self._confd_client)
         return self._validate_greeting_exists(vm_conf, greeting)
 
     def validate_user_greeting_exists(self, user_uuid, greeting):
@@ -162,9 +146,7 @@ class VoicemailsService:
             raise
 
     def create_greeting(self, tenant_uuid, voicemail_id, greeting, data):
-        vm_conf = confd.get_voicemail_tenant(
-            tenant_uuid, voicemail_id, self._confd_client
-        )
+        vm_conf = confd.get_voicemail(tenant_uuid, voicemail_id, self._confd_client)
         return self._create_greeting(vm_conf, greeting, data)
 
     def create_user_greeting(self, user_uuid, greeting, data):
@@ -190,9 +172,7 @@ class VoicemailsService:
             raise
 
     def update_greeting(self, tenant_uuid, voicemail_id, greeting, data):
-        vm_conf = confd.get_voicemail_tenant(
-            tenant_uuid, voicemail_id, self._confd_client
-        )
+        vm_conf = confd.get_voicemail(tenant_uuid, voicemail_id, self._confd_client)
         return self._update_greeting(vm_conf, greeting, data)
 
     def update_user_greeting(self, user_uuid, greeting, data):
@@ -218,9 +198,7 @@ class VoicemailsService:
             raise
 
     def delete_greeting(self, tenant_uuid, voicemail_id, greeting):
-        vm_conf = confd.get_voicemail_tenant(
-            tenant_uuid, voicemail_id, self._confd_client
-        )
+        vm_conf = confd.get_voicemail(tenant_uuid, voicemail_id, self._confd_client)
         self._ari.wazo.removeVoicemailGreeting(
             context=vm_conf['context'],
             voicemail=vm_conf['number'],
