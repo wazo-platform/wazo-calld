@@ -52,8 +52,10 @@ class VoicemailsService:
         vm_conf = confd.get_user_voicemail(user_uuid, self._confd_client)
         return self._storage.get_message_info(vm_conf, message_id)
 
-    def get_message_recording(self, voicemail_id, message_id):
-        vm_conf = confd.get_voicemail(voicemail_id, self._confd_client)
+    def get_message_recording(self, tenant_uuid, voicemail_id, message_id):
+        vm_conf = confd.get_voicemail_tenant(
+            tenant_uuid, voicemail_id, self._confd_client
+        )
         return self._get_message_recording(vm_conf, message_id)
 
     def get_user_message_recording(self, user_uuid, message_id):

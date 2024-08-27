@@ -166,10 +166,11 @@ class VoicemailRecordingResource(_BaseVoicemailRecordingResource):
         extract_token_id=extract_token_id_from_query_or_header,
     )
     def get(self, voicemail_id, message_id):
+        tenant = Tenant.autodetect()
         voicemail_id = _validate_voicemail_id(voicemail_id)
         message_id = _validate_message_id(message_id)
         recording = self._voicemails_service.get_message_recording(
-            voicemail_id, message_id
+            tenant.uuid, voicemail_id, message_id
         )
         return self._get_response(recording, message_id)
 

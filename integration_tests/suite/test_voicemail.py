@@ -778,6 +778,75 @@ class TestVoicemails(RealAsteriskIntegrationTest):
             ),
         )
 
+    def test_voicemail_get_message_recording_tenant_isolation(self):
+        user_uuid_1 = str(uuid.uuid4())
+        user_uuid_2 = str(uuid.uuid4())
+        voicemail_id_1 = 111
+        voicemail_id_2 = 222
+        message_id_1 = '1724107750-00000011'  # Present in Docker image
+        message_id_2 = '1724107750-00000021'  # Present in Docker image
+        voicemail_1 = MockVoicemail(
+            voicemail_id_1,
+            '8001',
+            'voicemail-name',
+            'multitenant-1',
+            tenant_uuid=VALID_TENANT_MULTITENANT_1,
+        )
+        voicemail_2 = MockVoicemail(
+            voicemail_id_2,
+            '8002',
+            'voicemail-name',
+            'multitenant-2',
+            tenant_uuid=VALID_TENANT_MULTITENANT_2,
+        )
+        self.confd.set_voicemails(voicemail_1, voicemail_2)
+        calld_1 = self.make_user_calld(
+            user_uuid_1, tenant_uuid=VALID_TENANT_MULTITENANT_1
+        )
+        calld_2 = self.make_user_calld(
+            user_uuid_2, tenant_uuid=VALID_TENANT_MULTITENANT_2
+        )
+
+        # tenant 1, voicemail 1 = OK
+        content = calld_1.voicemails.get_voicemail_recording(
+            voicemail_id_1, message_id_1
+        )
+        assert content == b'some-wav-data-1\n'
+
+        # tenant 1, voicemail 2 = NOK
+        assert_that(
+            calling(calld_1.voicemails.get_voicemail_recording).with_args(
+                voicemail_id_2, message_id_2
+            ),
+            raises(CalldError).matching(
+                has_properties(
+                    status_code=404,
+                    message=contains_string('No such voicemail'),
+                    details=has_entry('voicemail_id', voicemail_id_2),
+                )
+            ),
+        )
+
+        # tenant 2, voicemail 1 = NOK
+        assert_that(
+            calling(calld_2.voicemails.get_voicemail_recording).with_args(
+                voicemail_id_1, message_id_2
+            ),
+            raises(CalldError).matching(
+                has_properties(
+                    status_code=404,
+                    message=contains_string('No such voicemail'),
+                    details=has_entry('voicemail_id', voicemail_id_1),
+                )
+            ),
+        )
+
+        # tenant 2, voicemail 2 = OK
+        content = calld_2.voicemails.get_voicemail_recording(
+            voicemail_id_2, message_id_2
+        )
+        assert content == b'some-wav-data-2\n'
+
     def test_voicemail_get_message_recording(self):
         content = self.calld_client.voicemails.get_voicemail_recording(
             self._voicemail_id, self._message_id
