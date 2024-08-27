@@ -323,12 +323,15 @@ class VoicemailGreetingCopyResource(AuthResource):
 
     @required_acl('calld.voicemails.{voicemail_id}.greetings.{greeting}.copy.create')
     def post(self, voicemail_id, greeting):
+        tenant = Tenant.autodetect()
         voicemail_id = _validate_voicemail_id(voicemail_id)
         greeting = _validate_greeting(greeting)
         params = request.get_json(force=True)
         greeting_form = voicemail_greeting_copy_schema.load(params)
         dest_greeting = greeting_form['dest_greeting']
-        self._service.copy_greeting(voicemail_id, greeting, dest_greeting)
+        self._service.copy_greeting_tenant(
+            tenant.uuid, voicemail_id, greeting, dest_greeting
+        )
         return '', 204
 
 

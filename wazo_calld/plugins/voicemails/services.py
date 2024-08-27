@@ -259,6 +259,13 @@ class VoicemailsService:
             greeting=greeting,
         )
 
+    def copy_greeting_tenant(self, tenant_uuid, voicemail_id, greeting, dest_greeting):
+        data = self.get_greeting_tenant(tenant_uuid, voicemail_id, greeting)
+        try:
+            self.update_greeting_tenant(tenant_uuid, voicemail_id, dest_greeting, data)
+        except NoSuchVoicemailGreeting:
+            self.create_greeting_tenant(tenant_uuid, voicemail_id, dest_greeting, data)
+
     def copy_greeting(self, voicemail_id, greeting, dest_greeting):
         data = self.get_greeting(voicemail_id, greeting)
         try:

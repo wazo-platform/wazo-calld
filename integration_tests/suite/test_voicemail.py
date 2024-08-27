@@ -574,6 +574,11 @@ class TestVoicemails(RealAsteriskIntegrationTest):
             self._voicemail_id, 'busy', WAVE_DATA_1
         )
 
+        # copy greeting from other tenant = NOK
+        with self._assert_voicemail_not_found():
+            calld_other_tenant.voicemails.copy_voicemail_greeting(
+                self._voicemail_id, 'busy', 'unavailable'
+            )
         # copy greeting
         self.calld_client.voicemails.copy_voicemail_greeting(
             self._voicemail_id, 'busy', 'unavailable'
