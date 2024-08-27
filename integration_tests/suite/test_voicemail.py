@@ -66,6 +66,7 @@ class TestVoicemails(RealAsteriskIntegrationTest):
         )
 
         self._folder_id = 1  # INBOX folder. Present in Docker image
+        self._folder_old_id = 2  # Old folder. Present in Docker image
         self._message_id = '1724107750-00000001'  # Present in Docker image
 
     def test_voicemail_get_invalid(self):
@@ -428,6 +429,79 @@ class TestVoicemails(RealAsteriskIntegrationTest):
         )
         assert message['id'] == self._message_id
         assert message['caller_id_name'] == 'Alice'
+
+    def test_voicemail_move_message_invalid(self):
+        # invalid voicemail
+        assert_that(
+            calling(self.calld_client.voicemails.move_voicemail_message).with_args(
+                'invalid', 123, self._folder_old_id
+            ),
+            raises(CalldError).matching(
+                has_properties(
+                    status_code=400,
+                    message=contains_string('Invalid voicemail ID'),
+                    details=has_entry('voicemail_id', 'invalid'),
+                )
+            ),
+        )
+
+        # invalid message
+        assert_that(
+            calling(self.calld_client.voicemails.move_voicemail_message).with_args(
+                123, 'invalid!', self._folder_old_id
+            ),
+            raises(CalldError).matching(
+                has_properties(
+                    status_code=400,
+                    message=contains_string('Invalid voicemail message ID'),
+                    details=has_entry('message_id', 'invalid!'),
+                )
+            ),
+        )
+
+    def test_voicemail_move_message_not_found(self):
+        # voicemail not found
+        assert_that(
+            calling(self.calld_client.voicemails.move_voicemail_message).with_args(
+                123, 123, self._folder_old_id
+            ),
+            raises(CalldError).matching(
+                has_properties(
+                    status_code=404,
+                    message=contains_string('No such voicemail'),
+                    details=has_entry('voicemail_id', 123),
+                )
+            ),
+        )
+
+        # message not found
+        assert_that(
+            calling(self.calld_client.voicemails.move_voicemail_message).with_args(
+                self._voicemail_id, 123, self._folder_old_id
+            ),
+            raises(CalldError).matching(
+                has_properties(
+                    status_code=404,
+                    message=contains_string('No such voicemail message'),
+                    details=has_entry('message_id', '123'),
+                )
+            ),
+        )
+
+    def test_voicemail_move_message(self):
+        self.calld_client.voicemails.move_voicemail_message(
+            self._voicemail_id, self._message_id, self._folder_old_id
+        )
+        message = self.calld_client.voicemails.get_voicemail_message(
+            self._voicemail_id, self._message_id
+        )
+        assert message['id'] == self._message_id
+        assert message['folder']['id'] == self._folder_old_id
+
+        # restore file
+        self.calld_client.voicemails.move_voicemail_message(
+            self._voicemail_id, self._message_id, self._folder_id
+        )
 
     def test_voicemail_head_greeting_invalid_voicemail(self):
         exists = self.calld_client.voicemails.voicemail_greeting_exists(

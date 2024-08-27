@@ -2,11 +2,6 @@ FROM wazoplatform/wazo-calld
 
 ENV PYTHONDONTWRITEBYTECODE='true'
 
-RUN install -dm777 /usr/share/asterisk/voicemail
-ADD ./integration_tests/assets/voicemails/8000 /var/spool/asterisk/voicemail/default/8000
-ADD ./integration_tests/assets/voicemails/8001 /var/spool/asterisk/voicemail/multitenant-1/8001
-ADD ./integration_tests/assets/voicemails/8002 /var/spool/asterisk/voicemail/multitenant-2/8002
-
 ADD . /usr/src/wazo-calld
 WORKDIR /usr/src/wazo-calld
 
