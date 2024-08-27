@@ -137,6 +137,12 @@ class VoicemailsService:
                 raise NoSuchVoicemailGreeting(greeting)
             raise
 
+    def validate_greeting_exists_tenant(self, tenant_uuid, voicemail_id, greeting):
+        vm_conf = confd.get_voicemail_tenant(
+            tenant_uuid, voicemail_id, self._confd_client
+        )
+        return self._validate_greeting_exists(vm_conf, greeting)
+
     def validate_greeting_exists(self, voicemail_id, greeting):
         vm_conf = confd.get_voicemail(voicemail_id, self._confd_client)
         return self._validate_greeting_exists(vm_conf, greeting)

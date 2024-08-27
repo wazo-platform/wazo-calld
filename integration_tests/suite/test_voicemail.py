@@ -3,7 +3,9 @@
 
 import os
 import uuid
+from contextlib import contextmanager
 
+import pytest
 from hamcrest import (
     assert_that,
     calling,
@@ -557,9 +559,17 @@ class TestVoicemails(RealAsteriskIntegrationTest):
         pass
 
     def test_voicemail_greeting_workflow(self):
+        user_uuid_other_tenant = str(uuid.uuid4())
+        calld_other_tenant = self.make_user_calld(
+            user_uuid_other_tenant, tenant_uuid=VALID_TENANT_MULTITENANT_2
+        )
+
+        # create greeting
         self.calld_client.voicemails.create_voicemail_greeting(
             self._voicemail_id, 'busy', WAVE_DATA_1
         )
+
+        # copy greeting
         self.calld_client.voicemails.copy_voicemail_greeting(
             self._voicemail_id, 'busy', 'unavailable'
         )
@@ -567,6 +577,7 @@ class TestVoicemails(RealAsteriskIntegrationTest):
             self._voicemail_id, 'busy', 'name'
         )
 
+        # create greeting but already exists = NOK
         assert_that(
             calling(self.calld_client.voicemails.create_voicemail_greeting).with_args(
                 self._voicemail_id, 'busy', WAVE_DATA_2
@@ -581,16 +592,25 @@ class TestVoicemails(RealAsteriskIntegrationTest):
         )
 
         for greeting in VALID_GREETINGS:
+            # greeting exists from other tenant = NOK
+            exists = calld_other_tenant.voicemails.voicemail_greeting_exists(
+                self._voicemail_id, greeting
+            )
+            assert not exists
+
+            # greeting exists
             exists = self.calld_client.voicemails.voicemail_greeting_exists(
                 self._voicemail_id, greeting
             )
-            assert_that(exists)
+            assert exists
 
+            # get greeting
             data = self.calld_client.voicemails.get_voicemail_greeting(
                 self._voicemail_id, greeting
             )
             assert_that(data, equal_to(WAVE_DATA_1))
 
+        # update greeting
         self.calld_client.voicemails.update_voicemail_greeting(
             self._voicemail_id, 'busy', WAVE_DATA_2
         )
@@ -600,11 +620,10 @@ class TestVoicemails(RealAsteriskIntegrationTest):
         assert_that(data, equal_to(WAVE_DATA_2))
 
         for greeting in VALID_GREETINGS:
+            # delete greeting
             self.calld_client.voicemails.delete_voicemail_greeting(
                 self._voicemail_id, greeting
             )
-
-        for greeting in VALID_GREETINGS:
             assert_that(
                 calling(self.calld_client.voicemails.get_voicemail_greeting).with_args(
                     self._voicemail_id, greeting
@@ -617,6 +636,15 @@ class TestVoicemails(RealAsteriskIntegrationTest):
                     )
                 ),
             )
+
+    @contextmanager
+    def _assert_voicemail_not_found(self):
+        with pytest.raises(CalldError) as exc_info:
+            yield
+
+        calld_error = exc_info.value
+        assert calld_error.status_code == 404
+        assert calld_error.error_id == 'no-such-voicemail'
 
     def test_voicemail_greeting_workflow_from_user(self):
         self.calld_client.voicemails.create_voicemail_greeting_from_user(
