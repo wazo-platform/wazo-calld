@@ -1216,34 +1216,6 @@ class TestVoicemails(RealAsteriskIntegrationTest):
                 ),
             )
 
-    @contextmanager
-    def _assert_voicemail_not_found(self):
-        with pytest.raises(CalldError) as exc_info:
-            yield
-
-        calld_error = exc_info.value
-        assert calld_error.status_code == 404
-        assert calld_error.error_id == 'no-such-voicemail'
-
-    def _assert_voicemail_message_deleted(self, calld_client, voicemail_id, message_id):
-        def message_deleted():
-            assert_that(
-                calling(calld_client.voicemails.get_voicemail_message).with_args(
-                    voicemail_id, message_id
-                ),
-                raises(CalldError).matching(
-                    has_properties(
-                        status_code=404,
-                        message=contains_string('No such voicemail message'),
-                        details=has_entry('message_id', message_id),
-                    )
-                ),
-            )
-
-        until.assert_(
-            message_deleted, message='Voicemail message is still present', timeout=5
-        )
-
     def test_voicemail_greeting_workflow_from_user(self):
         self.calld_client.voicemails.create_voicemail_greeting_from_user(
             'busy', WAVE_DATA_1
@@ -1299,3 +1271,31 @@ class TestVoicemails(RealAsteriskIntegrationTest):
                     )
                 ),
             )
+
+    @contextmanager
+    def _assert_voicemail_not_found(self):
+        with pytest.raises(CalldError) as exc_info:
+            yield
+
+        calld_error = exc_info.value
+        assert calld_error.status_code == 404
+        assert calld_error.error_id == 'no-such-voicemail'
+
+    def _assert_voicemail_message_deleted(self, calld_client, voicemail_id, message_id):
+        def message_deleted():
+            assert_that(
+                calling(calld_client.voicemails.get_voicemail_message).with_args(
+                    voicemail_id, message_id
+                ),
+                raises(CalldError).matching(
+                    has_properties(
+                        status_code=404,
+                        message=contains_string('No such voicemail message'),
+                        details=has_entry('message_id', message_id),
+                    )
+                ),
+            )
+
+        until.assert_(
+            message_deleted, message='Voicemail message is still present', timeout=5
+        )
