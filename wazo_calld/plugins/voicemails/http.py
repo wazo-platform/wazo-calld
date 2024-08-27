@@ -106,9 +106,10 @@ class VoicemailMessageResource(AuthResource):
 
     @required_acl('calld.voicemails.{voicemail_id}.messages.{message_id}.delete')
     def delete(self, voicemail_id, message_id):
+        tenant = Tenant.autodetect()
         voicemail_id = _validate_voicemail_id(voicemail_id)
         message_id = _validate_message_id(message_id)
-        self._voicemails_service.delete_message(voicemail_id, message_id)
+        self._voicemails_service.delete_message(tenant.uuid, voicemail_id, message_id)
         return '', 204
 
 

@@ -93,8 +93,10 @@ class VoicemailsService:
         }
         self._ari.wazo.moveVoicemailMessage(body=body)
 
-    def delete_message(self, voicemail_id, message_id):
-        vm_conf = confd.get_voicemail(voicemail_id, self._confd_client)
+    def delete_message(self, tenant_uuid, voicemail_id, message_id):
+        vm_conf = confd.get_voicemail_tenant(
+            tenant_uuid, voicemail_id, self._confd_client
+        )
         return self._delete_message(vm_conf, message_id)
 
     def delete_user_message(self, user_uuid, message_id):
