@@ -66,9 +66,9 @@ class TestVoicemails(RealAsteriskIntegrationTest):
             self._user_uuid, tenant_uuid=VALID_TENANT
         )
 
-        self._folder_id = 1  # INBOX folder. Present in Docker image
-        self._folder_old_id = 2  # Old folder. Present in Docker image
-        self._message_id = '1724107750-00000001'  # Present in Docker image
+        self._folder_id = 1  # INBOX folder. Present in Docker volume
+        self._folder_old_id = 2  # Old folder. Present in Docker volume
+        self._message_id = '1724107750-00000001'  # Present in Docker volume
 
     def test_voicemail_get_invalid(self):
         assert_that(
@@ -364,8 +364,8 @@ class TestVoicemails(RealAsteriskIntegrationTest):
         user_uuid_2 = str(uuid.uuid4())
         voicemail_id_1 = 111
         voicemail_id_2 = 222
-        message_id_1 = '1724107750-00000011'  # Present in Docker image
-        message_id_2 = '1724107750-00000021'  # Present in Docker image
+        message_id_1 = '1724107750-00000011'  # Present in Docker volume
+        message_id_2 = '1724107750-00000021'  # Present in Docker volume
         voicemail_1 = MockVoicemail(
             voicemail_id_1,
             '8001',
@@ -494,8 +494,8 @@ class TestVoicemails(RealAsteriskIntegrationTest):
         user_uuid_2 = str(uuid.uuid4())
         voicemail_id_1 = 111
         voicemail_id_2 = 222
-        message_id_1 = '1724107750-00000011'  # Present in Docker image
-        message_id_2 = '1724107750-00000021'  # Present in Docker image
+        message_id_1 = '1724107750-00000011'  # Present in Docker volume
+        message_id_2 = '1724107750-00000021'  # Present in Docker volume
         voicemail_1 = MockVoicemail(
             voicemail_id_1,
             '8001',
@@ -646,8 +646,8 @@ class TestVoicemails(RealAsteriskIntegrationTest):
         user_uuid_2 = str(uuid.uuid4())
         voicemail_id_1 = 111
         voicemail_id_2 = 222
-        message_id_1 = '1724107750-00000011'  # Present in Docker image
-        message_id_2 = '1724107750-00000021'  # Present in Docker image
+        message_id_1 = '1724107750-00000011'  # Present in Docker volume
+        message_id_2 = '1724107750-00000021'  # Present in Docker volume
         voicemail_1 = MockVoicemail(
             voicemail_id_1,
             '8001',
@@ -783,8 +783,8 @@ class TestVoicemails(RealAsteriskIntegrationTest):
         user_uuid_2 = str(uuid.uuid4())
         voicemail_id_1 = 111
         voicemail_id_2 = 222
-        message_id_1 = '1724107750-00000011'  # Present in Docker image
-        message_id_2 = '1724107750-00000021'  # Present in Docker image
+        message_id_1 = '1724107750-00000011'  # Present in Docker volume
+        message_id_2 = '1724107750-00000021'  # Present in Docker volume
         voicemail_1 = MockVoicemail(
             voicemail_id_1,
             '8001',
