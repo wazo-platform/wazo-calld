@@ -37,9 +37,7 @@ class VoicemailResource(AuthResource):
     def get(self, voicemail_id):
         tenant = Tenant.autodetect()
         voicemail_id = _validate_voicemail_id(voicemail_id)
-        voicemail = self._voicemails_service.get_voicemail_tenant(
-            tenant.uuid, voicemail_id
-        )
+        voicemail = self._voicemails_service.get_voicemail(tenant.uuid, voicemail_id)
         return voicemail_schema.dump(voicemail)
 
 
@@ -63,7 +61,7 @@ class VoicemailFolderResource(AuthResource):
         tenant = Tenant.autodetect()
         voicemail_id = _validate_voicemail_id(voicemail_id)
         folder_id = _validate_folder_id(folder_id)
-        folder = self._voicemails_service.get_folder_tenant(
+        folder = self._voicemails_service.get_folder(
             tenant.uuid, voicemail_id, folder_id
         )
         return voicemail_folder_schema.dump(folder)
@@ -227,9 +225,7 @@ class VoicemailGreetingResource(AuthResource):
         tenant = Tenant.autodetect()
         voicemail_id = _validate_voicemail_id(voicemail_id)
         greeting = _validate_greeting(greeting)
-        self._service.create_greeting_tenant(
-            tenant.uuid, voicemail_id, greeting, request.data
-        )
+        self._service.create_greeting(tenant.uuid, voicemail_id, greeting, request.data)
         return '', 204
 
     @required_acl('calld.voicemails.{voicemail_id}.greetings.{greeting}.read')
@@ -237,9 +233,7 @@ class VoicemailGreetingResource(AuthResource):
         tenant = Tenant.autodetect()
         voicemail_id = _validate_voicemail_id(voicemail_id)
         greeting = _validate_greeting(greeting)
-        self._service.validate_greeting_exists_tenant(
-            tenant.uuid, voicemail_id, greeting
-        )
+        self._service.validate_greeting_exists(tenant.uuid, voicemail_id, greeting)
         return '', 200
 
     @required_acl('calld.voicemails.{voicemail_id}.greetings.{greeting}.read')
@@ -247,7 +241,7 @@ class VoicemailGreetingResource(AuthResource):
         tenant = Tenant.autodetect()
         voicemail_id = _validate_voicemail_id(voicemail_id)
         greeting = _validate_greeting(greeting)
-        data = self._service.get_greeting_tenant(tenant.uuid, voicemail_id, greeting)
+        data = self._service.get_greeting(tenant.uuid, voicemail_id, greeting)
         headers = {'Content-Disposition': self.content_dispo_tpl.format(greeting)}
         return Response(
             response=data, status=200, headers=headers, content_type='audio/wav'
@@ -258,9 +252,7 @@ class VoicemailGreetingResource(AuthResource):
         tenant = Tenant.autodetect()
         voicemail_id = _validate_voicemail_id(voicemail_id)
         greeting = _validate_greeting(greeting)
-        self._service.update_greeting_tenant(
-            tenant.uuid, voicemail_id, greeting, request.data
-        )
+        self._service.update_greeting(tenant.uuid, voicemail_id, greeting, request.data)
         return '', 204
 
     @required_acl('calld.voicemails.{voicemail_id}.greetings.{greeting}.delete')
@@ -268,7 +260,7 @@ class VoicemailGreetingResource(AuthResource):
         tenant = Tenant.autodetect()
         voicemail_id = _validate_voicemail_id(voicemail_id)
         greeting = _validate_greeting(greeting)
-        self._service.delete_greeting_tenant(tenant.uuid, voicemail_id, greeting)
+        self._service.delete_greeting(tenant.uuid, voicemail_id, greeting)
         return '', 204
 
 
@@ -329,9 +321,7 @@ class VoicemailGreetingCopyResource(AuthResource):
         params = request.get_json(force=True)
         greeting_form = voicemail_greeting_copy_schema.load(params)
         dest_greeting = greeting_form['dest_greeting']
-        self._service.copy_greeting_tenant(
-            tenant.uuid, voicemail_id, greeting, dest_greeting
-        )
+        self._service.copy_greeting(tenant.uuid, voicemail_id, greeting, dest_greeting)
         return '', 204
 
 

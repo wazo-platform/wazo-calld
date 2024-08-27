@@ -22,11 +22,7 @@ class VoicemailsService:
         self._confd_client = confd_client
         self._storage = voicemail_storage
 
-    def get_voicemail(self, voicemail_id):
-        vm_conf = confd.get_voicemail(voicemail_id, self._confd_client)
-        return self._storage.get_voicemail_info(vm_conf)
-
-    def get_voicemail_tenant(self, tenant_uuid, voicemail_id):
+    def get_voicemail(self, tenant_uuid, voicemail_id):
         vm_conf = confd.get_voicemail_tenant(
             tenant_uuid, voicemail_id, self._confd_client
         )
@@ -36,11 +32,7 @@ class VoicemailsService:
         vm_conf = confd.get_user_voicemail(user_uuid, self._confd_client)
         return self._storage.get_voicemail_info(vm_conf)
 
-    def get_folder(self, voicemail_id, folder_id):
-        vm_conf = confd.get_voicemail(voicemail_id, self._confd_client)
-        return self._storage.get_folder_info(vm_conf, folder_id)
-
-    def get_folder_tenant(self, tenant_uuid, voicemail_id, folder_id):
+    def get_folder(self, tenant_uuid, voicemail_id, folder_id):
         vm_conf = confd.get_voicemail_tenant(
             tenant_uuid, voicemail_id, self._confd_client
         )
@@ -115,14 +107,10 @@ class VoicemailsService:
         }
         self._ari.wazo.deleteVoicemailMessage(body=body)
 
-    def get_greeting_tenant(self, tenant_uuid, voicemail_id, greeting):
+    def get_greeting(self, tenant_uuid, voicemail_id, greeting):
         vm_conf = confd.get_voicemail_tenant(
             tenant_uuid, voicemail_id, self._confd_client
         )
-        return self._get_greeting(vm_conf, greeting)
-
-    def get_greeting(self, voicemail_id, greeting):
-        vm_conf = confd.get_voicemail(voicemail_id, self._confd_client)
         return self._get_greeting(vm_conf, greeting)
 
     def get_user_greeting(self, user_uuid, greeting):
@@ -143,14 +131,10 @@ class VoicemailsService:
                 raise NoSuchVoicemailGreeting(greeting)
             raise
 
-    def validate_greeting_exists_tenant(self, tenant_uuid, voicemail_id, greeting):
+    def validate_greeting_exists(self, tenant_uuid, voicemail_id, greeting):
         vm_conf = confd.get_voicemail_tenant(
             tenant_uuid, voicemail_id, self._confd_client
         )
-        return self._validate_greeting_exists(vm_conf, greeting)
-
-    def validate_greeting_exists(self, voicemail_id, greeting):
-        vm_conf = confd.get_voicemail(voicemail_id, self._confd_client)
         return self._validate_greeting_exists(vm_conf, greeting)
 
     def validate_user_greeting_exists(self, user_uuid, greeting):
@@ -169,14 +153,10 @@ class VoicemailsService:
                 raise NoSuchVoicemailGreeting(greeting)
             raise
 
-    def create_greeting_tenant(self, tenant_uuid, voicemail_id, greeting, data):
+    def create_greeting(self, tenant_uuid, voicemail_id, greeting, data):
         vm_conf = confd.get_voicemail_tenant(
             tenant_uuid, voicemail_id, self._confd_client
         )
-        return self._create_greeting(vm_conf, greeting, data)
-
-    def create_greeting(self, voicemail_id, greeting, data):
-        vm_conf = confd.get_voicemail(voicemail_id, self._confd_client)
         return self._create_greeting(vm_conf, greeting, data)
 
     def create_user_greeting(self, user_uuid, greeting, data):
@@ -201,14 +181,10 @@ class VoicemailsService:
                 raise VoicemailGreetingAlreadyExists(greeting)
             raise
 
-    def update_greeting_tenant(self, tenant_uuid, voicemail_id, greeting, data):
+    def update_greeting(self, tenant_uuid, voicemail_id, greeting, data):
         vm_conf = confd.get_voicemail_tenant(
             tenant_uuid, voicemail_id, self._confd_client
         )
-        return self._update_greeting(vm_conf, greeting, data)
-
-    def update_greeting(self, voicemail_id, greeting, data):
-        vm_conf = confd.get_voicemail(voicemail_id, self._confd_client)
         return self._update_greeting(vm_conf, greeting, data)
 
     def update_user_greeting(self, user_uuid, greeting, data):
@@ -233,18 +209,10 @@ class VoicemailsService:
                 raise NoSuchVoicemailGreeting(greeting)
             raise
 
-    def delete_greeting_tenant(self, tenant_uuid, voicemail_id, greeting):
+    def delete_greeting(self, tenant_uuid, voicemail_id, greeting):
         vm_conf = confd.get_voicemail_tenant(
             tenant_uuid, voicemail_id, self._confd_client
         )
-        self._ari.wazo.removeVoicemailGreeting(
-            context=vm_conf['context'],
-            voicemail=vm_conf['number'],
-            greeting=greeting,
-        )
-
-    def delete_greeting(self, voicemail_id, greeting):
-        vm_conf = confd.get_voicemail(voicemail_id, self._confd_client)
         self._ari.wazo.removeVoicemailGreeting(
             context=vm_conf['context'],
             voicemail=vm_conf['number'],
@@ -259,19 +227,12 @@ class VoicemailsService:
             greeting=greeting,
         )
 
-    def copy_greeting_tenant(self, tenant_uuid, voicemail_id, greeting, dest_greeting):
-        data = self.get_greeting_tenant(tenant_uuid, voicemail_id, greeting)
+    def copy_greeting(self, tenant_uuid, voicemail_id, greeting, dest_greeting):
+        data = self.get_greeting(tenant_uuid, voicemail_id, greeting)
         try:
-            self.update_greeting_tenant(tenant_uuid, voicemail_id, dest_greeting, data)
+            self.update_greeting(tenant_uuid, voicemail_id, dest_greeting, data)
         except NoSuchVoicemailGreeting:
-            self.create_greeting_tenant(tenant_uuid, voicemail_id, dest_greeting, data)
-
-    def copy_greeting(self, voicemail_id, greeting, dest_greeting):
-        data = self.get_greeting(voicemail_id, greeting)
-        try:
-            self.update_greeting(voicemail_id, dest_greeting, data)
-        except NoSuchVoicemailGreeting:
-            self.create_greeting(voicemail_id, dest_greeting, data)
+            self.create_greeting(tenant_uuid, voicemail_id, dest_greeting, data)
 
     def copy_user_greeting(self, user_uuid, greeting, dest_greeting):
         data = self.get_user_greeting(user_uuid, greeting)
