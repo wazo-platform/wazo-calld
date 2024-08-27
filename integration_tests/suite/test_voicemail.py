@@ -604,6 +604,11 @@ class TestVoicemails(RealAsteriskIntegrationTest):
             )
             assert exists
 
+            # get greeting from other tenant = NOK
+            with self._assert_voicemail_not_found():
+                data = calld_other_tenant.voicemails.get_voicemail_greeting(
+                    self._voicemail_id, greeting
+                )
             # get greeting
             data = self.calld_client.voicemails.get_voicemail_greeting(
                 self._voicemail_id, greeting

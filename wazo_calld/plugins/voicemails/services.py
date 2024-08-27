@@ -115,6 +115,12 @@ class VoicemailsService:
         }
         self._ari.wazo.deleteVoicemailMessage(body=body)
 
+    def get_greeting_tenant(self, tenant_uuid, voicemail_id, greeting):
+        vm_conf = confd.get_voicemail_tenant(
+            tenant_uuid, voicemail_id, self._confd_client
+        )
+        return self._get_greeting(vm_conf, greeting)
+
     def get_greeting(self, voicemail_id, greeting):
         vm_conf = confd.get_voicemail(voicemail_id, self._confd_client)
         return self._get_greeting(vm_conf, greeting)
