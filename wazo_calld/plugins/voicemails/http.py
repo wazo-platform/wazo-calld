@@ -224,9 +224,12 @@ class VoicemailGreetingResource(AuthResource):
 
     @required_acl('calld.voicemails.{voicemail_id}.greetings.{greeting}.create')
     def post(self, voicemail_id, greeting):
+        tenant = Tenant.autodetect()
         voicemail_id = _validate_voicemail_id(voicemail_id)
         greeting = _validate_greeting(greeting)
-        self._service.create_greeting(voicemail_id, greeting, request.data)
+        self._service.create_greeting_tenant(
+            tenant.uuid, voicemail_id, greeting, request.data
+        )
         return '', 204
 
     @required_acl('calld.voicemails.{voicemail_id}.greetings.{greeting}.read')

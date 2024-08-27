@@ -564,6 +564,11 @@ class TestVoicemails(RealAsteriskIntegrationTest):
             user_uuid_other_tenant, tenant_uuid=VALID_TENANT_MULTITENANT_2
         )
 
+        # create greeting from other tenant = NOK
+        with self._assert_voicemail_not_found():
+            calld_other_tenant.voicemails.create_voicemail_greeting(
+                self._voicemail_id, 'busy', WAVE_DATA_1
+            )
         # create greeting
         self.calld_client.voicemails.create_voicemail_greeting(
             self._voicemail_id, 'busy', WAVE_DATA_1
