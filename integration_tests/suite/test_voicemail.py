@@ -18,6 +18,7 @@ from hamcrest import (
     is_,
 )
 from wazo_calld_client.exceptions import CalldError
+from wazo_test_helpers import until
 from wazo_test_helpers.hamcrest.raises import raises
 
 from .helpers.confd import MockVoicemail
@@ -582,6 +583,75 @@ class TestVoicemails(RealAsteriskIntegrationTest):
             self._voicemail_id, self._message_id, self._folder_id
         )
 
+    def test_voicemail_delete_message_invalid(self):
+        # invalid voicemail
+        assert_that(
+            calling(self.calld_client.voicemails.delete_voicemail_message).with_args(
+                'invalid', 123
+            ),
+            raises(CalldError).matching(
+                has_properties(
+                    status_code=400,
+                    message=contains_string('Invalid voicemail ID'),
+                    details=has_entry('voicemail_id', 'invalid'),
+                )
+            ),
+        )
+
+        # invalid message
+        assert_that(
+            calling(self.calld_client.voicemails.delete_voicemail_message).with_args(
+                123, 'invalid!'
+            ),
+            raises(CalldError).matching(
+                has_properties(
+                    status_code=400,
+                    message=contains_string('Invalid voicemail message ID'),
+                    details=has_entry('message_id', 'invalid!'),
+                )
+            ),
+        )
+
+    def test_voicemail_delete_message_not_found(self):
+        # voicemail not found
+        assert_that(
+            calling(self.calld_client.voicemails.delete_voicemail_message).with_args(
+                123, 123
+            ),
+            raises(CalldError).matching(
+                has_properties(
+                    status_code=404,
+                    message=contains_string('No such voicemail'),
+                    details=has_entry('voicemail_id', 123),
+                )
+            ),
+        )
+
+        # message not found
+        assert_that(
+            calling(self.calld_client.voicemails.delete_voicemail_message).with_args(
+                self._voicemail_id, 123
+            ),
+            raises(CalldError).matching(
+                has_properties(
+                    status_code=404,
+                    message=contains_string('No such voicemail message'),
+                    details=has_entry('message_id', '123'),
+                )
+            ),
+        )
+
+    def test_voicemail_delete_message(self):
+        self.calld_client.voicemails.delete_voicemail_message(
+            self._voicemail_id, self._message_id
+        )
+        self._assert_voicemail_message_deleted(
+            self.calld_client, self._voicemail_id, self._message_id
+        )
+
+        # restore message
+        self.restart_service('volume-init')
+
     def test_voicemail_head_greeting_invalid_voicemail(self):
         exists = self.calld_client.voicemails.voicemail_greeting_exists(
             'not-exists', 'busy'
@@ -953,6 +1023,25 @@ class TestVoicemails(RealAsteriskIntegrationTest):
         calld_error = exc_info.value
         assert calld_error.status_code == 404
         assert calld_error.error_id == 'no-such-voicemail'
+
+    def _assert_voicemail_message_deleted(self, calld_client, voicemail_id, message_id):
+        def message_deleted():
+            assert_that(
+                calling(calld_client.voicemails.get_voicemail_message).with_args(
+                    voicemail_id, message_id
+                ),
+                raises(CalldError).matching(
+                    has_properties(
+                        status_code=404,
+                        message=contains_string('No such voicemail message'),
+                        details=has_entry('message_id', message_id),
+                    )
+                ),
+            )
+
+        until.assert_(
+            message_deleted, message='Voicemail message is still present', timeout=5
+        )
 
     def test_voicemail_greeting_workflow_from_user(self):
         self.calld_client.voicemails.create_voicemail_greeting_from_user(
