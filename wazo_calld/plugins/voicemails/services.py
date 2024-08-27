@@ -233,6 +233,16 @@ class VoicemailsService:
                 raise NoSuchVoicemailGreeting(greeting)
             raise
 
+    def delete_greeting_tenant(self, tenant_uuid, voicemail_id, greeting):
+        vm_conf = confd.get_voicemail_tenant(
+            tenant_uuid, voicemail_id, self._confd_client
+        )
+        self._ari.wazo.removeVoicemailGreeting(
+            context=vm_conf['context'],
+            voicemail=vm_conf['number'],
+            greeting=greeting,
+        )
+
     def delete_greeting(self, voicemail_id, greeting):
         vm_conf = confd.get_voicemail(voicemail_id, self._confd_client)
         self._ari.wazo.removeVoicemailGreeting(

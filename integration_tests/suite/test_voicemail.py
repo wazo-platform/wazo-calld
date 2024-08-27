@@ -635,6 +635,11 @@ class TestVoicemails(RealAsteriskIntegrationTest):
         assert_that(data, equal_to(WAVE_DATA_2))
 
         for greeting in VALID_GREETINGS:
+            # delete greeting from other tenant = NOK
+            with self._assert_voicemail_not_found():
+                calld_other_tenant.voicemails.delete_voicemail_greeting(
+                    self._voicemail_id, greeting
+                )
             # delete greeting
             self.calld_client.voicemails.delete_voicemail_greeting(
                 self._voicemail_id, greeting
