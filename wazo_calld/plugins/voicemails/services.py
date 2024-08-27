@@ -201,6 +201,12 @@ class VoicemailsService:
                 raise VoicemailGreetingAlreadyExists(greeting)
             raise
 
+    def update_greeting_tenant(self, tenant_uuid, voicemail_id, greeting, data):
+        vm_conf = confd.get_voicemail_tenant(
+            tenant_uuid, voicemail_id, self._confd_client
+        )
+        return self._update_greeting(vm_conf, greeting, data)
+
     def update_greeting(self, voicemail_id, greeting, data):
         vm_conf = confd.get_voicemail(voicemail_id, self._confd_client)
         return self._update_greeting(vm_conf, greeting, data)

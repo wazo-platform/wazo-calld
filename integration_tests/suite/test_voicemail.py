@@ -620,6 +620,11 @@ class TestVoicemails(RealAsteriskIntegrationTest):
             )
             assert_that(data, equal_to(WAVE_DATA_1))
 
+        # update greeting from other tenant = NOK
+        with self._assert_voicemail_not_found():
+            calld_other_tenant.voicemails.update_voicemail_greeting(
+                self._voicemail_id, 'busy', WAVE_DATA_2
+            )
         # update greeting
         self.calld_client.voicemails.update_voicemail_greeting(
             self._voicemail_id, 'busy', WAVE_DATA_2
