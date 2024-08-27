@@ -309,6 +309,26 @@ class TestVoicemails(RealAsteriskIntegrationTest):
         )
         assert_that(exists, is_(False))
 
+    def test_voicemail_head_greeting(self):
+        # see test_voicemail_greeting_workflow
+        pass
+
+    def test_voicemail_head_greeting_from_user_invalid_greeting(self):
+        exists = self.calld_client.voicemails.voicemail_greeting_from_user_exists(
+            'not-exists'
+        )
+        assert_that(exists, is_(False))
+
+    def test_voicemail_head_greeting_from_user_unset_greeting(self):
+        exists = self.calld_client.voicemails.voicemail_greeting_from_user_exists(
+            'busy'
+        )
+        assert_that(exists, is_(False))
+
+    def test_voicemail_head_greeting_from_user(self):
+        # see test_voicemail_greeting_workflow_from_user
+        pass
+
     def test_voicemail_get_greeting_invalid_voicemail(self):
         assert_that(
             calling(self.calld_client.voicemails.get_voicemail_greeting).with_args(
@@ -352,41 +372,9 @@ class TestVoicemails(RealAsteriskIntegrationTest):
             ),
         )
 
-    def test_voicemail_copy_greeting_invalid_dest_greeting(self):
-        assert_that(
-            calling(self.calld_client.voicemails.copy_voicemail_greeting).with_args(
-                self._voicemail_id, 'busy', 'not-exists'
-            ),
-            raises(CalldError).matching(
-                has_properties(
-                    status_code=400,
-                    message=contains_string('Sent data is invalid'),
-                    details=has_entry(
-                        'dest_greeting',
-                        contains_exactly(
-                            has_entries(
-                                constraint=has_entry(
-                                    'choices', equal_to(['unavailable', 'busy', 'name'])
-                                ),
-                                message='Must be one of: unavailable, busy, name.',
-                            )
-                        ),
-                    ),
-                )
-            ),
-        )
-
-    def test_voicemail_head_greeting_from_user_invalid_greeting(self):
-        exists = self.calld_client.voicemails.voicemail_greeting_from_user_exists(
-            'not-exists'
-        )
-        assert_that(exists, is_(False))
-
-    def test_voicemail_head_greeting_from_user_unset_greeting(self):
-        exists = self.calld_client.voicemails.voicemail_greeting_from_user_exists(
-            'busy'
-        )
-        assert_that(exists, is_(False))
+    def test_voicemail_get_greeting(self):
+        # see test_voicemail_greeting_workflow
+        pass
 
     def test_voicemail_get_greeting_from_user_invalid_greeting(self):
         assert_that(
@@ -415,6 +403,38 @@ class TestVoicemails(RealAsteriskIntegrationTest):
                 )
             ),
         )
+
+    def test_voicemail_get_greeting_from_user(self):
+        # see test_voicemail_greeting_workflow_from_user
+        pass
+
+    def test_voicemail_copy_greeting_invalid_dest_greeting(self):
+        assert_that(
+            calling(self.calld_client.voicemails.copy_voicemail_greeting).with_args(
+                self._voicemail_id, 'busy', 'not-exists'
+            ),
+            raises(CalldError).matching(
+                has_properties(
+                    status_code=400,
+                    message=contains_string('Sent data is invalid'),
+                    details=has_entry(
+                        'dest_greeting',
+                        contains_exactly(
+                            has_entries(
+                                constraint=has_entry(
+                                    'choices', equal_to(['unavailable', 'busy', 'name'])
+                                ),
+                                message='Must be one of: unavailable, busy, name.',
+                            )
+                        ),
+                    ),
+                )
+            ),
+        )
+
+    def test_voicemail_copy_greeting(self):
+        # see test_voicemail_greeting_workflow
+        pass
 
     def test_voicemail_put_greeting_unset(self):
         assert_that(
@@ -451,6 +471,10 @@ class TestVoicemails(RealAsteriskIntegrationTest):
             self._voicemail_id, 'busy'
         )
 
+    def test_voicemail_put_greeting(self):
+        # see test_voicemail_greeting_workflow
+        pass
+
     def test_voicemail_put_greeting_from_user_unset(self):
         assert_that(
             calling(
@@ -484,6 +508,10 @@ class TestVoicemails(RealAsteriskIntegrationTest):
 
         self.calld_client.voicemails.delete_voicemail_greeting_from_user('busy')
 
+    def test_voicemail_put_greeting_from_user(self):
+        # see test_voicemail_greeting_workflow_from_user
+        pass
+
     def test_voicemail_delete_unset_greeting(self):
         self.calld_client.voicemails.delete_voicemail_greeting(
             self._voicemail_id, 'busy'
@@ -506,7 +534,11 @@ class TestVoicemails(RealAsteriskIntegrationTest):
             ),
         )
 
-    def test_voicemail_create_invalid_body_from_user(self):
+    def test_voicemail_create_greeting(self):
+        # see test_voicemail_greeting_workflow
+        pass
+
+    def test_voicemail_create_from_user_invalid_body(self):
         assert_that(
             calling(
                 self.calld_client.voicemails.create_voicemail_greeting_from_user
@@ -519,6 +551,10 @@ class TestVoicemails(RealAsteriskIntegrationTest):
                 )
             ),
         )
+
+    def test_voicemail_create_greeting_from_user(self):
+        # see test_voicemail_greeting_workflow_from_user
+        pass
 
     def test_voicemail_greeting_workflow(self):
         self.calld_client.voicemails.create_voicemail_greeting(
