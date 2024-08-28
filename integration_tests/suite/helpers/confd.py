@@ -5,12 +5,10 @@ from __future__ import annotations
 
 from random import choice
 from string import ascii_uppercase, digits
-from typing import TYPE_CHECKING
 
 import requests
 
-if TYPE_CHECKING:
-    from .schemas import ExtensionSchema, ParkingLotSchema
+from .schemas import ExtensionSchema, ParkingLotSchema
 
 
 class ConfdClient:

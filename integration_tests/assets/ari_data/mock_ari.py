@@ -6,14 +6,10 @@ from __future__ import annotations
 import json
 import logging
 import sys
-from typing import TYPE_CHECKING
 
 from flask import Flask, Response, jsonify, make_response, request
 from flask_sockets import Sockets
-
-if TYPE_CHECKING:
-    from geventwebsocket.websocket import WebSocket
-
+from geventwebsocket.websocket import WebSocket
 
 _EMPTY_RESPONSES: dict[str, dict | list] = {
     'amqp': {},

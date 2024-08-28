@@ -5,23 +5,19 @@ from __future__ import annotations
 
 import logging
 from functools import wraps
-from typing import TYPE_CHECKING, Callable, Union
+from typing import Callable, Union
 
 from ari.exceptions import ARINotFound
 
+from wazo_calld.ari_ import CoreARI
+from wazo_calld.bus import CoreBusConsumer
 from wazo_calld.plugin_helpers.ari_ import Channel, set_channel_id_var_sync
 
 from .dataclasses_ import AsteriskParkedCall, AsteriskUnparkedCall
 from .exceptions import NoSuchParking
 from .helpers import DONT_CHECK_TENANT, split_parking_id_from_name
-
-if TYPE_CHECKING:
-    from wazo_calld.ari_ import CoreARI
-    from wazo_calld.bus import CoreBusConsumer
-
-    from .notifier import ParkingNotifier
-    from .services import ParkingService
-
+from .notifier import ParkingNotifier
+from .services import ParkingService
 
 AvailableModels = Union[AsteriskParkedCall, AsteriskUnparkedCall]
 

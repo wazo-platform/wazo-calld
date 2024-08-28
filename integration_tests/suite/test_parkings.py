@@ -3,9 +3,10 @@
 
 from __future__ import annotations
 
+from collections.abc import Generator
 from datetime import datetime, timezone
 from functools import wraps
-from typing import TYPE_CHECKING, Callable, TypedDict, cast
+from typing import Callable, TypedDict, cast
 from uuid import uuid4
 
 from ari.exceptions import ARINotFound
@@ -29,11 +30,7 @@ from .helpers.confd import MockParkinglot
 from .helpers.constants import ENDPOINT_AUTOANSWER, VALID_TENANT
 from .helpers.hamcrest_ import HamcrestARIBridge, HamcrestARIChannel
 from .helpers.real_asterisk import RealAsterisk, RealAsteriskIntegrationTest
-
-if TYPE_CHECKING:
-    from collections.abc import Generator
-
-    from .helpers.schemas import ParkingLotSchema
+from .helpers.schemas import ParkingLotSchema
 
 
 class ParkingLotArgs(TypedDict, total=False):
