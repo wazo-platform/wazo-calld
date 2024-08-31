@@ -1,0 +1,3 @@
+---
+- import_playbook: ../docker-build/run-filtered.yaml
+- import_playbook: ../wazo-tox/run.yaml

@@ -1,0 +1,20 @@
+- name: Debug
+  debug:
+    msg: "Processing {{ item.short_name }}"
+
+- name: Check if we have a Dockerfile
+  stat:
+    path: "{{ ansible_env.HOME }}/{{ item.src_dir }}/Dockerfile"
+  register: dockerfile
+
+- name: Build a docker image
+  shell: "{% raw %}docker image inspect --format='{{ .Id }}' wazoplatform/$(basename $(pwd)) || docker build -t wazoplatform/$(basename $(pwd)) .{% endraw %}"
+  args:
+    chdir: "{{ ansible_env.HOME }}/{{ item.src_dir }}"
+  when: dockerfile.stat.exists
+
+- name: Build docker images using make
+  shell: "set -x; if [ -f Makefile -a -n \"$(find . -name 'Dockerfile*' | grep -Fv integration_tests)\" ]; then make; fi"
+  args:
+    chdir: "{{ ansible_env.HOME }}/{{ item.src_dir }}"
+  when: not dockerfile.stat.exists

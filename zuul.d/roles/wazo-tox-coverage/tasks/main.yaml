@@ -1,0 +1,138 @@
+- name: Require tox_envlist variable
+  fail:
+    msg: tox_envlist is required for this role
+  when: tox_envlist is not defined
+
+- name: Check to see if requirements file exists
+  stat:
+    path: "{{ zuul_work_dir}}/{{ item }}"
+  register: requirements_files
+  loop:
+    - requirements.txt
+    - integration_tests/test-requirements.txt
+    - integration_tests/test-requirements-for-tox.txt
+  ignore_errors: True
+
+- name: Replace requirements by predefined base branch (bullseye / bookworm)
+  ansible.builtin.replace:
+    path: "{{ item.stat.path }}"
+    regexp: /master\.zip
+    replace: /{{ zuul.branch }}.zip
+  loop: "{{ requirements_files.results }}"
+  when: "'{{ zuul.branch }}' in ['bullseye', 'bookworm'] and {{ item }}.stat.exists"
+
+- name: Run tox without tests
+  command: "{{ tox_executable }} --notest -e{{ tox_envlist }}"
+  args:
+    chdir: "{{ zuul_work_dir }}"
+  environment: "{{ tox_environment|combine(tox_constraints_env|default({})) }}"
+
+- name: Extract tox config
+  shell: "{{ tox_executable }} --showconfig -e{{ tox_envlist }} > .tox.config"
+  args:
+    chdir: "{{ zuul_work_dir }}"
+  environment: "{{ tox_environment|combine(tox_constraints_env|default({})) }}"
+
+- name: Check if setup.py exists
+  stat:
+    path: "{{ zuul_work_dir }}/setup.py"
+  register: check_setup_py_file
+
+- name: Extract tox package name
+  command: "python3 setup.py --name"
+  args:
+    chdir: "{{ zuul_work_dir }}"
+  when: check_setup_py_file.stat.exists
+  register: python_package_name
+
+- name: Install any sibling python packages
+  tox_install_sibling_packages:
+    tox_show_config: "{{ zuul_work_dir }}/.tox.config"
+    tox_package_name: "{{ python_package_name.stdout | default(omit) }}"
+    tox_constraints_file: "{{ tox_constraints_file | default(omit) }}"
+    project_dir: "{{ zuul_work_dir }}"
+    projects: "{{ zuul.projects.values() | list | json_query(projects_filter) }}"
+  vars:
+    projects_filter: "[?name!='{{ zuul.project.name }}']"
+
+- name: Install any sibling python packages into docker compose configuration
+  docker_sibling_packages:
+    tox_envlist: "{{ tox_envlist }}"
+    project_dir: "{{ zuul_work_dir }}"
+    projects: "{{ zuul.projects.values() | list | json_query(projects_filter) }}"
+    services: "{{ docker_compose_services_override | list }}"
+  vars:
+    projects_filter: "[?name!='{{ zuul.project.name }}']"
+  register: docker_sibling_results
+  when: docker_install_siblings
+
+- name: Set docker compose override location env
+  set_fact:
+    docker_compose_override_env:
+      WAZO_TEST_DOCKER_OVERRIDE_EXTRA: "{{ docker_sibling_results.file }}"
+  when: docker_install_siblings
+
+# This should be installed in the elements instead
+- name: Install docker Python lib
+  ansible.builtin.pip:
+    name: docker
+    state: present
+
+- name: Build sibling mock docker images
+  community.docker.docker_image:
+    build:
+      path: "{{ zuul.projects['github.com/wazo-platform/wazo-test-helpers'].src_dir }}/contribs/docker/{{ item }}"
+    name: "wazoplatform/{{ item }}"
+    source: build
+  loop:
+    - flask
+    - wait
+    - wazo-amid-mock
+    - wazo-auth-mock
+    - wazo-confd-mock
+    - wazo-sysconfd-mock
+  when: docker_install_siblings and 'github.com/wazo-platform/wazo-test-helpers' in zuul.projects
+
+- name: Set the integration environment variables
+  set_fact:
+    integration_env:
+      INTEGRATION_TEST_TIMEOUT: "{{ integration_test_timeout | default(omit) }}"
+      MANAGE_DB_DIR: "{{ ansible_env.PWD + '/' + manage_db_dir_relative if manage_db_dir_relative else '' }}"
+      TEST_LOGS: "verbose"
+      WAZO_TEST_COVERAGE_DIR: "/tmp/integration-tests-coverage"
+      WAZO_TEST_COVERAGE_ENABLED: "{{ 1 if integration_test_coverage_service_name is defined else 0 }}"
+      WAZO_TEST_COVERAGE_SERVICE_NAME: "{{ integration_test_coverage_service_name | default(omit) }}"
+      WAZO_TEST_DOCKER_LOGS_ENABLED: 1
+      WAZO_TEST_DOCKER_LOGS_DIR: "/tmp/docker-logs"
+      WAZO_TEST_NO_DOCKER_COMPOSE_PULL: 1
+      # WARNING: To be effective, variables must be declared in the `pass_env` config of the tox.ini file for each project
+  vars:
+    manage_db_query: "[?short_name=='xivo-manage-db'].src_dir"
+    manage_db_dir_relative: "{{ zuul.projects.values() | list | json_query(manage_db_query) | first | default('') }}"
+
+- name: Emit docker compose override file
+  debug:
+    msg: "Docker compose override file contents: {{ docker_sibling_results.contents }}"
+  when: docker_install_siblings
+
+- name: Set tox environment variables
+  set_fact:
+    tox_environment: "{{ tox_environment | combine(item) }}"
+  loop:
+    - "{{ docker_compose_override_env | default({}) }}"
+    - "{{ tox_constraints_env | default({}) }}"
+    - "{{ integration_env | default({}) }}"
+
+- name: Emit tox environment
+  debug:
+    var: tox_environment
+
+- name: Emit tox command
+  debug:
+    msg: "Running tox: {{ tox_executable }} -e{{ tox_envlist }} {{ tox_extra_args }}"
+
+- name: Run tox
+  args:
+    chdir: "{{ zuul_work_dir }}"
+  environment: "{{ tox_environment }}"
+  command: "{{ tox_executable }} -e{{ tox_envlist }} {{ tox_extra_args }}"

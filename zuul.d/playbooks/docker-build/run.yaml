@@ -1,0 +1,5 @@
+---
+- hosts: all
+  tasks:
+    - include_tasks: docker-build.yaml
+      loop: "{{ zuul.projects.values() | list }}"

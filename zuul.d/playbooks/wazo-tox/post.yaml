@@ -1,0 +1,62 @@
+---
+- hosts: all
+  tasks:
+    - name: check if logs exist
+      stat:
+        path: /tmp/docker-logs
+      register: docker_logs
+
+    - name: Compress integration logs
+      shell: |
+        gzip {{ docker_logs.stat.path }}/*
+      when: docker_logs.stat.exists
+
+    - name: Fetch integration logs
+      synchronize:
+        src: '{{ docker_logs.stat.path }}/'
+        dest: '{{ zuul.executor.log_root }}/docker/'
+        mode: pull
+        copy_links: true
+        verify_host: true
+        rsync_opts: []
+      when: docker_logs.stat.exists
+
+    - name: check if coverage exists
+      stat:
+        path: /tmp/integration-tests-coverage
+      register: coverage_artifacts
+
+    - name: Install coverage tool
+      pip:
+        name: coverage
+        state: present
+      when: coverage_artifacts.stat.exists
+
+    - name: Generate coverage report
+      shell: |
+        python3 -m coverage combine --data-file {{ coverage_artifacts.stat.path }}/combined.coverage {{ coverage_artifacts.stat.path }}/*.coverage
+        python3 -m coverage report -m --data-file {{ coverage_artifacts.stat.path }}/combined.coverage > {{ coverage_artifacts.stat.path }}/report.txt
+        python3 -m coverage html --data-file {{ coverage_artifacts.stat.path }}/combined.coverage --directory {{ coverage_artifacts.stat.path }}/report-html
+      args:
+        chdir: "{{ zuul.project.src_dir }}"
+      when: coverage_artifacts.stat.exists
+
+    - name: Fetch coverage report
+      synchronize:
+        src: '{{ coverage_artifacts.stat.path }}/report.txt'
+        dest: '{{ zuul.executor.log_root }}/coverage.txt'
+        mode: pull
+        copy_links: true
+        verify_host: true
+        rsync_opts: []
+      when: coverage_artifacts.stat.exists
+
+    - name: Fetch coverage HTML report
+      synchronize:
+        src: '{{ coverage_artifacts.stat.path }}/report-html/'
+        dest: '{{ zuul.executor.log_root }}/coverage/'
+        mode: pull
+        copy_links: true
+        verify_host: true
+        rsync_opts: []
+      when: coverage_artifacts.stat.exists

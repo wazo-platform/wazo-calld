@@ -1,0 +1,6 @@
+---
+- hosts: all
+  tasks:
+    - include_tasks: docker-build.yaml
+      loop: "{{ zuul.projects.values() | list }}"
+      when: item.short_name != zuul.project.short_name

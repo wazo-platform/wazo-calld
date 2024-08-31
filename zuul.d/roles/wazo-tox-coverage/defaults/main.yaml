@@ -1,0 +1,9 @@
+---
+tox_environment: {}
+tox_envlist: venv
+tox_executable: tox
+tox_extra_args: -vv
+tox_install_siblings: true
+docker_install_siblings: false
+docker_compose_services_override: []
+zuul_work_dir: "{{ zuul.project.src_dir }}"
