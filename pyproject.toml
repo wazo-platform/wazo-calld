@@ -26,3 +26,9 @@ check_untyped_defs = true
 warn_unused_configs = true
 ignore_missing_imports = true
 enable_incomplete_feature = "Unpack"
+
+[tool.coverage.paths]
+source = [
+  "wazo_calld",
+  "/usr/src/wazo-calld/wazo_calld",
+]

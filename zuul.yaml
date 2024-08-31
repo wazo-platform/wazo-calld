@@ -5,6 +5,8 @@
     required-projects:
       - wazo-platform/chan-test
     timeout: 10800
+    run: zuul.d/playbooks/wazo-tox-integration/run.yaml
+    post: zuul.d/playbooks/wazo-tox/post.yaml
 
 - project:
     templates:
