@@ -1,8 +1,12 @@
 # Copyright 2018-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+from __future__ import annotations
+
 from wazo_amid_client import Client as AmidClient
 from wazo_confd_client import Client as ConfdClient
+
+from wazo_calld.types import PluginDependencies
 
 from .bus_consume import ConferencesBusEventHandler
 from .http import (
@@ -18,7 +22,7 @@ from .services import ConferencesService
 
 
 class Plugin:
-    def load(self, dependencies):
+    def load(self, dependencies: PluginDependencies) -> None:
         api = dependencies['api']
         ari = dependencies['ari']
         bus_consumer = dependencies['bus_consumer']
@@ -43,30 +47,30 @@ class Plugin:
         api.add_resource(
             ParticipantsResource,
             '/conferences/<int:conference_id>/participants',
-            **kwargs
+            **kwargs,
         )
         api.add_resource(
             ParticipantsUserResource,
             '/users/me/conferences/<int:conference_id>/participants',
-            **kwargs
+            **kwargs,
         )
         api.add_resource(
             ParticipantResource,
             '/conferences/<int:conference_id>/participants/<participant_id>',
-            **kwargs
+            **kwargs,
         )
         api.add_resource(
             ParticipantMuteResource,
             '/conferences/<int:conference_id>/participants/<participant_id>/mute',
-            **kwargs
+            **kwargs,
         )
         api.add_resource(
             ParticipantUnmuteResource,
             '/conferences/<int:conference_id>/participants/<participant_id>/unmute',
-            **kwargs
+            **kwargs,
         )
         api.add_resource(
             ConferenceRecordResource,
             '/conferences/<int:conference_id>/record',
-            **kwargs
+            **kwargs,
         )

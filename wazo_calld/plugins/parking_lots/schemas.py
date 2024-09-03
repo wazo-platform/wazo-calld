@@ -3,17 +3,13 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 from marshmallow import EXCLUDE, Schema, post_dump, pre_dump
 from marshmallow.fields import Method
 from marshmallow.validate import Predicate, Range
 from xivo.mallow.fields import Integer, List, Nested, String
 
+from .dataclasses_ import AsteriskParkedCall
 from .helpers import timestamp, timestamp_since
-
-if TYPE_CHECKING:
-    from .dataclasses_ import AsteriskParkedCall
 
 
 class _Base(Schema):

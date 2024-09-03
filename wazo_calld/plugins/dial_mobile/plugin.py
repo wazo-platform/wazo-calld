@@ -1,9 +1,13 @@
 # Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+from __future__ import annotations
+
 from wazo_amid_client import Client as AmidClient
 from wazo_auth_client import Client as AuthClient
 from xivo.pubsub import CallbackCollector
+
+from wazo_calld.types import PluginDependencies
 
 from .bus_consume import EventHandler
 from .notifier import Notifier
@@ -12,7 +16,7 @@ from .stasis import DialMobileStasis
 
 
 class Plugin:
-    def load(self, dependencies):
+    def load(self, dependencies: PluginDependencies) -> None:
         ari = dependencies['ari']
         pubsub = dependencies['pubsub']
         bus_consumer = dependencies['bus_consumer']

@@ -1,15 +1,20 @@
 # Copyright 2015-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+from __future__ import annotations
 
 import argparse
+from collections.abc import Sequence
+from typing import Any
 
 from xivo.chain_map import ChainMap
 from xivo.config_helper import parse_config_file, read_config_file_hierarchy
 from xivo.xivo_logging import get_log_level_by_name
 
+from wazo_calld.types import CalldConfigDict
+
 _DEFAULT_HTTP_PORT = 9500
-_DEFAULT_CONFIG = {
+_DEFAULT_CONFIG: CalldConfigDict = {
     'config_file': '/etc/wazo-calld/config.yml',
     'extra_config_files': '/etc/wazo-calld/conf.d/',
     'debug': False,
@@ -110,7 +115,7 @@ _DEFAULT_CONFIG = {
 }
 
 
-def load(argv):
+def load(argv: Sequence[str]) -> CalldConfigDict:
     cli_config = _parse_cli_args(argv)
     file_config = read_config_file_hierarchy(ChainMap(cli_config, _DEFAULT_CONFIG))
     reinterpreted_config = _get_reinterpreted_raw_values(
@@ -122,7 +127,7 @@ def load(argv):
     )
 
 
-def _parse_cli_args(argv):
+def _parse_cli_args(argv: Sequence[str]) -> dict[str, Any]:
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '-c',
@@ -161,7 +166,7 @@ def _parse_cli_args(argv):
     return result
 
 
-def _load_key_file(config):
+def _load_key_file(config: dict[str, Any]) -> dict[str, Any]:
     key_file = parse_config_file(config['auth']['key_file'])
     return {
         'auth': {
@@ -171,7 +176,7 @@ def _load_key_file(config):
     }
 
 
-def _get_reinterpreted_raw_values(config):
+def _get_reinterpreted_raw_values(config: dict[str, Any]) -> dict[str, Any]:
     result = {}
 
     log_level = config.get('log_level')

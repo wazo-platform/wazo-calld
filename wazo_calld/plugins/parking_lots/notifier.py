@@ -3,8 +3,6 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 from wazo_bus.resources.calls.parking import (
     CallParkedEvent,
     CallUnparkedEvent,
@@ -13,12 +11,10 @@ from wazo_bus.resources.calls.parking import (
 )
 from wazo_bus.resources.calls.types import ParkedCallDict, UnparkedCallDict
 
+from wazo_calld.bus import CoreBusPublisher
+
+from .dataclasses_ import AsteriskParkedCall, AsteriskUnparkedCall
 from .helpers import split_parking_id_from_name, timestamp, timestamp_since
-
-if TYPE_CHECKING:
-    from wazo_calld.bus import CoreBusPublisher
-
-    from .dataclasses_ import AsteriskParkedCall, AsteriskUnparkedCall
 
 
 class ParkingNotifier:

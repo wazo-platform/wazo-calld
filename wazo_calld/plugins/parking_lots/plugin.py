@@ -3,10 +3,17 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Callable
+from collections.abc import Mapping
+from typing import Callable
 
+from flask_restful import Api
 from wazo_amid_client import Client as AmidClient
 from wazo_confd_client import Client as ConfdClient
+from xivo.token_renewer import Callback
+
+from wazo_calld.ari_ import CoreARI as AriClient
+from wazo_calld.bus import CoreBusConsumer, CoreBusPublisher
+from wazo_calld.types import PluginDependencies
 
 from .bus_consume import ParkingLotEventsHandler
 from .http import (
@@ -18,18 +25,9 @@ from .http import (
 from .notifier import ParkingNotifier
 from .services import ParkingService
 
-if TYPE_CHECKING:
-    from collections.abc import Mapping
-
-    from flask_restful import Api
-    from xivo.token_renewer import Callback
-
-    from wazo_calld.ari_ import CoreARI as AriClient
-    from wazo_calld.bus import CoreBusConsumer, CoreBusPublisher
-
 
 class Plugin:
-    def load(self, dependencies: Mapping) -> None:
+    def load(self, dependencies: PluginDependencies) -> None:
         api: Api = dependencies['api']
         ari: AriClient = dependencies['ari']
         bus_consumer: CoreBusConsumer = dependencies['bus_consumer']

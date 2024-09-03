@@ -5,11 +5,15 @@ from __future__ import annotations
 
 import logging
 from time import sleep
-from typing import TYPE_CHECKING, TypedDict
+from typing import TypedDict
 
 from requests import RequestException
 from typing_extensions import NotRequired
+from wazo_amid_client import Client as AmidClient
+from wazo_confd_client import Client as ConfdClient
 
+from wazo_calld.ari_ import CoreARI as AriClient
+from wazo_calld.bus import CoreBusConsumer as BusConsumer
 from wazo_calld.plugin_helpers.ari_ import Channel
 from wazo_calld.plugin_helpers.exceptions import (
     NotEnoughChannels,
@@ -19,7 +23,7 @@ from wazo_calld.plugin_helpers.exceptions import (
 )
 
 from .cache import ParkingLotCache
-from .dataclasses_ import AsteriskParkedCall
+from .dataclasses_ import AsteriskParkedCall, ConfdParkingLot
 from .exceptions import (
     InvalidCall,
     NoSuchCall,
@@ -29,16 +33,6 @@ from .exceptions import (
 )
 from .helpers import DONT_CHECK_TENANT, DontCheckTenant, split_parking_id_from_name
 from .notifier import ParkingNotifier
-
-if TYPE_CHECKING:
-    from wazo_amid_client import Client as AmidClient
-    from wazo_confd_client import Client as ConfdClient
-
-    from wazo_calld.ari_ import CoreARI as AriClient
-    from wazo_calld.bus import CoreBusConsumer as BusConsumer
-
-    from .dataclasses_ import ConfdParkingLot
-
 
 CHECK_PARKING_DELAY_BETWEEN_RETRIES = 0.2
 CHECK_PARKING_MAX_RETRIES = 5

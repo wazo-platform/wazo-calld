@@ -1,9 +1,13 @@
 # Copyright 2017-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+from __future__ import annotations
+
 from wazo_amid_client import Client as AmidClient
 from wazo_confd_client import Client as ConfdClient
 from xivo.pubsub import CallbackCollector
+
+from wazo_calld.types import PluginDependencies
 
 from .http import (
     UserRelocateCancelResource,
@@ -19,7 +23,7 @@ from .state import StateFactory, state_index
 
 
 class Plugin:
-    def load(self, dependencies):
+    def load(self, dependencies: PluginDependencies) -> None:
         api = dependencies['api']
         ari = dependencies['ari']
         bus_publisher = dependencies['bus_publisher']
@@ -54,10 +58,10 @@ class Plugin:
         api.add_resource(
             UserRelocateCompleteResource,
             '/users/me/relocates/<relocate_uuid>/complete',
-            **kwargs
+            **kwargs,
         )
         api.add_resource(
             UserRelocateCancelResource,
             '/users/me/relocates/<relocate_uuid>/cancel',
-            **kwargs
+            **kwargs,
         )
