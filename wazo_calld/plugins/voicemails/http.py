@@ -4,6 +4,7 @@
 import re
 
 from flask import Response, request
+from xivo.tenant_flask_helpers import Tenant
 
 from wazo_calld.auth import (
     extract_token_id_from_query_or_header,
@@ -34,8 +35,9 @@ class VoicemailResource(AuthResource):
 
     @required_acl('calld.voicemails.{voicemail_id}.read')
     def get(self, voicemail_id):
+        tenant = Tenant.autodetect()
         voicemail_id = _validate_voicemail_id(voicemail_id)
-        voicemail = self._voicemails_service.get_voicemail(voicemail_id)
+        voicemail = self._voicemails_service.get_voicemail(tenant.uuid, voicemail_id)
         return voicemail_schema.dump(voicemail)
 
 
@@ -56,9 +58,12 @@ class VoicemailFolderResource(AuthResource):
 
     @required_acl('calld.voicemails.{voicemail_id}.folders.{folder_id}.read')
     def get(self, voicemail_id, folder_id):
+        tenant = Tenant.autodetect()
         voicemail_id = _validate_voicemail_id(voicemail_id)
         folder_id = _validate_folder_id(folder_id)
-        folder = self._voicemails_service.get_folder(voicemail_id, folder_id)
+        folder = self._voicemails_service.get_folder(
+            tenant.uuid, voicemail_id, folder_id
+        )
         return voicemail_folder_schema.dump(folder)
 
 
@@ -80,26 +85,31 @@ class VoicemailMessageResource(AuthResource):
 
     @required_acl('calld.voicemails.{voicemail_id}.messages.{message_id}.read')
     def get(self, voicemail_id, message_id):
+        tenant = Tenant.autodetect()
         voicemail_id = _validate_voicemail_id(voicemail_id)
         message_id = _validate_message_id(message_id)
-        message = self._voicemails_service.get_message(voicemail_id, message_id)
+        message = self._voicemails_service.get_message(
+            tenant.uuid, voicemail_id, message_id
+        )
         return voicemail_message_schema.dump(message)
 
     @required_acl('calld.voicemails.{voicemail_id}.messages.{message_id}.update')
     def put(self, voicemail_id, message_id):
+        tenant = Tenant.autodetect()
         voicemail_id = _validate_voicemail_id(voicemail_id)
         message_id = _validate_message_id(message_id)
         data = voicemail_message_update_schema.load(request.get_json(force=True))
         self._voicemails_service.move_message(
-            voicemail_id, message_id, data['folder_id']
+            tenant.uuid, voicemail_id, message_id, data['folder_id']
         )
         return '', 204
 
     @required_acl('calld.voicemails.{voicemail_id}.messages.{message_id}.delete')
     def delete(self, voicemail_id, message_id):
+        tenant = Tenant.autodetect()
         voicemail_id = _validate_voicemail_id(voicemail_id)
         message_id = _validate_message_id(message_id)
-        self._voicemails_service.delete_message(voicemail_id, message_id)
+        self._voicemails_service.delete_message(tenant.uuid, voicemail_id, message_id)
         return '', 204
 
 
@@ -156,10 +166,11 @@ class VoicemailRecordingResource(_BaseVoicemailRecordingResource):
         extract_token_id=extract_token_id_from_query_or_header,
     )
     def get(self, voicemail_id, message_id):
+        tenant = Tenant.autodetect()
         voicemail_id = _validate_voicemail_id(voicemail_id)
         message_id = _validate_message_id(message_id)
         recording = self._voicemails_service.get_message_recording(
-            voicemail_id, message_id
+            tenant.uuid, voicemail_id, message_id
         )
         return self._get_response(recording, message_id)
 
@@ -217,23 +228,26 @@ class VoicemailGreetingResource(AuthResource):
 
     @required_acl('calld.voicemails.{voicemail_id}.greetings.{greeting}.create')
     def post(self, voicemail_id, greeting):
+        tenant = Tenant.autodetect()
         voicemail_id = _validate_voicemail_id(voicemail_id)
         greeting = _validate_greeting(greeting)
-        self._service.create_greeting(voicemail_id, greeting, request.data)
+        self._service.create_greeting(tenant.uuid, voicemail_id, greeting, request.data)
         return '', 204
 
     @required_acl('calld.voicemails.{voicemail_id}.greetings.{greeting}.read')
     def head(self, voicemail_id, greeting):
+        tenant = Tenant.autodetect()
         voicemail_id = _validate_voicemail_id(voicemail_id)
         greeting = _validate_greeting(greeting)
-        self._service.validate_greeting_exists(voicemail_id, greeting)
+        self._service.validate_greeting_exists(tenant.uuid, voicemail_id, greeting)
         return '', 200
 
     @required_acl('calld.voicemails.{voicemail_id}.greetings.{greeting}.read')
     def get(self, voicemail_id, greeting):
+        tenant = Tenant.autodetect()
         voicemail_id = _validate_voicemail_id(voicemail_id)
         greeting = _validate_greeting(greeting)
-        data = self._service.get_greeting(voicemail_id, greeting)
+        data = self._service.get_greeting(tenant.uuid, voicemail_id, greeting)
         headers = {'Content-Disposition': self.content_dispo_tpl.format(greeting)}
         return Response(
             response=data, status=200, headers=headers, content_type='audio/wav'
@@ -241,16 +255,18 @@ class VoicemailGreetingResource(AuthResource):
 
     @required_acl('calld.voicemails.{voicemail_id}.greetings.{greeting}.update')
     def put(self, voicemail_id, greeting):
+        tenant = Tenant.autodetect()
         voicemail_id = _validate_voicemail_id(voicemail_id)
         greeting = _validate_greeting(greeting)
-        self._service.update_greeting(voicemail_id, greeting, request.data)
+        self._service.update_greeting(tenant.uuid, voicemail_id, greeting, request.data)
         return '', 204
 
     @required_acl('calld.voicemails.{voicemail_id}.greetings.{greeting}.delete')
     def delete(self, voicemail_id, greeting):
+        tenant = Tenant.autodetect()
         voicemail_id = _validate_voicemail_id(voicemail_id)
         greeting = _validate_greeting(greeting)
-        self._service.delete_greeting(voicemail_id, greeting)
+        self._service.delete_greeting(tenant.uuid, voicemail_id, greeting)
         return '', 204
 
 
@@ -305,12 +321,13 @@ class VoicemailGreetingCopyResource(AuthResource):
 
     @required_acl('calld.voicemails.{voicemail_id}.greetings.{greeting}.copy.create')
     def post(self, voicemail_id, greeting):
+        tenant = Tenant.autodetect()
         voicemail_id = _validate_voicemail_id(voicemail_id)
         greeting = _validate_greeting(greeting)
         params = request.get_json(force=True)
         greeting_form = voicemail_greeting_copy_schema.load(params)
         dest_greeting = greeting_form['dest_greeting']
-        self._service.copy_greeting(voicemail_id, greeting, dest_greeting)
+        self._service.copy_greeting(tenant.uuid, voicemail_id, greeting, dest_greeting)
         return '', 204
 
 

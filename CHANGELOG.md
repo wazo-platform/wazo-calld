@@ -1,5 +1,11 @@
 # Changelog
 
+## 24.12
+
+* The following endpoints now enforce tenant isolation:
+
+  * `GET /1.0/voicemails/<voicemail_id>`
+
 ## 24.11
 
 * The following endpoints are now performing additional validation before starting a call, which introduces a different behavior for existing error conditions:

@@ -1,0 +1,18 @@
+;
+; Message Information file
+;
+[message]
+origmailbox=8001
+context=multitenant-1
+macrocontext=
+exten=voicemail
+rdnis=8001
+priority=7
+callerchan=SIP/jih45z-00000005
+callerid="Alice" <1001>
+origdate=Mon Aug 19 10:49:28 PM UTC 2024
+origtime=1724107750
+category=
+msg_id=1724107750-00000011
+flag=
+duration=19

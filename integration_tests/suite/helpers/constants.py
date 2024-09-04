@@ -8,8 +8,10 @@ from kombu import Exchange
 ASSET_ROOT = os.path.join(os.path.dirname(__file__), '..', '..', 'assets')
 
 INVALID_ACL_TOKEN = 'invalid-acl-token'
-VALID_TOKEN = 'valid-token'
 VALID_TENANT = 'ffffffff-ffff-ffff-ffff-ffffffffffff'
+VALID_TENANT_MULTITENANT_1 = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeee2'
+VALID_TENANT_MULTITENANT_2 = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeee3'
+VALID_TOKEN = 'valid-token'
 VALID_TOKEN_MULTITENANT = 'valid-token-multitenant'
 
 CALLD_SERVICE_TOKEN = 'wazo-calld-service-token'
