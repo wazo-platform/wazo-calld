@@ -5,9 +5,11 @@ import logging
 import uuid
 
 from ari.exceptions import ARINotFound
+from wazo_amid_client import Client as AmidClient
+from wazo_confd_client import Client as ConfdClient
 from xivo.caller_id import assemble_caller_id
 
-from wazo_calld.ari_ import DEFAULT_APPLICATION_NAME
+from wazo_calld.ari_ import DEFAULT_APPLICATION_NAME, ARIClientProxy
 from wazo_calld.plugin_helpers import ami
 from wazo_calld.plugin_helpers.ari_ import Channel
 from wazo_calld.plugin_helpers.confd import User
@@ -25,8 +27,16 @@ from .exceptions import (
     TransferCreationError,
 )
 from .lock import HangupLock, InvalidLock
-from .state import TransferState, TransferStateNonStasis, TransferStateReady
+from .notifier import TransferNotifier
+from .state import (
+    StateFactory,
+    TransferState,
+    TransferStateNonStasis,
+    TransferStateReady,
+)
+from .state_persistor import StatePersistor
 from .transfer import Transfer
+from .transfer_lock import TransferLock
 
 logger = logging.getLogger(__name__)
 
@@ -42,13 +52,13 @@ class TransfersService:
         state_persistor,
         transfer_lock,
     ):
-        self.amid_client = amid_client
-        self.ari = ari
-        self.confd_client = confd_client
-        self.notifier = notifier
-        self.state_persistor = state_persistor
-        self.state_factory = state_factory
-        self.transfer_lock = transfer_lock
+        self.amid_client: AmidClient = amid_client
+        self.ari: ARIClientProxy = ari
+        self.confd_client: ConfdClient = confd_client
+        self.notifier: TransferNotifier = notifier
+        self.state_persistor: StatePersistor = state_persistor
+        self.state_factory: StateFactory = state_factory
+        self.transfer_lock: TransferLock = transfer_lock
 
     def list_from_user(self, user_uuid):
         transfers = self.state_persistor.list()
