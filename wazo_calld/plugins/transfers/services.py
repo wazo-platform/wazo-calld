@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
-import uuid
 
 from ari.exceptions import ARINotFound
 from wazo_amid_client import Client as AmidClient
@@ -86,11 +85,13 @@ class TransfersService:
         if initiator_uuid is None:
             raise TransferCreationError('initiator has no user UUID')
         initiator_tenant_uuid = channel.tenant_uuid()
-        transfer_id = str(uuid.uuid4())
-        transfer = Transfer(transfer_id, initiator_uuid, initiator_tenant_uuid)
-        transfer.transferred_call = transferred_channel.id
-        transfer.initiator_call = initiator_channel.id
-        transfer.flow = flow
+        transfer = Transfer(
+            initiator_uuid=initiator_uuid,
+            initiator_tenant_uuid=initiator_tenant_uuid,
+            transferred_call=transferred_channel.id,
+            initiator_call=initiator_channel.id,
+            flow=flow,
+        )
 
         transfer_state: TransferState
         transfer_state_class: type[TransferState]

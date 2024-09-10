@@ -15,11 +15,25 @@ class TestTransfer(TestCase):
     def tearDown(self):
         pass
 
+    def test_create_transfer_with_defaults(self):
+        transfer = Transfer(
+            initiator_uuid='initiator_uuid',
+            initiator_tenant_uuid='initiator_tenant_uuid',
+            transferred_call='transferred',
+            initiator_call='initiator',
+        )
+        assert transfer.id and isinstance(transfer.id, str)
+        assert transfer.flow == 'attended'
+
     def test_transfer_role(self):
-        transfer = Transfer('id', 'initiator_uuid', 'initiator_tenant_uuid')
-        transfer.transferred_call = 'transferred'
-        transfer.initiator_call = 'initiator'
-        transfer.recipient_call = 'recipient'
+        transfer = Transfer(
+            id_='id',
+            initiator_uuid='initiator_uuid',
+            initiator_tenant_uuid='initiator_tenant_uuid',
+            transferred_call='transferred',
+            initiator_call='initiator',
+            recipient_call='recipient',
+        )
 
         assert_that(
             transfer.role(transfer.transferred_call), equal_to(TransferRole.transferred)
