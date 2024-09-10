@@ -4,9 +4,10 @@
 import logging
 
 from ari.exceptions import ARINotFound, ARINotInStasis
+from wazo_amid_client import Client as AmidClient
 from xivo.pubsub import Pubsub
 
-from wazo_calld.ari_ import DEFAULT_APPLICATION_NAME
+from wazo_calld.ari_ import DEFAULT_APPLICATION_NAME, ARIClientProxy, CoreARI
 from wazo_calld.plugin_helpers.ari_ import Channel, GlobalVariableAdapter
 from wazo_calld.plugin_helpers.exceptions import WazoAmidError
 
@@ -14,6 +15,9 @@ from . import ari_helpers
 from .event import CreateTransferEvent, TransferRecipientAnsweredEvent
 from .exceptions import InvalidEvent, TransferException
 from .lock import HangupLock, InvalidLock
+from .services import TransfersService
+from .state import StateFactory
+from .state_persistor import StatePersistor
 from .transfer import TransferRole, TransferStatus
 
 logger = logging.getLogger(__name__)
@@ -23,17 +27,17 @@ class TransfersStasis:
     def __init__(
         self, amid_client, ari, services, state_factory, state_persistor, xivo_uuid
     ):
-        self.ari = ari.client
-        self._core_ari = ari
-        self.amid = amid_client
-        self.services = services
-        self.xivo_uuid = xivo_uuid
-        self.stasis_start_pubsub = Pubsub()
+        self.ari: ARIClientProxy = ari.client
+        self._core_ari: CoreARI = ari
+        self.amid: AmidClient = amid_client
+        self.services: TransfersService = services
+        self.xivo_uuid: str = xivo_uuid
+        self.stasis_start_pubsub: Pubsub = Pubsub()
         self.stasis_start_pubsub.set_exception_handler(self.invalid_event)
-        self.hangup_pubsub = Pubsub()
+        self.hangup_pubsub: Pubsub = Pubsub()
         self.hangup_pubsub.set_exception_handler(self.invalid_event)
-        self.state_factory = state_factory
-        self.state_persistor = state_persistor
+        self.state_factory: StateFactory = state_factory
+        self.state_persistor: StatePersistor = state_persistor
 
     def initialize(self):
         self._subscribe()
@@ -147,6 +151,7 @@ class TransfersStasis:
         logger.debug('Done.')
 
     def stasis_start(self, event_objects, event):
+        logger.debug('received StasisStart event: %s', event)
         try:
             sub_app, *_ = event['args']
         except ValueError:
@@ -170,6 +175,7 @@ class TransfersStasis:
         self.stasis_start_pubsub.publish(transfer_action, (channel, event))
 
     def hangup(self, channel, event):
+        logger.debug('received StasisEnd/hangup event: %s', event)
         try:
             transfer = self.state_persistor.get_by_channel(channel.id)
         except KeyError:
@@ -183,6 +189,7 @@ class TransfersStasis:
         self.hangup_pubsub.publish(transfer_role, transfer)
 
     def transfer_recipient_answered(self, channel_event):
+        logger.debug('received TransferRecipientAnswered event: %s', channel_event)
         channel, event = channel_event
         event = TransferRecipientAnsweredEvent(event)
 
@@ -208,6 +215,7 @@ class TransfersStasis:
                     pass
 
     def create_transfer(self, channel_event):
+        logger.debug('received CreateTransfer event: %s', channel_event)
         channel, event = channel_event
         event = CreateTransferEvent(event)
         transfer = self.state_persistor.get(event.transfer_id)
