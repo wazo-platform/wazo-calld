@@ -3,7 +3,6 @@
 
 import logging
 import uuid
-from typing import cast
 
 from ari.exceptions import ARINotFound
 from xivo.caller_id import assemble_caller_id
@@ -84,13 +83,14 @@ class TransfersService:
         transfer.flow = flow
 
         transfer_state: TransferState
+        transfer_state_class: type[TransferState]
         if not (
             Channel(transferred_call, self.ari).is_in_stasis()
             and Channel(initiator_call, self.ari).is_in_stasis()
         ):
-            transfer_state_class = cast(TransferState, TransferStateNonStasis)
+            transfer_state_class = TransferStateNonStasis
         else:
-            transfer_state_class = cast(TransferState, TransferStateReady)
+            transfer_state_class = TransferStateReady
 
         with self.state_factory.make_from_class(
             transfer_state_class, transfer
