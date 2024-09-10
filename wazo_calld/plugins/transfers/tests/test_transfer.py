@@ -8,7 +8,7 @@ from hamcrest import assert_that, calling, equal_to, raises
 from ..transfer import Transfer, TransferRole
 
 
-class Testclassname(TestCase):
+class TestTransfer(TestCase):
     def setUp(self):
         pass
 
