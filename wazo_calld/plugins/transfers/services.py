@@ -68,6 +68,16 @@ class TransfersService:
     def create(
         self, transferred_call, initiator_call, context, exten, flow, variables, timeout
     ):
+        logger.debug(
+            'Creating transfer: initiator_call=%s, transferred_call=%s,'
+            'context=%s, exten=%s, flow=%s, timeout=%s',
+            initiator_call,
+            transferred_call,
+            context,
+            exten,
+            flow,
+            timeout,
+        )
         try:
             transferred_channel = self.ari.channels.get(channelId=transferred_call)
             initiator_channel = self.ari.channels.get(channelId=initiator_call)
