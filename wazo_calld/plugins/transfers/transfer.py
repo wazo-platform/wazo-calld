@@ -1,17 +1,31 @@
 # Copyright 2016-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+from __future__ import annotations
+
+from typing import Literal
+from uuid import uuid4
+
 
 class Transfer:
-    def __init__(self, id_, initiator_uuid, initiator_tenant_uuid):
-        self.id = id_
+    def __init__(
+        self,
+        initiator_uuid: str,
+        initiator_tenant_uuid: str,
+        id_: str | None = None,
+        initiator_call: str | None = None,
+        transferred_call: str | None = None,
+        recipient_call: str | None = None,
+        flow: Literal['attended', 'blind'] = 'attended',
+    ):
+        self.id = id_ or str(uuid4())
         self.initiator_uuid = initiator_uuid
         self.initiator_tenant_uuid = initiator_tenant_uuid
-        self.transferred_call = None
-        self.initiator_call = None
-        self.recipient_call = None
+        self.transferred_call = transferred_call
+        self.initiator_call = initiator_call
+        self.recipient_call = recipient_call
         self.status = 'invalid'
-        self.flow = 'attended'
+        self.flow = flow
 
     def to_internal_dict(self):
         return {
@@ -50,15 +64,15 @@ class Transfer:
     @classmethod
     def from_dict(cls, dict_):
         transfer = cls(
-            dict_['id'],
-            dict_['initiator_uuid'],
-            dict_['initiator_tenant_uuid'],
+            id_=dict_['id'],
+            initiator_uuid=dict_['initiator_uuid'],
+            initiator_tenant_uuid=dict_['initiator_tenant_uuid'],
+            transferred_call=dict_['transferred_call'],
+            initiator_call=dict_['initiator_call'],
+            recipient_call=dict_['recipient_call'],
+            flow=dict_['flow'],
         )
-        transfer.transferred_call = dict_['transferred_call']
-        transfer.initiator_call = dict_['initiator_call']
-        transfer.recipient_call = dict_['recipient_call']
         transfer.status = dict_['status']
-        transfer.flow = dict_['flow']
         return transfer
 
     def role(self, call_id):
