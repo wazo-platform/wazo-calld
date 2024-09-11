@@ -27,7 +27,7 @@
       register: coverage_artifacts
 
     - name: Check if coverage files exist
-      stat:
+      find:
         paths: /tmp/integration-tests-coverage/
       register: coverage_files_found
       when: coverage_artifacts.stat.exists
