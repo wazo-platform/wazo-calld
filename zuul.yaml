@@ -7,8 +7,6 @@
     timeout: 10800
     run: zuul.d/run-coverage.yaml
     post-run: zuul.d/playbooks/wazo-tox/post.yaml
-    vars:
-      integration_test_coverage_service_name: calld
 
 - project:
     templates:

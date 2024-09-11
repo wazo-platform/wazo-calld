@@ -99,9 +99,8 @@
       INTEGRATION_TEST_TIMEOUT: "{{ integration_test_timeout | default(omit) }}"
       MANAGE_DB_DIR: "{{ ansible_env.PWD + '/' + manage_db_dir_relative if manage_db_dir_relative else '' }}"
       TEST_LOGS: "verbose"
+      WAZO_TEST_COVERAGE_ENABLED: 1
       WAZO_TEST_COVERAGE_DIR: "/tmp/integration-tests-coverage"
-      WAZO_TEST_COVERAGE_ENABLED: "{{ 1 if integration_test_coverage_service_name is defined else 0 }}"
-      WAZO_TEST_COVERAGE_SERVICE_NAME: "{{ integration_test_coverage_service_name | default(omit) }}"
       WAZO_TEST_DOCKER_LOGS_ENABLED: 1
       WAZO_TEST_DOCKER_LOGS_DIR: "/tmp/docker-logs"
       WAZO_TEST_NO_DOCKER_COMPOSE_PULL: 1

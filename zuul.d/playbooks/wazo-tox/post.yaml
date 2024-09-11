@@ -26,11 +26,19 @@
         path: /tmp/integration-tests-coverage
       register: coverage_artifacts
 
+    - name: Check if coverage files exist
+      stat:
+        paths: /tmp/integration-tests-coverage/
+      register: coverage_files_found
+      when: coverage_artifacts.stat.exists
+
     - name: Install coverage tool
       pip:
         name: coverage
         state: present
-      when: coverage_artifacts.stat.exists
+      when:
+        - coverage_artifacts.stat.exists
+        - coverage_files_found.matched > 0
 
     - name: Generate coverage report
       shell: |
@@ -39,7 +47,9 @@
         python3 -m coverage html --data-file {{ coverage_artifacts.stat.path }}/combined.coverage --directory {{ coverage_artifacts.stat.path }}/report-html
       args:
         chdir: "{{ zuul.project.src_dir }}"
-      when: coverage_artifacts.stat.exists
+      when:
+        - coverage_artifacts.stat.exists
+        - coverage_files_found.matched > 0
 
     - name: Fetch coverage report
       synchronize:
@@ -49,7 +59,9 @@
         copy_links: true
         verify_host: true
         rsync_opts: []
-      when: coverage_artifacts.stat.exists
+      when:
+        - coverage_artifacts.stat.exists
+        - coverage_files_found.matched > 0
 
     - name: Fetch coverage HTML report
       synchronize:
@@ -59,4 +71,6 @@
         copy_links: true
         verify_host: true
         rsync_opts: []
-      when: coverage_artifacts.stat.exists
+      when:
+        - coverage_artifacts.stat.exists
+        - coverage_files_found.matched > 0
