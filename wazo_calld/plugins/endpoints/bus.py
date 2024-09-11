@@ -130,6 +130,9 @@ class EventHandler:
             sip_username,
             event['line']['tenant_uuid'],
         )
+        self._endpoint_status_cache.add_new_sip_endpoint(
+            event['endpoint_sip']['name'],
+        )
 
     def on_line_endpoint_sccp_associated(self, event):
         self._confd_cache.add_line(

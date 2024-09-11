@@ -8,7 +8,7 @@ from .helpers.ari_ import MockEndpoint
 from .helpers.base import IntegrationTest
 from .helpers.calld import new_call_id
 from .helpers.confd import MockLine, MockTrunk
-from .helpers.constants import XIVO_UUID
+from .helpers.constants import VALID_TENANT, XIVO_UUID
 from .helpers.wait_strategy import CalldEverythingOkWaitStrategy
 
 
@@ -267,7 +267,7 @@ class TestTrunkBusConsume(IntegrationTest):
 
     def test_when_trunk_associated_events_can_be_published(self):
         trunk_id = 42
-        tenant_uuid = 'the_tenant_uuid'
+        tenant_uuid = VALID_TENANT
         name = 'abcdef'
         client_uri = 'sip:the-username@hostname'
 
@@ -275,13 +275,11 @@ class TestTrunkBusConsume(IntegrationTest):
             MockEndpoint('PJSIP', name, 'offline', channel_ids=[]),
         )
         # There are no trunks when starting calld
-
         self.restart_service('calld')
 
         events = self.bus.accumulator(headers={'name': 'trunk_status_updated'})
         self.reset_clients()
         self.wait_strategy.wait(self)
-
         # A trunk is created
         self.confd.set_trunks(
             MockTrunk(
@@ -294,6 +292,23 @@ class TestTrunkBusConsume(IntegrationTest):
             )
         )
         self.bus.send_trunk_endpoint_associated_event(trunk_id, endpoint_id=3)
+
+        def trunk_exists():
+            expected = {
+                'id': trunk_id,
+                'name': name,
+                'technology': 'sip',
+                'registered': False,
+                'current_call_count': 0,
+            }
+            assert (
+                expected
+                in self.calld_client.trunks.list_trunks(tenant_uuid=tenant_uuid)[
+                    'items'
+                ]
+            )
+
+        until.assert_(trunk_exists, timeout=5)
 
         self.bus.send_ami_registry_event(
             'PJSIP',
@@ -315,6 +330,23 @@ class TestTrunkBusConsume(IntegrationTest):
             )
 
         until.assert_(assert_function, tries=5)
+
+        def trunk_registered():
+            expected = {
+                'id': trunk_id,
+                'name': name,
+                'technology': 'sip',
+                'registered': True,
+                'current_call_count': 0,
+            }
+            assert (
+                expected
+                in self.calld_client.trunks.list_trunks(tenant_uuid=tenant_uuid)[
+                    'items'
+                ]
+            )
+
+        until.assert_(trunk_registered, timeout=5)
 
 
 class TestLineBusConsume(IntegrationTest):
@@ -496,3 +528,72 @@ class TestLineBusConsume(IntegrationTest):
             )
 
         until.assert_(assert_not_registered, tries=5)
+
+    def test_when_line_associated_events_can_be_published(self):
+        line_id = 42
+        tenant_uuid = VALID_TENANT
+        name = 'abcdef'
+
+        events = self.bus.accumulator(headers={'name': 'line_status_updated'})
+        # A line is created
+        self.confd.set_lines(
+            MockLine(
+                line_id,
+                name=name,
+                protocol='sip',
+                endpoint_sip={
+                    'name': name,
+                    'auth_section_options': [['username', name]],
+                },
+                tenant_uuid=tenant_uuid,
+            )
+        )
+        self.bus.send_line_endpoint_sip_associated_event(
+            tenant_uuid, line_id, endpoint_id=3, endpoint_name=name
+        )
+
+        def line_exists():
+            expected = {
+                'id': line_id,
+                'name': name,
+                'technology': 'sip',
+                'registered': False,
+                'current_call_count': 0,
+            }
+            assert (
+                expected
+                in self.calld_client.lines.list_lines(tenant_uuid=tenant_uuid)['items']
+            )
+
+        until.assert_(line_exists, timeout=5)
+
+        self.bus.send_ami_peerstatus_event('PJSIP', 'PJSIP/abcdef', 'Reachable')
+
+        def assert_function():
+            assert_that(
+                events.accumulate(),
+                has_item(
+                    has_entries(
+                        name='line_status_updated',
+                        origin_uuid=XIVO_UUID,
+                        data=has_entries(id=line_id, registered=True),
+                    )
+                ),
+            )
+
+        until.assert_(assert_function, timeout=5)
+
+        def line_registered():
+            expected = {
+                'id': line_id,
+                'name': name,
+                'technology': 'sip',
+                'registered': True,
+                'current_call_count': 0,
+            }
+            assert (
+                expected
+                in self.calld_client.lines.list_lines(tenant_uuid=tenant_uuid)['items']
+            )
+
+        until.assert_(line_registered, timeout=5)
