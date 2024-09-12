@@ -251,6 +251,25 @@ class BusClient(bus_helper.BusClient):
             headers={'name': 'application_deleted'},
         )
 
+    def send_line_endpoint_sip_associated_event(
+        self, tenant_uuid, line_id, endpoint_id, endpoint_name
+    ):
+        payload = {
+            'data': {
+                'line': {'id': line_id, 'tenant_uuid': tenant_uuid},
+                'endpoint_sip': {
+                    'id': endpoint_id,
+                    'name': endpoint_name,
+                    'auth_section_options': [['username', endpoint_name]],
+                },
+            },
+            'name': 'line_endpoint_sip_associated',
+        }
+        self.send_event(
+            payload,
+            headers={'name': 'line_endpoint_sip_associated'},
+        )
+
     def send_trunk_endpoint_associated_event(self, trunk_id, endpoint_id):
         payload = {
             'data': {'trunk_id': trunk_id, 'endpoint_id': endpoint_id},

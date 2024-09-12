@@ -73,10 +73,18 @@ class StatusCache:
         self._endpoints[endpoint.techno][endpoint.name] = endpoint
 
     def add_new_sip_endpoint(self, endpoint_name):
-        self.add_endpoint(Endpoint('PJSIP', endpoint_name, None, []))
+        if self._endpoints is None:
+            raise CalldUninitializedError()
+
+        # endpoint is unlikely to exist in ARI yet, so create it as unregistered
+        self.add_endpoint(Endpoint('PJSIP', endpoint_name, False, []))
 
     def add_new_iax_endpoint(self, endpoint_name):
-        self.add_endpoint(Endpoint('IAX2', endpoint_name, None, []))
+        if self._endpoints is None:
+            raise CalldUninitializedError()
+
+        # endpoint is unlikely to exist in ARI yet, so create it as unregistered
+        self.add_endpoint(Endpoint('IAX2', endpoint_name, False, []))
 
     def get(self, techno, name):
         if self._endpoints is None:
