@@ -1,9 +1,12 @@
 # Copyright 2015-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+from __future__ import annotations
+
 import json
 import logging
 import time
+from typing import Protocol, TypeVar
 
 from ari.exceptions import ARINotFound, ARINotInStasis
 
@@ -71,6 +74,31 @@ def set_channel_id_var_sync(ari, channel_id, var, value, bypass_stasis=False):
         time.sleep(0.01)
 
     raise Exception(f'failed to set channel variable {var}={value}')
+
+
+T = TypeVar('T')
+
+
+class GlobalVariableAdapterProtocol(Protocol[T]):
+    def get(self, variable: str, default: T | None = None) -> T:
+        pass
+
+    def set(self, variable: str, value: T) -> None:
+        pass
+
+    def unset(self, variable: str) -> None:
+        pass
+
+
+class GlobalVariableConstantAdapterProtocol(Protocol[T]):
+    def get(self, default: T | None = None) -> T:
+        pass
+
+    def set(self, value: T) -> None:
+        pass
+
+    def unset(self) -> None:
+        pass
 
 
 class GlobalVariableAdapter:
