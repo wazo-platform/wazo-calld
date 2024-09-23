@@ -1,10 +1,21 @@
 # Changelog
 
-## 24.12
+## 24.13
 
 * The following endpoints now enforce tenant isolation:
 
   * `GET /1.0/voicemails/<voicemail_id>`
+  * `GET /1.0/voicemails/<voicemail_id>/folders/<folder_id>`
+  * `GET /1.0/voicemails/<voicemail_id>/greetings/<greeting_id>`
+  * `HEAD /1.0/voicemails/<voicemail_id>/greetings/<greeting_id>`
+  * `POST /1.0/voicemails/<voicemail_id>/greetings/<greeting_id>`
+  * `PUT /1.0/voicemails/<voicemail_id>/greetings/<greeting_id>`
+  * `DELETE /1.0/voicemails/<voicemail_id>/greetings/<greeting_id>`
+  * `POST /1.0/voicemails/<voicemail_id>/greetings/<greeting_id>/copy`
+  * `GET /1.0/voicemails/<voicemail_id>/messages/<message_id>`
+  * `PUT /1.0/voicemails/<voicemail_id>/messages/<message_id>`
+  * `DELETE /1.0/voicemails/<voicemail_id>/messages/<message_id>`
+  * `GET /1.0/voicemails/<voicemail_id>/messages/<message_id>/recording`
 
 ## 24.11
 
