@@ -120,7 +120,9 @@ class RealAsterisk:
 
         return new_channel
 
-    def given_bridged_call_stasis(self, caller_uuid=None, callee_uuid=None):
+    def given_bridged_call_stasis(
+        self, caller_uuid=None, callee_uuid=None
+    ) -> tuple[str, str]:
         bridge = self.ari.bridges.create(type='mixing')
 
         caller = self.stasis_channel()
