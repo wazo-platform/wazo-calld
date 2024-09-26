@@ -6,6 +6,23 @@ from __future__ import annotations
 from typing import Literal
 from uuid import uuid4
 
+InternalTransferStatus = Literal[
+    'none_moved_to_stasis',
+    'initiator_moved_to_stasis',
+    'transferred_moved_to_stasis',
+    'starting',
+    'invalid',
+    'answered',
+    'blind_transferred',
+    'ringback',
+    'ready',
+    'starting',
+    'non_stasis',
+    'ended',
+    'abandoned',
+]
+FlowType = Literal['attended', 'blind']
+
 
 class Transfer:
     def __init__(
@@ -87,14 +104,17 @@ class Transfer:
 
 
 class TransferStatus:
-    answered = 'answered'
-    blind_transferred = 'blind_transferred'
-    ringback = 'ringback'
-    ready = 'ready'
-    starting = 'starting'
+    answered: Literal['answered'] = 'answered'
+    blind_transferred: Literal['blind_transferred'] = 'blind_transferred'
+    ringback: Literal['ringback'] = 'ringback'
+    ready: Literal['ready'] = 'ready'
+    starting: Literal['starting'] = 'starting'
+
+
+TransferRoleType = Literal['transferred', 'initiator', 'recipient']
 
 
 class TransferRole:
-    transferred = 'transferred'
-    initiator = 'initiator'
-    recipient = 'recipient'
+    transferred: Literal['transferred'] = 'transferred'
+    initiator: Literal['initiator'] = 'initiator'
+    recipient: Literal['recipient'] = 'recipient'
