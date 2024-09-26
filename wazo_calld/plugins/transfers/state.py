@@ -6,10 +6,12 @@ from __future__ import annotations
 import logging
 import threading
 from contextlib import contextmanager
-from typing import ClassVar
+from typing import TYPE_CHECKING, ClassVar
 
 from ari.exceptions import ARINotFound
+from wazo_amid_client import Client as AmidClient
 
+from wazo_calld.ari_ import ARIClientProxy
 from wazo_calld.plugin_helpers.ari_ import Channel
 from wazo_calld.plugin_helpers.exceptions import BridgeNotFound
 
@@ -20,7 +22,14 @@ from .exceptions import (
     TransferCompletionError,
     TransferCreationError,
 )
-from .transfer import TransferStatus
+from .notifier import TransferNotifier
+from .state_persistor import StatePersistor
+from .transfer import InternalTransferStatus, Transfer, TransferStatus
+from .transfer_lock import TransferLock
+
+# avoid circular import
+if TYPE_CHECKING:
+    from .services import TransfersService
 
 logger = logging.getLogger(__name__)
 state_machine_lock = threading.RLock()
@@ -130,7 +139,7 @@ def transition(decorated):
 
 
 class TransferState:
-    name: ClassVar[str]
+    name: ClassVar[InternalTransferStatus]
 
     def __init__(
         self,
@@ -142,13 +151,13 @@ class TransferState:
         transfer_lock,
         transfer,
     ):
-        self._amid = amid
-        self._ari = ari
-        self._notifier = notifier
-        self._services = services
-        self._state_persistor = state_persistor
-        self._transfer_lock = transfer_lock
-        self.transfer = transfer
+        self._amid: AmidClient = amid
+        self._ari: ARIClientProxy = ari
+        self._notifier: TransferNotifier = notifier
+        self._services: TransfersService = services
+        self._state_persistor: StatePersistor = state_persistor
+        self._transfer_lock: TransferLock = transfer_lock
+        self.transfer: Transfer = transfer
 
     @classmethod
     def from_state(cls, other_state):
