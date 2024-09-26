@@ -29,20 +29,22 @@ class Transfer:
         self,
         initiator_uuid: str,
         initiator_tenant_uuid: str,
+        initiator_call: str,
+        transferred_call: str,
         id_: str | None = None,
-        initiator_call: str | None = None,
-        transferred_call: str | None = None,
         recipient_call: str | None = None,
-        flow: Literal['attended', 'blind'] = 'attended',
+        flow: FlowType = 'attended',
+        transfer_bridge_id: str | None = None,
     ):
-        self.id = id_ or str(uuid4())
-        self.initiator_uuid = initiator_uuid
-        self.initiator_tenant_uuid = initiator_tenant_uuid
-        self.transferred_call = transferred_call
-        self.initiator_call = initiator_call
-        self.recipient_call = recipient_call
-        self.status = 'invalid'
-        self.flow = flow
+        self.id: str = id_ or str(uuid4())
+        self.initiator_uuid: str = initiator_uuid
+        self.initiator_tenant_uuid: str = initiator_tenant_uuid
+        self.transferred_call: str = transferred_call
+        self.initiator_call: str = initiator_call
+        self.recipient_call: str | None = recipient_call
+        self.transfer_bridge_id: str = transfer_bridge_id or self.id
+        self.status: InternalTransferStatus = 'invalid'
+        self.flow: FlowType = flow
 
     def to_internal_dict(self):
         return {
@@ -52,6 +54,7 @@ class Transfer:
             'transferred_call': self.transferred_call,
             'initiator_call': self.initiator_call,
             'recipient_call': self.recipient_call,
+            'transfer_bridge_id': self.transfer_bridge_id,
             'status': self.status,
             'flow': self.flow,
         }
@@ -88,6 +91,7 @@ class Transfer:
             initiator_call=dict_['initiator_call'],
             recipient_call=dict_['recipient_call'],
             flow=dict_['flow'],
+            transfer_bridge_id=dict_['transfer_bridge_id'],
         )
         transfer.status = dict_['status']
         return transfer
