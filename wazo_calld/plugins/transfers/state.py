@@ -109,11 +109,13 @@ def transition(decorated):
         assert (
             state_machine_locked
         ), 'Transfer state machine was not locked before transition'
+        logger.debug('transition start: %s -[%s]>', state.name, decorated.__name__)
         try:
             result = decorated(state, *args, **kwargs)
         except Exception:
             state._transfer_lock.release(state.transfer.initiator_call)
             raise
+
         logger.info(
             'Transition: %s -> %s -> %s',
             state.name,
