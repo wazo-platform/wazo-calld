@@ -1,7 +1,8 @@
 # Copyright 2016-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-import json
+from __future__ import annotations
+
 import logging
 import threading
 from contextlib import contextmanager
@@ -474,33 +475,10 @@ class TransferStateMovingToStasisInitiatorReady(TransferState):
 
     @transition
     def transferred_joined_stasis(self):
-        bridge = self._ari.bridges.get(bridgeId=self.transfer.id)
-        bridge.addChannel(channel=self.transfer.transferred_call)
-
-        try:
-            context = self._ari.channels.getChannelVar(
-                channelId=self.transfer.initiator_call,
-                variable='XIVO_TRANSFER_RECIPIENT_CONTEXT',
-            )['value']
-            exten = self._ari.channels.getChannelVar(
-                channelId=self.transfer.initiator_call,
-                variable='XIVO_TRANSFER_RECIPIENT_EXTEN',
-            )['value']
-            variables_str = self._ari.channels.getChannelVar(
-                channelId=self.transfer.initiator_call,
-                variable='XIVO_TRANSFER_VARIABLES',
-            )['value']
-            timeout_str = self._ari.channels.getChannelVar(
-                channelId=self.transfer.initiator_call, variable='XIVO_TRANSFER_TIMEOUT'
-            )['value']
-        except ARINotFound:
-            logger.error('initiator hung up while creating transfer')
-        try:
-            variables = json.loads(variables_str)
-        except ValueError:
-            logger.warning('could not decode transfer variables "%s"', variables_str)
-            variables = {}
-        timeout = None if timeout_str == 'None' else int(timeout_str)
+        # TODO: any error to interpret?
+        context, exten, variables, timeout = ari_helpers.get_initial_transfer_variables(
+            self._ari, self.transfer.initiator_call
+        )
 
         self._start(context, exten, variables, timeout)
         return TransferStateRingback.from_state(self)
@@ -526,33 +504,10 @@ class TransferStateMovingToStasisTransferredReady(TransferState):
 
     @transition
     def initiator_joined_stasis(self):
-        bridge = self._ari.bridges.get(bridgeId=self.transfer.id)
-        bridge.addChannel(channel=self.transfer.initiator_call)
-
-        try:
-            context = self._ari.channels.getChannelVar(
-                channelId=self.transfer.initiator_call,
-                variable='XIVO_TRANSFER_RECIPIENT_CONTEXT',
-            )['value']
-            exten = self._ari.channels.getChannelVar(
-                channelId=self.transfer.initiator_call,
-                variable='XIVO_TRANSFER_RECIPIENT_EXTEN',
-            )['value']
-            variables_str = self._ari.channels.getChannelVar(
-                channelId=self.transfer.initiator_call,
-                variable='XIVO_TRANSFER_VARIABLES',
-            )['value']
-            timeout_str = self._ari.channels.getChannelVar(
-                channelId=self.transfer.initiator_call, variable='XIVO_TRANSFER_TIMEOUT'
-            )['value']
-        except ARINotFound:
-            logger.error('initiator hung up while creating transfer')
-        try:
-            variables = json.loads(variables_str)
-        except ValueError:
-            logger.warning('could not decode transfer variables "%s"', variables_str)
-            variables = {}
-        timeout = None if timeout_str == 'None' else int(timeout_str)
+        # TODO: any error to interpret?
+        context, exten, variables, timeout = ari_helpers.get_initial_transfer_variables(
+            self._ari, self.transfer.initiator_call
+        )
 
         self._start(context, exten, variables, timeout)
         return TransferStateRingback.from_state(self)

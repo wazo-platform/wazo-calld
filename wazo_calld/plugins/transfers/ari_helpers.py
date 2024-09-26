@@ -1,11 +1,14 @@
-# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
+
+from __future__ import annotations
 
 import json
 import logging
 
 from ari.exceptions import ARINotFound, ARINotInStasis
 
+from wazo_calld.ari_ import ARIClientProxy
 from wazo_calld.plugin_helpers import ami
 from wazo_calld.plugin_helpers.exceptions import WazoAmidError
 
@@ -137,3 +140,39 @@ def convert_transfer_to_stasis(
         exten='transfer',
         extra_channel=initiator_call,
     )
+
+
+def get_initial_transfer_variables(
+    ari: ARIClientProxy, initiator_call: str
+) -> tuple[str, str, dict, int | None]:
+    """
+    Counterpart of convert_transfer_to_stasis;
+    extract variables injected into initiator_channel
+    when channels were brought into stasis at start of transfer
+    """
+    try:
+        context = ari.channels.getChannelVar(
+            channelId=initiator_call,
+            variable='XIVO_TRANSFER_RECIPIENT_CONTEXT',
+        )['value']
+        exten = ari.channels.getChannelVar(
+            channelId=initiator_call,
+            variable='XIVO_TRANSFER_RECIPIENT_EXTEN',
+        )['value']
+        variables_str = ari.channels.getChannelVar(
+            channelId=initiator_call,
+            variable='XIVO_TRANSFER_VARIABLES',
+        )['value']
+        timeout_str = ari.channels.getChannelVar(
+            channelId=initiator_call, variable='XIVO_TRANSFER_TIMEOUT'
+        )['value']
+    except ARINotFound:
+        logger.error('initiator hung up while creating transfer')
+    try:
+        variables = json.loads(variables_str)
+    except ValueError:
+        logger.warning('could not decode transfer variables "%s"', variables_str)
+        variables = {}
+    timeout = None if timeout_str == 'None' else int(timeout_str)
+
+    return context, exten, variables, timeout
