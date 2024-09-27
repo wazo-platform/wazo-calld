@@ -513,7 +513,6 @@ class TransferStateMovingToStasisNoneReady(TransferState):
     @transition
     def initiator_hangup(self):
         self.transfer.flow = 'blind'
-
         return self
 
     @transition
@@ -527,7 +526,6 @@ class TransferStateMovingToStasisNoneReady(TransferState):
 
     @transition
     def transferred_joined_stasis(self):
-
         return TransferStateMovingToStasisTransferredReady.from_state(self)
 
     def transferred_moh_stop(self):
@@ -561,7 +559,6 @@ class TransferStateMovingToStasisInitiatorReady(TransferState):
 
     @transition
     def transferred_joined_stasis(self):
-        # TODO: any error to interpret?
         context, exten, variables, timeout = ari_helpers.get_initial_transfer_variables(
             self._ari, self.transfer.initiator_call
         )
