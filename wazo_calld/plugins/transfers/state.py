@@ -287,7 +287,9 @@ class TransferState:
             )
         return bridge
 
-    def _start(self, context, exten, variables, timeout):
+    def _start_attended(self, context, exten, variables, timeout):
+        # initiate attended transfer and notify
+
         self._hold_transferred_call()
 
         try:
@@ -306,6 +308,7 @@ class TransferState:
             )
         except TransferCreationError as e:
             logger.error('%s %s', e.message, e.details)
+
         self._notifier.updated(self.transfer)
 
     def _set_initiator_variables(self):
@@ -574,7 +577,7 @@ class TransferStateMovingToStasisInitiatorReady(TransferState):
             self._ari, self.transfer.initiator_call
         )
 
-        self._start(context, exten, variables, timeout)
+        self._start_attended(context, exten, variables, timeout)
         return TransferStateRingback.from_state(self)
 
     @transition
@@ -603,7 +606,7 @@ class TransferStateMovingToStasisTransferredReady(TransferState):
             self._ari, self.transfer.initiator_call
         )
 
-        self._start(context, exten, variables, timeout)
+        self._start_attended(context, exten, variables, timeout)
         return TransferStateRingback.from_state(self)
 
     @transition
