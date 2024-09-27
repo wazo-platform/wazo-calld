@@ -130,7 +130,7 @@ class TestTransfers(RealAsteriskIntegrationTest):
         else:
             raise Exception(f'No channel with linkedid {linkedid} found')
 
-    def given_ringing_transfer(self):
+    def given_ringing_transfer(self) -> tuple[str, str, str, str]:
         (
             transferred_channel_id,
             initiator_channel_id,
