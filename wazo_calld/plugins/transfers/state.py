@@ -434,7 +434,6 @@ class TransferStateReady(TransferState):
         variables,
         timeout,
     ):
-        transfer_id = self.transfer.id
         initiator_channel = Channel(self.transfer.initiator_call, self._ari)
         transferred_channel = Channel(self.transfer.transferred_call, self._ari)
         initiator_uuid = initiator_channel.user()
@@ -460,17 +459,7 @@ class TransferStateReady(TransferState):
                 # hangup one of the channels before they get transferred
                 self._ari.bridges.destroy(bridgeId=bridge.id)
 
-        self._hold_transferred_call()
-        try:
-            self._ari.channels.ring(channelId=initiator_channel.id)
-        except ARINotFound:
-            raise TransferCreationError('initiator call hung up')
-
-        recipient_call = self._services.originate_recipient(
-            initiator_channel.id, context, exten, transfer_id, variables, timeout
-        )
-
-        self.transfer.recipient_call = recipient_call
+        self._start_attended(context, exten, variables, timeout)
 
         return TransferStateRingback.from_state(self)
 
