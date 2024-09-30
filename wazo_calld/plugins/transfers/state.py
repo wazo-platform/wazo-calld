@@ -383,7 +383,8 @@ class TransferState:
         self._notifier.abandoned(self.transfer)
 
     def _cancel(self):
-        logger.debug('cancelling transfer %s', self.transfer.id)
+        # transfer is cancelled: transfer recipient exits
+        # initiator and transferred channels remain
         # cancel logic:
         # 1. unset transfer channel variables
         # 2. hangup transfer recipient channel
@@ -521,6 +522,7 @@ class TransferStateMovingToStasisNoneReady(TransferState):
     @transition
     def transferred_hangup(self):
         self._abandon()
+        # further handling of initiator channel is done by stasis handlers
         return TransferStateEnded.from_state(self)
 
     @transition
@@ -602,6 +604,7 @@ class TransferStateMovingToStasisTransferredReady(TransferState):
     @transition
     def transferred_hangup(self):
         self._abandon()
+        # further handling of initiator channel is part of stasis handlers
         return TransferStateEnded.from_state(self)
 
     @transition
@@ -745,6 +748,11 @@ class TransferStateBlindTransferred(TransferState):
 
 @state_factory.state
 class TransferStateAnswered(TransferState):
+    """
+    recipient channel answered
+    transferred and initiator channels still remain
+    """
+
     name = TransferStatus.answered
 
     @transition
@@ -755,6 +763,7 @@ class TransferStateAnswered(TransferState):
     @transition
     def initiator_hangup(self):
         # same as complete transition, but initiator already hung up
+        # recipient is already bridged
         self._unhold_transferred_call()
         self._move_transferred_call_to_transfer_bridge()
 
@@ -772,8 +781,8 @@ class TransferStateAnswered(TransferState):
 
     @transition
     def complete(self):
-        # NOTE(clanglois): transferred channel must be moved into transfer bridge
-        # before initiator hangup, otherwise transfer bridge may be destroyed
+        # NOTE(2024-09): moving transferred channel into transfer bridge
+        # before initiator hangup avoids triggering stasis bridge cleanup handler
         self._unhold_transferred_call()
         self._move_transferred_call_to_transfer_bridge()
 
