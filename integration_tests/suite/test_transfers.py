@@ -167,6 +167,17 @@ class TestTransfers(RealAsteriskIntegrationTest):
             transfer_id,
         )
 
+    def assert_participants_are_bridged(self, *channel_ids):
+        # check for a bridge with both channels
+        all_bridges = self.ari.bridges.list()
+        relevant_bridges = [
+            bridge
+            for bridge in all_bridges
+            if set(channel_ids) <= set(bridge.json['channels'])
+        ]
+        assert relevant_bridges, f"No bridge found for channels {channel_ids}"
+        assert len(relevant_bridges) == 1, "More than one bridge found"
+
     def given_answered_transfer(self, variables=None, initiator_uuid=None):
         (
             transferred_channel_id,
@@ -182,13 +193,6 @@ class TestTransfers(RealAsteriskIntegrationTest):
         transfer_id = response['id']
         recipient_channel_id = response['recipient_call']
 
-        def channel_is_in_bridge(channel_id, bridge_id):
-            return (
-                channel_id in self.ari.bridges.get(bridgeId=bridge_id).json['channels']
-            )
-
-        until.true(channel_is_in_bridge, recipient_channel_id, transfer_id, tries=5)
-
         def transfer_is_answered(transfer_id):
             return self.calld.get_transfer(transfer_id)['status'] == 'answered'
 
@@ -198,6 +202,8 @@ class TestTransfers(RealAsteriskIntegrationTest):
             timeout=5,
             message='transfer was not answered',
         )
+
+        self.assert_participants_are_bridged(initiator_channel_id, recipient_channel_id)
 
         return (
             transferred_channel_id,
@@ -232,22 +238,7 @@ class TestTransfers(RealAsteriskIntegrationTest):
 
         recipient_channel_id = transfer['recipient_call']
 
-        try:
-            transfer_bridge = self.ari.bridges.get(bridgeId=transfer_id)
-        except ARINotFound:
-            raise AssertionError('no transfer bridge')
-        assert_that(
-            transfer_bridge.json,
-            has_entry(
-                'channels',
-                contains_inanyorder(
-                    transferred_channel_id,
-                    initiator_channel_id,
-                    recipient_channel_id,
-                ),
-            ),
-            'transfer bridge is missing one channel',
-        )
+        self.assert_participants_are_bridged(initiator_channel_id, recipient_channel_id)
 
         assert_that(
             transferred_channel_id,
