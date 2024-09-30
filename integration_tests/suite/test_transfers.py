@@ -605,6 +605,27 @@ class TestTransfers(RealAsteriskIntegrationTest):
         recipient_channel_id,
         events,
     ):
+        def receive_transfer_events():
+            assert_that(
+                events.accumulate(with_headers=True),
+                has_item(
+                    has_entries(
+                        message=has_entry('name', 'transfer_ended'),
+                        headers=has_entries(
+                            {
+                                'name': 'transfer_ended',
+                                'tenant_uuid': VALID_TENANT,
+                            }
+                        ),
+                    )
+                ),
+            )
+
+        until.assert_(receive_transfer_events, interval=0.5, timeout=2)
+
+        result = self.calld.get_transfer_result(transfer_id, token=VALID_TOKEN)
+        assert_that(result.status_code, equal_to(404))
+
         assert_that(transfer_id, not_(self.b.is_found()), 'transfer still exists')
 
         assert_that(
@@ -621,24 +642,6 @@ class TestTransfers(RealAsteriskIntegrationTest):
             recipient_channel_id,
             self.c.is_hungup(),
             'recipient channel is still talking',
-        )
-
-        result = self.calld.get_transfer_result(transfer_id, token=VALID_TOKEN)
-        assert_that(result.status_code, equal_to(404))
-
-        assert_that(
-            events.accumulate(with_headers=True),
-            has_item(
-                has_entries(
-                    message=has_entry('name', 'transfer_ended'),
-                    headers=has_entries(
-                        {
-                            'name': 'transfer_ended',
-                            'tenant_uuid': VALID_TENANT,
-                        }
-                    ),
-                )
-            ),
         )
 
     def assert_everyone_hungup(
