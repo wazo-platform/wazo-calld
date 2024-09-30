@@ -2293,3 +2293,64 @@ class TestInitialisation(TestTransfers):
             self.events,
             tries=5,
         )
+
+
+class TestAttendedTransfers(TestTransfers):
+    def setUp(self):
+        super().setUp()
+        self.tenant_events = self.bus.accumulator(headers={'tenant_uuid': VALID_TENANT})
+        self.amid_events = self.bus.accumulator(routing_key='ami.*')
+
+    def test_given_attended_transfer_when_recipient_answers_then_music_on_hold_continues(
+        self,
+    ):
+        (
+            _,
+            _,
+            recipient_channel_id,
+            transfer_id,
+        ) = self.given_ringing_transfer()
+
+        self.answer_recipient_channel(recipient_channel_id)
+        transfer = self.calld.get_transfer(transfer_id)
+
+        def receive_transfer_events():
+            events = self.tenant_events.accumulate(with_headers=True)
+            assert_that(
+                events,
+                has_item(
+                    has_entries(
+                        message=has_entry('name', 'transfer_answered'),
+                        headers=has_entries(
+                            {
+                                'name': 'transfer_answered',
+                                'tenant_uuid': VALID_TENANT,
+                                f"user_uuid:{transfer['initiator_uuid']}": True,
+                            }
+                        ),
+                    )
+                ),
+                'transfer_answered event wrong or missing',
+            )
+
+        until.assert_(receive_transfer_events, interval=0.5, tries=5)
+
+        def receive_amid_events():
+            events = self.amid_events.accumulate(with_headers=True)
+            assert_that(
+                events,
+                not_(
+                    has_item(
+                        has_entries(
+                            headers=has_entries(
+                                {
+                                    'name': 'MusicOnHoldStop',
+                                }
+                            ),
+                        )
+                    )
+                ),
+                'MusicOnHoldStop event received',
+            )
+
+        until.assert_(receive_amid_events, interval=0.5, tries=5)
