@@ -251,6 +251,29 @@ class TransfersStasis:
         if bridge.json['bridge_type'] != 'mixing':
             return
 
+        # check if bridge is associated with transfer
+        # and avoid touching it if transfer is still active
+        if transfer_id := ari_helpers.get_bridge_variable(
+            self.ari, bridge.id, 'WAZO_TRANSFER_ID'
+        ):
+            try:
+                transfer = self.state_persistor.get(transfer_id)
+            except KeyError:
+                logger.debug(
+                    'bridge(id=%s) has variable WAZO_TRANSFER_ID=%s, but transfer is not persisted anymore',
+                    bridge.id,
+                    transfer_id,
+                )
+                pass
+            else:
+                logger.debug(
+                    'transfer(id=%s) in progress(status=%s) using bridge(id=%s), leaving bridge intact',
+                    transfer_id,
+                    transfer.status,
+                    bridge.id,
+                )
+                return
+
         logger.debug('cleaning bridge %s', bridge.id)
 
         if len(bridge.json['channels']) == 1:
