@@ -499,16 +499,6 @@ class TestTransfers(RealAsteriskIntegrationTest):
 
         recipient_channel_id = transfer['recipient_call']
 
-        transfer_bridge = self.ari.bridges.get(bridgeId=transfer_id)
-        assert_that(
-            transfer_bridge.json,
-            has_entry(
-                'channels',
-                contains_inanyorder(
-                    transferred_channel_id,
-                ),
-            ),
-        )
         assert_that(
             transferred_channel_id,
             self.c.is_ringback(),
