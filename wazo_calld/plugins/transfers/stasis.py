@@ -214,7 +214,14 @@ class TransfersStasis:
         logger.debug('received CreateTransfer event: %s', channel_event)
         channel, event = channel_event
         event = CreateTransferEvent(event)
-        transfer = self.state_persistor.get(event.transfer_id)
+        try:
+            transfer = self.state_persistor.get(event.transfer_id)
+        except KeyError:
+            logger.error('transfer %s was abandoned')
+            # avoid leaving channel hanging
+            channel.hangup()
+            return
+
         transfer_role = transfer.role(channel.id)
         with self.state_factory.make(transfer.id) as transfer_state:
             if transfer_role == TransferRole.initiator:
