@@ -135,7 +135,11 @@ class TransfersStasis:
     def process_answered_calls(self):
         transfers = list(self.state_persistor.list())
 
-        logger.debug('Processing lost answered calls since last stop...')
+        logger.info(
+            'Processing lost answered calls for %d remaining transfers since last stop...',
+            len(transfers),
+        )
+        answered_calls = 0
         for transfer in transfers:
             with self.state_factory.make(transfer.id) as transfer_state:
                 if (
@@ -144,11 +148,14 @@ class TransfersStasis:
                 ):
                     channel = self.ari.channels.get(channelId=transfer.recipient_call)
                     if channel.json['state'] != 'Up':
-                        logger.debug('Recipiend answered from transfer %s', transfer.id)
+                        logger.debug('Recipient answered from transfer %s', transfer.id)
                         continue
                     event = {'args': ['', '', transfer.id]}
                     self.transfer_recipient_answered((channel, event))
-        logger.debug('Done.')
+                    answered_calls += 1
+        logger.debug(
+            'Finished processing %d answered calls since last stop.', answered_calls
+        )
 
     def stasis_start(self, event_objects, event):
         logger.debug('received StasisStart event: %s', event)
