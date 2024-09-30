@@ -66,6 +66,14 @@ class TestTransfers(RealAsteriskIntegrationTest):
         self.b = HamcrestARIBridge(self.ari)
         self.c = HamcrestARIChannel(self.ari)
         self.real_asterisk = RealAsterisk(self.ari, self.calld_client)
+        self.transfers = []
+
+    def tearDown(self):
+        # try and cleanup any remaining transfers
+        for transfer_info in self.transfers:
+            transfer_id = transfer_info['id']
+            self.calld.delete_transfer_result(transfer_id, token=VALID_TOKEN)
+        super().tearDown()
 
     def dereference_local_channel(self, local_channel_left):
         left_name = local_channel_left.json['name']
@@ -130,12 +138,21 @@ class TestTransfers(RealAsteriskIntegrationTest):
         else:
             raise Exception(f'No channel with linkedid {linkedid} found')
 
+    def _given_new_transfer(
+        self, transferred_channel_id, initiator_channel_id, **kwargs
+    ):
+        response = self.calld.create_transfer(
+            transferred_channel_id, initiator_channel_id, **kwargs
+        )
+        self.transfers.append(response)
+        return response
+
     def given_ringing_transfer(self) -> tuple[str, str, str, str]:
         (
             transferred_channel_id,
             initiator_channel_id,
         ) = self.real_asterisk.given_bridged_call_stasis()
-        response = self.calld.create_transfer(
+        response = self._given_new_transfer(
             transferred_channel_id, initiator_channel_id, **RECIPIENT
         )
 
@@ -155,7 +172,7 @@ class TestTransfers(RealAsteriskIntegrationTest):
             transferred_channel_id,
             initiator_channel_id,
         ) = self.real_asterisk.given_bridged_call_stasis(callee_uuid=initiator_uuid)
-        response = self.calld.create_transfer(
+        response = self._given_new_transfer(
             transferred_channel_id,
             initiator_channel_id,
             variables=variables,
@@ -907,7 +924,7 @@ class TestCreateTransfer(TestTransfers):
         ) = self.real_asterisk.given_bridged_call_stasis()
 
         events = self.bus.accumulator(headers={'name': 'transfer_created'})
-        self.calld.create_transfer(
+        self._given_new_transfer(
             transferred_channel_id, initiator_channel_id, **RECIPIENT
         )
 
@@ -936,7 +953,7 @@ class TestCreateTransfer(TestTransfers):
         ) = self.real_asterisk.given_bridged_call_not_stasis()
 
         events = self.bus.accumulator(headers={'name': 'transfer_created'})
-        self.calld.create_transfer(
+        self._given_new_transfer(
             transferred_channel_id, initiator_channel_id, **RECIPIENT
         )
 
@@ -964,7 +981,7 @@ class TestCreateTransfer(TestTransfers):
             initiator_channel_id,
         ) = self.real_asterisk.given_bridged_call_stasis(callee_uuid='my-uuid')
 
-        response = self.calld.create_transfer(
+        response = self._given_new_transfer(
             transferred_channel_id, initiator_channel_id, **RECIPIENT
         )
 
@@ -976,7 +993,7 @@ class TestCreateTransfer(TestTransfers):
             initiator_channel_id,
         ) = self.real_asterisk.given_bridged_call_not_stasis(callee_uuid='my-uuid')
 
-        response = self.calld.create_transfer(
+        response = self._given_new_transfer(
             transferred_channel_id, initiator_channel_id, **RECIPIENT
         )
 
@@ -995,7 +1012,7 @@ class TestCreateTransfer(TestTransfers):
             value=initiator_caller_id_name.encode('utf-8'),
         )
 
-        response = self.calld.create_transfer(
+        response = self._given_new_transfer(
             transferred_channel_id, initiator_channel_id, **RECIPIENT_CALLER_ID
         )
 
@@ -1102,7 +1119,7 @@ class TestCreateTransfer(TestTransfers):
         )
         custom_variables = {'TEST': 'foobar'}
 
-        response = self.calld.create_transfer(
+        response = self._given_new_transfer(
             transferred_channel_id,
             initiator_channel_id,
             variables=custom_variables,
@@ -1128,9 +1145,10 @@ class TestCreateTransfer(TestTransfers):
             initiator_channel_id,
         ) = self.real_asterisk.given_bridged_call_stasis()
 
-        response = self.calld.create_transfer(
+        response = self._given_new_transfer(
             transferred_channel_id, initiator_channel_id, **RECIPIENT_CALLER_ID
         )
+
         recipient_channel_id = response['recipient_call']
         assert_that(
             calling(self.ari.channels.getChannelVar).with_args(
@@ -1623,9 +1641,10 @@ class TestTransferFromStasis(TestTransfers):
             initiator_channel_id,
         ) = self.real_asterisk.given_bridged_call_stasis()
 
-        response = self.calld.create_transfer(
+        response = self._given_new_transfer(
             transferred_channel_id, initiator_channel_id, **RECIPIENT
         )
+
         recipient_channel_id = response['recipient_call']
         self.answer_recipient_channel(recipient_channel_id)
 
@@ -1660,7 +1679,7 @@ class TestTransferFromStasis(TestTransfers):
             initiator_channel_id,
         ) = self.real_asterisk.given_bridged_call_stasis()
 
-        response = self.calld.create_transfer(
+        response = self._given_new_transfer(
             transferred_channel_id, initiator_channel_id, **RECIPIENT_BUSY
         )
 
@@ -1705,7 +1724,7 @@ class TestTransferFromStasis(TestTransfers):
             initiator_channel_id,
         ) = self.real_asterisk.given_bridged_call_stasis()
 
-        response = self.calld.create_transfer(
+        response = self._given_new_transfer(
             transferred_channel_id, initiator_channel_id, **RECIPIENT
         )
 
@@ -2056,7 +2075,7 @@ class TestTransferFromNonStasis(TestTransfers):
         ) = self.real_asterisk.given_bridged_call_not_stasis()
         events = self.bus.accumulator(headers={'tenant_uuid': VALID_TENANT})
 
-        response = self.calld.create_transfer(
+        response = self._given_new_transfer(
             transferred_channel_id, initiator_channel_id, **RECIPIENT
         )
 
