@@ -140,7 +140,7 @@ class TestTransfers(RealAsteriskIntegrationTest):
             raise Exception(f'No channel with linkedid {linkedid} found')
 
     def _given_new_transfer(
-        self, transferred_channel_id, initiator_channel_id, **kwargs
+        self, transferred_channel_id: str, initiator_channel_id: str, **kwargs
     ):
         response = self.calld.create_transfer(
             transferred_channel_id, initiator_channel_id, **kwargs
@@ -215,11 +215,11 @@ class TestTransfers(RealAsteriskIntegrationTest):
 
     def assert_transfer_is_answered(
         self,
-        transfer_id,
-        transferred_channel_id,
-        initiator_channel_id,
-        events,
-        recipient_channel_id=None,
+        transfer_id: str,
+        transferred_channel_id: str,
+        initiator_channel_id: str,
+        events: BusMessageAccumulator,
+        recipient_channel_id: str | None = None,
     ):
         transfer = self.calld.get_transfer(transfer_id)
 
@@ -473,10 +473,10 @@ class TestTransfers(RealAsteriskIntegrationTest):
 
     def assert_transfer_is_blind_transferred(
         self,
-        transfer_id,
-        transferred_channel_id,
-        initiator_channel_id,
-        recipient_channel_id=None,
+        transfer_id: str,
+        transferred_channel_id: str,
+        initiator_channel_id: str,
+        recipient_channel_id: str | None = None,
     ):
         transfer = self.calld.get_transfer(transfer_id)
         assert_that(
@@ -534,11 +534,11 @@ class TestTransfers(RealAsteriskIntegrationTest):
 
     def assert_transfer_is_abandoned(
         self,
-        transfer_id,
-        transferred_channel_id,
-        initiator_channel_id,
-        recipient_channel_id,
-        events,
+        transfer_id: str,
+        transferred_channel_id: str,
+        initiator_channel_id: str,
+        recipient_channel_id: str,
+        events: BusMessageAccumulator,
     ):
         def receive_transfer_events():
             assert_that(
@@ -590,11 +590,11 @@ class TestTransfers(RealAsteriskIntegrationTest):
 
     def assert_transfer_is_hungup(
         self,
-        transfer_id,
-        transferred_channel_id,
-        initiator_channel_id,
-        recipient_channel_id,
-        events,
+        transfer_id: str,
+        transferred_channel_id: str,
+        initiator_channel_id: str,
+        recipient_channel_id: str,
+        events: BusMessageAccumulator,
     ):
         def receive_transfer_events():
             assert_that(
