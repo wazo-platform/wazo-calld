@@ -141,6 +141,7 @@ class TestTransfers(RealAsteriskIntegrationTest):
 
         transfer_id = response['id']
         recipient_channel_id = response['recipient_call']
+        assert response['status'] == 'ringback'
 
         return (
             transferred_channel_id,
