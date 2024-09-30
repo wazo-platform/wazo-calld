@@ -193,13 +193,6 @@ class TransfersStasis:
         channel, event = channel_event
         event = TransferRecipientAnsweredEvent(event)
 
-        try:
-            transfer_bridge = self.ari.bridges.get(bridgeId=event.transfer_bridge)
-            transfer_bridge.addChannel(channel=channel.id)
-        except ARINotFound:
-            logger.error('recipient answered, but transfer was hung up')
-            return
-
         transfer_id = event.transfer_bridge
         try:
             with self.state_factory.make(transfer_id) as transfer_state:
@@ -207,12 +200,8 @@ class TransfersStasis:
                 transfer_state.recipient_answer()
         except KeyError:
             logger.debug('recipient answered, but transfer was abandoned')
-
-            for channel_id in transfer_bridge.json['channels']:
-                try:
-                    ari_helpers.unring_initiator_call(self.ari, channel_id)
-                except ARINotFound:
-                    pass
+            # avoid leaving recipient channel hanging
+            channel.hangup()
 
     def create_transfer(self, channel_event):
         logger.debug('received CreateTransfer event: %s', channel_event)
