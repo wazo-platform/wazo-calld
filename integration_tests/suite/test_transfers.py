@@ -221,6 +221,29 @@ class TestTransfers(RealAsteriskIntegrationTest):
         recipient_channel_id=None,
     ):
         transfer = self.calld.get_transfer(transfer_id)
+
+        def receive_transfer_answered_event():
+            assert_that(
+                events.accumulate(with_headers=True),
+                has_item(
+                    has_entries(
+                        message=has_entry('name', 'transfer_answered'),
+                        headers=has_entries(
+                            {
+                                'name': 'transfer_answered',
+                                'tenant_uuid': VALID_TENANT,
+                                f"user_uuid:{transfer['initiator_uuid']}": True,
+                            }
+                        ),
+                    )
+                ),
+                'transfer_answered event wrong or missing',
+            )
+
+        until.assert_(receive_transfer_answered_event, interval=0.5, tries=5)
+
+        # state may have changed
+        transfer = self.calld.get_transfer(transfer_id)
         assert_that(
             transfer,
             has_entries(
@@ -286,23 +309,6 @@ class TestTransfers(RealAsteriskIntegrationTest):
             recipient_channel_id,
             self.c.has_variable('XIVO_TRANSFER_ROLE', 'recipient'),
             'variable not set',
-        )
-
-        assert_that(
-            events.accumulate(with_headers=True),
-            has_item(
-                has_entries(
-                    message=has_entry('name', 'transfer_answered'),
-                    headers=has_entries(
-                        {
-                            'name': 'transfer_answered',
-                            'tenant_uuid': VALID_TENANT,
-                            f"user_uuid:{transfer['initiator_uuid']}": True,
-                        }
-                    ),
-                )
-            ),
-            'transfer_answered event wrong or missing',
         )
 
     def assert_transfer_is_cancelled(
