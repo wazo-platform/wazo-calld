@@ -113,6 +113,7 @@ class TransferStatus:
     ringback: Literal['ringback'] = 'ringback'
     ready: Literal['ready'] = 'ready'
     starting: Literal['starting'] = 'starting'
+    abandoned: Literal['abandoned'] = 'abandoned'
 
 
 TransferRoleType = Literal['transferred', 'initiator', 'recipient']

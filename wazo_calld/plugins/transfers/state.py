@@ -372,8 +372,7 @@ class TransferState:
         )
 
     def _abandon(self):
-        self._unset_recipient_variables()
-        self._unset_initiator_variables()
+        # transferred channel left transfer
 
         if self.transfer.transferred_call:
             try:
@@ -569,6 +568,11 @@ class TransferStateMovingToStasisInitiatorReady(TransferState):
     @transition
     def transferred_hangup(self):
         self._abandon()
+        # only initiator channel remains
+        try:
+            self._ari.channels.hangup(channelId=self.transfer.initiator_call)
+        except ARINotFound:
+            pass
         return TransferStateEnded.from_state(self)
 
     def update_cache(self):
@@ -617,7 +621,7 @@ class TransferStateRingback(TransferState):
     @transition
     def transferred_hangup(self):
         self._abandon()
-        return TransferStateEnded.from_state(self)
+        return TransferStateAbandoned.from_state(self)
 
     @transition
     def initiator_hangup(self):
@@ -643,13 +647,20 @@ class TransferStateRingback(TransferState):
 
     @transition
     def complete(self):
-        self._unhold_transferred_call()
-        self._move_transferred_call_to_transfer_bridge()
-
+        # transfer is completed by initiator before recipient answers
+        # this effectively becomes a blind transfer
+        # equivalent to initiator hanging up directly
         try:
             self._ari.channels.hangup(channelId=self.transfer.initiator_call)
         except ARINotFound:
             pass
+
+        self._unhold_transferred_call()
+
+        try:
+            self._ari.channels.ring(channelId=self.transfer.transferred_call)
+        except ARINotFound:
+            raise TransferCompletionError(self.transfer.id, 'transferred party hung up')
 
         self.transfer.flow = 'blind'
         self._notifier.completed(self.transfer)
@@ -739,7 +750,7 @@ class TransferStateAnswered(TransferState):
     @transition
     def transferred_hangup(self):
         self._abandon()
-        return TransferStateEnded.from_state(self)
+        return TransferStateAbandoned.from_state(self)
 
     @transition
     def initiator_hangup(self):
@@ -801,6 +812,73 @@ class TransferStateAnswered(TransferState):
     def from_state(cls, *args, **kwargs):
         new_state = super().from_state(*args, **kwargs)
         new_state._notifier.answered(new_state.transfer)
+        return new_state
+
+
+@state_factory.state
+class TransferStateAbandoned(TransferState):
+    """
+    transferred channel left
+    initiator and recipient channels remain
+    """
+
+    name = TransferStatus.abandoned
+
+    @transition
+    def transferred_hangup(self):
+        # not supposed to happen from this state
+        # but for the sake of idempotency
+        return self
+
+    @transition
+    def initiator_hangup(self):
+        # we expect only the recipient channel to remain
+        if self.transfer.recipient_call:
+            try:
+                self._ari.channels.hangup(channelId=self.transfer.recipient_call)
+            except ARINotFound:
+                pass
+
+        return TransferStateEnded.from_state(self)
+
+    @transition
+    def recipient_hangup(self):
+        # we expect only the initiator channel to remain
+        try:
+            self._ari.channels.hangup(channelId=self.transfer.initiator_call)
+        except ARINotFound:
+            pass
+
+        return TransferStateEnded.from_state(self)
+
+    @transition
+    def recipient_answer(self):
+        # allow recipient and initiator to be bridged
+
+        try:
+            ari_helpers.unring_initiator_call(self._ari, self.transfer.initiator_call)
+        except ARINotFound:
+            raise TransferAnswerError(self.transfer.id, 'initiator hung up')
+
+        try:
+            self._move_initiator_call_to_transfer_bridge()
+        except ARINotFound:
+            raise TransferAnswerError(self.transfer.id, 'initiator hung up')
+
+        try:
+            self._move_recipient_call_to_transfer_bridge()
+        except ARINotFound:
+            raise TransferAnswerError(self.transfer.id, 'recipient hung up')
+
+        # we remain in this state until a channel hangup
+        return self
+
+    def update_cache(self):
+        self._state_persistor.upsert(self.transfer)
+
+    @classmethod
+    def from_state(cls, *args, **kwargs):
+        new_state = super().from_state(*args, **kwargs)
         return new_state
 
 
