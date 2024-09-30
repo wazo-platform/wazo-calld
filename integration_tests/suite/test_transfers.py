@@ -553,14 +553,26 @@ class TestTransfers(RealAsteriskIntegrationTest):
         recipient_channel_id,
         events,
     ):
-        transfer_bridge = self.ari.bridges.get(bridgeId=transfer_id)
-        assert_that(
-            transfer_bridge.json,
-            has_entry(
-                'channels',
-                contains_inanyorder(initiator_channel_id, recipient_channel_id),
-            ),
-        )
+        def receive_transfer_events():
+            assert_that(
+                events.accumulate(with_headers=True),
+                has_items(
+                    has_entries(
+                        message=has_entry('name', 'transfer_abandoned'),
+                        headers=has_entries(
+                            {
+                                'name': 'transfer_abandoned',
+                                'tenant_uuid': VALID_TENANT,
+                            }
+                        ),
+                    ),
+                ),
+            )
+
+        until.assert_(receive_transfer_events, interval=0.5, tries=5)
+
+        self.assert_participants_are_bridged(initiator_channel_id, recipient_channel_id)
+
         assert_that(
             transferred_channel_id,
             self.c.is_hungup(),
@@ -570,55 +582,22 @@ class TestTransfers(RealAsteriskIntegrationTest):
         assert_that(
             initiator_channel_id, self.c.is_talking(), 'initiator channel not talking'
         )
-        assert_that(
-            initiator_channel_id,
-            self.c.has_variable('XIVO_TRANSFER_ID', ''),
-            'variable not unset',
-        )
-        assert_that(
-            initiator_channel_id,
-            self.c.has_variable('XIVO_TRANSFER_ROLE', ''),
-            'variable not unset',
-        )
 
         assert_that(
             recipient_channel_id, self.c.is_talking(), 'recipient channel not talking'
         )
-        assert_that(
-            recipient_channel_id,
-            self.c.has_variable('XIVO_TRANSFER_ID', ''),
-            'variable not unset',
-        )
-        assert_that(
-            recipient_channel_id,
-            self.c.has_variable('XIVO_TRANSFER_ROLE', ''),
-            'variable not unset',
-        )
 
         result = self.calld.get_transfer_result(transfer_id, token=VALID_TOKEN)
-        assert_that(result.status_code, equal_to(404))
+
+        assert_that(result.status_code, equal_to(200))
 
         assert_that(
-            events.accumulate(with_headers=True),
-            has_items(
-                has_entries(
-                    message=has_entry('name', 'transfer_abandoned'),
-                    headers=has_entries(
-                        {
-                            'name': 'transfer_abandoned',
-                            'tenant_uuid': VALID_TENANT,
-                        }
-                    ),
-                ),
-                has_entries(
-                    message=has_entry('name', 'transfer_ended'),
-                    headers=has_entries(
-                        {
-                            'name': 'transfer_ended',
-                            'tenant_uuid': VALID_TENANT,
-                        }
-                    ),
-                ),
+            result.json(),
+            has_entries(
+                {
+                    'id': transfer_id,
+                    'status': 'abandoned',
+                }
             ),
         )
 
@@ -1844,6 +1823,7 @@ class TestTransferFromStasis(TestTransfers):
             self.events,
             tries=5,
         )
+        self.assert_participants_are_bridged(initiator_channel_id, recipient_channel_id)
 
     def test_given_state_ringback_when_transferred_hangup_and_recipient_hangup_then_state_hungup(
         self,
@@ -1990,6 +1970,8 @@ class TestTransferFromStasis(TestTransfers):
             self.events,
             tries=5,
         )
+
+        self.assert_participants_are_bridged(initiator_channel_id, recipient_channel_id)
 
     def test_given_state_abandoned_when_initiator_hangup_then_everybody_hungup(self):
         (
