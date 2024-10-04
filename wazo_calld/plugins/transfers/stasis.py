@@ -7,7 +7,7 @@ from ari.exceptions import ARINotFound, ARINotInStasis
 from xivo.pubsub import Pubsub
 
 from wazo_calld.ari_ import DEFAULT_APPLICATION_NAME
-from wazo_calld.plugin_helpers.ari_ import Channel
+from wazo_calld.plugin_helpers.ari_ import Channel, GlobalVariableAdapter
 from wazo_calld.plugin_helpers.exceptions import WazoAmidError
 
 from . import ari_helpers
@@ -280,7 +280,7 @@ class TransfersStasis:
 
     def clean_bridge_variables(self, bridge, event):
         global_variable = f'XIVO_BRIDGE_VARIABLES_{bridge.id}'
-        self.ari.asterisk.setGlobalVar(variable=global_variable, value='')
+        GlobalVariableAdapter(self.ari).unset(global_variable)
 
     def release_hangup_lock(self, channel, event):
         lock_source = channel
