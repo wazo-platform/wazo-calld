@@ -5,12 +5,11 @@ import logging
 import os
 from datetime import timedelta
 
-from cheroot import wsgi
 from flask import Flask
 from flask_cors import CORS
 from flask_restful import Api
 from werkzeug.middleware.proxy_fix import ProxyFix
-from xivo import http_helpers
+from xivo import http_helpers, wsgi
 from xivo.http_helpers import ReverseProxied
 
 VERSION = 1.0
