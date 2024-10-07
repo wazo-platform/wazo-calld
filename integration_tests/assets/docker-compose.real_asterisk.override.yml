@@ -41,7 +41,7 @@ services:
       - "./etc/asterisk/voicemail.conf:/etc/asterisk/voicemail.conf"
       - "./ssl:/usr/local/share/ssl"
       - asterisk-voicemail:/var/spool/asterisk/voicemail
-    command: "asterisk -fTnvvvvvddddd"
+    command: "asterisk -fTnvvvvv"
 
   calld:
     volumes:
