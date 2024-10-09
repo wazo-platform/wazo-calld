@@ -722,7 +722,7 @@ class TransferStateBlindTransferred(TransferState):
 
     @transition
     def recipient_hangup(self):
-        self._abandon()
+        self._cancel()
         return TransferStateEnded.from_state(self)
 
     @transition
