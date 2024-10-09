@@ -7,8 +7,6 @@ import threading
 from wazo_calld.ari_ import ARIClientProxy
 from wazo_calld.plugin_helpers.ari_ import (
     GlobalVariableAdapter,
-    GlobalVariableAdapterProtocol,
-    GlobalVariableConstantAdapterProtocol,
     GlobalVariableConstantNameAdapter,
     GlobalVariableJsonAdapter,
     GlobalVariableNameDecorator,
@@ -21,14 +19,12 @@ logger = logging.getLogger(__name__)
 
 class StatePersistor:
     def __init__(self, ari: ARIClientProxy):
-        self._transfers: GlobalVariableAdapterProtocol = GlobalVariableNameDecorator(
+        self._transfers = GlobalVariableNameDecorator(
             GlobalVariableJsonAdapter(GlobalVariableAdapter(ari)), 'XIVO_TRANSFERS_{}'
         )
-        self._index: GlobalVariableConstantAdapterProtocol = (
-            GlobalVariableConstantNameAdapter(
-                GlobalVariableJsonAdapter(GlobalVariableAdapter(ari)),
-                'XIVO_TRANSFERS_INDEX',
-            )
+        self._index = GlobalVariableConstantNameAdapter(
+            GlobalVariableJsonAdapter(GlobalVariableAdapter(ari)),
+            'XIVO_TRANSFERS_INDEX',
         )
         self._lock = threading.RLock()
 
