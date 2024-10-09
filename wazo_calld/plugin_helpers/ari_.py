@@ -6,7 +6,7 @@ from __future__ import annotations
 import json
 import logging
 import time
-from typing import Protocol, TypeVar
+from typing import Protocol, TypeVar, Union
 
 from ari.exceptions import ARINotFound, ARINotInStasis
 
@@ -101,7 +101,7 @@ class GlobalVariableConstantAdapterProtocol(Protocol[T]):
         pass
 
 
-class GlobalVariableAdapter:
+class GlobalVariableAdapter(GlobalVariableAdapterProtocol[str]):
     def __init__(self, ari_client):
         self._ari = ari_client
 
@@ -120,8 +120,11 @@ class GlobalVariableAdapter:
         self._ari.asterisk.setGlobalVar(variable=f'GLOBAL_DELETE({variable})', value='')
 
 
-class GlobalVariableJsonAdapter:
-    def __init__(self, global_variables):
+JSON = Union[str, int, float, bool, None, list['JSON'], dict[str, 'JSON']]
+
+
+class GlobalVariableJsonAdapter(GlobalVariableAdapterProtocol[JSON]):
+    def __init__(self, global_variables: GlobalVariableAdapterProtocol[str]):
         self._global_variables = global_variables
 
     def get(self, variable, default=None):
@@ -139,8 +142,12 @@ class GlobalVariableJsonAdapter:
         self._global_variables.unset(variable)
 
 
-class GlobalVariableNameDecorator:
-    def __init__(self, global_variables, variable_name_format):
+class GlobalVariableNameDecorator(GlobalVariableAdapterProtocol[T]):
+    def __init__(
+        self,
+        global_variables: GlobalVariableAdapterProtocol[T],
+        variable_name_format: str,
+    ):
         self._global_variables = global_variables
         self._format = variable_name_format
 
@@ -154,8 +161,10 @@ class GlobalVariableNameDecorator:
         return self._global_variables.unset(self._format.format(variable))
 
 
-class GlobalVariableConstantNameAdapter:
-    def __init__(self, global_variables, variable_name):
+class GlobalVariableConstantNameAdapter(GlobalVariableConstantAdapterProtocol[T]):
+    def __init__(
+        self, global_variables: GlobalVariableAdapterProtocol[T], variable_name: str
+    ):
         self._global_variables = global_variables
         self._variable = variable_name
 
