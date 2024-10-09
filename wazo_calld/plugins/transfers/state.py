@@ -385,12 +385,6 @@ class TransferState:
     def _cancel(self):
         # transfer is cancelled: transfer recipient exits
         # initiator and transferred channels remain
-        # cancel logic:
-        # 1. unset transfer channel variables
-        # 2. hangup transfer recipient channel
-        # 3. stop ringing on initiator channel
-        # 4. remove transferred party from hold
-        # 5. bridge back transferred and initiator parties
 
         self._unset_transferred_variables()
         self._unset_initiator_variables()
@@ -593,7 +587,6 @@ class TransferStateMovingToStasisTransferredReady(TransferState):
 
     @transition
     def initiator_joined_stasis(self):
-        # TODO: any error to interpret?
         context, exten, variables, timeout = ari_helpers.get_initial_transfer_variables(
             self._ari, self.transfer.initiator_call
         )
