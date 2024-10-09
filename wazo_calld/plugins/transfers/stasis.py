@@ -271,8 +271,9 @@ class TransfersStasis:
                     bridge.id,
                     transfer_id,
                 )
-                pass
-            else:
+                transfer = None
+                
+            if transfer:
                 logger.debug(
                     'transfer(id=%s) in progress(status=%s) using bridge(id=%s), leaving bridge intact',
                     transfer_id,
