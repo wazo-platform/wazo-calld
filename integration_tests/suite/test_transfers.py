@@ -2273,35 +2273,24 @@ class TestAttendedTransfers(TestTransfers):
         self,
     ):
         (
-            _,
-            _,
+            transferred_channel_id,
+            initiator_channel_id,
             recipient_channel_id,
             transfer_id,
         ) = self.given_ringing_transfer()
 
         self.answer_recipient_channel(recipient_channel_id)
-        transfer = self.calld.get_transfer(transfer_id)
 
-        def receive_transfer_events():
-            events = self.tenant_events.accumulate(with_headers=True)
-            assert_that(
-                events,
-                has_item(
-                    has_entries(
-                        message=has_entry('name', 'transfer_answered'),
-                        headers=has_entries(
-                            {
-                                'name': 'transfer_answered',
-                                'tenant_uuid': VALID_TENANT,
-                                f"user_uuid:{transfer['initiator_uuid']}": True,
-                            }
-                        ),
-                    )
-                ),
-                'transfer_answered event wrong or missing',
-            )
-
-        until.assert_(receive_transfer_events, interval=0.5, tries=5)
+        until.assert_(
+            self.assert_transfer_is_answered,
+            transfer_id,
+            transferred_channel_id,
+            initiator_channel_id,
+            self.tenant_events,
+            recipient_channel_id,
+            interval=0.5,
+            tries=5,
+        )
 
         def receive_amid_events():
             events = self.amid_events.accumulate(with_headers=True)
@@ -2316,6 +2305,19 @@ class TestAttendedTransfers(TestTransfers):
                                 }
                             ),
                         )
+                    )
+                ),
+                'MusicOnHoldStop event received',
+            )
+            assert_that(
+                events,
+                has_item(
+                    has_entries(
+                        headers=has_entries(
+                            {
+                                'name': 'ChannelEnteredBridge',
+                            }
+                        ),
                     )
                 ),
                 'MusicOnHoldStop event received',
