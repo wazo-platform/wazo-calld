@@ -158,7 +158,6 @@ class TransfersStasis:
         )
 
     def stasis_start(self, event_objects, event):
-        logger.debug('received StasisStart event: %s', event)
         try:
             sub_app, *_ = event['args']
         except ValueError:
@@ -179,10 +178,10 @@ class TransfersStasis:
             return
 
         channel = event_objects['channel']
+        logger.debug('processing stasis_start from channel %s', channel.id)
         self.stasis_start_pubsub.publish(transfer_action, (channel, event))
 
     def hangup(self, channel, event):
-        logger.debug('received StasisEnd/hangup event: %s', event)
         try:
             transfer = self.state_persistor.get_by_channel(channel.id)
         except KeyError:
@@ -192,12 +191,16 @@ class TransfersStasis:
                 event['application'],
             )
             return
+
+        logger.debug('processing hangup event from channel %s', channel.id)
         transfer_role = transfer.role(channel.id)
         self.hangup_pubsub.publish(transfer_role, transfer)
 
     def transfer_recipient_answered(self, channel_event):
-        logger.debug('received TransferRecipientAnswered event: %s', channel_event)
         channel, event = channel_event
+        logger.debug(
+            'processing transfer recipient answer event from channel %s', channel.id
+        )
         event = TransferRecipientAnsweredEvent(event)
 
         transfer_id = event.transfer_bridge
@@ -211,8 +214,8 @@ class TransfersStasis:
             channel.hangup()
 
     def create_transfer(self, channel_event):
-        logger.debug('received CreateTransfer event: %s', channel_event)
         channel, event = channel_event
+        logger.debug('processing create transfer event from channel %s', channel.id)
         event = CreateTransferEvent(event)
         try:
             transfer = self.state_persistor.get(event.transfer_id)
@@ -272,7 +275,7 @@ class TransfersStasis:
                     transfer_id,
                 )
                 transfer = None
-                
+
             if transfer:
                 logger.debug(
                     'transfer(id=%s) in progress(status=%s) using bridge(id=%s), leaving bridge intact',
