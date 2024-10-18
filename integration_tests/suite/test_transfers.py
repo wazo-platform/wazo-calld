@@ -562,6 +562,26 @@ class TestTransfers(RealAsteriskIntegrationTest):
             recipient_channel_id, self.c.is_talking(), 'recipient channel not talking'
         )
 
+        assert_that(
+            initiator_channel_id,
+            self.c.has_variable('XIVO_TRANSFER_ID', transfer_id),
+            'variable not set',
+        )
+        assert_that(
+            initiator_channel_id,
+            self.c.has_variable('XIVO_TRANSFER_ROLE', 'initiator'),
+            'variable not set',
+        )
+        assert_that(
+            recipient_channel_id,
+            self.c.has_variable('XIVO_TRANSFER_ID', transfer_id),
+            'variable not set',
+        )
+        assert_that(
+            recipient_channel_id,
+            self.c.has_variable('XIVO_TRANSFER_ROLE', 'recipient'),
+            'variable not set',
+        )
         result = self.calld.get_transfer_result(transfer_id, token=VALID_TOKEN)
 
         assert_that(result.status_code, equal_to(200))
