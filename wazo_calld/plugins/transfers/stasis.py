@@ -209,7 +209,7 @@ class TransfersStasis:
                 logger.debug('recipient answered, transfer continues normally')
                 transfer_state.recipient_answer()
         except KeyError:
-            logger.debug('recipient answered, but transfer was abandoned')
+            logger.debug('recipient answered, but transfer was lost')
             # avoid leaving recipient channel hanging
             channel.hangup()
 
@@ -220,7 +220,7 @@ class TransfersStasis:
         try:
             transfer = self.state_persistor.get(event.transfer_id)
         except KeyError:
-            logger.error('transfer %s was abandoned')
+            logger.error('transfer %s was lost')
             # avoid leaving channel hanging
             channel.hangup()
             return
@@ -270,7 +270,8 @@ class TransfersStasis:
                 transfer = self.state_persistor.get(transfer_id)
             except KeyError:
                 logger.debug(
-                    'bridge(id=%s) has variable WAZO_TRANSFER_ID=%s, but transfer is not persisted anymore',
+                    'bridge(id=%s) has variable WAZO_TRANSFER_ID=%s, '
+                    'but transfer is not persisted anymore',
                     bridge.id,
                     transfer_id,
                 )
@@ -278,7 +279,8 @@ class TransfersStasis:
 
             if transfer:
                 logger.debug(
-                    'transfer(id=%s) in progress(status=%s) using bridge(id=%s), leaving bridge intact',
+                    'transfer(id=%s) in progress(status=%s) using bridge(id=%s), '
+                    'leaving bridge intact',
                     transfer_id,
                     transfer.status,
                     bridge.id,
