@@ -3,6 +3,7 @@
 
 import logging
 
+from wazo_bus import BusPublisher
 from wazo_bus.resources.calls.event import (
     CallTransferAbandonedEvent,
     CallTransferAnsweredEvent,
@@ -18,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 class TransferNotifier:
     def __init__(self, bus_producer):
-        self._bus_producer = bus_producer
+        self._bus_producer: BusPublisher = bus_producer
 
     def created(self, transfer):
         event = CallTransferCreatedEvent(
