@@ -263,9 +263,14 @@ class TransfersStasis:
 
         # check if bridge is associated with transfer
         # and avoid touching it if transfer is still active
-        if transfer_id := ari_helpers.get_bridge_variable(
-            self.ari, bridge.id, 'WAZO_TRANSFER_ID'
-        ):
+        try:
+            transfer_id = ari_helpers.get_bridge_variable(
+                self.ari, bridge.id, 'WAZO_TRANSFER_ID'
+            )
+        except ARINotFound:
+            transfer_id = None
+
+        if transfer_id:
             try:
                 transfer = self.state_persistor.get(transfer_id)
             except KeyError:
