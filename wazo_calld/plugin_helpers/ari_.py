@@ -1,9 +1,12 @@
 # Copyright 2015-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+from __future__ import annotations
+
 import json
 import logging
 import time
+from typing import Protocol, TypeVar, Union
 
 from ari.exceptions import ARINotFound, ARINotInStasis
 
@@ -73,7 +76,32 @@ def set_channel_id_var_sync(ari, channel_id, var, value, bypass_stasis=False):
     raise Exception(f'failed to set channel variable {var}={value}')
 
 
-class GlobalVariableAdapter:
+T = TypeVar('T')
+
+
+class GlobalVariableAdapterProtocol(Protocol[T]):
+    def get(self, variable: str, default: T | None = None) -> T:
+        pass
+
+    def set(self, variable: str, value: T) -> None:
+        pass
+
+    def unset(self, variable: str) -> None:
+        pass
+
+
+class GlobalVariableConstantAdapterProtocol(Protocol[T]):
+    def get(self, default: T | None = None) -> T:
+        pass
+
+    def set(self, value: T) -> None:
+        pass
+
+    def unset(self) -> None:
+        pass
+
+
+class GlobalVariableAdapter(GlobalVariableAdapterProtocol[str]):
     def __init__(self, ari_client):
         self._ari = ari_client
 
@@ -92,8 +120,11 @@ class GlobalVariableAdapter:
         self._ari.asterisk.setGlobalVar(variable=f'GLOBAL_DELETE({variable})', value='')
 
 
-class GlobalVariableJsonAdapter:
-    def __init__(self, global_variables):
+JSON = Union[str, int, float, bool, None, list['JSON'], dict[str, 'JSON']]
+
+
+class GlobalVariableJsonAdapter(GlobalVariableAdapterProtocol[JSON]):
+    def __init__(self, global_variables: GlobalVariableAdapterProtocol[str]):
         self._global_variables = global_variables
 
     def get(self, variable, default=None):
@@ -111,8 +142,12 @@ class GlobalVariableJsonAdapter:
         self._global_variables.unset(variable)
 
 
-class GlobalVariableNameDecorator:
-    def __init__(self, global_variables, variable_name_format):
+class GlobalVariableNameDecorator(GlobalVariableAdapterProtocol[T]):
+    def __init__(
+        self,
+        global_variables: GlobalVariableAdapterProtocol[T],
+        variable_name_format: str,
+    ):
         self._global_variables = global_variables
         self._format = variable_name_format
 
@@ -126,8 +161,10 @@ class GlobalVariableNameDecorator:
         return self._global_variables.unset(self._format.format(variable))
 
 
-class GlobalVariableConstantNameAdapter:
-    def __init__(self, global_variables, variable_name):
+class GlobalVariableConstantNameAdapter(GlobalVariableConstantAdapterProtocol[T]):
+    def __init__(
+        self, global_variables: GlobalVariableAdapterProtocol[T], variable_name: str
+    ):
         self._global_variables = global_variables
         self._variable = variable_name
 

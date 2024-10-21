@@ -2,13 +2,13 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
-import uuid
-from typing import cast
 
 from ari.exceptions import ARINotFound
+from wazo_amid_client import Client as AmidClient
+from wazo_confd_client import Client as ConfdClient
 from xivo.caller_id import assemble_caller_id
 
-from wazo_calld.ari_ import DEFAULT_APPLICATION_NAME
+from wazo_calld.ari_ import DEFAULT_APPLICATION_NAME, ARIClientProxy
 from wazo_calld.plugin_helpers import ami
 from wazo_calld.plugin_helpers.ari_ import Channel
 from wazo_calld.plugin_helpers.confd import User
@@ -26,8 +26,16 @@ from .exceptions import (
     TransferCreationError,
 )
 from .lock import HangupLock, InvalidLock
-from .state import TransferState, TransferStateNonStasis, TransferStateReady
+from .notifier import TransferNotifier
+from .state import (
+    StateFactory,
+    TransferState,
+    TransferStateNonStasis,
+    TransferStateReady,
+)
+from .state_persistor import StatePersistor
 from .transfer import Transfer
+from .transfer_lock import TransferLock
 
 logger = logging.getLogger(__name__)
 
@@ -43,13 +51,13 @@ class TransfersService:
         state_persistor,
         transfer_lock,
     ):
-        self.amid_client = amid_client
-        self.ari = ari
-        self.confd_client = confd_client
-        self.notifier = notifier
-        self.state_persistor = state_persistor
-        self.state_factory = state_factory
-        self.transfer_lock = transfer_lock
+        self.amid_client: AmidClient = amid_client
+        self.ari: ARIClientProxy = ari
+        self.confd_client: ConfdClient = confd_client
+        self.notifier: TransferNotifier = notifier
+        self.state_persistor: StatePersistor = state_persistor
+        self.state_factory: StateFactory = state_factory
+        self.transfer_lock: TransferLock = transfer_lock
 
     def list_from_user(self, user_uuid):
         transfers = self.state_persistor.list()
@@ -60,6 +68,16 @@ class TransfersService:
     def create(
         self, transferred_call, initiator_call, context, exten, flow, variables, timeout
     ):
+        logger.debug(
+            'Creating transfer: initiator_call=%s, transferred_call=%s,'
+            'context=%s, exten=%s, flow=%s, timeout=%s',
+            initiator_call,
+            transferred_call,
+            context,
+            exten,
+            flow,
+            timeout,
+        )
         try:
             transferred_channel = self.ari.channels.get(channelId=transferred_call)
             initiator_channel = self.ari.channels.get(channelId=initiator_call)
@@ -77,20 +95,23 @@ class TransfersService:
         if initiator_uuid is None:
             raise TransferCreationError('initiator has no user UUID')
         initiator_tenant_uuid = channel.tenant_uuid()
-        transfer_id = str(uuid.uuid4())
-        transfer = Transfer(transfer_id, initiator_uuid, initiator_tenant_uuid)
-        transfer.transferred_call = transferred_channel.id
-        transfer.initiator_call = initiator_channel.id
-        transfer.flow = flow
+        transfer = Transfer(
+            initiator_uuid=initiator_uuid,
+            initiator_tenant_uuid=initiator_tenant_uuid,
+            transferred_call=transferred_channel.id,
+            initiator_call=initiator_channel.id,
+            flow=flow,
+        )
 
         transfer_state: TransferState
+        transfer_state_class: type[TransferState]
         if not (
             Channel(transferred_call, self.ari).is_in_stasis()
             and Channel(initiator_call, self.ari).is_in_stasis()
         ):
-            transfer_state_class = cast(TransferState, TransferStateNonStasis)
+            transfer_state_class = TransferStateNonStasis
         else:
-            transfer_state_class = cast(TransferState, TransferStateReady)
+            transfer_state_class = TransferStateReady
 
         with self.state_factory.make_from_class(
             transfer_state_class, transfer

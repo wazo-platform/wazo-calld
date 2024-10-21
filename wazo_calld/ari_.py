@@ -7,6 +7,7 @@ import time
 import urllib.parse
 
 import ari
+import ari.client
 import swaggerpy.http_client
 from xivo.pubsub import Pubsub
 from xivo.status import Status

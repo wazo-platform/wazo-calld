@@ -1,5 +1,6 @@
 # Copyright 2016-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
+from __future__ import annotations
 
 import json
 from typing import Any
@@ -27,6 +28,7 @@ from hamcrest import (
 )
 from wazo_test_helpers import until
 from wazo_test_helpers.auth import MockUserToken
+from wazo_test_helpers.bus import BusMessageAccumulator
 
 from .helpers.base import IntegrationTest
 from .helpers.confd import MockLine, MockUser
@@ -66,6 +68,14 @@ class TestTransfers(RealAsteriskIntegrationTest):
         self.b = HamcrestARIBridge(self.ari)
         self.c = HamcrestARIChannel(self.ari)
         self.real_asterisk = RealAsterisk(self.ari, self.calld_client)
+        self.transfers = []
+
+    def tearDown(self):
+        # try and cleanup any remaining transfers
+        for transfer_info in self.transfers:
+            transfer_id = transfer_info['id']
+            self.calld.delete_transfer_result(transfer_id, token=VALID_TOKEN)
+        super().tearDown()
 
     def dereference_local_channel(self, local_channel_left):
         left_name = local_channel_left.json['name']
@@ -130,17 +140,27 @@ class TestTransfers(RealAsteriskIntegrationTest):
         else:
             raise Exception(f'No channel with linkedid {linkedid} found')
 
-    def given_ringing_transfer(self):
+    def _given_new_transfer(
+        self, transferred_channel_id: str, initiator_channel_id: str, **kwargs
+    ):
+        response = self.calld.create_transfer(
+            transferred_channel_id, initiator_channel_id, **kwargs
+        )
+        self.transfers.append(response)
+        return response
+
+    def given_ringing_transfer(self) -> tuple[str, str, str, str]:
         (
             transferred_channel_id,
             initiator_channel_id,
         ) = self.real_asterisk.given_bridged_call_stasis()
-        response = self.calld.create_transfer(
+        response = self._given_new_transfer(
             transferred_channel_id, initiator_channel_id, **RECIPIENT
         )
 
         transfer_id = response['id']
         recipient_channel_id = response['recipient_call']
+        assert response['status'] == 'ringback'
 
         return (
             transferred_channel_id,
@@ -149,12 +169,23 @@ class TestTransfers(RealAsteriskIntegrationTest):
             transfer_id,
         )
 
+    def assert_participants_are_bridged(self, *channel_ids):
+        # check for a bridge with both channels
+        all_bridges = self.ari.bridges.list()
+        relevant_bridges = [
+            bridge
+            for bridge in all_bridges
+            if set(channel_ids) <= set(bridge.json['channels'])
+        ]
+        assert relevant_bridges, f"No bridge found for channels {channel_ids}"
+        assert len(relevant_bridges) == 1, "More than one bridge found"
+
     def given_answered_transfer(self, variables=None, initiator_uuid=None):
         (
             transferred_channel_id,
             initiator_channel_id,
         ) = self.real_asterisk.given_bridged_call_stasis(callee_uuid=initiator_uuid)
-        response = self.calld.create_transfer(
+        response = self._given_new_transfer(
             transferred_channel_id,
             initiator_channel_id,
             variables=variables,
@@ -163,13 +194,6 @@ class TestTransfers(RealAsteriskIntegrationTest):
 
         transfer_id = response['id']
         recipient_channel_id = response['recipient_call']
-
-        def channel_is_in_bridge(channel_id, bridge_id):
-            return (
-                channel_id in self.ari.bridges.get(bridgeId=bridge_id).json['channels']
-            )
-
-        until.true(channel_is_in_bridge, recipient_channel_id, transfer_id, tries=5)
 
         def transfer_is_answered(transfer_id):
             return self.calld.get_transfer(transfer_id)['status'] == 'answered'
@@ -181,6 +205,8 @@ class TestTransfers(RealAsteriskIntegrationTest):
             message='transfer was not answered',
         )
 
+        self.assert_participants_are_bridged(initiator_channel_id, recipient_channel_id)
+
         return (
             transferred_channel_id,
             initiator_channel_id,
@@ -190,12 +216,32 @@ class TestTransfers(RealAsteriskIntegrationTest):
 
     def assert_transfer_is_answered(
         self,
-        transfer_id,
-        transferred_channel_id,
-        initiator_channel_id,
-        events,
-        recipient_channel_id=None,
+        transfer_id: str,
+        transferred_channel_id: str,
+        initiator_channel_id: str,
+        events: BusMessageAccumulator,
+        recipient_channel_id: str | None = None,
     ):
+        transfer = self.calld.get_transfer(transfer_id)
+
+        assert_that(
+            events.accumulate(with_headers=True),
+            has_item(
+                has_entries(
+                    message=has_entry('name', 'transfer_answered'),
+                    headers=has_entries(
+                        {
+                            'name': 'transfer_answered',
+                            'tenant_uuid': VALID_TENANT,
+                            f"user_uuid:{transfer['initiator_uuid']}": True,
+                        }
+                    ),
+                )
+            ),
+            'transfer_answered event wrong or missing',
+        )
+
+        # state may have changed
         transfer = self.calld.get_transfer(transfer_id)
         assert_that(
             transfer,
@@ -214,22 +260,7 @@ class TestTransfers(RealAsteriskIntegrationTest):
 
         recipient_channel_id = transfer['recipient_call']
 
-        try:
-            transfer_bridge = self.ari.bridges.get(bridgeId=transfer_id)
-        except ARINotFound:
-            raise AssertionError('no transfer bridge')
-        assert_that(
-            transfer_bridge.json,
-            has_entry(
-                'channels',
-                contains_inanyorder(
-                    transferred_channel_id,
-                    initiator_channel_id,
-                    recipient_channel_id,
-                ),
-            ),
-            'transfer bridge is missing one channel',
-        )
+        self.assert_participants_are_bridged(initiator_channel_id, recipient_channel_id)
 
         assert_that(
             transferred_channel_id,
@@ -279,39 +310,42 @@ class TestTransfers(RealAsteriskIntegrationTest):
             'variable not set',
         )
 
-        assert_that(
-            events.accumulate(with_headers=True),
-            has_item(
-                has_entries(
-                    message=has_entry('name', 'transfer_answered'),
-                    headers=has_entries(
-                        {
-                            'name': 'transfer_answered',
-                            'tenant_uuid': VALID_TENANT,
-                            f"user_uuid:{transfer['initiator_uuid']}": True,
-                        }
-                    ),
-                )
-            ),
-            'transfer_answered event wrong or missing',
-        )
-
     def assert_transfer_is_cancelled(
         self,
-        transfer_id,
-        transferred_channel_id,
-        initiator_channel_id,
-        recipient_channel_id,
-        events,
+        transfer_id: str,
+        transferred_channel_id: str,
+        initiator_channel_id: str,
+        recipient_channel_id: str,
+        events: BusMessageAccumulator,
     ):
-        transfer_bridge = self.ari.bridges.get(bridgeId=transfer_id)
         assert_that(
-            transfer_bridge.json,
-            has_entry(
-                'channels',
-                contains_inanyorder(transferred_channel_id, initiator_channel_id),
+            events.accumulate(with_headers=True),
+            has_items(
+                has_entries(
+                    message=has_entry('name', 'transfer_cancelled'),
+                    headers=has_entries(
+                        {
+                            'name': 'transfer_cancelled',
+                            'tenant_uuid': VALID_TENANT,
+                        }
+                    ),
+                ),
+                has_entries(
+                    message=has_entry('name', 'transfer_ended'),
+                    headers=has_entries(
+                        {
+                            'name': 'transfer_ended',
+                            'tenant_uuid': VALID_TENANT,
+                        }
+                    ),
+                ),
             ),
         )
+
+        self.assert_participants_are_bridged(
+            transferred_channel_id, initiator_channel_id
+        )
+
         assert_that(
             transferred_channel_id,
             self.c.is_talking(),
@@ -353,14 +387,22 @@ class TestTransfers(RealAsteriskIntegrationTest):
         result = self.calld.get_transfer_result(transfer_id, token=VALID_TOKEN)
         assert_that(result.status_code, equal_to(404), 'transfer not removed')
 
+    def assert_transfer_is_completed(
+        self,
+        transfer_id: str,
+        transferred_channel_id: str,
+        initiator_channel_id: str,
+        recipient_channel_id: str,
+        events: BusMessageAccumulator,
+    ):
         assert_that(
             events.accumulate(with_headers=True),
             has_items(
                 has_entries(
-                    message=has_entry('name', 'transfer_cancelled'),
+                    message=has_entry('name', 'transfer_completed'),
                     headers=has_entries(
                         {
-                            'name': 'transfer_cancelled',
+                            'name': 'transfer_completed',
                             'tenant_uuid': VALID_TENANT,
                         }
                     ),
@@ -377,22 +419,10 @@ class TestTransfers(RealAsteriskIntegrationTest):
             ),
         )
 
-    def assert_transfer_is_completed(
-        self,
-        transfer_id,
-        transferred_channel_id,
-        initiator_channel_id,
-        recipient_channel_id,
-        events,
-    ):
-        transfer_bridge = self.ari.bridges.get(bridgeId=transfer_id)
-        assert_that(
-            transfer_bridge.json,
-            has_entry(
-                'channels',
-                contains_inanyorder(transferred_channel_id, recipient_channel_id),
-            ),
+        self.assert_participants_are_bridged(
+            transferred_channel_id, recipient_channel_id
         )
+
         assert_that(
             transferred_channel_id,
             self.c.is_talking(),
@@ -432,45 +462,12 @@ class TestTransfers(RealAsteriskIntegrationTest):
         result = self.calld.get_transfer_result(transfer_id, token=VALID_TOKEN)
         assert_that(result.status_code, equal_to(404))
 
-        assert_that(
-            events.accumulate(with_headers=True),
-            has_items(
-                has_entries(
-                    message=has_entry('name', 'transfer_answered'),
-                    headers=has_entries(
-                        {
-                            'name': 'transfer_answered',
-                            'tenant_uuid': VALID_TENANT,
-                        }
-                    ),
-                ),
-                has_entries(
-                    message=has_entry('name', 'transfer_completed'),
-                    headers=has_entries(
-                        {
-                            'name': 'transfer_completed',
-                            'tenant_uuid': VALID_TENANT,
-                        }
-                    ),
-                ),
-                has_entries(
-                    message=has_entry('name', 'transfer_ended'),
-                    headers=has_entries(
-                        {
-                            'name': 'transfer_ended',
-                            'tenant_uuid': VALID_TENANT,
-                        }
-                    ),
-                ),
-            ),
-        )
-
     def assert_transfer_is_blind_transferred(
         self,
-        transfer_id,
-        transferred_channel_id,
-        initiator_channel_id,
-        recipient_channel_id=None,
+        transfer_id: str,
+        transferred_channel_id: str,
+        initiator_channel_id: str,
+        recipient_channel_id: str | None = None,
     ):
         transfer = self.calld.get_transfer(transfer_id)
         assert_that(
@@ -490,16 +487,6 @@ class TestTransfers(RealAsteriskIntegrationTest):
 
         recipient_channel_id = transfer['recipient_call']
 
-        transfer_bridge = self.ari.bridges.get(bridgeId=transfer_id)
-        assert_that(
-            transfer_bridge.json,
-            has_entry(
-                'channels',
-                contains_inanyorder(
-                    transferred_channel_id,
-                ),
-            ),
-        )
         assert_that(
             transferred_channel_id,
             self.c.is_ringback(),
@@ -538,57 +525,12 @@ class TestTransfers(RealAsteriskIntegrationTest):
 
     def assert_transfer_is_abandoned(
         self,
-        transfer_id,
-        transferred_channel_id,
-        initiator_channel_id,
-        recipient_channel_id,
-        events,
+        transfer_id: str,
+        transferred_channel_id: str,
+        initiator_channel_id: str,
+        recipient_channel_id: str,
+        events: BusMessageAccumulator,
     ):
-        transfer_bridge = self.ari.bridges.get(bridgeId=transfer_id)
-        assert_that(
-            transfer_bridge.json,
-            has_entry(
-                'channels',
-                contains_inanyorder(initiator_channel_id, recipient_channel_id),
-            ),
-        )
-        assert_that(
-            transferred_channel_id,
-            self.c.is_hungup(),
-            'transferred channel is still talking',
-        )
-
-        assert_that(
-            initiator_channel_id, self.c.is_talking(), 'initiator channel not talking'
-        )
-        assert_that(
-            initiator_channel_id,
-            self.c.has_variable('XIVO_TRANSFER_ID', ''),
-            'variable not unset',
-        )
-        assert_that(
-            initiator_channel_id,
-            self.c.has_variable('XIVO_TRANSFER_ROLE', ''),
-            'variable not unset',
-        )
-
-        assert_that(
-            recipient_channel_id, self.c.is_talking(), 'recipient channel not talking'
-        )
-        assert_that(
-            recipient_channel_id,
-            self.c.has_variable('XIVO_TRANSFER_ID', ''),
-            'variable not unset',
-        )
-        assert_that(
-            recipient_channel_id,
-            self.c.has_variable('XIVO_TRANSFER_ROLE', ''),
-            'variable not unset',
-        )
-
-        result = self.calld.get_transfer_result(transfer_id, token=VALID_TOKEN)
-        assert_that(result.status_code, equal_to(404))
-
         assert_that(
             events.accumulate(with_headers=True),
             has_items(
@@ -601,6 +543,70 @@ class TestTransfers(RealAsteriskIntegrationTest):
                         }
                     ),
                 ),
+            ),
+        )
+
+        self.assert_participants_are_bridged(initiator_channel_id, recipient_channel_id)
+
+        assert_that(
+            transferred_channel_id,
+            self.c.is_hungup(),
+            'transferred channel is still talking',
+        )
+
+        assert_that(
+            initiator_channel_id, self.c.is_talking(), 'initiator channel not talking'
+        )
+
+        assert_that(
+            recipient_channel_id, self.c.is_talking(), 'recipient channel not talking'
+        )
+
+        assert_that(
+            initiator_channel_id,
+            self.c.has_variable('XIVO_TRANSFER_ID', transfer_id),
+            'variable not set',
+        )
+        assert_that(
+            initiator_channel_id,
+            self.c.has_variable('XIVO_TRANSFER_ROLE', 'initiator'),
+            'variable not set',
+        )
+        assert_that(
+            recipient_channel_id,
+            self.c.has_variable('XIVO_TRANSFER_ID', transfer_id),
+            'variable not set',
+        )
+        assert_that(
+            recipient_channel_id,
+            self.c.has_variable('XIVO_TRANSFER_ROLE', 'recipient'),
+            'variable not set',
+        )
+        result = self.calld.get_transfer_result(transfer_id, token=VALID_TOKEN)
+
+        assert_that(result.status_code, equal_to(200))
+
+        assert_that(
+            result.json(),
+            has_entries(
+                {
+                    'id': transfer_id,
+                    'status': 'abandoned',
+                }
+            ),
+        )
+
+    def assert_transfer_is_hungup(
+        self,
+        transfer_id: str,
+        transferred_channel_id: str,
+        initiator_channel_id: str,
+        recipient_channel_id: str,
+        events: BusMessageAccumulator,
+    ):
+        assert_that(
+            events.accumulate(with_headers=True),
+            has_item(
                 has_entries(
                     message=has_entry('name', 'transfer_ended'),
                     headers=has_entries(
@@ -609,18 +615,13 @@ class TestTransfers(RealAsteriskIntegrationTest):
                             'tenant_uuid': VALID_TENANT,
                         }
                     ),
-                ),
+                )
             ),
         )
 
-    def assert_transfer_is_hungup(
-        self,
-        transfer_id,
-        transferred_channel_id,
-        initiator_channel_id,
-        recipient_channel_id,
-        events,
-    ):
+        result = self.calld.get_transfer_result(transfer_id, token=VALID_TOKEN)
+        assert_that(result.status_code, equal_to(404))
+
         assert_that(transfer_id, not_(self.b.is_found()), 'transfer still exists')
 
         assert_that(
@@ -637,24 +638,6 @@ class TestTransfers(RealAsteriskIntegrationTest):
             recipient_channel_id,
             self.c.is_hungup(),
             'recipient channel is still talking',
-        )
-
-        result = self.calld.get_transfer_result(transfer_id, token=VALID_TOKEN)
-        assert_that(result.status_code, equal_to(404))
-
-        assert_that(
-            events.accumulate(with_headers=True),
-            has_item(
-                has_entries(
-                    message=has_entry('name', 'transfer_ended'),
-                    headers=has_entries(
-                        {
-                            'name': 'transfer_ended',
-                            'tenant_uuid': VALID_TENANT,
-                        }
-                    ),
-                )
-            ),
         )
 
     def assert_everyone_hungup(
@@ -906,7 +889,7 @@ class TestCreateTransfer(TestTransfers):
         ) = self.real_asterisk.given_bridged_call_stasis()
 
         events = self.bus.accumulator(headers={'name': 'transfer_created'})
-        self.calld.create_transfer(
+        self._given_new_transfer(
             transferred_channel_id, initiator_channel_id, **RECIPIENT
         )
 
@@ -935,7 +918,7 @@ class TestCreateTransfer(TestTransfers):
         ) = self.real_asterisk.given_bridged_call_not_stasis()
 
         events = self.bus.accumulator(headers={'name': 'transfer_created'})
-        self.calld.create_transfer(
+        self._given_new_transfer(
             transferred_channel_id, initiator_channel_id, **RECIPIENT
         )
 
@@ -963,7 +946,7 @@ class TestCreateTransfer(TestTransfers):
             initiator_channel_id,
         ) = self.real_asterisk.given_bridged_call_stasis(callee_uuid='my-uuid')
 
-        response = self.calld.create_transfer(
+        response = self._given_new_transfer(
             transferred_channel_id, initiator_channel_id, **RECIPIENT
         )
 
@@ -975,7 +958,7 @@ class TestCreateTransfer(TestTransfers):
             initiator_channel_id,
         ) = self.real_asterisk.given_bridged_call_not_stasis(callee_uuid='my-uuid')
 
-        response = self.calld.create_transfer(
+        response = self._given_new_transfer(
             transferred_channel_id, initiator_channel_id, **RECIPIENT
         )
 
@@ -994,7 +977,7 @@ class TestCreateTransfer(TestTransfers):
             value=initiator_caller_id_name.encode('utf-8'),
         )
 
-        response = self.calld.create_transfer(
+        response = self._given_new_transfer(
             transferred_channel_id, initiator_channel_id, **RECIPIENT_CALLER_ID
         )
 
@@ -1101,7 +1084,7 @@ class TestCreateTransfer(TestTransfers):
         )
         custom_variables = {'TEST': 'foobar'}
 
-        response = self.calld.create_transfer(
+        response = self._given_new_transfer(
             transferred_channel_id,
             initiator_channel_id,
             variables=custom_variables,
@@ -1127,9 +1110,10 @@ class TestCreateTransfer(TestTransfers):
             initiator_channel_id,
         ) = self.real_asterisk.given_bridged_call_stasis()
 
-        response = self.calld.create_transfer(
+        response = self._given_new_transfer(
             transferred_channel_id, initiator_channel_id, **RECIPIENT_CALLER_ID
         )
+
         recipient_channel_id = response['recipient_call']
         assert_that(
             calling(self.ari.channels.getChannelVar).with_args(
@@ -1622,9 +1606,10 @@ class TestTransferFromStasis(TestTransfers):
             initiator_channel_id,
         ) = self.real_asterisk.given_bridged_call_stasis()
 
-        response = self.calld.create_transfer(
+        response = self._given_new_transfer(
             transferred_channel_id, initiator_channel_id, **RECIPIENT
         )
+
         recipient_channel_id = response['recipient_call']
         self.answer_recipient_channel(recipient_channel_id)
 
@@ -1659,7 +1644,7 @@ class TestTransferFromStasis(TestTransfers):
             initiator_channel_id,
         ) = self.real_asterisk.given_bridged_call_stasis()
 
-        response = self.calld.create_transfer(
+        response = self._given_new_transfer(
             transferred_channel_id, initiator_channel_id, **RECIPIENT_BUSY
         )
 
@@ -1704,7 +1689,7 @@ class TestTransferFromStasis(TestTransfers):
             initiator_channel_id,
         ) = self.real_asterisk.given_bridged_call_stasis()
 
-        response = self.calld.create_transfer(
+        response = self._given_new_transfer(
             transferred_channel_id, initiator_channel_id, **RECIPIENT
         )
 
@@ -1833,6 +1818,7 @@ class TestTransferFromStasis(TestTransfers):
             self.events,
             tries=5,
         )
+        self.assert_participants_are_bridged(initiator_channel_id, recipient_channel_id)
 
     def test_given_state_ringback_when_transferred_hangup_and_recipient_hangup_then_state_hungup(
         self,
@@ -1980,6 +1966,8 @@ class TestTransferFromStasis(TestTransfers):
             tries=5,
         )
 
+        self.assert_participants_are_bridged(initiator_channel_id, recipient_channel_id)
+
     def test_given_state_abandoned_when_initiator_hangup_then_everybody_hungup(self):
         (
             transferred_channel_id,
@@ -2055,7 +2043,7 @@ class TestTransferFromNonStasis(TestTransfers):
         ) = self.real_asterisk.given_bridged_call_not_stasis()
         events = self.bus.accumulator(headers={'tenant_uuid': VALID_TENANT})
 
-        response = self.calld.create_transfer(
+        response = self._given_new_transfer(
             transferred_channel_id, initiator_channel_id, **RECIPIENT
         )
 
@@ -2293,3 +2281,66 @@ class TestInitialisation(TestTransfers):
             self.events,
             tries=5,
         )
+
+
+class TestAttendedTransfers(TestTransfers):
+    def setUp(self):
+        super().setUp()
+        self.tenant_events = self.bus.accumulator(headers={'tenant_uuid': VALID_TENANT})
+        self.amid_events = self.bus.accumulator(routing_key='ami.*')
+
+    def test_given_attended_transfer_when_recipient_answers_then_music_on_hold_continues(
+        self,
+    ):
+        (
+            transferred_channel_id,
+            initiator_channel_id,
+            recipient_channel_id,
+            transfer_id,
+        ) = self.given_ringing_transfer()
+
+        self.answer_recipient_channel(recipient_channel_id)
+
+        until.assert_(
+            self.assert_transfer_is_answered,
+            transfer_id,
+            transferred_channel_id,
+            initiator_channel_id,
+            self.tenant_events,
+            recipient_channel_id,
+            interval=0.5,
+            tries=5,
+        )
+
+        def receive_amid_events():
+            events = self.amid_events.accumulate(with_headers=True)
+            assert_that(
+                events,
+                not_(
+                    has_item(
+                        has_entries(
+                            headers=has_entries(
+                                {
+                                    'name': 'MusicOnHoldStop',
+                                }
+                            ),
+                        )
+                    )
+                ),
+                'MusicOnHoldStop event received',
+            )
+            assert_that(
+                events,
+                has_item(
+                    has_entries(
+                        headers=has_entries(
+                            {
+                                'name': 'ChannelEnteredBridge',
+                            }
+                        ),
+                    )
+                ),
+                'MusicOnHoldStop event received',
+            )
+
+        until.assert_(receive_amid_events, interval=0.5, tries=5)

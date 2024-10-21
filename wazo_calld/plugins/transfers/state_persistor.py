@@ -4,6 +4,7 @@
 import logging
 import threading
 
+from wazo_calld.ari_ import ARIClientProxy
 from wazo_calld.plugin_helpers.ari_ import (
     GlobalVariableAdapter,
     GlobalVariableConstantNameAdapter,
@@ -17,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 class StatePersistor:
-    def __init__(self, ari):
+    def __init__(self, ari: ARIClientProxy):
         self._transfers = GlobalVariableNameDecorator(
             GlobalVariableJsonAdapter(GlobalVariableAdapter(ari)), 'XIVO_TRANSFERS_{}'
         )
@@ -27,12 +28,12 @@ class StatePersistor:
         )
         self._lock = threading.RLock()
 
-    def get(self, transfer_id):
+    def get(self, transfer_id) -> Transfer:
         with self._lock:
             transfer_dict = self._transfers.get(transfer_id)
         return Transfer.from_dict(transfer_dict)
 
-    def get_by_channel(self, channel_id):
+    def get_by_channel(self, channel_id) -> Transfer:
         for transfer in self.list():
             if channel_id in (
                 transfer.transferred_call,
@@ -65,7 +66,7 @@ class StatePersistor:
             self._index.set(list(index))
         logger.debug('transfer: %s remove done', transfer_id)
 
-    def list(self):
+    def list(self) -> list[Transfer]:
         results = []
         with self._lock:
             for transfer_id in self._index.get(default=[]):

@@ -4,9 +4,10 @@
 import logging
 
 from ari.exceptions import ARINotFound, ARINotInStasis
+from wazo_amid_client import Client as AmidClient
 from xivo.pubsub import Pubsub
 
-from wazo_calld.ari_ import DEFAULT_APPLICATION_NAME
+from wazo_calld.ari_ import DEFAULT_APPLICATION_NAME, ARIClientProxy, CoreARI
 from wazo_calld.plugin_helpers.ari_ import Channel, GlobalVariableAdapter
 from wazo_calld.plugin_helpers.exceptions import WazoAmidError
 
@@ -14,6 +15,9 @@ from . import ari_helpers
 from .event import CreateTransferEvent, TransferRecipientAnsweredEvent
 from .exceptions import InvalidEvent, TransferException
 from .lock import HangupLock, InvalidLock
+from .services import TransfersService
+from .state import StateFactory
+from .state_persistor import StatePersistor
 from .transfer import TransferRole, TransferStatus
 
 logger = logging.getLogger(__name__)
@@ -23,17 +27,17 @@ class TransfersStasis:
     def __init__(
         self, amid_client, ari, services, state_factory, state_persistor, xivo_uuid
     ):
-        self.ari = ari.client
-        self._core_ari = ari
-        self.amid = amid_client
-        self.services = services
-        self.xivo_uuid = xivo_uuid
-        self.stasis_start_pubsub = Pubsub()
+        self.ari: ARIClientProxy = ari.client
+        self._core_ari: CoreARI = ari
+        self.amid: AmidClient = amid_client
+        self.services: TransfersService = services
+        self.xivo_uuid: str = xivo_uuid
+        self.stasis_start_pubsub: Pubsub = Pubsub()
         self.stasis_start_pubsub.set_exception_handler(self.invalid_event)
-        self.hangup_pubsub = Pubsub()
+        self.hangup_pubsub: Pubsub = Pubsub()
         self.hangup_pubsub.set_exception_handler(self.invalid_event)
-        self.state_factory = state_factory
-        self.state_persistor = state_persistor
+        self.state_factory: StateFactory = state_factory
+        self.state_persistor: StatePersistor = state_persistor
 
     def initialize(self):
         self._subscribe()
@@ -131,7 +135,11 @@ class TransfersStasis:
     def process_answered_calls(self):
         transfers = list(self.state_persistor.list())
 
-        logger.debug('Processing lost answered calls since last stop...')
+        logger.info(
+            'Processing lost answered calls for %d remaining transfers since last stop...',
+            len(transfers),
+        )
+        answered_calls = 0
         for transfer in transfers:
             with self.state_factory.make(transfer.id) as transfer_state:
                 if (
@@ -140,11 +148,14 @@ class TransfersStasis:
                 ):
                     channel = self.ari.channels.get(channelId=transfer.recipient_call)
                     if channel.json['state'] != 'Up':
-                        logger.debug('Recipiend answered from transfer %s', transfer.id)
+                        logger.debug('Recipient answered from transfer %s', transfer.id)
                         continue
                     event = {'args': ['', '', transfer.id]}
                     self.transfer_recipient_answered((channel, event))
-        logger.debug('Done.')
+                    answered_calls += 1
+        logger.debug(
+            'Finished processing %d answered calls since last stop.', answered_calls
+        )
 
     def stasis_start(self, event_objects, event):
         try:
@@ -167,6 +178,7 @@ class TransfersStasis:
             return
 
         channel = event_objects['channel']
+        logger.debug('processing stasis_start from channel %s', channel.id)
         self.stasis_start_pubsub.publish(transfer_action, (channel, event))
 
     def hangup(self, channel, event):
@@ -179,19 +191,17 @@ class TransfersStasis:
                 event['application'],
             )
             return
+
+        logger.debug('processing hangup event from channel %s', channel.id)
         transfer_role = transfer.role(channel.id)
         self.hangup_pubsub.publish(transfer_role, transfer)
 
     def transfer_recipient_answered(self, channel_event):
         channel, event = channel_event
+        logger.debug(
+            'processing transfer recipient answer event from channel %s', channel.id
+        )
         event = TransferRecipientAnsweredEvent(event)
-
-        try:
-            transfer_bridge = self.ari.bridges.get(bridgeId=event.transfer_bridge)
-            transfer_bridge.addChannel(channel=channel.id)
-        except ARINotFound:
-            logger.error('recipient answered, but transfer was hung up')
-            return
 
         transfer_id = event.transfer_bridge
         try:
@@ -199,18 +209,22 @@ class TransfersStasis:
                 logger.debug('recipient answered, transfer continues normally')
                 transfer_state.recipient_answer()
         except KeyError:
-            logger.debug('recipient answered, but transfer was abandoned')
-
-            for channel_id in transfer_bridge.json['channels']:
-                try:
-                    ari_helpers.unring_initiator_call(self.ari, channel_id)
-                except ARINotFound:
-                    pass
+            logger.debug('recipient answered, but transfer was lost')
+            # avoid leaving recipient channel hanging
+            channel.hangup()
 
     def create_transfer(self, channel_event):
         channel, event = channel_event
+        logger.debug('processing create transfer event from channel %s', channel.id)
         event = CreateTransferEvent(event)
-        transfer = self.state_persistor.get(event.transfer_id)
+        try:
+            transfer = self.state_persistor.get(event.transfer_id)
+        except KeyError:
+            logger.error('transfer %s was lost')
+            # avoid leaving channel hanging
+            channel.hangup()
+            return
+
         transfer_role = transfer.role(channel.id)
         with self.state_factory.make(transfer.id) as transfer_state:
             if transfer_role == TransferRole.initiator:
@@ -246,6 +260,37 @@ class TransfersStasis:
             return
         if bridge.json['bridge_type'] != 'mixing':
             return
+
+        # check if bridge is associated with transfer
+        # and avoid touching it if transfer is still active
+        try:
+            transfer_id = ari_helpers.get_bridge_variable(
+                self.ari, bridge.id, 'WAZO_TRANSFER_ID'
+            )
+        except ARINotFound:
+            transfer_id = None
+
+        if transfer_id:
+            try:
+                transfer = self.state_persistor.get(transfer_id)
+            except KeyError:
+                logger.debug(
+                    'bridge(id=%s) has variable WAZO_TRANSFER_ID=%s, '
+                    'but transfer is not persisted anymore',
+                    bridge.id,
+                    transfer_id,
+                )
+                transfer = None
+
+            if transfer:
+                logger.debug(
+                    'transfer(id=%s) in progress(status=%s) using bridge(id=%s), '
+                    'leaving bridge intact',
+                    transfer_id,
+                    transfer.status,
+                    bridge.id,
+                )
+                return
 
         logger.debug('cleaning bridge %s', bridge.id)
 
