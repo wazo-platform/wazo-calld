@@ -281,7 +281,9 @@ class DialMobileServiceTestCase(DialerTestCase):
             mock.assert_not_called()
 
     def test_join_bridge_unknown_future_bridge_will_hangup(self):
-        self.service.join_bridge(s.channel_id, s.bridge_uuid)
+        with patch.object(self.service, 'cancel_push_mobile') as push_cancel:
+            self.service.join_bridge(s.channel_id, s.bridge_uuid)
+            push_cancel.assert_called_once_with(s.channel_id)
 
         self.ari_client.channels.hangup.assert_called_once_with(channelId=s.channel_id)
 
@@ -293,7 +295,9 @@ class DialMobileServiceTestCase(DialerTestCase):
             self.ari_client, s.error
         )
 
-        self.service.join_bridge(s.channel_id, s.bridge_uuid)
+        with patch.object(self.service, 'cancel_push_mobile') as push_cancel:
+            self.service.join_bridge(s.channel_id, s.bridge_uuid)
+            push_cancel.assert_called_once_with(s.channel_id)
 
         dialer.stop.assert_called_once_with()
 

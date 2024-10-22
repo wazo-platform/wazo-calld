@@ -233,6 +233,7 @@ class DialMobileService:
             except ARINotFound:
                 # If its already gone do nothing
                 pass
+            self.cancel_push_mobile(channel_id)
             return
 
         dialer.stop()
@@ -249,6 +250,7 @@ class DialMobileService:
             except ARINotFound:
                 # If its already gone do nothing
                 pass
+            self.cancel_push_mobile(channel_id)
             return
 
         try:
