@@ -219,7 +219,17 @@ class ApplicationStasis:
             return
         application = self._service.get_application(application_uuid)
 
-        self._notifier.playback_created(application, playback.json)
+        playback_json = playback.json
+        channel_id = None
+        conversation_id = None
+        if playback_json['target_uri'].startswith('channel:'):
+            _, channel_id = playback_json['target_uri'].split('channel:')
+            channel = _ChannelHelper(channel_id, self._ari)
+            conversation_id = channel.conversation_id()
+
+        self._notifier.playback_created(
+            application, playback.json, channel_id, conversation_id
+        )
 
     def _subscribe(self, applications):
         self._ari.on_playback_event('PlaybackStarted', self.playback_started)

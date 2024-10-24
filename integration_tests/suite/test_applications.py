@@ -2103,6 +2103,8 @@ class TestApplicationPlayback(BaseApplicationTestCase):
                             name='application_playback_created',
                             data=has_entries(
                                 application_uuid=app_uuid,
+                                call_id=channel.id,
+                                conversation_id=channel.id,
                                 playback=has_entries(
                                     uuid=playback['uuid'],
                                     language='en',

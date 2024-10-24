@@ -171,15 +171,21 @@ class ApplicationNotifier:
         )
         self._bus.publish(event)
 
-    def playback_created(self, application, playback):
+    def playback_created(self, application, playback, call_id, conversation_id):
         logger.debug(
-            'Application (%s): Playback (%s) started',
+            'Application (%s) call_id: %s conversation_id: %s: Playback (%s) started',
             application['uuid'],
+            call_id,
+            conversation_id,
             playback['id'],
         )
         playback = application_playback_schema.dump(playback)
         event = ApplicationPlaybackCreatedEvent(
-            playback, application['uuid'], application['tenant_uuid']
+            playback,
+            application['uuid'],
+            application['tenant_uuid'],
+            call_id,
+            conversation_id,
         )
         self._bus.publish(event)
 
