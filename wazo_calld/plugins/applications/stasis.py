@@ -3,7 +3,7 @@
 
 import logging
 
-from wazo_calld.plugin_helpers.ari_ import set_channel_var_sync
+from wazo_calld.plugin_helpers.ari_ import set_channel_var_sync, Channel as _ChannelHelper
 
 from .exceptions import NoSuchSnoop
 from .models import CallFormatter, make_node_from_bridge, make_node_from_bridge_event
@@ -39,8 +39,12 @@ class ApplicationStasis:
         if not application_uuid:
             return
         application = self._service.get_application(application_uuid)
+        channel = _ChannelHelper(channel.id, self._ari)
+        conversation_id = channel.conversation_id()
 
-        self._notifier.dtmf_received(application, channel.id, event['digit'])
+        self._notifier.dtmf_received(
+            application, channel.id, conversation_id, event['digit']
+        )
 
     def channel_entered_bridge(self, channel, event):
         application_uuid = AppNameHelper.to_uuid(event.get('application'))

@@ -2940,6 +2940,7 @@ class TestDTMFEvents(BaseApplicationTestCase):
                             data=has_entries(
                                 application_uuid=self.node_app_uuid,
                                 call_id=channel.id,
+                                conversation_id=channel.id,
                                 dtmf='1',
                             ),
                         ),

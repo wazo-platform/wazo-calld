@@ -124,15 +124,20 @@ class ApplicationNotifier:
         )
         self._bus.publish(event)
 
-    def dtmf_received(self, application, call_id, dtmf):
+    def dtmf_received(self, application, call_id, conversation_id, dtmf):
         logger.debug(
-            'Application (%s): DTMF (%s) received on %s',
+            'Application (%s): DTMF (%s) received on %s for conversation_id %s',
             application['uuid'],
             dtmf,
             call_id,
+            conversation_id,
         )
         event = ApplicationCallDTMFReceivedEvent(
-            call_id, dtmf, application['uuid'], application['tenant_uuid']
+            call_id,
+            conversation_id,
+            dtmf,
+            application['uuid'],
+            application['tenant_uuid'],
         )
         self._bus.publish(event)
 
