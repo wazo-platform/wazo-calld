@@ -183,15 +183,21 @@ class ApplicationNotifier:
         )
         self._bus.publish(event)
 
-    def playback_deleted(self, application, playback):
+    def playback_deleted(self, application, playback, call_id, conversation_id):
         logger.debug(
-            'Application (%s): Playback (%s) deleted',
+            'Application (%s) call_id: %s conversation_id: %s: Playback (%s) deleted',
             application['uuid'],
+            call_id,
+            conversation_id,
             playback['id'],
         )
         playback = application_playback_schema.dump(playback)
         event = ApplicationPlaybackDeletedEvent(
-            playback, application['uuid'], application['tenant_uuid']
+            playback,
+            application['uuid'],
+            application['tenant_uuid'],
+            call_id,
+            conversation_id,
         )
         self._bus.publish(event)
 
