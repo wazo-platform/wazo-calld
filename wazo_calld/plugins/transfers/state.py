@@ -625,11 +625,11 @@ class TransferStateRingback(TransferState):
             self._ari.channels.ring(channelId=self.transfer.transferred_call)
         except ARINotFound:
             logger.info('transferred party hung up while handling initiator hangup')
-            if self.transfer.recipient_call:
-                try:
-                    self._ari.channels.hangup(channelId=self.transfer.recipient_call)
-                except ARINotFound:
-                    pass
+            assert self.transfer.recipient_call
+            try:
+                self._ari.channels.hangup(channelId=self.transfer.recipient_call)
+            except ARINotFound:
+                pass
             return TransferStateEnded.from_state(self)
 
         self.transfer.flow = 'blind'
@@ -657,11 +657,11 @@ class TransferStateRingback(TransferState):
             self._ari.channels.ring(channelId=self.transfer.transferred_call)
         except ARINotFound:
             logger.info('transferred party hung up while handling initiator hangup')
-            if self.transfer.recipient_call:
-                try:
-                    self._ari.channels.hangup(channelId=self.transfer.recipient_call)
-                except ARINotFound:
-                    pass
+            assert self.transfer.recipient_call
+            try:
+                self._ari.channels.hangup(channelId=self.transfer.recipient_call)
+            except ARINotFound:
+                pass
             return TransferStateEnded.from_state(self)
 
         self.transfer.flow = 'blind'
