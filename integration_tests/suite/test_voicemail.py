@@ -853,6 +853,18 @@ class TestVoicemails(RealAsteriskIntegrationTest):
         )
         assert content == b'some-wav-data\n'
 
+    def test_voicemail_get_message_recording_does_not_mark_message_as_old(self):
+        content = self.calld_client.voicemails.get_voicemail_recording(
+            self._voicemail_id, self._message_id
+        )
+        assert content == b'some-wav-data\n'
+
+        message = self.calld_client.voicemails.get_voicemail_message(
+            self._voicemail_id, self._message_id
+        )
+        assert message['id'] == self._message_id
+        assert message['folder']['id'] == self._folder_id
+
     def test_voicemail_head_greeting_invalid_voicemail(self):
         exists = self.calld_client.voicemails.voicemail_greeting_exists(
             'not-exists', 'busy'
