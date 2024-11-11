@@ -19,7 +19,6 @@ from . import ari_helpers
 from .exceptions import (
     TransferAnswerError,
     TransferCancellationError,
-    TransferCompletionError,
     TransferCreationError,
 )
 from .notifier import TransferNotifier
@@ -623,13 +622,15 @@ class TransferStateRingback(TransferState):
     def initiator_hangup(self):
         try:
             self._unhold_transferred_call()
-        except ARINotFound:
-            raise TransferCompletionError(self.transfer.id, 'transferred party hung up')
-
-        try:
             self._ari.channels.ring(channelId=self.transfer.transferred_call)
         except ARINotFound:
-            raise TransferCompletionError(self.transfer.id, 'transferred party hung up')
+            logger.info('transferred party hung up while handling initiator hangup')
+            assert self.transfer.recipient_call
+            try:
+                self._ari.channels.hangup(channelId=self.transfer.recipient_call)
+            except ARINotFound:
+                pass
+            return TransferStateEnded.from_state(self)
 
         self.transfer.flow = 'blind'
         self._notifier.completed(self.transfer)
@@ -651,12 +652,17 @@ class TransferStateRingback(TransferState):
         except ARINotFound:
             pass
 
-        self._unhold_transferred_call()
-
         try:
+            self._unhold_transferred_call()
             self._ari.channels.ring(channelId=self.transfer.transferred_call)
         except ARINotFound:
-            raise TransferCompletionError(self.transfer.id, 'transferred party hung up')
+            logger.info('transferred party hung up while handling initiator hangup')
+            assert self.transfer.recipient_call
+            try:
+                self._ari.channels.hangup(channelId=self.transfer.recipient_call)
+            except ARINotFound:
+                pass
+            return TransferStateEnded.from_state(self)
 
         self.transfer.flow = 'blind'
         self._notifier.completed(self.transfer)
