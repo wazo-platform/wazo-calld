@@ -4,7 +4,7 @@
 
 * The following endpoints are not marking a voicemail message as read anymore when accessed:
   * `GET /1.0/voicemails/<voicemail_id>/messages/<message_id>/recording`
-  * `GET /1.0/vusers/me/oicemails/<voicemail_id>/messages/<message_id>/recording`
+  * `GET /1.0/users/me/voicemails/<voicemail_id>/messages/<message_id>/recording`
   If you want to mark a message as read, use the
   `PUT /1.0/voicemails/<voicemail_id>/messages/<message_id>` API to change the `folder_id` of the
   message to the `Old` folder (id 2).
