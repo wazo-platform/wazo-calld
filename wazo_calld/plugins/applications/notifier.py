@@ -124,15 +124,20 @@ class ApplicationNotifier:
         )
         self._bus.publish(event)
 
-    def dtmf_received(self, application, call_id, dtmf):
+    def dtmf_received(self, application, call_id, conversation_id, dtmf):
         logger.debug(
-            'Application (%s): DTMF (%s) received on %s',
+            'Application (%s): DTMF (%s) received on %s for conversation_id %s',
             application['uuid'],
             dtmf,
             call_id,
+            conversation_id,
         )
         event = ApplicationCallDTMFReceivedEvent(
-            call_id, dtmf, application['uuid'], application['tenant_uuid']
+            call_id,
+            conversation_id,
+            dtmf,
+            application['uuid'],
+            application['tenant_uuid'],
         )
         self._bus.publish(event)
 
@@ -166,27 +171,39 @@ class ApplicationNotifier:
         )
         self._bus.publish(event)
 
-    def playback_created(self, application, playback):
+    def playback_created(self, application, playback, call_id, conversation_id):
         logger.debug(
-            'Application (%s): Playback (%s) started',
+            'Application (%s) call_id: %s conversation_id: %s: Playback (%s) started',
             application['uuid'],
+            call_id,
+            conversation_id,
             playback['id'],
         )
         playback = application_playback_schema.dump(playback)
         event = ApplicationPlaybackCreatedEvent(
-            playback, application['uuid'], application['tenant_uuid']
+            playback,
+            application['uuid'],
+            application['tenant_uuid'],
+            call_id,
+            conversation_id,
         )
         self._bus.publish(event)
 
-    def playback_deleted(self, application, playback):
+    def playback_deleted(self, application, playback, call_id, conversation_id):
         logger.debug(
-            'Application (%s): Playback (%s) deleted',
+            'Application (%s) call_id: %s conversation_id: %s: Playback (%s) deleted',
             application['uuid'],
+            call_id,
+            conversation_id,
             playback['id'],
         )
         playback = application_playback_schema.dump(playback)
         event = ApplicationPlaybackDeletedEvent(
-            playback, application['uuid'], application['tenant_uuid']
+            playback,
+            application['uuid'],
+            application['tenant_uuid'],
+            call_id,
+            conversation_id,
         )
         self._bus.publish(event)
 

@@ -3,6 +3,7 @@
 
 import logging
 
+from wazo_calld.plugin_helpers.ari_ import Channel as _ChannelHelper
 from wazo_calld.plugin_helpers.ari_ import set_channel_var_sync
 
 from .exceptions import NoSuchSnoop
@@ -39,8 +40,12 @@ class ApplicationStasis:
         if not application_uuid:
             return
         application = self._service.get_application(application_uuid)
+        channel = _ChannelHelper(channel.id, self._ari)
+        conversation_id = channel.conversation_id()
 
-        self._notifier.dtmf_received(application, channel.id, event['digit'])
+        self._notifier.dtmf_received(
+            application, channel.id, conversation_id, event['digit']
+        )
 
     def channel_entered_bridge(self, channel, event):
         application_uuid = AppNameHelper.to_uuid(event.get('application'))
@@ -89,7 +94,6 @@ class ApplicationStasis:
 
     def remove_ari_application(self, application):
         app_name = AppNameHelper.to_name(application['uuid'])
-
         # Should be implemented in ari-py
         self._ari._app_registered_callbacks.pop(app_name, None)
         self._ari._app_deregistered_callbacks.pop(app_name, None)
@@ -197,7 +201,16 @@ class ApplicationStasis:
             return
         application = self._service.get_application(application_uuid)
 
-        self._notifier.playback_deleted(application, playback.json)
+        channel_id = None
+        conversation_id = None
+        if playback.json['target_uri'].startswith('channel:'):
+            _, channel_id = playback.json['target_uri'].split('channel:')
+            channel = _ChannelHelper(channel_id, self._ari)
+            conversation_id = channel.conversation_id()
+
+        self._notifier.playback_deleted(
+            application, playback.json, channel_id, conversation_id
+        )
 
     def playback_started(self, playback, event):
         application_uuid = AppNameHelper.to_uuid(event.get('application'))
@@ -205,7 +218,16 @@ class ApplicationStasis:
             return
         application = self._service.get_application(application_uuid)
 
-        self._notifier.playback_created(application, playback.json)
+        channel_id = None
+        conversation_id = None
+        if playback.json['target_uri'].startswith('channel:'):
+            _, channel_id = playback.json['target_uri'].split('channel:')
+            channel = _ChannelHelper(channel_id, self._ari)
+            conversation_id = channel.conversation_id()
+
+        self._notifier.playback_created(
+            application, playback.json, channel_id, conversation_id
+        )
 
     def _subscribe(self, applications):
         self._ari.on_playback_event('PlaybackStarted', self.playback_started)
