@@ -201,11 +201,10 @@ class ApplicationStasis:
             return
         application = self._service.get_application(application_uuid)
 
-        playback_json = playback.json
         channel_id = None
         conversation_id = None
-        if playback_json['target_uri'].startswith('channel:'):
-            _, channel_id = playback_json['target_uri'].split('channel:')
+        if playback.json['target_uri'].startswith('channel:'):
+            _, channel_id = playback.json['target_uri'].split('channel:')
             channel = _ChannelHelper(channel_id, self._ari)
             conversation_id = channel.conversation_id()
 
@@ -219,11 +218,10 @@ class ApplicationStasis:
             return
         application = self._service.get_application(application_uuid)
 
-        playback_json = playback.json
         channel_id = None
         conversation_id = None
-        if playback_json['target_uri'].startswith('channel:'):
-            _, channel_id = playback_json['target_uri'].split('channel:')
+        if playback.json['target_uri'].startswith('channel:'):
+            _, channel_id = playback.json['target_uri'].split('channel:')
             channel = _ChannelHelper(channel_id, self._ari)
             conversation_id = channel.conversation_id()
 
