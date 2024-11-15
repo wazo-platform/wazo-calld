@@ -13,7 +13,6 @@ from .exceptions import (
     NoSuchVoicemailGreeting,
     VoicemailGreetingAlreadyExists,
 )
-from .storage import VoicemailFolderType
 
 
 class VoicemailsService:
@@ -55,12 +54,7 @@ class VoicemailsService:
         return self._get_message_recording(vm_conf, message_id)
 
     def _get_message_recording(self, vm_conf, message_id):
-        message_info, recording = self._storage.get_message_info_and_recording(
-            vm_conf, message_id
-        )
-        if message_info['folder'].is_unread:
-            dest_folder = self._storage.get_folder_by_type(VoicemailFolderType.old)
-            self._move_message(vm_conf, message_info, dest_folder)
+        _, recording = self._storage.get_message_info_and_recording(vm_conf, message_id)
         return recording
 
     def move_message(self, tenant_uuid, voicemail_id, message_id, dest_folder_id):
