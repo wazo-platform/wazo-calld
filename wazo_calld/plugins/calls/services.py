@@ -635,9 +635,17 @@ class CallsService:
         except ARINotFound:
             is_group_callee = False
 
+        try:
+            is_queue_callee = (
+                channel.getChannelVar(variable='WAZO_RECORD_QUEUE_CALLEE')['value']
+                == '1'
+            )
+        except ARINotFound:
+            is_queue_callee = False
+
         is_agent_callback = 'agentcallback' in channel_name
 
-        if not (is_group_callee or is_agent_callback):
+        if not (is_group_callee or is_agent_callback or is_queue_callee):
             return channel
 
         local_chan_uuid = channel.json['channelvars']['WAZO_LOCAL_CHAN_MATCH_UUID']
