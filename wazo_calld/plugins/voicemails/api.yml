@@ -124,7 +124,9 @@ paths:
   /voicemails/{voicemail_id}/greetings/{greeting}:
     post:
       summary: Create a custom greeting
-      description: '**Required ACL:** `calld.voicemails.{voicemail_id}.greetings.{greeting}.create`'
+      description: '**Required ACL:** `calld.voicemails.{voicemail_id}.greetings.{greeting}.create`
+
+      Accepted audio file format: .wav - 8KHz, 16 bits, mono'
       parameters:
       - $ref: '#/parameters/VoicemailID'
       - $ref: '#/parameters/VoicemailGreeting'
@@ -184,7 +186,9 @@ paths:
           $ref: '#/responses/AnotherServiceUnavailable'
     put:
       summary: Update a custom greeting
-      description: '**Required ACL:** `calld.voicemails.{voicemail_id}.greetings.{greeting}.update`'
+      description: '**Required ACL:** `calld.voicemails.{voicemail_id}.greetings.{greeting}.update`
+
+      Accepted audio file format: .wav - 8KHz, 16 bits, mono'
       parameters:
       - $ref: '#/parameters/VoicemailID'
       - $ref: '#/parameters/VoicemailGreeting'
@@ -369,7 +373,9 @@ paths:
   /users/me/voicemails/greetings/{greeting}:
     post:
       summary: Create a custom greeting
-      description: '**Required ACL:** `calld.users.me.voicemails.greetings.{greeting}.create`'
+      description: '**Required ACL:** `calld.users.me.voicemails.greetings.{greeting}.create`
+
+      Accepted audio file format: .wav - 8KHz, 16 bits, mono'
       parameters:
       - $ref: '#/parameters/VoicemailGreeting'
       - name: body
@@ -429,7 +435,9 @@ paths:
           $ref: '#/responses/AnotherServiceUnavailable'
     put:
       summary: Update a custom greeting
-      description: '**Required ACL:** `calld.users.me.voicemails.greetings.{greeting}.update`'
+      description: '**Required ACL:** `calld.users.me.voicemails.greetings.{greeting}.update`
+
+      Accepted audio file format: .wav - 8KHz, 16 bits, mono'
       parameters:
       - $ref: '#/parameters/VoicemailGreeting'
       - name: body
