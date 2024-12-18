@@ -6,7 +6,7 @@ https://github.com/wazo-platform/wazo-auth-client/archive/master.zip
 https://github.com/wazo-platform/wazo-confd-client/archive/master.zip
 https://github.com/wazo-platform/wazo-bus/archive/master.zip
 https://github.com/wazo-platform/xivo-lib-python/archive/master.zip
-cheroot==8.5.2
+cheroot==9.0.0
 flask-cors==3.0.9
 flask-restful==0.3.8
 flask==1.1.2
