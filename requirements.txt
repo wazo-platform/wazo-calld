@@ -12,10 +12,10 @@ flask-restful==0.3.8
 flask==1.1.2
 iso8601==0.1.13
 itsdangerous==1.1.0  # from flask
-jinja2==2.11.3  # from flask
+jinja2==3.0.3  # from flask
 jsonpatch==1.25
 kombu==5.0.2
-markupsafe==1.1.1 # from jinja
+markupsafe==2.0.1 # from jinja
 marshmallow==3.10.0
 python-consul==1.1.0
 pyyaml==5.3.1  # from xivo-lib-python
