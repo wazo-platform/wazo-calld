@@ -16,7 +16,7 @@ jinja2==3.0.3  # from flask
 jsonpatch==1.25
 kombu==5.0.2
 markupsafe==2.0.1 # from jinja
-marshmallow==3.10.0
+marshmallow==3.18.0
 python-consul==1.1.0
 pyyaml==5.3.1  # from xivo-lib-python
 requests==2.25.1

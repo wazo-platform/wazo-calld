@@ -25,10 +25,12 @@ class ApplicationCallPlaySchema(BaseSchema):
 class ApplicationCallRequestSchema(BaseSchema):
     exten = fields.String(validate=Length(min=1), required=True)
     context = fields.String(required=True)
-    autoanswer = fields.Boolean(required=False, missing=False)
-    variables = fields.Dict(validate=validate_string_dict, missing={})
-    displayed_caller_id_name = fields.String(missing='', validate=Length(max=256))
-    displayed_caller_id_number = fields.String(missing='', validate=Length(max=256))
+    autoanswer = fields.Boolean(required=False, load_default=False)
+    variables = fields.Dict(validate=validate_string_dict, load_default={})
+    displayed_caller_id_name = fields.String(load_default='', validate=Length(max=256))
+    displayed_caller_id_number = fields.String(
+        load_default='', validate=Length(max=256)
+    )
 
     @post_load
     def remove_extension_whitespace(self, call_request, **kwargs):
@@ -38,10 +40,12 @@ class ApplicationCallRequestSchema(BaseSchema):
 
 class ApplicationCallUserRequestSchema(BaseSchema):
     user_uuid = fields.String(required=True)
-    autoanswer = fields.Boolean(required=False, missing=False)
-    variables = fields.Dict(validate=validate_string_dict, missing={})
-    displayed_caller_id_name = fields.String(missing='', validate=Length(max=256))
-    displayed_caller_id_number = fields.String(missing='', validate=Length(max=256))
+    autoanswer = fields.Boolean(required=False, load_default=False)
+    variables = fields.Dict(validate=validate_string_dict, load_default={})
+    displayed_caller_id_name = fields.String(load_default='', validate=Length(max=256))
+    displayed_caller_id_number = fields.String(
+        load_default='', validate=Length(max=256)
+    )
 
 
 class ApplicationCallSchema(BaseSchema):
@@ -76,7 +80,7 @@ class ApplicationNodeSchema(BaseSchema):
 
 class ApplicationSnoopPutSchema(BaseSchema):
     whisper_mode = fields.String(
-        validate=OneOf(['in', 'out', 'both', 'none']), missing='none'
+        validate=OneOf(['in', 'out', 'both', 'none']), load_default='none'
     )
 
 

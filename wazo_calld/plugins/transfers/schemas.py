@@ -12,13 +12,13 @@ class TransferRequestSchema(Schema):
     initiator_call = fields.Str(validate=Length(min=1), required=True)
     context = fields.Str(validate=Length(min=1), required=True)
     exten = fields.Str(validate=Length(min=1), required=True)
-    flow = fields.Str(validate=OneOf(['attended', 'blind']), missing='attended')
+    flow = fields.Str(validate=OneOf(['attended', 'blind']), load_default='attended')
     variables = StrictDict(
         key_field=fields.String(required=True, validate=Length(min=1)),
         value_field=fields.String(required=True, validate=Length(min=1)),
-        missing=dict,
+        load_default=dict,
     )
-    timeout = fields.Integer(missing=None, min=1, allow_none=True)
+    timeout = fields.Integer(load_default=None, min=1, allow_none=True)
 
     @post_load
     def remove_extension_whitespace(self, call_request, **kwargs):
@@ -32,8 +32,8 @@ transfer_request_schema = TransferRequestSchema()
 class UserTransferRequestSchema(Schema):
     initiator_call = fields.Str(validate=Length(min=1), required=True)
     exten = fields.Str(validate=Length(min=1), required=True)
-    flow = fields.Str(validate=OneOf(['attended', 'blind']), missing='attended')
-    timeout = fields.Integer(missing=None, min=1, allow_none=True)
+    flow = fields.Str(validate=OneOf(['attended', 'blind']), load_default='attended')
+    timeout = fields.Integer(load_default=None, min=1, allow_none=True)
 
     @post_load
     def remove_extension_whitespace(self, call_request, **kwargs):

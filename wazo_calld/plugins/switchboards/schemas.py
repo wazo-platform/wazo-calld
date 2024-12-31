@@ -1,4 +1,4 @@
-# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from marshmallow import Schema, fields
@@ -23,7 +23,7 @@ held_call_schema = HeldCallSchema()
 
 
 class AnswerCallSchema(Schema):
-    line_id = fields.Integer(missing=None)
+    line_id = fields.Integer(load_default=None)
 
 
 answer_call_schema = AnswerCallSchema()
