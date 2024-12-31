@@ -23,10 +23,10 @@ class ParkingLotSchema(_Base):
     name = String(dump_only=True)
     slots_start = String(dump_only=True)
     slots_end = String(dump_only=True)
-    slots_total = Integer(dump_only=True, default=0)
-    slots_remaining = Integer(dump_only=True, default=0)
+    slots_total = Integer(dump_only=True, dump_default=0)
+    slots_remaining = Integer(dump_only=True, dump_default=0)
     default_timeout = Integer(attribute='timeout', dump_only=True)
-    calls = List(Nested("ParkedCallGetResponseSchema"), default=list)
+    calls = List(Nested("ParkedCallGetResponseSchema"), dump_default=list)
 
     @pre_dump
     def calls_from_context(self, obj, **kwargs):
@@ -73,12 +73,15 @@ class ParkedCallGetResponseSchema(_Base):
 class ParkCallRequestSchema(_Base):
     parking_id = Integer(allow_none=False, required=True, load_only=True)
     preferred_slot = String(
-        validate=Predicate('isdigit'), allow_none=True, missing=None, load_only=True
+        validate=Predicate('isdigit'),
+        allow_none=True,
+        load_default=None,
+        load_only=True,
     )
     timeout = Integer(
         validate=Range(min=0, error='Must be a positive integer or 0'),
         allow_none=True,
-        missing=None,
+        load_default=None,
         load_only=True,
     )
 
