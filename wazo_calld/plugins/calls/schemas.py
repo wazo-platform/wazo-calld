@@ -13,11 +13,11 @@ class CallBaseSchema(Schema):
 
 
 class CallRequestSourceSchema(CallBaseSchema):
-    from_mobile = fields.Boolean(missing=False)
+    from_mobile = fields.Boolean(load_default=False)
     line_id = fields.Integer()
-    all_lines = fields.Boolean(missing=False)
+    all_lines = fields.Boolean(load_default=False)
     user = fields.String(required=True)
-    auto_answer = fields.Boolean(missing=False)
+    auto_answer = fields.Boolean(load_default=False)
 
 
 class CallRequestDestinationSchema(CallBaseSchema):
@@ -37,21 +37,21 @@ class CallRequestSchema(CallBaseSchema):
     variables = StrictDict(
         key_field=fields.String(required=True, validate=Length(min=1)),
         value_field=fields.String(required=True, validate=Length(min=1)),
-        missing=dict,
+        load_default=dict,
     )
 
 
 class UserCallRequestSchema(CallBaseSchema):
     extension = fields.String(validate=Length(min=1), required=True)
     line_id = fields.Integer()
-    all_lines = fields.Boolean(missing=False)
-    from_mobile = fields.Boolean(missing=False)
+    all_lines = fields.Boolean(load_default=False)
+    from_mobile = fields.Boolean(load_default=False)
     variables = StrictDict(
         key_field=fields.String(required=True, validate=Length(min=1)),
         value_field=fields.String(required=True, validate=Length(min=1)),
-        missing=dict,
+        load_default=dict,
     )
-    auto_answer_caller = fields.Boolean(missing=False)
+    auto_answer_caller = fields.Boolean(load_default=False)
 
     @post_load
     def remove_extension_whitespace(self, call_request, **kwargs):
@@ -98,7 +98,7 @@ class CallSchema(CallBaseSchema):
 class ConnectCallRequestBodySchema(CallBaseSchema):
     timeout = fields.Integer(
         validate=Range(min=0),
-        missing=30,
+        load_default=30,
         allow_none=True,
     )
 
