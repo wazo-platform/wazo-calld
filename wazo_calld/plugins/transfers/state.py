@@ -1,4 +1,4 @@
-# Copyright 2016-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from __future__ import annotations
@@ -232,7 +232,7 @@ class TransferState:
         bridge = self._get_or_create_transfer_bridge()
         bridge.addChannel(channel=self.transfer.transferred_call)
         logger.debug(
-            'transferred call %s moved to bridge %s: %s',
+            'transferred call %s moved to bridge %s',
             self.transfer.transferred_call,
             bridge.id,
         )
@@ -248,7 +248,7 @@ class TransferState:
         bridge = self._get_or_create_transfer_bridge()
         bridge.addChannel(channel=self.transfer.recipient_call)
         logger.debug(
-            'recipient channel %s moved to bridge %s: %s',
+            'recipient channel %s moved to bridge %s',
             self.transfer.recipient_call,
             bridge.id,
         )
@@ -262,12 +262,11 @@ class TransferState:
             self.transfer.initiator_call,
         )
         bridge = self._get_or_create_transfer_bridge()
-        response = bridge.addChannel(channel=self.transfer.initiator_call)
+        bridge.addChannel(channel=self.transfer.initiator_call)
         logger.debug(
-            'initiator call %s moved to bridge %s: %s',
+            'initiator call %s moved to bridge %s',
             self.transfer.initiator_call,
             bridge.id,
-            response,
         )
 
     def _get_or_create_transfer_bridge(self):
