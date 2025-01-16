@@ -1,4 +1,4 @@
-# Copyright 2021-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2021-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import uuid
@@ -162,6 +162,7 @@ class TestCallRecord(RealAsteriskIntegrationTest):
         channel_id = self.given_call_not_stasis(user_uuid=user_uuid)
         other_channel_id = self.given_call_not_stasis()
         user_calld = self.make_user_calld(user_uuid, tenant_uuid=VALID_TENANT)
+        user_calld.calls.start_record_from_user(channel_id)
 
         assert_that(
             calling(user_calld.calls.stop_record_from_user).with_args(UNKNOWN_UUID),
