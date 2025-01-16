@@ -1,4 +1,4 @@
-# Copyright 2015-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from __future__ import annotations
@@ -18,6 +18,8 @@ from .http import (
     CallHoldResource,
     CallMuteStartResource,
     CallMuteStopResource,
+    CallRecordPauseResource,
+    CallRecordResumeResource,
     CallRecordStartResource,
     CallRecordStopResource,
     CallResource,
@@ -29,6 +31,8 @@ from .http import (
     MyCallHoldResource,
     MyCallMuteStartResource,
     MyCallMuteStopResource,
+    MyCallRecordPauseResource,
+    MyCallRecordResumeResource,
     MyCallRecordStartResource,
     MyCallRecordStopResource,
     MyCallResource,
@@ -113,6 +117,12 @@ class Plugin:
         api.add_resource(
             CallRecordStopResource, '/calls/<call_id>/record/stop', **kwargs
         )
+        api.add_resource(
+            CallRecordResumeResource, '/calls/<call_id>/record/resume', **kwargs
+        )
+        api.add_resource(
+            CallRecordPauseResource, '/calls/<call_id>/record/pause', **kwargs
+        )
         api.add_resource(CallAnswerResource, '/calls/<call_id>/answer', **kwargs)
         api.add_resource(MyCallResource, '/users/me/calls/<call_id>', **kwargs)
         api.add_resource(
@@ -135,6 +145,16 @@ class Plugin:
         )
         api.add_resource(
             MyCallRecordStopResource, '/users/me/calls/<call_id>/record/stop', **kwargs
+        )
+        api.add_resource(
+            MyCallRecordResumeResource,
+            '/users/me/calls/<call_id>/record/resume',
+            **kwargs,
+        )
+        api.add_resource(
+            MyCallRecordPauseResource,
+            '/users/me/calls/<call_id>/record/pause',
+            **kwargs,
         )
         api.add_resource(
             MyCallAnswerResource, '/users/me/calls/<call_id>/answer', **kwargs
