@@ -347,6 +347,7 @@ class CallsBusEventHandler:
 
     def _mix_monitor_stop(self, event):
         channel_id = event['Uniqueid']
+        # TODO change for pause?
         try:
             set_channel_id_var_sync(
                 self.ari,
