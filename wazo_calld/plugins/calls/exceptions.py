@@ -1,7 +1,17 @@
-# Copyright 2015-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from wazo_calld.exceptions import APIException
+
+
+class RecordingUnauthorized(APIException):
+    def __init__(self, call_id):
+        super().__init__(
+            status_code=403,
+            message='Recording unauthorized',
+            error_id='recording-unauthorized',
+            details={'call_id': call_id},
+        )
 
 
 class NoSuchCall(APIException):
