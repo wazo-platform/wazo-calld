@@ -19,7 +19,9 @@ class TestCallRecord(RealAsteriskIntegrationTest):
     asset = 'real_asterisk'
 
     def test_put_record_start(self):
-        channel_id = self.given_call_not_stasis()
+        channel_id = self.given_call_not_stasis(
+            variables={'WAZO_USER_DTMF_RECORD_TOGGLE_ENABLED': '1'}
+        )
         events = self.bus.accumulator(headers={'name': 'call_updated'})
 
         self.calld_client.calls.start_record(channel_id)
@@ -62,7 +64,9 @@ class TestCallRecord(RealAsteriskIntegrationTest):
 
     def test_put_record_start_from_user(self):
         user_uuid = str(uuid.uuid4())
-        channel_id = self.given_call_not_stasis(user_uuid=user_uuid)
+        channel_id = self.given_call_not_stasis(
+            user_uuid=user_uuid, variables={'WAZO_USER_DTMF_RECORD_TOGGLE_ENABLED': '1'}
+        )
         events = self.bus.accumulator(headers={'name': 'call_updated'})
         user_calld = self.make_user_calld(user_uuid, tenant_uuid=VALID_TENANT)
 
@@ -100,7 +104,9 @@ class TestCallRecord(RealAsteriskIntegrationTest):
 
     def test_put_record_start_from_user_errors(self):
         user_uuid = str(uuid.uuid4())
-        other_channel_id = self.given_call_not_stasis()
+        other_channel_id = self.given_call_not_stasis(
+            variables={'WAZO_USER_DTMF_RECORD_TOGGLE_ENABLED': '1'}
+        )
         user_calld = self.make_user_calld(user_uuid, tenant_uuid=VALID_TENANT)
 
         assert_that(
@@ -115,7 +121,9 @@ class TestCallRecord(RealAsteriskIntegrationTest):
         )
 
     def test_put_record_stop(self):
-        channel_id = self.given_call_not_stasis()
+        channel_id = self.given_call_not_stasis(
+            variables={'WAZO_USER_DTMF_RECORD_TOGGLE_ENABLED': '1'}
+        )
 
         assert_that(
             calling(self.calld_client.calls.stop_record).with_args(UNKNOWN_UUID),
@@ -159,8 +167,12 @@ class TestCallRecord(RealAsteriskIntegrationTest):
 
     def test_put_record_stop_from_user(self):
         user_uuid = str(uuid.uuid4())
-        channel_id = self.given_call_not_stasis(user_uuid=user_uuid)
-        other_channel_id = self.given_call_not_stasis()
+        channel_id = self.given_call_not_stasis(
+            user_uuid=user_uuid, variables={'WAZO_USER_DTMF_RECORD_TOGGLE_ENABLED': '1'}
+        )
+        other_channel_id = self.given_call_not_stasis(
+            variables={'WAZO_USER_DTMF_RECORD_TOGGLE_ENABLED': '1'}
+        )
         user_calld = self.make_user_calld(user_uuid, tenant_uuid=VALID_TENANT)
         user_calld.calls.start_record_from_user(channel_id)
 
@@ -232,8 +244,14 @@ class TestCallRecord(RealAsteriskIntegrationTest):
         user_uuid_1 = str(uuid.uuid4())
         tenant_uuid_1 = str(uuid.uuid4())
         tenant_uuid_2 = str(uuid.uuid4())
-        channel_id_1 = self.given_call_not_stasis(tenant_uuid=tenant_uuid_1)
-        channel_id_2 = self.given_call_not_stasis(tenant_uuid=tenant_uuid_2)
+        channel_id_1 = self.given_call_not_stasis(
+            tenant_uuid=tenant_uuid_1,
+            variables={'WAZO_USER_DTMF_RECORD_TOGGLE_ENABLED': '1'},
+        )
+        channel_id_2 = self.given_call_not_stasis(
+            tenant_uuid=tenant_uuid_2,
+            variables={'WAZO_USER_DTMF_RECORD_TOGGLE_ENABLED': '1'},
+        )
         user_calld = self.make_user_calld(user_uuid_1, tenant_uuid=tenant_uuid_1)
 
         # record channel from other tenant = NOK
