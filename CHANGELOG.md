@@ -1,5 +1,15 @@
 # Changelog
 
+## 25.02
+
+* The following endpoints can now return a `403` when call recording is
+  not enabled on the user or the queue
+
+  * `PUT /1.0/users/me/calls/<call_id>/record/start`
+  * `PUT /1.0/users/me/calls/<call_id>/record/stop`
+  * `PUT /1.0/calls/<call_id>/record/start`
+  * `PUT /1.0/calls/<call_id>/record/stop`
+
 ## 24.16
 
 * The following endpoints are not marking a voicemail message as read anymore when accessed:
