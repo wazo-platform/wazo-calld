@@ -195,6 +195,10 @@ paths:
       responses:
         '204':
           description: Recording has started for the call
+        '403':
+          description: On demand call recording is not enabled
+          schema:
+            $ref: '#/definitions/Error'
         '404':
           description: No such call
           schema:
@@ -213,6 +217,10 @@ paths:
       responses:
         '204':
           description: Recording has stopped for the call
+        '403':
+          description: On demand call recording is not enabled
+          schema:
+            $ref: '#/definitions/Error'
         '404':
           description: No such call
           schema:
@@ -468,6 +476,10 @@ paths:
       responses:
         '204':
           description: Recording has started for the call
+        '403':
+          description: On demand call recording is not enabled
+          schema:
+            $ref: '#/definitions/Error'
         '404':
           description: No such call
           schema:
@@ -486,6 +498,10 @@ paths:
       responses:
         '204':
           description: Recording has stopped for the call
+        '403':
+          description: On demand call recording is not enabled
+          schema:
+            $ref: '#/definitions/Error'
         '404':
           description: No such call
           schema:
