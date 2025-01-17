@@ -62,6 +62,35 @@ class TestCallRecord(RealAsteriskIntegrationTest):
             raises(CalldError).matching(has_properties(status_code=404)),
         )
 
+        # No user permission
+        channel_id = self.given_call_not_stasis()
+        assert_that(
+            calling(self.calld_client.calls.start_record).with_args(channel_id),
+            raises(CalldError).matching(has_properties(status_code=403)),
+        )
+
+        # No queue permission
+        channel_id = self.given_call_not_stasis(
+            variables={'WAZO_QUEUENAME': 'q', 'WAZO_CALL_RECORD_SIDE': ''}
+        )
+        assert_that(
+            calling(self.calld_client.calls.start_record).with_args(channel_id),
+            raises(CalldError).matching(has_properties(status_code=403)),
+        )
+
+        # Queue permission but no user permission for caller
+        channel_id = self.given_call_not_stasis(
+            variables={
+                'WAZO_QUEUENAME': 'q',
+                'WAZO_CALL_RECORD_SIDE': 'caller',
+                'WAZO_QUEUE_DTMF_RECORD_TOGGLE_ENABLED': '1',
+            }
+        )
+        assert_that(
+            calling(self.calld_client.calls.start_record).with_args(channel_id),
+            raises(CalldError).matching(has_properties(status_code=403)),
+        )
+
     def test_put_record_start_from_user(self):
         user_uuid = str(uuid.uuid4())
         channel_id = self.given_call_not_stasis(
