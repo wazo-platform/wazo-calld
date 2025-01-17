@@ -3,7 +3,7 @@
 ## 25.02
 
 * The following endpoints can now return a `403` when call recording is
-  not enabled on the user or the queue
+  not enabled on the user, the queue or the group
 
   * `PUT /1.0/users/me/calls/<call_id>/record/start`
   * `PUT /1.0/users/me/calls/<call_id>/record/stop`
