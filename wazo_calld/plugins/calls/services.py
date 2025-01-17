@@ -679,23 +679,32 @@ class CallsService:
         cv = channel.json['channelvars']
 
         is_queue_call = cv['WAZO_QUEUENAME'] != ''
+        is_group_call = cv['WAZO_GROUPNAME'] != ''
         is_callee = cv['WAZO_CALL_RECORD_SIDE'] != 'caller'
 
         queue_record_toggle_enabled = cv['WAZO_QUEUE_DTMF_RECORD_TOGGLE_ENABLED'] == '1'
+        group_record_toggle_enabled = cv['WAZO_GROUP_DTMF_RECORD_TOGGLE_ENABLED'] == '1'
         user_record_toggle_enabled = cv['WAZO_USER_DTMF_RECORD_TOGGLE_ENABLED'] == '1'
 
         logger.debug(
-            'toggle record allowed?: is_queue_call: %s, is_callee: %s, queue_record_toggle_enabled: %s, user_record_toggle_enabled: %s',
+            'toggle_record_allowed source: is_group_call: %s, is_queue_call: %s, is_callee: %s',
+            is_group_call,
             is_queue_call,
             is_callee,
+        )
+        logger.debug(
+            'toggle record allowed options: group_record_toggle_enabled: %s, queue_record_toggle_enabled: %s, user_record_toggle_enabled: %s',
+            group_record_toggle_enabled,
             queue_record_toggle_enabled,
             user_record_toggle_enabled,
         )
 
         if is_queue_call and is_callee:
             return queue_record_toggle_enabled
-
-        return user_record_toggle_enabled
+        elif is_group_call and is_callee:
+            return group_record_toggle_enabled
+        else:
+            return user_record_toggle_enabled
 
     def record_start(self, tenant_uuid, call_id):
         channel_id = call_id
