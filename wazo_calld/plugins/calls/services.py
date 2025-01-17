@@ -684,6 +684,14 @@ class CallsService:
         queue_record_toggle_enabled = cv['WAZO_QUEUE_DTMF_RECORD_TOGGLE_ENABLED'] == '1'
         user_record_toggle_enabled = cv['WAZO_USER_DTMF_RECORD_TOGGLE_ENABLED'] == '1'
 
+        logger.debug(
+            'toggle record allowed?: is_queue_call: %s, is_callee: %s, queue_record_toggle_enabled: %s, user_record_toggle_enabled: %s',
+            is_queue_call,
+            is_callee,
+            queue_record_toggle_enabled,
+            user_record_toggle_enabled,
+        )
+
         if is_queue_call and is_callee:
             return queue_record_toggle_enabled
 
