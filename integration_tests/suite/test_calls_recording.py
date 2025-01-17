@@ -164,6 +164,27 @@ class TestCallRecord(RealAsteriskIntegrationTest):
         user_calld = self.make_user_calld(user_uuid, tenant_uuid=VALID_TENANT)
         user_calld.calls.start_record_from_user(channel_id)
 
+        events = self.bus.accumulator(headers={'name': 'call_updated'})
+
+        def recording_started():
+            assert_that(
+                events.accumulate(with_headers=True),
+                has_items(
+                    has_entries(
+                        message=has_entries(
+                            name='call_updated',
+                            data=has_entries(call_id=channel_id, record_state='active'),
+                        ),
+                        headers=has_entries(
+                            name='call_updated',
+                            tenant_uuid=VALID_TENANT,
+                        ),
+                    )
+                ),
+            )
+
+        until.assert_(recording_started, tries=10)
+
         assert_that(
             calling(user_calld.calls.stop_record_from_user).with_args(UNKNOWN_UUID),
             raises(CalldError).matching(has_properties(status_code=404)),
@@ -172,8 +193,6 @@ class TestCallRecord(RealAsteriskIntegrationTest):
             calling(user_calld.calls.stop_record_from_user).with_args(other_channel_id),
             raises(CalldError).matching(has_properties(status_code=403)),
         )
-
-        events = self.bus.accumulator(headers={'name': 'call_updated'})
 
         user_calld.calls.stop_record_from_user(channel_id)
 
