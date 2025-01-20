@@ -1,4 +1,4 @@
-# Copyright 2015-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import datetime
@@ -446,6 +446,7 @@ class CallsService:
         call.muted = channel_helper.muted()
         call.parked = channel_helper.parked()
         call.record_state = (
+            # TODO pause state
             'active'
             if channel_variables.get('WAZO_CALL_RECORD_ACTIVE') == '1'
             else 'inactive'
@@ -687,9 +688,18 @@ class CallsService:
         if channel_variables['WAZO_CALL_RECORD_ACTIVE'] == '1':
             return
 
+        recording_uuid = str(uuid.uuid4())
         filename = CALL_RECORDING_FILENAME_TEMPLATE.format(
             tenant_uuid=channel_variables['WAZO_TENANT_UUID'],
-            recording_uuid=str(uuid.uuid4()),
+            recording_uuid=recording_uuid,
+        )
+
+        set_channel_id_var_sync(
+            self._ari,
+            channel_id,
+            'WAZO_RECORDING_UUID',
+            recording_uuid,
+            bypass_stasis=True
         )
 
         try:
@@ -700,6 +710,7 @@ class CallsService:
             mix_monitor_options = None
 
         ami.record_start(self._ami, channel.id, filename, mix_monitor_options or None)
+        # TODO send event recording_started
 
     def record_start_user(self, tenant_uuid, call_id, user_uuid):
         self._verify_user(call_id, user_uuid)
@@ -722,10 +733,94 @@ class CallsService:
             return
 
         ami.record_stop(self._ami, channel_id)
+        # TODO send event recording_stopped
 
     def record_stop_user(self, tenant_uuid, call_id, user_uuid):
         self._verify_user(call_id, user_uuid)
         self.record_stop(tenant_uuid, call_id)
+
+    def record_pause(self, tenant_uuid, call_id):
+        channel_id = call_id
+
+        channel_helper = Channel(channel_id, self._ari)
+        if tenant_uuid and channel_helper.tenant_uuid() != tenant_uuid:
+            raise NoSuchCall(call_id)
+
+        try:
+            channel = self._ari.channels.get(channelId=channel_id)
+        except ARINotFound:
+            raise NoSuchCall(call_id)
+
+        call_record_active = channel.json['channelvars'].get('WAZO_CALL_RECORD_ACTIVE')
+        if not call_record_active or call_record_active == '0':
+            return
+
+        call_recording_paused = channel.json['channelvars'].get('WAZO_RECORDING_PAUSED')
+        if call_recording_paused and call_recording_paused == '1':
+            return
+
+        set_channel_id_var_sync(
+            self._ari,
+            channel_id,
+            'WAZO_RECORDING_PAUSED',
+            '1',
+            bypass_stasis=True
+        )
+
+        ami.record_stop(self._ami, channel_id)
+        # TODO send event recording_paused
+
+    def record_pause_user(self, tenant_uuid, call_id, user_uuid):
+        self._verify_user(call_id, user_uuid)
+        self.record_pause(tenant_uuid, call_id)
+
+    def record_resume(self, tenant_uuid, call_id):
+        channel_id = call_id
+
+        channel_helper = Channel(channel_id, self._ari)
+        if tenant_uuid and channel_helper.tenant_uuid() != tenant_uuid:
+            raise NoSuchCall(call_id)
+
+        channel = self._find_channel_to_record(channel_id)
+        channel_variables: dict = channel.json['channelvars']
+
+        recording_paused = channel_variables.get('WAZO_RECORDING_PAUSED')
+        if not recording_paused or recording_paused == '0':
+            # XXX raise?
+            return
+
+        if channel_variables.get('WAZO_RECORDING_PAUSED') == '1':
+            set_channel_id_var_sync(
+                self._ari,
+                channel_id,
+                'WAZO_RECORDING_PAUSED',
+                '0',
+                bypass_stasis=True
+            )
+
+        if not channel_variables.get('WAZO_RECORDING_UUID'):
+            # XXX raise?
+            return
+
+        recording_uuid = channel_variables['WAZO_RECORDING_UUID']
+        filename = CALL_RECORDING_FILENAME_TEMPLATE.format(
+            tenant_uuid=channel_variables['WAZO_TENANT_UUID'],
+            recording_uuid=recording_uuid,
+        )
+
+        try:
+            mix_monitor_options = channel.getChannelVar(
+                variable='WAZO_MIXMONITOR_OPTIONS'
+            )['value']
+        except ARINotFound:
+            mix_monitor_options = None
+
+        ami.record_resume(self._ami, channel.id, filename, mix_monitor_options or None)
+        # TODO send event recording resumed
+
+    def record_resume_user(self, tenant_uuid, call_id, user_uuid):
+        self._verify_user(call_id, user_uuid)
+        self.record_resume(tenant_uuid, call_id)
 
     def answer(self, tenant_uuid, call_id):
         channel_id = call_id
