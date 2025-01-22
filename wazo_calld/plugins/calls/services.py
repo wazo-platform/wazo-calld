@@ -1,4 +1,4 @@
-# Copyright 2015-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import datetime
@@ -27,6 +27,7 @@ from .exceptions import (
     CallCreationError,
     CallOriginUnavailableError,
     NoSuchCall,
+    RecordingUnauthorized,
 )
 from .state_persistor import ReadOnlyStatePersistor
 
@@ -674,6 +675,28 @@ class CallsService:
 
         return channel
 
+    def _toggle_record_allowed(self, channel):
+        cv = channel.json['channelvars']
+
+        is_queue_call = cv['WAZO_QUEUENAME'] != ''
+        is_callee = cv['WAZO_CALL_RECORD_SIDE'] != 'caller'
+
+        queue_record_toggle_enabled = cv['WAZO_QUEUE_DTMF_RECORD_TOGGLE_ENABLED'] == '1'
+        user_record_toggle_enabled = cv['WAZO_USER_DTMF_RECORD_TOGGLE_ENABLED'] == '1'
+
+        logger.debug(
+            'toggle record allowed?: is_queue_call: %s, is_callee: %s, queue_record_toggle_enabled: %s, user_record_toggle_enabled: %s',
+            is_queue_call,
+            is_callee,
+            queue_record_toggle_enabled,
+            user_record_toggle_enabled,
+        )
+
+        if is_queue_call and is_callee:
+            return queue_record_toggle_enabled
+
+        return user_record_toggle_enabled
+
     def record_start(self, tenant_uuid, call_id):
         channel_id = call_id
 
@@ -686,6 +709,9 @@ class CallsService:
 
         if channel_variables['WAZO_CALL_RECORD_ACTIVE'] == '1':
             return
+
+        if not self._toggle_record_allowed(channel):
+            raise RecordingUnauthorized(call_id)
 
         filename = CALL_RECORDING_FILENAME_TEMPLATE.format(
             tenant_uuid=channel_variables['WAZO_TENANT_UUID'],
@@ -716,6 +742,9 @@ class CallsService:
             channel = self._ari.channels.get(channelId=channel_id)
         except ARINotFound:
             raise NoSuchCall(call_id)
+
+        if not self._toggle_record_allowed(channel):
+            raise RecordingUnauthorized(call_id)
 
         call_record_active = channel.json['channelvars'].get('WAZO_CALL_RECORD_ACTIVE')
         if not call_record_active or call_record_active == '0':

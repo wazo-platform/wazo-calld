@@ -18,8 +18,52 @@ UNKNOWN_UUID = '00000000-0000-0000-0000-000000000000'
 class TestCallRecord(RealAsteriskIntegrationTest):
     asset = 'real_asterisk'
 
-    def test_put_record_start(self):
-        channel_id = self.given_call_not_stasis()
+    def test_put_record_start_user_allowed(self):
+        channel_id = self.given_call_not_stasis(
+            variables={'WAZO_USER_DTMF_RECORD_TOGGLE_ENABLED': '1'}
+        )
+        events = self.bus.accumulator(headers={'name': 'call_updated'})
+
+        self.calld_client.calls.start_record(channel_id)
+
+        def event_received():
+            assert_that(
+                events.accumulate(with_headers=True),
+                has_items(
+                    has_entries(
+                        message=has_entries(
+                            name='call_updated',
+                            data=has_entries(call_id=channel_id, record_state='active'),
+                        ),
+                        headers=has_entries(
+                            name='call_updated',
+                            tenant_uuid=VALID_TENANT,
+                        ),
+                    )
+                ),
+            )
+
+        until.assert_(event_received, tries=10)
+
+        assert_that(
+            self.calld_client.calls.list_calls()['items'],
+            has_items(has_entries(call_id=channel_id, record_state='active')),
+        )
+
+        # Should not raise an error on second record start
+        assert_that(
+            calling(self.calld_client.calls.start_record).with_args(channel_id),
+            not_(raises(CalldError)),
+        )
+
+    def test_put_record_start_queue_allowed(self):
+        channel_id = self.given_call_not_stasis(
+            variables={
+                'WAZO_QUEUE_DTMF_RECORD_TOGGLE_ENABLED': '1',
+                'WAZO_QUEUENAME': 'q',
+                'WAZO_CALL_RECORD_SIDE': '',  # callee
+            },
+        )
         events = self.bus.accumulator(headers={'name': 'call_updated'})
 
         self.calld_client.calls.start_record(channel_id)
@@ -60,9 +104,40 @@ class TestCallRecord(RealAsteriskIntegrationTest):
             raises(CalldError).matching(has_properties(status_code=404)),
         )
 
+        # No user permission
+        channel_id = self.given_call_not_stasis()
+        assert_that(
+            calling(self.calld_client.calls.start_record).with_args(channel_id),
+            raises(CalldError).matching(has_properties(status_code=403)),
+        )
+
+        # No queue permission
+        channel_id = self.given_call_not_stasis(
+            variables={'WAZO_QUEUENAME': 'q', 'WAZO_CALL_RECORD_SIDE': ''}
+        )
+        assert_that(
+            calling(self.calld_client.calls.start_record).with_args(channel_id),
+            raises(CalldError).matching(has_properties(status_code=403)),
+        )
+
+        # Queue permission but no user permission for caller
+        channel_id = self.given_call_not_stasis(
+            variables={
+                'WAZO_QUEUENAME': 'q',
+                'WAZO_CALL_RECORD_SIDE': 'caller',
+                'WAZO_QUEUE_DTMF_RECORD_TOGGLE_ENABLED': '1',
+            }
+        )
+        assert_that(
+            calling(self.calld_client.calls.start_record).with_args(channel_id),
+            raises(CalldError).matching(has_properties(status_code=403)),
+        )
+
     def test_put_record_start_from_user(self):
         user_uuid = str(uuid.uuid4())
-        channel_id = self.given_call_not_stasis(user_uuid=user_uuid)
+        channel_id = self.given_call_not_stasis(
+            user_uuid=user_uuid, variables={'WAZO_USER_DTMF_RECORD_TOGGLE_ENABLED': '1'}
+        )
         events = self.bus.accumulator(headers={'name': 'call_updated'})
         user_calld = self.make_user_calld(user_uuid, tenant_uuid=VALID_TENANT)
 
@@ -100,7 +175,9 @@ class TestCallRecord(RealAsteriskIntegrationTest):
 
     def test_put_record_start_from_user_errors(self):
         user_uuid = str(uuid.uuid4())
-        other_channel_id = self.given_call_not_stasis()
+        other_channel_id = self.given_call_not_stasis(
+            variables={'WAZO_USER_DTMF_RECORD_TOGGLE_ENABLED': '1'}
+        )
         user_calld = self.make_user_calld(user_uuid, tenant_uuid=VALID_TENANT)
 
         assert_that(
@@ -114,8 +191,59 @@ class TestCallRecord(RealAsteriskIntegrationTest):
             raises(CalldError).matching(has_properties(status_code=403)),
         )
 
-    def test_put_record_stop(self):
-        channel_id = self.given_call_not_stasis()
+    def test_put_record_stop_user_allowed(self):
+        channel_id = self.given_call_not_stasis(
+            variables={'WAZO_USER_DTMF_RECORD_TOGGLE_ENABLED': '1'}
+        )
+
+        assert_that(
+            calling(self.calld_client.calls.stop_record).with_args(UNKNOWN_UUID),
+            raises(CalldError).matching(has_properties(status_code=404)),
+        )
+        events = self.bus.accumulator(headers={'name': 'call_updated'})
+
+        self.calld_client.calls.stop_record(channel_id)
+
+        def event_received():
+            assert_that(
+                events.accumulate(with_headers=True),
+                has_items(
+                    has_entries(
+                        message=has_entries(
+                            name='call_updated',
+                            data=has_entries(
+                                call_id=channel_id, record_state='inactive'
+                            ),
+                        ),
+                        headers=has_entries(
+                            name='call_updated',
+                            tenant_uuid=VALID_TENANT,
+                        ),
+                    )
+                ),
+            )
+
+        until.assert_(event_received, tries=10)
+
+        assert_that(
+            self.calld_client.calls.list_calls()['items'],
+            has_items(has_entries(call_id=channel_id, record_state='inactive')),
+        )
+
+        # Should not raise an error on second record stop
+        assert_that(
+            calling(self.calld_client.calls.stop_record).with_args(channel_id),
+            not_(raises(CalldError)),
+        )
+
+    def test_put_record_stop_queue_allowed(self):
+        channel_id = self.given_call_not_stasis(
+            variables={
+                'WAZO_QUEUE_DTMF_RECORD_TOGGLE_ENABLED': '1',
+                'WAZO_QUEUENAME': 'q',
+                'WAZO_CALL_RECORD_SIDE': '',  # callee
+            },
+        )
 
         assert_that(
             calling(self.calld_client.calls.stop_record).with_args(UNKNOWN_UUID),
@@ -159,8 +287,12 @@ class TestCallRecord(RealAsteriskIntegrationTest):
 
     def test_put_record_stop_from_user(self):
         user_uuid = str(uuid.uuid4())
-        channel_id = self.given_call_not_stasis(user_uuid=user_uuid)
-        other_channel_id = self.given_call_not_stasis()
+        channel_id = self.given_call_not_stasis(
+            user_uuid=user_uuid, variables={'WAZO_USER_DTMF_RECORD_TOGGLE_ENABLED': '1'}
+        )
+        other_channel_id = self.given_call_not_stasis(
+            variables={'WAZO_USER_DTMF_RECORD_TOGGLE_ENABLED': '1'}
+        )
         user_calld = self.make_user_calld(user_uuid, tenant_uuid=VALID_TENANT)
         user_calld.calls.start_record_from_user(channel_id)
 
@@ -232,8 +364,14 @@ class TestCallRecord(RealAsteriskIntegrationTest):
         user_uuid_1 = str(uuid.uuid4())
         tenant_uuid_1 = str(uuid.uuid4())
         tenant_uuid_2 = str(uuid.uuid4())
-        channel_id_1 = self.given_call_not_stasis(tenant_uuid=tenant_uuid_1)
-        channel_id_2 = self.given_call_not_stasis(tenant_uuid=tenant_uuid_2)
+        channel_id_1 = self.given_call_not_stasis(
+            tenant_uuid=tenant_uuid_1,
+            variables={'WAZO_USER_DTMF_RECORD_TOGGLE_ENABLED': '1'},
+        )
+        channel_id_2 = self.given_call_not_stasis(
+            tenant_uuid=tenant_uuid_2,
+            variables={'WAZO_USER_DTMF_RECORD_TOGGLE_ENABLED': '1'},
+        )
         user_calld = self.make_user_calld(user_uuid_1, tenant_uuid=tenant_uuid_1)
 
         # record channel from other tenant = NOK
