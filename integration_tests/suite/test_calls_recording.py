@@ -550,8 +550,12 @@ class TestCallRecord(RealAsteriskIntegrationTest):
         user_calld.calls.start_record_from_user(channel_id)
 
         call_events = self.bus.accumulator(headers={'name': 'call_updated'})
-        recording_started_events = self.bus.accumulator(headers={'name': 'recording_started'})
-        recording_stopped_events = self.bus.accumulator(headers={'name': 'recording_stopped'})
+        recording_started_events = self.bus.accumulator(
+            headers={'name': 'recording_started'}
+        )
+        recording_stopped_events = self.bus.accumulator(
+            headers={'name': 'recording_stopped'}
+        )
 
         def recording_started():
             assert_that(
@@ -658,8 +662,12 @@ class TestCallRecord(RealAsteriskIntegrationTest):
             variables={'WAZO_USER_DTMF_RECORD_TOGGLE_ENABLED': '1'}
         )
         call_events = self.bus.accumulator(headers={'name': 'call_updated'})
-        recording_started_events = self.bus.accumulator(headers={'name': 'recording_started'})
-        recording_paused_events = self.bus.accumulator(headers={'name': 'recording_paused'})
+        recording_started_events = self.bus.accumulator(
+            headers={'name': 'recording_started'}
+        )
+        recording_paused_events = self.bus.accumulator(
+            headers={'name': 'recording_paused'}
+        )
 
         self.calld_client.calls.start_record(channel_id)
 
@@ -761,12 +769,15 @@ class TestCallRecord(RealAsteriskIntegrationTest):
     def test_put_record_pause_from_user(self):
         user_uuid = str(uuid.uuid4())
         channel_id = self.given_call_not_stasis(
-            user_uuid=user_uuid,
-            variables={'WAZO_USER_DTMF_RECORD_TOGGLE_ENABLED': '1'}
+            user_uuid=user_uuid, variables={'WAZO_USER_DTMF_RECORD_TOGGLE_ENABLED': '1'}
         )
         call_events = self.bus.accumulator(headers={'name': 'call_updated'})
-        recording_paused_events = self.bus.accumulator(headers={'name': 'recording_paused'})
-        recording_started_events = self.bus.accumulator(headers={'name': 'recording_started'})
+        recording_paused_events = self.bus.accumulator(
+            headers={'name': 'recording_paused'}
+        )
+        recording_started_events = self.bus.accumulator(
+            headers={'name': 'recording_started'}
+        )
         user_calld = self.make_user_calld(user_uuid, tenant_uuid=VALID_TENANT)
 
         user_calld.calls.start_record_from_user(channel_id)
