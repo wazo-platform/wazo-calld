@@ -759,7 +759,8 @@ class CallsService:
             mix_monitor_options = None
 
         ami.record_start(self._ami, channel.id, filename, mix_monitor_options or None)
-        # TODO send event recording_started
+        call = self.make_call_from_channel(self._ari, channel)
+        self._notifier.call_record_started(call)
 
     def record_start_user(self, tenant_uuid, call_id, user_uuid):
         self._verify_user(call_id, user_uuid)
@@ -785,7 +786,8 @@ class CallsService:
             return
 
         ami.record_stop(self._ami, channel_id)
-        # TODO send event recording_stopped
+        call = self.make_call_from_channel(self._ari, channel)
+        self._notifier.call_record_stopped(call)
 
     def record_stop_user(self, tenant_uuid, call_id, user_uuid):
         self._verify_user(call_id, user_uuid)
