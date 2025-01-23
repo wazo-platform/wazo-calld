@@ -447,8 +447,10 @@ class CallsService:
         call.muted = channel_helper.muted()
         call.parked = channel_helper.parked()
         call.record_state = (
-            'paused' if channel_variables.get('WAZO_RECORDING_PAUSED') == '1'
-            else 'active' if channel_variables.get('WAZO_CALL_RECORD_ACTIVE') == '1'
+            'paused'
+            if channel_variables.get('WAZO_RECORDING_PAUSED') == '1'
+            else 'active'
+            if channel_variables.get('WAZO_CALL_RECORD_ACTIVE') == '1'
             else 'inactive'
         )
         call.bridges = [
