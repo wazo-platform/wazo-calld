@@ -9,11 +9,11 @@ from wazo_bus.resources.calls.event import (
     CallDTMFEvent,
     CallEndedEvent,
     CallHeldEvent,
-    CallResumedEvent,
     CallRecordPausedEvent,
     CallRecordResumedEvent,
     CallRecordStartedEvent,
     CallRecordStoppedEvent,
+    CallResumedEvent,
     CallUpdatedEvent,
     MissedCallEvent,
 )
@@ -66,17 +66,21 @@ class CallNotifier:
         self._bus.publish(event)
 
     def call_record_paused(self, call):
-        event = CallRecordPausedEvent(call.id_, call.tenant_uuid, call.user_uuid)
+        payload = {"call_id": call.id_}
+        event = CallRecordPausedEvent(payload, call.tenant_uuid, call.user_uuid)
         self._bus.publish(event)
 
     def call_record_resumed(self, call):
-        event = CallRecordResumedEvent(call.id_, call.tenant_uuid, call.user_uuid)
+        payload = {"call_id": call.id_}
+        event = CallRecordResumedEvent(payload, call.tenant_uuid, call.user_uuid)
         self._bus.publish(event)
 
     def call_record_started(self, call):
-        event = CallRecordStartedEvent(call.id_, call.tenant_uuid, call.user_uuid)
+        payload = {"call_id": call.id_}
+        event = CallRecordStartedEvent(payload, call.tenant_uuid, call.user_uuid)
         self._bus.publish(event)
 
     def call_record_stopped(self, call):
-        event = CallRecordStoppedEvent(call.id_, call.tenant_uuid, call.user_uuid)
+        payload = {"call_id": call.id_}
+        event = CallRecordStoppedEvent(payload, call.tenant_uuid, call.user_uuid)
         self._bus.publish(event)
