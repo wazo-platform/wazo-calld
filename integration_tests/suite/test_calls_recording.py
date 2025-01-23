@@ -1501,7 +1501,7 @@ class TestCallRecord(RealAsteriskIntegrationTest):
         tenant_uuid = tenant_uuid or VALID_TENANT
         variables = variables or {}
         variables.setdefault('WAZO_USERUUID', user_uuid)
-        variables.setdefault('WAZO_TENANT_UUID', tenant_uuid)
+        variables.setdefault('__WAZO_TENANT_UUID', tenant_uuid)
         variables.setdefault('WAZO_CALL_RECORD_SIDE', 'caller')
         call = self.ari.channels.originate(
             endpoint=ENDPOINT_AUTOANSWER,
