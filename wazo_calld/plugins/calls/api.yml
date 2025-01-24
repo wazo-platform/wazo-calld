@@ -227,6 +227,50 @@ paths:
             $ref: '#/definitions/Error'
         '503':
           $ref: '#/responses/AnotherServiceUnavailable'
+  /calls/{call_id}/record/pause:
+    put:
+      summary: Pause recording a call
+      description: '**Required ACL:** `calld.calls.{call_id}.record.pause.update`'
+      parameters:
+      - $ref: '#/parameters/TenantUUID'
+      - $ref: '#/parameters/CallID'
+      tags:
+      - calls
+      responses:
+        '204':
+          description: Recording has paused for the call
+        '403':
+          description: On demand call recording is not enabled
+          schema:
+            $ref: '#/definitions/Error'
+        '404':
+          description: No such call
+          schema:
+            $ref: '#/definitions/Error'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+  /calls/{call_id}/record/resume:
+    put:
+      summary: Resume recording a call
+      description: '**Required ACL:** `calld.calls.{call_id}.record.resume.update`'
+      parameters:
+      - $ref: '#/parameters/TenantUUID'
+      - $ref: '#/parameters/CallID'
+      tags:
+      - calls
+      responses:
+        '204':
+          description: Recording has resumed for the call
+        '403':
+          description: On demand call recording is not enabled
+          schema:
+            $ref: '#/definitions/Error'
+        '404':
+          description: No such call
+          schema:
+            $ref: '#/definitions/Error'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
   /calls/{call_id}/answer:
     put:
       summary: Answer a call
@@ -498,6 +542,50 @@ paths:
       responses:
         '204':
           description: Recording has stopped for the call
+        '403':
+          description: On demand call recording is not enabled
+          schema:
+            $ref: '#/definitions/Error'
+        '404':
+          description: No such call
+          schema:
+            $ref: '#/definitions/Error'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+  /users/me/calls/{call_id}/record/pause:
+    put:
+      summary: Pause recording a call
+      description: '**Required ACL:** `calld.calls.{call_id}.record.pause.update`'
+      parameters:
+      - $ref: '#/parameters/CallID'
+      tags:
+      - calls
+      - users
+      responses:
+        '204':
+          description: Recording has paused for the call
+        '403':
+          description: On demand call recording is not enabled
+          schema:
+            $ref: '#/definitions/Error'
+        '404':
+          description: No such call
+          schema:
+            $ref: '#/definitions/Error'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+  /users/me/calls/{call_id}/record/resume:
+    put:
+      summary: Resume recording a call
+      description: '**Required ACL:** `calld.calls.{call_id}.record.resume.update`'
+      parameters:
+      - $ref: '#/parameters/CallID'
+      tags:
+      - calls
+      - users
+      responses:
+        '204':
+          description: Recording has resumed for the call
         '403':
           description: On demand call recording is not enabled
           schema:
