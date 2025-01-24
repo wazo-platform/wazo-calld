@@ -27,6 +27,7 @@ from .exceptions import (
     CallCreationError,
     CallOriginUnavailableError,
     NoSuchCall,
+    RecordingNotStarted,
     RecordingUnauthorized,
 )
 from .state_persistor import ReadOnlyStatePersistor
@@ -797,8 +798,7 @@ class CallsService:
 
         call_record_active = channel.json['channelvars'].get('WAZO_CALL_RECORD_ACTIVE')
         if not call_record_active or call_record_active == '0':
-            # XXX raise 400
-            return
+            raise RecordingNotStarted(call_id)
 
         call_recording_paused = channel.json['channelvars'].get('WAZO_RECORDING_PAUSED')
         if call_recording_paused and call_recording_paused == '1':
@@ -824,21 +824,27 @@ class CallsService:
             raise NoSuchCall(call_id)
 
         channel = self._find_channel_to_record(channel_id)
+
+        if not self._toggle_record_allowed(channel):
+            raise RecordingUnauthorized(call_id)
+
         channel_variables: dict = channel.json['channelvars']
+
+        call_record_active = channel_variables.get('WAZO_CALL_RECORD_ACTIVE')
+        if not call_record_active or call_record_active == '0':
+            raise RecordingNotStarted(call_id)
 
         recording_paused = channel_variables.get('WAZO_RECORDING_PAUSED')
         if not recording_paused or recording_paused == '0':
-            # XXX raise?
+            return
+
+        if not channel_variables.get('WAZO_RECORDING_UUID'):
             return
 
         if channel_variables.get('WAZO_RECORDING_PAUSED') == '1':
             set_channel_id_var_sync(
                 self._ari, channel_id, 'WAZO_RECORDING_PAUSED', '0', bypass_stasis=True
             )
-
-        if not channel_variables.get('WAZO_RECORDING_UUID'):
-            # XXX raise?
-            return
 
         recording_uuid = channel_variables['WAZO_RECORDING_UUID']
         filename = CALL_RECORDING_FILENAME_TEMPLATE.format(

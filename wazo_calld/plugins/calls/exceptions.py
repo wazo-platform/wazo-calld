@@ -14,6 +14,16 @@ class RecordingUnauthorized(APIException):
         )
 
 
+class RecordingNotStarted(APIException):
+    def __init__(self, call_id):
+        super().__init__(
+            status_code=400,
+            message='Recording not started',
+            error_id='recording-not-started',
+            details={'call_id': call_id},
+        )
+
+
 class NoSuchCall(APIException):
     def __init__(self, call_id):
         super().__init__(

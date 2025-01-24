@@ -1,4 +1,4 @@
-# Copyright 2016-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -347,18 +347,18 @@ class CallsBusEventHandler:
 
     def _mix_monitor_stop(self, event):
         channel_id = event['Uniqueid']
-        # TODO change for pause?
-        try:
-            set_channel_id_var_sync(
-                self.ari,
-                channel_id,
-                'WAZO_CALL_RECORD_ACTIVE',
-                '0',
-                bypass_stasis=True,
-            )
-        except ARINotFound:
-            logger.debug('channel %s not found', channel_id)
-            return
+        if not event['ChanVariable']['WAZO_RECORDING_PAUSED'] == '1':
+            try:
+                set_channel_id_var_sync(
+                    self.ari,
+                    channel_id,
+                    'WAZO_CALL_RECORD_ACTIVE',
+                    '0',
+                    bypass_stasis=True,
+                )
+            except ARINotFound:
+                logger.debug('channel %s not found', channel_id)
+                return
         self._relay_channel_updated(event)
 
     def _pickup_occurred(self, event):
