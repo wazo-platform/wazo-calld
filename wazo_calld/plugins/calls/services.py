@@ -792,8 +792,12 @@ class CallsService:
         except ARINotFound:
             raise NoSuchCall(call_id)
 
+        if not self._toggle_record_allowed(channel):
+            raise RecordingUnauthorized(call_id)
+
         call_record_active = channel.json['channelvars'].get('WAZO_CALL_RECORD_ACTIVE')
         if not call_record_active or call_record_active == '0':
+            # XXX raise 400
             return
 
         call_recording_paused = channel.json['channelvars'].get('WAZO_RECORDING_PAUSED')
