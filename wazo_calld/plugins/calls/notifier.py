@@ -1,4 +1,4 @@
-# Copyright 2020-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2020-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -9,6 +9,10 @@ from wazo_bus.resources.calls.event import (
     CallDTMFEvent,
     CallEndedEvent,
     CallHeldEvent,
+    CallRecordPausedEvent,
+    CallRecordResumedEvent,
+    CallRecordStartedEvent,
+    CallRecordStoppedEvent,
     CallResumedEvent,
     CallUpdatedEvent,
     MissedCallEvent,
@@ -59,4 +63,24 @@ class CallNotifier:
     def user_missed_call(self, payload):
         tenant_uuid = payload.pop('tenant_uuid')
         event = MissedCallEvent(payload, tenant_uuid, payload['user_uuid'])
+        self._bus.publish(event)
+
+    def call_record_paused(self, call):
+        payload = {"call_id": call.id_}
+        event = CallRecordPausedEvent(payload, call.tenant_uuid, call.user_uuid)
+        self._bus.publish(event)
+
+    def call_record_resumed(self, call):
+        payload = {"call_id": call.id_}
+        event = CallRecordResumedEvent(payload, call.tenant_uuid, call.user_uuid)
+        self._bus.publish(event)
+
+    def call_record_started(self, call):
+        payload = {"call_id": call.id_}
+        event = CallRecordStartedEvent(payload, call.tenant_uuid, call.user_uuid)
+        self._bus.publish(event)
+
+    def call_record_stopped(self, call):
+        payload = {"call_id": call.id_}
+        event = CallRecordStoppedEvent(payload, call.tenant_uuid, call.user_uuid)
         self._bus.publish(event)

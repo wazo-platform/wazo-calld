@@ -1,4 +1,4 @@
-# Copyright 2015-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from flask import request
@@ -81,7 +81,7 @@ class MyCallsResource(AuthResource):
 
 
 class CallResource(AuthResource):
-    def __init__(self, calls_service):
+    def __init__(self, calls_service: CallsService):
         self.calls_service = calls_service
 
     @required_acl('calld.calls.{call_id}.read')
@@ -273,6 +273,52 @@ class MyCallRecordStartResource(AuthResource):
         tenant = Tenant.autodetect()
         user_uuid = get_token_user_uuid_from_request()
         self.calls_service.record_start_user(tenant.uuid, call_id, user_uuid)
+        return '', 204
+
+
+class CallRecordResumeResource(AuthResource):
+    def __init__(self, calls_service):
+        self.calls_service = calls_service
+
+    @required_acl('calld.calls.{call_id}.record.resume.update')
+    def put(self, call_id):
+        tenant = Tenant.autodetect()
+        self.calls_service.record_resume(tenant.uuid, call_id)
+        return '', 204
+
+
+class CallRecordPauseResource(AuthResource):
+    def __init__(self, calls_service):
+        self.calls_service = calls_service
+
+    @required_acl('calld.calls.{call_id}.record.pause.update')
+    def put(self, call_id):
+        tenant = Tenant.autodetect()
+        self.calls_service.record_pause(tenant.uuid, call_id)
+        return '', 204
+
+
+class MyCallRecordResumeResource(AuthResource):
+    def __init__(self, calls_service: CallsService):
+        self.calls_service = calls_service
+
+    @required_acl('calld.users.me.calls.{call_id}.record.resume.update')
+    def put(self, call_id):
+        tenant = Tenant.autodetect()
+        user_uuid = get_token_user_uuid_from_request()
+        self.calls_service.record_resume_user(tenant.uuid, call_id, user_uuid)
+        return '', 204
+
+
+class MyCallRecordPauseResource(AuthResource):
+    def __init__(self, calls_service: CallsService):
+        self.calls_service = calls_service
+
+    @required_acl('calld.users.me.calls.{call_id}.record.pause.update')
+    def put(self, call_id):
+        tenant = Tenant.autodetect()
+        user_uuid = get_token_user_uuid_from_request()
+        self.calls_service.record_pause_user(tenant.uuid, call_id, user_uuid)
         return '', 204
 
 

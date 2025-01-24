@@ -146,6 +146,22 @@ def record_stop(amid, channel):
         raise WazoAmidError(amid, e)
 
 
+def record_resume(amid, channel, filename, options=None):
+    destination = {
+        'Channel': channel,
+        'File': filename,
+    }
+    if options:
+        destination['options'] = f"{options}a"
+    else:
+        destination['options'] = "a"
+
+    try:
+        amid.action('MixMonitor', destination)
+    except RequestException as e:
+        raise WazoAmidError(amid, e)
+
+
 def pause_queue_member(amid, interface):
     destination = {
         'Interface': interface,
