@@ -10,6 +10,12 @@
   * `PUT /1.0/calls/<call_id>/record/start`
   * `PUT /1.0/calls/<call_id>/record/stop`
 
+* New API to resume and pause call recordings:
+  * `PUT /1.0/users/me/calls/<call_id>/record/pause`
+  * `PUT /1.0/users/me/calls/<call_id>/record/resume`
+  * `PUT /1.0/calls/<call_id>/record/pause`
+  * `PUT /1.0/calls/<call_id>/record/resume`
+
 ## 24.16
 
 * The following endpoints are not marking a voicemail message as read anymore when accessed:
