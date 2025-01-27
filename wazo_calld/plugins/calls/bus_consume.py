@@ -345,6 +345,14 @@ class CallsBusEventHandler:
             return
         self._relay_channel_updated(event)
 
+        channel = self.ari.channels.get(channelId=channel_id)
+        call = self.services.make_call_from_channel(self.ari, channel)
+        has_been_paused = event['ChanVariable']['WAZO_RECORDING_PAUSED'] != '0'
+        if has_been_paused:
+            self.notifier.call_record_started(call)
+        else:
+            self.notifier.call_record_resumed(call)
+
     def _mix_monitor_stop(self, event):
         channel_id = event['Uniqueid']
         if not event['ChanVariable']['WAZO_RECORDING_PAUSED'] == '1':
