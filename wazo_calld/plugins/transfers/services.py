@@ -1,4 +1,4 @@
-# Copyright 2016-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -25,7 +25,6 @@ from .exceptions import (
     TransferAlreadyStarted,
     TransferCreationError,
 )
-from .lock import HangupLock, InvalidLock
 from .notifier import TransferNotifier
 from .state import (
     StateFactory,
@@ -201,11 +200,6 @@ class TransfersService:
             originator=initiator_call,
         )
         recipient_call = new_channel.id
-
-        try:
-            HangupLock.acquire(self.ari, recipient_call, transfer_id)
-        except InvalidLock:
-            raise TransferCreationError('bridge not found')
 
         return recipient_call
 
