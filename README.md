@@ -1,5 +1,6 @@
 <p align="center"><img src="https://github.com/wazo-platform/wazo-platform.org/raw/master/static/images/logo.png" height="200"></p>
 
+# DO NOT MERGE
 # wazo-calld
 
 [![Build Status](https://jenkins.wazo.community/buildStatus/icon?job=wazo-calld)](https://jenkins.wazo.community/job/wazo-calld)
