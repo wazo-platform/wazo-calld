@@ -28,12 +28,12 @@ from .exceptions import (
     CallOriginUnavailableError,
     NoSuchCall,
     RecordingNotStarted,
+    RecordingPauseError,
     RecordingUnauthorized,
 )
 from .state_persistor import ReadOnlyStatePersistor
 
 logger = logging.getLogger(__name__)
-
 # The recording file name template must be kept synced with RECORDING_PATH_REGEX
 # in wazo-call-logd
 CALL_RECORDING_FILENAME_TEMPLATE = (
@@ -350,7 +350,6 @@ class CallsService:
             raise NoSuchCall(call_id)
 
         ami.mute(self._ami, channel_id)
-
         # NOTE(fblackburn): asterisk should send back an event
         # instead of falsy pretend that channel is muted
         call = self.make_call_from_channel(self._ari, channel)
@@ -370,7 +369,6 @@ class CallsService:
             raise NoSuchCall(call_id)
 
         ami.unmute(self._ami, call_id)
-
         # NOTE(fblackburn): asterisk should send back an event
         # instead of falsy pretend that channel is unmuted
         call = self.make_call_from_channel(self._ari, channel)
@@ -416,7 +414,6 @@ class CallsService:
             # -1 means no timeout
             timeout=timeout or -1,
         )
-
         # if the caller hangs up, we cancel our originate
         originate_canceller = channel.on_event(
             'StasisEnd', lambda _, __: self.hangup(new_channel.id)
@@ -424,7 +421,6 @@ class CallsService:
         # if the callee accepts, we don't have to cancel anything
         new_channel.on_event('StasisStart', lambda _, __: originate_canceller.close())
         # if the callee refuses, leave the caller as it is
-
         return new_channel.id
 
     @staticmethod
@@ -800,14 +796,41 @@ class CallsService:
 
         call_recording_paused = channel.json['channelvars'].get('WAZO_RECORDING_PAUSED')
         if call_recording_paused and call_recording_paused == '1':
+            logger.debug('tried to pause a recording that is already paused')
             return
+
+        tenant_uuid = channel.json['channelvars'].get('WAZO_TENANT_UUID')
+        if not tenant_uuid:
+            raise RecordingPauseError(
+                'Missing channel variable WAZO_TENANT_UUID',
+                call_id,
+            )
+
+        recording_uuid = channel.json['channelvars'].get('WAZO_RECORDING_UUID')
+        if not recording_uuid:
+            raise RecordingPauseError(
+                'Missing channel variable WAZO_RECORDING_UUID',
+                call_id,
+            )
 
         set_channel_id_var_sync(
             self._ari, channel_id, 'WAZO_RECORDING_PAUSED', '1', bypass_stasis=True
         )
 
         ami.record_stop(self._ami, channel_id)
+
         call = self.make_call_from_channel(self._ari, channel)
+        filename = CALL_RECORDING_FILENAME_TEMPLATE.format(
+            tenant_uuid=tenant_uuid,
+            recording_uuid=recording_uuid,
+        )
+        self._ari.channels.originate(
+            endpoint='Local/s@wazo-record-listening-channel',
+            context='wazo-record-beep',
+            extension='s',
+            priority='1',
+            variables={'variables': {'WAZO_MIXMONITOR_FILENAME': filename}},
+        )
         self._notifier.call_record_paused(call)
 
     def record_pause_user(self, tenant_uuid, call_id, user_uuid):
