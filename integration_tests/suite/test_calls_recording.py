@@ -336,7 +336,7 @@ class TestCallRecord(RealAsteriskIntegrationTest):
         )
 
     def test_put_record_stop_user_allowed(self):
-        channel_id = self.given_call_not_stasis(
+        channel_id = self.given_call_not_stasis_recorded(
             variables={'WAZO_USER_DTMF_RECORD_TOGGLE_ENABLED': '1'}
         )
 
@@ -348,49 +348,6 @@ class TestCallRecord(RealAsteriskIntegrationTest):
         recording_stopped_events = self.bus.accumulator(
             headers={'name': 'recording_stopped'}
         )
-        recording_started_events = self.bus.accumulator(
-            headers={'name': 'recording_started'}
-        )
-
-        self.calld_client.calls.start_record(channel_id)
-
-        def recording_started():
-            assert_that(
-                call_events.accumulate(with_headers=True),
-                has_items(
-                    has_entries(
-                        message=has_entries(
-                            name='call_updated',
-                            data=has_entries(call_id=channel_id, record_state='active'),
-                        ),
-                        headers=has_entries(
-                            name='call_updated',
-                            tenant_uuid=VALID_TENANT,
-                        ),
-                    )
-                ),
-            )
-
-        until.assert_(recording_started, tries=10)
-
-        def recording_started_event_received():
-            assert_that(
-                recording_started_events.accumulate(with_headers=True),
-                has_items(
-                    has_entries(
-                        message=has_entries(
-                            name='recording_started',
-                            data=has_entries(call_id=channel_id),
-                        ),
-                        headers=has_entries(
-                            name='recording_started',
-                            tenant_uuid=VALID_TENANT,
-                        ),
-                    )
-                ),
-            )
-
-        until.assert_(recording_started_event_received, tries=10)
 
         self.calld_client.calls.stop_record(channel_id)
 
@@ -446,7 +403,7 @@ class TestCallRecord(RealAsteriskIntegrationTest):
         )
 
     def test_put_record_stop_queue_allowed(self):
-        channel_id = self.given_call_not_stasis(
+        channel_id = self.given_call_not_stasis_recorded(
             variables={
                 'WAZO_QUEUE_DTMF_RECORD_TOGGLE_ENABLED': '1',
                 'WAZO_QUEUENAME': 'q',
@@ -462,49 +419,6 @@ class TestCallRecord(RealAsteriskIntegrationTest):
         recording_stopped_events = self.bus.accumulator(
             headers={'name': 'recording_stopped'}
         )
-        recording_started_events = self.bus.accumulator(
-            headers={'name': 'recording_started'}
-        )
-
-        self.calld_client.calls.start_record(channel_id)
-
-        def recording_started():
-            assert_that(
-                call_events.accumulate(with_headers=True),
-                has_items(
-                    has_entries(
-                        message=has_entries(
-                            name='call_updated',
-                            data=has_entries(call_id=channel_id, record_state='active'),
-                        ),
-                        headers=has_entries(
-                            name='call_updated',
-                            tenant_uuid=VALID_TENANT,
-                        ),
-                    )
-                ),
-            )
-
-        until.assert_(recording_started, tries=10)
-
-        def recording_started_event_received():
-            assert_that(
-                recording_started_events.accumulate(with_headers=True),
-                has_items(
-                    has_entries(
-                        message=has_entries(
-                            name='recording_started',
-                            data=has_entries(call_id=channel_id),
-                        ),
-                        headers=has_entries(
-                            name='recording_started',
-                            tenant_uuid=VALID_TENANT,
-                        ),
-                    )
-                ),
-            )
-
-        until.assert_(recording_started_event_received, tries=10)
 
         self.calld_client.calls.stop_record(channel_id)
 
@@ -560,7 +474,7 @@ class TestCallRecord(RealAsteriskIntegrationTest):
         )
 
     def test_put_record_stop_group_allowed(self):
-        channel_id = self.given_call_not_stasis(
+        channel_id = self.given_call_not_stasis_recorded(
             variables={
                 'WAZO_GROUP_DTMF_RECORD_TOGGLE_ENABLED': '1',
                 'WAZO_GROUPNAME': 'g',
@@ -576,50 +490,6 @@ class TestCallRecord(RealAsteriskIntegrationTest):
         recording_stopped_events = self.bus.accumulator(
             headers={'name': 'recording_stopped'}
         )
-        recording_started_events = self.bus.accumulator(
-            headers={'name': 'recording_started'}
-        )
-
-        self.calld_client.calls.start_record(channel_id)
-
-        def recording_started():
-            assert_that(
-                call_events.accumulate(with_headers=True),
-                has_items(
-                    has_entries(
-                        message=has_entries(
-                            name='call_updated',
-                            data=has_entries(call_id=channel_id, record_state='active'),
-                        ),
-                        headers=has_entries(
-                            name='call_updated',
-                            tenant_uuid=VALID_TENANT,
-                        ),
-                    )
-                ),
-            )
-
-        until.assert_(recording_started, tries=10)
-
-        def recording_started_event_received():
-            assert_that(
-                recording_started_events.accumulate(with_headers=True),
-                has_items(
-                    has_entries(
-                        message=has_entries(
-                            name='recording_started',
-                            data=has_entries(call_id=channel_id),
-                        ),
-                        headers=has_entries(
-                            name='recording_started',
-                            tenant_uuid=VALID_TENANT,
-                        ),
-                    )
-                ),
-            )
-
-        until.assert_(recording_started_event_received, tries=10)
-
         self.calld_client.calls.stop_record(channel_id)
 
         def event_received():
@@ -675,7 +545,7 @@ class TestCallRecord(RealAsteriskIntegrationTest):
 
     def test_put_record_stop_from_user(self):
         user_uuid = str(uuid.uuid4())
-        channel_id = self.given_call_not_stasis(
+        channel_id = self.given_call_not_stasis_recorded(
             user_uuid=user_uuid, variables={'WAZO_USER_DTMF_RECORD_TOGGLE_ENABLED': '1'}
         )
         other_channel_id = self.given_call_not_stasis(
@@ -684,52 +554,9 @@ class TestCallRecord(RealAsteriskIntegrationTest):
         user_calld = self.make_user_calld(user_uuid, tenant_uuid=VALID_TENANT)
 
         call_events = self.bus.accumulator(headers={'name': 'call_updated'})
-        recording_started_events = self.bus.accumulator(
-            headers={'name': 'recording_started'}
-        )
         recording_stopped_events = self.bus.accumulator(
             headers={'name': 'recording_stopped'}
         )
-
-        user_calld.calls.start_record_from_user(channel_id)
-
-        def recording_started():
-            assert_that(
-                call_events.accumulate(with_headers=True),
-                has_items(
-                    has_entries(
-                        message=has_entries(
-                            name='call_updated',
-                            data=has_entries(call_id=channel_id, record_state='active'),
-                        ),
-                        headers=has_entries(
-                            name='call_updated',
-                            tenant_uuid=VALID_TENANT,
-                        ),
-                    )
-                ),
-            )
-
-        until.assert_(recording_started, tries=10)
-
-        def recording_started_event_received():
-            assert_that(
-                recording_started_events.accumulate(with_headers=True),
-                has_items(
-                    has_entries(
-                        message=has_entries(
-                            name='recording_started',
-                            data=has_entries(call_id=channel_id),
-                        ),
-                        headers=has_entries(
-                            name='recording_started',
-                            tenant_uuid=VALID_TENANT,
-                        ),
-                    )
-                ),
-            )
-
-        until.assert_(recording_started_event_received, tries=10)
 
         assert_that(
             calling(user_calld.calls.stop_record_from_user).with_args(UNKNOWN_UUID),
@@ -794,56 +621,13 @@ class TestCallRecord(RealAsteriskIntegrationTest):
         )
 
     def test_put_record_pause(self):
-        channel_id = self.given_call_not_stasis(
+        channel_id = self.given_call_not_stasis_recorded(
             variables={'WAZO_USER_DTMF_RECORD_TOGGLE_ENABLED': '1'}
         )
         call_events = self.bus.accumulator(headers={'name': 'call_updated'})
-        recording_started_events = self.bus.accumulator(
-            headers={'name': 'recording_started'}
-        )
         recording_paused_events = self.bus.accumulator(
             headers={'name': 'recording_paused'}
         )
-
-        self.calld_client.calls.start_record(channel_id)
-
-        def recording_started():
-            assert_that(
-                call_events.accumulate(with_headers=True),
-                has_items(
-                    has_entries(
-                        message=has_entries(
-                            name='call_updated',
-                            data=has_entries(call_id=channel_id, record_state='active'),
-                        ),
-                        headers=has_entries(
-                            name='call_updated',
-                            tenant_uuid=VALID_TENANT,
-                        ),
-                    )
-                ),
-            )
-
-        until.assert_(recording_started, tries=10)
-
-        def recording_started_event_received():
-            assert_that(
-                recording_started_events.accumulate(with_headers=True),
-                has_items(
-                    has_entries(
-                        message=has_entries(
-                            name='recording_started',
-                            data=has_entries(call_id=channel_id),
-                        ),
-                        headers=has_entries(
-                            name='recording_started',
-                            tenant_uuid=VALID_TENANT,
-                        ),
-                    )
-                ),
-            )
-
-        until.assert_(recording_started_event_received, tries=10)
 
         self.calld_client.calls.pause_record(channel_id)
 
@@ -961,60 +745,50 @@ class TestCallRecord(RealAsteriskIntegrationTest):
             raises(CalldError).matching(has_properties(status_code=400)),
         )
 
+        # Call has no tenant UUID
+        channel_id = self.given_call_not_stasis_recorded(
+            variables={
+                'WAZO_USER_DTMF_RECORD_TOGGLE_ENABLED': '1',
+            }
+        )
+        self.ari.channels.setChannelVar(
+            channelId=channel_id,
+            variable='WAZO_TENANT_UUID',
+            value='',
+            bypassStasis=True,
+        )
+        assert_that(
+            calling(self.calld_client.calls.pause_record).with_args(channel_id),
+            raises(CalldError).matching(has_properties(status_code=400)),
+        )
+
+        # Call has no recording UUID
+        channel_id = self.given_call_not_stasis_recorded(
+            variables={
+                'WAZO_USER_DTMF_RECORD_TOGGLE_ENABLED': '1',
+            }
+        )
+        self.ari.channels.setChannelVar(
+            channelId=channel_id,
+            variable='WAZO_RECORDING_UUID',
+            value='',
+            bypassStasis=True,
+        )
+        assert_that(
+            calling(self.calld_client.calls.pause_record).with_args(channel_id),
+            raises(CalldError).matching(has_properties(status_code=400)),
+        )
+
     def test_put_record_pause_from_user(self):
         user_uuid = str(uuid.uuid4())
-        channel_id = self.given_call_not_stasis(
+        channel_id = self.given_call_not_stasis_recorded(
             user_uuid=user_uuid, variables={'WAZO_USER_DTMF_RECORD_TOGGLE_ENABLED': '1'}
         )
         call_events = self.bus.accumulator(headers={'name': 'call_updated'})
         recording_paused_events = self.bus.accumulator(
             headers={'name': 'recording_paused'}
         )
-        recording_started_events = self.bus.accumulator(
-            headers={'name': 'recording_started'}
-        )
         user_calld = self.make_user_calld(user_uuid, tenant_uuid=VALID_TENANT)
-
-        user_calld.calls.start_record_from_user(channel_id)
-
-        def recording_started():
-            assert_that(
-                call_events.accumulate(with_headers=True),
-                has_items(
-                    has_entries(
-                        message=has_entries(
-                            name='call_updated',
-                            data=has_entries(call_id=channel_id, record_state='active'),
-                        ),
-                        headers=has_entries(
-                            name='call_updated',
-                            tenant_uuid=VALID_TENANT,
-                        ),
-                    )
-                ),
-            )
-
-        until.assert_(recording_started, tries=10)
-
-        def recording_started_event_received():
-            assert_that(
-                recording_started_events.accumulate(with_headers=True),
-                has_items(
-                    has_entries(
-                        message=has_entries(
-                            name='recording_started',
-                            data=has_entries(call_id=channel_id),
-                        ),
-                        headers=has_entries(
-                            name='recording_started',
-                            tenant_uuid=VALID_TENANT,
-                        ),
-                    )
-                ),
-            )
-
-        until.assert_(recording_started_event_received, tries=10)
-
         user_calld.calls.pause_record_from_user(channel_id)
 
         def event_received():
@@ -1495,6 +1269,55 @@ class TestCallRecord(RealAsteriskIntegrationTest):
         # record channel from same tenant = OK
         user_calld.calls.start_record(channel_id_1)
         user_calld.calls.stop_record(channel_id_1)
+
+    def given_call_not_stasis_recorded(
+        self, user_uuid=None, variables=None, tenant_uuid=None
+    ):
+        recording_events = self.bus.accumulator(headers={'name': 'recording_started'})
+        call_events = self.bus.accumulator(headers={'name': 'call_updated'})
+        channel_id = self.given_call_not_stasis(
+            user_uuid=user_uuid,
+            variables=variables,
+            tenant_uuid=tenant_uuid,
+        )
+        self.calld_client.calls.start_record(channel_id)
+
+        def recording_started():
+            assert_that(
+                recording_events.accumulate(with_headers=True),
+                has_items(
+                    has_entries(
+                        headers=has_entries(name='recording_started'),
+                        message=has_entries(
+                            name='recording_started',
+                            data=has_entries(call_id=channel_id),
+                        ),
+                    )
+                ),
+            )
+
+        until.assert_(recording_started, tries=10)
+
+        def channel_updated():
+            assert_that(
+                call_events.accumulate(with_headers=True),
+                has_items(
+                    has_entries(
+                        message=has_entries(
+                            name='call_updated',
+                            data=has_entries(call_id=channel_id, record_state='active'),
+                        ),
+                        headers=has_entries(
+                            name='call_updated',
+                            tenant_uuid=VALID_TENANT,
+                        ),
+                    )
+                ),
+            )
+
+        until.assert_(channel_updated, tries=10)
+
+        return channel_id
 
     def given_call_not_stasis(self, user_uuid=None, variables=None, tenant_uuid=None):
         user_uuid = user_uuid or str(uuid.uuid4())
