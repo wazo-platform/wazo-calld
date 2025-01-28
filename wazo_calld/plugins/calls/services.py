@@ -675,6 +675,19 @@ class CallsService:
 
         return channel
 
+    def _is_automated_recording(self, channel_id):
+        try:
+            channel = self._ari.channels.get(channelId=channel_id)
+        except ARINotFound:
+            raise NoSuchCall(channel_id)
+
+        cv = channel.json['channelvars']
+
+        auto_group_record = cv['WAZO_RECORD_GROUP_CALLEE'] == '1'
+        auto_queue_record = cv['WAZO_RECORD_QUEUE_CALLEE'] == '1'
+
+        return auto_group_record or auto_queue_record
+
     def _toggle_record_allowed(self, channel):
         cv = channel.json['channelvars']
 
@@ -719,7 +732,9 @@ class CallsService:
         if channel_variables['WAZO_CALL_RECORD_ACTIVE'] == '1':
             return
 
-        if not self._toggle_record_allowed(channel):
+        if self._is_automated_recording(channel_id):
+            logger.debug('bypassing configured toggle permissions for auto-recording')
+        elif not self._toggle_record_allowed(channel):
             raise RecordingUnauthorized(call_id)
 
         filename = CALL_RECORDING_FILENAME_TEMPLATE.format(
