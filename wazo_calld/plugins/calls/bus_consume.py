@@ -332,6 +332,14 @@ class CallsBusEventHandler:
 
     def _mix_monitor_start(self, event):
         channel_id = event['Uniqueid']
+
+        if event['Channel'].startswith('Local/s@wazo-record-listening-channel'):
+            logger.debug(
+                'Ignoring mix monitor start for wazo-record-listening-channel: %s',
+                channel_id,
+            )
+            return
+
         try:
             set_channel_id_var_sync(
                 self.ari,
@@ -355,6 +363,14 @@ class CallsBusEventHandler:
 
     def _mix_monitor_stop(self, event):
         channel_id = event['Uniqueid']
+
+        if event['Channel'].startswith('Local/s@wazo-record-listening-channel'):
+            logger.debug(
+                'Ignoring mix monitor stop for wazo-record-listening-channel: %s',
+                channel_id,
+            )
+            return
+
         if not event['ChanVariable']['WAZO_RECORDING_PAUSED'] == '1':
             try:
                 set_channel_id_var_sync(
