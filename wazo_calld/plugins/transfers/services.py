@@ -1,4 +1,4 @@
-# Copyright 2016-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -187,6 +187,13 @@ class TransfersService:
             ]
             originate_variables['WAZO_USERUUID'] = user_uuid
             originate_variables['XIVO_USERUUID'] = user_uuid  # Deprecated in 24.01
+        except ARINotFound:
+            pass
+        try:
+            callee_simultcalls = initiator_channel.getChannelVar(
+                variable='WAZO_CALLEE_SIMULTCALLS'
+            )['value']
+            originate_variables['WAZO_CALLER_SIMULTCALLS'] = callee_simultcalls
         except ARINotFound:
             pass
         timeout = -1 if timeout is None else timeout
