@@ -785,6 +785,8 @@ definitions:
         type: string
       language:
         type: string
+      state:
+        type: string
   ApplicationSnoops:
     type: object
     properties:
