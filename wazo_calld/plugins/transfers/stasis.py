@@ -1,4 +1,4 @@
-# Copyright 2016-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -14,7 +14,6 @@ from wazo_calld.plugin_helpers.exceptions import WazoAmidError
 from . import ari_helpers
 from .event import CreateTransferEvent, TransferRecipientAnsweredEvent
 from .exceptions import InvalidEvent, TransferException
-from .lock import HangupLock, InvalidLock
 from .services import TransfersService
 from .state import StateFactory
 from .state_persistor import StatePersistor
@@ -49,10 +48,6 @@ class TransfersStasis:
         )
         self.ari.on_application_registered(
             DEFAULT_APPLICATION_NAME, self.process_answered_calls
-        )
-        self.ari.on_channel_event('ChannelEnteredBridge', self.release_hangup_lock)
-        self.ari.on_channel_event(
-            'ChannelDestroyed', self.bypass_hangup_lock_from_source
         )
         self.ari.on_bridge_event('BridgeDestroyed', self.clean_bridge_variables)
 
@@ -298,24 +293,11 @@ class TransfersStasis:
             logger.debug('one channel left bridge %s', bridge.id)
             lone_channel_id = bridge.json['channels'][0]
 
+            logger.debug('emptying bridge %s', bridge.id)
             try:
-                bridge_is_locked = HangupLock.from_target(self.ari, bridge.id)
-            except InvalidLock:
-                bridge_is_locked = False
-
-            if not bridge_is_locked:
-                logger.debug('emptying bridge %s', bridge.id)
-                try:
-                    self.ari.channels.hangup(channelId=lone_channel_id)
-                except ARINotFound:
-                    pass
-
-        try:
-            bridge = bridge.get()
-        except ARINotFound:
-            return
-        if len(bridge.json['channels']) == 0:
-            self.bypass_hangup_lock_from_target(bridge)
+                self.ari.channels.hangup(channelId=lone_channel_id)
+            except ARINotFound:
+                pass
 
             logger.debug('destroying bridge %s', bridge.id)
             try:
@@ -326,27 +308,6 @@ class TransfersStasis:
     def clean_bridge_variables(self, bridge, event):
         global_variable = f'XIVO_BRIDGE_VARIABLES_{bridge.id}'
         GlobalVariableAdapter(self.ari).unset(global_variable)
-
-    def release_hangup_lock(self, channel, event):
-        lock_source = channel
-        lock_target_candidate_id = event['bridge']['id']
-        try:
-            lock = HangupLock(self.ari, lock_source.id, lock_target_candidate_id)
-            lock.release()
-        except InvalidLock:
-            pass
-
-    def bypass_hangup_lock_from_source(self, channel, event):
-        lock_source = channel
-        for lock in HangupLock.from_source(self.ari, lock_source.id):
-            lock.kill_target()
-
-    def bypass_hangup_lock_from_target(self, bridge):
-        try:
-            lock = HangupLock.from_target(self.ari, bridge.id)
-            lock.kill_source()
-        except InvalidLock:
-            pass
 
     def update_transfer_caller_id(self, channel, event):
         try:
