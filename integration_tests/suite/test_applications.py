@@ -1,4 +1,4 @@
-# Copyright 2018-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from ari.exceptions import ARIServerError
@@ -2109,6 +2109,7 @@ class TestApplicationPlayback(BaseApplicationTestCase):
                                     uuid=playback['uuid'],
                                     language='en',
                                     uri='sound:tt-weasels',
+                                    state=not_('failed'),
                                 ),
                             ),
                         ),
@@ -2118,6 +2119,122 @@ class TestApplicationPlayback(BaseApplicationTestCase):
             )
 
         until.assert_(event_received, tries=5)
+
+    def test_playback_sound_created_failed_event(self):
+        app_uuid = self.node_app_uuid
+        sound_exists_body = {'uri': 'sound:tt-weasels'}
+        sound_does_not_exist_body = {'uri': 'sound:does-not-exist'}
+        channel = self.call_app(app_uuid)
+        event_accumulator = self.app_event_accumulator(app_uuid)
+
+        playback_exists = self.calld_client.applications.send_playback(
+            app_uuid, channel.id, sound_exists_body
+        )
+        playback_does_not_exist = self.calld_client.applications.send_playback(
+            app_uuid, channel.id, sound_does_not_exist_body
+        )
+
+        def event_received():
+            events = event_accumulator.accumulate(with_headers=True)
+            assert_that(
+                events,
+                has_items(
+                    has_entries(
+                        message=has_entries(
+                            name='application_playback_created',
+                            data=has_entries(
+                                application_uuid=app_uuid,
+                                call_id=channel.id,
+                                conversation_id=channel.id,
+                                playback=has_entries(
+                                    uuid=playback_exists['uuid'],
+                                    language='en',
+                                    uri='sound:tt-weasels',
+                                    state=not_('failed'),
+                                ),
+                            ),
+                        ),
+                        headers=has_entry('tenant_uuid', VALID_TENANT),
+                    ),
+                    has_entries(
+                        message=has_entries(
+                            name='application_playback_deleted',
+                            data=has_entries(
+                                application_uuid=app_uuid,
+                                call_id=channel.id,
+                                conversation_id=channel.id,
+                                playback=has_entries(
+                                    uuid=playback_does_not_exist['uuid'],
+                                    language='en',
+                                    uri='sound:does-not-exist',
+                                    state='failed',
+                                ),
+                            ),
+                        ),
+                        headers=has_entry('tenant_uuid', VALID_TENANT),
+                    ),
+                ),
+            )
+
+        until.assert_(event_received, tries=5)
+
+    def test_playback_recording_created_failed_event(self):
+        app_uuid = self.node_app_uuid
+        sound_exists_body = {'uri': 'sound:tt-weasels'}
+        recording_does_not_exist_body = {'uri': 'recording:does-not-exist'}
+        channel = self.call_app(app_uuid)
+        event_accumulator = self.app_event_accumulator(app_uuid)
+
+        playback_exists = self.calld_client.applications.send_playback(
+            app_uuid, channel.id, sound_exists_body
+        )
+        playback_does_not_exist = self.calld_client.applications.send_playback(
+            app_uuid, channel.id, recording_does_not_exist_body
+        )
+
+        def event_received():
+            events = event_accumulator.accumulate(with_headers=True)
+            assert_that(
+                events,
+                has_items(
+                    has_entries(
+                        message=has_entries(
+                            name='application_playback_created',
+                            data=has_entries(
+                                application_uuid=app_uuid,
+                                call_id=channel.id,
+                                conversation_id=channel.id,
+                                playback=has_entries(
+                                    uuid=playback_exists['uuid'],
+                                    language='en',
+                                    uri='sound:tt-weasels',
+                                    state=not_('failed'),
+                                ),
+                            ),
+                        ),
+                        headers=has_entry('tenant_uuid', VALID_TENANT),
+                    ),
+                    has_entries(
+                        message=has_entries(
+                            name='application_playback_deleted',
+                            data=has_entries(
+                                application_uuid=app_uuid,
+                                call_id=channel.id,
+                                conversation_id=channel.id,
+                                playback=has_entries(
+                                    uuid=playback_does_not_exist['uuid'],
+                                    language='en',
+                                    uri='recording:does-not-exist',
+                                    state='failed',
+                                ),
+                            ),
+                        ),
+                        headers=has_entry('tenant_uuid', VALID_TENANT),
+                    ),
+                ),
+            )
+
+        until.assert_(event_received, tries=10)
 
     def test_delete(self):
         body = {'uri': 'sound:tt-weasels'}
@@ -2170,6 +2287,7 @@ class TestApplicationPlayback(BaseApplicationTestCase):
                                     uuid=playback['uuid'],
                                     language='en',
                                     uri='sound:tt-weasels',
+                                    state=not_('failed'),
                                 ),
                             ),
                         ),
@@ -2209,6 +2327,7 @@ class TestApplicationPlayback(BaseApplicationTestCase):
                                     uuid=playback['uuid'],
                                     language='en',
                                     uri='sound:tt-weasels',
+                                    state=not_('failed'),
                                 ),
                             ),
                         ),
