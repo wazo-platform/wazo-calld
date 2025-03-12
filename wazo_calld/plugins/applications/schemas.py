@@ -1,4 +1,4 @@
-# Copyright 2018-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from marshmallow import EXCLUDE, Schema, fields, post_load, pre_load
@@ -20,6 +20,7 @@ class ApplicationCallPlaySchema(BaseSchema):
     uuid = fields.String(attribute='id', dump_only=True)
     uri = fields.String(attribute='media_uri', required=True)
     language = fields.String()
+    state = fields.String(dump_only=True)
 
 
 class ApplicationCallRequestSchema(BaseSchema):
