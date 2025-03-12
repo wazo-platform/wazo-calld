@@ -1,5 +1,9 @@
 # Changelog
 
+## 25.04
+
+* The `state` attribute has been added to the application playback response and events
+
 ## 25.02
 
 * The following endpoints can now return a `403` when call recording is
