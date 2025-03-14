@@ -731,7 +731,7 @@ class CallsService:
         if channel_variables['WAZO_CALL_RECORD_ACTIVE'] == '1':
             return
 
-        if self._is_automated_recording(channel_id):
+        if self._is_automated_recording(channel.id):
             logger.debug('bypassing configured toggle permissions for auto-recording')
         elif not self._toggle_record_allowed(channel):
             raise RecordingUnauthorized(call_id)
@@ -744,7 +744,7 @@ class CallsService:
 
         set_channel_id_var_sync(
             self._ari,
-            channel_id,
+            channel.id,
             'WAZO_RECORDING_UUID',
             recording_uuid,
             bypass_stasis=True,
