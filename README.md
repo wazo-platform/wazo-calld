@@ -57,3 +57,4 @@ You can learn more on how to contribute in the [Wazo Platform documentation](htt
 ## License
 
 wazo-calld is released under the GPL 3.0 license. You can get the full license in the [LICENSE](LICENSE) file.
+do not merge
