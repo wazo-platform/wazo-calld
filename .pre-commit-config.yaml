@@ -15,7 +15,7 @@ repos:
     rev: v3.15.0
     hooks:
       - id: pyupgrade
-        args: [--py39-plus]
+        args: [--py311-plus]
 # Automatically sort and format imports (in black compatible way)
   - repo: https://github.com/pycqa/isort
     rev: 5.12.0
@@ -27,7 +27,7 @@ repos:
     rev: v0.991
     hooks:
       - id: mypy
-        language_version: '3.10'
+        language_version: '3.11'
         exclude: 'integration_tests/setup.py'
         additional_dependencies:
           - 'types-flask'
