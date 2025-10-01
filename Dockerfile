@@ -1,4 +1,4 @@
-FROM python:3.9-slim-bullseye AS compile-image
+FROM python:3.11-slim-bookworm AS compile-image
 LABEL maintainer="Wazo Maintainers <dev@wazo.community>"
 
 RUN python -m venv /opt/venv
@@ -10,7 +10,7 @@ WORKDIR /usr/src/wazo-calld
 RUN pip install -r requirements.txt
 RUN pip install .
 
-FROM python:3.9-slim-bullseye AS build-image
+FROM python:3.11-slim-bookworm AS build-image
 COPY --from=compile-image /opt/venv /opt/venv
 
 COPY ./etc/wazo-calld /etc/wazo-calld
