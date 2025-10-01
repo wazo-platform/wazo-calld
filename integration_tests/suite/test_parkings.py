@@ -1,12 +1,12 @@
-# Copyright 2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2024-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from __future__ import annotations
 
-from collections.abc import Generator
+from collections.abc import Callable, Generator
 from datetime import datetime, timezone
 from functools import wraps
-from typing import Callable, TypedDict, cast
+from typing import NotRequired, Required, TypedDict, cast
 from uuid import uuid4
 
 from ari.exceptions import ARINotFound
@@ -21,7 +21,7 @@ from hamcrest import (
     has_properties,
     not_,
 )
-from typing_extensions import NotRequired, Required, Unpack
+from typing_extensions import Unpack
 from wazo_calld_client.exceptions import CalldError
 from wazo_test_helpers import until
 from wazo_test_helpers.hamcrest.raises import raises

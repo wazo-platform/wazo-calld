@@ -1,11 +1,11 @@
-# Copyright 2024 The Wazo Authors (see the AUTHORS file)
+# Copyright 2024-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
 from functools import wraps
-from typing import Callable, Union
 
 from ari.exceptions import ARINotFound
 
@@ -19,7 +19,7 @@ from .helpers import DONT_CHECK_TENANT, split_parking_id_from_name
 from .notifier import ParkingNotifier
 from .services import ParkingService
 
-AvailableModels = Union[AsteriskParkedCall, AsteriskUnparkedCall]
+AvailableModels = AsteriskParkedCall | AsteriskUnparkedCall
 
 logger = logging.getLogger(__name__)
 PARKED_CHANNEL_VAR = 'WAZO_CALL_PARKED'
@@ -123,7 +123,6 @@ class ParkingLotEventsHandler:
         self, parked_call: AsteriskParkedCall, _: Channel
     ) -> None:
         '''A parked call has been hungup before being answered'''
-
         # Since channel is closed at this point, we must find the tenant_uuid some other way
         tenant_uuid = None
         try:

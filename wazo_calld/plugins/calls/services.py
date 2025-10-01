@@ -39,7 +39,7 @@ logger = logging.getLogger(__name__)
 CALL_RECORDING_FILENAME_TEMPLATE = (
     '/var/lib/wazo/sounds/tenants/{tenant_uuid}/monitor/{recording_uuid}.wav'
 )
-LOCAL_TIMEZONE = datetime.datetime.now(datetime.timezone.utc).astimezone().tzinfo
+LOCAL_TIMEZONE = datetime.datetime.now(datetime.UTC).astimezone().tzinfo
 AUTOPROV_CONTEXT = 'xivo-provisioning'
 
 
