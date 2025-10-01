@@ -1,10 +1,9 @@
-# Copyright 2024 The Wazo Authors (see the AUTHORS file)
+# Copyright 2024-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from __future__ import annotations
 
-from collections.abc import Mapping
-from typing import Callable
+from collections.abc import Callable, Mapping
 
 from flask_restful import Api
 from wazo_amid_client import Client as AmidClient
