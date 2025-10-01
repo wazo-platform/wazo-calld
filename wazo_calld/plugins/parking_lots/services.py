@@ -1,14 +1,13 @@
-# Copyright 2024 The Wazo Authors (see the AUTHORS file)
+# Copyright 2024-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from __future__ import annotations
 
 import logging
 from time import sleep
-from typing import TypedDict
+from typing import NotRequired, TypedDict
 
 from requests import RequestException
-from typing_extensions import NotRequired
 from wazo_amid_client import Client as AmidClient
 from wazo_confd_client import Client as ConfdClient
 
