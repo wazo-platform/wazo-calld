@@ -16,18 +16,21 @@ pipeline {
     stage('Debian build and deploy') {
       steps {
         build job: 'build-package-no-arch', parameters: [
-          string(name: 'PACKAGE', value: "${JOB_NAME}"),
+          string(name: 'PACKAGE', value: "wazo-calld"),
+          string(name: "BRANCH", value: "bookworm"),
+          string(name: "DISTRIBUTION", value: "wazo-dev-bookworm"),
         ]
       }
     }
     stage('Docker build') {
       steps {
-        sh "docker build --no-cache -t wazoplatform/${JOB_NAME}:latest ."
+        sh "sed -i s/wazo-platform.*master.zip/bookworm.zip/ requirements.txt"
+        sh "docker build --no-cache -t wazoplatform/wazo-calld:bookworm ."
       }
     }
     stage('Docker publish') {
       steps {
-        sh "docker push wazoplatform/${JOB_NAME}:latest"
+        sh "docker push wazoplatform/wazo-calld:bookworm"
       }
     }
   }
