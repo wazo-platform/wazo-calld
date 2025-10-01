@@ -1,16 +1,16 @@
 - job:
     name: calld-tox-integration
     description: Run calld integration tests
-    parent: wazo-tox-integration-py39
+    parent: wazo-tox-integration-py311
     required-projects:
       - wazo-platform/chan-test
     timeout: 10800
 
 - project:
     templates:
-      - wazo-tox-linters-310
-      - wazo-tox-py39
-      - debian-packaging-bullseye
+      - wazo-tox-linters-py311
+      - wazo-tox-py311
+      - debian-packaging-bookworm
     wazo-check:
       jobs:
         - calld-tox-integration
