@@ -5,6 +5,7 @@
 [![Build Status](https://jenkins.wazo.community/buildStatus/icon?job=wazo-calld)](https://jenkins.wazo.community/job/wazo-calld)
 
 wazo-calld provides REST API to create, control calls and hangup calls, and sends events when something happens to a call.
+test
 
 ## Installing wazo-calld
 
