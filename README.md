@@ -22,7 +22,7 @@ On a Wazo Platform environment, wazo-calld is launched automatically at system b
 
 ```
 pip install tox
-tox --recreate -e py39
+tox --recreate -e py311
 ```
 
 ### Running integration tests

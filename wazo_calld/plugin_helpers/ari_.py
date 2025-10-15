@@ -1,4 +1,4 @@
-# Copyright 2015-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from __future__ import annotations
@@ -6,7 +6,7 @@ from __future__ import annotations
 import json
 import logging
 import time
-from typing import Protocol, TypeVar, Union
+from typing import Protocol, TypeVar
 
 from ari.exceptions import ARINotFound, ARINotInStasis
 
@@ -120,7 +120,7 @@ class GlobalVariableAdapter(GlobalVariableAdapterProtocol[str]):
         self._ari.asterisk.setGlobalVar(variable=f'GLOBAL_DELETE({variable})', value='')
 
 
-JSON = Union[str, int, float, bool, None, list['JSON'], dict[str, 'JSON']]
+JSON = str | int | float | bool | None | list['JSON'] | dict[str, 'JSON']
 
 
 class GlobalVariableJsonAdapter(GlobalVariableAdapterProtocol[JSON]):
