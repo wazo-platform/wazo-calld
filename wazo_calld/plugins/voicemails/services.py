@@ -1,12 +1,14 @@
-# Copyright 2016-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import base64
+from typing import Literal
 
 import requests
 from ari.exceptions import ARIHTTPError
 
 from wazo_calld.plugin_helpers import confd
+from wazo_calld.plugin_helpers.exceptions import NoSuchUserVoicemail
 
 from .exceptions import (
     InvalidVoicemailGreeting,
@@ -40,6 +42,35 @@ class VoicemailsService:
     def get_message(self, tenant_uuid, voicemail_id, message_id):
         vm_conf = confd.get_voicemail(tenant_uuid, voicemail_id, self._confd_client)
         return self._storage.get_message_info(vm_conf, message_id)
+
+    def get_user_messages(
+        self,
+        tenant_uuid,
+        user_uuid,
+        voicemail_type: Literal["all", "shared", "personal"] = "all",
+        limit: int | None = None,
+        offset: int | None = None,
+        order: str | None = None,
+    ):
+        voicemails = []
+
+        if voicemail_type in ("all", "personal"):
+            try:
+                user_vm = confd.get_user_voicemail(user_uuid, self._confd_client)
+            except NoSuchUserVoicemail:
+                pass
+            else:
+                voicemails.append(user_vm)
+
+        if voicemail_type in ("all", "shared"):
+            voicemails.extend(
+                confd.get_shared_voicemails(tenant_uuid, self._confd_client)
+            )
+
+        if not voicemails:
+            return []
+
+        return self._storage.get_all_messages(*voicemails)
 
     def get_user_message(self, user_uuid, message_id):
         vm_conf = confd.get_user_voicemail(user_uuid, self._confd_client)

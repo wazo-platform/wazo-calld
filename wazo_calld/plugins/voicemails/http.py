@@ -1,4 +1,4 @@
-# Copyright 2016-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import re
@@ -25,6 +25,8 @@ from .schemas import (
     voicemail_greeting_copy_schema,
     voicemail_message_schema,
     voicemail_message_update_schema,
+    voicemail_messages_get_schema,
+    voicemail_messages_schema,
     voicemail_schema,
 )
 
@@ -350,3 +352,20 @@ def _validate_greeting(greeting):
     if greeting in VALID_GREETINGS:
         return greeting
     raise NoSuchVoicemailGreeting(greeting)
+
+
+class UserVoicemailMessagesResource(AuthResource):
+    def __init__(self, voicemails_service):
+        self._voicemails_service = voicemails_service
+
+    @required_acl('calld.users.me.voicemails.messages.read')
+    def get(self):
+        params = request.get_json(force=True) or {}
+        form = voicemail_messages_get_schema.load(params)
+        tenant = Tenant.autodetect()
+        user_uuid = get_token_user_uuid_from_request()
+
+        messages = self._voicemails_service.get_user_messages(
+            tenant.uuid, user_uuid, **form
+        )
+        return voicemail_messages_schema.dump({"items": messages})

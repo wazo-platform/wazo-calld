@@ -1,4 +1,4 @@
-# Copyright 2016-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from requests import HTTPError, RequestException
@@ -238,3 +238,14 @@ def get_user_voicemail(user_uuid, confd_client):
         raise WazoConfdUnreachable(confd_client, e)
 
     return voicemail
+
+
+def get_shared_voicemails(tenant_uuid, confd_client) -> list[dict]:
+    try:
+        return confd_client.voicemails.list(tenant_uuid=tenant_uuid, shared=True)
+    except HTTPError as e:
+        if not_found(e):
+            return []
+        raise
+    except RequestException as e:
+        raise WazoConfdUnreachable(confd_client, e)
