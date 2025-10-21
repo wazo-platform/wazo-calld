@@ -1,4 +1,4 @@
-# Copyright 2016-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import errno
@@ -145,6 +145,20 @@ class _VoicemailFilesystemStorage:
         vm_access = _VoicemailAccess(self._base_path, self._folders, vm_conf)
         message_access = vm_access.get_message(message_id)
         return message_access.info(), message_access.recording()
+
+    def get_all_messages(self, *vm_confs: dict) -> list[dict]:
+        messages = []
+        for vm_conf in vm_confs:
+            vm_access = _VoicemailAccess(self._base_path, self._folders, vm_conf)
+            messages.extend(
+                [
+                    message.info()
+                    for folder in vm_access.folders()
+                    for message in folder.messages()
+                ]
+            )
+
+        return messages
 
     def _sort_messages(self, messages):
         messages.sort(key=itemgetter('timestamp'), reverse=True)

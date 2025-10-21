@@ -1,10 +1,18 @@
-# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
+
+from enum import StrEnum, auto
 
 from marshmallow import Schema, fields
 from xivo.mallow.validate import OneOf
 
 VALID_GREETINGS = ["unavailable", "busy", "name"]
+VALID_VOICEMAIL_TYPES = ["all", "personal", "shared"]
+
+
+class VoicemailTypeEnum(StrEnum):
+    personal = auto()
+    shared = auto()
 
 
 class VoicemailMessageBaseSchema(Schema):
@@ -44,8 +52,31 @@ class VoicemailGreetingCopySchema(Schema):
     dest_greeting = fields.String(validate=OneOf(VALID_GREETINGS))
 
 
+class UnifiedVoicemailMessageSchema(VoicemailMessageBaseSchema):
+    voicemail_id = fields.Integer()
+    voicemail_name = fields.String()
+    voicemail_type = fields.Enum(VoicemailTypeEnum, by_value=fields.String)
+    folder = fields.Nested(VoicemailFolderBaseSchema)
+
+
+class VoicemailMessagesSchema(Schema):
+    items = fields.Nested(UnifiedVoicemailMessageSchema, many=True)
+
+
+class VoicemailMessagesGetSchema(Schema):
+    limit = fields.Integer()
+    offset = fields.Integer()
+    direction = fields.String(validate=OneOf("asc", "desc"), load_default="desc")
+    order = fields.String(validate=OneOf("timestamp"), load_default="timestamp")
+    voicemail_type = fields.String(
+        validate=OneOf(VALID_VOICEMAIL_TYPES), load_default="all"
+    )
+
+
 voicemail_schema = VoicemailSchema()
 voicemail_folder_schema = VoicemailFolderSchema()
 voicemail_message_schema = VoicemailMessageSchema()
 voicemail_message_update_schema = VoicemailMessageUpdateSchema()
 voicemail_greeting_copy_schema = VoicemailGreetingCopySchema()
+voicemail_messages_schema = VoicemailMessagesSchema()
+voicemail_messages_get_schema = VoicemailMessagesGetSchema()

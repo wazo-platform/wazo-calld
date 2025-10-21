@@ -1,4 +1,4 @@
-# Copyright 2016-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from __future__ import annotations
@@ -16,6 +16,7 @@ from .http import (
     UserVoicemailGreetingCopyResource,
     UserVoicemailGreetingResource,
     UserVoicemailMessageResource,
+    UserVoicemailMessagesResource,
     UserVoicemailRecordingResource,
     UserVoicemailResource,
     VoicemailFolderResource,
@@ -119,6 +120,11 @@ class Plugin:
         api.add_resource(
             UserVoicemailMessageResource,
             '/users/me/voicemails/messages/<message_id>',
+            resource_class_args=[voicemails_service],
+        )
+        api.add_resource(
+            UserVoicemailMessagesResource,
+            "/users/me/voicemails/messages",
             resource_class_args=[voicemails_service],
         )
         api.add_resource(
