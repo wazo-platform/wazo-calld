@@ -284,6 +284,36 @@ paths:
           $ref: '#/responses/NotFoundError'
         '503':
           $ref: '#/responses/AnotherServiceUnavailable'
+  /users/me/voicemails/messages:
+    get:
+      summary: Get all user's messages
+      description: '**Required ACL:** `calld.users.me.voicemails.messages`'
+      tags:
+      - users
+      - voicemails
+      parameters:
+      - name: voicemail_type
+        in: query
+        description: include or exclude messages from shared mailboxes
+        schema:
+          type: string
+          enum:
+            - all
+            - personal
+            - shared
+          default: all
+        required: false
+      responses:
+        '200':
+          description: The voicemail messages available to the user
+          schema:
+            $ref: '#/definitions/VoicemailMessages'
+        '400':
+          $ref: '#/responses/InvalidRequest'
+        '404':
+          $ref: '#/responses/NotFoundError'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
   /users/me/voicemails/messages/{message_id}:
     get:
       summary: Get a message
@@ -583,6 +613,35 @@ definitions:
         description: The folder's ID
     required:
     - folder_id
+  UnifiedVoicemailMessage:
+    allOf:
+    - $ref: '#/definitions/VoicemailMessageBase'
+    - type: object
+      properties:
+        voicemail_type:
+          type: string
+          enum:
+            - shared
+            - personal
+          readOnly: true
+        voicemail_name:
+          type: string
+          readOnly: true
+        voicemail_id:
+          type: integer
+          readOnly: true
+    - type: object
+      properties:
+        folder:
+          $ref: '#/definitions/VoicemailFolderBase'
+          readOnly: true
+  VoicemailMessages:
+    type: object
+    properties:
+      items:
+        type: array
+        items:
+          $ref: '#/definitions/UnifiedVoicemailMessage'
 parameters:
   ForceDownload:
     name: download
