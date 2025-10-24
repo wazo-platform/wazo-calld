@@ -163,7 +163,7 @@ class _VoicemailFilesystemStorage:
             )
         )
 
-        if order and order in messages[0]:
+        if messages and order and order in messages[0]:
             messages.sort(key=itemgetter(order), reverse=(direction == "desc"))
 
         return messages
