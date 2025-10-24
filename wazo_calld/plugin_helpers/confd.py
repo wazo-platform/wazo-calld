@@ -242,7 +242,11 @@ def get_user_voicemail(user_uuid, confd_client):
 
 def get_shared_voicemails(tenant_uuid, confd_client) -> list[dict]:
     try:
-        return confd_client.voicemails.list(tenant_uuid=tenant_uuid, shared=True)
+        response = confd_client.voicemails.list(tenant_uuid=tenant_uuid, shared=True)
+
+        # FIXME (jalie): Workaround for wazo-confd mock...
+        shared_vms = [vm for vm in response.get("items", []) if vm["shared"]]
+        return shared_vms
     except HTTPError as e:
         if not_found(e):
             return []
