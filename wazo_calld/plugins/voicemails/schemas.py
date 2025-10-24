@@ -42,6 +42,7 @@ class VoicemailSchema(Schema):
     name = fields.String()
     number = fields.String()
     folders = fields.Nested(VoicemailFolderSchema, many=True)
+    shared = fields.Boolean()
 
 
 class VoicemailMessageUpdateSchema(Schema):
@@ -53,9 +54,7 @@ class VoicemailGreetingCopySchema(Schema):
 
 
 class UnifiedVoicemailMessageSchema(VoicemailMessageBaseSchema):
-    voicemail_id = fields.Integer()
-    voicemail_name = fields.String()
-    voicemail_type = fields.Enum(VoicemailTypeEnum, by_value=fields.String)
+    voicemail = fields.Nested(VoicemailSchema, only=("id", "name", "shared"))
     folder = fields.Nested(VoicemailFolderBaseSchema)
 
 
