@@ -360,12 +360,10 @@ class UserVoicemailMessagesResource(AuthResource):
 
     @required_acl('calld.users.me.voicemails.messages.read')
     def get(self):
-        params = request.get_json(force=True) or {}
-        form = voicemail_messages_get_schema.load(params)
+        params = voicemail_messages_get_schema.load(request.args.to_dict())
         tenant = Tenant.autodetect()
         user_uuid = get_token_user_uuid_from_request()
-
         messages = self._voicemails_service.get_user_messages(
-            tenant.uuid, user_uuid, **form
+            tenant.uuid, user_uuid, **params
         )
         return voicemail_messages_schema.dump({"items": messages})
