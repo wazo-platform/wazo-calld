@@ -48,19 +48,19 @@ class VoicemailsService:
         tenant_uuid,
         user_uuid,
         voicemail_type: Literal["all", "shared", "personal"] = "all",
-        limit: int | None = None,
-        offset: int | None = None,
+        direction: str | None = None,
         order: str | None = None,
+        **params,
     ):
         voicemails = []
 
         if voicemail_type in ("all", "personal"):
             try:
-                user_vm = confd.get_user_voicemail(user_uuid, self._confd_client)
+                voicemails.append(
+                    confd.get_user_voicemail(user_uuid, self._confd_client)
+                )
             except NoSuchUserVoicemail:
                 pass
-            else:
-                voicemails.append(user_vm)
 
         if voicemail_type in ("all", "shared"):
             voicemails.extend(
@@ -70,7 +70,9 @@ class VoicemailsService:
         if not voicemails:
             return []
 
-        return self._storage.get_all_messages(*voicemails)
+        return self._storage.get_all_messages_infos(
+            *voicemails, order=order, direction=direction
+        )
 
     def get_user_message(self, user_uuid, message_id):
         vm_conf = confd.get_user_voicemail(user_uuid, self._confd_client)
