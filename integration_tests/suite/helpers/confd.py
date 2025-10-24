@@ -1,4 +1,4 @@
-# Copyright 2015-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from __future__ import annotations
@@ -434,13 +434,16 @@ class MockTrunk:
 
 
 class MockVoicemail:
-    def __init__(self, id, number, name, context, user_uuids=None, tenant_uuid=None):
+    def __init__(
+        self, id, number, name, context, user_uuids=None, tenant_uuid=None, shared=False
+    ):
         self._id = id
         self._number = number
         self._name = name
         self._context = context
         self._tenant_uuid = tenant_uuid
         self.user_uuids = user_uuids or []
+        self.shared = shared
 
     def id(self):
         return self._id
@@ -451,6 +454,7 @@ class MockVoicemail:
             'number': self._number,
             'name': self._name,
             'context': self._context,
+            'shared': self.shared,
             'tenant_uuid': self._tenant_uuid,
             'users': [{"uuid": user} for user in self.user_uuids],
         }
