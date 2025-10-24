@@ -4,7 +4,9 @@
 import errno
 import logging
 import os.path
+from itertools import chain
 from operator import itemgetter
+from typing import Literal
 
 from xivo import caller_id
 
@@ -146,17 +148,23 @@ class _VoicemailFilesystemStorage:
         message_access = vm_access.get_message(message_id)
         return message_access.info(), message_access.recording()
 
-    def get_all_messages(self, *vm_confs: dict) -> list[dict]:
-        messages = []
-        for vm_conf in vm_confs:
-            vm_access = _VoicemailAccess(self._base_path, self._folders, vm_conf)
-            messages.extend(
-                [
-                    message.info()
-                    for folder in vm_access.folders()
-                    for message in folder.messages()
-                ]
+    def get_all_messages_infos(
+        self,
+        *vm_confs: dict,
+        order: str | None = "caller_id_name",
+        direction: Literal["asc", "desc"] | None = "asc",
+    ) -> list[dict]:
+        messages = list(
+            chain(
+                *(
+                    _VoicemailAccess(self._base_path, self._folders, vm_conf).messages()
+                    for vm_conf in vm_confs
+                )
             )
+        )
+
+        if order and order in messages[0]:
+            messages.sort(key=itemgetter(order), reverse=(direction == "desc"))
 
         return messages
 
@@ -188,12 +196,21 @@ class _VoicemailAccess:
                     return message_access
         raise NoSuchVoicemailMessage(message_id)
 
+    def messages(self):
+        vm_info = {"voicemail": self.info()}
+        return [
+            message.info() | vm_info
+            for folder in self.folders()
+            for message in folder.messages()
+        ]
+
     def info(self):
         return {
             'id': self.vm_conf['id'],
             'number': self.vm_conf['number'],
             'context': self.vm_conf['context'],
             'name': self.vm_conf['name'],
+            'shared': self.vm_conf['shared'],
             'folders': [],
         }
 
