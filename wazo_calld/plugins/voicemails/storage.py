@@ -476,4 +476,5 @@ def _fake_vm_conf(number, context):
         'name': 'fake-vm-conf',
         'number': number,
         'context': context,
+        'shared': False,
     }
