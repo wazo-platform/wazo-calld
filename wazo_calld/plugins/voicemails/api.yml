@@ -292,16 +292,19 @@ paths:
       - users
       - voicemails
       parameters:
+      - $ref: '#/parameters/direction'
+      - $ref: '#/parameters/order'
+      - $ref: '#/parameters/limit'
+      - $ref: '#/parameters/offset'
       - name: voicemail_type
         in: query
         description: include or exclude messages from shared mailboxes
-        schema:
-          type: string
-          enum:
-            - all
-            - personal
-            - shared
-          default: all
+        type: string
+        enum:
+        - all
+        - personal
+        - shared
+        default: all
         required: false
       responses:
         '200':
@@ -645,6 +648,10 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/UnifiedVoicemailMessage'
+        readOnly: true
+      total:
+        type: integer
+        readOnly: true
 parameters:
   ForceDownload:
     name: download
