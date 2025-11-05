@@ -8,6 +8,7 @@ from xivo.mallow.validate import OneOf
 
 VALID_GREETINGS = ["unavailable", "busy", "name"]
 VALID_VOICEMAIL_TYPES = ["all", "personal", "shared"]
+VALID_VOICEMAIL_ORDER = ["id", "caller_id_name", "duration", "timestamp"]
 
 
 class VoicemailTypeEnum(StrEnum):
@@ -60,13 +61,16 @@ class UnifiedVoicemailMessageSchema(VoicemailMessageBaseSchema):
 
 class VoicemailMessagesSchema(Schema):
     items = fields.Nested(UnifiedVoicemailMessageSchema, many=True)
+    total = fields.Integer()
 
 
 class VoicemailMessagesGetSchema(Schema):
     limit = fields.Integer()
     offset = fields.Integer()
-    direction = fields.String(validate=OneOf("asc", "desc"), load_default="desc")
-    order = fields.String(validate=OneOf("timestamp"), load_default="timestamp")
+    direction = fields.String(validate=OneOf(("asc", "desc")), load_default="asc")
+    order = fields.String(
+        validate=OneOf(VALID_VOICEMAIL_ORDER), load_default="timestamp"
+    )
     voicemail_type = fields.String(
         validate=OneOf(VALID_VOICEMAIL_TYPES), load_default="all"
     )

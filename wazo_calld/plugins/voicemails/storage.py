@@ -4,9 +4,11 @@
 import errno
 import logging
 import os.path
-from itertools import chain
+from collections.abc import Iterable
+from functools import partial
+from itertools import chain, islice
 from operator import itemgetter
-from typing import Literal
+from typing import Any, Literal
 
 from xivo import caller_id
 
@@ -17,6 +19,37 @@ from .exceptions import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+class _Slicer:
+    limit: int | None
+    offset: int
+    order: str | None
+    direction: Literal["asc", "desc"]
+
+    def __init__(
+        self,
+        limit: int | None = None,
+        offset: int | None = None,
+        order: str | None = None,
+        direction: Literal["asc", "desc"] | None = "asc",
+    ):
+        self.limit = limit
+        self.offset = offset or 0
+        self.order = order
+        self.direction = direction or "asc"
+
+    def __call__(self, iterable: Iterable[Any]) -> list[Any]:
+        # NOTE (jalie): If using a sorting order, we must convert to list beforehand
+        # which will require more memory to handle (might be a better way?)
+        if self.order:
+            iterable = list(iterable)
+            iterable.sort(
+                key=itemgetter(self.order), reverse=(self.direction == "desc")
+            )
+
+        stop = (self.offset + self.limit) if self.limit else None
+        return list(islice(iterable, self.offset, stop))
 
 
 class VoicemailFolderType:
@@ -151,22 +184,18 @@ class _VoicemailFilesystemStorage:
     def get_all_messages_infos(
         self,
         *vm_confs: dict,
-        order: str | None = "caller_id_name",
+        limit: int | None = None,
+        offset: int | None = None,
+        order: str | None = "timestamp",
         direction: Literal["asc", "desc"] | None = "asc",
     ) -> list[dict]:
-        messages = list(
-            chain(
-                *(
-                    _VoicemailAccess(self._base_path, self._folders, vm_conf).messages()
-                    for vm_conf in vm_confs
-                )
-            )
-        )
+        vm = partial(_VoicemailAccess, self._base_path, self._folders)
+        messages = chain(*(vm(conf).messages() for conf in vm_confs))
+        return _Slicer(limit, offset, order, direction)(messages)
 
-        if messages and order and order in messages[0]:
-            messages.sort(key=itemgetter(order), reverse=(direction == "desc"))
-
-        return messages
+    def count_all_messages(self, *vm_confs) -> int:
+        vm = partial(_VoicemailAccess, self._base_path, self._folders)
+        return sum(vm(conf).messages_count() for conf in vm_confs)
 
     def _sort_messages(self, messages):
         messages.sort(key=itemgetter('timestamp'), reverse=True)
@@ -196,6 +225,9 @@ class _VoicemailAccess:
                     return message_access
         raise NoSuchVoicemailMessage(message_id)
 
+    def messages_count(self) -> int:
+        return sum(folder.messages_count() for folder in self.folders())
+
     def messages(self):
         vm_info = {"voicemail": self.info()}
         return [
@@ -220,6 +252,19 @@ class _FolderAccess:
         self.vm_access = vm_access
         self.folder = folder
         self.path = os.path.join(vm_access.path, folder.path)
+
+    def messages_count(self) -> int:
+        count = 0
+        try:
+            for entry in os.scandir(self.path):
+                if entry.is_file() and entry.name.endswith(b'.txt'):
+                    count += 1
+        except OSError as e:
+            if e.errno == errno.ENOENT:
+                return 0
+            raise
+
+        return count
 
     def messages(self):
         try:

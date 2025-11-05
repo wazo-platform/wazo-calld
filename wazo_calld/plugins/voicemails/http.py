@@ -363,7 +363,13 @@ class UserVoicemailMessagesResource(AuthResource):
         params = voicemail_messages_get_schema.load(request.args.to_dict())
         tenant = Tenant.autodetect()
         user_uuid = get_token_user_uuid_from_request()
+
+        total = self._voicemails_service.count_user_messages(
+            tenant.uuid, user_uuid, params.get("voicemail_type")
+        )
+
         messages = self._voicemails_service.get_user_messages(
             tenant.uuid, user_uuid, **params
         )
-        return voicemail_messages_schema.dump({"items": messages})
+
+        return voicemail_messages_schema.dump({"items": messages, "total": total})
