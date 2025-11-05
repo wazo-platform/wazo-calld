@@ -16,6 +16,8 @@ from .exceptions import (
     VoicemailGreetingAlreadyExists,
 )
 
+VoicemailTypes = Literal["all", "shared", "personal"]
+
 
 class VoicemailsService:
     def __init__(self, ari, confd_client, voicemail_storage):
@@ -43,35 +45,50 @@ class VoicemailsService:
         vm_conf = confd.get_voicemail(tenant_uuid, voicemail_id, self._confd_client)
         return self._storage.get_message_info(vm_conf, message_id)
 
+    def _get_voicemails_configs(
+        self, tenant_uuid, user_uuid, voicemail_type: VoicemailTypes = "all"
+    ):
+        vm_confs = []
+        client = self._confd_client
+
+        if voicemail_type in ("all", "personal"):
+            try:
+                vm_confs.append(confd.get_user_voicemail(user_uuid, client))
+            except NoSuchUserVoicemail:
+                pass
+
+        if voicemail_type in ("all", "shared"):
+            vm_confs.extend(confd.get_shared_voicemails(tenant_uuid, client))
+
+        return vm_confs
+
+    def count_user_messages(
+        self,
+        tenant_uuid,
+        user_uuid,
+        voicemail_type: Literal["all", "shared", "personal"] = "all",
+    ):
+        vm_confs = self._get_voicemails_configs(tenant_uuid, user_uuid, voicemail_type)
+        if not vm_confs:
+            return 0
+        return self._storage.count_all_messages(*vm_confs)
+
     def get_user_messages(
         self,
         tenant_uuid,
         user_uuid,
         voicemail_type: Literal["all", "shared", "personal"] = "all",
+        limit: int | None = None,
+        offset: int | None = None,
         direction: str | None = None,
         order: str | None = None,
-        **params,
     ):
-        voicemails = []
-
-        if voicemail_type in ("all", "personal"):
-            try:
-                voicemails.append(
-                    confd.get_user_voicemail(user_uuid, self._confd_client)
-                )
-            except NoSuchUserVoicemail:
-                pass
-
-        if voicemail_type in ("all", "shared"):
-            voicemails.extend(
-                confd.get_shared_voicemails(tenant_uuid, self._confd_client)
-            )
-
-        if not voicemails:
+        vm_confs = self._get_voicemails_configs(tenant_uuid, user_uuid, voicemail_type)
+        if not vm_confs:
             return []
 
         return self._storage.get_all_messages_infos(
-            *voicemails, order=order, direction=direction
+            *vm_confs, limit=limit, offset=offset, order=order, direction=direction
         )
 
     def get_user_message(self, user_uuid, message_id):
