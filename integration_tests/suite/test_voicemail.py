@@ -1375,3 +1375,97 @@ class TestVoicemails(RealAsteriskIntegrationTest):
                 )
             ),
         )
+
+    def test_voicemail_all_messages_listing(self):
+        user_uuid_1 = str(uuid.uuid4())
+        voicemail_id_1 = 111
+        voicemail_id_2 = 222
+        message_id_1 = '1724107750-00000001'  # Present in Docker volume
+        message_id_2 = '1724436688-00000001'  # Present in Docker volume
+        voicemail_1 = MockVoicemail(
+            voicemail_id_1,
+            '8000',
+            'tenant-voicemail',
+            'default',
+            shared=True,
+            tenant_uuid=VALID_TENANT_MULTITENANT_1,
+        )
+        voicemail_2 = MockVoicemail(
+            voicemail_id_2,
+            '8001',
+            'user-voicemail',
+            'default',
+            user_uuids=[user_uuid_1],
+            tenant_uuid=VALID_TENANT_MULTITENANT_1,
+        )
+        self.confd.set_user_voicemails({user_uuid_1: [voicemail_2]})
+        self.confd.set_voicemails(voicemail_1, voicemail_2)
+        calld = self.make_user_calld(
+            user_uuid_1, tenant_uuid=VALID_TENANT_MULTITENANT_1
+        )
+
+        assert_that(
+            calld.voicemails.get_all_voicemail_messages_from_user(direction="asc"),
+            has_entries(
+                items=contains_exactly(
+                    has_entry("id", message_id_1),
+                    has_entry("id", message_id_2),
+                ),
+                total=2,
+            ),
+        )
+
+        assert_that(
+            calld.voicemails.get_all_voicemail_messages_from_user(direction="desc"),
+            has_entries(
+                items=contains_exactly(
+                    has_entry("id", message_id_2),
+                    has_entry("id", message_id_1),
+                ),
+                total=2,
+            ),
+        )
+
+        assert_that(
+            calld.voicemails.get_all_voicemail_messages_from_user(limit=1),
+            has_entries(
+                items=contains_exactly(
+                    has_entry("id", message_id_1),
+                ),
+                total=2,
+            ),
+        )
+
+        assert_that(
+            calld.voicemails.get_all_voicemail_messages_from_user(limit=1, offset=1),
+            has_entries(
+                items=contains_exactly(
+                    has_entry("id", message_id_2),
+                ),
+                total=2,
+            ),
+        )
+
+        assert_that(
+            calld.voicemails.get_all_voicemail_messages_from_user(order="duration"),
+            has_entries(
+                items=contains_exactly(
+                    has_entry("id", message_id_2),
+                    has_entry("id", message_id_1),
+                ),
+                total=2,
+            ),
+        )
+
+        assert_that(
+            calld.voicemails.get_all_voicemail_messages_from_user(
+                order="duration", direction="desc"
+            ),
+            has_entries(
+                items=contains_exactly(
+                    has_entry("id", message_id_1),
+                    has_entry("id", message_id_2),
+                ),
+                total=2,
+            ),
+        )
