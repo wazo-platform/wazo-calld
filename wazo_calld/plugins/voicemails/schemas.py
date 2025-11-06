@@ -4,7 +4,7 @@
 from enum import StrEnum, auto
 
 from marshmallow import Schema, fields, post_dump
-from xivo.mallow.validate import OneOf
+from xivo.mallow.validate import OneOf, Range
 
 VALID_GREETINGS = ["unavailable", "busy", "name"]
 VALID_VOICEMAIL_TYPES = ["all", "personal", "shared"]
@@ -75,8 +75,8 @@ class VoicemailMessagesSchema(Schema):
 
 
 class VoicemailMessagesGetSchema(Schema):
-    limit = fields.Integer()
-    offset = fields.Integer()
+    limit = fields.Integer(validate=Range(0))
+    offset = fields.Integer(validate=Range(0))
     direction = fields.String(validate=OneOf(("asc", "desc")), load_default="asc")
     order = fields.String(
         validate=OneOf(VALID_VOICEMAIL_ORDER), load_default="timestamp"
