@@ -1,19 +1,12 @@
 # Copyright 2019-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from enum import StrEnum, auto
-
 from marshmallow import Schema, fields, post_dump
 from xivo.mallow.validate import OneOf, Range
 
 VALID_GREETINGS = ["unavailable", "busy", "name"]
 VALID_VOICEMAIL_TYPES = ["all", "personal", "shared"]
 VALID_VOICEMAIL_ORDER = ["id", "caller_id_name", "duration", "timestamp"]
-
-
-class VoicemailTypeEnum(StrEnum):
-    personal = auto()
-    shared = auto()
 
 
 class VoicemailMessageBaseSchema(Schema):
@@ -75,7 +68,7 @@ class VoicemailMessagesSchema(Schema):
 
 
 class VoicemailMessagesGetSchema(Schema):
-    limit = fields.Integer(validate=Range(0))
+    limit = fields.Integer(validate=Range(1))
     offset = fields.Integer(validate=Range(0))
     direction = fields.String(validate=OneOf(("asc", "desc")), load_default="asc")
     order = fields.String(

@@ -48,7 +48,7 @@ class _Slicer:
                 key=itemgetter(self.order), reverse=(self.direction == "desc")
             )
 
-        stop = (self.offset + self.limit) if self.limit else None
+        stop = (self.offset + self.limit) if self.limit is not None else None
         return list(islice(iterable, self.offset, stop))
 
 

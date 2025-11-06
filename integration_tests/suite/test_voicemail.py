@@ -1320,7 +1320,7 @@ class TestVoicemails(RealAsteriskIntegrationTest):
         message_id_1 = '1724107750-00000001'  # Present in Docker volume
         message_id_2 = '1724436688-00000001'  # Present in Docker volume
         message_id_3 = '1724436755-00000002'  # Present in Docker volume
-        voicemail_1 = MockVoicemail(
+        tenant_voicemail = MockVoicemail(
             voicemail_id_1,
             '8000',
             'tenant-voicemail',
@@ -1328,7 +1328,7 @@ class TestVoicemails(RealAsteriskIntegrationTest):
             shared=True,
             tenant_uuid=VALID_TENANT_MULTITENANT_1,
         )
-        voicemail_2 = MockVoicemail(
+        user_voicemail = MockVoicemail(
             voicemail_id_2,
             '8001',
             'user-voicemail',
@@ -1336,15 +1336,15 @@ class TestVoicemails(RealAsteriskIntegrationTest):
             user_uuids=[user_uuid_1],
             tenant_uuid=VALID_TENANT_MULTITENANT_1,
         )
-        self.confd.set_user_voicemails({user_uuid_1: [voicemail_2]})
-        self.confd.set_voicemails(voicemail_1, voicemail_2)
+        self.confd.set_user_voicemails({user_uuid_1: [user_voicemail]})
+        self.confd.set_voicemails(tenant_voicemail, user_voicemail)
         calld = self.make_user_calld(
             user_uuid_1, tenant_uuid=VALID_TENANT_MULTITENANT_1
         )
 
         # All voicemail messages
         assert_that(
-            calld.voicemails.get_all_voicemail_messages_from_user(voicemail_type="all"),
+            calld.voicemails.list_voicemail_messages_from_user(voicemail_type="all"),
             has_entries(
                 items=has_items(
                     has_entry("id", message_id_1),
@@ -1357,9 +1357,7 @@ class TestVoicemails(RealAsteriskIntegrationTest):
 
         # Shared voicemail messages only
         assert_that(
-            calld.voicemails.get_all_voicemail_messages_from_user(
-                voicemail_type="shared"
-            ),
+            calld.voicemails.list_voicemail_messages_from_user(voicemail_type="shared"),
             has_entries(
                 items=contains_exactly(
                     has_entry("id", message_id_1),
@@ -1370,7 +1368,7 @@ class TestVoicemails(RealAsteriskIntegrationTest):
 
         # Personal voicemail messages only
         assert_that(
-            calld.voicemails.get_all_voicemail_messages_from_user(
+            calld.voicemails.list_voicemail_messages_from_user(
                 voicemail_type="personal"
             ),
             has_entries(
@@ -1389,7 +1387,7 @@ class TestVoicemails(RealAsteriskIntegrationTest):
         message_id_1 = '1724107750-00000001'  # Present in Docker volume
         message_id_2 = '1724436688-00000001'  # Present in Docker volume
         message_id_3 = '1724436755-00000002'  # Present in Docker volume
-        voicemail_1 = MockVoicemail(
+        tenant_voicemail = MockVoicemail(
             voicemail_id_1,
             '8000',
             'tenant-voicemail',
@@ -1397,7 +1395,7 @@ class TestVoicemails(RealAsteriskIntegrationTest):
             shared=True,
             tenant_uuid=VALID_TENANT_MULTITENANT_1,
         )
-        voicemail_2 = MockVoicemail(
+        user_voicemail = MockVoicemail(
             voicemail_id_2,
             '8001',
             'user-voicemail',
@@ -1405,14 +1403,14 @@ class TestVoicemails(RealAsteriskIntegrationTest):
             user_uuids=[user_uuid_1],
             tenant_uuid=VALID_TENANT_MULTITENANT_1,
         )
-        self.confd.set_user_voicemails({user_uuid_1: [voicemail_2]})
-        self.confd.set_voicemails(voicemail_1, voicemail_2)
+        self.confd.set_user_voicemails({user_uuid_1: [user_voicemail]})
+        self.confd.set_voicemails(tenant_voicemail, user_voicemail)
         calld = self.make_user_calld(
             user_uuid_1, tenant_uuid=VALID_TENANT_MULTITENANT_1
         )
 
         assert_that(
-            calld.voicemails.get_all_voicemail_messages_from_user(direction="asc"),
+            calld.voicemails.list_voicemail_messages_from_user(direction="asc"),
             has_entries(
                 items=contains_exactly(
                     has_entry('id', message_id_1),
@@ -1424,7 +1422,7 @@ class TestVoicemails(RealAsteriskIntegrationTest):
         )
 
         assert_that(
-            calld.voicemails.get_all_voicemail_messages_from_user(direction="desc"),
+            calld.voicemails.list_voicemail_messages_from_user(direction="desc"),
             has_entries(
                 items=contains_exactly(
                     has_entry('id', message_id_3),
@@ -1436,7 +1434,7 @@ class TestVoicemails(RealAsteriskIntegrationTest):
         )
 
         assert_that(
-            calld.voicemails.get_all_voicemail_messages_from_user(limit=1),
+            calld.voicemails.list_voicemail_messages_from_user(limit=1),
             has_entries(
                 items=contains_exactly(
                     has_entry('id', message_id_1),
@@ -1446,7 +1444,7 @@ class TestVoicemails(RealAsteriskIntegrationTest):
         )
 
         assert_that(
-            calld.voicemails.get_all_voicemail_messages_from_user(limit=1, offset=1),
+            calld.voicemails.list_voicemail_messages_from_user(limit=1, offset=1),
             has_entries(
                 items=contains_exactly(
                     has_entry('id', message_id_2),
@@ -1456,7 +1454,7 @@ class TestVoicemails(RealAsteriskIntegrationTest):
         )
 
         assert_that(
-            calld.voicemails.get_all_voicemail_messages_from_user(offset=2),
+            calld.voicemails.list_voicemail_messages_from_user(offset=2),
             has_entries(
                 items=contains_exactly(
                     has_entry('id', message_id_3),
@@ -1466,7 +1464,7 @@ class TestVoicemails(RealAsteriskIntegrationTest):
         )
 
         assert_that(
-            calld.voicemails.get_all_voicemail_messages_from_user(order="duration"),
+            calld.voicemails.list_voicemail_messages_from_user(order="duration"),
             has_entries(
                 items=contains_exactly(
                     has_entry('id', message_id_2),
@@ -1478,7 +1476,7 @@ class TestVoicemails(RealAsteriskIntegrationTest):
         )
 
         assert_that(
-            calld.voicemails.get_all_voicemail_messages_from_user(
+            calld.voicemails.list_voicemail_messages_from_user(
                 order="duration", direction="desc"
             ),
             has_entries(
