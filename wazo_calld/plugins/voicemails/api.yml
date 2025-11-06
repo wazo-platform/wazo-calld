@@ -616,38 +616,35 @@ definitions:
         description: The folder's ID
     required:
     - folder_id
-  UnifiedVoicemailMessage:
-    allOf:
-    - $ref: '#/definitions/VoicemailMessageBase'
-    - type: object
-      properties:
-        voicemail:
-          type: object
-          properties:
-            id:
-              type: integer
-              readOnly: true
-            name:
-              type: string
-              readOnly: true
-            type:
-              type: string
-              enum:
-                - shared
-                - personal
-              readOnly: true
-    - type: object
-      properties:
-        folder:
-          $ref: '#/definitions/VoicemailFolderBase'
-          readOnly: true
   VoicemailMessages:
     type: object
     properties:
       items:
+        description: List of voicemail messages
         type: array
         items:
-          $ref: '#/definitions/UnifiedVoicemailMessage'
+          allOf:
+          - $ref: '#/definitions/VoicemailMessage'
+          - type: object
+            properties:
+              voicemail:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    description: The containing voicemail's ID
+                    readOnly: true
+                  name:
+                    type: string
+                    description: The containing voicemail's name
+                    readOnly: true
+                  type:
+                    type: string
+                    description: The containing voicemail's type (either shared or personal)
+                    enum:
+                    - shared
+                    - personal
+                    readOnly: true
         readOnly: true
       total:
         type: integer
