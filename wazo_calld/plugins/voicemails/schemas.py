@@ -3,7 +3,7 @@
 
 from enum import StrEnum, auto
 
-from marshmallow import Schema, fields
+from marshmallow import Schema, fields, post_dump
 from xivo.mallow.validate import OneOf
 
 VALID_GREETINGS = ["unavailable", "busy", "name"]
@@ -55,8 +55,18 @@ class VoicemailGreetingCopySchema(Schema):
 
 
 class UnifiedVoicemailMessageSchema(VoicemailMessageBaseSchema):
-    voicemail = fields.Nested(VoicemailSchema, only=("id", "name", "shared"))
+    voicemail = fields.Nested(VoicemailSchema, only=("id", "name"))
     folder = fields.Nested(VoicemailFolderBaseSchema)
+
+    @post_dump(pass_original=True)
+    def compute_voicemail_type(self, data, original_data, **kwargs):
+        try:
+            is_shared = bool(original_data['voicemail']['shared'])
+        except KeyError:
+            is_shared = False
+
+        data['voicemail']['type'] = 'shared' if is_shared else 'personal'
+        return data
 
 
 class VoicemailMessagesSchema(Schema):
