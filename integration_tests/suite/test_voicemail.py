@@ -1325,7 +1325,7 @@ class TestVoicemails(RealAsteriskIntegrationTest):
             '8000',
             'tenant-voicemail',
             'default',
-            shared=True,
+            accesstype='global',
             tenant_uuid=VALID_TENANT_MULTITENANT_1,
         )
         user_voicemail = MockVoicemail(
@@ -1355,9 +1355,9 @@ class TestVoicemails(RealAsteriskIntegrationTest):
             ),
         )
 
-        # Shared voicemail messages only
+        # Global voicemail messages only
         assert_that(
-            calld.voicemails.list_voicemail_messages_from_user(voicemail_type="shared"),
+            calld.voicemails.list_voicemail_messages_from_user(voicemail_type="global"),
             has_entries(
                 items=contains_exactly(
                     has_entry("id", message_id_1),
@@ -1392,7 +1392,7 @@ class TestVoicemails(RealAsteriskIntegrationTest):
             '8000',
             'tenant-voicemail',
             'default',
-            shared=True,
+            accesstype='global',
             tenant_uuid=VALID_TENANT_MULTITENANT_1,
         )
         user_voicemail = MockVoicemail(

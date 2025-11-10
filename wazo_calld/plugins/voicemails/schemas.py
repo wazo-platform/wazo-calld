@@ -5,8 +5,9 @@ from marshmallow import Schema, fields, post_dump
 from xivo.mallow.validate import OneOf, Range
 
 VALID_GREETINGS = ["unavailable", "busy", "name"]
-VALID_VOICEMAIL_TYPES = ["all", "personal", "shared"]
+VALID_VOICEMAIL_TYPES = ["all", "personal", "global"]
 VALID_VOICEMAIL_ORDER = ["id", "caller_id_name", "duration", "timestamp"]
+VALID_ACCESSTYPES = ["personal", "global"]
 
 
 class VoicemailMessageBaseSchema(Schema):
@@ -36,7 +37,7 @@ class VoicemailSchema(Schema):
     name = fields.String()
     number = fields.String()
     folders = fields.Nested(VoicemailFolderSchema, many=True)
-    shared = fields.Boolean()
+    accesstype = fields.String(validate=OneOf(VALID_ACCESSTYPES))
 
 
 class VoicemailMessageUpdateSchema(Schema):
@@ -54,11 +55,11 @@ class UnifiedVoicemailMessageSchema(VoicemailMessageBaseSchema):
     @post_dump(pass_original=True)
     def compute_voicemail_type(self, data, original_data, **kwargs):
         try:
-            is_shared = bool(original_data['voicemail']['shared'])
+            accesstype = original_data['voicemail'].get('accesstype', 'personal')
         except KeyError:
-            is_shared = False
+            accesstype = 'personal'
 
-        data['voicemail']['type'] = 'shared' if is_shared else 'personal'
+        data['voicemail']['type'] = 'global' if accesstype == 'global' else 'personal'
         return data
 
 

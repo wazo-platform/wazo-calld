@@ -16,7 +16,7 @@ from .exceptions import (
     VoicemailGreetingAlreadyExists,
 )
 
-VoicemailTypes = Literal["all", "shared", "personal"]
+VoicemailTypes = Literal["all", "global", "personal"]
 
 
 class VoicemailsService:
@@ -57,8 +57,8 @@ class VoicemailsService:
             except NoSuchUserVoicemail:
                 pass
 
-        if voicemail_type in ("all", "shared"):
-            vm_confs.extend(confd.get_shared_voicemails(tenant_uuid, client))
+        if voicemail_type in ("all", "global"):
+            vm_confs.extend(confd.get_global_voicemails(tenant_uuid, client))
 
         return vm_confs
 
@@ -66,7 +66,7 @@ class VoicemailsService:
         self,
         tenant_uuid,
         user_uuid,
-        voicemail_type: Literal["all", "shared", "personal"] = "all",
+        voicemail_type: Literal["all", "global", "personal"] = "all",
     ):
         vm_confs = self._get_voicemails_configs(tenant_uuid, user_uuid, voicemail_type)
         if not vm_confs:
@@ -77,7 +77,7 @@ class VoicemailsService:
         self,
         tenant_uuid,
         user_uuid,
-        voicemail_type: Literal["all", "shared", "personal"] = "all",
+        voicemail_type: Literal["all", "global", "personal"] = "all",
         limit: int | None = None,
         offset: int | None = None,
         direction: str | None = None,

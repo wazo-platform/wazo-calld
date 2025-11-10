@@ -240,9 +240,11 @@ def get_user_voicemail(user_uuid, confd_client):
     return voicemail
 
 
-def get_shared_voicemails(tenant_uuid, confd_client) -> list[dict]:
+def get_global_voicemails(tenant_uuid, confd_client) -> list[dict]:
     try:
-        response = confd_client.voicemails.list(tenant_uuid=tenant_uuid, shared=True)
+        response = confd_client.voicemails.list(
+            tenant_uuid=tenant_uuid, accesstype='global'
+        )
         return response.get("items", [])
     except HTTPError as e:
         if not_found(e):

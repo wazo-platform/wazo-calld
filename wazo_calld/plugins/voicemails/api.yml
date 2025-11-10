@@ -298,12 +298,12 @@ paths:
       - $ref: '#/parameters/offset'
       - name: voicemail_type
         in: query
-        description: include or exclude messages from shared mailboxes
+        description: include or exclude messages from global mailboxes
         type: string
         enum:
         - all
         - personal
-        - shared
+        - global
         default: all
         required: false
       responses:
@@ -545,6 +545,12 @@ definitions:
       name:
         type: string
         description: The voicemail's name
+      accesstype:
+        type: string
+        description: The voicemail's access type (either personal or global)
+        enum:
+        - personal
+        - global
       folders:
         type: array
         description: The voicemail's folders
@@ -640,9 +646,9 @@ definitions:
                     readOnly: true
                   type:
                     type: string
-                    description: The containing voicemail's type (either shared or personal)
+                    description: The containing voicemail's type (either global or personal)
                     enum:
-                    - shared
+                    - global
                     - personal
                     readOnly: true
         readOnly: true
