@@ -242,7 +242,7 @@ class _VoicemailAccess:
             'number': self.vm_conf['number'],
             'context': self.vm_conf['context'],
             'name': self.vm_conf['name'],
-            'shared': self.vm_conf['shared'],
+            'accesstype': self.vm_conf.get('accesstype', 'personal'),
             'folders': [],
         }
 
@@ -476,5 +476,5 @@ def _fake_vm_conf(number, context):
         'name': 'fake-vm-conf',
         'number': number,
         'context': context,
-        'shared': False,
+        'accesstype': 'personal',
     }
