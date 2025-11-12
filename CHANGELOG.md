@@ -1,5 +1,10 @@
 # Changelog
 
+## 25.16
+
+* The following endpoint has been added for a user to access the messages across all the voicemails they have access to
+  * `PUT /1.0/users/me/voicemails/messages`
+
 ## 25.04
 
 * The `state` attribute has been added to the application playback response and events
