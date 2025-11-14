@@ -1,0 +1,18 @@
+;
+; Message Information file
+;
+[message]
+origmailbox=8001
+context=default
+macrocontext=
+exten=voicemail
+rdnis=8001
+priority=7
+callerchan=SIP/qQh25b-00000002
+callerid="Bob" <1002>
+origdate=Mon Aug 23 06:16:35 PM UTC 2024
+origtime=1724436995
+category=
+msg_id=1724436995-00000003
+flag=
+duration=0

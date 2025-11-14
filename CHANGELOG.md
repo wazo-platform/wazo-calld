@@ -4,6 +4,7 @@
 
 * The following endpoint has been added for a user to access the messages across all the voicemails they have access to
   * `PUT /1.0/users/me/voicemails/messages`
+* The `empty` attribute has been added to voicemail messages. It is set to `True` when the duration of the message is 0, meaning that there is a voicemail but the audio is empty.
 
 ## 25.04
 

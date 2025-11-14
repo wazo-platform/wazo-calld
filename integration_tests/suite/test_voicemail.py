@@ -1320,6 +1320,7 @@ class TestVoicemails(RealAsteriskIntegrationTest):
         message_id_1 = '1724107750-00000001'  # Present in Docker volume
         message_id_2 = '1724436688-00000001'  # Present in Docker volume
         message_id_3 = '1724436755-00000002'  # Present in Docker volume
+        message_id_4 = '1724436995-00000003'  # Present in Docker volume
         tenant_voicemail = MockVoicemail(
             voicemail_id_1,
             '8000',
@@ -1350,8 +1351,9 @@ class TestVoicemails(RealAsteriskIntegrationTest):
                     has_entry("id", message_id_1),
                     has_entry("id", message_id_2),
                     has_entry('id', message_id_3),
+                    has_entry('id', message_id_4),
                 ),
-                total=3,
+                total=4,
             ),
         )
 
@@ -1375,8 +1377,9 @@ class TestVoicemails(RealAsteriskIntegrationTest):
                 items=contains_exactly(
                     has_entry("id", message_id_2),
                     has_entry('id', message_id_3),
+                    has_entry('id', message_id_4),
                 ),
-                total=2,
+                total=3,
             ),
         )
 
@@ -1387,6 +1390,7 @@ class TestVoicemails(RealAsteriskIntegrationTest):
         message_id_1 = '1724107750-00000001'  # Present in Docker volume
         message_id_2 = '1724436688-00000001'  # Present in Docker volume
         message_id_3 = '1724436755-00000002'  # Present in Docker volume
+        message_id_4 = '1724436995-00000003'  # Present in Docker volume
         tenant_voicemail = MockVoicemail(
             voicemail_id_1,
             '8000',
@@ -1416,8 +1420,9 @@ class TestVoicemails(RealAsteriskIntegrationTest):
                     has_entry('id', message_id_1),
                     has_entry('id', message_id_2),
                     has_entry('id', message_id_3),
+                    has_entry('id', message_id_4),
                 ),
-                total=3,
+                total=4,
             ),
         )
 
@@ -1425,11 +1430,12 @@ class TestVoicemails(RealAsteriskIntegrationTest):
             calld.voicemails.list_voicemail_messages_from_user(direction="desc"),
             has_entries(
                 items=contains_exactly(
+                    has_entry('id', message_id_4),
                     has_entry('id', message_id_3),
                     has_entry('id', message_id_2),
                     has_entry('id', message_id_1),
                 ),
-                total=3,
+                total=4,
             ),
         )
 
@@ -1439,7 +1445,7 @@ class TestVoicemails(RealAsteriskIntegrationTest):
                 items=contains_exactly(
                     has_entry('id', message_id_1),
                 ),
-                total=3,
+                total=4,
             ),
         )
 
@@ -1449,7 +1455,7 @@ class TestVoicemails(RealAsteriskIntegrationTest):
                 items=contains_exactly(
                     has_entry('id', message_id_2),
                 ),
-                total=3,
+                total=4,
             ),
         )
 
@@ -1458,8 +1464,9 @@ class TestVoicemails(RealAsteriskIntegrationTest):
             has_entries(
                 items=contains_exactly(
                     has_entry('id', message_id_3),
+                    has_entry('id', message_id_4),
                 ),
-                total=3,
+                total=4,
             ),
         )
 
@@ -1467,11 +1474,12 @@ class TestVoicemails(RealAsteriskIntegrationTest):
             calld.voicemails.list_voicemail_messages_from_user(order="duration"),
             has_entries(
                 items=contains_exactly(
+                    has_entry('id', message_id_4),
                     has_entry('id', message_id_2),
                     has_entry('id', message_id_1),
                     has_entry('id', message_id_3),
                 ),
-                total=3,
+                total=4,
             ),
         )
 
@@ -1484,7 +1492,31 @@ class TestVoicemails(RealAsteriskIntegrationTest):
                     has_entry('id', message_id_3),
                     has_entry('id', message_id_1),
                     has_entry('id', message_id_2),
+                    has_entry('id', message_id_4),
                 ),
-                total=3,
+                total=4,
             ),
         )
+
+    def test_voicemail_message_duration_empty(self):
+        user_uuid_1 = str(uuid.uuid4())
+        voicemail_id_1 = 111
+        message_id_1 = '1724436995-00000003'  # Present in Docker volume
+        user_voicemail = MockVoicemail(
+            voicemail_id_1,
+            '8001',
+            'user-voicemail',
+            'default',
+            user_uuids=[user_uuid_1],
+            tenant_uuid=VALID_TENANT_MULTITENANT_1,
+        )
+        self.confd.set_user_voicemails({user_uuid_1: [user_voicemail]})
+        self.confd.set_voicemails(user_voicemail)
+        calld = self.make_user_calld(
+            user_uuid_1, tenant_uuid=VALID_TENANT_MULTITENANT_1
+        )
+        message = calld.voicemails.get_voicemail_message(voicemail_id_1, message_id_1)
+        assert message['id'] == message_id_1
+        assert message['caller_id_name'] == 'Bob'
+        assert message['duration'] == 0
+        assert message['empty'] is True

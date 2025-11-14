@@ -16,6 +16,7 @@ class VoicemailMessageBaseSchema(Schema):
     caller_id_num = fields.String()
     duration = fields.Integer()
     timestamp = fields.Integer()
+    empty = fields.Boolean()
 
 
 class VoicemailFolderBaseSchema(Schema):

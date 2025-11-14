@@ -52,6 +52,7 @@ duration=12
             'caller_id_num': '101',
             'timestamp': 1478200319,
             'duration': 12,
+            'empty': False,
         }
         assert_that(result, equal_to(expected))
 
@@ -74,7 +75,7 @@ origtime=  1478200319
 category=
 msg_id=1478200319-00000000
 flag=
-duration= 12
+duration= 0
 '''  # noqa: W291
         result = self._parse(content)
         expected = {
@@ -82,7 +83,8 @@ duration= 12
             'caller_id_name': 'Etienne',
             'caller_id_num': '101',
             'timestamp': 1478200319,
-            'duration': 12,
+            'duration': 0,
+            'empty': True,
         }
         assert_that(result, equal_to(expected))
 
