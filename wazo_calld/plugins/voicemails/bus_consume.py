@@ -1,4 +1,4 @@
-# Copyright 2016-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -24,7 +24,14 @@ class VoicemailsBusEventHandler:
         if diff.is_empty():
             return
         voicemail = self._get_voicemail(number, context)
-        for user in voicemail['users']:
+        users = []
+        match voicemail['accesstype']:
+            case 'personal':
+                users = voicemail['users']
+            case 'global':
+                users = self._confd_client.users.list(context=context)['items']
+
+        for user in users:
             self._send_notifications_from_diff(
                 user['uuid'], voicemail['tenant_uuid'], voicemail['id'], diff
             )
@@ -36,20 +43,54 @@ class VoicemailsBusEventHandler:
         return response['items'][0]
 
     def _send_notifications_from_diff(self, user_uuid, tenant_uuid, voicemail_id, diff):
+        voicemail = self._confd_client.voicemails.get(
+            voicemail_id, tenant_uuid=tenant_uuid
+        )
+        access_type = voicemail['accesstype']
         for message in diff.created_messages:
             payload = voicemail_message_schema.dump(message)
-            self._notifier.create_user_voicemail_message(
-                user_uuid, tenant_uuid, voicemail_id, payload['id'], payload
-            )
+            match access_type:
+                case 'personal':
+                    self._notifier.create_user_voicemail_message(
+                        user_uuid, tenant_uuid, voicemail_id, payload['id'], payload
+                    )
+                case 'global':
+                    self._notifier.create_global_voicemail_message(
+                        user_uuid, tenant_uuid, voicemail_id, payload['id'], payload
+                    )
+                case _:
+                    logger.error(
+                        f'unknown accesstype "{access_type}" for voicemail {voicemail_id}'
+                    )
 
         for message in diff.updated_messages:
             payload = voicemail_message_schema.dump(message)
-            self._notifier.update_user_voicemail_message(
-                user_uuid, tenant_uuid, voicemail_id, payload['id'], payload
-            )
+            match access_type:
+                case 'personal':
+                    self._notifier.update_user_voicemail_message(
+                        user_uuid, tenant_uuid, voicemail_id, payload['id'], payload
+                    )
+                case 'global':
+                    self._notifier.update_global_voicemail_message(
+                        user_uuid, tenant_uuid, voicemail_id, payload['id'], payload
+                    )
+                case _:
+                    logger.error(
+                        f'unknown accesstype "{access_type}" for voicemail {voicemail_id}'
+                    )
 
         for message in diff.deleted_messages:
             payload = voicemail_message_schema.dump(message)
-            self._notifier.delete_user_voicemail_message(
-                user_uuid, tenant_uuid, voicemail_id, payload['id'], payload
-            )
+            match access_type:
+                case 'personal':
+                    self._notifier.delete_user_voicemail_message(
+                        user_uuid, tenant_uuid, voicemail_id, payload['id'], payload
+                    )
+                case 'global':
+                    self._notifier.delete_global_voicemail_message(
+                        user_uuid, tenant_uuid, voicemail_id, payload['id'], payload
+                    )
+                case _:
+                    logger.error(
+                        f'unknown accesstype "{access_type}" for voicemail {voicemail_id}'
+                    )
