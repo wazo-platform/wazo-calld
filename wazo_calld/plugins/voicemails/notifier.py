@@ -39,26 +39,14 @@ class VoicemailsNotifier:
         )
         self._bus_publisher.publish(event)
 
-    def create_global_voicemail_message(
-        self, user_uuid, tenant_uuid, voicemail_id, message_id, message
-    ):
-        event = GlobalVoicemailMessageCreatedEvent(
-            message_id, voicemail_id, message, tenant_uuid, user_uuid
-        )
+    def create_global_voicemail_message(self, tenant_uuid, message):
+        event = GlobalVoicemailMessageCreatedEvent(message, tenant_uuid)
         self._bus_publisher.publish(event)
 
-    def update_global_voicemail_message(
-        self, user_uuid, tenant_uuid, voicemail_id, message_id, message
-    ):
-        event = GlobalVoicemailMessageUpdatedEvent(
-            message_id, voicemail_id, message, tenant_uuid, user_uuid
-        )
+    def update_global_voicemail_message(self, tenant_uuid, message):
+        event = GlobalVoicemailMessageUpdatedEvent(message, tenant_uuid)
         self._bus_publisher.publish(event)
 
-    def delete_global_voicemail_message(
-        self, user_uuid, tenant_uuid, voicemail_id, message_id, message
-    ):
-        event = GlobalVoicemailMessageDeletedEvent(
-            message_id, voicemail_id, message, tenant_uuid, user_uuid
-        )
+    def delete_global_voicemail_message(self, tenant_uuid, message):
+        event = GlobalVoicemailMessageDeletedEvent(message, tenant_uuid)
         self._bus_publisher.publish(event)

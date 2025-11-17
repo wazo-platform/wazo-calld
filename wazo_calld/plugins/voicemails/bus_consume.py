@@ -55,9 +55,7 @@ class VoicemailsBusEventHandler:
                         user_uuid, tenant_uuid, voicemail_id, payload['id'], payload
                     )
                 case 'global':
-                    self._notifier.create_global_voicemail_message(
-                        user_uuid, tenant_uuid, voicemail_id, payload['id'], payload
-                    )
+                    self._notifier.create_global_voicemail_message(tenant_uuid, payload)
                 case _:
                     logger.error(
                         f'unknown accesstype "{access_type}" for voicemail {voicemail_id}'
@@ -67,9 +65,7 @@ class VoicemailsBusEventHandler:
             payload = voicemail_message_schema.dump(message)
             match access_type:
                 case 'personal':
-                    self._notifier.update_user_voicemail_message(
-                        user_uuid, tenant_uuid, voicemail_id, payload['id'], payload
-                    )
+                    self._notifier.update_user_voicemail_message(tenant_uuid, payload)
                 case 'global':
                     self._notifier.update_global_voicemail_message(
                         user_uuid, tenant_uuid, voicemail_id, payload['id'], payload
@@ -87,9 +83,7 @@ class VoicemailsBusEventHandler:
                         user_uuid, tenant_uuid, voicemail_id, payload['id'], payload
                     )
                 case 'global':
-                    self._notifier.delete_global_voicemail_message(
-                        user_uuid, tenant_uuid, voicemail_id, payload['id'], payload
-                    )
+                    self._notifier.delete_global_voicemail_message(tenant_uuid, payload)
                 case _:
                     logger.error(
                         f'unknown accesstype "{access_type}" for voicemail {voicemail_id}'
