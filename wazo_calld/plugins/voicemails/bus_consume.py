@@ -24,17 +24,14 @@ class VoicemailsBusEventHandler:
         if diff.is_empty():
             return
         voicemail = self._get_voicemail(number, context)
-        users = []
         match voicemail['accesstype']:
             case 'personal':
-                users = voicemail['users']
+                for user in voicemail['users']:
+                    self._send_notifications_from_diff(
+                        user['uuid'], voicemail['tenant_uuid'], voicemail['id'], diff
+                    )
             case 'global':
-                users = self._confd_client.users.list(context=context)['items']
-
-        for user in users:
-            self._send_notifications_from_diff(
-                user['uuid'], voicemail['tenant_uuid'], voicemail['id'], diff
-            )
+                self._send_tenant_notification_from_diff(voicemail['tenant_uuid'], diff)
 
     def _get_voicemail(self, number, context):
         response = self._confd_client.voicemails.list(
@@ -42,49 +39,34 @@ class VoicemailsBusEventHandler:
         )
         return response['items'][0]
 
-    def _send_notifications_from_diff(self, user_uuid, tenant_uuid, voicemail_id, diff):
-        voicemail = self._confd_client.voicemails.get(
-            voicemail_id, tenant_uuid=tenant_uuid
-        )
-        access_type = voicemail['accesstype']
+    def _send_tenant_notification_from_diff(self, tenant_uuid, diff):
         for message in diff.created_messages:
             payload = voicemail_message_schema.dump(message)
-            match access_type:
-                case 'personal':
-                    self._notifier.create_user_voicemail_message(
-                        user_uuid, tenant_uuid, voicemail_id, payload['id'], payload
-                    )
-                case 'global':
-                    self._notifier.create_global_voicemail_message(tenant_uuid, payload)
-                case _:
-                    logger.error(
-                        f'unknown accesstype "{access_type}" for voicemail {voicemail_id}'
-                    )
+            self._notifier.create_global_voicemail_message(tenant_uuid, payload)
 
         for message in diff.updated_messages:
             payload = voicemail_message_schema.dump(message)
-            match access_type:
-                case 'personal':
-                    self._notifier.update_user_voicemail_message(tenant_uuid, payload)
-                case 'global':
-                    self._notifier.update_global_voicemail_message(
-                        user_uuid, tenant_uuid, voicemail_id, payload['id'], payload
-                    )
-                case _:
-                    logger.error(
-                        f'unknown accesstype "{access_type}" for voicemail {voicemail_id}'
-                    )
+            self._notifier.update_global_voicemail_message(tenant_uuid, payload)
 
         for message in diff.deleted_messages:
             payload = voicemail_message_schema.dump(message)
-            match access_type:
-                case 'personal':
-                    self._notifier.delete_user_voicemail_message(
-                        user_uuid, tenant_uuid, voicemail_id, payload['id'], payload
-                    )
-                case 'global':
-                    self._notifier.delete_global_voicemail_message(tenant_uuid, payload)
-                case _:
-                    logger.error(
-                        f'unknown accesstype "{access_type}" for voicemail {voicemail_id}'
-                    )
+            self._notifier.delete_global_voicemail_message(tenant_uuid, payload)
+
+    def _send_notifications_from_diff(self, user_uuid, tenant_uuid, voicemail_id, diff):
+        for message in diff.created_messages:
+            payload = voicemail_message_schema.dump(message)
+            self._notifier.create_user_voicemail_message(
+                user_uuid, tenant_uuid, voicemail_id, payload['id'], payload
+            )
+
+        for message in diff.updated_messages:
+            payload = voicemail_message_schema.dump(message)
+            self._notifier.update_user_voicemail_message(
+                user_uuid, tenant_uuid, voicemail_id, payload['id'], payload
+            )
+
+        for message in diff.deleted_messages:
+            payload = voicemail_message_schema.dump(message)
+            self._notifier.delete_user_voicemail_message(
+                user_uuid, tenant_uuid, voicemail_id, payload['id'], payload
+            )
