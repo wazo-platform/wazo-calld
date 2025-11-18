@@ -3,10 +3,10 @@
 
 import logging
 
-from .schemas import UnifiedVoicemailMessageSchema, voicemail_message_schema
+from .schemas import UnifiedVoicemailMessageSchema
 
 logger = logging.getLogger(__name__)
-global_voicemail_message_schema = UnifiedVoicemailMessageSchema()
+voicemail_message_schema = UnifiedVoicemailMessageSchema()
 
 
 class VoicemailsBusEventHandler:
@@ -39,32 +39,19 @@ class VoicemailsBusEventHandler:
         )
         return response['items'][0]
 
-    def _voicemail_info(self, voicemail):
-        return {
-            'id': voicemail['id'],
-            'name': voicemail['name'],
-            'accesstype': voicemail['accesstype'],
-        }
-
     def _send_tenant_notifications_from_diff(self, voicemail, diff):
         tenant_uuid = voicemail['tenant_uuid']
 
         for message in diff.created_messages:
-            payload = global_voicemail_message_schema.dump(
-                message | {'voicemail': self._voicemail_info(voicemail)}
-            )
+            payload = _build_message(voicemail_message_schema, voicemail, message)
             self._notifier.create_global_voicemail_message(tenant_uuid, payload)
 
         for message in diff.updated_messages:
-            payload = global_voicemail_message_schema.dump(
-                message | {'voicemail': self._voicemail_info(voicemail)}
-            )
+            payload = _build_message(voicemail_message_schema, voicemail, message)
             self._notifier.update_global_voicemail_message(tenant_uuid, payload)
 
         for message in diff.deleted_messages:
-            payload = global_voicemail_message_schema.dump(
-                message | {'voicemail': self._voicemail_info(voicemail)}
-            )
+            payload = _build_message(voicemail_message_schema, voicemail, message)
             self._notifier.delete_global_voicemail_message(tenant_uuid, payload)
 
     def _send_users_notifications_from_diff(self, voicemail, diff):
@@ -75,19 +62,28 @@ class VoicemailsBusEventHandler:
             user_uuid = user['uuid']
 
             for message in diff.created_messages:
-                payload = voicemail_message_schema.dump(message)
+                payload = _build_message(voicemail_message_schema, voicemail, message)
                 self._notifier.create_user_voicemail_message(
                     user_uuid, tenant_uuid, voicemail_id, payload['id'], payload
                 )
 
             for message in diff.updated_messages:
-                payload = voicemail_message_schema.dump(message)
+                payload = _build_message(voicemail_message_schema, voicemail, message)
                 self._notifier.update_user_voicemail_message(
                     user_uuid, tenant_uuid, voicemail_id, payload['id'], payload
                 )
 
             for message in diff.deleted_messages:
-                payload = voicemail_message_schema.dump(message)
+                payload = _build_message(voicemail_message_schema, voicemail, message)
                 self._notifier.delete_user_voicemail_message(
                     user_uuid, tenant_uuid, voicemail_id, payload['id'], payload
                 )
+
+
+def _build_message(schema, voicemail, message) -> dict:
+    voicemail_info = {
+        'id': voicemail['id'],
+        'name': voicemail['name'],
+        'accesstype': voicemail['accesstype'],
+    }
+    return schema.dump(message | {'voicemail': voicemail_info})
