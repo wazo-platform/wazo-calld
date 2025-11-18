@@ -602,6 +602,10 @@ definitions:
         type: integer
         description: The message's duration in seconds
         readOnly: true
+      empty:
+        type: boolean
+        description: True if the message is empty (duration is 0)
+        readOnly: true
       timestamp:
         type: integer
         description: The time the message was left as a Unix time value

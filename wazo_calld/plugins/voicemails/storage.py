@@ -340,6 +340,7 @@ class _MessageInfoParser:
     @staticmethod
     def _parse_duration(value, result):
         result['duration'] = int(value)
+        result['empty'] = int(value) == 0
 
 
 class _MessageAccess:
