@@ -648,7 +648,7 @@ definitions:
                     type: string
                     description: The containing voicemail's name
                     readOnly: true
-                  type:
+                  accesstype:
                     type: string
                     description: The containing voicemail's type (either global or personal)
                     enum:

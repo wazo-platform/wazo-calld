@@ -60,7 +60,9 @@ class UnifiedVoicemailMessageSchema(VoicemailMessageBaseSchema):
         except KeyError:
             accesstype = 'personal'
 
-        data['voicemail']['type'] = 'global' if accesstype == 'global' else 'personal'
+        data['voicemail']['accesstype'] = (
+            'global' if accesstype == 'global' else 'personal'
+        )
         return data
 
 
