@@ -1515,8 +1515,31 @@ class TestVoicemails(RealAsteriskIntegrationTest):
         calld = self.make_user_calld(
             user_uuid_1, tenant_uuid=VALID_TENANT_MULTITENANT_1
         )
-        message = calld.voicemails.get_voicemail_message(voicemail_id_1, message_id_1)
-        assert message['id'] == message_id_1
-        assert message['caller_id_name'] == 'Bob'
-        assert message['duration'] == 0
-        assert message['empty'] is True
+        assert_that(
+            calld.voicemails.get_voicemail_message(voicemail_id_1, message_id_1),
+            has_entries(
+                {
+                    'id': message_id_1,
+                    'caller_id_name': 'Bob',
+                    'duration': 0,
+                    'empty': True,
+                }
+            ),
+        )
+        assert_that(
+            calld.voicemails.list_voicemail_messages_from_user(
+                order="duration", direction="asc", limit=1
+            ),
+            has_entries(
+                items=contains_exactly(
+                    has_entries(
+                        {
+                            'id': message_id_1,
+                            'caller_id_name': 'Bob',
+                            'duration': 0,
+                            'empty': True,
+                        }
+                    )
+                ),
+            ),
+        )
