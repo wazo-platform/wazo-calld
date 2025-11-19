@@ -6,6 +6,8 @@
   * `PUT /1.0/users/me/voicemails/messages`
 * The `empty` attribute has been added to voicemail messages. It is set to `True` when the duration of the message is 0, meaning that there is a voicemail but the audio is empty.
 
+* `accesstype` attribute has been added to the voicemail object and events
+
 ## 25.04
 
 * The `state` attribute has been added to the application playback response and events

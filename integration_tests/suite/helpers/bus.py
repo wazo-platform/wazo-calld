@@ -1,4 +1,4 @@
-# Copyright 2015-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
@@ -346,3 +346,16 @@ class BusClient(bus_helper.BusClient):
             'data': {'id': id},
         }
         self.send_event(payload, headers={'name': 'parking_lot_deleted'})
+
+    def send_message_waiting_event(self, voicemail_id, context=None):
+        self.send_event(
+            {
+                'data': {
+                    'Event': 'MessageWaiting',
+                    'Mailbox': f'{voicemail_id}@{context or "default-context"}',
+                }
+            },
+            headers={
+                'name': 'MessageWaiting',
+            },
+        )

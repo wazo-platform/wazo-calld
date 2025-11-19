@@ -1,11 +1,12 @@
-# Copyright 2016-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
 
-from .http import voicemail_message_schema
+from .schemas import UnifiedVoicemailMessageSchema
 
 logger = logging.getLogger(__name__)
+voicemail_message_schema = UnifiedVoicemailMessageSchema()
 
 
 class VoicemailsBusEventHandler:
@@ -24,10 +25,13 @@ class VoicemailsBusEventHandler:
         if diff.is_empty():
             return
         voicemail = self._get_voicemail(number, context)
-        for user in voicemail['users']:
-            self._send_notifications_from_diff(
-                user['uuid'], voicemail['tenant_uuid'], voicemail['id'], diff
-            )
+        match voicemail['accesstype']:
+            case 'personal':
+                self._send_users_notifications_from_diff(voicemail, diff)
+            case 'global':
+                self._send_tenant_notifications_from_diff(voicemail, diff)
+            case _:
+                pass
 
     def _get_voicemail(self, number, context):
         response = self._confd_client.voicemails.list(
@@ -35,21 +39,51 @@ class VoicemailsBusEventHandler:
         )
         return response['items'][0]
 
-    def _send_notifications_from_diff(self, user_uuid, tenant_uuid, voicemail_id, diff):
+    def _send_tenant_notifications_from_diff(self, voicemail, diff):
+        tenant_uuid = voicemail['tenant_uuid']
+
         for message in diff.created_messages:
-            payload = voicemail_message_schema.dump(message)
-            self._notifier.create_user_voicemail_message(
-                user_uuid, tenant_uuid, voicemail_id, payload['id'], payload
-            )
+            payload = _build_message(voicemail_message_schema, voicemail, message)
+            self._notifier.create_global_voicemail_message(tenant_uuid, payload)
 
         for message in diff.updated_messages:
-            payload = voicemail_message_schema.dump(message)
-            self._notifier.update_user_voicemail_message(
-                user_uuid, tenant_uuid, voicemail_id, payload['id'], payload
-            )
+            payload = _build_message(voicemail_message_schema, voicemail, message)
+            self._notifier.update_global_voicemail_message(tenant_uuid, payload)
 
         for message in diff.deleted_messages:
-            payload = voicemail_message_schema.dump(message)
-            self._notifier.delete_user_voicemail_message(
-                user_uuid, tenant_uuid, voicemail_id, payload['id'], payload
-            )
+            payload = _build_message(voicemail_message_schema, voicemail, message)
+            self._notifier.delete_global_voicemail_message(tenant_uuid, payload)
+
+    def _send_users_notifications_from_diff(self, voicemail, diff):
+        tenant_uuid = voicemail['tenant_uuid']
+        voicemail_id = voicemail['id']
+
+        for user in voicemail['users']:
+            user_uuid = user['uuid']
+
+            for message in diff.created_messages:
+                payload = _build_message(voicemail_message_schema, voicemail, message)
+                self._notifier.create_user_voicemail_message(
+                    user_uuid, tenant_uuid, voicemail_id, payload['id'], payload
+                )
+
+            for message in diff.updated_messages:
+                payload = _build_message(voicemail_message_schema, voicemail, message)
+                self._notifier.update_user_voicemail_message(
+                    user_uuid, tenant_uuid, voicemail_id, payload['id'], payload
+                )
+
+            for message in diff.deleted_messages:
+                payload = _build_message(voicemail_message_schema, voicemail, message)
+                self._notifier.delete_user_voicemail_message(
+                    user_uuid, tenant_uuid, voicemail_id, payload['id'], payload
+                )
+
+
+def _build_message(schema, voicemail, message) -> dict:
+    voicemail_info = {
+        'id': voicemail['id'],
+        'name': voicemail['name'],
+        'accesstype': voicemail['accesstype'],
+    }
+    return schema.dump(message | {'voicemail': voicemail_info})

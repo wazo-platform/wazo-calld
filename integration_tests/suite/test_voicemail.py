@@ -1348,10 +1348,19 @@ class TestVoicemails(RealAsteriskIntegrationTest):
             calld.voicemails.list_voicemail_messages_from_user(voicemail_type="all"),
             has_entries(
                 items=has_items(
-                    has_entry("id", message_id_1),
-                    has_entry("id", message_id_2),
-                    has_entry('id', message_id_3),
-                    has_entry('id', message_id_4),
+                    has_entries(
+                        id=message_id_1, voicemail=has_entry('accesstype', 'global')
+                    ),
+                    has_entries(
+                        id=message_id_2, voicemail=has_entry('accesstype', 'personal')
+                    ),
+                    has_entries(
+                        id=message_id_3, voicemail=has_entry('accesstype', 'personal')
+                    ),
+                    has_entries(
+                        id=message_id_4,
+                        voicemail=has_entry('accesstype', 'personal'),
+                    ),
                 ),
                 total=4,
             ),
@@ -1362,7 +1371,9 @@ class TestVoicemails(RealAsteriskIntegrationTest):
             calld.voicemails.list_voicemail_messages_from_user(voicemail_type="global"),
             has_entries(
                 items=contains_exactly(
-                    has_entry("id", message_id_1),
+                    has_entries(
+                        id=message_id_1, voicemail=has_entry('accesstype', 'global')
+                    ),
                 ),
                 total=1,
             ),
@@ -1375,9 +1386,16 @@ class TestVoicemails(RealAsteriskIntegrationTest):
             ),
             has_entries(
                 items=contains_exactly(
-                    has_entry("id", message_id_2),
-                    has_entry('id', message_id_3),
-                    has_entry('id', message_id_4),
+                    has_entries(
+                        id=message_id_2, voicemail=has_entry('accesstype', 'personal')
+                    ),
+                    has_entries(
+                        id=message_id_3, voicemail=has_entry('accesstype', 'personal')
+                    ),
+                    has_entries(
+                        id=message_id_4,
+                        voicemail=has_entry('accesstype', 'personal'),
+                    ),
                 ),
                 total=3,
             ),
@@ -1417,10 +1435,19 @@ class TestVoicemails(RealAsteriskIntegrationTest):
             calld.voicemails.list_voicemail_messages_from_user(direction="asc"),
             has_entries(
                 items=contains_exactly(
-                    has_entry('id', message_id_1),
-                    has_entry('id', message_id_2),
-                    has_entry('id', message_id_3),
-                    has_entry('id', message_id_4),
+                    has_entries(
+                        id=message_id_1, voicemail=has_entry('accesstype', 'global')
+                    ),
+                    has_entries(
+                        id=message_id_2, voicemail=has_entry('accesstype', 'personal')
+                    ),
+                    has_entries(
+                        id=message_id_3, voicemail=has_entry('accesstype', 'personal')
+                    ),
+                    has_entries(
+                        id=message_id_4,
+                        voicemail=has_entry('accesstype', 'personal'),
+                    ),
                 ),
                 total=4,
             ),
@@ -1430,10 +1457,19 @@ class TestVoicemails(RealAsteriskIntegrationTest):
             calld.voicemails.list_voicemail_messages_from_user(direction="desc"),
             has_entries(
                 items=contains_exactly(
-                    has_entry('id', message_id_4),
-                    has_entry('id', message_id_3),
-                    has_entry('id', message_id_2),
-                    has_entry('id', message_id_1),
+                    has_entries(
+                        id=message_id_4,
+                        voicemail=has_entry('accesstype', 'personal'),
+                    ),
+                    has_entries(
+                        id=message_id_3, voicemail=has_entry('accesstype', 'personal')
+                    ),
+                    has_entries(
+                        id=message_id_2, voicemail=has_entry('accesstype', 'personal')
+                    ),
+                    has_entries(
+                        id=message_id_1, voicemail=has_entry('accesstype', 'global')
+                    ),
                 ),
                 total=4,
             ),
@@ -1443,7 +1479,9 @@ class TestVoicemails(RealAsteriskIntegrationTest):
             calld.voicemails.list_voicemail_messages_from_user(limit=1),
             has_entries(
                 items=contains_exactly(
-                    has_entry('id', message_id_1),
+                    has_entries(
+                        id=message_id_1, voicemail=has_entry('accesstype', 'global')
+                    ),
                 ),
                 total=4,
             ),
@@ -1453,7 +1491,9 @@ class TestVoicemails(RealAsteriskIntegrationTest):
             calld.voicemails.list_voicemail_messages_from_user(limit=1, offset=1),
             has_entries(
                 items=contains_exactly(
-                    has_entry('id', message_id_2),
+                    has_entries(
+                        id=message_id_2, voicemail=has_entry('accesstype', 'personal')
+                    )
                 ),
                 total=4,
             ),
@@ -1463,8 +1503,13 @@ class TestVoicemails(RealAsteriskIntegrationTest):
             calld.voicemails.list_voicemail_messages_from_user(offset=2),
             has_entries(
                 items=contains_exactly(
-                    has_entry('id', message_id_3),
-                    has_entry('id', message_id_4),
+                    has_entries(
+                        id=message_id_3, voicemail=has_entry('accesstype', 'personal')
+                    ),
+                    has_entries(
+                        id=message_id_4,
+                        voicemail=has_entry('accesstype', 'personal'),
+                    ),
                 ),
                 total=4,
             ),
@@ -1474,10 +1519,19 @@ class TestVoicemails(RealAsteriskIntegrationTest):
             calld.voicemails.list_voicemail_messages_from_user(order="duration"),
             has_entries(
                 items=contains_exactly(
-                    has_entry('id', message_id_4),
-                    has_entry('id', message_id_2),
-                    has_entry('id', message_id_1),
-                    has_entry('id', message_id_3),
+                    has_entries(
+                        id=message_id_4,
+                        voicemail=has_entry('accesstype', 'personal'),
+                    ),
+                    has_entries(
+                        id=message_id_2, voicemail=has_entry('accesstype', 'personal')
+                    ),
+                    has_entries(
+                        id=message_id_1, voicemail=has_entry('accesstype', 'global')
+                    ),
+                    has_entries(
+                        id=message_id_3, voicemail=has_entry('accesstype', 'personal')
+                    ),
                 ),
                 total=4,
             ),
@@ -1489,10 +1543,22 @@ class TestVoicemails(RealAsteriskIntegrationTest):
             ),
             has_entries(
                 items=contains_exactly(
-                    has_entry('id', message_id_3),
-                    has_entry('id', message_id_1),
-                    has_entry('id', message_id_2),
-                    has_entry('id', message_id_4),
+                    has_entries(
+                        id=message_id_3,
+                        voicemail=has_entry('accesstype', 'personal'),
+                    ),
+                    has_entries(
+                        id=message_id_1,
+                        voicemail=has_entry('accesstype', 'global'),
+                    ),
+                    has_entries(
+                        id=message_id_2,
+                        voicemail=has_entry('accesstype', 'personal'),
+                    ),
+                    has_entries(
+                        id=message_id_4,
+                        voicemail=has_entry('accesstype', 'personal'),
+                    ),
                 ),
                 total=4,
             ),

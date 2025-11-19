@@ -1,7 +1,7 @@
 # Copyright 2019-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from marshmallow import Schema, fields, post_dump
+from marshmallow import Schema, fields
 from xivo.mallow.validate import OneOf, Range
 
 VALID_GREETINGS = ["unavailable", "busy", "name"]
@@ -50,18 +50,8 @@ class VoicemailGreetingCopySchema(Schema):
 
 
 class UnifiedVoicemailMessageSchema(VoicemailMessageBaseSchema):
-    voicemail = fields.Nested(VoicemailSchema, only=("id", "name"))
+    voicemail = fields.Nested(VoicemailSchema, only=("id", "name", "accesstype"))
     folder = fields.Nested(VoicemailFolderBaseSchema)
-
-    @post_dump(pass_original=True)
-    def compute_voicemail_type(self, data, original_data, **kwargs):
-        try:
-            accesstype = original_data['voicemail'].get('accesstype', 'personal')
-        except KeyError:
-            accesstype = 'personal'
-
-        data['voicemail']['type'] = 'global' if accesstype == 'global' else 'personal'
-        return data
 
 
 class VoicemailMessagesSchema(Schema):

@@ -2,6 +2,9 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from wazo_bus.resources.voicemail.event import (
+    GlobalVoicemailMessageCreatedEvent,
+    GlobalVoicemailMessageDeletedEvent,
+    GlobalVoicemailMessageUpdatedEvent,
     UserVoicemailMessageCreatedEvent,
     UserVoicemailMessageDeletedEvent,
     UserVoicemailMessageUpdatedEvent,
@@ -34,4 +37,16 @@ class VoicemailsNotifier:
         event = UserVoicemailMessageDeletedEvent(
             message_id, voicemail_id, message, tenant_uuid, user_uuid
         )
+        self._bus_publisher.publish(event)
+
+    def create_global_voicemail_message(self, tenant_uuid, message):
+        event = GlobalVoicemailMessageCreatedEvent(message, tenant_uuid)
+        self._bus_publisher.publish(event)
+
+    def update_global_voicemail_message(self, tenant_uuid, message):
+        event = GlobalVoicemailMessageUpdatedEvent(message, tenant_uuid)
+        self._bus_publisher.publish(event)
+
+    def delete_global_voicemail_message(self, tenant_uuid, message):
+        event = GlobalVoicemailMessageDeletedEvent(message, tenant_uuid)
         self._bus_publisher.publish(event)
