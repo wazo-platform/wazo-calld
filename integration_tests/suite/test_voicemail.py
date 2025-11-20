@@ -1776,6 +1776,8 @@ class TestVoicemails(RealAsteriskIntegrationTest):
         calld.voicemails.move_voicemail_message_from_user(message_id_1, new_folder_id)
         message = calld.voicemails.get_voicemail_message_from_user(message_id_1)
         assert message['folder']['id'] == new_folder_id
+        # restore messages
+        self.restart_service('volume-init')
 
     def test_voicemail_global_user_move_message_tenant_isolation(self):
         user_uuid_1 = str(uuid.uuid4())
