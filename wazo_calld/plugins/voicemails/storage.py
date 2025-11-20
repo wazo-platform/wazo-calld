@@ -195,7 +195,7 @@ class _VoicemailFilesystemStorage:
         else:
             raise NoSuchVoicemailMessage(message_id)
 
-    def get_all_messages_infos(
+    def list_messages_infos(
         self,
         *vm_confs: dict,
         limit: int | None = None,

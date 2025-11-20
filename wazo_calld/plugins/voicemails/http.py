@@ -374,7 +374,7 @@ class UserVoicemailMessagesResource(AuthResource):
             tenant.uuid, user_uuid, params.get("voicemail_type")
         )
 
-        messages = self._voicemails_service.get_user_messages(
+        messages = self._voicemails_service.list_user_messages(
             tenant.uuid, user_uuid, **params
         )
 

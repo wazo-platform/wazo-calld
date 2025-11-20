@@ -92,7 +92,7 @@ class VoicemailsService:
         )
         return recording
 
-    def get_user_messages(
+    def list_user_messages(
         self,
         tenant_uuid,
         user_uuid,
@@ -106,7 +106,7 @@ class VoicemailsService:
         if not vm_confs:
             return []
 
-        return self._storage.get_all_messages_infos(
+        return self._storage.list_messages_infos(
             *vm_confs, limit=limit, offset=offset, order=order, direction=direction
         )
 
