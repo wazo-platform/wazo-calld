@@ -1609,3 +1609,88 @@ class TestVoicemails(RealAsteriskIntegrationTest):
                 ),
             ),
         )
+
+    def test_voicemail_global_get_voicemail_message(self):
+        user_uuid_1 = str(uuid.uuid4())
+        voicemail_id_1 = 111
+        voicemail_id_2 = 222
+        message_id_1 = '1724107750-00000001'  # Present in Docker volume
+        message_id_2 = '1724436688-00000001'  # Present in Docker volume
+        tenant_voicemail = MockVoicemail(
+            voicemail_id_1,
+            '8000',
+            'tenant-voicemail',
+            'default',
+            accesstype='global',
+            tenant_uuid=VALID_TENANT_MULTITENANT_1,
+        )
+        user_voicemail = MockVoicemail(
+            voicemail_id_2,
+            '8001',
+            'user-voicemail',
+            'default',
+            user_uuids=[user_uuid_1],
+            tenant_uuid=VALID_TENANT_MULTITENANT_1,
+        )
+        self.confd.set_user_voicemails({user_uuid_1: [user_voicemail]})
+        self.confd.set_voicemails(tenant_voicemail, user_voicemail)
+        calld = self.make_user_calld(
+            user_uuid_1, tenant_uuid=VALID_TENANT_MULTITENANT_1
+        )
+
+        assert_that(
+            calld.voicemails.get_voicemail_message_from_user(message_id_1),
+            has_entries(
+                {
+                    'id': message_id_1,
+                    'caller_id_name': 'Alice',
+                    'caller_id_num': '1001',
+                    'duration': 19,
+                }
+            ),
+        )
+        assert_that(
+            calld.voicemails.get_voicemail_message_from_user(message_id_2),
+            has_entries(
+                {
+                    'id': message_id_2,
+                    'caller_id_name': 'Bob',
+                    'caller_id_num': '1002',
+                    'duration': 3,
+                }
+            ),
+        )
+
+    def test_voicemail_global_get_voicemail_recording(self):
+        user_uuid_1 = str(uuid.uuid4())
+        voicemail_id_1 = 111
+        voicemail_id_2 = 222
+        message_id_1 = '1724107750-00000001'  # Present in Docker volume
+        message_id_2 = '1724436688-00000001'  # Present in Docker volume
+        tenant_voicemail = MockVoicemail(
+            voicemail_id_1,
+            '8000',
+            'tenant-voicemail',
+            'default',
+            accesstype='global',
+            tenant_uuid=VALID_TENANT_MULTITENANT_1,
+        )
+        user_voicemail = MockVoicemail(
+            voicemail_id_2,
+            '8001',
+            'user-voicemail',
+            'default',
+            user_uuids=[user_uuid_1],
+            tenant_uuid=VALID_TENANT_MULTITENANT_1,
+        )
+        self.confd.set_user_voicemails({user_uuid_1: [user_voicemail]})
+        self.confd.set_voicemails(tenant_voicemail, user_voicemail)
+        calld = self.make_user_calld(
+            user_uuid_1, tenant_uuid=VALID_TENANT_MULTITENANT_1
+        )
+
+        content = calld.voicemails.get_voicemail_recording_from_user(message_id_1)
+        assert content == b'some-wav-data\n'
+
+        content = calld.voicemails.get_voicemail_recording_from_user(message_id_2)
+        assert content == b'some-wav-data-3\n'
