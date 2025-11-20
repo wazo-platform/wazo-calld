@@ -180,8 +180,8 @@ class _VoicemailFilesystemStorage:
                 continue
             else:
                 return message_access.info()
-        else:
-            raise NoSuchVoicemailMessage(message_id)
+
+        raise NoSuchVoicemailMessage(message_id)
 
     def get_message_info_and_recording(self, message_id, *vm_confs):
         for vm_conf in vm_confs:
@@ -192,8 +192,8 @@ class _VoicemailFilesystemStorage:
                 continue
             else:
                 return message_access.info(), message_access.recording()
-        else:
-            raise NoSuchVoicemailMessage(message_id)
+
+        raise NoSuchVoicemailMessage(message_id)
 
     def list_messages_infos(
         self,
