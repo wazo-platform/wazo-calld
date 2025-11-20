@@ -1610,7 +1610,7 @@ class TestVoicemails(RealAsteriskIntegrationTest):
             ),
         )
 
-    def test_voicemail_global_get_voicemail_message(self):
+    def test_voicemail_global_user_get_message(self):
         user_uuid_1 = str(uuid.uuid4())
         voicemail_id_1 = 111
         voicemail_id_2 = 222
@@ -1661,7 +1661,37 @@ class TestVoicemails(RealAsteriskIntegrationTest):
             ),
         )
 
-    def test_voicemail_global_get_voicemail_recording(self):
+    def test_voicemail_global_user_get_message_tenant_isolation(self):
+        user_uuid_1 = str(uuid.uuid4())
+        voicemail_id_1 = 111
+        message_id_1 = '1724107750-00000001'  # Present in Docker volume
+        tenant_voicemail = MockVoicemail(
+            voicemail_id_1,
+            '8000',
+            'tenant1-voicemail',
+            'default',
+            accesstype='global',
+            tenant_uuid=VALID_TENANT_MULTITENANT_2,
+        )
+        self.confd.set_voicemails(tenant_voicemail)
+        calld = self.make_user_calld(
+            user_uuid_1, tenant_uuid=VALID_TENANT_MULTITENANT_1
+        )
+
+        assert_that(
+            calling(calld.voicemails.get_voicemail_message_from_user).with_args(
+                message_id_1
+            ),
+            raises(CalldError).matching(
+                has_properties(
+                    status_code=404,
+                    message=contains_string('No such voicemail message'),
+                    details=has_entry('message_id', message_id_1),
+                )
+            ),
+        )
+
+    def test_voicemail_global_user_get_recording(self):
         user_uuid_1 = str(uuid.uuid4())
         voicemail_id_1 = 111
         voicemail_id_2 = 222
@@ -1694,3 +1724,142 @@ class TestVoicemails(RealAsteriskIntegrationTest):
 
         content = calld.voicemails.get_voicemail_recording_from_user(message_id_2)
         assert content == b'some-wav-data-3\n'
+
+    def test_voicemail_global_user_get_recording_tenant_isolation(self):
+        user_uuid_1 = str(uuid.uuid4())
+        voicemail_id_1 = 111
+        message_id_1 = '1724107750-00000001'  # Present in Docker volume
+        tenant_voicemail = MockVoicemail(
+            voicemail_id_1,
+            '8000',
+            'tenant1-voicemail',
+            'default',
+            accesstype='global',
+            tenant_uuid=VALID_TENANT_MULTITENANT_2,
+        )
+        self.confd.set_voicemails(tenant_voicemail)
+        calld = self.make_user_calld(
+            user_uuid_1, tenant_uuid=VALID_TENANT_MULTITENANT_1
+        )
+
+        assert_that(
+            calling(calld.voicemails.get_voicemail_recording_from_user).with_args(
+                message_id_1
+            ),
+            raises(CalldError).matching(
+                has_properties(
+                    status_code=404,
+                    message=contains_string('No such voicemail message'),
+                    details=has_entry('message_id', message_id_1),
+                )
+            ),
+        )
+
+    def test_voicemail_global_user_move_message(self):
+        user_uuid_1 = str(uuid.uuid4())
+        voicemail_id_1 = 111
+        message_id_1 = '1724107750-00000001'  # Present in Docker volume
+        new_folder_id = 3
+        tenant_voicemail = MockVoicemail(
+            voicemail_id_1,
+            '8000',
+            'tenant-voicemail',
+            'default',
+            accesstype='global',
+            tenant_uuid=VALID_TENANT_MULTITENANT_1,
+        )
+        self.confd.set_voicemails(tenant_voicemail)
+        calld = self.make_user_calld(
+            user_uuid_1, tenant_uuid=VALID_TENANT_MULTITENANT_1
+        )
+
+        calld.voicemails.move_voicemail_message_from_user(message_id_1, new_folder_id)
+        message = calld.voicemails.get_voicemail_message_from_user(message_id_1)
+        assert message['folder']['id'] == new_folder_id
+
+    def test_voicemail_global_user_move_message_tenant_isolation(self):
+        user_uuid_1 = str(uuid.uuid4())
+        voicemail_id_1 = 111
+        message_id_1 = '1724107750-00000001'  # Present in Docker volume
+        new_folder_id = 3
+        tenant_voicemail = MockVoicemail(
+            voicemail_id_1,
+            '8000',
+            'tenant-voicemail',
+            'default',
+            accesstype='global',
+            tenant_uuid=VALID_TENANT_MULTITENANT_2,
+        )
+        self.confd.set_voicemails(tenant_voicemail)
+        calld = self.make_user_calld(
+            user_uuid_1, tenant_uuid=VALID_TENANT_MULTITENANT_1
+        )
+
+        assert_that(
+            calling(calld.voicemails.move_voicemail_message_from_user).with_args(
+                message_id_1, new_folder_id
+            ),
+            raises(CalldError).matching(
+                has_properties(
+                    status_code=404,
+                    message=contains_string('No such voicemail message'),
+                    details=has_entry('message_id', message_id_1),
+                )
+            ),
+        )
+
+    def test_voicemail_global_user_delete_message(self):
+        user_uuid_1 = str(uuid.uuid4())
+        voicemail_id_1 = 111
+        message_id_1 = '1724107750-00000001'  # Present in Docker volume
+        tenant_voicemail = MockVoicemail(
+            voicemail_id_1,
+            '8000',
+            'tenant-voicemail',
+            'default',
+            accesstype='global',
+            tenant_uuid=VALID_TENANT_MULTITENANT_1,
+        )
+        self.confd.set_voicemails(tenant_voicemail)
+        calld = self.make_user_calld(
+            user_uuid_1, tenant_uuid=VALID_TENANT_MULTITENANT_1
+        )
+
+        calld.voicemails.delete_voicemail_message_from_user(message_id_1)
+        self._assert_voicemail_message_deleted(calld, voicemail_id_1, message_id_1)
+
+        # restore message
+        self.restart_service('volume-init')
+
+    def test_voicemail_global_user_delete_message_tenant_isolation(self):
+        user_uuid_1 = str(uuid.uuid4())
+        voicemail_id_1 = 111
+        message_id_1 = '1724107750-00000001'  # Present in Docker volume
+        tenant_voicemail = MockVoicemail(
+            voicemail_id_1,
+            '8000',
+            'tenant-voicemail',
+            'default',
+            accesstype='global',
+            tenant_uuid=VALID_TENANT_MULTITENANT_2,
+        )
+        self.confd.set_voicemails(tenant_voicemail)
+        calld = self.make_user_calld(
+            user_uuid_1, tenant_uuid=VALID_TENANT_MULTITENANT_1
+        )
+
+        assert_that(
+            calling(calld.voicemails.delete_voicemail_message_from_user).with_args(
+                message_id_1
+            ),
+            raises(CalldError).matching(
+                has_properties(
+                    status_code=404,
+                    message=contains_string('No such voicemail message'),
+                    details=has_entry('message_id', message_id_1),
+                )
+            ),
+        )
+
+        # restore message
+        self.restart_service('volume-init')
