@@ -13,6 +13,7 @@ from wazo_calld.plugin_helpers.exceptions import NoSuchUserVoicemail
 from .exceptions import (
     InvalidVoicemailGreeting,
     NoSuchVoicemailGreeting,
+    NoSuchVoicemailMessage,
     VoicemailGreetingAlreadyExists,
 )
 
@@ -24,6 +25,34 @@ class VoicemailsService:
         self._ari = ari
         self._confd_client = confd_client
         self._storage = voicemail_storage
+
+    def count_user_messages(
+        self,
+        tenant_uuid,
+        user_uuid,
+        voicemail_type: Literal["all", "global", "personal"] = "all",
+    ):
+        vm_confs = self._get_voicemails_configs(tenant_uuid, user_uuid, voicemail_type)
+        if not vm_confs:
+            return 0
+        return self._storage.count_all_messages(*vm_confs)
+
+    def _get_voicemails_configs(
+        self, tenant_uuid, user_uuid, voicemail_type: VoicemailTypes = "all"
+    ):
+        vm_confs = []
+        client = self._confd_client
+
+        if voicemail_type in ("all", "personal"):
+            try:
+                vm_confs.append(confd.get_user_voicemail(user_uuid, client))
+            except NoSuchUserVoicemail:
+                pass
+
+        if voicemail_type in ("all", "global"):
+            vm_confs.extend(confd.get_global_voicemails(tenant_uuid, client))
+
+        return vm_confs
 
     def get_voicemail(self, tenant_uuid, voicemail_id):
         vm_conf = confd.get_voicemail(tenant_uuid, voicemail_id, self._confd_client)
@@ -43,35 +72,25 @@ class VoicemailsService:
 
     def get_message(self, tenant_uuid, voicemail_id, message_id):
         vm_conf = confd.get_voicemail(tenant_uuid, voicemail_id, self._confd_client)
-        return self._storage.get_message_info(vm_conf, message_id)
+        return self._storage.get_message_info(message_id, vm_conf)
 
-    def _get_voicemails_configs(
-        self, tenant_uuid, user_uuid, voicemail_type: VoicemailTypes = "all"
-    ):
-        vm_confs = []
-        client = self._confd_client
+    def get_user_message(self, tenant_uuid, user_uuid, message_id):
+        vm_confs = self._get_voicemails_configs(tenant_uuid, user_uuid, 'all')
+        return self._storage.get_message_info(message_id, *vm_confs)
 
-        if voicemail_type in ("all", "personal"):
-            try:
-                vm_confs.append(confd.get_user_voicemail(user_uuid, client))
-            except NoSuchUserVoicemail:
-                pass
+    def get_message_recording(self, tenant_uuid, voicemail_id, message_id):
+        vm_conf = confd.get_voicemail(tenant_uuid, voicemail_id, self._confd_client)
+        return self._get_message_recording(message_id, vm_conf)
 
-        if voicemail_type in ("all", "global"):
-            vm_confs.extend(confd.get_global_voicemails(tenant_uuid, client))
+    def get_user_message_recording(self, tenant_uuid, user_uuid, message_id):
+        vm_confs = self._get_voicemails_configs(tenant_uuid, user_uuid, 'all')
+        return self._get_message_recording(message_id, *vm_confs)
 
-        return vm_confs
-
-    def count_user_messages(
-        self,
-        tenant_uuid,
-        user_uuid,
-        voicemail_type: Literal["all", "global", "personal"] = "all",
-    ):
-        vm_confs = self._get_voicemails_configs(tenant_uuid, user_uuid, voicemail_type)
-        if not vm_confs:
-            return 0
-        return self._storage.count_all_messages(*vm_confs)
+    def _get_message_recording(self, message_id, *vm_confs):
+        _, recording = self._storage.get_message_info_and_recording(
+            message_id, *vm_confs
+        )
+        return recording
 
     def get_user_messages(
         self,
@@ -91,33 +110,23 @@ class VoicemailsService:
             *vm_confs, limit=limit, offset=offset, order=order, direction=direction
         )
 
-    def get_user_message(self, user_uuid, message_id):
-        vm_conf = confd.get_user_voicemail(user_uuid, self._confd_client)
-        return self._storage.get_message_info(vm_conf, message_id)
-
-    def get_message_recording(self, tenant_uuid, voicemail_id, message_id):
-        vm_conf = confd.get_voicemail(tenant_uuid, voicemail_id, self._confd_client)
-        return self._get_message_recording(vm_conf, message_id)
-
-    def get_user_message_recording(self, user_uuid, message_id):
-        vm_conf = confd.get_user_voicemail(user_uuid, self._confd_client)
-        return self._get_message_recording(vm_conf, message_id)
-
-    def _get_message_recording(self, vm_conf, message_id):
-        _, recording = self._storage.get_message_info_and_recording(vm_conf, message_id)
-        return recording
-
     def move_message(self, tenant_uuid, voicemail_id, message_id, dest_folder_id):
         vm_conf = confd.get_voicemail(tenant_uuid, voicemail_id, self._confd_client)
         dest_folder = self._storage.get_folder_by_id(dest_folder_id)
-        message_info = self._storage.get_message_info(vm_conf, message_id)
+        message_info = self._storage.get_message_info(message_id, vm_conf)
         self._move_message(vm_conf, message_info, dest_folder)
 
-    def move_user_message(self, user_uuid, message_id, dest_folder_id):
-        vm_conf = confd.get_user_voicemail(user_uuid, self._confd_client)
+    def move_user_message(self, tenant_uuid, user_uuid, message_id, dest_folder_id):
         dest_folder = self._storage.get_folder_by_id(dest_folder_id)
-        message_info = self._storage.get_message_info(vm_conf, message_id)
-        self._move_message(vm_conf, message_info, dest_folder)
+        for vm_conf in self._get_voicemails_configs(tenant_uuid, user_uuid, 'all'):
+            try:
+                message_info = self._storage.get_message_info(message_id, vm_conf)
+            except NoSuchVoicemailMessage:
+                continue
+            else:
+                return self._move_message(vm_conf, message_info, dest_folder)
+
+        raise NoSuchVoicemailMessage(message_id)
 
     def _move_message(self, vm_conf, message_info, dest_folder):
         body = {
@@ -133,12 +142,17 @@ class VoicemailsService:
         vm_conf = confd.get_voicemail(tenant_uuid, voicemail_id, self._confd_client)
         return self._delete_message(vm_conf, message_id)
 
-    def delete_user_message(self, user_uuid, message_id):
-        vm_conf = confd.get_user_voicemail(user_uuid, self._confd_client)
-        return self._delete_message(vm_conf, message_id)
+    def delete_user_message(self, tenant_uuid, user_uuid, message_id):
+        for vm_conf in self._get_voicemails_configs(tenant_uuid, user_uuid, 'all'):
+            try:
+                return self._delete_message(vm_conf, message_id)
+            except NoSuchVoicemailMessage:
+                continue
+
+        raise NoSuchVoicemailMessage(message_id)
 
     def _delete_message(self, vm_conf, message_id):
-        message_info = self._storage.get_message_info(vm_conf, message_id)
+        message_info = self._storage.get_message_info(message_id, vm_conf)
         body = {
             'mailbox': vm_conf['number'],
             'context': vm_conf['context'],

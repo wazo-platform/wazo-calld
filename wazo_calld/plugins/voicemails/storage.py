@@ -171,15 +171,29 @@ class _VoicemailFilesystemStorage:
     def get_folder_by_type(self, folder_type):
         return self._folders.get_folder_by_type(folder_type)
 
-    def get_message_info(self, vm_conf, message_id):
-        vm_access = _VoicemailAccess(self._base_path, self._folders, vm_conf)
-        message_access = vm_access.get_message(message_id)
-        return message_access.info()
+    def get_message_info(self, message_id, *vm_confs):
+        for vm_conf in vm_confs:
+            vm_access = _VoicemailAccess(self._base_path, self._folders, vm_conf)
+            try:
+                message_access = vm_access.get_message(message_id)
+            except NoSuchVoicemailMessage:
+                continue
+            else:
+                return message_access.info()
+        else:
+            raise NoSuchVoicemailMessage(message_id)
 
-    def get_message_info_and_recording(self, vm_conf, message_id):
-        vm_access = _VoicemailAccess(self._base_path, self._folders, vm_conf)
-        message_access = vm_access.get_message(message_id)
-        return message_access.info(), message_access.recording()
+    def get_message_info_and_recording(self, message_id, *vm_confs):
+        for vm_conf in vm_confs:
+            vm_access = _VoicemailAccess(self._base_path, self._folders, vm_conf)
+            try:
+                message_access = vm_access.get_message(message_id)
+            except NoSuchVoicemailMessage:
+                continue
+            else:
+                return message_access.info(), message_access.recording()
+        else:
+            raise NoSuchVoicemailMessage(message_id)
 
     def get_all_messages_infos(
         self,
