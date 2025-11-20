@@ -121,26 +121,31 @@ class UserVoicemailMessageResource(AuthResource):
 
     @required_acl('calld.users.me.voicemails.messages.{message_id}.read')
     def get(self, message_id):
+        tenant = Tenant.autodetect()
         user_uuid = get_token_user_uuid_from_request()
         message_id = _validate_message_id(message_id)
-        message = self._voicemails_service.get_user_message(user_uuid, message_id)
+        message = self._voicemails_service.get_user_message(
+            tenant.uuid, user_uuid, message_id
+        )
         return voicemail_message_schema.dump(message)
 
     @required_acl('calld.users.me.voicemails.messages.{message_id}.update')
     def put(self, message_id):
+        tenant = Tenant.autodetect()
         user_uuid = get_token_user_uuid_from_request()
         message_id = _validate_message_id(message_id)
         data = voicemail_message_update_schema.load(request.get_json(force=True))
         self._voicemails_service.move_user_message(
-            user_uuid, message_id, data['folder_id']
+            tenant.uuid, user_uuid, message_id, data['folder_id']
         )
         return '', 204
 
     @required_acl('calld.users.me.voicemails.messages.{message_id}.delete')
     def delete(self, message_id):
+        tenant = Tenant.autodetect()
         user_uuid = get_token_user_uuid_from_request()
         message_id = _validate_message_id(message_id)
-        self._voicemails_service.delete_user_message(user_uuid, message_id)
+        self._voicemails_service.delete_user_message(tenant.uuid, user_uuid, message_id)
         return '', 204
 
 
@@ -183,10 +188,11 @@ class UserVoicemailRecordingResource(_BaseVoicemailRecordingResource):
         extract_token_id=extract_token_id_from_query_or_header,
     )
     def get(self, message_id):
+        tenant = Tenant.autodetect()
         user_uuid = get_token_user_uuid_from_request()
         message_id = _validate_message_id(message_id)
         recording = self._voicemails_service.get_user_message_recording(
-            user_uuid, message_id
+            tenant.uuid, user_uuid, message_id
         )
         return self._get_response(recording, message_id)
 
@@ -368,7 +374,7 @@ class UserVoicemailMessagesResource(AuthResource):
             tenant.uuid, user_uuid, params.get("voicemail_type")
         )
 
-        messages = self._voicemails_service.get_user_messages(
+        messages = self._voicemails_service.list_user_messages(
             tenant.uuid, user_uuid, **params
         )
 
