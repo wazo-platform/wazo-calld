@@ -70,11 +70,11 @@ class Transfer:
             'transferred_call': self.transferred_call,
             'initiator_call': self.initiator_call,
             'recipient_call': self.recipient_call,
-            'status': self.public_status(),
+            'status': self._public_status(),
             'flow': self.flow,
         }
 
-    def public_status(self):
+    def _public_status(self):
         # we don't want to expose stasis-related statuses
         if self.status in (
             'none_moved_to_stasis',
