@@ -82,6 +82,12 @@ class Transfer:
             'transferred_moved_to_stasis',
         ):
             return 'starting'
+        elif self.status in (
+            'none_moved_to_stasis_cancelled',
+            'initiator_moved_to_stasis_cancelled',
+            'transferred_moved_to_stasis_cancelled',
+        ):
+            return 'abandoned'
         return self.status
 
     @classmethod
