@@ -8,6 +8,7 @@ from uuid import uuid4
 
 InternalTransferStatus = Literal[
     'none_moved_to_stasis',
+    'none_moved_to_stasis_cancelled',
     'initiator_moved_to_stasis',
     'initiator_moved_to_stasis_cancelled',
     'transferred_moved_to_stasis',

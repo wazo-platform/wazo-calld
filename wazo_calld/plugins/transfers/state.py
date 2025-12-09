@@ -556,6 +556,10 @@ class TransferStateMovingToStasisNoneReady(TransferState):
 
         return self
 
+    @transition
+    def cancel(self):
+        return TransferStateMovingToStasisNoneCancelled.from_state(self)
+
     def update_cache(self):
         self._state_persistor.upsert(self.transfer)
 
@@ -690,6 +694,37 @@ class TransferStateMovingToStasisTransferredCancelled(TransferState):
     def transferred_hangup(self):
         self._abandon()
         # further handling of initiator channel is part of stasis handlers
+        return TransferStateEnded.from_state(self)
+
+    @transition
+    def cancel(self):
+        return self
+
+    def update_cache(self):
+        self._state_persistor.upsert(self.transfer)
+
+
+@state_factory.state
+class TransferStateMovingToStasisNoneCancelled(TransferState):
+    name = 'none_moved_to_stasis_cancelled'
+
+    @transition
+    def initiator_hangup(self):
+        return TransferStateEnded.from_state(self)
+
+    @transition
+    def initiator_joined_stasis(self):
+        self._cancel()
+        return TransferStateEnded.from_state(self)
+
+    @transition
+    def transferred_hangup(self):
+        self._abandon()
+        return TransferStateEnded.from_state(self)
+
+    @transition
+    def transferred_joined_stasis(self):
+        self._cancel()
         return TransferStateEnded.from_state(self)
 
     @transition
