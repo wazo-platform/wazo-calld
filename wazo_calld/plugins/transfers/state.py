@@ -556,6 +556,10 @@ class TransferStateMovingToStasisNoneReady(TransferState):
 
         return self
 
+    @transition
+    def cancel(self):
+        return TransferStateMovingToStasisNoneCancelled.from_state(self)
+
     def update_cache(self):
         self._state_persistor.upsert(self.transfer)
 
@@ -594,6 +598,10 @@ class TransferStateMovingToStasisInitiatorReady(TransferState):
 
         return TransferStateEnded.from_state(self)
 
+    @transition
+    def cancel(self):
+        return TransferStateMovingToStasisInitiatorCancelled.from_state(self)
+
     def update_cache(self):
         self._state_persistor.upsert(self.transfer)
 
@@ -627,6 +635,100 @@ class TransferStateMovingToStasisTransferredReady(TransferState):
     def complete(self):
         self.transfer.flow = 'blind'
 
+        return self
+
+    @transition
+    def cancel(self):
+        return TransferStateMovingToStasisTransferredCancelled.from_state(self)
+
+    def update_cache(self):
+        self._state_persistor.upsert(self.transfer)
+
+
+@state_factory.state
+class TransferStateMovingToStasisInitiatorCancelled(TransferState):
+    name = 'initiator_moved_to_stasis_cancelled'
+
+    @transition
+    def initiator_hangup(self):
+        return TransferStateEnded.from_state(self)
+
+    @transition
+    def transferred_joined_stasis(self):
+        self._cancel()
+        return TransferStateEnded.from_state(self)
+
+    @transition
+    def transferred_hangup(self):
+        self._abandon()
+
+        # only initiator channel remains
+        self._hangup_all_transfer_participants()
+
+        return TransferStateEnded.from_state(self)
+
+    @transition
+    def cancel(self):
+        return self
+
+    def update_cache(self):
+        self._state_persistor.upsert(self.transfer)
+
+
+@state_factory.state
+class TransferStateMovingToStasisTransferredCancelled(TransferState):
+    name = 'transferred_moved_to_stasis_cancelled'
+
+    @transition
+    def initiator_hangup(self):
+        # transfer is cancelled and only transferred channel remains
+        self._hangup_all_transfer_participants()
+        return TransferStateEnded.from_state(self)
+
+    @transition
+    def initiator_joined_stasis(self):
+        self._cancel()
+        return TransferStateEnded.from_state(self)
+
+    @transition
+    def transferred_hangup(self):
+        self._abandon()
+        # further handling of initiator channel is part of stasis handlers
+        return TransferStateEnded.from_state(self)
+
+    @transition
+    def cancel(self):
+        return self
+
+    def update_cache(self):
+        self._state_persistor.upsert(self.transfer)
+
+
+@state_factory.state
+class TransferStateMovingToStasisNoneCancelled(TransferState):
+    name = 'none_moved_to_stasis_cancelled'
+
+    @transition
+    def initiator_hangup(self):
+        return TransferStateEnded.from_state(self)
+
+    @transition
+    def initiator_joined_stasis(self):
+        self._cancel()
+        return TransferStateEnded.from_state(self)
+
+    @transition
+    def transferred_hangup(self):
+        self._abandon()
+        return TransferStateEnded.from_state(self)
+
+    @transition
+    def transferred_joined_stasis(self):
+        self._cancel()
+        return TransferStateEnded.from_state(self)
+
+    @transition
+    def cancel(self):
         return self
 
     def update_cache(self):
@@ -751,6 +853,11 @@ class TransferStateBlindTransferred(TransferState):
 
         self._notifier.answered(self.transfer)
 
+        return TransferStateEnded.from_state(self)
+
+    @transition
+    def cancel(self):
+        self._cancel()
         return TransferStateEnded.from_state(self)
 
     def update_cache(self):
@@ -885,6 +992,11 @@ class TransferStateAbandoned(TransferState):
 
         # we remain in this state until a channel hangup
         return self
+
+    @transition
+    def cancel(self):
+        self._cancel()
+        return TransferStateEnded.from_state(self)
 
     def update_cache(self):
         self._state_persistor.upsert(self.transfer)

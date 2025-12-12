@@ -1,4 +1,4 @@
-# Copyright 2016-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from __future__ import annotations
@@ -8,8 +8,11 @@ from uuid import uuid4
 
 InternalTransferStatus = Literal[
     'none_moved_to_stasis',
+    'none_moved_to_stasis_cancelled',
     'initiator_moved_to_stasis',
+    'initiator_moved_to_stasis_cancelled',
     'transferred_moved_to_stasis',
+    'transferred_moved_to_stasis_cancelled',
     'starting',
     'invalid',
     'answered',
@@ -67,11 +70,11 @@ class Transfer:
             'transferred_call': self.transferred_call,
             'initiator_call': self.initiator_call,
             'recipient_call': self.recipient_call,
-            'status': self.public_status(),
+            'status': self._public_status(),
             'flow': self.flow,
         }
 
-    def public_status(self):
+    def _public_status(self):
         # we don't want to expose stasis-related statuses
         if self.status in (
             'none_moved_to_stasis',
@@ -79,6 +82,12 @@ class Transfer:
             'transferred_moved_to_stasis',
         ):
             return 'starting'
+        elif self.status in (
+            'none_moved_to_stasis_cancelled',
+            'initiator_moved_to_stasis_cancelled',
+            'transferred_moved_to_stasis_cancelled',
+        ):
+            return 'abandoned'
         return self.status
 
     @classmethod

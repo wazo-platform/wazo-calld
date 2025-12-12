@@ -1,4 +1,4 @@
-# Copyright 2016-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 from __future__ import annotations
 
@@ -26,6 +26,7 @@ from hamcrest import (
     not_none,
     raises,
 )
+from wazo_calld_client.exceptions import CalldError
 from wazo_test_helpers import until
 from wazo_test_helpers.auth import MockUserToken
 from wazo_test_helpers.bus import BusMessageAccumulator
@@ -74,7 +75,14 @@ class TestTransfers(RealAsteriskIntegrationTest):
         # try and cleanup any remaining transfers
         for transfer_info in self.transfers:
             transfer_id = transfer_info['id']
-            self.calld.delete_transfer_result(transfer_id, token=VALID_TOKEN)
+
+            try:
+                self.calld_client.transfers.cancel_transfer(transfer_id)
+            except CalldError as e:
+                if e.status_code == 404:
+                    continue
+                raise
+
         super().tearDown()
 
     def dereference_local_channel(self, local_channel_left):
