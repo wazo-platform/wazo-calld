@@ -1,3 +1,3 @@
 https://github.com/wazo-platform/wazo-test-helpers/archive/master.zip
 pyhamcrest
-pytest
+pytest>=9.0

@@ -32,3 +32,6 @@ source = [
   "wazo_calld",
   "/usr/src/wazo-calld/wazo_calld",
 ]
+
+[tool.pytest]
+testpaths = ["wazo_calld"]
