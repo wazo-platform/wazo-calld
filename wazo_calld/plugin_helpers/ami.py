@@ -185,6 +185,7 @@ def unpause_queue_member(amid, interface):
 
 
 def play_beep(amid, channel, beep):
+    beep = beep or 'beep'
     options = {
         'Channel': 'Local/s@wazo-play-beep',
         'Application': 'Playback',
