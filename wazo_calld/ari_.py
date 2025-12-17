@@ -1,4 +1,4 @@
-# Copyright 2015-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -82,7 +82,8 @@ class CachingRepository:
         'WAZO_DEREFERENCED_USERUUID',
         'WAZO_ENTRY_EXTEN',
         'WAZO_LINE_ID',
-        'WAZO_MIXMONITOR_OPTIONS',
+        'WAZO_RECORDING_START_SOUND',
+        'WAZO_RECORDING_STOP_SOUND',
         'WAZO_SIP_CALL_ID',
         'WAZO_SWITCHBOARD_FALLBACK_NOANSWER_ACTION',
         'WAZO_SWITCHBOARD_TIMEOUT',
