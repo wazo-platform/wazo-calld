@@ -191,7 +191,7 @@ def play_beep(amid, channel, beep):
         'Application': 'Playback',
         'Data': beep,
         'Async': True,
-        'Variable': f'__WAZO_PLAYBACK_CHANNEL={channel},',
+        'Variable': f'WAZO_PLAYBACK_CHANNEL={channel}',
     }
 
     try:
