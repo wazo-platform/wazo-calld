@@ -41,6 +41,7 @@ CALL_RECORDING_FILENAME_TEMPLATE = (
 )
 LOCAL_TIMEZONE = datetime.datetime.now(datetime.UTC).astimezone().tzinfo
 AUTOPROV_CONTEXT = 'xivo-provisioning'
+DEFAULT_RECORD_BEEP = 'beep'
 
 
 class CallsService:
@@ -726,7 +727,7 @@ class CallsService:
             raise NoSuchCall(call_id)
 
         channel = self._find_channel_to_record(channel_id)
-        channel_variables = channel.json['channelvars']
+        channel_variables: dict = channel.json['channelvars']
 
         if channel_variables['WAZO_CALL_RECORD_ACTIVE'] == '1':
             return
@@ -751,13 +752,14 @@ class CallsService:
         )
 
         try:
-            mix_monitor_options = channel.getChannelVar(
-                variable='WAZO_MIXMONITOR_OPTIONS'
+            recording_beep = channel.getChannelVar(
+                variable='WAZO_RECORDING_START_SOUND'
             )['value']
         except ARINotFound:
-            mix_monitor_options = None
+            recording_beep = None
 
-        ami.record_start(self._ami, channel.id, filename, mix_monitor_options or None)
+        ami.record_start(self._ami, channel.id, filename, None)
+        ami.play_beep(self._ami, channel.id, recording_beep or DEFAULT_RECORD_BEEP)
 
     def record_start_user(self, tenant_uuid, call_id, user_uuid):
         self._verify_user(call_id, user_uuid)
@@ -782,7 +784,15 @@ class CallsService:
         if not call_record_active or call_record_active == '0':
             return
 
+        try:
+            recording_beep = channel.getChannelVar(
+                variable='WAZO_RECORDING_STOP_SOUND'
+            )['value']
+        except ARINotFound:
+            recording_beep = None
+
         ami.record_stop(self._ami, channel_id)
+        ami.play_beep(self._ami, channel_id, recording_beep or DEFAULT_RECORD_BEEP)
         call = self.make_call_from_channel(self._ari, channel)
         self._notifier.call_record_stopped(call)
 
@@ -832,7 +842,15 @@ class CallsService:
             self._ari, channel_id, 'WAZO_RECORDING_PAUSED', '1', bypass_stasis=True
         )
 
+        try:
+            recording_beep = channel.getChannelVar(
+                variable='WAZO_RECORDING_STOP_SOUND'
+            )['value']
+        except ARINotFound:
+            recording_beep = None
+
         ami.record_stop(self._ami, channel_id)
+        ami.play_beep(self._ami, channel_id, recording_beep or DEFAULT_RECORD_BEEP)
 
         call = self.make_call_from_channel(self._ari, channel)
         filename = CALL_RECORDING_FILENAME_TEMPLATE.format(
@@ -889,13 +907,14 @@ class CallsService:
         )
 
         try:
-            mix_monitor_options = channel.getChannelVar(
-                variable='WAZO_MIXMONITOR_OPTIONS'
+            recording_beep = channel.getChannelVar(
+                variable='WAZO_RECORDING_START_SOUND'
             )['value']
         except ARINotFound:
-            mix_monitor_options = None
+            recording_beep = None
 
-        ami.record_resume(self._ami, channel.id, filename, mix_monitor_options or None)
+        ami.record_resume(self._ami, channel.id, filename, None)
+        ami.play_beep(self._ami, channel.id, recording_beep or DEFAULT_RECORD_BEEP)
 
     def record_resume_user(self, tenant_uuid, call_id, user_uuid):
         self._verify_user(call_id, user_uuid)

@@ -1,4 +1,4 @@
-# Copyright 2016-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -180,5 +180,21 @@ def unpause_queue_member(amid, interface):
     }
     try:
         amid.action('QueuePause', destination)
+    except RequestException as e:
+        raise WazoAmidError(amid, e)
+
+
+def play_beep(amid, channel, beep):
+    beep = beep or 'beep'
+    options = {
+        'Channel': 'Local/s@wazo-play-beep',
+        'Application': 'Playback',
+        'Data': beep,
+        'Async': True,
+        'Variable': f'WAZO_PLAYBACK_CHANNEL={channel}',
+    }
+
+    try:
+        amid.action('Originate', options)
     except RequestException as e:
         raise WazoAmidError(amid, e)
