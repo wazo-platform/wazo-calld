@@ -1,4 +1,4 @@
-# Copyright 2015-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -7,6 +7,7 @@ import tempfile
 import uuid
 from contextlib import contextmanager
 
+import requests
 import urllib3
 from wazo_test_helpers import until
 from wazo_test_helpers.asset_launching_test_case import (
@@ -271,6 +272,43 @@ class IntegrationTest(AssetLaunchingTestCase):
             self.calld_client.set_token(VALID_TOKEN)
         except ClientCreateException:
             pass
+
+    def _make_http_request(
+        self, verb: str, endpoint: str, body: str | None, headers: dict | None = None
+    ) -> requests.Response:
+        calld_port = self.service_port(9500, 'calld')
+        base_url = f'http://127.0.0.1:{calld_port}/1.0/'
+        default_headers = {
+            'X-Auth-Token': CALLD_SERVICE_TOKEN,
+        }
+        req_headers = (
+            default_headers if headers is None else {**default_headers, **headers}
+        )
+
+        match verb.lower():
+            case 'patch':
+                call = requests.patch
+            case 'post':
+                call = requests.post
+            case 'put':
+                call = requests.put
+            case _:
+                raise ValueError(f'An unexpected http verb was given: {verb}')
+
+        return call(
+            base_url + endpoint,
+            headers=req_headers,
+            data=body,
+            verify=False,
+        )
+
+    def assert_empty_body_returns_400(self, urls: list[tuple[str, str]]):
+        for method, url in urls:
+            response = self._make_http_request(method, url, '')
+            assert response.status_code == 400, f'Error with url: ({method}) {url}'
+
+            response = self._make_http_request(method, url, None)
+            assert response.status_code == 400, f'Error with url: ({method}) {url}'
 
 
 def make_user_uuid():

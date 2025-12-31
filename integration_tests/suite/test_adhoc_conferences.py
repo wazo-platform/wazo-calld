@@ -1,4 +1,4 @@
-# Copyright 2020-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2020-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 
@@ -1099,3 +1099,6 @@ class TestAdhocConference(RealAsteriskIntegrationTest):
             )
 
         until.assert_(bus_events_are_sent, timeout=10)
+
+    def test_that_empty_body_for_post_adhoc_conferences_returns_400(self):
+        self.assert_empty_body_returns_400([('post', 'users/me/conferences/adhoc')])

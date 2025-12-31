@@ -1,4 +1,4 @@
-# Copyright 2018-2025 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from ari.exceptions import ARIServerError
@@ -1168,6 +1168,48 @@ class TestApplication(BaseApplicationTestCase):
             )
 
         until.assert_(call_entered_node, tries=5)
+
+    def test_that_empty_body_for_post_applications_returns_400(self):
+        app_uuid = self.no_node_app_uuid
+        call_id = '12345.67'
+        urls = [
+            ('post', f'applications/{app_uuid}/calls'),
+            ('post', f'applications/{app_uuid}/calls/{call_id}/snoops'),
+            ('post', f'applications/{app_uuid}/nodes'),
+        ]
+        self.assert_empty_body_returns_400(urls)
+
+    def test_that_empty_body_for_post_playbacks_returns_400(self):
+        app_uuid = self.no_node_app_uuid
+        channel = self.call_app(app_uuid)
+        try:
+            self.assert_empty_body_returns_400(
+                [('post', f'applications/{app_uuid}/calls/{channel.id}/playbacks')]
+            )
+        finally:
+            self.ari.channels.hangup(channelId=channel.id)
+
+    def test_that_empty_body_for_post_node_calls_returns_400(self):
+        app_uuid = self.no_node_app_uuid
+        channel = self.call_app(app_uuid)
+        try:
+            node = self.calld_client.applications.create_node(app_uuid, [channel.id])
+            urls = [
+                ('post', f'applications/{app_uuid}/nodes/{node["uuid"]}/calls'),
+                ('post', f'applications/{app_uuid}/nodes/{node["uuid"]}/calls/user'),
+            ]
+            self.assert_empty_body_returns_400(urls)
+        finally:
+            self.ari.channels.hangup(channelId=channel.id)
+
+    def test_that_empty_body_for_put_applications_returns_400(self):
+        app_uuid = '00000000-0000-0000-0000-000000000000'
+        snoop_uuid = '00000000-0000-0000-0000-000000000001'
+        self.assert_empty_body_returns_400(
+            [
+                ('put', f'applications/{app_uuid}/snoops/{snoop_uuid}'),
+            ]
+        )
 
 
 class TestApplicationMute(BaseApplicationTestCase):

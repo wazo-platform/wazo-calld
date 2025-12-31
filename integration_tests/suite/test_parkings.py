@@ -1,4 +1,4 @@
-# Copyright 2024-2025 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2024-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from __future__ import annotations
@@ -667,3 +667,11 @@ class TestParkings(BaseParkingTest):
             calling(calld.calls.park_from_user).with_args(user_call, parking['id']),
             not_(raises(CalldError)),
         )
+
+    def test_that_empty_body_for_put_parkings_returns_400(self):
+        call_id = '12345.67'
+        urls = [
+            ('put', f'calls/{call_id}/park'),
+            ('put', f'users/me/calls/{call_id}/park'),
+        ]
+        self.assert_empty_body_returns_400(urls)
