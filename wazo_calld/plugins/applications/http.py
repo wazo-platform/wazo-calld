@@ -1,4 +1,4 @@
-# Copyright 2018-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from flask import request
@@ -43,7 +43,9 @@ class ApplicationCallItem(_BaseResource):
 class ApplicationCallList(_BaseResource):
     @required_acl('calld.applications.{application_uuid}.calls.create')
     def post(self, application_uuid):
-        request_body = application_call_request_schema.load(request.get_json())
+        request_body = application_call_request_schema.load(
+            request.get_json(force=True)
+        )
         application = self._service.get_application(application_uuid)
         call = self._service.originate(application, None, **request_body)
         return application_call_schema.dump(call), 201
@@ -159,7 +161,7 @@ class ApplicationCallPlaybackList(_BaseResource):
     def post(self, application_uuid, call_id):
         application = self._service.get_application(application_uuid)
         self._service.get_call_id(application, call_id)
-        form = application_playback_schema.load(request.get_json())
+        form = application_playback_schema.load(request.get_json(force=True))
         playback = self._service.create_playback(application_uuid, call_id, **form)
         return application_playback_schema.dump(playback)
 
@@ -167,7 +169,7 @@ class ApplicationCallPlaybackList(_BaseResource):
 class ApplicationCallSnoopList(_BaseResource):
     @required_acl('calld.applications.{application_uuid}.calls.{call_id}.snoops.create')
     def post(self, application_uuid, call_id):
-        form = application_snoop_schema.load(request.get_json())
+        form = application_snoop_schema.load(request.get_json(force=True))
         application = self._service.get_application(application_uuid)
         snoop = self._service.snoop_create(application, call_id, **form)
         return application_snoop_schema.dump(snoop), 201
@@ -201,7 +203,7 @@ class ApplicationSnoopItem(_BaseResource):
 
     @required_acl('calld.applications.{application_uuid}.snoops.{snoop_uuid}.update')
     def put(self, application_uuid, snoop_uuid):
-        form = application_snoop_put_schema.load(request.get_json())
+        form = application_snoop_put_schema.load(request.get_json(force=True))
         application = self._service.get_application(application_uuid)
         self._service.snoop_edit(application, snoop_uuid, form['whisper_mode'])
         return '', 204
@@ -244,7 +246,9 @@ class ApplicationNodeCallList(_BaseResource):
         # TODO: Check if node is in application
         #       But Asterisk doesn't allow to create empty node in an application ...
         self._service.get_node(application, node_uuid, verify_application=False)
-        request_body = application_call_request_schema.load(request.get_json())
+        request_body = application_call_request_schema.load(
+            request.get_json(force=True)
+        )
         call = self._service.originate(application, node_uuid, **request_body)
         return application_call_schema.dump(call), 201
 
@@ -258,7 +262,9 @@ class ApplicationNodeCallUserList(_BaseResource):
         # TODO: Check if node is in application
         #       But Asterisk doesn't allow to create empty node in an application ...
         self._service.get_node(application, node_uuid, verify_application=False)
-        request_body = application_call_user_request_schema.load(request.get_json())
+        request_body = application_call_user_request_schema.load(
+            request.get_json(force=True)
+        )
         call = self._service.originate_user(application, node_uuid, **request_body)
         return application_call_schema.dump(call), 201
 
@@ -288,7 +294,7 @@ class ApplicationNodeList(_BaseResource):
     @required_acl('calld.applications.{application_uuid}.nodes.create')
     def post(self, application_uuid):
         application = self._service.get_application(application_uuid)
-        form = application_node_schema.load(request.get_json())
+        form = application_node_schema.load(request.get_json(force=True))
         call_ids = [call['id_'] for call in form.get('calls', [])]
         node = self._service.create_node_with_calls(application, call_ids)
         return application_node_schema.dump(node), 201
