@@ -1,4 +1,4 @@
-# Copyright 2016-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from __future__ import annotations
@@ -19,12 +19,12 @@ class StateFactory:
         self._ari = ari
         self._stat_sender = stat_sender
 
-    def make(self, state_name):
+    def make(self, state_name) -> CallState:
         if not self._ari or not self._stat_sender:
             raise RuntimeError('StateFactory is not configured')
         return self._state_constructors[state_name](self._ari, self._stat_sender)
 
-    def state(self, wrapped_class):
+    def state(self, wrapped_class) -> type[CallState]:
         self._state_constructors[wrapped_class.name] = wrapped_class
         return wrapped_class
 
@@ -39,13 +39,13 @@ class CallState:
         self._ari = ari
         self._stat_sender = stat_sender
 
-    def ring(self):
+    def ring(self, call):
         pass
 
-    def connect(self):
+    def connect(self, call):
         pass
 
-    def hangup(self):
+    def hangup(self, call):
         pass
 
     @classmethod

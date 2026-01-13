@@ -1,4 +1,4 @@
-# Copyright 2024 The Wazo Authors (see the AUTHORS file)
+# Copyright 2024-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from __future__ import annotations
@@ -53,6 +53,7 @@ def dataclass_from_dict(dataclass: type[T], dict_: dict) -> T:
         type_ = hints[key]
         if get_origin(type_) in (list, set, tuple):
             if is_dataclass(nested_type := get_args(type_)[0]):
+                assert isinstance(nested_type, type)
                 args[key] = type_(
                     [dataclass_from_dict(nested_type, item) for item in value]
                 )
