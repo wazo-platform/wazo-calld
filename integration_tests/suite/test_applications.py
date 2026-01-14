@@ -1202,7 +1202,7 @@ class TestApplication(BaseApplicationTestCase):
         finally:
             self.ari.channels.hangup(channelId=channel.id)
 
-    def test_that_empty_body_for_put_applications_returns_400(self):
+    def test_that_empty_body_for_put_applications_snoop_returns_400(self):
         app_uuid = '00000000-0000-0000-0000-000000000000'
         snoop_uuid = '00000000-0000-0000-0000-000000000001'
         self.assert_empty_body_returns_400(

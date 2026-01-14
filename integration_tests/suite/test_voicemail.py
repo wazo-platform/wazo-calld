@@ -1866,7 +1866,7 @@ class TestVoicemails(RealAsteriskIntegrationTest):
         # restore message
         self.restart_service('volume-init')
 
-    def test_that_empty_body_for_post_voicemails_returns_400(self):
+    def test_that_empty_body_for_post_voicemails_greetings_returns_400(self):
         voicemail_id = '1234'
         greeting = 'busy'
         urls = [
@@ -1875,7 +1875,7 @@ class TestVoicemails(RealAsteriskIntegrationTest):
         ]
         self.assert_empty_body_returns_400(urls)
 
-    def test_that_empty_body_for_put_voicemails_returns_400(self):
+    def test_that_empty_body_for_put_voicemails_message_returns_400(self):
         voicemail_id = '1234'
         message_id = 'msg-001'
         urls = [
