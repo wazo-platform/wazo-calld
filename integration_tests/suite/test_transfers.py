@@ -1,4 +1,4 @@
-# Copyright 2016-2025 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 from __future__ import annotations
 
@@ -1176,6 +1176,13 @@ class TestCreateTransfer(TestTransfers):
         assert_that(
             (response1.status_code, response2.status_code), contains_exactly(201, 201)
         )
+
+    def test_that_empty_body_for_post_transfers_returns_400(self):
+        urls = [
+            ('post', 'transfers'),
+            ('post', 'users/me/transfers'),
+        ]
+        self.assert_empty_body_returns_400(urls)
 
 
 class TestUserCreateTransfer(TestTransfers):

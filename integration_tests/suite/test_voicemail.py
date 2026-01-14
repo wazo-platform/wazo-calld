@@ -1,4 +1,4 @@
-# Copyright 2019-2025 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import os
@@ -1865,3 +1865,21 @@ class TestVoicemails(RealAsteriskIntegrationTest):
 
         # restore message
         self.restart_service('volume-init')
+
+    def test_that_empty_body_for_post_voicemails_greetings_returns_400(self):
+        voicemail_id = '1234'
+        greeting = 'busy'
+        urls = [
+            ('post', f'voicemails/{voicemail_id}/greetings/{greeting}/copy'),
+            ('post', f'users/me/voicemails/greetings/{greeting}/copy'),
+        ]
+        self.assert_empty_body_returns_400(urls)
+
+    def test_that_empty_body_for_put_voicemails_message_returns_400(self):
+        voicemail_id = '1234'
+        message_id = 'msg-001'
+        urls = [
+            ('put', f'voicemails/{voicemail_id}/messages/{message_id}'),
+            ('put', f'users/me/voicemails/messages/{message_id}'),
+        ]
+        self.assert_empty_body_returns_400(urls)

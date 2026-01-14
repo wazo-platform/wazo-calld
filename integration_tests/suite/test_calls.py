@@ -1,4 +1,4 @@
-# Copyright 2015-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
@@ -2123,6 +2123,13 @@ class TestCreateCall(_BaseTestCalls):
         # originate from user in same tenant = OK
         result = calld_1.calls.make_call(call_args)
         assert result['call_id'] == my_new_call_id
+
+    def test_that_empty_body_for_post_calls_returns_400(self):
+        urls = [
+            ('post', 'calls'),
+            ('post', 'users/me/calls'),
+        ]
+        self.assert_empty_body_returns_400(urls)
 
 
 class TestUserCreateCall(_BaseTestCalls):

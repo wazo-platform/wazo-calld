@@ -1,4 +1,4 @@
-# Copyright 2021-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2021-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import uuid
@@ -63,3 +63,6 @@ class TestConfig(IntegrationTest):
             calling(calld.config.patch).with_args({}),
             raises(CalldError, has_properties(status_code=401)),
         )
+
+    def test_that_empty_body_for_patch_config_returns_400(self):
+        self.assert_empty_body_returns_400([('patch', 'config')])
