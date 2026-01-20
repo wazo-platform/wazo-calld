@@ -1,4 +1,4 @@
-# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from contextlib import contextmanager
@@ -37,11 +37,11 @@ class TestBusEvent(TestCase):
         self.confd_cache.get_trunk_by_username.return_value = {'name': 'foobar'}
         event = {
             'ChannelType': 'PJSIP',
-            'Domain': 'sip:wazo-dev-gateway.lan.wazo.io',
+            'Domain': 'sip:gateway.example.com',
             'Event': 'Registry',
             'Privilege': 'system,all',
             'Status': 'Registered',
-            'Username': 'sip:dev_370@wazo-dev-gateway.lan.wazo.io',
+            'Username': 'sip:dev_370@gateway.example.com',
         }
 
         self.handler.on_registry(event)
@@ -70,11 +70,11 @@ class TestBusEvent(TestCase):
         self.confd_cache.get_trunk_by_username.return_value = {'name': 'foobar'}
         event = {
             'ChannelType': 'PJSIP',
-            'Domain': 'sip:wazo-dev-gateway.lan.wazo.io',
+            'Domain': 'sip:gateway.example.com',
             'Event': 'Registry',
             'Privilege': 'system,all',
             'Status': 'Unregistered',
-            'Username': 'sip:dev_370@wazo-dev-gateway.lan.wazo.io',
+            'Username': 'sip:dev_370@gateway.example.com',
         }
 
         self.handler.on_registry(event)
@@ -88,11 +88,11 @@ class TestBusEvent(TestCase):
         self.confd_cache.get_trunk_by_username.return_value = None
         event = {
             'ChannelType': 'PJSIP',
-            'Domain': 'sip:wazo-dev-gateway.lan.wazo.io',
+            'Domain': 'sip:gateway.example.com',
             'Event': 'Registry',
             'Privilege': 'system,all',
             'Status': 'Unregistered',
-            'Username': 'sip:dev_370@wazo-dev-gateway.lan.wazo.io',
+            'Username': 'sip:dev_370@gateway.example.com',
         }
 
         assert_that(
