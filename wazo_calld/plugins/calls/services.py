@@ -808,7 +808,8 @@ class CallsService:
             raise NoSuchCall(call_id)
 
         try:
-            channel = self._ari.channels.get(channelId=channel_id)
+            call_channel = self._ari.channels.get(channelId=channel_id)
+            channel = self._ari.channels.get(channelId=call_channel.json['channelvars'].get('CHANNEL(linkedid)'))
         except ARINotFound:
             raise NoSuchCall(call_id)
 
