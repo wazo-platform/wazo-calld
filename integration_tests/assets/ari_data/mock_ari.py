@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright 2015-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from __future__ import annotations
@@ -9,8 +9,7 @@ import logging
 import sys
 
 from flask import Flask, Response, jsonify, make_response, request
-from flask_sockets import Sockets
-from geventwebsocket.websocket import WebSocket
+from flask_sock import Sock
 
 _EMPTY_RESPONSES: dict[str, dict | list] = {
     'amqp': {},
@@ -24,8 +23,8 @@ _EMPTY_RESPONSES: dict[str, dict | list] = {
 }
 
 app = Flask(__name__)
-sockets = Sockets(app)
-websocket: WebSocket = None  # type: ignore[assignment]
+sock = Sock(app)
+websocket = None
 
 _requests: list = []
 _responses: dict = {}
@@ -85,13 +84,16 @@ def set_response() -> tuple[str, int]:
 
 @app.route('/_send_ws_event', methods=['POST'])
 def send_event() -> tuple[str, int]:
+    if websocket is None:
+        return '', 503
+
     websocket.send(request.data)
     return '', 201
 
 
 @app.route('/_websockets')
 def websockets() -> Response:
-    result = []
+    result: list[int] = []
     if websocket:
         result.append(id(websocket))
     return make_response(json.dumps(result), 200, {'Content-Type': 'application/json'})
@@ -241,7 +243,7 @@ def set_global_variable() -> tuple[str, int]:
     return '', 204
 
 
-@sockets.route('/ari/events')
+@sock.route('/ari/events')
 def echo_socket(ws) -> None:
     global websocket
     websocket = ws
@@ -258,6 +260,4 @@ _reset()
 
 if __name__ == '__main__':
     port = int(sys.argv[1])
-    app.run(host='0.0.0.0', port=port, debug=True)
-    # context = ('/usr/local/share/ssl/ari/server.crt', '/usr/local/share/ssl/ari/server.key')
-    # app.run(host='0.0.0.0', port=port, ssl_context=context, debug=True)
+    app.run(host='0.0.0.0', port=port, threaded=True)
