@@ -23,7 +23,7 @@ services:
       - ./ssl/ari:/usr/local/share/ari-ssl:ro
     environment:
       PYTHONPATH: /usr/local/share/ari
-    command: python3 -m gunicorn -b 0.0.0.0:5039 -k flask_sockets.worker mock_ari:app
+    command: python3 /usr/local/share/ari/mock_ari.py 5039
 
   auth:
     image: wazoplatform/wazo-auth-mock
