@@ -20,6 +20,7 @@ from wazo_test_helpers.auth import AuthClient, MockCredentials, MockUserToken
 from .amid import MockAmidClient
 from .ari_ import ARIClient
 from .bus import BusClient
+from .call_logd import CallLogdClient
 from .calld import CalldClient, LegacyCalldClient
 from .confd import ConfdClient
 from .constants import (
@@ -133,6 +134,13 @@ class IntegrationTest(AssetLaunchingTestCase):
         except (NoSuchService, NoSuchPort) as e:
             logger.debug(e)
             cls.auth = WrongClient('auth')
+        try:
+            cls.call_logd = CallLogdClient(
+                '127.0.0.1', cls.service_port(9298, 'call-logd')
+            )
+        except (NoSuchService, NoSuchPort) as e:
+            logger.debug(e)
+            cls.call_logd = WrongClient('call-logd')
         try:
             cls.confd = ConfdClient('127.0.0.1', cls.service_port(9486, 'confd'))
         except (NoSuchService, NoSuchPort) as e:
