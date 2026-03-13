@@ -30,6 +30,14 @@ services:
     ports:
       - 9497
 
+  call-logd:
+    image: wazoplatform/flask
+    ports:
+      - 9298
+    volumes:
+      - ./call_logd_data:/usr/local/share/wazo-call-logd:ro
+    command: python3 /usr/local/share/wazo-call-logd/mock-wazo-call-logd.py 9298
+
   confd:
     image: wazoplatform/wazo-confd-mock
     ports:

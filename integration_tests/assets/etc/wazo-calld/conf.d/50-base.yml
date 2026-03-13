@@ -18,6 +18,12 @@ auth:
 bus:
   host: rabbitmq
 
+call_logd:
+  host: call-logd
+  port: 9298
+  prefix: null
+  https: false
+
 confd:
   host: confd
 

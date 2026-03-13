@@ -1,4 +1,4 @@
-# Copyright 2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2024-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from __future__ import annotations
@@ -60,6 +60,13 @@ class CollectdConfigDict(TypedDict):
     exchange_durable: bool
 
 
+class CallLogdConfigDict(TypedDict):
+    host: str
+    port: int
+    prefix: str | None
+    https: bool
+
+
 class ConfdConfigDict(TypedDict):
     host: str
     port: int
@@ -115,6 +122,7 @@ class CalldConfigDict(TypedDict):
     auth: AuthConfigDict
     bus: BusConfigDict
     collectd: CollectdConfigDict
+    call_logd: CallLogdConfigDict
     confd: ConfdConfigDict
     consul: ConsulConfigDict
     enabled_plugins: dict[str, bool]
