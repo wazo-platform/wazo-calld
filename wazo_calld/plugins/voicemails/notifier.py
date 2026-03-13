@@ -1,13 +1,17 @@
-# Copyright 2022-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2022-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from wazo_bus.resources.voicemail.event import (
     GlobalVoicemailMessageCreatedEvent,
     GlobalVoicemailMessageDeletedEvent,
     GlobalVoicemailMessageUpdatedEvent,
+    GlobalVoicemailTranscriptionCreatedEvent,
+    GlobalVoicemailTranscriptionDeletedEvent,
     UserVoicemailMessageCreatedEvent,
     UserVoicemailMessageDeletedEvent,
     UserVoicemailMessageUpdatedEvent,
+    UserVoicemailTranscriptionCreatedEvent,
+    UserVoicemailTranscriptionDeletedEvent,
 )
 
 
@@ -49,4 +53,28 @@ class VoicemailsNotifier:
 
     def delete_global_voicemail_message(self, tenant_uuid, message):
         event = GlobalVoicemailMessageDeletedEvent(message, tenant_uuid)
+        self._bus_publisher.publish(event)
+
+    def create_user_voicemail_transcription(
+        self, user_uuid, tenant_uuid, transcription
+    ):
+        event = UserVoicemailTranscriptionCreatedEvent(
+            transcription, tenant_uuid, user_uuid
+        )
+        self._bus_publisher.publish(event)
+
+    def delete_user_voicemail_transcription(
+        self, user_uuid, tenant_uuid, transcription
+    ):
+        event = UserVoicemailTranscriptionDeletedEvent(
+            transcription, tenant_uuid, user_uuid
+        )
+        self._bus_publisher.publish(event)
+
+    def create_global_voicemail_transcription(self, tenant_uuid, transcription):
+        event = GlobalVoicemailTranscriptionCreatedEvent(transcription, tenant_uuid)
+        self._bus_publisher.publish(event)
+
+    def delete_global_voicemail_transcription(self, tenant_uuid, transcription):
+        event = GlobalVoicemailTranscriptionDeletedEvent(transcription, tenant_uuid)
         self._bus_publisher.publish(event)

@@ -583,6 +583,13 @@ definitions:
           description: The folder's messages
           items:
             $ref: '#/definitions/VoicemailMessageBase'
+  VoicemailTranscription:
+    type: object
+    properties:
+      text:
+        type: string
+        description: The transcription text
+        readOnly: true
   VoicemailMessageBase:
     type: object
     properties:
@@ -609,6 +616,9 @@ definitions:
       timestamp:
         type: integer
         description: The time the message was left as a Unix time value
+        readOnly: true
+      transcription:
+        $ref: '#/definitions/VoicemailTranscription'
         readOnly: true
   VoicemailMessage:
     type: object

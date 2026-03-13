@@ -1,4 +1,4 @@
-# Copyright 2015-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from __future__ import annotations
@@ -66,6 +66,12 @@ _DEFAULT_CONFIG: CalldConfigDict = {
         'exchange_name': 'collectd',
         'exchange_type': 'topic',
         'exchange_durable': False,
+    },
+    'call_logd': {
+        'host': 'localhost',
+        'port': 9298,
+        'prefix': None,
+        'https': False,
     },
     'confd': {
         'host': 'localhost',
