@@ -202,7 +202,7 @@ class TestChannelGone(DialerTestCase):
 
         self.poller.stop.assert_called_once_with()
         self.ari.channels.hangup.assert_called_with(
-            channelId=self.poller._caller_channel_id
+            channelId=self.poller._caller_channel_id, reason_code=21
         )
 
 
@@ -279,6 +279,37 @@ class DialMobileServiceTestCase(DialerTestCase):
         with patch.object(self.service, '_set_user_hint') as mock:
             self.service.on_mobile_refresh_token_deleted(s.user_uuid)
             mock.assert_not_called()
+
+    def test_notify_channel_gone_on_rejection_hangs_up_caller(self):
+        caller_channel_id = '1234567890.42'
+        dialed_channel_id = '1234567890.99'
+
+        self.ari.client.channels.getChannelVar.return_value = {'value': 'pickupmark'}
+        self.ari.client.channels.get.return_value = Mock(
+            json={'caller': {'name': 'Test', 'number': '1001'}}
+        )
+
+        self.service.dial_all_contacts(
+            caller_channel_id, self.origin_channel_id, self.aor
+        )
+
+        assert_that(len(self.service._contact_dialers), equal_to(1))
+        bridge_uuid = next(iter(self.service._contact_dialers))
+        dialer = self.service._contact_dialers[bridge_uuid]
+
+        # Simulate the poller having dialed a channel
+        mock_dialed_channel = Mock()
+        mock_dialed_channel.id = dialed_channel_id
+        dialer._dialed_channels.add(mock_dialed_channel)
+        dialer.should_stop.set()
+        dialer._thread.join()
+
+        self.service.notify_channel_gone(dialed_channel_id)
+
+        self.ari_client.channels.hangup.assert_called_with(
+            channelId=caller_channel_id, reason_code=21
+        )
+        assert_that(self.service._contact_dialers, equal_to({}))
 
     def test_join_bridge_unknown_future_bridge_will_hangup(self):
         with patch.object(self.service, 'cancel_push_mobile') as push_cancel:

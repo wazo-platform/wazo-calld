@@ -174,7 +174,9 @@ class _PollingContactDialer:
                 'Call was refused, hanging up caller channel %s', channel_id
             )
             try:
-                self._ari.channels.hangup(channelId=self._caller_channel_id)
+                self._ari.channels.hangup(
+                    channelId=self._caller_channel_id, reason_code=21
+                )
             except ARINotFound:
                 pass  # Already gone
 
