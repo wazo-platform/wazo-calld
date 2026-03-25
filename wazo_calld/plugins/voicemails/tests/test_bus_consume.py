@@ -15,7 +15,7 @@ class TestTranscriptionBusEventHandler:
     def _make_event(self, **overrides):
         event = {
             'voicemail_id': 42,
-            'voicemail_message_id': 'msg-1',
+            'message_id': 'msg-1',
             'transcription_text': 'Hello world',
             'provider_id': 'openai/whisper-1',
             'language': 'en',
@@ -96,21 +96,3 @@ class TestTranscriptionBusEventHandler:
         self.handler._transcription_deleted(event)
 
         self.notifier.delete_global_voicemail_transcription.assert_called_once()
-
-    def test_confd_failure_is_handled(self):
-        self.confd_client.voicemails.get.side_effect = Exception('confd unavailable')
-        event = self._make_event()
-
-        self.handler._transcription_created(event)
-
-        self.notifier.create_user_voicemail_transcription.assert_not_called()
-        self.notifier.create_global_voicemail_transcription.assert_not_called()
-
-    def test_missing_voicemail_id(self):
-        event = self._make_event()
-        del event['voicemail_id']
-
-        self.handler._transcription_created(event)
-
-        self.confd_client.voicemails.get.assert_not_called()
-        self.notifier.create_user_voicemail_transcription.assert_not_called()

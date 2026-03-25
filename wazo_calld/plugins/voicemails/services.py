@@ -130,7 +130,7 @@ class VoicemailsService:
                 )
             )
             transcriptions_by_message_id = {
-                t['voicemail_message_id']: t for t in response.get('items', [])
+                t['message_id']: t for t in response.get('items', [])
             }
         except Exception:
             logger.warning(
@@ -144,8 +144,8 @@ class VoicemailsService:
             if message_id and message_id in transcriptions_by_message_id:
                 t = transcriptions_by_message_id[message_id]
                 message['transcription'] = {
-                    'id': t.get('voicemail_message_id', ''),
-                    'text': t.get('transcript', ''),
+                    'id': t['message_id'],
+                    'text': t['transcription_text'],
                 }
 
     def move_message(self, tenant_uuid, voicemail_id, message_id, dest_folder_id):

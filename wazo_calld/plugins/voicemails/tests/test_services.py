@@ -18,13 +18,13 @@ class TestEnrichMessagesWithTranscriptions:
         call_logd_client.voicemail_transcription.list_transcriptions.return_value = {
             'items': [
                 {
-                    'voicemail_message_id': 'msg-1',
-                    'transcript': 'Hello world',
+                    'message_id': 'msg-1',
+                    'transcription_text': 'Hello world',
                     'voicemail_id': 42,
                 },
                 {
-                    'voicemail_message_id': 'msg-2',
-                    'transcript': 'Goodbye',
+                    'message_id': 'msg-2',
+                    'transcription_text': 'Goodbye',
                     'voicemail_id': 42,
                 },
             ],

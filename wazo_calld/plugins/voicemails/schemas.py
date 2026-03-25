@@ -11,7 +11,6 @@ VALID_ACCESSTYPES = ["personal", "global"]
 
 
 class VoicemailTranscriptionSchema(Schema):
-    id = fields.String()
     text = fields.String()
 
 

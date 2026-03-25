@@ -25,62 +25,52 @@ class TranscriptionBusEventHandler:
         )
 
     def _transcription_created(self, event):
-        self._forward_transcription_event(event, 'created')
-
-    def _transcription_deleted(self, event):
-        self._forward_transcription_event(event, 'deleted')
-
-    def _forward_transcription_event(self, event, action):
-        voicemail_id = event.get('voicemail_id')
-        if not voicemail_id:
-            logger.warning(
-                'Received transcription %s event without voicemail_id', action
-            )
-            return
-
-        try:
-            voicemail = self._get_voicemail(voicemail_id)
-        except Exception:
-            logger.warning(
-                'Could not look up voicemail %s for transcription %s event',
-                voicemail_id,
-                action,
-                exc_info=True,
-            )
-            return
-
+        voicemail = self._get_voicemail(event['voicemail_id'])
         transcription = {
-            'voicemail_id': voicemail_id,
-            'message_id': event.get('voicemail_message_id', ''),
-            'transcription_text': event.get('transcription_text', ''),
-            'provider_id': event.get('provider_id', ''),
-            'language': event.get('language', ''),
-            'duration': event.get('duration', 0.0),
-            'created_at': event.get('created_at', ''),
+            'voicemail_id': event['voicemail_id'],
+            'message_id': event['message_id'],
+            'transcription_text': event['transcription_text'],
+            'provider_id': event['provider_id'],
+            'language': event['language'],
+            'duration': event['duration'],
+            'created_at': event['created_at'],
         }
         tenant_uuid = voicemail['tenant_uuid']
 
         match voicemail['accesstype']:
             case 'personal':
-                for user in voicemail.get('users', []):
-                    user_uuid = user['uuid']
-                    if action == 'created':
-                        self._notifier.create_user_voicemail_transcription(
-                            user_uuid, tenant_uuid, transcription
-                        )
-                    else:
-                        self._notifier.delete_user_voicemail_transcription(
-                            user_uuid, tenant_uuid, transcription
-                        )
+                for user in voicemail['users']:
+                    self._notifier.create_user_voicemail_transcription(
+                        user['uuid'], tenant_uuid, transcription
+                    )
             case 'global':
-                if action == 'created':
-                    self._notifier.create_global_voicemail_transcription(
-                        tenant_uuid, transcription
+                self._notifier.create_global_voicemail_transcription(
+                    tenant_uuid, transcription
+                )
+
+    def _transcription_deleted(self, event):
+        voicemail = self._get_voicemail(event['voicemail_id'])
+        transcription = {
+            'voicemail_id': event['voicemail_id'],
+            'message_id': event['message_id'],
+            'transcription_text': event['transcription_text'],
+            'provider_id': event['provider_id'],
+            'language': event['language'],
+            'duration': event['duration'],
+            'created_at': event['created_at'],
+        }
+        tenant_uuid = voicemail['tenant_uuid']
+
+        match voicemail['accesstype']:
+            case 'personal':
+                for user in voicemail['users']:
+                    self._notifier.delete_user_voicemail_transcription(
+                        user['uuid'], tenant_uuid, transcription
                     )
-                else:
-                    self._notifier.delete_global_voicemail_transcription(
-                        tenant_uuid, transcription
-                    )
+            case 'global':
+                self._notifier.delete_global_voicemail_transcription(
+                    tenant_uuid, transcription
+                )
 
     def _get_voicemail(self, voicemail_id):
         response = self._confd_client.voicemails.get(voicemail_id)
