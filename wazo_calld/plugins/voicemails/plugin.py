@@ -140,6 +140,7 @@ class Plugin:
             '/users/me/voicemails/messages/<message_id>/recording',
             resource_class_args=[voicemails_service],
         )
+        logger.critical("Loaded transcription-enabled voicemails API")
 
     def _provide_status(self, status: StatusDict) -> None:
         status['plugins']['voicemails']['status'] = Status.ok
