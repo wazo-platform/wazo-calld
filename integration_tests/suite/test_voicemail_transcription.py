@@ -106,6 +106,10 @@ class TestVoicemailTranscriptionBusConsume(IntegrationTest):
             message_id=message_id,
             tenant_uuid=VALID_TENANT,
             transcription_text='Hello world',
+            provider_id='openai/whisper-1',
+            language='en',
+            duration=5.0,
+            created_at='2026-03-12T11:00:00+00:00',
         )
 
         def assert_fn():
@@ -119,6 +123,10 @@ class TestVoicemailTranscriptionBusConsume(IntegrationTest):
                             user_uuid=user_uuid_1,
                             voicemail_id=voicemail_id,
                             message_id=message_id,
+                            provider_id='openai/whisper-1',
+                            language='en',
+                            duration=5.0,
+                            created_at='2026-03-12T11:00:00+00:00',
                         ),
                     )
                 ),
@@ -148,7 +156,7 @@ class TestVoicemailTranscriptionBusConsume(IntegrationTest):
             tenant_uuid=VALID_TENANT_MULTITENANT_1,
             transcription_text='Goodbye world',
             provider_id='openai/whisper-1',
-            language='fr',
+            language='en',
             duration=5.0,
             created_at='2026-03-12T11:00:00+00:00',
         )
@@ -164,7 +172,10 @@ class TestVoicemailTranscriptionBusConsume(IntegrationTest):
                             voicemail_id=voicemail_id,
                             message_id=message_id,
                             transcription_text='Goodbye world',
-                            language='fr',
+                            provider_id='openai/whisper-1',
+                            language='en',
+                            duration=5.0,
+                            created_at='2026-03-12T11:00:00+00:00',
                         ),
                     )
                 ),
@@ -238,9 +249,9 @@ class TestVoicemailTranscriptionEnrichment(RealAsteriskIntegrationTest):
         self.call_logd.set_transcriptions(
             [
                 {
-                    'voicemail_message_id': message_id,
+                    'message_id': message_id,
                     'voicemail_id': voicemail_id,
-                    'transcript': 'This is a test transcription',
+                    'transcription_text': 'This is a test transcription',
                     'provider_id': 'openai/whisper-1',
                     'language': 'en',
                     'duration': 19.0,
@@ -319,9 +330,9 @@ class TestVoicemailTranscriptionEnrichment(RealAsteriskIntegrationTest):
         self.call_logd.set_transcriptions(
             [
                 {
-                    'voicemail_message_id': message_id,
+                    'message_id': message_id,
                     'voicemail_id': voicemail_id,
-                    'transcript': 'Hello from voicemail',
+                    'transcription_text': 'Hello from voicemail',
                     'provider_id': 'openai/whisper-1',
                     'language': 'en',
                     'duration': 19.0,
