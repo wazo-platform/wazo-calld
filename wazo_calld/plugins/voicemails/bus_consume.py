@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, TypedDict
+from typing import TYPE_CHECKING, Any, Literal, TypedDict
 
 from wazo_bus.resources.call_logd.types import VoicemailTranscriptionDataDict
 from wazo_confd_client import Client as ConfdClient
@@ -18,6 +18,21 @@ if TYPE_CHECKING:
     from .storage import _VoicemailMessagesCache, _VoicemailMessagesDiff
 
 logger = logging.getLogger(__name__)
+
+
+VoicemailAccessType = Literal['personal', 'global']
+
+
+class VoicemailUserDict(TypedDict):
+    uuid: str
+
+
+class VoicemailDict(TypedDict):
+    id: int
+    name: str
+    accesstype: VoicemailAccessType
+    tenant_uuid: str
+    users: list[VoicemailUserDict]
 
 
 class VoicemailTranscriptionDict(TypedDict):
@@ -96,7 +111,7 @@ class TranscriptionBusEventHandler:
                     tenant_uuid, transcription
                 )
 
-    def _get_voicemail(self, voicemail_id: int) -> dict[str, Any]:
+    def _get_voicemail(self, voicemail_id: int) -> VoicemailDict:
         return self._confd_client.voicemails.get(voicemail_id)
 
 
@@ -115,7 +130,7 @@ class VoicemailsBusEventHandler:
     def subscribe(self, bus_consumer: CoreBusConsumer) -> None:
         bus_consumer.subscribe('MessageWaiting', self._voicemail_updated)
 
-    def _voicemail_updated(self, event: dict[str, Any]) -> None:
+    def _voicemail_updated(self, event: dict[str, str]) -> None:
         number, context = event['Mailbox'].split('@', 1)
         diff = self._voicemail_cache.get_diff(number, context)
         if diff.is_empty():
@@ -129,14 +144,14 @@ class VoicemailsBusEventHandler:
             case _:
                 pass
 
-    def _get_voicemail(self, number: str, context: str) -> dict[str, Any]:
+    def _get_voicemail(self, number: str, context: str) -> VoicemailDict:
         response = self._confd_client.voicemails.list(
             number=number, context=context, recurse=True
         )
         return response['items'][0]
 
     def _send_tenant_notifications_from_diff(
-        self, voicemail: dict[str, Any], diff: _VoicemailMessagesDiff
+        self, voicemail: VoicemailDict, diff: _VoicemailMessagesDiff
     ) -> None:
         tenant_uuid = voicemail['tenant_uuid']
 
@@ -153,7 +168,7 @@ class VoicemailsBusEventHandler:
             self._notifier.delete_global_voicemail_message(tenant_uuid, payload)
 
     def _send_users_notifications_from_diff(
-        self, voicemail: dict[str, Any], diff: _VoicemailMessagesDiff
+        self, voicemail: VoicemailDict, diff: _VoicemailMessagesDiff
     ) -> None:
         tenant_uuid = voicemail['tenant_uuid']
         voicemail_id = voicemail['id']
@@ -182,7 +197,7 @@ class VoicemailsBusEventHandler:
 
 def _build_message(
     schema: UnifiedVoicemailMessageSchema,
-    voicemail: dict[str, Any],
+    voicemail: VoicemailDict,
     message: dict[str, Any],
 ) -> dict:
     voicemail_info = {
