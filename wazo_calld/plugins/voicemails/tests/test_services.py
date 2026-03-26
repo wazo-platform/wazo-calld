@@ -81,3 +81,61 @@ class TestEnrichMessagesWithTranscriptions:
         service._enrich_messages_with_transcriptions(messages, set())
 
         call_logd_client.voicemail_transcription.list_transcriptions.assert_not_called()
+
+
+class TestGetUserMessage:
+    def _make_service(self, call_logd_client=None):
+        ari = MagicMock()
+        confd_client = MagicMock()
+        storage = MagicMock()
+        return VoicemailsService(ari, confd_client, storage, call_logd_client)
+
+    def test_get_user_message_enriches_with_transcription(self):
+        call_logd_client = MagicMock()
+        call_logd_client.voicemail_transcription.list_transcriptions.return_value = {
+            'items': [
+                {
+                    'message_id': 'msg-1',
+                    'transcription_text': 'Hello world',
+                    'voicemail_id': 42,
+                },
+            ],
+            'total': 1,
+            'filtered': 1,
+        }
+        service = self._make_service(call_logd_client)
+        service._confd_client.users(MagicMock()).get_voicemail.return_value = {
+            'id': 42,
+            'name': 'vm',
+        }
+        service._storage.get_message_info.return_value = {
+            'id': 'msg-1',
+            'duration': 10,
+        }
+        service._get_voicemails_configs = MagicMock(
+            return_value=[{'id': 42, 'name': 'vm'}]
+        )
+
+        result = service.get_user_message('tenant-1', 'user-1', 'msg-1')
+
+        assert result['transcription'] == {'text': 'Hello world'}
+
+    def test_get_user_message_without_transcription(self):
+        call_logd_client = MagicMock()
+        call_logd_client.voicemail_transcription.list_transcriptions.return_value = {
+            'items': [],
+            'total': 0,
+            'filtered': 0,
+        }
+        service = self._make_service(call_logd_client)
+        service._storage.get_message_info.return_value = {
+            'id': 'msg-1',
+            'duration': 10,
+        }
+        service._get_voicemails_configs = MagicMock(
+            return_value=[{'id': 42, 'name': 'vm'}]
+        )
+
+        result = service.get_user_message('tenant-1', 'user-1', 'msg-1')
+
+        assert 'transcription' not in result
