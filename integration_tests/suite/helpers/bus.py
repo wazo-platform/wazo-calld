@@ -363,7 +363,7 @@ class BusClient(bus_helper.BusClient):
                 'name': 'call_logd_voicemail_transcription_created',
                 'data': {
                     'voicemail_id': voicemail_id,
-                    'voicemail_message_id': message_id,
+                    'message_id': message_id,
                     'tenant_uuid': tenant_uuid,
                     'transcription_text': transcription_text,
                     'provider_id': provider_id,
@@ -394,7 +394,7 @@ class BusClient(bus_helper.BusClient):
                 'name': 'call_logd_voicemail_transcription_deleted',
                 'data': {
                     'voicemail_id': voicemail_id,
-                    'voicemail_message_id': message_id,
+                    'message_id': message_id,
                     'tenant_uuid': tenant_uuid,
                     'transcription_text': transcription_text,
                     'provider_id': provider_id,
