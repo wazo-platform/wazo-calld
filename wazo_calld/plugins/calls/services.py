@@ -775,10 +775,7 @@ class CallsService:
         if tenant_uuid and channel_helper.tenant_uuid() != tenant_uuid:
             raise NoSuchCall(call_id)
 
-        try:
-            channel = self._ari.channels.get(channelId=channel_id)
-        except ARINotFound:
-            raise NoSuchCall(call_id)
+        channel = self._find_channel_to_record(channel_id)
 
         if not self._toggle_record_allowed(channel):
             raise RecordingUnauthorized(call_id)
@@ -810,10 +807,7 @@ class CallsService:
         if tenant_uuid and channel_helper.tenant_uuid() != tenant_uuid:
             raise NoSuchCall(call_id)
 
-        try:
-            channel = self._ari.channels.get(channelId=channel_id)
-        except ARINotFound:
-            raise NoSuchCall(call_id)
+        channel = self._find_channel_to_record(channel_id)
 
         if not self._toggle_record_allowed(channel):
             raise RecordingUnauthorized(call_id)
