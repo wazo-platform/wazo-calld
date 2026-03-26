@@ -261,7 +261,6 @@ class TestVoicemailTranscriptionEnrichment(RealAsteriskIntegrationTest):
                     has_entries(
                         id=message_id,
                         transcription=has_entries(
-                            id=message_id,
                             text='This is a test transcription',
                         ),
                     ),
@@ -339,7 +338,6 @@ class TestVoicemailTranscriptionEnrichment(RealAsteriskIntegrationTest):
             has_entries(
                 id=message_id,
                 transcription=has_entries(
-                    id=message_id,
                     text='Hello from voicemail',
                 ),
             ),

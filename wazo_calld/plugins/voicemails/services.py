@@ -144,7 +144,6 @@ class VoicemailsService:
             if message_id and message_id in transcriptions_by_message_id:
                 t = transcriptions_by_message_id[message_id]
                 message['transcription'] = {
-                    'id': t['message_id'],
                     'text': t['transcription_text'],
                 }
 

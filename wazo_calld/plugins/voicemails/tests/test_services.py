@@ -40,8 +40,8 @@ class TestEnrichMessagesWithTranscriptions:
         ]
         service._enrich_messages_with_transcriptions(messages, {42})
 
-        assert messages[0]['transcription'] == {'id': 'msg-1', 'text': 'Hello world'}
-        assert messages[1]['transcription'] == {'id': 'msg-2', 'text': 'Goodbye'}
+        assert messages[0]['transcription'] == {'text': 'Hello world'}
+        assert messages[1]['transcription'] == {'text': 'Goodbye'}
         assert 'transcription' not in messages[2]
 
     def test_enrichment_call_logd_unavailable(self):
