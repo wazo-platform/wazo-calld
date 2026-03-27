@@ -251,11 +251,11 @@ class TestVoicemailTranscriptionEnrichment(RealAsteriskIntegrationTest):
                 {
                     'message_id': message_id,
                     'voicemail_id': voicemail_id,
+                    'tenant_uuid': VALID_TENANT,
                     'transcription_text': 'This is a test transcription',
                     'provider_id': 'openai/whisper-1',
                     'language': 'en',
                     'duration': 19.0,
-                    'created_at': '2026-03-12T10:00:00+00:00',
                 },
             ]
         )
@@ -332,11 +332,11 @@ class TestVoicemailTranscriptionEnrichment(RealAsteriskIntegrationTest):
                 {
                     'message_id': message_id,
                     'voicemail_id': voicemail_id,
+                    'tenant_uuid': VALID_TENANT,
                     'transcription_text': 'Hello from voicemail',
                     'provider_id': 'openai/whisper-1',
                     'language': 'en',
                     'duration': 19.0,
-                    'created_at': '2026-03-12T10:00:00+00:00',
                 },
             ]
         )
