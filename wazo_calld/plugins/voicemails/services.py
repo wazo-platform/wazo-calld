@@ -24,7 +24,7 @@ VoicemailTypes = Literal["all", "global", "personal"]
 
 
 class VoicemailsService:
-    def __init__(self, ari, confd_client, voicemail_storage, call_logd_client=None):
+    def __init__(self, ari, confd_client, voicemail_storage, call_logd_client):
         self._ari = ari
         self._confd_client = confd_client
         self._storage = voicemail_storage
@@ -121,7 +121,7 @@ class VoicemailsService:
         return messages
 
     def _enrich_messages_with_transcriptions(self, messages, voicemail_ids):
-        if not self._call_logd_client or not messages or not voicemail_ids:
+        if not messages or not voicemail_ids:
             return
         try:
             response = (

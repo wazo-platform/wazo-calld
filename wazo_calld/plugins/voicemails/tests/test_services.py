@@ -56,14 +56,6 @@ class TestEnrichMessagesWithTranscriptions:
 
         assert 'transcription' not in messages[0]
 
-    def test_enrichment_no_call_logd_client(self):
-        service = self._make_service(call_logd_client=None)
-
-        messages = [{'id': 'msg-1', 'duration': 10}]
-        service._enrich_messages_with_transcriptions(messages, {42})
-
-        assert 'transcription' not in messages[0]
-
     def test_enrichment_empty_messages(self):
         call_logd_client = MagicMock()
         service = self._make_service(call_logd_client)
