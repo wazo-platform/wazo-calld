@@ -4,13 +4,12 @@ services:
       - auth
       - amid
       - ari
-      - call-logd
       - confd
       - calld
       - rabbitmq
       - volume-init
     environment:
-      TARGETS: "ari:5039 ari:5040 rabbitmq:5672 confd:9486 call-logd:9298 amid:9491 auth:9497 calld:9500"
+      TARGETS: "ari:5039 ari:5040 rabbitmq:5672 confd:9486 amid:9491 auth:9497 calld:9500"
 
   amid:
     image: wazoplatform/wazo-amid

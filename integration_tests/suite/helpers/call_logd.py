@@ -12,11 +12,11 @@ class CallLogdClient:
         self._port = port
 
     def url(self, *parts):
-        return f'http://{self._host}:{self._port}/{"/".join(parts)}'
+        return f'http://{self._host}:{self._port}/1.0/{"/".join(parts)}'
 
     def is_up(self):
         try:
-            response = requests.get(self.url('_requests'))
+            response = requests.get(self.url('_status'))
             return response.status_code == 200
         except requests.RequestException:
             return False
@@ -31,9 +31,3 @@ class CallLogdClient:
         url = self.url('_reset')
         response = requests.post(url)
         response.raise_for_status()
-
-    def requests(self):
-        url = self.url('_requests')
-        response = requests.get(url)
-        response.raise_for_status()
-        return response.json()

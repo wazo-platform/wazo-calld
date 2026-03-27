@@ -224,7 +224,7 @@ class TestVoicemailTranscriptionBusConsume(IntegrationTest):
 
 
 class TestVoicemailTranscriptionEnrichment(RealAsteriskIntegrationTest):
-    asset = 'real_asterisk'
+    asset = 'real_asterisk_call_logd'
 
     def setUp(self):
         super().setUp()
