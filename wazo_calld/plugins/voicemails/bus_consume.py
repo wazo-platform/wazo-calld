@@ -11,6 +11,7 @@ from wazo_confd_client import Client as ConfdClient
 
 from wazo_calld.bus import CoreBusConsumer
 
+from .exceptions import VoicemailNotFound
 from .notifier import VoicemailsNotifier
 from .schemas import UnifiedVoicemailMessageSchema
 
@@ -160,7 +161,10 @@ class VoicemailsBusEventHandler:
         response = self._confd_client.voicemails.list(
             number=number, context=context, recurse=True
         )
-        return response['items'][0]
+        items = response['items']
+        if not items:
+            raise VoicemailNotFound(number=number, context=context)
+        return items[0]
 
     def _send_tenant_notifications_from_diff(
         self, voicemail: VoicemailDict, diff: _VoicemailMessagesDiff

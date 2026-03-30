@@ -129,15 +129,15 @@ class VoicemailsService:
                     voicemail_id=','.join(str(v) for v in voicemail_ids),
                 )
             )
-            transcriptions_by_message_id = {
-                t['message_id']: t for t in response.get('items', [])
-            }
         except Exception:
             logger.warning(
                 'Could not fetch voicemail transcriptions from call-logd',
                 exc_info=True,
             )
             return
+        transcriptions_by_message_id = {
+            t['message_id']: t for t in response.get('items', [])
+        }
 
         for message in messages:
             message_id = message.get('id')

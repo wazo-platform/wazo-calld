@@ -3,7 +3,13 @@
 
 from unittest.mock import MagicMock
 
-from wazo_calld.plugins.voicemails.bus_consume import TranscriptionBusEventHandler
+import pytest
+
+from wazo_calld.plugins.voicemails.bus_consume import (
+    TranscriptionBusEventHandler,
+    VoicemailsBusEventHandler,
+)
+from wazo_calld.plugins.voicemails.exceptions import VoicemailNotFound
 
 
 class TestTranscriptionBusEventHandler:
@@ -96,3 +102,44 @@ class TestTranscriptionBusEventHandler:
         self.handler._transcription_deleted(event)
 
         self.notifier.delete_global_voicemail_transcription.assert_called_once()
+
+
+class TestVoicemailsBusEventHandler:
+    def setup_method(self):
+        self.confd_client = MagicMock()
+        self.notifier = MagicMock()
+        self.voicemail_cache = MagicMock()
+        self.handler = VoicemailsBusEventHandler(
+            self.confd_client, self.notifier, self.voicemail_cache
+        )
+
+    def _make_event(self, mailbox='8000@default'):
+        return {'Mailbox': mailbox}
+
+    def test_voicemail_updated_raises_when_voicemail_deleted(self):
+        self.voicemail_cache.get_diff.return_value.is_empty.return_value = False
+        self.confd_client.voicemails.list.return_value = {'items': []}
+
+        with pytest.raises(VoicemailNotFound):
+            self.handler._voicemail_updated(self._make_event())
+
+    def test_voicemail_updated_sends_notifications(self):
+        self.voicemail_cache.get_diff.return_value.is_empty.return_value = False
+        self.voicemail_cache.get_diff.return_value.created_messages = [{'id': 'msg-1'}]
+        self.voicemail_cache.get_diff.return_value.updated_messages = []
+        self.voicemail_cache.get_diff.return_value.deleted_messages = []
+        self.confd_client.voicemails.list.return_value = {
+            'items': [
+                {
+                    'id': 42,
+                    'name': 'vm',
+                    'tenant_uuid': 'tenant-1',
+                    'accesstype': 'global',
+                    'users': [],
+                }
+            ]
+        }
+
+        self.handler._voicemail_updated(self._make_event())
+
+        self.notifier.create_global_voicemail_message.assert_called_once()
