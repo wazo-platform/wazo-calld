@@ -86,6 +86,12 @@ class TranscriptionBusEventHandler:
                 self._notifier.create_global_voicemail_transcription(
                     tenant_uuid, transcription
                 )
+            case _:
+                logger.warning(
+                    "Ignoring event for unsupported voicemail access type %s (voicemail id %s)",
+                    voicemail['accesstype'],
+                    voicemail['id'],
+                )
 
     def _transcription_deleted(self, event: VoicemailTranscriptionDataDict) -> None:
         voicemail = self._get_voicemail(event['voicemail_id'])
@@ -109,6 +115,12 @@ class TranscriptionBusEventHandler:
             case 'global':
                 self._notifier.delete_global_voicemail_transcription(
                     tenant_uuid, transcription
+                )
+            case _:
+                logger.warning(
+                    "Ignoring event for unsupported voicemail access type %s (voicemail id %s)",
+                    voicemail['accesstype'],
+                    voicemail['id'],
                 )
 
     def _get_voicemail(self, voicemail_id: int) -> VoicemailDict:
