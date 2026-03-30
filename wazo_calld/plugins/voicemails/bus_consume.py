@@ -7,6 +7,7 @@ import logging
 from typing import TYPE_CHECKING, Any, Literal, TypedDict
 
 from wazo_bus.resources.call_logd.types import VoicemailTranscriptionDataDict
+from wazo_bus.resources.voicemail.types import VoicemailTranscriptionCalldDataDict
 from wazo_confd_client import Client as ConfdClient
 
 from wazo_calld.bus import CoreBusConsumer
@@ -36,16 +37,6 @@ class VoicemailDict(TypedDict):
     users: list[VoicemailUserDict]
 
 
-class VoicemailTranscriptionDict(TypedDict):
-    voicemail_id: int
-    message_id: str
-    transcription_text: str
-    provider_id: str
-    language: str
-    duration: float
-    created_at: str
-
-
 voicemail_message_schema = UnifiedVoicemailMessageSchema()
 
 
@@ -66,7 +57,7 @@ class TranscriptionBusEventHandler:
 
     def _transcription_created(self, event: VoicemailTranscriptionDataDict) -> None:
         voicemail = self._get_voicemail(event['voicemail_id'])
-        transcription = VoicemailTranscriptionDict(
+        transcription = VoicemailTranscriptionCalldDataDict(
             voicemail_id=event['voicemail_id'],
             message_id=event['message_id'],
             transcription_text=event['transcription_text'],
@@ -96,7 +87,7 @@ class TranscriptionBusEventHandler:
 
     def _transcription_deleted(self, event: VoicemailTranscriptionDataDict) -> None:
         voicemail = self._get_voicemail(event['voicemail_id'])
-        transcription = VoicemailTranscriptionDict(
+        transcription = VoicemailTranscriptionCalldDataDict(
             voicemail_id=event['voicemail_id'],
             message_id=event['message_id'],
             transcription_text=event['transcription_text'],
@@ -147,6 +138,7 @@ class VoicemailsBusEventHandler:
         number, context = event['Mailbox'].split('@', 1)
         diff = self._voicemail_cache.get_diff(number, context)
         if diff.is_empty():
+            logger.debug("No change found for mailbox %s@%s", number, context)
             return
         voicemail = self._get_voicemail(number, context)
         match voicemail['accesstype']:

@@ -21,7 +21,7 @@ from wazo_bus.resources.voicemail.event import (
 from wazo_calld.bus import CoreBusPublisher
 
 if TYPE_CHECKING:
-    from .bus_consume import VoicemailTranscriptionDict
+    from wazo_bus.resources.voicemail.types import VoicemailTranscriptionCalldDataDict
 
 
 class VoicemailsNotifier:
@@ -83,7 +83,7 @@ class VoicemailsNotifier:
         self,
         user_uuid: str,
         tenant_uuid: str,
-        transcription: VoicemailTranscriptionDict,
+        transcription: VoicemailTranscriptionCalldDataDict,
     ) -> None:
         event = UserVoicemailTranscriptionCreatedEvent(
             transcription, tenant_uuid, user_uuid
@@ -94,7 +94,7 @@ class VoicemailsNotifier:
         self,
         user_uuid: str,
         tenant_uuid: str,
-        transcription: VoicemailTranscriptionDict,
+        transcription: VoicemailTranscriptionCalldDataDict,
     ) -> None:
         event = UserVoicemailTranscriptionDeletedEvent(
             transcription, tenant_uuid, user_uuid
@@ -102,13 +102,13 @@ class VoicemailsNotifier:
         self._bus_publisher.publish(event)
 
     def create_global_voicemail_transcription(
-        self, tenant_uuid: str, transcription: VoicemailTranscriptionDict
+        self, tenant_uuid: str, transcription: VoicemailTranscriptionCalldDataDict
     ) -> None:
         event = GlobalVoicemailTranscriptionCreatedEvent(transcription, tenant_uuid)
         self._bus_publisher.publish(event)
 
     def delete_global_voicemail_transcription(
-        self, tenant_uuid: str, transcription: VoicemailTranscriptionDict
+        self, tenant_uuid: str, transcription: VoicemailTranscriptionCalldDataDict
     ) -> None:
         event = GlobalVoicemailTranscriptionDeletedEvent(transcription, tenant_uuid)
         self._bus_publisher.publish(event)
