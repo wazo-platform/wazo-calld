@@ -155,7 +155,11 @@ class VoicemailsBusEventHandler:
             case 'global':
                 self._send_tenant_notifications_from_diff(voicemail, diff)
             case _:
-                pass
+                logger.warning(
+                    "Ignoring event for unsupported voicemail access type %s (voicemail id %s)",
+                    voicemail['accesstype'],
+                    voicemail['id'],
+                )
 
     def _get_voicemail(self, number: str, context: str) -> VoicemailDict:
         response = self._confd_client.voicemails.list(
