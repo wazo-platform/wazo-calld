@@ -13,6 +13,7 @@ build-ari:
 
 build-call-logd:
 	docker build -t call-logd-test -f docker/Dockerfile-call-logd-test .
+	docker build -t call-logd-db-test -f docker/Dockerfile-call-logd-db .
 
 clean:
 	docker rmi -f wazoplatform/wazo-calld
@@ -20,6 +21,7 @@ clean:
 	docker rmi -f ari-mock
 	docker rmi -f ari-real
 	docker rmi -f call-logd-test
+	docker rmi -f call-logd-db-test
 
 egg-info:
 	cd .. && python setup.py egg_info

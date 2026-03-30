@@ -62,7 +62,7 @@ services:
       - auth
 
   call-logd-postgres:
-    image: wazoplatform/wazo-call-logd-db
+    image: call-logd-db-test
     ports:
       - 5432
 
