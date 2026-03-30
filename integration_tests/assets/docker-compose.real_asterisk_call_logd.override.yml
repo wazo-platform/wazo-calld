@@ -1,0 +1,87 @@
+services:
+  sync:
+    depends_on:
+      - auth
+      - amid
+      - ari
+      - call-logd
+      - call-logd-postgres
+      - call-logd-cel-postgres
+      - confd
+      - calld
+      - rabbitmq
+      - volume-init
+    environment:
+      TARGETS: "ari:5039 ari:5040 rabbitmq:5672 confd:9486 call-logd:9298 amid:9491 auth:9497 calld:9500"
+
+  amid:
+    image: wazoplatform/wazo-amid
+    expose:
+      - "9491"
+    volumes:
+      - "./ssl:/usr/local/share/ssl"
+      - "./etc/wazo-amid:/etc/wazo-amid"
+    command: "wazo-amid -d"
+
+  ari:
+    image: ari-real
+    expose:
+      - "5038"
+    ports:
+      - "5039"
+    volumes:
+      - "./etc/asterisk/amqp.conf:/etc/asterisk/amqp.conf"
+      - "./etc/asterisk/ari.conf:/etc/asterisk/ari.conf"
+      - "./etc/asterisk/asterisk.conf:/etc/asterisk/asterisk.conf"
+      - "./etc/asterisk/extensions.conf:/etc/asterisk/extensions.conf"
+      - "./etc/asterisk/http.conf:/etc/asterisk/http.conf"
+      - "./etc/asterisk/logger.conf:/etc/asterisk/logger.conf"
+      - "./etc/asterisk/manager.conf:/etc/asterisk/manager.conf"
+      - "./etc/asterisk/modules.conf:/etc/asterisk/modules.conf"
+      - "./etc/asterisk/musiconhold.conf:/etc/asterisk/musiconhold.conf"
+      - "./etc/asterisk/res_parking.conf:/etc/asterisk/res_parking.conf"
+      - "./etc/asterisk/stasis_amqp.conf:/etc/asterisk/stasis_amqp.conf"
+      - "./etc/asterisk/voicemail.conf:/etc/asterisk/voicemail.conf"
+      - "./ssl:/usr/local/share/ssl"
+      - asterisk-voicemail:/var/spool/asterisk/voicemail
+    command: "asterisk -fTnvvvvv"
+
+  call-logd:
+    image: call-logd-test
+    ports:
+      - 9298
+    volumes:
+      - ./etc/wazo-call-logd/conf.d/50-calld-tests.yml:/etc/wazo-call-logd/conf.d/50-calld-tests.yml:ro
+    environment:
+      XIVO_UUID: 08c56466-8f29-45c7-9856-92bf1ba89b92
+    command: "wazo-call-logd --db-upgrade-on-startup"
+    depends_on:
+      - call-logd-postgres
+      - call-logd-cel-postgres
+      - rabbitmq
+      - auth
+
+  call-logd-postgres:
+    image: wazoplatform/wazo-call-logd-db
+    ports:
+      - 5432
+
+  call-logd-cel-postgres:
+    image: wazoplatform/wazo-confd-db-test
+    ports:
+      - 5432
+
+  calld:
+    volumes:
+      - ./etc/wazo-calld/conf.d/20-real-asterisk.yml:/etc/wazo-calld/conf.d/20-real-asterisk.yml
+      - asterisk-voicemail:/var/spool/asterisk/voicemail
+
+  volume-init:
+    image: python:3.9-slim-bullseye
+    volumes:
+      - ./asterisk-voicemail:/var/spool/asterisk/voicemail-init:ro
+      - asterisk-voicemail:/var/spool/asterisk/voicemail
+    command: bash -c "cp -rT /var/spool/asterisk/voicemail-init/ /var/spool/asterisk/voicemail/ && chmod -R 777 /var/spool/asterisk/voicemail"
+
+volumes:
+  asterisk-voicemail:
