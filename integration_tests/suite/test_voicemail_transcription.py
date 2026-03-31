@@ -354,6 +354,138 @@ class TestVoicemailTranscriptionEnrichment(RealAsteriskIntegrationTest):
             ),
         )
 
+    def test_get_voicemail_message_with_transcription(self):
+        voicemail_id = 111
+        message_id = '1724107750-00000001'  # Present in Docker volume
+        voicemail = MockVoicemail(
+            voicemail_id,
+            '8000',
+            'admin-voicemail',
+            'default',
+            tenant_uuid=VALID_TENANT,
+        )
+        self.confd.set_voicemails(voicemail)
+
+        self.call_logd.set_transcriptions(
+            [
+                {
+                    'message_id': message_id,
+                    'voicemail_id': voicemail_id,
+                    'tenant_uuid': VALID_TENANT,
+                    'transcription_text': 'Admin transcription',
+                    'provider_id': 'openai/whisper-1',
+                    'language': 'en',
+                    'duration': 19.0,
+                },
+            ]
+        )
+
+        result = self.calld_client.voicemails.get_voicemail_message(
+            voicemail_id, message_id
+        )
+
+        assert_that(
+            result,
+            has_entries(
+                id=message_id,
+                transcription=has_entries(
+                    text='Admin transcription',
+                ),
+            ),
+        )
+
+    def test_get_voicemail_with_transcription(self):
+        voicemail_id = 111
+        message_id = '1724107750-00000001'  # Present in Docker volume
+        voicemail = MockVoicemail(
+            voicemail_id,
+            '8000',
+            'admin-voicemail',
+            'default',
+            tenant_uuid=VALID_TENANT,
+        )
+        self.confd.set_voicemails(voicemail)
+
+        self.call_logd.set_transcriptions(
+            [
+                {
+                    'message_id': message_id,
+                    'voicemail_id': voicemail_id,
+                    'tenant_uuid': VALID_TENANT,
+                    'transcription_text': 'Voicemail transcription',
+                    'provider_id': 'openai/whisper-1',
+                    'language': 'en',
+                    'duration': 19.0,
+                },
+            ]
+        )
+
+        result = self.calld_client.voicemails.get_voicemail(voicemail_id)
+
+        assert_that(
+            result,
+            has_entries(
+                id=voicemail_id,
+                folders=has_item(
+                    has_entries(
+                        messages=has_item(
+                            has_entries(
+                                id=message_id,
+                                transcription=has_entries(
+                                    text='Voicemail transcription',
+                                ),
+                            ),
+                        ),
+                    ),
+                ),
+            ),
+        )
+
+    def test_get_voicemail_folder_with_transcription(self):
+        voicemail_id = 111
+        message_id = '1724107750-00000001'  # Present in Docker volume
+        folder_id = 1  # INBOX
+        voicemail = MockVoicemail(
+            voicemail_id,
+            '8000',
+            'admin-voicemail',
+            'default',
+            tenant_uuid=VALID_TENANT,
+        )
+        self.confd.set_voicemails(voicemail)
+
+        self.call_logd.set_transcriptions(
+            [
+                {
+                    'message_id': message_id,
+                    'voicemail_id': voicemail_id,
+                    'tenant_uuid': VALID_TENANT,
+                    'transcription_text': 'Folder transcription',
+                    'provider_id': 'openai/whisper-1',
+                    'language': 'en',
+                    'duration': 19.0,
+                },
+            ]
+        )
+
+        result = self.calld_client.voicemails.get_voicemail_folder(
+            voicemail_id, folder_id
+        )
+
+        assert_that(
+            result,
+            has_entries(
+                messages=has_item(
+                    has_entries(
+                        id=message_id,
+                        transcription=has_entries(
+                            text='Folder transcription',
+                        ),
+                    ),
+                ),
+            ),
+        )
+
     def test_list_user_messages_transcription_fault_tolerance(self):
         """Verify that messages are still returned when call-logd is unavailable."""
         user_uuid = str(uuid.uuid4())

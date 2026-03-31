@@ -60,7 +60,10 @@ class VoicemailsService:
 
     def get_voicemail(self, tenant_uuid, voicemail_id):
         vm_conf = confd.get_voicemail(tenant_uuid, voicemail_id, self._confd_client)
-        return self._storage.get_voicemail_info(vm_conf)
+        voicemail = self._storage.get_voicemail_info(vm_conf)
+        messages = [m for f in voicemail['folders'] for m in f['messages']]
+        self._enrich_messages_with_transcriptions(messages, {voicemail_id})
+        return voicemail
 
     def get_user_voicemail(self, user_uuid):
         vm_conf = confd.get_user_voicemail(user_uuid, self._confd_client)
@@ -68,7 +71,9 @@ class VoicemailsService:
 
     def get_folder(self, tenant_uuid, voicemail_id, folder_id):
         vm_conf = confd.get_voicemail(tenant_uuid, voicemail_id, self._confd_client)
-        return self._storage.get_folder_info(vm_conf, folder_id)
+        folder = self._storage.get_folder_info(vm_conf, folder_id)
+        self._enrich_messages_with_transcriptions(folder['messages'], {voicemail_id})
+        return folder
 
     def get_user_folder(self, user_uuid, folder_id):
         vm_conf = confd.get_user_voicemail(user_uuid, self._confd_client)
@@ -76,7 +81,9 @@ class VoicemailsService:
 
     def get_message(self, tenant_uuid, voicemail_id, message_id):
         vm_conf = confd.get_voicemail(tenant_uuid, voicemail_id, self._confd_client)
-        return self._storage.get_message_info(message_id, vm_conf)
+        message = self._storage.get_message_info(message_id, vm_conf)
+        self._enrich_messages_with_transcriptions([message], {voicemail_id})
+        return message
 
     def get_user_message(self, tenant_uuid, user_uuid, message_id):
         vm_confs = self._get_voicemails_configs(tenant_uuid, user_uuid, 'all')
