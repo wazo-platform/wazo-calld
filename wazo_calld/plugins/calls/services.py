@@ -1,4 +1,4 @@
-# Copyright 2015-2025 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import datetime
@@ -665,6 +665,9 @@ class CallsService:
                 potential_channel.json['channelvars']['WAZO_CALL_RECORD_SIDE']
                 == 'caller'
             ):
+                continue
+
+            if potential_channel.json['state'] != 'Up':
                 continue
 
             logger.debug(
