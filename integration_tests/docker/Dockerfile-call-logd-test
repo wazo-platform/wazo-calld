@@ -1,9 +1,5 @@
 FROM wazoplatform/wazo-call-logd
 
 # Install test plugin for integration tests
-COPY assets/call_logd_data/call_logd_test_plugin.py /opt/venv/lib/python3.11/site-packages/wazo_call_logd/plugins/tests/plugin.py
-RUN touch /opt/venv/lib/python3.11/site-packages/wazo_call_logd/plugins/tests/__init__.py
-
-# Register test plugin entry point
-RUN sed -i '/\[wazo_call_logd.plugins\]/a tests = wazo_call_logd.plugins.tests.plugin:Plugin' \
-    /opt/venv/lib/python3.11/site-packages/wazo_call_logd-*.dist-info/entry_points.txt
+COPY assets/call_logd_data /usr/src/call-logd-test-plugin
+RUN /opt/venv/bin/pip install /usr/src/call-logd-test-plugin
