@@ -83,57 +83,6 @@ class TestVoicemailTranscriptionBusConsume(IntegrationTest):
 
         until.assert_(assert_fn, tries=5)
 
-    def test_personal_voicemail_transcription_deleted_event(self):
-        user_uuid_1 = str(uuid.uuid4())
-        voicemail_id = 111
-        message_id = 'msg-001'
-        voicemail = MockVoicemail(
-            voicemail_id,
-            '8000',
-            'personal-vm',
-            'default',
-            user_uuids=[user_uuid_1],
-            accesstype='personal',
-            tenant_uuid=VALID_TENANT,
-        )
-        self.confd.set_voicemails(voicemail)
-
-        events = self.bus.accumulator(
-            headers={'name': 'user_voicemail_transcription_deleted'}
-        )
-        self.bus.send_voicemail_transcription_deleted_event(
-            voicemail_id=voicemail_id,
-            message_id=message_id,
-            tenant_uuid=VALID_TENANT,
-            transcription_text='Hello world',
-            provider_id='openai/whisper-1',
-            language='en',
-            duration=5.0,
-            created_at='2026-03-12T11:00:00+00:00',
-        )
-
-        def assert_fn():
-            assert_that(
-                events.accumulate(),
-                has_item(
-                    has_entries(
-                        name='user_voicemail_transcription_deleted',
-                        origin_uuid=XIVO_UUID,
-                        data=has_entries(
-                            user_uuid=user_uuid_1,
-                            voicemail_id=voicemail_id,
-                            message_id=message_id,
-                            provider_id='openai/whisper-1',
-                            language='en',
-                            duration=5.0,
-                            created_at='2026-03-12T11:00:00+00:00',
-                        ),
-                    )
-                ),
-            )
-
-        until.assert_(assert_fn, tries=5)
-
     def test_global_voicemail_transcription_created_event(self):
         voicemail_id = 222
         message_id = 'msg-002'
@@ -176,45 +125,6 @@ class TestVoicemailTranscriptionBusConsume(IntegrationTest):
                             language='en',
                             duration=5.0,
                             created_at='2026-03-12T11:00:00+00:00',
-                        ),
-                    )
-                ),
-            )
-
-        until.assert_(assert_fn, tries=5)
-
-    def test_global_voicemail_transcription_deleted_event(self):
-        voicemail_id = 222
-        message_id = 'msg-002'
-        voicemail = MockVoicemail(
-            voicemail_id,
-            '8000',
-            'global-vm',
-            'default',
-            accesstype='global',
-            tenant_uuid=VALID_TENANT_MULTITENANT_1,
-        )
-        self.confd.set_voicemails(voicemail)
-
-        events = self.bus.accumulator(
-            headers={'name': 'global_voicemail_transcription_deleted'}
-        )
-        self.bus.send_voicemail_transcription_deleted_event(
-            voicemail_id=voicemail_id,
-            message_id=message_id,
-            tenant_uuid=VALID_TENANT_MULTITENANT_1,
-        )
-
-        def assert_fn():
-            assert_that(
-                events.accumulate(),
-                has_item(
-                    has_entries(
-                        name='global_voicemail_transcription_deleted',
-                        origin_uuid=XIVO_UUID,
-                        data=has_entries(
-                            voicemail_id=voicemail_id,
-                            message_id=message_id,
                         ),
                     )
                 ),
@@ -620,3 +530,112 @@ class TestVoicemailTranscriptionEnrichment(RealAsteriskIntegrationTest):
         finally:
             self.start_service('call-logd')
             self.reset_clients()
+
+    def test_personal_voicemail_transcription_deleted_event(self):
+        user_uuid_1 = str(uuid.uuid4())
+        voicemail_id = 111
+        message_id = 'msg-deleted-001'
+        voicemail = MockVoicemail(
+            voicemail_id,
+            '8000',
+            'personal-vm',
+            'default',
+            user_uuids=[user_uuid_1],
+            accesstype='personal',
+            tenant_uuid=VALID_TENANT,
+        )
+        self.confd.set_voicemails(voicemail)
+
+        self.call_logd.set_transcriptions(
+            [
+                {
+                    'message_id': message_id,
+                    'voicemail_id': voicemail_id,
+                    'tenant_uuid': VALID_TENANT,
+                    'transcription_text': 'To be deleted',
+                    'provider_id': 'openai/whisper-1',
+                    'language': 'en',
+                    'duration': 5.0,
+                },
+            ]
+        )
+
+        events = self.bus.accumulator(
+            headers={'name': 'user_voicemail_transcription_deleted'}
+        )
+        self.call_logd.reset()
+
+        def assert_fn():
+            assert_that(
+                events.accumulate(),
+                has_item(
+                    has_entries(
+                        name='user_voicemail_transcription_deleted',
+                        origin_uuid=XIVO_UUID,
+                        data=has_entries(
+                            user_uuid=user_uuid_1,
+                            voicemail_id=voicemail_id,
+                            message_id=message_id,
+                            transcription_text='To be deleted',
+                            provider_id='openai/whisper-1',
+                            language='en',
+                            duration=5.0,
+                        ),
+                    )
+                ),
+            )
+
+        until.assert_(assert_fn, tries=5)
+
+    def test_global_voicemail_transcription_deleted_event(self):
+        voicemail_id = 111
+        message_id = 'msg-deleted-002'
+        voicemail = MockVoicemail(
+            voicemail_id,
+            '8000',
+            'global-vm',
+            'default',
+            accesstype='global',
+            tenant_uuid=VALID_TENANT,
+        )
+        self.confd.set_voicemails(voicemail)
+
+        self.call_logd.set_transcriptions(
+            [
+                {
+                    'message_id': message_id,
+                    'voicemail_id': voicemail_id,
+                    'tenant_uuid': VALID_TENANT,
+                    'transcription_text': 'Global to be deleted',
+                    'provider_id': 'openai/whisper-1',
+                    'language': 'en',
+                    'duration': 5.0,
+                },
+            ]
+        )
+
+        events = self.bus.accumulator(
+            headers={'name': 'global_voicemail_transcription_deleted'}
+        )
+        self.call_logd.reset()
+
+        def assert_fn():
+            assert_that(
+                events.accumulate(),
+                has_item(
+                    has_entries(
+                        name='global_voicemail_transcription_deleted',
+                        origin_uuid=XIVO_UUID,
+                        data=has_entries(
+                            voicemail_id=voicemail_id,
+                            message_id=message_id,
+                            transcription_text='Global to be deleted',
+                            provider_id='openai/whisper-1',
+                            language='en',
+                            duration=5.0,
+                        ),
+                    )
+                ),
+            )
+
+        until.assert_(assert_fn, tries=5)
