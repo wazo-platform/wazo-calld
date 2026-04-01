@@ -141,10 +141,9 @@ class VoicemailsService:
                     voicemail_id=','.join(str(v) for v in voicemail_ids),
                 )
             )
-        except Exception:
+        except Exception as ex:
             logger.warning(
-                'Could not fetch voicemail transcriptions from call-logd',
-                exc_info=True,
+                'Could not fetch voicemail transcriptions from call-logd: %s', str(ex)
             )
             return
         transcriptions_by_message_id = {
