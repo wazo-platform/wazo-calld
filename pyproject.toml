@@ -26,6 +26,7 @@ check_untyped_defs = true
 warn_unused_configs = true
 ignore_missing_imports = true
 enable_incomplete_feature = "Unpack"
+explicit_package_bases = true
 
 [tool.coverage.paths]
 source = [

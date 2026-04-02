@@ -28,7 +28,7 @@ repos:
     hooks:
       - id: mypy
         language_version: '3.11'
-        exclude: 'integration_tests/setup.py'
+        exclude: 'integration_tests/(.+/)?setup\.py'
         additional_dependencies:
           - 'types-flask'
           - 'types-pyyaml'
