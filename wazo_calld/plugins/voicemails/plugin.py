@@ -1,16 +1,17 @@
-# Copyright 2016-2025 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from __future__ import annotations
 
 import logging
 
+from wazo_call_logd_client import Client as CallLogdClient
 from wazo_confd_client import Client as ConfdClient
 from xivo.status import Status
 
 from wazo_calld.types import PluginDependencies, StatusDict
 
-from .bus_consume import VoicemailsBusEventHandler
+from .bus_consume import TranscriptionBusEventHandler, VoicemailsBusEventHandler
 from .http import (
     UserVoicemailFolderResource,
     UserVoicemailGreetingCopyResource,
@@ -44,10 +45,12 @@ class Plugin:
         token_changed_subscribe = dependencies['token_changed_subscribe']
 
         confd_client = ConfdClient(**config['confd'])
+        call_logd_client = CallLogdClient(**config['call_logd'])
 
         notifier = VoicemailsNotifier(bus_publisher)
 
         token_changed_subscribe(confd_client.set_token)
+        token_changed_subscribe(call_logd_client.set_token)
 
         voicemail_storage = new_filesystem_storage()
         self._voicemail_cache = new_cache(voicemail_storage)
@@ -56,13 +59,18 @@ class Plugin:
         except Exception:
             logger.exception('fail to refresh voicemail cache')
         voicemails_service = VoicemailsService(
-            ari.client, confd_client, voicemail_storage
+            ari.client, confd_client, voicemail_storage, call_logd_client
         )
 
         voicemails_bus_event_handler = VoicemailsBusEventHandler(
             confd_client, notifier, self._voicemail_cache
         )
         voicemails_bus_event_handler.subscribe(bus_consumer)
+
+        transcription_bus_event_handler = TranscriptionBusEventHandler(
+            confd_client, notifier
+        )
+        transcription_bus_event_handler.subscribe(bus_consumer)
 
         status_aggregator.add_provider(self._provide_status)
 

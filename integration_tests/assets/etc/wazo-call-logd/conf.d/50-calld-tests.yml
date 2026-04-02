@@ -1,0 +1,34 @@
+debug: true
+rest_api:
+  listen: 0.0.0.0
+
+db_uri: postgresql://wazo-call-logd:Secr7t@call-logd-postgres/wazo-call-logd
+cel_db_uri: postgresql://asterisk:proformatique@call-logd-cel-postgres/asterisk
+
+auth:
+  host: auth
+  username: wazo-call-logd
+  password: opensesame
+  master_tenant_uuid: ffffffff-ffff-ffff-ffff-ffffffffffff
+
+exports:
+  service_id: export-service-id
+  service_key: export-service-key
+
+bus:
+  host: rabbitmq
+
+confd:
+  host: confd
+
+enabled_plugins:
+  api: true
+  config: true
+  status: true
+  tenant: true
+  voicemail_transcription: true
+  tests: true
+  cdr: false
+  export: false
+  retention: false
+  support_center: false

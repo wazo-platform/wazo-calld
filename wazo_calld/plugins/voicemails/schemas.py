@@ -1,4 +1,4 @@
-# Copyright 2019-2025 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from marshmallow import Schema, fields
@@ -10,6 +10,10 @@ VALID_VOICEMAIL_ORDER = ["id", "caller_id_name", "duration", "timestamp"]
 VALID_ACCESSTYPES = ["personal", "global"]
 
 
+class VoicemailTranscriptionSchema(Schema):
+    text = fields.String()
+
+
 class VoicemailMessageBaseSchema(Schema):
     id = fields.String()
     caller_id_name = fields.String()
@@ -17,6 +21,9 @@ class VoicemailMessageBaseSchema(Schema):
     duration = fields.Integer()
     timestamp = fields.Integer()
     empty = fields.Boolean()
+    transcription = fields.Nested(
+        VoicemailTranscriptionSchema, allow_none=True, dump_default=None
+    )
 
 
 class VoicemailFolderBaseSchema(Schema):

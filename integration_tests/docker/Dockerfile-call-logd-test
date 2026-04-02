@@ -1,0 +1,5 @@
+FROM wazoplatform/wazo-call-logd
+
+# Install test plugin for integration tests
+COPY assets/call_logd_data /usr/src/call-logd-test-plugin
+RUN /opt/venv/bin/pip install /usr/src/call-logd-test-plugin

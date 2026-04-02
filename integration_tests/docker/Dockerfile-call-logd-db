@@ -1,0 +1,9 @@
+FROM wazoplatform/wazo-base-db
+
+RUN pg_start \
+    && su postgres -c "psql -c \"CREATE ROLE \\\"wazo-call-logd\\\" LOGIN PASSWORD 'Secr7t';\"" \
+    && su postgres -c "psql -c 'CREATE DATABASE \"wazo-call-logd\" WITH OWNER \"wazo-call-logd\";'" \
+    && su postgres -c "psql \"wazo-call-logd\" -c 'CREATE EXTENSION \"uuid-ossp\";'" \
+    && pg_stop
+
+USER postgres

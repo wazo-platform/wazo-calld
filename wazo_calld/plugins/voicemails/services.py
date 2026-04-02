@@ -1,7 +1,8 @@
-# Copyright 2016-2025 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import base64
+import logging
 from typing import Literal
 
 import requests
@@ -17,14 +18,17 @@ from .exceptions import (
     VoicemailGreetingAlreadyExists,
 )
 
+logger = logging.getLogger(__name__)
+
 VoicemailTypes = Literal["all", "global", "personal"]
 
 
 class VoicemailsService:
-    def __init__(self, ari, confd_client, voicemail_storage):
+    def __init__(self, ari, confd_client, voicemail_storage, call_logd_client):
         self._ari = ari
         self._confd_client = confd_client
         self._storage = voicemail_storage
+        self._call_logd_client = call_logd_client
 
     def count_user_messages(
         self,
@@ -56,27 +60,42 @@ class VoicemailsService:
 
     def get_voicemail(self, tenant_uuid, voicemail_id):
         vm_conf = confd.get_voicemail(tenant_uuid, voicemail_id, self._confd_client)
-        return self._storage.get_voicemail_info(vm_conf)
+        voicemail = self._storage.get_voicemail_info(vm_conf)
+        messages = [m for f in voicemail['folders'] for m in f['messages']]
+        self._enrich_messages_with_transcriptions(messages, {voicemail_id})
+        return voicemail
 
     def get_user_voicemail(self, user_uuid):
         vm_conf = confd.get_user_voicemail(user_uuid, self._confd_client)
-        return self._storage.get_voicemail_info(vm_conf)
+        voicemail = self._storage.get_voicemail_info(vm_conf)
+        messages = [m for f in voicemail['folders'] for m in f['messages']]
+        self._enrich_messages_with_transcriptions(messages, {vm_conf['id']})
+        return voicemail
 
     def get_folder(self, tenant_uuid, voicemail_id, folder_id):
         vm_conf = confd.get_voicemail(tenant_uuid, voicemail_id, self._confd_client)
-        return self._storage.get_folder_info(vm_conf, folder_id)
+        folder = self._storage.get_folder_info(vm_conf, folder_id)
+        self._enrich_messages_with_transcriptions(folder['messages'], {voicemail_id})
+        return folder
 
     def get_user_folder(self, user_uuid, folder_id):
         vm_conf = confd.get_user_voicemail(user_uuid, self._confd_client)
-        return self._storage.get_folder_info(vm_conf, folder_id)
+        folder = self._storage.get_folder_info(vm_conf, folder_id)
+        self._enrich_messages_with_transcriptions(folder['messages'], {vm_conf['id']})
+        return folder
 
     def get_message(self, tenant_uuid, voicemail_id, message_id):
         vm_conf = confd.get_voicemail(tenant_uuid, voicemail_id, self._confd_client)
-        return self._storage.get_message_info(message_id, vm_conf)
+        message = self._storage.get_message_info(message_id, vm_conf)
+        self._enrich_messages_with_transcriptions([message], {voicemail_id})
+        return message
 
     def get_user_message(self, tenant_uuid, user_uuid, message_id):
         vm_confs = self._get_voicemails_configs(tenant_uuid, user_uuid, 'all')
-        return self._storage.get_message_info(message_id, *vm_confs)
+        message = self._storage.get_message_info(message_id, *vm_confs)
+        voicemail_ids = {vm_conf['id'] for vm_conf in vm_confs if 'id' in vm_conf}
+        self._enrich_messages_with_transcriptions([message], voicemail_ids)
+        return message
 
     def get_message_recording(self, tenant_uuid, voicemail_id, message_id):
         vm_conf = confd.get_voicemail(tenant_uuid, voicemail_id, self._confd_client)
@@ -106,9 +125,38 @@ class VoicemailsService:
         if not vm_confs:
             return []
 
-        return self._storage.list_messages_infos(
+        messages = self._storage.list_messages_infos(
             *vm_confs, limit=limit, offset=offset, order=order, direction=direction
         )
+        voicemail_ids = {vm_conf['id'] for vm_conf in vm_confs if 'id' in vm_conf}
+        self._enrich_messages_with_transcriptions(messages, voicemail_ids)
+        return messages
+
+    def _enrich_messages_with_transcriptions(self, messages, voicemail_ids):
+        if not messages or not voicemail_ids:
+            return
+        try:
+            response = (
+                self._call_logd_client.voicemail_transcription.list_transcriptions(
+                    voicemail_id=','.join(str(v) for v in voicemail_ids),
+                )
+            )
+        except Exception as ex:
+            logger.warning(
+                'Could not fetch voicemail transcriptions from call-logd: %s', str(ex)
+            )
+            return
+        transcriptions_by_message_id = {
+            t['message_id']: t for t in response.get('items', [])
+        }
+
+        for message in messages:
+            message_id = message.get('id')
+            if message_id and message_id in transcriptions_by_message_id:
+                t = transcriptions_by_message_id[message_id]
+                message['transcription'] = {
+                    'text': t['transcription_text'],
+                }
 
     def move_message(self, tenant_uuid, voicemail_id, message_id, dest_folder_id):
         vm_conf = confd.get_voicemail(tenant_uuid, voicemail_id, self._confd_client)

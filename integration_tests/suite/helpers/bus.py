@@ -1,4 +1,4 @@
-# Copyright 2015-2025 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
@@ -346,6 +346,37 @@ class BusClient(bus_helper.BusClient):
             'data': {'id': id},
         }
         self.send_event(payload, headers={'name': 'parking_lot_deleted'})
+
+    def send_voicemail_transcription_created_event(
+        self,
+        voicemail_id,
+        message_id,
+        tenant_uuid,
+        transcription_text='',
+        provider_id='',
+        language='',
+        duration=0.0,
+        created_at='',
+    ):
+        self.send_event(
+            {
+                'name': 'call_logd_voicemail_transcription_created',
+                'data': {
+                    'voicemail_id': voicemail_id,
+                    'message_id': message_id,
+                    'tenant_uuid': tenant_uuid,
+                    'transcription_text': transcription_text,
+                    'provider_id': provider_id,
+                    'language': language,
+                    'duration': duration,
+                    'created_at': created_at,
+                },
+            },
+            headers={
+                'name': 'call_logd_voicemail_transcription_created',
+                'tenant_uuid': tenant_uuid,
+            },
+        )
 
     def send_message_waiting_event(self, voicemail_id, context=None):
         self.send_event(

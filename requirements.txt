@@ -3,6 +3,7 @@ https://github.com/wazo-platform/ari-py/archive/master.zip
 https://github.com/wazo-platform/wazo-lib-rest-client/archive/master.zip
 https://github.com/wazo-platform/wazo-amid-client/archive/master.zip
 https://github.com/wazo-platform/wazo-auth-client/archive/master.zip
+https://github.com/wazo-platform/wazo-call-logd-client/archive/master.zip
 https://github.com/wazo-platform/wazo-confd-client/archive/master.zip
 https://github.com/wazo-platform/wazo-bus/archive/master.zip
 https://github.com/wazo-platform/xivo-lib-python/archive/master.zip
