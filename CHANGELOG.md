@@ -1,5 +1,16 @@
 # Changelog
 
+## 26.05
+
+* The `transcription` attribute has been added to voicemail messages. It contains the transcription text when available, or `null` otherwise.
+
+* New events for voicemail transcriptions:
+
+  * `user_voicemail_transcription_created`
+  * `user_voicemail_transcription_deleted`
+  * `global_voicemail_transcription_created`
+  * `global_voicemail_transcription_deleted`
+
 ## 26.02
 
 * `POST`, `PATCH` and `PUT` request bodies to endpoints accepting JSON payload are systematically parsed as JSON, with or without a proper `Content-Type` header;
