@@ -276,6 +276,12 @@ class CallsBusEventHandler:
                 return
             participant_channels.append(channel)
 
+        participant_channels = [
+            ch
+            for ch in participant_channels
+            if not ch.json['name'].startswith('Local/')
+        ]
+
         call_direction = self.services.conversation_direction_from_channels(
             self.ari, [channel.id for channel in participant_channels]
         )
@@ -319,6 +325,12 @@ class CallsBusEventHandler:
                 return
 
             participant_channels.append(channel)
+
+        participant_channels = [
+            ch
+            for ch in participant_channels
+            if not ch.json['name'].startswith('Local/')
+        ]
 
         call_direction = self.services.conversation_direction_from_channels(
             self.ari, [channel.id for channel in participant_channels]
