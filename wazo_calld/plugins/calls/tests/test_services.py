@@ -1,4 +1,4 @@
-# Copyright 2017-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from unittest import TestCase
@@ -7,6 +7,37 @@ from unittest.mock import Mock, patch
 from hamcrest import assert_that, equal_to
 
 from ..services import CallsService
+
+
+def _make_local_group_callee_channel(match_uuid):
+    channel = Mock()
+    channel.json = {
+        'name': 'Local/user-uuid@usersharedlines-000001;1',
+        'channelvars': {
+            'WAZO_LOCAL_CHAN_MATCH_UUID': match_uuid,
+        },
+    }
+
+    def get_channel_var(variable):
+        if variable == 'WAZO_RECORD_GROUP_CALLEE':
+            return {'value': '1'}
+        return {'value': ''}
+
+    channel.getChannelVar.side_effect = get_channel_var
+    return channel
+
+
+def _make_pjsip_channel(name, match_uuid, state='Up', record_side='callee'):
+    channel = Mock()
+    channel.json = {
+        'name': name,
+        'state': state,
+        'channelvars': {
+            'WAZO_LOCAL_CHAN_MATCH_UUID': match_uuid,
+            'WAZO_CALL_RECORD_SIDE': record_side,
+        },
+    }
+    return channel
 
 
 class TestServices(TestCase):
@@ -205,3 +236,59 @@ class TestServices(TestCase):
             direction([internal_channel, internal_channel, internal_channel]),
             equal_to(internal_channel),
         )
+
+
+class TestFindChannelToRecord(TestCase):
+    def setUp(self):
+        self.ari = Mock()
+        self.services = CallsService(
+            Mock(), Mock(), self.ari, Mock(), Mock(), Mock(), Mock()
+        )
+
+    def test_group_callee_returns_answered_channel(self):
+        call_uuid = 'shared-group-call-uuid'
+        local_channel = _make_local_group_callee_channel(call_uuid)
+        answered_pjsip = _make_pjsip_channel(
+            'PJSIP/answered-001', call_uuid, state='Up'
+        )
+
+        self.ari.channels.get.return_value = local_channel
+        self.ari.channels.list.return_value = [answered_pjsip]
+
+        result = self.services._find_channel_to_record('local-chan-id')
+
+        assert_that(result, equal_to(answered_pjsip))
+
+    def test_group_callee_skips_ringing_channels(self):
+        call_uuid = 'shared-group-call-uuid'
+        local_channel = _make_local_group_callee_channel(call_uuid)
+        ringing_pjsip = _make_pjsip_channel(
+            'PJSIP/ringing-001', call_uuid, state='Ring'
+        )
+        answered_pjsip = _make_pjsip_channel(
+            'PJSIP/answered-002', call_uuid, state='Up'
+        )
+
+        self.ari.channels.get.return_value = local_channel
+        self.ari.channels.list.return_value = [ringing_pjsip, answered_pjsip]
+
+        result = self.services._find_channel_to_record('local-chan-id')
+
+        assert_that(result, equal_to(answered_pjsip))
+
+    def test_group_callee_falls_back_to_local_when_no_channel_is_up(self):
+        call_uuid = 'shared-group-call-uuid'
+        local_channel = _make_local_group_callee_channel(call_uuid)
+        ringing_pjsip_1 = _make_pjsip_channel(
+            'PJSIP/ringing-001', call_uuid, state='Ring'
+        )
+        ringing_pjsip_2 = _make_pjsip_channel(
+            'PJSIP/ringing-002', call_uuid, state='Ring'
+        )
+
+        self.ari.channels.get.return_value = local_channel
+        self.ari.channels.list.return_value = [ringing_pjsip_1, ringing_pjsip_2]
+
+        result = self.services._find_channel_to_record('local-chan-id')
+
+        assert_that(result, equal_to(local_channel))
