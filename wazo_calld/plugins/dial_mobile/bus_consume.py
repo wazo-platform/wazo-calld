@@ -35,12 +35,15 @@ class EventHandler:
         ring_timeout = event['WAZO_RING_TIME']
         tenant_uuid = event.get('ChanVariable', {}).get('WAZO_TENANT_UUID')
         timestamp = event['WAZO_TIMESTAMP']
+        push_trace_uuid = event.get('WAZO_PUSH_TRACE_UUID', '')
 
         logger.info(
-            'Received push notification request for user %s from %s <%s>',
+            'Received push notification request for user %s from %s <%s>'
+            ' push_trace_uuid=%s',
             user_uuid,
             event["CallerIDName"],
             event["CallerIDNum"],
+            push_trace_uuid,
         )
 
         self._service.send_push_notification(
@@ -54,6 +57,7 @@ class EventHandler:
             ring_timeout,
             event["Linkedid"],
             timestamp,
+            push_trace_uuid,
         )
 
     def _on_refresh_token_created(self, event):

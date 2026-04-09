@@ -348,6 +348,7 @@ class DialMobileService:
         ring_timeout,
         origin_call_id,
         push_mobile_timestamp,
+        push_trace_uuid='',
     ):
         payload = {
             'peer_caller_id_number': caller_id_number,
@@ -357,7 +358,15 @@ class DialMobileService:
             'ring_timeout': ring_timeout,
             'sip_call_id': sip_call_id,
             'mobile_wakeup_timestamp': push_mobile_timestamp,
+            'push_trace_uuid': push_trace_uuid,
         }
+
+        logger.info(
+            'Sending push notification push_trace_uuid=%s user=%s call_id=%s',
+            push_trace_uuid,
+            user_uuid,
+            call_id,
+        )
 
         self._pending_push_mobile[call_id] = PendingPushMobile(
             call_id,
@@ -375,6 +384,12 @@ class DialMobileService:
         if not pending_push:
             return
 
+        logger.info(
+            'Cancelling push notification push_trace_uuid=%s user=%s call_id=%s',
+            pending_push.payload.get('push_trace_uuid', ''),
+            pending_push.user_uuid,
+            call_id,
+        )
         self._notifier.cancel_push_notification(
             pending_push.payload,
             pending_push.tenant_uuid,
