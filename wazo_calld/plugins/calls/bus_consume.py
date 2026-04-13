@@ -81,29 +81,38 @@ class CallsBusEventHandler:
         except ARINotFound:
             logger.debug('channel %s not found', channel_id)
 
-    def _relay_channel_created(self, event):
+    def _get_call_from_event(self, event, action):
         channel_id = event['Uniqueid']
         if event['Channel'].startswith('Local/'):
-            logger.debug('Ignoring local channel creation: %s', channel_id)
-            return
-        logger.debug('Relaying to bus: channel %s created', channel_id)
+            logger.debug('Ignoring local channel %s: %s', action, channel_id)
+            return None
+        logger.debug('Relaying to bus: channel %s %s', channel_id, action)
         try:
             channel = self.ari.channels.get(channelId=channel_id)
         except ARINotFound:
             logger.debug('channel %s not found', channel_id)
-            return
-
+            return None
         call = self.services.make_call_from_channel(self.ari, channel)
         if call.is_autoprov:
             logger.debug(
                 'ignoring event %s because this is a device in autoprov', event['Event']
             )
-            return
+            return None
+        return call, channel
+
+    def _ensure_call_direction(self, call, channel):
         if self._call_direction_unknown(call):
             call.direction = self.services.conversation_direction_from_channels(
                 self.ari, [channel.id]
             )
-            self._set_conversation_direction_cache(channel_id, call.direction)
+            self._set_conversation_direction_cache(channel.id, call.direction)
+
+    def _relay_channel_created(self, event):
+        result = self._get_call_from_event(event, 'created')
+        if result is None:
+            return
+        call, channel = result
+        self._ensure_call_direction(call, channel)
         self.notifier.call_created(call)
 
     def _collectd_channel_created(self, event):
@@ -112,54 +121,27 @@ class CallsBusEventHandler:
         self.collectd.publish(ChannelCreatedCollectdEvent())
 
     def _relay_channel_updated(self, event):
-        channel_id = event['Uniqueid']
-        if event['Channel'].startswith('Local/'):
-            logger.debug('Ignoring local channel update: %s', channel_id)
+        result = self._get_call_from_event(event, 'updated')
+        if result is None:
             return
-        logger.debug('Relaying to bus: channel %s updated', channel_id)
-        try:
-            channel = self.ari.channels.get(channelId=channel_id)
-        except ARINotFound:
-            logger.debug('channel %s not found', channel_id)
-            return
-        call = self.services.make_call_from_channel(self.ari, channel)
-        if call.is_autoprov:
-            logger.debug(
-                'ignoring event %s because this is a device in autoprov', event['Event']
-            )
-            return
+        call, _channel = result
         self.notifier.call_updated(call)
 
     def _relay_channel_answered(self, event):
         if event['ChannelStateDesc'] != 'Up':
             return
-        channel_id = event['Uniqueid']
         if event['Channel'].startswith('Local/'):
-            logger.debug('Ignoring local channel answer: %s', channel_id)
             return
-
-        logger.debug('Relaying to bus: channel %s answered', channel_id)
+        channel_id = event['Uniqueid']
         try:
             self.services.set_answered_time(channel_id)
         except NoSuchCall:
             return
-
-        try:
-            channel = self.ari.channels.get(channelId=channel_id)
-        except ARINotFound:
-            logger.debug('channel %s not found', channel_id)
+        result = self._get_call_from_event(event, 'answered')
+        if result is None:
             return
-        call = self.services.make_call_from_channel(self.ari, channel)
-        if call.is_autoprov:
-            logger.debug(
-                'ignoring event %s because this is a device in autoprov', event['Event']
-            )
-            return
-        if self._call_direction_unknown(call):
-            call.direction = self.services.conversation_direction_from_channels(
-                self.ari, [channel.id]
-            )
-            self._set_conversation_direction_cache(channel_id, call.direction)
+        call, channel = result
+        self._ensure_call_direction(call, channel)
         self.notifier.call_answered(call)
 
     def _collectd_channel_ended(self, event):
