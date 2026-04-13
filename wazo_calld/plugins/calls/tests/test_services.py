@@ -255,7 +255,7 @@ def _make_channel_mock(
 
     channel = Mock()
     channel.id = channel_id
-    channel.json = {'name': name, 'channelvars': default_vars}
+    channel.json = {'name': name, 'state': 'Up', 'channelvars': default_vars}
 
     def _getvar(variable=''):
         if getvar_side_effect and variable in getvar_side_effect:

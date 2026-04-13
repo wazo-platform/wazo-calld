@@ -48,6 +48,10 @@ class TestCallsBusEventHandler(TestCase):
             'chan-1': pjsip_channel,
             'chan-2': local_channel,
         }[channelId]
+        self.services.conversation_direction_from_channels.return_value = 'internal'
+        self.handler.ari.channels.getChannelVar.return_value = {
+            'value': 'internal',
+        }
 
         event = {
             'Uniqueid': 'chan-1',
@@ -72,6 +76,10 @@ class TestCallsBusEventHandler(TestCase):
             'chan-1': pjsip_channel,
             'chan-2': local_channel,
         }[channelId]
+        self.services.conversation_direction_from_channels.return_value = 'internal'
+        self.handler.ari.channels.getChannelVar.return_value = {
+            'value': 'internal',
+        }
 
         event = {
             'Uniqueid': 'chan-2',
