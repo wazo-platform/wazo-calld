@@ -3,7 +3,7 @@
 
 import base64
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Literal
 
 import requests
@@ -150,7 +150,7 @@ class VoicemailsService:
             return self._get_voicemails_configs(tenant_uuid, user_uuid, voicemail_type)
 
         if voicemail_type == "global":
-            return confd.get_global_voicemails(tenant_uuid, client)
+            return confd.get_global_voicemails(tenant_uuid, client, recurse=recurse)
         elif voicemail_type == "personal":
             all_vms = confd.get_all_voicemails(tenant_uuid, client, recurse=recurse)
             return [vm for vm in all_vms if vm.get('accesstype') != 'global']
@@ -241,10 +241,10 @@ class VoicemailsService:
     ) -> list[dict]:
         result = messages
         if from_ is not None:
-            from_ts = int(from_.timestamp())
+            from_ts = int(from_.replace(tzinfo=timezone.utc).timestamp())
             result = [m for m in result if m.get('timestamp', 0) >= from_ts]
         if until is not None:
-            until_ts = int(until.timestamp())
+            until_ts = int(until.replace(tzinfo=timezone.utc).timestamp())
             result = [m for m in result if m.get('timestamp', 0) < until_ts]
         return result
 
