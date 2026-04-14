@@ -1,4 +1,4 @@
-# Copyright 2016-2025 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import re
@@ -21,6 +21,7 @@ from .exceptions import (
 )
 from .schemas import (
     VALID_GREETINGS,
+    voicemail_admin_messages_get_schema,
     voicemail_folder_schema,
     voicemail_greeting_copy_schema,
     voicemail_message_schema,
@@ -358,6 +359,47 @@ def _validate_greeting(greeting):
     if greeting in VALID_GREETINGS:
         return greeting
     raise NoSuchVoicemailGreeting(greeting)
+
+
+class VoicemailMessagesResource(AuthResource):
+    def __init__(self, voicemails_service):
+        self._voicemails_service = voicemails_service
+
+    @required_acl('calld.voicemails.messages.read')
+    def get(self):
+        params = voicemail_admin_messages_get_schema.load(request.args.to_dict())
+        tenant = Tenant.autodetect()
+
+        voicemail_type = params.get('voicemail_type', 'all')
+        user_uuid = params.get('user_uuid')
+        voicemail_id = params.get('voicemail_id')
+        recurse = params.get('recurse', False)
+        from_ = params.get('from_')
+        until = params.get('until')
+
+        total = self._voicemails_service.count_messages(
+            tenant.uuid,
+            voicemail_type=voicemail_type,
+            user_uuid=user_uuid,
+            voicemail_id=voicemail_id,
+            recurse=recurse,
+        )
+
+        filtered = self._voicemails_service.count_filtered_messages(
+            tenant.uuid,
+            voicemail_type=voicemail_type,
+            user_uuid=user_uuid,
+            voicemail_id=voicemail_id,
+            from_=from_,
+            until=until,
+            recurse=recurse,
+        )
+
+        messages = self._voicemails_service.list_messages(tenant.uuid, **params)
+
+        return voicemail_messages_schema.dump(
+            {"items": messages, "total": total, "filtered": filtered}
+        )
 
 
 class UserVoicemailMessagesResource(AuthResource):

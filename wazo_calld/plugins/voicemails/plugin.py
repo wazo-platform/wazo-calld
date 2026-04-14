@@ -24,6 +24,7 @@ from .http import (
     VoicemailGreetingCopyResource,
     VoicemailGreetingResource,
     VoicemailMessageResource,
+    VoicemailMessagesResource,
     VoicemailRecordingResource,
     VoicemailResource,
 )
@@ -74,6 +75,11 @@ class Plugin:
 
         status_aggregator.add_provider(self._provide_status)
 
+        api.add_resource(
+            VoicemailMessagesResource,
+            '/voicemails/messages',
+            resource_class_args=[voicemails_service],
+        )
         api.add_resource(
             VoicemailResource,
             '/voicemails/<voicemail_id>',

@@ -64,6 +64,7 @@ class UnifiedVoicemailMessageSchema(VoicemailMessageBaseSchema):
 class VoicemailMessagesSchema(Schema):
     items = fields.Nested(UnifiedVoicemailMessageSchema, many=True)
     total = fields.Integer()
+    filtered = fields.Integer(dump_default=None)
 
 
 class VoicemailMessagesGetSchema(Schema):
@@ -78,6 +79,14 @@ class VoicemailMessagesGetSchema(Schema):
     )
 
 
+class VoicemailAdminMessagesGetSchema(VoicemailMessagesGetSchema):
+    user_uuid = fields.String()
+    voicemail_id = fields.Integer()
+    from_ = fields.DateTime(data_key='from')
+    until = fields.DateTime()
+    recurse = fields.Boolean(load_default=False)
+
+
 voicemail_schema = VoicemailSchema()
 voicemail_folder_schema = VoicemailFolderSchema()
 voicemail_message_schema = VoicemailMessageSchema()
@@ -85,3 +94,4 @@ voicemail_message_update_schema = VoicemailMessageUpdateSchema()
 voicemail_greeting_copy_schema = VoicemailGreetingCopySchema()
 voicemail_messages_schema = VoicemailMessagesSchema()
 voicemail_messages_get_schema = VoicemailMessagesGetSchema()
+voicemail_admin_messages_get_schema = VoicemailAdminMessagesGetSchema()

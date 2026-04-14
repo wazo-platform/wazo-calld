@@ -1,4 +1,85 @@
 paths:
+  /voicemails/messages:
+    get:
+      summary: List all voicemail messages in a tenant
+      description: '**Required ACL:** `calld.voicemails.messages.read`'
+      parameters:
+      - $ref: '#/parameters/TenantUUID'
+      - name: direction
+        in: query
+        type: string
+        enum:
+        - asc
+        - desc
+        default: asc
+        required: false
+      - name: order
+        in: query
+        type: string
+        enum:
+        - id
+        - caller_id_name
+        - duration
+        - timestamp
+        default: timestamp
+        required: false
+      - name: limit
+        in: query
+        type: integer
+        required: false
+      - name: offset
+        in: query
+        type: integer
+        required: false
+      - name: voicemail_type
+        in: query
+        description: Include or exclude messages from global mailboxes
+        type: string
+        enum:
+        - all
+        - personal
+        - global
+        default: all
+        required: false
+      - name: user_uuid
+        in: query
+        description: Filter messages by user UUID (returns user's personal + global voicemails)
+        type: string
+        required: false
+      - name: voicemail_id
+        in: query
+        description: Filter messages by voicemail ID
+        type: integer
+        required: false
+      - name: from
+        in: query
+        description: Filter messages with timestamp >= this value (ISO 8601 datetime)
+        type: string
+        format: date-time
+        required: false
+      - name: until
+        in: query
+        description: Filter messages with timestamp < this value (ISO 8601 datetime)
+        type: string
+        format: date-time
+        required: false
+      - name: recurse
+        in: query
+        description: Include sub-tenants
+        type: boolean
+        default: false
+        required: false
+      tags:
+      - voicemails
+      responses:
+        '200':
+          description: The voicemail messages in the tenant
+          schema:
+            $ref: '#/definitions/VoicemailMessages'
+        '400':
+          $ref: '#/responses/InvalidRequest'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
   /voicemails/{voicemail_id}:
     get:
       summary: Get details of a voicemail
