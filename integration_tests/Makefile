@@ -2,7 +2,7 @@ CHAN_TEST_DIR ?= ../../chan-test
 
 test-setup: build-calld build-ari build-call-logd
 
-build-calld: egg-info
+build-calld:
 	docker build -t wazoplatform/wazo-calld ..
 	docker build --no-cache -t wazo-calld-test -f docker/Dockerfile-calld-test ..
 
@@ -23,10 +23,7 @@ clean:
 	docker rmi -f call-logd-test
 	docker rmi -f call-logd-db-test
 
-egg-info:
-	cd .. && python setup.py egg_info
-
 test:
 	pytest
 
-.PHONY: test-setup build-calld build-ari build-call-logd egg-info test
+.PHONY: test-setup build-calld build-ari build-call-logd test
