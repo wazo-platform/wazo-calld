@@ -493,6 +493,78 @@ class TestVoicemailTranscriptionEnrichment(RealAsteriskIntegrationTest):
             ),
         )
 
+    def test_list_admin_messages_with_transcription(self):
+        user_uuid = str(uuid.uuid4())
+        voicemail_id = 111
+        message_id = '1724107750-00000001'  # Present in Docker volume
+        voicemail = MockVoicemail(
+            voicemail_id,
+            '8000',
+            'admin-voicemail',
+            'default',
+            tenant_uuid=VALID_TENANT,
+        )
+        self.confd.set_voicemails(voicemail)
+
+        self.call_logd.set_transcriptions(
+            [
+                {
+                    'message_id': message_id,
+                    'voicemail_id': voicemail_id,
+                    'tenant_uuid': VALID_TENANT,
+                    'transcription_text': 'Admin list transcription',
+                    'provider_id': 'openai/whisper-1',
+                    'language': 'en',
+                    'duration': 19.0,
+                },
+            ]
+        )
+
+        calld = self.make_user_calld(user_uuid, tenant_uuid=VALID_TENANT)
+        result = calld.voicemails.list_voicemail_messages()
+
+        assert_that(
+            result,
+            has_entries(
+                items=has_item(
+                    has_entries(
+                        id=message_id,
+                        transcription=has_entries(
+                            text='Admin list transcription',
+                        ),
+                    ),
+                ),
+            ),
+        )
+
+    def test_list_admin_messages_without_transcription(self):
+        user_uuid = str(uuid.uuid4())
+        voicemail_id = 111
+        message_id = '1724107750-00000001'  # Present in Docker volume
+        voicemail = MockVoicemail(
+            voicemail_id,
+            '8000',
+            'admin-voicemail',
+            'default',
+            tenant_uuid=VALID_TENANT,
+        )
+        self.confd.set_voicemails(voicemail)
+
+        calld = self.make_user_calld(user_uuid, tenant_uuid=VALID_TENANT)
+        result = calld.voicemails.list_voicemail_messages()
+
+        assert_that(
+            result,
+            has_entries(
+                items=has_item(
+                    has_entries(
+                        id=message_id,
+                        transcription=is_(none()),
+                    ),
+                ),
+            ),
+        )
+
     def test_list_user_messages_transcription_fault_tolerance(self):
         """Verify that messages are still returned when call-logd is unavailable."""
         user_uuid = str(uuid.uuid4())
