@@ -3,6 +3,7 @@
 
 import base64
 import logging
+from datetime import datetime
 from typing import Literal
 
 import requests
@@ -131,6 +132,121 @@ class VoicemailsService:
         voicemail_ids = {vm_conf['id'] for vm_conf in vm_confs if 'id' in vm_conf}
         self._enrich_messages_with_transcriptions(messages, voicemail_ids)
         return messages
+
+    def _get_tenant_voicemails_configs(
+        self,
+        tenant_uuid: str,
+        voicemail_type: VoicemailTypes = "all",
+        user_uuid: str | None = None,
+        voicemail_id: int | None = None,
+        recurse: bool = False,
+    ) -> list[dict]:
+        client = self._confd_client
+
+        if voicemail_id is not None:
+            return [confd.get_voicemail(tenant_uuid, voicemail_id, client)]
+
+        if user_uuid is not None:
+            return self._get_voicemails_configs(tenant_uuid, user_uuid, voicemail_type)
+
+        if voicemail_type == "global":
+            return confd.get_global_voicemails(tenant_uuid, client)
+        elif voicemail_type == "personal":
+            all_vms = confd.get_all_voicemails(tenant_uuid, client, recurse=recurse)
+            return [vm for vm in all_vms if vm.get('accesstype') != 'global']
+        else:
+            return confd.get_all_voicemails(tenant_uuid, client, recurse=recurse)
+
+    def count_messages(
+        self,
+        tenant_uuid: str,
+        voicemail_type: VoicemailTypes = "all",
+        user_uuid: str | None = None,
+        voicemail_id: int | None = None,
+        recurse: bool = False,
+    ) -> int:
+        vm_confs = self._get_tenant_voicemails_configs(
+            tenant_uuid, voicemail_type, user_uuid, voicemail_id, recurse
+        )
+        if not vm_confs:
+            return 0
+        return self._storage.count_all_messages(*vm_confs)
+
+    def count_filtered_messages(
+        self,
+        tenant_uuid: str,
+        voicemail_type: VoicemailTypes = "all",
+        user_uuid: str | None = None,
+        voicemail_id: int | None = None,
+        from_: datetime | None = None,
+        until: datetime | None = None,
+        recurse: bool = False,
+    ) -> int | None:
+        if from_ is None and until is None:
+            return None
+        vm_confs = self._get_tenant_voicemails_configs(
+            tenant_uuid, voicemail_type, user_uuid, voicemail_id, recurse
+        )
+        if not vm_confs:
+            return 0
+        messages = self._storage.list_messages_infos(*vm_confs)
+        return len(self._filter_by_timestamp(messages, from_, until))
+
+    def list_messages(
+        self,
+        tenant_uuid: str,
+        voicemail_type: VoicemailTypes = "all",
+        user_uuid: str | None = None,
+        voicemail_id: int | None = None,
+        limit: int | None = None,
+        offset: int | None = None,
+        direction: str | None = None,
+        order: str | None = None,
+        from_: datetime | None = None,
+        until: datetime | None = None,
+        recurse: bool = False,
+    ) -> list[dict]:
+        vm_confs = self._get_tenant_voicemails_configs(
+            tenant_uuid, voicemail_type, user_uuid, voicemail_id, recurse
+        )
+        if not vm_confs:
+            return []
+
+        if from_ is not None or until is not None:
+            all_messages = self._storage.list_messages_infos(
+                *vm_confs, order=order, direction=direction
+            )
+            filtered = self._filter_by_timestamp(all_messages, from_, until)
+            start = offset or 0
+            end = (start + limit) if limit is not None else None
+            messages = filtered[start:end]
+        else:
+            messages = self._storage.list_messages_infos(
+                *vm_confs,
+                limit=limit,
+                offset=offset,
+                order=order,
+                direction=direction,
+            )
+
+        voicemail_ids = {vm_conf['id'] for vm_conf in vm_confs if 'id' in vm_conf}
+        self._enrich_messages_with_transcriptions(messages, voicemail_ids)
+        return messages
+
+    @staticmethod
+    def _filter_by_timestamp(
+        messages: list[dict],
+        from_: datetime | None,
+        until: datetime | None,
+    ) -> list[dict]:
+        result = messages
+        if from_ is not None:
+            from_ts = int(from_.timestamp())
+            result = [m for m in result if m.get('timestamp', 0) >= from_ts]
+        if until is not None:
+            until_ts = int(until.timestamp())
+            result = [m for m in result if m.get('timestamp', 0) < until_ts]
+        return result
 
     def _enrich_messages_with_transcriptions(self, messages, voicemail_ids):
         if not messages or not voicemail_ids:
