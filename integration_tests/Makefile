@@ -12,8 +12,8 @@ build-ari:
 	docker build -t ari-real --pull -f $(CHAN_TEST_DIR)/Dockerfile $(CHAN_TEST_DIR)
 
 build-call-logd:
-	docker build -t call-logd-test -f docker/Dockerfile-call-logd-test .
-	docker build -t call-logd-db-test -f docker/Dockerfile-call-logd-db .
+	docker build --pull -t call-logd-test -f docker/Dockerfile-call-logd-test .
+	docker build --pull -t call-logd-db-test -f docker/Dockerfile-call-logd-db .
 
 clean:
 	docker rmi -f wazoplatform/wazo-calld
