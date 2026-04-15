@@ -65,6 +65,9 @@ class UnifiedVoicemailMessageSchema(VoicemailMessageBaseSchema):
 class VoicemailMessagesSchema(Schema):
     items = fields.Nested(UnifiedVoicemailMessageSchema, many=True)
     total = fields.Integer()
+
+
+class VoicemailAdminMessagesSchema(VoicemailMessagesSchema):
     filtered = fields.Integer(dump_default=None)
 
 
@@ -94,5 +97,6 @@ voicemail_message_schema = VoicemailMessageSchema()
 voicemail_message_update_schema = VoicemailMessageUpdateSchema()
 voicemail_greeting_copy_schema = VoicemailGreetingCopySchema()
 voicemail_messages_schema = VoicemailMessagesSchema()
+voicemail_admin_messages_schema = VoicemailAdminMessagesSchema()
 voicemail_messages_get_schema = VoicemailMessagesGetSchema()
 voicemail_admin_messages_get_schema = VoicemailAdminMessagesGetSchema()
