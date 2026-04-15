@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from marshmallow import Schema, fields
+from marshmallow.fields import AwareDateTime
 from xivo.mallow.validate import OneOf, Range
 
 VALID_GREETINGS = ["unavailable", "busy", "name"]
@@ -82,8 +83,8 @@ class VoicemailMessagesGetSchema(Schema):
 class VoicemailAdminMessagesGetSchema(VoicemailMessagesGetSchema):
     user_uuid = fields.String()
     voicemail_id = fields.Integer()
-    from_ = fields.DateTime(data_key='from')
-    until = fields.DateTime()
+    from_ = AwareDateTime(data_key='from')
+    until = AwareDateTime()
     recurse = fields.Boolean(load_default=False)
 
 
