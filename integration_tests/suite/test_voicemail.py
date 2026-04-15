@@ -2235,8 +2235,8 @@ class TestVoicemails(RealAsteriskIntegrationTest):
         # from inclusive, until exclusive
         result = calld.voicemails.list_voicemail_messages(
             **{
-                'from': '2024-08-23T18:11:28',
-                'until': '2024-08-23T18:16:35',
+                'from': '2024-08-23T18:11:28Z',
+                'until': '2024-08-23T18:16:35Z',
             }
         )
         assert_that(
@@ -2254,7 +2254,7 @@ class TestVoicemails(RealAsteriskIntegrationTest):
         # only from
         result = calld.voicemails.list_voicemail_messages(
             **{
-                'from': '2024-08-23T18:12:35',
+                'from': '2024-08-23T18:12:35Z',
             }
         )
         assert_that(
@@ -2296,7 +2296,7 @@ class TestVoicemails(RealAsteriskIntegrationTest):
         # 3 messages match from >= 2024-08-23T18:11:28, paginate with limit=1, offset=1
         result = calld.voicemails.list_voicemail_messages(
             **{
-                'from': '2024-08-23T18:11:28',
+                'from': '2024-08-23T18:11:28Z',
                 'limit': 1,
                 'offset': 1,
             }
@@ -2310,4 +2310,30 @@ class TestVoicemails(RealAsteriskIntegrationTest):
                 total=4,
                 filtered=3,
             ),
+        )
+
+    def test_admin_list_messages_rejects_naive_datetime(self):
+        user_uuid = str(uuid.uuid4())
+        voicemail = MockVoicemail(
+            111,
+            '8000',
+            'voicemail',
+            'default',
+            tenant_uuid=VALID_TENANT_MULTITENANT_1,
+        )
+        self.confd.set_voicemails(voicemail)
+        calld = self.make_user_calld(user_uuid, tenant_uuid=VALID_TENANT_MULTITENANT_1)
+
+        assert_that(
+            calling(calld.voicemails.list_voicemail_messages).with_args(
+                **{'from': '2024-08-23T18:11:28'}
+            ),
+            raises(CalldError).matching(has_properties(status_code=400)),
+        )
+
+        assert_that(
+            calling(calld.voicemails.list_voicemail_messages).with_args(
+                until='2024-08-23T18:11:28'
+            ),
+            raises(CalldError).matching(has_properties(status_code=400)),
         )
