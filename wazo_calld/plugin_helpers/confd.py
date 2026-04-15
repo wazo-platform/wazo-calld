@@ -240,29 +240,9 @@ def get_user_voicemail(user_uuid, confd_client):
     return voicemail
 
 
-def get_global_voicemails(
-    tenant_uuid, confd_client, recurse: bool = False
-) -> list[dict]:
+def get_all_voicemails(confd_client, **kwargs) -> list[dict]:
     try:
-        response = confd_client.voicemails.list(
-            tenant_uuid=tenant_uuid, accesstype='global', recurse=recurse
-        )
-        return response.get("items", [])
-    except HTTPError as e:
-        if not_found(e):
-            return []
-        raise
-    except RequestException as e:
-        raise WazoConfdUnreachable(confd_client, e)
-
-
-def get_all_voicemails(
-    tenant_uuid: str, confd_client, recurse: bool = False
-) -> list[dict]:
-    try:
-        response = confd_client.voicemails.list(
-            tenant_uuid=tenant_uuid, recurse=recurse
-        )
+        response = confd_client.voicemails.list(**kwargs)
         return response.get("items", [])
     except HTTPError as e:
         if not_found(e):
