@@ -68,7 +68,7 @@ class VoicemailMessagesSchema(Schema):
 
 
 class VoicemailAdminMessagesSchema(VoicemailMessagesSchema):
-    filtered = fields.Integer(dump_default=None)
+    filtered = fields.Integer()
 
 
 class VoicemailMessagesGetSchema(Schema):

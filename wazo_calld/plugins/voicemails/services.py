@@ -37,27 +37,45 @@ class VoicemailsService:
         user_uuid,
         voicemail_type: Literal["all", "global", "personal"] = "all",
     ):
-        vm_confs = self._get_voicemails_configs(tenant_uuid, user_uuid, voicemail_type)
+        vm_confs = self._get_voicemails_configs(
+            tenant_uuid, voicemail_type=voicemail_type, user_uuid=user_uuid
+        )
         if not vm_confs:
             return 0
         return self._storage.count_all_messages(*vm_confs)
 
     def _get_voicemails_configs(
-        self, tenant_uuid, user_uuid, voicemail_type: VoicemailTypes = "all"
-    ):
-        vm_confs = []
+        self,
+        tenant_uuid: str,
+        voicemail_type: VoicemailTypes = "all",
+        user_uuid: str | None = None,
+        voicemail_id: int | None = None,
+        recurse: bool = False,
+    ) -> list[dict]:
         client = self._confd_client
 
-        if voicemail_type in ("all", "personal"):
-            try:
-                vm_confs.append(confd.get_user_voicemail(user_uuid, client))
-            except NoSuchUserVoicemail:
-                pass
+        if voicemail_id is not None:
+            return [confd.get_voicemail(tenant_uuid, voicemail_id, client)]
 
-        if voicemail_type in ("all", "global"):
-            vm_confs.extend(confd.get_global_voicemails(tenant_uuid, client))
+        if user_uuid is not None:
+            vm_confs: list[dict] = []
+            if voicemail_type in ("all", "personal"):
+                try:
+                    vm_confs.append(confd.get_user_voicemail(user_uuid, client))
+                except NoSuchUserVoicemail:
+                    pass
+            if voicemail_type in ("all", "global"):
+                vm_confs.extend(
+                    confd.get_all_voicemails(
+                        client, tenant_uuid=tenant_uuid, accesstype='global'
+                    )
+                )
+            return vm_confs
 
-        return vm_confs
+        kwargs: dict = {'tenant_uuid': tenant_uuid, 'recurse': recurse}
+        if voicemail_type != "all":
+            kwargs['accesstype'] = voicemail_type
+        return confd.get_all_voicemails(client, **kwargs)
 
     def get_voicemail(self, tenant_uuid, voicemail_id):
         vm_conf = confd.get_voicemail(tenant_uuid, voicemail_id, self._confd_client)
@@ -92,7 +110,7 @@ class VoicemailsService:
         return message
 
     def get_user_message(self, tenant_uuid, user_uuid, message_id):
-        vm_confs = self._get_voicemails_configs(tenant_uuid, user_uuid, 'all')
+        vm_confs = self._get_voicemails_configs(tenant_uuid, user_uuid=user_uuid)
         message = self._storage.get_message_info(message_id, *vm_confs)
         voicemail_ids = {vm_conf['id'] for vm_conf in vm_confs if 'id' in vm_conf}
         self._enrich_messages_with_transcriptions([message], voicemail_ids)
@@ -103,7 +121,7 @@ class VoicemailsService:
         return self._get_message_recording(message_id, vm_conf)
 
     def get_user_message_recording(self, tenant_uuid, user_uuid, message_id):
-        vm_confs = self._get_voicemails_configs(tenant_uuid, user_uuid, 'all')
+        vm_confs = self._get_voicemails_configs(tenant_uuid, user_uuid=user_uuid)
         return self._get_message_recording(message_id, *vm_confs)
 
     def _get_message_recording(self, message_id, *vm_confs):
@@ -122,7 +140,9 @@ class VoicemailsService:
         direction: str | None = None,
         order: str | None = None,
     ):
-        vm_confs = self._get_voicemails_configs(tenant_uuid, user_uuid, voicemail_type)
+        vm_confs = self._get_voicemails_configs(
+            tenant_uuid, voicemail_type=voicemail_type, user_uuid=user_uuid
+        )
         if not vm_confs:
             return []
 
@@ -133,66 +153,7 @@ class VoicemailsService:
         self._enrich_messages_with_transcriptions(messages, voicemail_ids)
         return messages
 
-    def _get_tenant_voicemails_configs(
-        self,
-        tenant_uuid: str,
-        voicemail_type: VoicemailTypes = "all",
-        user_uuid: str | None = None,
-        voicemail_id: int | None = None,
-        recurse: bool = False,
-    ) -> list[dict]:
-        client = self._confd_client
-
-        if voicemail_id is not None:
-            return [confd.get_voicemail(tenant_uuid, voicemail_id, client)]
-
-        if user_uuid is not None:
-            return self._get_voicemails_configs(tenant_uuid, user_uuid, voicemail_type)
-
-        if voicemail_type == "global":
-            return confd.get_global_voicemails(tenant_uuid, client, recurse=recurse)
-        elif voicemail_type == "personal":
-            all_vms = confd.get_all_voicemails(tenant_uuid, client, recurse=recurse)
-            return [vm for vm in all_vms if vm.get('accesstype') != 'global']
-        else:
-            return confd.get_all_voicemails(tenant_uuid, client, recurse=recurse)
-
-    def count_messages(
-        self,
-        tenant_uuid: str,
-        voicemail_type: VoicemailTypes = "all",
-        user_uuid: str | None = None,
-        voicemail_id: int | None = None,
-        recurse: bool = False,
-    ) -> int:
-        vm_confs = self._get_tenant_voicemails_configs(
-            tenant_uuid, voicemail_type, user_uuid, voicemail_id, recurse
-        )
-        if not vm_confs:
-            return 0
-        return self._storage.count_all_messages(*vm_confs)
-
-    def count_filtered_messages(
-        self,
-        tenant_uuid: str,
-        voicemail_type: VoicemailTypes = "all",
-        user_uuid: str | None = None,
-        voicemail_id: int | None = None,
-        from_: datetime | None = None,
-        until: datetime | None = None,
-        recurse: bool = False,
-    ) -> int | None:
-        if from_ is None and until is None:
-            return None
-        vm_confs = self._get_tenant_voicemails_configs(
-            tenant_uuid, voicemail_type, user_uuid, voicemail_id, recurse
-        )
-        if not vm_confs:
-            return 0
-        messages = self._storage.list_messages_infos(*vm_confs)
-        return len(self._filter_by_timestamp(messages, from_, until))
-
-    def list_messages(
+    def get_tenant_messages(
         self,
         tenant_uuid: str,
         voicemail_type: VoicemailTypes = "all",
@@ -205,48 +166,42 @@ class VoicemailsService:
         from_: datetime | None = None,
         until: datetime | None = None,
         recurse: bool = False,
-    ) -> list[dict]:
-        vm_confs = self._get_tenant_voicemails_configs(
-            tenant_uuid, voicemail_type, user_uuid, voicemail_id, recurse
+    ) -> dict:
+        vm_confs = self._get_voicemails_configs(
+            tenant_uuid,
+            voicemail_type=voicemail_type,
+            user_uuid=user_uuid,
+            voicemail_id=voicemail_id,
+            recurse=recurse,
         )
         if not vm_confs:
-            return []
+            return {'items': [], 'total': 0, 'filtered': 0}
 
-        if from_ is not None or until is not None:
-            all_messages = self._storage.list_messages_infos(
-                *vm_confs, order=order, direction=direction
-            )
-            filtered = self._filter_by_timestamp(all_messages, from_, until)
-            start = offset or 0
-            end = (start + limit) if limit is not None else None
-            messages = filtered[start:end]
-        else:
-            messages = self._storage.list_messages_infos(
-                *vm_confs,
-                limit=limit,
-                offset=offset,
-                order=order,
-                direction=direction,
-            )
+        all_messages = self._storage.list_messages_infos(
+            *vm_confs, order=order, direction=direction
+        )
+        total = len(all_messages)
 
-        voicemail_ids = {vm_conf['id'] for vm_conf in vm_confs if 'id' in vm_conf}
-        self._enrich_messages_with_transcriptions(messages, voicemail_ids)
-        return messages
-
-    @staticmethod
-    def _filter_by_timestamp(
-        messages: list[dict],
-        from_: datetime | None,
-        until: datetime | None,
-    ) -> list[dict]:
-        result = messages
+        filtered_messages = all_messages
         if from_ is not None:
             from_ts = int(from_.timestamp())
-            result = [m for m in result if m.get('timestamp', 0) >= from_ts]
+            filtered_messages = [
+                m for m in filtered_messages if m.get('timestamp', 0) >= from_ts
+            ]
         if until is not None:
             until_ts = int(until.timestamp())
-            result = [m for m in result if m.get('timestamp', 0) < until_ts]
-        return result
+            filtered_messages = [
+                m for m in filtered_messages if m.get('timestamp', 0) < until_ts
+            ]
+        filtered = len(filtered_messages)
+
+        start = offset or 0
+        end = (start + limit) if limit is not None else None
+        items = filtered_messages[start:end]
+
+        voicemail_ids = {vm_conf['id'] for vm_conf in vm_confs if 'id' in vm_conf}
+        self._enrich_messages_with_transcriptions(items, voicemail_ids)
+        return {'items': items, 'total': total, 'filtered': filtered}
 
     def _enrich_messages_with_transcriptions(self, messages, voicemail_ids):
         if not messages or not voicemail_ids:
@@ -282,7 +237,7 @@ class VoicemailsService:
 
     def move_user_message(self, tenant_uuid, user_uuid, message_id, dest_folder_id):
         dest_folder = self._storage.get_folder_by_id(dest_folder_id)
-        for vm_conf in self._get_voicemails_configs(tenant_uuid, user_uuid, 'all'):
+        for vm_conf in self._get_voicemails_configs(tenant_uuid, user_uuid=user_uuid):
             try:
                 message_info = self._storage.get_message_info(message_id, vm_conf)
             except NoSuchVoicemailMessage:
@@ -307,7 +262,7 @@ class VoicemailsService:
         return self._delete_message(vm_conf, message_id)
 
     def delete_user_message(self, tenant_uuid, user_uuid, message_id):
-        for vm_conf in self._get_voicemails_configs(tenant_uuid, user_uuid, 'all'):
+        for vm_conf in self._get_voicemails_configs(tenant_uuid, user_uuid=user_uuid):
             try:
                 return self._delete_message(vm_conf, message_id)
             except NoSuchVoicemailMessage:
