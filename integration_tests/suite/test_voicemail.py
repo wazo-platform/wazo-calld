@@ -1935,6 +1935,7 @@ class TestVoicemails(RealAsteriskIntegrationTest):
                     ),
                 ),
                 total=4,
+                filtered=4,
             ),
         )
 
@@ -1973,6 +1974,7 @@ class TestVoicemails(RealAsteriskIntegrationTest):
                     has_entries(id='1724107750-00000011'),
                 ),
                 total=1,
+                filtered=1,
             ),
         )
 
@@ -1984,6 +1986,7 @@ class TestVoicemails(RealAsteriskIntegrationTest):
                     has_entries(id='1724107750-00000021'),
                 ),
                 total=1,
+                filtered=1,
             ),
         )
 
@@ -2024,6 +2027,7 @@ class TestVoicemails(RealAsteriskIntegrationTest):
                     ),
                 ),
                 total=1,
+                filtered=1,
             ),
         )
 
@@ -2040,6 +2044,7 @@ class TestVoicemails(RealAsteriskIntegrationTest):
                     ),
                 ),
                 total=3,
+                filtered=3,
             ),
         )
 
@@ -2076,6 +2081,7 @@ class TestVoicemails(RealAsteriskIntegrationTest):
                     has_entries(id='1724436995-00000003'),
                 ),
                 total=3,
+                filtered=3,
             ),
         )
 
@@ -2118,6 +2124,7 @@ class TestVoicemails(RealAsteriskIntegrationTest):
                     ),
                 ),
                 total=4,
+                filtered=4,
             ),
         )
 
@@ -2162,6 +2169,7 @@ class TestVoicemails(RealAsteriskIntegrationTest):
                     has_entries(id=message_id_4),
                 ),
                 total=4,
+                filtered=4,
             ),
         )
 
@@ -2178,6 +2186,7 @@ class TestVoicemails(RealAsteriskIntegrationTest):
                     has_entries(id=message_id_1),
                 ),
                 total=4,
+                filtered=4,
             ),
         )
 
@@ -2190,6 +2199,7 @@ class TestVoicemails(RealAsteriskIntegrationTest):
                     has_entries(id=message_id_2),
                 ),
                 total=4,
+                filtered=4,
             ),
         )
 
@@ -2201,6 +2211,7 @@ class TestVoicemails(RealAsteriskIntegrationTest):
                     has_entries(id=message_id_3),
                 ),
                 total=4,
+                filtered=4,
             ),
         )
 
