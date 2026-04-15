@@ -371,36 +371,9 @@ class VoicemailMessagesResource(AuthResource):
         params = voicemail_admin_messages_get_schema.load(request.args.to_dict())
         tenant = Tenant.autodetect()
 
-        voicemail_type = params.get('voicemail_type', 'all')
-        user_uuid = params.get('user_uuid')
-        voicemail_id = params.get('voicemail_id')
-        recurse = params.get('recurse', False)
-        from_ = params.get('from_')
-        until = params.get('until')
+        result = self._voicemails_service.get_tenant_messages(tenant.uuid, **params)
 
-        total = self._voicemails_service.count_messages(
-            tenant.uuid,
-            voicemail_type=voicemail_type,
-            user_uuid=user_uuid,
-            voicemail_id=voicemail_id,
-            recurse=recurse,
-        )
-
-        filtered = self._voicemails_service.count_filtered_messages(
-            tenant.uuid,
-            voicemail_type=voicemail_type,
-            user_uuid=user_uuid,
-            voicemail_id=voicemail_id,
-            from_=from_,
-            until=until,
-            recurse=recurse,
-        )
-
-        messages = self._voicemails_service.list_messages(tenant.uuid, **params)
-
-        return voicemail_admin_messages_schema.dump(
-            {"items": messages, "total": total, "filtered": filtered}
-        )
+        return voicemail_admin_messages_schema.dump(result)
 
 
 class UserVoicemailMessagesResource(AuthResource):
