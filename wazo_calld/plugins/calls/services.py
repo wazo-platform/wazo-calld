@@ -748,7 +748,7 @@ class CallsService:
 
         set_channel_id_var_sync(
             self._ari,
-            channel_id,
+            channel.id,
             'WAZO_RECORDING_UUID',
             recording_uuid,
             bypass_stasis=True,
@@ -775,10 +775,7 @@ class CallsService:
         if tenant_uuid and channel_helper.tenant_uuid() != tenant_uuid:
             raise NoSuchCall(call_id)
 
-        try:
-            channel = self._ari.channels.get(channelId=channel_id)
-        except ARINotFound:
-            raise NoSuchCall(call_id)
+        channel = self._find_channel_to_record(channel_id)
 
         if not self._toggle_record_allowed(channel):
             raise RecordingUnauthorized(call_id)
@@ -794,8 +791,8 @@ class CallsService:
         except ARINotFound:
             recording_beep = None
 
-        ami.record_stop(self._ami, channel_id)
-        ami.play_beep(self._ami, channel_id, recording_beep or DEFAULT_RECORD_BEEP)
+        ami.record_stop(self._ami, channel.id)
+        ami.play_beep(self._ami, channel.id, recording_beep or DEFAULT_RECORD_BEEP)
         call = self.make_call_from_channel(self._ari, channel)
         self._notifier.call_record_stopped(call)
 
@@ -810,10 +807,7 @@ class CallsService:
         if tenant_uuid and channel_helper.tenant_uuid() != tenant_uuid:
             raise NoSuchCall(call_id)
 
-        try:
-            channel = self._ari.channels.get(channelId=channel_id)
-        except ARINotFound:
-            raise NoSuchCall(call_id)
+        channel = self._find_channel_to_record(channel_id)
 
         if not self._toggle_record_allowed(channel):
             raise RecordingUnauthorized(call_id)
@@ -842,7 +836,7 @@ class CallsService:
             )
 
         set_channel_id_var_sync(
-            self._ari, channel_id, 'WAZO_RECORDING_PAUSED', '1', bypass_stasis=True
+            self._ari, channel.id, 'WAZO_RECORDING_PAUSED', '1', bypass_stasis=True
         )
 
         try:
@@ -852,8 +846,8 @@ class CallsService:
         except ARINotFound:
             recording_beep = None
 
-        ami.record_stop(self._ami, channel_id)
-        ami.play_beep(self._ami, channel_id, recording_beep or DEFAULT_RECORD_BEEP)
+        ami.record_stop(self._ami, channel.id)
+        ami.play_beep(self._ami, channel.id, recording_beep or DEFAULT_RECORD_BEEP)
 
         call = self.make_call_from_channel(self._ari, channel)
         filename = CALL_RECORDING_FILENAME_TEMPLATE.format(
@@ -900,7 +894,7 @@ class CallsService:
 
         if channel_variables.get('WAZO_RECORDING_PAUSED') == '1':
             set_channel_id_var_sync(
-                self._ari, channel_id, 'WAZO_RECORDING_PAUSED', '0', bypass_stasis=True
+                self._ari, channel.id, 'WAZO_RECORDING_PAUSED', '0', bypass_stasis=True
             )
 
         recording_uuid = channel_variables['WAZO_RECORDING_UUID']

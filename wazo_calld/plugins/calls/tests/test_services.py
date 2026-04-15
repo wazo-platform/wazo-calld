@@ -4,8 +4,10 @@
 from unittest import TestCase
 from unittest.mock import Mock, patch
 
-from hamcrest import assert_that, equal_to
+from ari.exceptions import ARINotFound
+from hamcrest import assert_that, calling, equal_to, is_, raises
 
+from ..exceptions import NoSuchCall
 from ..services import CallsService
 
 
@@ -238,8 +240,37 @@ class TestServices(TestCase):
         )
 
 
+def _make_channel_mock(
+    channel_id: str,
+    name: str,
+    channelvars: dict | None = None,
+    getvar_side_effect: dict | None = None,
+) -> Mock:
+    default_vars = {
+        'WAZO_LOCAL_CHAN_MATCH_UUID': '',
+        'WAZO_CALL_RECORD_SIDE': 'caller',
+    }
+    if channelvars:
+        default_vars.update(channelvars)
+
+    channel = Mock()
+    channel.id = channel_id
+    channel.json = {'name': name, 'state': 'Up', 'channelvars': default_vars}
+
+    def _getvar(variable=''):
+        if getvar_side_effect and variable in getvar_side_effect:
+            result = getvar_side_effect[variable]
+            if isinstance(result, Exception):
+                raise result
+            return result
+        raise ARINotFound(Mock(), Mock())
+
+    channel.getChannelVar = Mock(side_effect=_getvar)
+    return channel
+
+
 class TestFindChannelToRecord(TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         self.ari = Mock()
         self.services = CallsService(
             Mock(), Mock(), self.ari, Mock(), Mock(), Mock(), Mock()
@@ -292,3 +323,320 @@ class TestFindChannelToRecord(TestCase):
         result = self.services._find_channel_to_record('local-chan-id')
 
         assert_that(result, equal_to(local_channel))
+
+    def test_channel_not_found_raises_no_such_call(self) -> None:
+        self.ari.channels.get.side_effect = ARINotFound(Mock(), Mock())
+
+        assert_that(
+            calling(self.services._find_channel_to_record).with_args('missing-id'),
+            raises(NoSuchCall),
+        )
+
+    def test_non_local_channel_returned_as_is(self) -> None:
+        channel = _make_channel_mock('chan-1', 'PJSIP/abcd-00000001')
+        self.ari.channels.get.return_value = channel
+
+        result = self.services._find_channel_to_record('chan-1')
+
+        assert_that(result, is_(channel))
+
+    def test_local_side_2_returned_as_is(self) -> None:
+        channel = _make_channel_mock('chan-1', 'Local/s@group;2')
+        self.ari.channels.get.return_value = channel
+
+        result = self.services._find_channel_to_record('chan-1')
+
+        assert_that(result, is_(channel))
+
+    def test_local_side_1_not_group_nor_queue_returned_as_is(self) -> None:
+        channel = _make_channel_mock('chan-1', 'Local/s@some-context;1')
+        self.ari.channels.get.return_value = channel
+
+        result = self.services._find_channel_to_record('chan-1')
+
+        assert_that(result, is_(channel))
+
+    def test_local_side_1_group_callee_returns_real_channel(self) -> None:
+        local_channel = _make_channel_mock(
+            'local-1',
+            'Local/s@group;1',
+            channelvars={'WAZO_LOCAL_CHAN_MATCH_UUID': 'match-uuid'},
+            getvar_side_effect={
+                'WAZO_RECORD_GROUP_CALLEE': {'value': '1'},
+            },
+        )
+        real_channel = _make_channel_mock(
+            'real-1',
+            'PJSIP/abcd-00000001',
+            channelvars={
+                'WAZO_LOCAL_CHAN_MATCH_UUID': 'match-uuid',
+                'WAZO_CALL_RECORD_SIDE': 'callee',
+            },
+        )
+        self.ari.channels.get.return_value = local_channel
+        self.ari.channels.list.return_value = [local_channel, real_channel]
+
+        result = self.services._find_channel_to_record('local-1')
+
+        assert_that(result, is_(real_channel))
+
+    def test_local_side_1_queue_callee_returns_real_channel(self) -> None:
+        local_channel = _make_channel_mock(
+            'local-1',
+            'Local/s@queue;1',
+            channelvars={'WAZO_LOCAL_CHAN_MATCH_UUID': 'match-uuid'},
+            getvar_side_effect={
+                'WAZO_RECORD_GROUP_CALLEE': ARINotFound(Mock(), Mock()),
+                'WAZO_RECORD_QUEUE_CALLEE': {'value': '1'},
+            },
+        )
+        real_channel = _make_channel_mock(
+            'real-1',
+            'PJSIP/abcd-00000001',
+            channelvars={
+                'WAZO_LOCAL_CHAN_MATCH_UUID': 'match-uuid',
+                'WAZO_CALL_RECORD_SIDE': 'callee',
+            },
+        )
+        self.ari.channels.get.return_value = local_channel
+        self.ari.channels.list.return_value = [real_channel]
+
+        result = self.services._find_channel_to_record('local-1')
+
+        assert_that(result, is_(real_channel))
+
+    def test_local_side_1_agent_callback_returns_real_channel(self) -> None:
+        local_channel = _make_channel_mock(
+            'local-1',
+            'Local/s@agentcallback;1',
+            channelvars={'WAZO_LOCAL_CHAN_MATCH_UUID': 'match-uuid'},
+        )
+        real_channel = _make_channel_mock(
+            'real-1',
+            'PJSIP/abcd-00000001',
+            channelvars={
+                'WAZO_LOCAL_CHAN_MATCH_UUID': 'match-uuid',
+                'WAZO_CALL_RECORD_SIDE': 'callee',
+            },
+        )
+        self.ari.channels.get.return_value = local_channel
+        self.ari.channels.list.return_value = [real_channel]
+
+        result = self.services._find_channel_to_record('local-1')
+
+        assert_that(result, is_(real_channel))
+
+    def test_local_side_1_group_callee_no_match_uuid_returns_local(self) -> None:
+        local_channel = _make_channel_mock(
+            'local-1',
+            'Local/s@group;1',
+            channelvars={'WAZO_LOCAL_CHAN_MATCH_UUID': ''},
+            getvar_side_effect={
+                'WAZO_RECORD_GROUP_CALLEE': {'value': '1'},
+            },
+        )
+        self.ari.channels.get.return_value = local_channel
+
+        result = self.services._find_channel_to_record('local-1')
+
+        assert_that(result, is_(local_channel))
+
+    def test_local_side_1_group_callee_no_matching_channel_returns_local(self) -> None:
+        local_channel = _make_channel_mock(
+            'local-1',
+            'Local/s@group;1',
+            channelvars={'WAZO_LOCAL_CHAN_MATCH_UUID': 'match-uuid'},
+            getvar_side_effect={
+                'WAZO_RECORD_GROUP_CALLEE': {'value': '1'},
+            },
+        )
+        unrelated_channel = _make_channel_mock(
+            'other-1',
+            'PJSIP/xyz-00000002',
+            channelvars={
+                'WAZO_LOCAL_CHAN_MATCH_UUID': 'different-uuid',
+                'WAZO_CALL_RECORD_SIDE': 'callee',
+            },
+        )
+        self.ari.channels.get.return_value = local_channel
+        self.ari.channels.list.return_value = [local_channel, unrelated_channel]
+
+        result = self.services._find_channel_to_record('local-1')
+
+        assert_that(result, is_(local_channel))
+
+    def test_skips_local_channels_when_searching(self) -> None:
+        local_channel = _make_channel_mock(
+            'local-1',
+            'Local/s@group;1',
+            channelvars={'WAZO_LOCAL_CHAN_MATCH_UUID': 'match-uuid'},
+            getvar_side_effect={
+                'WAZO_RECORD_GROUP_CALLEE': {'value': '1'},
+            },
+        )
+        other_local = _make_channel_mock(
+            'local-2',
+            'Local/s@other;2',
+            channelvars={
+                'WAZO_LOCAL_CHAN_MATCH_UUID': 'match-uuid',
+                'WAZO_CALL_RECORD_SIDE': 'callee',
+            },
+        )
+        self.ari.channels.get.return_value = local_channel
+        self.ari.channels.list.return_value = [local_channel, other_local]
+
+        result = self.services._find_channel_to_record('local-1')
+
+        assert_that(result, is_(local_channel))
+
+    def test_skips_caller_side_channels_when_searching(self) -> None:
+        local_channel = _make_channel_mock(
+            'local-1',
+            'Local/s@group;1',
+            channelvars={'WAZO_LOCAL_CHAN_MATCH_UUID': 'match-uuid'},
+            getvar_side_effect={
+                'WAZO_RECORD_GROUP_CALLEE': {'value': '1'},
+            },
+        )
+        caller_channel = _make_channel_mock(
+            'caller-1',
+            'PJSIP/abcd-00000001',
+            channelvars={
+                'WAZO_LOCAL_CHAN_MATCH_UUID': 'match-uuid',
+                'WAZO_CALL_RECORD_SIDE': 'caller',
+            },
+        )
+        self.ari.channels.get.return_value = local_channel
+        self.ari.channels.list.return_value = [caller_channel]
+
+        result = self.services._find_channel_to_record('local-1')
+
+        assert_that(result, is_(local_channel))
+
+
+class TestRecordingUsesFoundChannel(TestCase):
+    """Verify that record_start/stop/pause/resume use the channel returned by
+    _find_channel_to_record (channel.id) rather than the original call_id for
+    AMI and ARI operations."""
+
+    def setUp(self) -> None:
+        self.ari = Mock()
+        self.amid = Mock()
+        self.notifier = Mock()
+        self.services = CallsService(
+            self.amid, Mock(), self.ari, Mock(), Mock(), Mock(), self.notifier
+        )
+
+        self.call_id = 'original-call-id'
+        self.found_channel_id = 'found-channel-id'
+
+        self.found_channel = _make_channel_mock(
+            self.found_channel_id,
+            'PJSIP/abcd-00000001',
+            channelvars={
+                'WAZO_CALL_RECORD_ACTIVE': '0',
+                'WAZO_TENANT_UUID': 'tenant-1',
+                'WAZO_USERUUID': 'user-1',
+                'WAZO_RECORDING_UUID': 'rec-uuid',
+                'WAZO_RECORDING_PAUSED': '0',
+                'WAZO_QUEUENAME': '',
+                'WAZO_GROUPNAME': '',
+                'WAZO_CALL_RECORD_SIDE': 'caller',
+                'WAZO_QUEUE_DTMF_RECORD_TOGGLE_ENABLED': '0',
+                'WAZO_GROUP_DTMF_RECORD_TOGGLE_ENABLED': '0',
+                'WAZO_USER_DTMF_RECORD_TOGGLE_ENABLED': '1',
+                'WAZO_RECORD_GROUP_CALLEE': '0',
+                'WAZO_RECORD_QUEUE_CALLEE': '0',
+            },
+        )
+
+        # _find_channel_to_record returns a different channel than call_id
+        find_patcher = patch.object(
+            self.services, '_find_channel_to_record', return_value=self.found_channel
+        )
+        self.mock_find = find_patcher.start()
+        self.addCleanup(find_patcher.stop)
+
+        # _is_automated_recording fetches channel by id from ARI
+        self.ari.channels.get.return_value = self.found_channel
+
+        # Bypass tenant check
+        tenant_patcher = patch(
+            'wazo_calld.plugins.calls.services.Channel',
+        )
+        mock_channel_cls = tenant_patcher.start()
+        mock_channel_cls.return_value.tenant_uuid.return_value = None
+        self.addCleanup(tenant_patcher.stop)
+
+        # make_call_from_channel is used in stop/pause/resume
+        make_call_patcher = patch.object(
+            self.services, 'make_call_from_channel', return_value=Mock()
+        )
+        make_call_patcher.start()
+        self.addCleanup(make_call_patcher.stop)
+
+    @patch('wazo_calld.plugins.calls.services.ami')
+    @patch('wazo_calld.plugins.calls.services.set_channel_id_var_sync')
+    def test_record_start_uses_found_channel_id(
+        self, mock_set_var: Mock, mock_ami: Mock
+    ) -> None:
+        self.services.record_start(None, self.call_id)
+
+        mock_set_var.assert_called_once()
+        assert_that(mock_set_var.call_args[0][1], equal_to(self.found_channel_id))
+        mock_ami.record_start.assert_called_once()
+        assert_that(
+            mock_ami.record_start.call_args[0][1], equal_to(self.found_channel_id)
+        )
+        mock_ami.play_beep.assert_called_once()
+        assert_that(mock_ami.play_beep.call_args[0][1], equal_to(self.found_channel_id))
+
+    @patch('wazo_calld.plugins.calls.services.ami')
+    def test_record_stop_uses_found_channel_id(self, mock_ami: Mock) -> None:
+        self.found_channel.json['channelvars']['WAZO_CALL_RECORD_ACTIVE'] = '1'
+
+        self.services.record_stop(None, self.call_id)
+
+        mock_ami.record_stop.assert_called_once()
+        assert_that(
+            mock_ami.record_stop.call_args[0][1], equal_to(self.found_channel_id)
+        )
+        mock_ami.play_beep.assert_called_once()
+        assert_that(mock_ami.play_beep.call_args[0][1], equal_to(self.found_channel_id))
+
+    @patch('wazo_calld.plugins.calls.services.ami')
+    @patch('wazo_calld.plugins.calls.services.set_channel_id_var_sync')
+    def test_record_pause_uses_found_channel_id(
+        self, mock_set_var: Mock, mock_ami: Mock
+    ) -> None:
+        self.found_channel.json['channelvars']['WAZO_CALL_RECORD_ACTIVE'] = '1'
+
+        self.services.record_pause(None, self.call_id)
+
+        mock_set_var.assert_called_once()
+        assert_that(mock_set_var.call_args[0][1], equal_to(self.found_channel_id))
+        mock_ami.record_stop.assert_called_once()
+        assert_that(
+            mock_ami.record_stop.call_args[0][1], equal_to(self.found_channel_id)
+        )
+        mock_ami.play_beep.assert_called_once()
+        assert_that(mock_ami.play_beep.call_args[0][1], equal_to(self.found_channel_id))
+
+    @patch('wazo_calld.plugins.calls.services.ami')
+    @patch('wazo_calld.plugins.calls.services.set_channel_id_var_sync')
+    def test_record_resume_uses_found_channel_id(
+        self, mock_set_var: Mock, mock_ami: Mock
+    ) -> None:
+        self.found_channel.json['channelvars']['WAZO_CALL_RECORD_ACTIVE'] = '1'
+        self.found_channel.json['channelvars']['WAZO_RECORDING_PAUSED'] = '1'
+
+        self.services.record_resume(None, self.call_id)
+
+        mock_set_var.assert_called_once()
+        assert_that(mock_set_var.call_args[0][1], equal_to(self.found_channel_id))
+        mock_ami.record_resume.assert_called_once()
+        assert_that(
+            mock_ami.record_resume.call_args[0][1], equal_to(self.found_channel_id)
+        )
+        mock_ami.play_beep.assert_called_once()
+        assert_that(mock_ami.play_beep.call_args[0][1], equal_to(self.found_channel_id))
