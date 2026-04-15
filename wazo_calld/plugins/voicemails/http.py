@@ -22,6 +22,7 @@ from .exceptions import (
 from .schemas import (
     VALID_GREETINGS,
     voicemail_admin_messages_get_schema,
+    voicemail_admin_messages_schema,
     voicemail_folder_schema,
     voicemail_greeting_copy_schema,
     voicemail_message_schema,
@@ -397,7 +398,7 @@ class VoicemailMessagesResource(AuthResource):
 
         messages = self._voicemails_service.list_messages(tenant.uuid, **params)
 
-        return voicemail_messages_schema.dump(
+        return voicemail_admin_messages_schema.dump(
             {"items": messages, "total": total, "filtered": filtered}
         )
 
