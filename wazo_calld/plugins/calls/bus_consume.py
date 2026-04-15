@@ -1,4 +1,4 @@
-# Copyright 2016-2025 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -263,6 +263,8 @@ class CallsBusEventHandler:
             for ch in participant_channels
             if not ch.json['name'].startswith('Local/')
         ]
+        if not participant_channels:
+            return
 
         call_direction = self.services.conversation_direction_from_channels(
             self.ari, [channel.id for channel in participant_channels]
@@ -313,6 +315,8 @@ class CallsBusEventHandler:
             for ch in participant_channels
             if not ch.json['name'].startswith('Local/')
         ]
+        if not participant_channels:
+            return
 
         call_direction = self.services.conversation_direction_from_channels(
             self.ari, [channel.id for channel in participant_channels]
