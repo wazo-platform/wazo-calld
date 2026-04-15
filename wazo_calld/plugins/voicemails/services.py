@@ -150,7 +150,7 @@ class VoicemailsService:
             return self._get_voicemails_configs(tenant_uuid, user_uuid, voicemail_type)
 
         if voicemail_type == "global":
-            return confd.get_global_voicemails(tenant_uuid, client)
+            return confd.get_global_voicemails(tenant_uuid, client, recurse=recurse)
         elif voicemail_type == "personal":
             all_vms = confd.get_all_voicemails(tenant_uuid, client, recurse=recurse)
             return [vm for vm in all_vms if vm.get('accesstype') != 'global']

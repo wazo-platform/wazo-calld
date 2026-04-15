@@ -240,10 +240,12 @@ def get_user_voicemail(user_uuid, confd_client):
     return voicemail
 
 
-def get_global_voicemails(tenant_uuid, confd_client) -> list[dict]:
+def get_global_voicemails(
+    tenant_uuid, confd_client, recurse: bool = False
+) -> list[dict]:
     try:
         response = confd_client.voicemails.list(
-            tenant_uuid=tenant_uuid, accesstype='global'
+            tenant_uuid=tenant_uuid, accesstype='global', recurse=recurse
         )
         return response.get("items", [])
     except HTTPError as e:
