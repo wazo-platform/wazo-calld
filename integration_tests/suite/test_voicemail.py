@@ -2219,10 +2219,6 @@ class TestVoicemails(RealAsteriskIntegrationTest):
         user_uuid = str(uuid.uuid4())
         voicemail_id_1 = 111
         voicemail_id_2 = 222
-        # ts 1724107750 = 2024-08-19T22:49:10
-        # ts 1724436688 = 2024-08-23T18:11:28
-        # ts 1724436755 = 2024-08-23T18:12:35
-        # ts 1724436995 = 2024-08-23T18:16:35
         global_voicemail = MockVoicemail(
             voicemail_id_1,
             '8000',
@@ -2243,7 +2239,8 @@ class TestVoicemails(RealAsteriskIntegrationTest):
         self.confd.set_voicemails(global_voicemail, personal_voicemail)
         calld = self.make_user_calld(user_uuid, tenant_uuid=VALID_TENANT_MULTITENANT_1)
 
-        # from inclusive, until exclusive
+        # ts 1724436688 = 2024-08-23T18:11:28
+        # ts 1724436755 = 2024-08-23T18:12:35
         result = calld.voicemails.list_voicemail_messages(
             **{
                 'from': '2024-08-23T18:11:28Z',
@@ -2262,7 +2259,8 @@ class TestVoicemails(RealAsteriskIntegrationTest):
             ),
         )
 
-        # only from
+        # ts 1724107750 = 2024-08-19T22:49:10
+        # ts 1724436995 = 2024-08-23T18:16:35
         result = calld.voicemails.list_voicemail_messages(
             **{
                 'from': '2024-08-23T18:12:35Z',
