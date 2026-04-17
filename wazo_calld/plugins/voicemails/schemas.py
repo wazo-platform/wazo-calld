@@ -22,9 +22,20 @@ class VoicemailMessageBaseSchema(Schema):
     duration = fields.Integer()
     timestamp = fields.Integer()
     empty = fields.Boolean()
+
+
+class VoicemailTranscriptedMessageSchema(VoicemailMessageBaseSchema):
     transcription = fields.Nested(
         VoicemailTranscriptionSchema, allow_none=True, dump_default=None
     )
+
+
+class VoicemailTranscriptedHiddenMessageSchema(VoicemailMessageBaseSchema):
+    transcripted = fields.Method('_is_transcripted')
+
+    @staticmethod
+    def _is_transcripted(obj):
+        return obj.get('transcription') is not None
 
 
 class VoicemailFolderBaseSchema(Schema):
@@ -33,12 +44,12 @@ class VoicemailFolderBaseSchema(Schema):
     type = fields.String()
 
 
-class VoicemailMessageSchema(VoicemailMessageBaseSchema):
+class VoicemailMessageSchema(VoicemailTranscriptedMessageSchema):
     folder = fields.Nested(VoicemailFolderBaseSchema)
 
 
 class VoicemailFolderSchema(VoicemailFolderBaseSchema):
-    messages = fields.Nested(VoicemailMessageBaseSchema, many=True)
+    messages = fields.Nested(VoicemailTranscriptedMessageSchema, many=True)
 
 
 class VoicemailSchema(Schema):
@@ -57,7 +68,12 @@ class VoicemailGreetingCopySchema(Schema):
     dest_greeting = fields.String(validate=OneOf(VALID_GREETINGS))
 
 
-class UnifiedVoicemailMessageSchema(VoicemailMessageBaseSchema):
+class UnifiedVoicemailMessageSchema(VoicemailTranscriptedMessageSchema):
+    voicemail = fields.Nested(VoicemailSchema, only=("id", "name", "accesstype"))
+    folder = fields.Nested(VoicemailFolderBaseSchema)
+
+
+class UnifiedVoicemailAdminMessageSchema(VoicemailTranscriptedHiddenMessageSchema):
     voicemail = fields.Nested(VoicemailSchema, only=("id", "name", "accesstype"))
     folder = fields.Nested(VoicemailFolderBaseSchema)
 
@@ -67,7 +83,9 @@ class VoicemailMessagesSchema(Schema):
     total = fields.Integer()
 
 
-class VoicemailAdminMessagesSchema(VoicemailMessagesSchema):
+class VoicemailAdminMessagesSchema(Schema):
+    items = fields.Nested(UnifiedVoicemailAdminMessageSchema, many=True)
+    total = fields.Integer()
     filtered = fields.Integer()
 
 

@@ -3,7 +3,15 @@
 
 import uuid
 
-from hamcrest import assert_that, has_entries, has_item, has_items, is_, none
+from hamcrest import (
+    assert_that,
+    has_entries,
+    has_item,
+    has_items,
+    is_,
+    none,
+    only_contains,
+)
 from wazo_test_helpers import until
 
 from .helpers.base import IntegrationTest
@@ -203,7 +211,6 @@ class TestVoicemailTranscriptionEnrichment(RealAsteriskIntegrationTest):
         )
         self.confd.set_user_voicemails({user_uuid: [voicemail]})
         self.confd.set_voicemails(voicemail)
-
         # No transcriptions set in call-logd
         calld = self.make_user_calld(user_uuid, tenant_uuid=VALID_TENANT)
         result = calld.voicemails.list_voicemail_messages_from_user(
@@ -523,19 +530,23 @@ class TestVoicemailTranscriptionEnrichment(RealAsteriskIntegrationTest):
         calld = self.make_user_calld(user_uuid, tenant_uuid=VALID_TENANT)
         result = calld.voicemails.list_voicemail_messages()
 
+        items = result['items']
+        msg = next(m for m in items if m['id'] == message_id)
         assert_that(
-            result,
-            has_entries(
-                items=has_item(
-                    has_entries(
-                        id=message_id,
-                        transcription=has_entries(
-                            text='Admin list transcription',
-                        ),
-                    ),
-                ),
+            msg.keys(),
+            only_contains(
+                'id',
+                'caller_id_name',
+                'caller_id_num',
+                'duration',
+                'timestamp',
+                'empty',
+                'transcripted',
+                'voicemail',
+                'folder',
             ),
         )
+        assert_that(msg['transcripted'], is_(True))
 
     def test_list_admin_messages_without_transcription(self):
         user_uuid = str(uuid.uuid4())
@@ -553,17 +564,23 @@ class TestVoicemailTranscriptionEnrichment(RealAsteriskIntegrationTest):
         calld = self.make_user_calld(user_uuid, tenant_uuid=VALID_TENANT)
         result = calld.voicemails.list_voicemail_messages()
 
+        items = result['items']
+        msg = next(m for m in items if m['id'] == message_id)
         assert_that(
-            result,
-            has_entries(
-                items=has_item(
-                    has_entries(
-                        id=message_id,
-                        transcription=is_(none()),
-                    ),
-                ),
+            msg.keys(),
+            only_contains(
+                'id',
+                'caller_id_name',
+                'caller_id_num',
+                'duration',
+                'timestamp',
+                'empty',
+                'transcripted',
+                'voicemail',
+                'folder',
             ),
         )
+        assert_that(msg['transcripted'], is_(False))
 
     def test_list_user_messages_transcription_fault_tolerance(self):
         """Verify that messages are still returned when call-logd is unavailable."""
