@@ -166,6 +166,7 @@ class VoicemailsService:
         from_: datetime | None = None,
         until: datetime | None = None,
         recurse: bool = False,
+        transcribed: bool | None = None,
     ) -> dict:
         vm_confs = self._get_voicemails_configs(
             tenant_uuid,
@@ -193,14 +194,22 @@ class VoicemailsService:
             filtered_messages = [
                 m for m in filtered_messages if m.get('timestamp', 0) < until_ts
             ]
+
+        voicemail_ids = {vm_conf['id'] for vm_conf in vm_confs if 'id' in vm_conf}
+        self._enrich_messages_with_transcriptions(filtered_messages, voicemail_ids)
+
+        if transcribed is not None:
+            filtered_messages = [
+                m
+                for m in filtered_messages
+                if (m.get('transcription') is not None) == transcribed
+            ]
         filtered = len(filtered_messages)
 
         start = offset or 0
         end = (start + limit) if limit is not None else None
         items = filtered_messages[start:end]
 
-        voicemail_ids = {vm_conf['id'] for vm_conf in vm_confs if 'id' in vm_conf}
-        self._enrich_messages_with_transcriptions(items, voicemail_ids)
         return {'items': items, 'total': total, 'filtered': filtered}
 
     def _enrich_messages_with_transcriptions(self, messages, voicemail_ids):
