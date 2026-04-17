@@ -107,6 +107,7 @@ class VoicemailAdminMessagesGetSchema(VoicemailMessagesGetSchema):
     from_ = AwareDateTime(data_key='from')
     until = AwareDateTime()
     recurse = fields.Boolean(load_default=False)
+    transcribed = fields.Boolean()
 
 
 voicemail_schema = VoicemailSchema()

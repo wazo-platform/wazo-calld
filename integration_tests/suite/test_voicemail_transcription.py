@@ -5,6 +5,7 @@ import uuid
 
 from hamcrest import (
     assert_that,
+    contains_exactly,
     has_entries,
     has_item,
     has_items,
@@ -581,6 +582,87 @@ class TestVoicemailTranscriptionEnrichment(RealAsteriskIntegrationTest):
             ),
         )
         assert_that(msg['transcribed'], is_(False))
+
+    def test_list_admin_messages_filter_transcribed(self):
+        user_uuid = str(uuid.uuid4())
+        voicemail_id_1 = 111
+        voicemail_id_2 = 222
+        transcribed_msg = '1724107750-00000001'  # default/8000
+        non_transcribed_msg = '1724436688-00000001'  # default/8001
+        vm1 = MockVoicemail(
+            voicemail_id_1,
+            '8000',
+            'vm-transcribed',
+            'default',
+            tenant_uuid=VALID_TENANT,
+        )
+        vm2 = MockVoicemail(
+            voicemail_id_2,
+            '8001',
+            'vm-not-transcribed',
+            'default',
+            tenant_uuid=VALID_TENANT,
+        )
+        self.confd.set_voicemails(vm1, vm2)
+
+        self.call_logd.set_transcriptions(
+            [
+                {
+                    'message_id': transcribed_msg,
+                    'voicemail_id': voicemail_id_1,
+                    'tenant_uuid': VALID_TENANT,
+                    'transcription_text': 'Hello',
+                    'provider_id': 'openai/whisper-1',
+                    'language': 'en',
+                    'duration': 19.0,
+                },
+            ]
+        )
+
+        calld = self.make_user_calld(user_uuid, tenant_uuid=VALID_TENANT)
+        # default/8001 has 3 more messages, total = 4
+
+        # no filter: both transcribed and non-transcribed included
+        result = calld.voicemails.list_voicemail_messages()
+        assert_that(
+            result,
+            has_entries(
+                items=has_items(
+                    has_entries(id=transcribed_msg, transcribed=True),
+                    has_entries(id=non_transcribed_msg, transcribed=False),
+                ),
+                total=4,
+                filtered=4,
+            ),
+        )
+
+        # transcribed=True: only transcribed messages
+        result = calld.voicemails.list_voicemail_messages(transcribed=True)
+        assert_that(
+            result,
+            has_entries(
+                items=contains_exactly(
+                    has_entries(id=transcribed_msg, transcribed=True),
+                ),
+                total=4,
+                filtered=1,
+            ),
+        )
+
+        # transcribed=False: only non-transcribed messages
+        result = calld.voicemails.list_voicemail_messages(transcribed=False)
+        assert_that(
+            result,
+            has_entries(
+                items=contains_exactly(
+                    has_entries(id='1724436688-00000001', transcribed=False),
+                    has_entries(id='1724436755-00000002', transcribed=False),
+                    has_entries(id='1724436995-00000003', transcribed=False),
+                ),
+                total=4,
+                filtered=3,
+            ),
+        )
 
     def test_list_user_messages_transcription_fault_tolerance(self):
         """Verify that messages are still returned when call-logd is unavailable."""

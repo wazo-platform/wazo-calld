@@ -69,6 +69,11 @@ paths:
         type: boolean
         default: false
         required: false
+      - name: transcribed
+        in: query
+        description: Filter messages by transcription availability
+        type: boolean
+        required: false
       tags:
       - voicemails
       responses:
