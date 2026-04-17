@@ -541,12 +541,12 @@ class TestVoicemailTranscriptionEnrichment(RealAsteriskIntegrationTest):
                 'duration',
                 'timestamp',
                 'empty',
-                'transcripted',
+                'transcribed',
                 'voicemail',
                 'folder',
             ),
         )
-        assert_that(msg['transcripted'], is_(True))
+        assert_that(msg['transcribed'], is_(True))
 
     def test_list_admin_messages_without_transcription(self):
         user_uuid = str(uuid.uuid4())
@@ -575,12 +575,12 @@ class TestVoicemailTranscriptionEnrichment(RealAsteriskIntegrationTest):
                 'duration',
                 'timestamp',
                 'empty',
-                'transcripted',
+                'transcribed',
                 'voicemail',
                 'folder',
             ),
         )
-        assert_that(msg['transcripted'], is_(False))
+        assert_that(msg['transcribed'], is_(False))
 
     def test_list_user_messages_transcription_fault_tolerance(self):
         """Verify that messages are still returned when call-logd is unavailable."""
