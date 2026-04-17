@@ -75,7 +75,7 @@ paths:
         '200':
           description: The voicemail messages in the tenant
           schema:
-            $ref: '#/definitions/VoicemailMessages'
+            $ref: '#/definitions/AdminVoicemailMessages'
         '400':
           $ref: '#/responses/InvalidRequest'
         '503':
@@ -698,13 +698,27 @@ definitions:
         type: integer
         description: The time the message was left as a Unix time value
         readOnly: true
-      transcription:
-        $ref: '#/definitions/VoicemailTranscription'
-        readOnly: true
-  VoicemailMessage:
+  VoicemailTranscriptedMessageBase:
     type: object
     allOf:
     - $ref: '#/definitions/VoicemailMessageBase'
+    - properties:
+        transcription:
+          $ref: '#/definitions/VoicemailTranscription'
+          readOnly: true
+  AdminVoicemailMessage:
+    type: object
+    allOf:
+    - $ref: '#/definitions/VoicemailMessageBase'
+    - properties:
+        transcripted:
+          type: boolean
+          description: True if a transcription exists for this message
+          readOnly: true
+  VoicemailMessage:
+    type: object
+    allOf:
+    - $ref: '#/definitions/VoicemailTranscriptedMessageBase'
     - properties:
         folder:
           $ref: '#/definitions/VoicemailFolderBase'
@@ -717,6 +731,24 @@ definitions:
         description: The folder's ID
     required:
     - folder_id
+  VoicemailMessageVoicemail:
+    type: object
+    properties:
+      id:
+        type: integer
+        description: The containing voicemail's ID
+        readOnly: true
+      name:
+        type: string
+        description: The containing voicemail's name
+        readOnly: true
+      accesstype:
+        type: string
+        description: The containing voicemail's type (either global or personal)
+        enum:
+        - global
+        - personal
+        readOnly: true
   VoicemailMessages:
     type: object
     properties:
@@ -729,25 +761,32 @@ definitions:
           - type: object
             properties:
               voicemail:
-                type: object
-                properties:
-                  id:
-                    type: integer
-                    description: The containing voicemail's ID
-                    readOnly: true
-                  name:
-                    type: string
-                    description: The containing voicemail's name
-                    readOnly: true
-                  accesstype:
-                    type: string
-                    description: The containing voicemail's type (either global or personal)
-                    enum:
-                    - global
-                    - personal
-                    readOnly: true
+                $ref: '#/definitions/VoicemailMessageVoicemail'
         readOnly: true
       total:
+        type: integer
+        readOnly: true
+  AdminVoicemailMessages:
+    type: object
+    properties:
+      items:
+        description: List of voicemail messages
+        type: array
+        items:
+          allOf:
+          - $ref: '#/definitions/AdminVoicemailMessage'
+          - type: object
+            properties:
+              folder:
+                $ref: '#/definitions/VoicemailFolderBase'
+                readOnly: true
+              voicemail:
+                $ref: '#/definitions/VoicemailMessageVoicemail'
+        readOnly: true
+      total:
+        type: integer
+        readOnly: true
+      filtered:
         type: integer
         readOnly: true
 parameters:
