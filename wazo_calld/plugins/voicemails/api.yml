@@ -711,7 +711,7 @@ definitions:
     allOf:
     - $ref: '#/definitions/VoicemailMessageBase'
     - properties:
-        transcripted:
+        transcribed:
           type: boolean
           description: True if a transcription exists for this message
           readOnly: true

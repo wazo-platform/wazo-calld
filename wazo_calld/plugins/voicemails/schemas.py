@@ -31,10 +31,10 @@ class VoicemailTranscriptedMessageSchema(VoicemailMessageBaseSchema):
 
 
 class VoicemailTranscriptedHiddenMessageSchema(VoicemailMessageBaseSchema):
-    transcripted = fields.Method('_is_transcripted')
+    transcribed = fields.Method('_is_transcribed')
 
     @staticmethod
-    def _is_transcripted(obj):
+    def _is_transcribed(obj):
         return obj.get('transcription') is not None
 
 
