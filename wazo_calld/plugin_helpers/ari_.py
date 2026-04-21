@@ -1,4 +1,4 @@
-# Copyright 2015-2025 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from __future__ import annotations
@@ -337,6 +337,18 @@ class Channel:
         try:
             progress = self._get_var('WAZO_CALL_PROGRESS')
             return progress == '1'
+        except ARINotFound:
+            return False
+
+    def is_group_auto_recorded(self):
+        try:
+            return self._get_var('SHARED(WAZO_RECORD_GROUP_CALLEE)') == '1'
+        except ARINotFound:
+            return False
+
+    def is_queue_auto_recorded(self):
+        try:
+            return self._get_var('SHARED(WAZO_RECORD_QUEUE_CALLEE)') == '1'
         except ARINotFound:
             return False
 
