@@ -8,7 +8,7 @@ import logging
 import time
 from typing import Protocol, TypeVar
 
-from ari.exceptions import ARINotFound, ARINotInStasis
+from ari.exceptions import ARINotFound, ARINotInStasis, ARIServerError
 
 from .exceptions import BridgeNotFound, NotEnoughChannels, TooManyChannels
 
@@ -343,13 +343,13 @@ class Channel:
     def is_group_auto_recorded(self):
         try:
             return self._get_var('SHARED(WAZO_RECORD_GROUP_CALLEE)') == '1'
-        except ARINotFound:
+        except (ARINotFound, ARINotInStasis, ARIServerError):
             return False
 
     def is_queue_auto_recorded(self):
         try:
             return self._get_var('SHARED(WAZO_RECORD_QUEUE_CALLEE)') == '1'
-        except ARINotFound:
+        except (ARINotFound, ARINotInStasis, ARIServerError):
             return False
 
     def sip_call_id(self):

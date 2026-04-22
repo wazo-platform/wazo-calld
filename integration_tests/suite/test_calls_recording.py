@@ -1,4 +1,4 @@
-# Copyright 2021-2026 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2021-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import uuid
@@ -1331,18 +1331,5 @@ class TestCallRecord(RealAsteriskIntegrationTest):
             context='local',
             extension='dial-autoanswer',
             variables={'variables': variables},
-        )
-        # Seed the SHARED() datastore so is_(group|queue)_auto_recorded()
-        # reads '0' instead of hitting Asterisk's "Error With Function" 500
-        # response for an uninitialized SHARED variable.
-        self.ari.channels.setChannelVar(
-            channelId=call.id,
-            variable='SHARED(WAZO_RECORD_GROUP_CALLEE)',
-            value='0',
-        )
-        self.ari.channels.setChannelVar(
-            channelId=call.id,
-            variable='SHARED(WAZO_RECORD_QUEUE_CALLEE)',
-            value='0',
         )
         return call.id
