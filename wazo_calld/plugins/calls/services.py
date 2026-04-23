@@ -618,10 +618,10 @@ class CallsService:
     def _find_channel_to_record(self, call_id):
         try:
             channel = self._ari.channels.get(channelId=call_id)
-            channel_helper = Channel(channel.id, self._ari)
         except ARINotFound:
             raise NoSuchCall(call_id)
 
+        channel_helper = Channel(channel.id, self._ari)
         channel_name = channel.json['name']
         is_side_1_of_local = channel_name.startswith(
             'Local/'
