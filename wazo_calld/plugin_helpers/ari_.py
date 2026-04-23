@@ -340,17 +340,29 @@ class Channel:
         except ARINotFound:
             return False
 
+    """
+    In the case of the Asterisk's shared variable area, if the shared store isn't initiated then the ARI will return a 500 error
+    """
+
     def is_group_auto_recorded(self):
         try:
             return self._get_var('SHARED(WAZO_RECORD_GROUP_CALLEE)') == '1'
-        except (ARINotFound, ARINotInStasis, ARIServerError):
+        except (ARINotFound, ARINotInStasis):
             return False
+        except ARIServerError as e:
+            if e.original_message == 'Unable to read provided function':
+                return False
+            raise
 
     def is_queue_auto_recorded(self):
         try:
             return self._get_var('SHARED(WAZO_RECORD_QUEUE_CALLEE)') == '1'
-        except (ARINotFound, ARINotInStasis, ARIServerError):
+        except (ARINotFound, ARINotInStasis):
             return False
+        except ARIServerError as e:
+            if e.original_message == 'Unable to read provided function':
+                return False
+            raise
 
     def sip_call_id(self):
         if not self.is_sip():
