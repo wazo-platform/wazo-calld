@@ -621,6 +621,7 @@ class CallsService:
         except ARINotFound:
             raise NoSuchCall(call_id)
 
+        channel_helper = Channel(channel.id, self._ari)
         channel_name = channel.json['name']
         is_side_1_of_local = channel_name.startswith(
             'Local/'
@@ -628,21 +629,8 @@ class CallsService:
         if not is_side_1_of_local:
             return channel
 
-        try:
-            is_group_callee = (
-                channel.getChannelVar(variable='WAZO_RECORD_GROUP_CALLEE')['value']
-                == '1'
-            )
-        except ARINotFound:
-            is_group_callee = False
-
-        try:
-            is_queue_callee = (
-                channel.getChannelVar(variable='WAZO_RECORD_QUEUE_CALLEE')['value']
-                == '1'
-            )
-        except ARINotFound:
-            is_queue_callee = False
+        is_group_callee = channel_helper.is_group_auto_recorded()
+        is_queue_callee = channel_helper.is_queue_auto_recorded()
 
         is_agent_callback = 'agentcallback' in channel_name
 
@@ -677,19 +665,6 @@ class CallsService:
             return potential_channel
 
         return channel
-
-    def _is_automated_recording(self, channel_id):
-        try:
-            channel = self._ari.channels.get(channelId=channel_id)
-        except ARINotFound:
-            raise NoSuchCall(channel_id)
-
-        cv = channel.json['channelvars']
-
-        auto_group_record = cv['WAZO_RECORD_GROUP_CALLEE'] == '1'
-        auto_queue_record = cv['WAZO_RECORD_QUEUE_CALLEE'] == '1'
-
-        return auto_group_record or auto_queue_record
 
     def _toggle_record_allowed(self, channel):
         cv = channel.json['channelvars']
@@ -735,7 +710,10 @@ class CallsService:
         if channel_variables['WAZO_CALL_RECORD_ACTIVE'] == '1':
             return
 
-        if self._is_automated_recording(channel_id):
+        if (
+            channel_helper.is_queue_auto_recorded()
+            or channel_helper.is_group_auto_recorded()
+        ):
             logger.debug('bypassing configured toggle permissions for auto-recording')
         elif not self._toggle_record_allowed(channel):
             raise RecordingUnauthorized(call_id)

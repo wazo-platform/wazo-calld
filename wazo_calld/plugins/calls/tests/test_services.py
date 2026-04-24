@@ -19,13 +19,6 @@ def _make_local_group_callee_channel(match_uuid):
             'WAZO_LOCAL_CHAN_MATCH_UUID': match_uuid,
         },
     }
-
-    def get_channel_var(variable):
-        if variable == 'WAZO_RECORD_GROUP_CALLEE':
-            return {'value': '1'}
-        return {'value': ''}
-
-    channel.getChannelVar.side_effect = get_channel_var
     return channel
 
 
@@ -272,12 +265,21 @@ def _make_channel_mock(
 class TestFindChannelToRecord(TestCase):
     def setUp(self) -> None:
         self.ari = Mock()
+        self.shared_vars: dict[str, str] = {}
+
+        def _ari_get_var(channelId, variable):
+            if variable in self.shared_vars:
+                return {'value': self.shared_vars[variable]}
+            raise ARINotFound(Mock(), Mock())
+
+        self.ari.channels.getChannelVar.side_effect = _ari_get_var
         self.services = CallsService(
             Mock(), Mock(), self.ari, Mock(), Mock(), Mock(), Mock()
         )
 
     def test_group_callee_returns_answered_channel(self):
         call_uuid = 'shared-group-call-uuid'
+        self.shared_vars['SHARED(WAZO_RECORD_GROUP_CALLEE)'] = '1'
         local_channel = _make_local_group_callee_channel(call_uuid)
         answered_pjsip = _make_pjsip_channel(
             'PJSIP/answered-001', call_uuid, state='Up'
@@ -292,6 +294,7 @@ class TestFindChannelToRecord(TestCase):
 
     def test_group_callee_skips_ringing_channels(self):
         call_uuid = 'shared-group-call-uuid'
+        self.shared_vars['SHARED(WAZO_RECORD_GROUP_CALLEE)'] = '1'
         local_channel = _make_local_group_callee_channel(call_uuid)
         ringing_pjsip = _make_pjsip_channel(
             'PJSIP/ringing-001', call_uuid, state='Ring'
@@ -309,6 +312,7 @@ class TestFindChannelToRecord(TestCase):
 
     def test_group_callee_falls_back_to_local_when_no_channel_is_up(self):
         call_uuid = 'shared-group-call-uuid'
+        self.shared_vars['SHARED(WAZO_RECORD_GROUP_CALLEE)'] = '1'
         local_channel = _make_local_group_callee_channel(call_uuid)
         ringing_pjsip_1 = _make_pjsip_channel(
             'PJSIP/ringing-001', call_uuid, state='Ring'
@@ -357,13 +361,11 @@ class TestFindChannelToRecord(TestCase):
         assert_that(result, is_(channel))
 
     def test_local_side_1_group_callee_returns_real_channel(self) -> None:
+        self.shared_vars['SHARED(WAZO_RECORD_GROUP_CALLEE)'] = '1'
         local_channel = _make_channel_mock(
             'local-1',
             'Local/s@group;1',
             channelvars={'WAZO_LOCAL_CHAN_MATCH_UUID': 'match-uuid'},
-            getvar_side_effect={
-                'WAZO_RECORD_GROUP_CALLEE': {'value': '1'},
-            },
         )
         real_channel = _make_channel_mock(
             'real-1',
@@ -381,14 +383,11 @@ class TestFindChannelToRecord(TestCase):
         assert_that(result, is_(real_channel))
 
     def test_local_side_1_queue_callee_returns_real_channel(self) -> None:
+        self.shared_vars['SHARED(WAZO_RECORD_QUEUE_CALLEE)'] = '1'
         local_channel = _make_channel_mock(
             'local-1',
             'Local/s@queue;1',
             channelvars={'WAZO_LOCAL_CHAN_MATCH_UUID': 'match-uuid'},
-            getvar_side_effect={
-                'WAZO_RECORD_GROUP_CALLEE': ARINotFound(Mock(), Mock()),
-                'WAZO_RECORD_QUEUE_CALLEE': {'value': '1'},
-            },
         )
         real_channel = _make_channel_mock(
             'real-1',
@@ -427,13 +426,11 @@ class TestFindChannelToRecord(TestCase):
         assert_that(result, is_(real_channel))
 
     def test_local_side_1_group_callee_no_match_uuid_returns_local(self) -> None:
+        self.shared_vars['SHARED(WAZO_RECORD_GROUP_CALLEE)'] = '1'
         local_channel = _make_channel_mock(
             'local-1',
             'Local/s@group;1',
             channelvars={'WAZO_LOCAL_CHAN_MATCH_UUID': ''},
-            getvar_side_effect={
-                'WAZO_RECORD_GROUP_CALLEE': {'value': '1'},
-            },
         )
         self.ari.channels.get.return_value = local_channel
 
@@ -442,13 +439,11 @@ class TestFindChannelToRecord(TestCase):
         assert_that(result, is_(local_channel))
 
     def test_local_side_1_group_callee_no_matching_channel_returns_local(self) -> None:
+        self.shared_vars['SHARED(WAZO_RECORD_GROUP_CALLEE)'] = '1'
         local_channel = _make_channel_mock(
             'local-1',
             'Local/s@group;1',
             channelvars={'WAZO_LOCAL_CHAN_MATCH_UUID': 'match-uuid'},
-            getvar_side_effect={
-                'WAZO_RECORD_GROUP_CALLEE': {'value': '1'},
-            },
         )
         unrelated_channel = _make_channel_mock(
             'other-1',
@@ -466,13 +461,11 @@ class TestFindChannelToRecord(TestCase):
         assert_that(result, is_(local_channel))
 
     def test_skips_local_channels_when_searching(self) -> None:
+        self.shared_vars['SHARED(WAZO_RECORD_GROUP_CALLEE)'] = '1'
         local_channel = _make_channel_mock(
             'local-1',
             'Local/s@group;1',
             channelvars={'WAZO_LOCAL_CHAN_MATCH_UUID': 'match-uuid'},
-            getvar_side_effect={
-                'WAZO_RECORD_GROUP_CALLEE': {'value': '1'},
-            },
         )
         other_local = _make_channel_mock(
             'local-2',
@@ -490,13 +483,11 @@ class TestFindChannelToRecord(TestCase):
         assert_that(result, is_(local_channel))
 
     def test_skips_caller_side_channels_when_searching(self) -> None:
+        self.shared_vars['SHARED(WAZO_RECORD_GROUP_CALLEE)'] = '1'
         local_channel = _make_channel_mock(
             'local-1',
             'Local/s@group;1',
             channelvars={'WAZO_LOCAL_CHAN_MATCH_UUID': 'match-uuid'},
-            getvar_side_effect={
-                'WAZO_RECORD_GROUP_CALLEE': {'value': '1'},
-            },
         )
         caller_channel = _make_channel_mock(
             'caller-1',
@@ -545,8 +536,6 @@ class TestRecordingUsesFoundChannel(TestCase):
                 'WAZO_QUEUE_DTMF_RECORD_TOGGLE_ENABLED': '0',
                 'WAZO_GROUP_DTMF_RECORD_TOGGLE_ENABLED': '0',
                 'WAZO_USER_DTMF_RECORD_TOGGLE_ENABLED': '1',
-                'WAZO_RECORD_GROUP_CALLEE': '0',
-                'WAZO_RECORD_QUEUE_CALLEE': '0',
             },
         )
 
@@ -566,6 +555,8 @@ class TestRecordingUsesFoundChannel(TestCase):
         )
         mock_channel_cls = tenant_patcher.start()
         mock_channel_cls.return_value.tenant_uuid.return_value = None
+        mock_channel_cls.return_value.is_group_auto_recorded.return_value = False
+        mock_channel_cls.return_value.is_queue_auto_recorded.return_value = False
         self.addCleanup(tenant_patcher.stop)
 
         # make_call_from_channel is used in stop/pause/resume

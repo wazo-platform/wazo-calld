@@ -1,4 +1,4 @@
-# Copyright 2015-2025 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from __future__ import annotations
@@ -8,7 +8,7 @@ import logging
 import time
 from typing import Protocol, TypeVar
 
-from ari.exceptions import ARINotFound, ARINotInStasis
+from ari.exceptions import ARINotFound, ARINotInStasis, ARIServerError
 
 from .exceptions import BridgeNotFound, NotEnoughChannels, TooManyChannels
 
@@ -339,6 +339,30 @@ class Channel:
             return progress == '1'
         except ARINotFound:
             return False
+
+    """
+    In the case of the Asterisk's shared variable area, if the shared store isn't initiated then the ARI will return a 500 error
+    """
+
+    def is_group_auto_recorded(self):
+        try:
+            return self._get_var('SHARED(WAZO_RECORD_GROUP_CALLEE)') == '1'
+        except (ARINotFound, ARINotInStasis):
+            return False
+        except ARIServerError as e:
+            if e.original_message == 'Unable to read provided function':
+                return False
+            raise
+
+    def is_queue_auto_recorded(self):
+        try:
+            return self._get_var('SHARED(WAZO_RECORD_QUEUE_CALLEE)') == '1'
+        except (ARINotFound, ARINotInStasis):
+            return False
+        except ARIServerError as e:
+            if e.original_message == 'Unable to read provided function':
+                return False
+            raise
 
     def sip_call_id(self):
         if not self.is_sip():
