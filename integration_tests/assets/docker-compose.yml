@@ -61,7 +61,7 @@ services:
       XIVO_UUID: 08c56466-8f29-45c7-9856-92bf1ba89b92
 
   rabbitmq:
-    image: rabbitmq
+    image: rabbitmq:3
     ports:
       - 5672
     volumes:
