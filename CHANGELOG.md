@@ -2,6 +2,8 @@
 
 ## 26.05
 
+* New admin endpoint `GET /1.0/voicemails/messages` to list all voicemail messages in a tenant.
+
 * The `transcription` attribute has been added to voicemail messages. It contains the transcription text when available, or `null` otherwise.
 
 * New events for voicemail transcriptions:

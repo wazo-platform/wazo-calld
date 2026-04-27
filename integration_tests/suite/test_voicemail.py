@@ -1883,3 +1883,466 @@ class TestVoicemails(RealAsteriskIntegrationTest):
             ('put', f'users/me/voicemails/messages/{message_id}'),
         ]
         self.assert_empty_body_returns_400(urls)
+
+    def test_admin_list_all_messages_in_tenant(self):
+        user_uuid = str(uuid.uuid4())
+        voicemail_id_1 = 111
+        voicemail_id_2 = 222
+        message_id_1 = '1724107750-00000001'
+        message_id_2 = '1724436688-00000001'
+        message_id_3 = '1724436755-00000002'
+        message_id_4 = '1724436995-00000003'
+        global_voicemail = MockVoicemail(
+            voicemail_id_1,
+            '8000',
+            'global-voicemail',
+            'default',
+            accesstype='global',
+            tenant_uuid=VALID_TENANT_MULTITENANT_1,
+        )
+        personal_voicemail = MockVoicemail(
+            voicemail_id_2,
+            '8001',
+            'personal-voicemail',
+            'default',
+            user_uuids=[user_uuid],
+            tenant_uuid=VALID_TENANT_MULTITENANT_1,
+        )
+        self.confd.set_user_voicemails({user_uuid: [personal_voicemail]})
+        self.confd.set_voicemails(global_voicemail, personal_voicemail)
+        calld = self.make_user_calld(user_uuid, tenant_uuid=VALID_TENANT_MULTITENANT_1)
+
+        result = calld.voicemails.list_voicemail_messages()
+        assert_that(
+            result,
+            has_entries(
+                items=has_items(
+                    has_entries(
+                        id=message_id_1,
+                        voicemail=has_entry('accesstype', 'global'),
+                    ),
+                    has_entries(
+                        id=message_id_2,
+                        voicemail=has_entry('accesstype', 'personal'),
+                    ),
+                    has_entries(
+                        id=message_id_3,
+                        voicemail=has_entry('accesstype', 'personal'),
+                    ),
+                    has_entries(
+                        id=message_id_4,
+                        voicemail=has_entry('accesstype', 'personal'),
+                    ),
+                ),
+                total=4,
+                filtered=4,
+            ),
+        )
+
+    def test_admin_list_messages_tenant_isolation(self):
+        user_uuid_1 = str(uuid.uuid4())
+        user_uuid_2 = str(uuid.uuid4())
+        voicemail_t1 = MockVoicemail(
+            301,
+            '8001',
+            'vm-tenant1',
+            'multitenant-1',
+            user_uuids=[user_uuid_1],
+            tenant_uuid=VALID_TENANT_MULTITENANT_1,
+        )
+        voicemail_t2 = MockVoicemail(
+            302,
+            '8002',
+            'vm-tenant2',
+            'multitenant-2',
+            user_uuids=[user_uuid_2],
+            tenant_uuid=VALID_TENANT_MULTITENANT_2,
+        )
+        self.confd.set_voicemails(voicemail_t1, voicemail_t2)
+        calld_t1 = self.make_user_calld(
+            user_uuid_1, tenant_uuid=VALID_TENANT_MULTITENANT_1
+        )
+        calld_t2 = self.make_user_calld(
+            user_uuid_2, tenant_uuid=VALID_TENANT_MULTITENANT_2
+        )
+
+        result_t1 = calld_t1.voicemails.list_voicemail_messages()
+        assert_that(
+            result_t1,
+            has_entries(
+                items=contains_exactly(
+                    has_entries(id='1724107750-00000011'),
+                ),
+                total=1,
+                filtered=1,
+            ),
+        )
+
+        result_t2 = calld_t2.voicemails.list_voicemail_messages()
+        assert_that(
+            result_t2,
+            has_entries(
+                items=contains_exactly(
+                    has_entries(id='1724107750-00000021'),
+                ),
+                total=1,
+                filtered=1,
+            ),
+        )
+
+    def test_admin_list_messages_filter_voicemail_type(self):
+        user_uuid = str(uuid.uuid4())
+        voicemail_id_1 = 111
+        voicemail_id_2 = 222
+        global_voicemail = MockVoicemail(
+            voicemail_id_1,
+            '8000',
+            'global-voicemail',
+            'default',
+            accesstype='global',
+            tenant_uuid=VALID_TENANT_MULTITENANT_1,
+        )
+        personal_voicemail = MockVoicemail(
+            voicemail_id_2,
+            '8001',
+            'personal-voicemail',
+            'default',
+            user_uuids=[user_uuid],
+            tenant_uuid=VALID_TENANT_MULTITENANT_1,
+        )
+        self.confd.set_user_voicemails({user_uuid: [personal_voicemail]})
+        self.confd.set_voicemails(global_voicemail, personal_voicemail)
+        calld = self.make_user_calld(user_uuid, tenant_uuid=VALID_TENANT_MULTITENANT_1)
+
+        result_global = calld.voicemails.list_voicemail_messages(
+            voicemail_type='global'
+        )
+        assert_that(
+            result_global,
+            has_entries(
+                items=contains_exactly(
+                    has_entries(
+                        id='1724107750-00000001',
+                        voicemail=has_entry('accesstype', 'global'),
+                    ),
+                ),
+                total=1,
+                filtered=1,
+            ),
+        )
+
+        result_personal = calld.voicemails.list_voicemail_messages(
+            voicemail_type='personal'
+        )
+        assert_that(
+            result_personal,
+            has_entries(
+                items=has_items(
+                    has_entries(
+                        id='1724436688-00000001',
+                        voicemail=has_entry('accesstype', 'personal'),
+                    ),
+                ),
+                total=3,
+                filtered=3,
+            ),
+        )
+
+    def test_admin_list_messages_filter_voicemail_id(self):
+        user_uuid = str(uuid.uuid4())
+        voicemail_id_1 = 111
+        voicemail_id_2 = 222
+        global_voicemail = MockVoicemail(
+            voicemail_id_1,
+            '8000',
+            'global-voicemail',
+            'default',
+            accesstype='global',
+            tenant_uuid=VALID_TENANT_MULTITENANT_1,
+        )
+        personal_voicemail = MockVoicemail(
+            voicemail_id_2,
+            '8001',
+            'personal-voicemail',
+            'default',
+            user_uuids=[user_uuid],
+            tenant_uuid=VALID_TENANT_MULTITENANT_1,
+        )
+        self.confd.set_voicemails(global_voicemail, personal_voicemail)
+        calld = self.make_user_calld(user_uuid, tenant_uuid=VALID_TENANT_MULTITENANT_1)
+
+        result = calld.voicemails.list_voicemail_messages(voicemail_id=voicemail_id_2)
+        assert_that(
+            result,
+            has_entries(
+                items=contains_exactly(
+                    has_entries(id='1724436688-00000001'),
+                    has_entries(id='1724436755-00000002'),
+                    has_entries(id='1724436995-00000003'),
+                ),
+                total=3,
+                filtered=3,
+            ),
+        )
+
+    def test_admin_list_messages_filter_user_uuid(self):
+        user_uuid = str(uuid.uuid4())
+        voicemail_id_1 = 111
+        voicemail_id_2 = 222
+        global_voicemail = MockVoicemail(
+            voicemail_id_1,
+            '8000',
+            'global-voicemail',
+            'default',
+            accesstype='global',
+            tenant_uuid=VALID_TENANT_MULTITENANT_1,
+        )
+        personal_voicemail = MockVoicemail(
+            voicemail_id_2,
+            '8001',
+            'personal-voicemail',
+            'default',
+            user_uuids=[user_uuid],
+            tenant_uuid=VALID_TENANT_MULTITENANT_1,
+        )
+        self.confd.set_user_voicemails({user_uuid: [personal_voicemail]})
+        self.confd.set_voicemails(global_voicemail, personal_voicemail)
+        calld = self.make_user_calld(user_uuid, tenant_uuid=VALID_TENANT_MULTITENANT_1)
+
+        result = calld.voicemails.list_voicemail_messages(user_uuid=user_uuid)
+        assert_that(
+            result,
+            has_entries(
+                items=has_items(
+                    has_entries(
+                        id='1724107750-00000001',
+                        voicemail=has_entry('accesstype', 'global'),
+                    ),
+                    has_entries(
+                        id='1724436688-00000001',
+                        voicemail=has_entry('accesstype', 'personal'),
+                    ),
+                ),
+                total=4,
+                filtered=4,
+            ),
+        )
+
+    def test_admin_list_messages_pagination_ordering(self):
+        user_uuid = str(uuid.uuid4())
+        voicemail_id_1 = 111
+        voicemail_id_2 = 222
+        message_id_1 = '1724107750-00000001'
+        message_id_2 = '1724436688-00000001'
+        message_id_3 = '1724436755-00000002'
+        message_id_4 = '1724436995-00000003'
+        global_voicemail = MockVoicemail(
+            voicemail_id_1,
+            '8000',
+            'global-voicemail',
+            'default',
+            accesstype='global',
+            tenant_uuid=VALID_TENANT_MULTITENANT_1,
+        )
+        personal_voicemail = MockVoicemail(
+            voicemail_id_2,
+            '8001',
+            'personal-voicemail',
+            'default',
+            user_uuids=[user_uuid],
+            tenant_uuid=VALID_TENANT_MULTITENANT_1,
+        )
+        self.confd.set_user_voicemails({user_uuid: [personal_voicemail]})
+        self.confd.set_voicemails(global_voicemail, personal_voicemail)
+        calld = self.make_user_calld(user_uuid, tenant_uuid=VALID_TENANT_MULTITENANT_1)
+
+        # ascending order by timestamp
+        assert_that(
+            calld.voicemails.list_voicemail_messages(
+                direction='asc', order='timestamp'
+            ),
+            has_entries(
+                items=contains_exactly(
+                    has_entries(id=message_id_1),
+                    has_entries(id=message_id_2),
+                    has_entries(id=message_id_3),
+                    has_entries(id=message_id_4),
+                ),
+                total=4,
+                filtered=4,
+            ),
+        )
+
+        # descending order
+        assert_that(
+            calld.voicemails.list_voicemail_messages(
+                direction='desc', order='timestamp'
+            ),
+            has_entries(
+                items=contains_exactly(
+                    has_entries(id=message_id_4),
+                    has_entries(id=message_id_3),
+                    has_entries(id=message_id_2),
+                    has_entries(id=message_id_1),
+                ),
+                total=4,
+                filtered=4,
+            ),
+        )
+
+        # limit
+        assert_that(
+            calld.voicemails.list_voicemail_messages(limit=2),
+            has_entries(
+                items=contains_exactly(
+                    has_entries(id=message_id_1),
+                    has_entries(id=message_id_2),
+                ),
+                total=4,
+                filtered=4,
+            ),
+        )
+
+        # limit + offset
+        assert_that(
+            calld.voicemails.list_voicemail_messages(limit=1, offset=2),
+            has_entries(
+                items=contains_exactly(
+                    has_entries(id=message_id_3),
+                ),
+                total=4,
+                filtered=4,
+            ),
+        )
+
+    def test_admin_list_messages_filter_timestamp_range(self):
+        user_uuid = str(uuid.uuid4())
+        voicemail_id_1 = 111
+        voicemail_id_2 = 222
+        global_voicemail = MockVoicemail(
+            voicemail_id_1,
+            '8000',
+            'global-voicemail',
+            'default',
+            accesstype='global',
+            tenant_uuid=VALID_TENANT_MULTITENANT_1,
+        )
+        personal_voicemail = MockVoicemail(
+            voicemail_id_2,
+            '8001',
+            'personal-voicemail',
+            'default',
+            user_uuids=[user_uuid],
+            tenant_uuid=VALID_TENANT_MULTITENANT_1,
+        )
+        self.confd.set_user_voicemails({user_uuid: [personal_voicemail]})
+        self.confd.set_voicemails(global_voicemail, personal_voicemail)
+        calld = self.make_user_calld(user_uuid, tenant_uuid=VALID_TENANT_MULTITENANT_1)
+
+        # ts 1724436688 = 2024-08-23T18:11:28
+        # ts 1724436755 = 2024-08-23T18:12:35
+        result = calld.voicemails.list_voicemail_messages(
+            **{
+                'from': '2024-08-23T18:11:28Z',
+                'until': '2024-08-23T18:16:35Z',
+            }
+        )
+        assert_that(
+            result,
+            has_entries(
+                items=contains_exactly(
+                    has_entries(id='1724436688-00000001'),
+                    has_entries(id='1724436755-00000002'),
+                ),
+                total=4,
+                filtered=2,
+            ),
+        )
+
+        # ts 1724107750 = 2024-08-19T22:49:10
+        # ts 1724436995 = 2024-08-23T18:16:35
+        result = calld.voicemails.list_voicemail_messages(
+            **{
+                'from': '2024-08-23T18:12:35Z',
+            }
+        )
+        assert_that(
+            result,
+            has_entries(
+                items=contains_exactly(
+                    has_entries(id='1724436755-00000002'),
+                    has_entries(id='1724436995-00000003'),
+                ),
+                total=4,
+                filtered=2,
+            ),
+        )
+
+    def test_admin_list_messages_timestamp_with_pagination(self):
+        user_uuid = str(uuid.uuid4())
+        voicemail_id_1 = 111
+        voicemail_id_2 = 222
+        global_voicemail = MockVoicemail(
+            voicemail_id_1,
+            '8000',
+            'global-voicemail',
+            'default',
+            accesstype='global',
+            tenant_uuid=VALID_TENANT_MULTITENANT_1,
+        )
+        personal_voicemail = MockVoicemail(
+            voicemail_id_2,
+            '8001',
+            'personal-voicemail',
+            'default',
+            user_uuids=[user_uuid],
+            tenant_uuid=VALID_TENANT_MULTITENANT_1,
+        )
+        self.confd.set_user_voicemails({user_uuid: [personal_voicemail]})
+        self.confd.set_voicemails(global_voicemail, personal_voicemail)
+        calld = self.make_user_calld(user_uuid, tenant_uuid=VALID_TENANT_MULTITENANT_1)
+
+        # 3 messages match from >= 2024-08-23T18:11:28, paginate with limit=1, offset=1
+        result = calld.voicemails.list_voicemail_messages(
+            **{
+                'from': '2024-08-23T18:11:28Z',
+                'limit': 1,
+                'offset': 1,
+            }
+        )
+        assert_that(
+            result,
+            has_entries(
+                items=contains_exactly(
+                    has_entries(id='1724436755-00000002'),
+                ),
+                total=4,
+                filtered=3,
+            ),
+        )
+
+    def test_admin_list_messages_rejects_naive_datetime(self):
+        user_uuid = str(uuid.uuid4())
+        voicemail = MockVoicemail(
+            111,
+            '8000',
+            'voicemail',
+            'default',
+            tenant_uuid=VALID_TENANT_MULTITENANT_1,
+        )
+        self.confd.set_voicemails(voicemail)
+        calld = self.make_user_calld(user_uuid, tenant_uuid=VALID_TENANT_MULTITENANT_1)
+
+        assert_that(
+            calling(calld.voicemails.list_voicemail_messages).with_args(
+                **{'from': '2024-08-23T18:11:28'}
+            ),
+            raises(CalldError).matching(has_properties(status_code=400)),
+        )
+
+        assert_that(
+            calling(calld.voicemails.list_voicemail_messages).with_args(
+                until='2024-08-23T18:11:28'
+            ),
+            raises(CalldError).matching(has_properties(status_code=400)),
+        )

@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from marshmallow import Schema, fields
+from marshmallow.fields import AwareDateTime
 from xivo.mallow.validate import OneOf, Range
 
 VALID_GREETINGS = ["unavailable", "busy", "name"]
@@ -21,9 +22,20 @@ class VoicemailMessageBaseSchema(Schema):
     duration = fields.Integer()
     timestamp = fields.Integer()
     empty = fields.Boolean()
+
+
+class VoicemailTranscriptedMessageSchema(VoicemailMessageBaseSchema):
     transcription = fields.Nested(
         VoicemailTranscriptionSchema, allow_none=True, dump_default=None
     )
+
+
+class VoicemailTranscriptedHiddenMessageSchema(VoicemailMessageBaseSchema):
+    transcribed = fields.Method('_is_transcribed')
+
+    @staticmethod
+    def _is_transcribed(obj):
+        return obj.get('transcription') is not None
 
 
 class VoicemailFolderBaseSchema(Schema):
@@ -32,12 +44,12 @@ class VoicemailFolderBaseSchema(Schema):
     type = fields.String()
 
 
-class VoicemailMessageSchema(VoicemailMessageBaseSchema):
+class VoicemailMessageSchema(VoicemailTranscriptedMessageSchema):
     folder = fields.Nested(VoicemailFolderBaseSchema)
 
 
 class VoicemailFolderSchema(VoicemailFolderBaseSchema):
-    messages = fields.Nested(VoicemailMessageBaseSchema, many=True)
+    messages = fields.Nested(VoicemailTranscriptedMessageSchema, many=True)
 
 
 class VoicemailSchema(Schema):
@@ -56,7 +68,12 @@ class VoicemailGreetingCopySchema(Schema):
     dest_greeting = fields.String(validate=OneOf(VALID_GREETINGS))
 
 
-class UnifiedVoicemailMessageSchema(VoicemailMessageBaseSchema):
+class UnifiedVoicemailMessageSchema(VoicemailTranscriptedMessageSchema):
+    voicemail = fields.Nested(VoicemailSchema, only=("id", "name", "accesstype"))
+    folder = fields.Nested(VoicemailFolderBaseSchema)
+
+
+class UnifiedVoicemailAdminMessageSchema(VoicemailTranscriptedHiddenMessageSchema):
     voicemail = fields.Nested(VoicemailSchema, only=("id", "name", "accesstype"))
     folder = fields.Nested(VoicemailFolderBaseSchema)
 
@@ -64,6 +81,12 @@ class UnifiedVoicemailMessageSchema(VoicemailMessageBaseSchema):
 class VoicemailMessagesSchema(Schema):
     items = fields.Nested(UnifiedVoicemailMessageSchema, many=True)
     total = fields.Integer()
+
+
+class VoicemailAdminMessagesSchema(Schema):
+    items = fields.Nested(UnifiedVoicemailAdminMessageSchema, many=True)
+    total = fields.Integer()
+    filtered = fields.Integer()
 
 
 class VoicemailMessagesGetSchema(Schema):
@@ -78,10 +101,21 @@ class VoicemailMessagesGetSchema(Schema):
     )
 
 
+class VoicemailAdminMessagesGetSchema(VoicemailMessagesGetSchema):
+    user_uuid = fields.String()
+    voicemail_id = fields.Integer()
+    from_ = AwareDateTime(data_key='from')
+    until = AwareDateTime()
+    recurse = fields.Boolean(load_default=False)
+    transcribed = fields.Boolean()
+
+
 voicemail_schema = VoicemailSchema()
 voicemail_folder_schema = VoicemailFolderSchema()
 voicemail_message_schema = VoicemailMessageSchema()
 voicemail_message_update_schema = VoicemailMessageUpdateSchema()
 voicemail_greeting_copy_schema = VoicemailGreetingCopySchema()
 voicemail_messages_schema = VoicemailMessagesSchema()
+voicemail_admin_messages_schema = VoicemailAdminMessagesSchema()
 voicemail_messages_get_schema = VoicemailMessagesGetSchema()
+voicemail_admin_messages_get_schema = VoicemailAdminMessagesGetSchema()
