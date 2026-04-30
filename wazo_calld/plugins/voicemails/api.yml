@@ -5,35 +5,13 @@ paths:
       description: '**Required ACL:** `calld.voicemails.messages.read`'
       parameters:
       - $ref: '#/parameters/TenantUUID'
-      - name: direction
-        in: query
-        type: string
-        enum:
-        - asc
-        - desc
-        default: asc
-        required: false
-      - name: order
-        in: query
-        type: string
-        enum:
-        - id
-        - caller_id_name
-        - duration
-        - timestamp
-        default: timestamp
-        required: false
-      - name: limit
-        in: query
-        type: integer
-        required: false
-      - name: offset
-        in: query
-        type: integer
-        required: false
+      - $ref: '#/parameters/direction'
+      - $ref: '#/parameters/order'
+      - $ref: '#/parameters/limit'
+      - $ref: '#/parameters/offset'
       - name: voicemail_type
         in: query
-        description: Include or exclude messages from global mailboxes
+        description: Filter messages by voicemail accesstype
         type: string
         enum:
         - all
