@@ -1,4 +1,4 @@
-# Copyright 2016-2025 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from requests import HTTPError, RequestException
@@ -240,11 +240,9 @@ def get_user_voicemail(user_uuid, confd_client):
     return voicemail
 
 
-def get_global_voicemails(tenant_uuid, confd_client) -> list[dict]:
+def get_all_voicemails(confd_client, **kwargs) -> list[dict]:
     try:
-        response = confd_client.voicemails.list(
-            tenant_uuid=tenant_uuid, accesstype='global'
-        )
+        response = confd_client.voicemails.list(**kwargs)
         return response.get("items", [])
     except HTTPError as e:
         if not_found(e):
