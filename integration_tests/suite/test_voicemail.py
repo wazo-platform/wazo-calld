@@ -2085,6 +2085,24 @@ class TestVoicemails(RealAsteriskIntegrationTest):
             ),
         )
 
+    def test_admin_list_messages_filter_unknown_voicemail_id(self):
+        user_uuid = str(uuid.uuid4())
+        voicemail = MockVoicemail(
+            111,
+            '8000',
+            'voicemail',
+            'default',
+            tenant_uuid=VALID_TENANT_MULTITENANT_1,
+        )
+        self.confd.set_voicemails(voicemail)
+        calld = self.make_user_calld(user_uuid, tenant_uuid=VALID_TENANT_MULTITENANT_1)
+
+        result = calld.voicemails.list_voicemail_messages(voicemail_id=99999)
+        assert_that(
+            result,
+            has_entries(items=[], total=0, filtered=0),
+        )
+
     def test_admin_list_messages_filter_user_uuid(self):
         user_uuid = str(uuid.uuid4())
         voicemail_id_1 = 111

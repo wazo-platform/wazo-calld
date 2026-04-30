@@ -10,7 +10,7 @@ import requests
 from ari.exceptions import ARIHTTPError
 
 from wazo_calld.plugin_helpers import confd
-from wazo_calld.plugin_helpers.exceptions import NoSuchUserVoicemail
+from wazo_calld.plugin_helpers.exceptions import NoSuchUserVoicemail, NoSuchVoicemail
 
 from .exceptions import (
     InvalidVoicemailGreeting,
@@ -55,7 +55,10 @@ class VoicemailsService:
         client = self._confd_client
 
         if voicemail_id is not None:
-            return [confd.get_voicemail(tenant_uuid, voicemail_id, client)]
+            try:
+                return [confd.get_voicemail(tenant_uuid, voicemail_id, client)]
+            except NoSuchVoicemail:
+                return []
 
         if user_uuid is not None:
             vm_confs: list[dict] = []
