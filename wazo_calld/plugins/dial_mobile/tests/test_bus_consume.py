@@ -37,6 +37,7 @@ class TestEventHandler(TestCase):
             'WAZO_VIDEO_ENABLED': '0',
             'WAZO_RING_TIME': '42',
             'WAZO_TIMESTAMP': '2024-08-06T23:59:59+00:00',
+            'WAZO_PUSH_TRACE_UUID': 'some-trace-uuid',
             'ChanVariable': {
                 'CHANNEL(linkedid)': '1647612626.39',
                 'CHANNEL(videonativeformat)': '(nothing)',
@@ -72,6 +73,7 @@ class TestEventHandler(TestCase):
             '42',
             '1647612626.39',
             '2024-08-06T23:59:59+00:00',
+            'some-trace-uuid',
         )
 
     def test_cancel_push_on_dial_end(self):
