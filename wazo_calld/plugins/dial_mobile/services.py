@@ -1,4 +1,4 @@
-# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -8,15 +8,20 @@ import uuid
 from collections import namedtuple
 
 import requests
-from ari.exceptions import ARINotFound
+from ari.exceptions import ARINotFound, ARIServerError
+from requests import HTTPError, RequestException
 
 from wazo_calld.plugin_helpers.ari_ import Bridge
 
 logger = logging.getLogger(__name__)
 
 PendingPushMobile = namedtuple(
-    'PendingPushMobile', ['call_id', 'tenant_uuid', 'user_uuid', 'payload']
+    'PendingPushMobile',
+    ['call_id', 'tenant_uuid', 'user_uuid', 'origin_call_id', 'payload'],
 )
+
+PSTN_FALLBACK_MAX_TIMEOUT = 10.0
+PSTN_FALLBACK_RING_TIMEOUT_FACTOR = 0.5
 
 
 class _NoSuchChannel(Exception):
@@ -182,15 +187,20 @@ class _PollingContactDialer:
 
 
 class DialMobileService:
-    def __init__(self, ari, notifier, amid_client, auth_client):
+    def __init__(self, ari, notifier, amid_client, auth_client, confd_client):
         self._ari = ari.client
         self._auth_client = auth_client
         self._amid_client = amid_client
+        self._confd_client = confd_client
         self._contact_dialers = {}
         self._outgoing_calls = {}
         self._call_ring_time = {}
         self._pending_push_mobile = {}
         self._notifier = notifier
+        self._pstn_fallback_timers: dict[str, threading.Timer] = {}
+        self._origin_call_id_by_bridge_uuid: dict[str, str] = {}
+        self._bridge_uuid_by_origin_call_id: dict[str, str] = {}
+        self._call_id_by_origin_call_id: dict[str, str] = {}
 
     def find_bridge_by_exten_context(self, exten, context):
         pickup_mark = f'{exten}%{context}'
@@ -210,9 +220,14 @@ class DialMobileService:
             future_bridge_uuid,
         )
         ringing_time = self._call_ring_time.get(origin_channel_id, 30)
-        pickup_mark = self._ari.channels.getChannelVar(
-            channelId=caller_channel_id, variable=f'PJSIP_ENDPOINT({aor},PICKUPMARK)'
-        )['value']
+        try:
+            pickup_mark = self._ari.channels.getChannelVar(
+                channelId=caller_channel_id,
+                variable=f'PJSIP_ENDPOINT({aor},PICKUPMARK)',
+            )['value']
+        except ARIServerError as e:
+            logger.warning('PJSIP_ENDPOINT(%s,PICKUPMARK) lookup failed: %s', aor, e)
+            pickup_mark = ''
         dialer = _PollingContactDialer(
             self._ari,
             future_bridge_uuid,
@@ -223,10 +238,19 @@ class DialMobileService:
         )
         self._contact_dialers[future_bridge_uuid] = dialer
         self._outgoing_calls[future_bridge_uuid] = caller_channel_id
+        self._origin_call_id_by_bridge_uuid[future_bridge_uuid] = origin_channel_id
+        self._bridge_uuid_by_origin_call_id[origin_channel_id] = future_bridge_uuid
         dialer.start()
 
     def join_bridge(self, channel_id, future_bridge_uuid):
         logger.info('%s is joining bridge %s', channel_id, future_bridge_uuid)
+        # cancel pstn fallback timer
+        if origin_call_id := self._origin_call_id_by_bridge_uuid.get(
+            future_bridge_uuid
+        ):
+            if call_id := self._call_id_by_origin_call_id.get(origin_call_id):
+                if timer := self._pstn_fallback_timers.pop(call_id, None):
+                    timer.cancel()
         dialer = self._contact_dialers.pop(future_bridge_uuid, None)
         logger.debug('Removing dialer: %s', str(dialer))
         if not dialer:
@@ -273,6 +297,14 @@ class DialMobileService:
         bridge.addChannel(channel=channel_id, inhibitConnectedLineUpdates=True)
         bridge.addChannel(channel=outgoing_channel_id, inhibitConnectedLineUpdates=True)
 
+    def _call_id_for_bridge(self, bridge_uuid: str) -> str | None:
+        origin_call_id = self._origin_call_id_by_bridge_uuid.get(bridge_uuid)
+        return (
+            self._call_id_by_origin_call_id.get(origin_call_id)
+            if origin_call_id
+            else None
+        )
+
     def notify_channel_gone(self, channel_id):
         to_remove = set()
 
@@ -287,6 +319,8 @@ class DialMobileService:
         for key in to_remove:
             logger.debug('Removing dialer: %s', str(self._contact_dialers[key]))
             del self._contact_dialers[key]
+            if call_id := self._call_id_for_bridge(key):
+                self.cancel_push_mobile(call_id)
 
     def clean_bridge(self, bridge_id):
         bridge_helper = Bridge(bridge_id, self._ari)
@@ -363,14 +397,27 @@ class DialMobileService:
             call_id,
             tenant_uuid,
             user_uuid,
+            origin_call_id,
             payload,
         )
 
         self._call_ring_time[origin_call_id] = ring_timeout
+        self._call_id_by_origin_call_id[origin_call_id] = call_id
+
+        # setup timer to trigger PSTN fallback mechanism
+        fallback_timeout = max(
+            PSTN_FALLBACK_MAX_TIMEOUT,
+            PSTN_FALLBACK_RING_TIMEOUT_FACTOR * int(ring_timeout),
+        )
+        timer = threading.Timer(fallback_timeout, self._pstn_fallback, args=[call_id])
+        self._pstn_fallback_timers[call_id] = timer
+        timer.start()
 
         self._notifier.push_notification(payload, tenant_uuid, user_uuid)
 
     def cancel_push_mobile(self, call_id):
+        if timer := self._pstn_fallback_timers.pop(call_id, None):
+            timer.cancel()
         pending_push = self._pending_push_mobile.pop(call_id, None)
         if not pending_push:
             return
@@ -383,6 +430,90 @@ class DialMobileService:
 
     def remove_pending_push_mobile(self, call_id):
         self._pending_push_mobile.pop(call_id, None)
+
+    def _pstn_fallback(self, call_id: str) -> None:
+        # fallback call to user's mobile number over PSTN if mobile wake up push still pending
+        pending = self._pending_push_mobile.get(call_id)
+        if not pending:
+            logger.info(
+                "no pending push for call_id %s, aborting PSTN fallback", call_id
+            )
+            return
+
+        try:
+            user = self._confd_client.users.get(
+                pending.user_uuid, tenant_uuid=pending.tenant_uuid
+            )
+        except (HTTPError, RequestException) as e:
+            logger.error(
+                'PSTN fallback: cannot fetch user %s: %s', pending.user_uuid, e
+            )
+            return
+
+        if not user.get('mobile_fallback_enabled'):
+            logger.info(
+                'PSTN fallback: user %s has mobile fallback disabled, skipping',
+                pending.user_uuid,
+            )
+            return
+
+        mobile_phone_number = user.get('mobile_phone_number')
+        if not mobile_phone_number:
+            logger.info(
+                'PSTN fallback: user %s has no mobile_phone_number, skipping',
+                pending.user_uuid,
+            )
+            return
+
+        lines = user.get('lines', [])
+        if not lines:
+            logger.warning(
+                'PSTN fallback: user %s has no lines, skipping', pending.user_uuid
+            )
+            return
+
+        try:
+            line = self._confd_client.lines.get(
+                lines[0]['id'], tenant_uuid=pending.tenant_uuid
+            )
+        except (HTTPError, RequestException) as e:
+            logger.error(
+                'PSTN fallback: cannot fetch line for user %s: %s', pending.user_uuid, e
+            )
+            return
+
+        user_context = line['context']
+
+        future_bridge_uuid = self._bridge_uuid_by_origin_call_id.get(
+            pending.origin_call_id
+        )
+        if not future_bridge_uuid:
+            logger.warning(
+                'PSTN fallback: no bridge found for call %s, skipping', call_id
+            )
+            return
+
+        caller_channel_id = self._outgoing_calls.get(future_bridge_uuid)
+        caller_id = '"{name}" <{number}>'.format(
+            name=pending.payload['peer_caller_id_name'],
+            number=pending.payload['peer_caller_id_number'],
+        )
+
+        logger.info(
+            'PSTN fallback: originating Local/%s@%s for user %s (call %s)',
+            mobile_phone_number,
+            user_context,
+            pending.user_uuid,
+            call_id,
+        )
+        self.cancel_push_mobile(call_id)
+        self._ari.channels.originate(
+            endpoint=f'Local/{mobile_phone_number}@{user_context}',
+            app='dial_mobile',
+            appArgs=['join', future_bridge_uuid],
+            callerId=caller_id,
+            originator=caller_channel_id,
+        )
 
     def has_a_registered_mobile_and_pending_push(
         self, push_call_id, call_id, endpoint, user_uuid
