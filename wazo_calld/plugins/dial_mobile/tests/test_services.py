@@ -1,4 +1,4 @@
-# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from unittest import TestCase
@@ -11,7 +11,7 @@ from ari.exceptions import ARINotFound
 from hamcrest import assert_that, contains_exactly, empty, equal_to, has_items
 
 from ..notifier import Notifier
-from ..services import DialMobileService, _NoSuchChannel
+from ..services import DialMobileService, PendingPushMobile, _NoSuchChannel
 from ..services import _PollingContactDialer as PollingContactDialer
 
 
@@ -212,9 +212,14 @@ class DialMobileServiceTestCase(DialerTestCase):
         self.ari.client = self.ari_client = Mock()
         self.amid_client = Mock()
         self.auth_client = Mock()
+        self.confd_client = Mock()
         self.notifier = Mock(Notifier)
         self.service = DialMobileService(
-            self.ari, self.notifier, self.amid_client, self.auth_client
+            self.ari,
+            self.notifier,
+            self.amid_client,
+            self.auth_client,
+            self.confd_client,
         )
         self.channel_id = '1234567890.42'
         self.aor = 'foobar'
@@ -341,14 +346,20 @@ class TestCancelPushNotification(TestCase):
         self.notifier = Mock(Notifier)
         self.amid_client = Mock()
         self.auth_client = Mock()
+        self.confd_client = Mock()
         self.service = DialMobileService(
-            self.ari, self.notifier, self.amid_client, self.auth_client
+            self.ari,
+            self.notifier,
+            self.amid_client,
+            self.auth_client,
+            self.confd_client,
         )
 
     def test_that_nothing_happens_when_not_a_pending_push(self):
         self.service.cancel_push_mobile(s.call_id)
 
-    def test_that_original_payload_is_sent_when_canceling(self):
+    @patch('wazo_calld.plugins.dial_mobile.services.threading.Timer')
+    def test_that_original_payload_is_sent_when_canceling(self, _mock_timer):
         self.service.send_push_notification(
             s.tenant_uuid,
             s.user_uuid,
@@ -357,7 +368,7 @@ class TestCancelPushNotification(TestCase):
             s.cid_name,
             s.cid_num,
             s.video_enabled,
-            s.ring_timeout,
+            30,
             s.origin_call_id,
             s.push_mobile_timestamp,
         )
@@ -368,4 +379,115 @@ class TestCancelPushNotification(TestCase):
 
         self.notifier.cancel_push_notification.assert_called_once_with(
             payload, s.tenant_uuid, s.user_uuid
+        )
+
+
+class TestPSTNFallback(TestCase):
+    def setUp(self):
+        self.ari = Mock()
+        self.ari.client = self.ari_client = Mock()
+        self.notifier = Mock(Notifier)
+        self.amid_client = Mock()
+        self.auth_client = Mock()
+        self.confd_client = Mock()
+        self.service = DialMobileService(
+            self.ari,
+            self.notifier,
+            self.amid_client,
+            self.auth_client,
+            self.confd_client,
+        )
+
+    def _make_pending(self, call_id='call-id', origin_call_id='origin-id'):
+        return PendingPushMobile(
+            call_id=call_id,
+            tenant_uuid='tenant-uuid',
+            user_uuid='user-uuid',
+            origin_call_id=origin_call_id,
+            payload={
+                'peer_caller_id_name': 'Alice',
+                'peer_caller_id_number': '101',
+            },
+        )
+
+    @patch('wazo_calld.plugins.dial_mobile.services.threading.Timer')
+    def test_pstn_fallback_timer_starts_on_push_notification(self, mock_timer_cls):
+        self.service.send_push_notification(
+            tenant_uuid='t-uuid',
+            user_uuid='u-uuid',
+            call_id='call-id',
+            sip_call_id='sip-id',
+            caller_id_name='Alice',
+            caller_id_number='101',
+            video_enabled=False,
+            ring_timeout=30,
+            origin_call_id='origin-id',
+            push_mobile_timestamp='ts',
+        )
+
+        mock_timer_cls.assert_called_once_with(
+            15.0, self.service._pstn_fallback, args=['call-id']
+        )
+        mock_timer_cls.return_value.start.assert_called_once()
+        assert 'call-id' in self.service._pstn_fallback_timers
+
+    def test_pstn_fallback_timer_cancelled_on_cancel_push(self):
+        timer = Mock()
+        self.service._pstn_fallback_timers['call-id'] = timer
+        self.service._pending_push_mobile['call-id'] = self._make_pending()
+
+        self.service.cancel_push_mobile('call-id')
+
+        timer.cancel.assert_called_once()
+
+    def test_pstn_fallback_timer_cancelled_on_join_bridge(self):
+        timer = Mock()
+        self.service._pstn_fallback_timers['call-id'] = timer
+        self.service._call_id_by_origin_call_id['origin-id'] = 'call-id'
+        self.service._origin_call_id_by_bridge_uuid['bridge-uuid'] = 'origin-id'
+
+        dialer = Mock()
+        self.service._contact_dialers['bridge-uuid'] = dialer
+        self.service._outgoing_calls['bridge-uuid'] = 'caller-ch'
+
+        self.service.join_bridge('mobile-ch', 'bridge-uuid')
+
+        timer.cancel.assert_called_once()
+
+    def test_pstn_fallback_noop_when_no_pending_push(self):
+        self.service._pstn_fallback('nonexistent-call-id')
+
+        self.ari_client.channels.originate.assert_not_called()
+
+    def test_pstn_fallback_noop_when_no_mobile_number(self):
+        self.service._pending_push_mobile['call-id'] = self._make_pending()
+        self.service._bridge_uuid_by_origin_call_id['origin-id'] = 'bridge-uuid'
+        self.service._outgoing_calls['bridge-uuid'] = 'caller-ch'
+        self.confd_client.users.get.return_value = {
+            'mobile_phone_number': None,
+            'lines': [],
+        }
+
+        self.service._pstn_fallback('call-id')
+
+        self.ari_client.channels.originate.assert_not_called()
+
+    def test_pstn_fallback_originates_local_channel(self):
+        self.service._pending_push_mobile['call-id'] = self._make_pending()
+        self.service._bridge_uuid_by_origin_call_id['origin-id'] = 'bridge-uuid'
+        self.service._outgoing_calls['bridge-uuid'] = 'caller-ch'
+        self.confd_client.users.get.return_value = {
+            'mobile_phone_number': '+33123456789',
+            'lines': [{'id': 42}],
+        }
+        self.confd_client.lines.get.return_value = {'context': 'my-outbound-context'}
+
+        self.service._pstn_fallback('call-id')
+
+        self.ari_client.channels.originate.assert_called_once_with(
+            endpoint='Local/+33123456789@my-outbound-context',
+            app='dial_mobile',
+            appArgs=['join', 'bridge-uuid'],
+            callerId='"Alice" <101>',
+            originator='caller-ch',
         )

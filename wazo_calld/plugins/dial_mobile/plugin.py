@@ -1,10 +1,11 @@
-# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from __future__ import annotations
 
 from wazo_amid_client import Client as AmidClient
 from wazo_auth_client import Client as AuthClient
+from wazo_confd_client import Client as ConfdClient
 from xivo.pubsub import CallbackCollector
 
 from wazo_calld.types import PluginDependencies
@@ -30,8 +31,13 @@ class Plugin:
         auth_client = AuthClient(**config['auth'])
         token_changed_subscribe(auth_client.set_token)
 
+        confd_client = ConfdClient(**config['confd'])
+        token_changed_subscribe(confd_client.set_token)
+
         notifier = Notifier(bus_publisher)
-        service = DialMobileService(ari, notifier, amid_client, auth_client)
+        service = DialMobileService(
+            ari, notifier, amid_client, auth_client, confd_client
+        )
         stasis = DialMobileStasis(ari, service)
         event_handler = EventHandler(service)
 
