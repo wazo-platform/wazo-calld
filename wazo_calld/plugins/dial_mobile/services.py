@@ -297,6 +297,14 @@ class DialMobileService:
         bridge.addChannel(channel=channel_id, inhibitConnectedLineUpdates=True)
         bridge.addChannel(channel=outgoing_channel_id, inhibitConnectedLineUpdates=True)
 
+    def _call_id_for_bridge(self, bridge_uuid: str) -> str | None:
+        origin_call_id = self._origin_call_id_by_bridge_uuid.get(bridge_uuid)
+        return (
+            self._call_id_by_origin_call_id.get(origin_call_id)
+            if origin_call_id
+            else None
+        )
+
     def notify_channel_gone(self, channel_id):
         to_remove = set()
 
@@ -311,6 +319,8 @@ class DialMobileService:
         for key in to_remove:
             logger.debug('Removing dialer: %s', str(self._contact_dialers[key]))
             del self._contact_dialers[key]
+            if call_id := self._call_id_for_bridge(key):
+                self.cancel_push_mobile(call_id)
 
     def clean_bridge(self, bridge_id):
         bridge_helper = Bridge(bridge_id, self._ari)
