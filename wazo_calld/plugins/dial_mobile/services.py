@@ -8,7 +8,7 @@ import uuid
 from collections import namedtuple
 
 import requests
-from ari.exceptions import ARINotFound
+from ari.exceptions import ARINotFound, ARIServerError
 from requests import HTTPError, RequestException
 
 from wazo_calld.plugin_helpers.ari_ import Bridge
@@ -220,9 +220,14 @@ class DialMobileService:
             future_bridge_uuid,
         )
         ringing_time = self._call_ring_time.get(origin_channel_id, 30)
-        pickup_mark = self._ari.channels.getChannelVar(
-            channelId=caller_channel_id, variable=f'PJSIP_ENDPOINT({aor},PICKUPMARK)'
-        )['value']
+        try:
+            pickup_mark = self._ari.channels.getChannelVar(
+                channelId=caller_channel_id,
+                variable=f'PJSIP_ENDPOINT({aor},PICKUPMARK)',
+            )['value']
+        except ARIServerError as e:
+            logger.warning('PJSIP_ENDPOINT(%s,PICKUPMARK) lookup failed: %s', aor, e)
+            pickup_mark = ''
         dialer = _PollingContactDialer(
             self._ari,
             future_bridge_uuid,
