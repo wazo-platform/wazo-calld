@@ -459,11 +459,24 @@ class TestPSTNFallback(TestCase):
 
         self.ari_client.channels.originate.assert_not_called()
 
+    def test_pstn_fallback_noop_when_fallback_disabled(self):
+        self.service._pending_push_mobile['call-id'] = self._make_pending()
+        self.confd_client.users.get.return_value = {
+            'mobile_fallback_enabled': False,
+            'mobile_phone_number': '+33123456789',
+            'lines': [{'id': 42}],
+        }
+
+        self.service._pstn_fallback('call-id')
+
+        self.ari_client.channels.originate.assert_not_called()
+
     def test_pstn_fallback_noop_when_no_mobile_number(self):
         self.service._pending_push_mobile['call-id'] = self._make_pending()
         self.service._bridge_uuid_by_origin_call_id['origin-id'] = 'bridge-uuid'
         self.service._outgoing_calls['bridge-uuid'] = 'caller-ch'
         self.confd_client.users.get.return_value = {
+            'mobile_fallback_enabled': True,
             'mobile_phone_number': None,
             'lines': [],
         }
@@ -477,6 +490,7 @@ class TestPSTNFallback(TestCase):
         self.service._bridge_uuid_by_origin_call_id['origin-id'] = 'bridge-uuid'
         self.service._outgoing_calls['bridge-uuid'] = 'caller-ch'
         self.confd_client.users.get.return_value = {
+            'mobile_fallback_enabled': True,
             'mobile_phone_number': '+33123456789',
             'lines': [{'id': 42}],
         }

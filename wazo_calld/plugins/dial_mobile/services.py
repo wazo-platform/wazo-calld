@@ -440,9 +440,6 @@ class DialMobileService:
             )
             return
 
-        # TODO: check user['mobile_fallback_enabled'] once DB column + confd field exist
-        # Hardcoded True for E2E testing without DB migration
-
         try:
             user = self._confd_client.users.get(
                 pending.user_uuid, tenant_uuid=pending.tenant_uuid
@@ -450,6 +447,13 @@ class DialMobileService:
         except (HTTPError, RequestException) as e:
             logger.error(
                 'PSTN fallback: cannot fetch user %s: %s', pending.user_uuid, e
+            )
+            return
+
+        if not user.get('mobile_fallback_enabled'):
+            logger.info(
+                'PSTN fallback: user %s has mobile fallback disabled, skipping',
+                pending.user_uuid,
             )
             return
 
