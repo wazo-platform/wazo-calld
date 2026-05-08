@@ -506,3 +506,21 @@ class TestPSTNFallback(TestCase):
             originator='caller-ch',
             variables={'variables': {'_WAZO_TENANT_UUID': 'tenant-uuid'}},
         )
+
+    def test_pstn_fallback_noop_when_caller_channel_gone(self):
+        self.service._pending_push_mobile['call-id'] = self._make_pending()
+        self.service._bridge_uuid_by_origin_call_id['origin-id'] = 'bridge-uuid'
+        self.service._outgoing_calls['bridge-uuid'] = 'caller-ch'
+        self.confd_client.users.get.return_value = {
+            'mobile_fallback_enabled': True,
+            'mobile_phone_number': '+33123456789',
+            'lines': [{'id': 42}],
+        }
+        self.confd_client.lines.get.return_value = {'context': 'my-outbound-context'}
+        self.ari_client.channels.get.side_effect = ARINotFound(
+            s.ari_client, s.original_error
+        )
+
+        self.service._pstn_fallback('call-id')
+
+        self.ari_client.channels.originate.assert_not_called()

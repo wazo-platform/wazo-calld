@@ -494,6 +494,16 @@ class DialMobileService:
             return
 
         caller_channel_id = self._outgoing_calls.get(future_bridge_uuid)
+        try:
+            self._ari.channels.get(channelId=caller_channel_id)
+        except ARINotFound:
+            logger.info(
+                'PSTN fallback: caller channel %s already gone for call %s, skipping',
+                caller_channel_id,
+                call_id,
+            )
+            return
+
         caller_id = '"{name}" <{number}>'.format(
             name=pending.payload['peer_caller_id_name'],
             number=pending.payload['peer_caller_id_number'],
