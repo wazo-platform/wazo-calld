@@ -513,6 +513,7 @@ class DialMobileService:
             appArgs=['join', future_bridge_uuid],
             callerId=caller_id,
             originator=caller_channel_id,
+            variables={'variables': {'_WAZO_TENANT_UUID': pending.tenant_uuid}},
         )
 
     def has_a_registered_mobile_and_pending_push(

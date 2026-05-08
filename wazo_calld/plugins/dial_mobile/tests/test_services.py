@@ -504,4 +504,5 @@ class TestPSTNFallback(TestCase):
             appArgs=['join', 'bridge-uuid'],
             callerId='"Alice" <101>',
             originator='caller-ch',
+            variables={'variables': {'_WAZO_TENANT_UUID': 'tenant-uuid'}},
         )
