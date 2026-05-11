@@ -164,8 +164,10 @@ class _PollingContactDialer:
                 )
                 break
 
+            self.logger.debug('woke up for new contacts')
             self._dial_current_contacts(channel_id, aor, caller_id)
 
+        self.logger.debug('Interrupted run loop')
         self._remove_unanswered_channels()
 
     def _dial_current_contacts(self, channel_id, aor, caller_id):
@@ -329,6 +331,7 @@ class DialMobileService:
         dialer.start()
 
     def notify_contact_available(self, aor: str) -> None:
+        logger.debug('new contact available for monitored aor %s', aor)
         for dialer in self._dialers_by_aor.get(aor, set()):
             dialer.kick()
 
