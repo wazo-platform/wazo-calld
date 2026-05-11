@@ -360,7 +360,7 @@ class DialMobileServiceTestCase(DialerTestCase):
 
         with patch.object(self.service, 'cancel_push_mobile') as push_cancel:
             self.service.join_bridge(s.channel_id, s.bridge_uuid)
-            push_cancel.assert_called_once_with(s.call_id)
+            push_cancel.assert_not_called()
 
         self.ari_client.channels.hangup.assert_called_once_with(channelId=s.channel_id)
 

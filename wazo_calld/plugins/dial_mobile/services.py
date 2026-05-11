@@ -297,6 +297,7 @@ class DialMobileService:
         logger.info('%s is joining bridge %s', channel_id, future_bridge_uuid)
         call_id = self._call_id_for_bridge(future_bridge_uuid)
         if call_id:
+            logger.debug('cancelling pstn fallback timer for call %s', call_id)
             self._cancel_pstn_timer(call_id)
         dialer = self._contact_dialers.pop(future_bridge_uuid, None)
         logger.debug('Removing dialer: %s', str(dialer))
@@ -306,8 +307,6 @@ class DialMobileService:
             except ARINotFound:
                 # If its already gone do nothing
                 pass
-            if call_id:
-                self.cancel_push_mobile(call_id)
             return
 
         dialer.stop()
