@@ -480,25 +480,70 @@ class TestPSTNFallback(TestCase):
             },
         )
 
+    def _send_push(self, **overrides):
+        kwargs = {
+            'tenant_uuid': 't-uuid',
+            'user_uuid': 'u-uuid',
+            'call_id': 'call-id',
+            'sip_call_id': 'sip-id',
+            'caller_id_name': 'Alice',
+            'caller_id_number': '101',
+            'video_enabled': False,
+            'ring_timeout': 30,
+            'origin_call_id': 'origin-id',
+            'push_mobile_timestamp': 'ts',
+        }
+        kwargs.update(overrides)
+        self.service.send_push_notification(**kwargs)
+
     @patch('wazo_calld.plugins.dial_mobile.services.threading.Timer')
     def test_pstn_fallback_timer_starts_on_push_notification(self, mock_timer_cls):
-        self.service.send_push_notification(
-            tenant_uuid='t-uuid',
-            user_uuid='u-uuid',
-            call_id='call-id',
-            sip_call_id='sip-id',
-            caller_id_name='Alice',
-            caller_id_number='101',
-            video_enabled=False,
-            ring_timeout=30,
-            origin_call_id='origin-id',
-            push_mobile_timestamp='ts',
-        )
+        self.confd_client.users.get.return_value = {
+            'mobile_fallback_enabled': True,
+            'mobile_phone_number': '+33123456789',
+        }
+
+        self._send_push()
 
         mock_timer_cls.assert_called_once_with(
             15.0, self.service._pstn_fallback, args=['call-id']
         )
         mock_timer_cls.return_value.start.assert_called_once()
+        assert 'call-id' in self.service._pstn_fallback_timers
+
+    @patch('wazo_calld.plugins.dial_mobile.services.threading.Timer')
+    def test_pstn_fallback_timer_skipped_when_disabled(self, mock_timer_cls):
+        self.confd_client.users.get.return_value = {
+            'mobile_fallback_enabled': False,
+            'mobile_phone_number': '+33123456789',
+        }
+
+        self._send_push()
+
+        mock_timer_cls.assert_not_called()
+        assert 'call-id' not in self.service._pstn_fallback_timers
+
+    @patch('wazo_calld.plugins.dial_mobile.services.threading.Timer')
+    def test_pstn_fallback_timer_skipped_when_no_mobile_number(self, mock_timer_cls):
+        self.confd_client.users.get.return_value = {
+            'mobile_fallback_enabled': True,
+            'mobile_phone_number': None,
+        }
+
+        self._send_push()
+
+        mock_timer_cls.assert_not_called()
+        assert 'call-id' not in self.service._pstn_fallback_timers
+
+    @patch('wazo_calld.plugins.dial_mobile.services.threading.Timer')
+    def test_pstn_fallback_timer_armed_on_confd_error(self, mock_timer_cls):
+        # If we can't determine eligibility, preserve the existing behavior:
+        # arm the timer and let _pstn_fallback handle the re-check.
+        self.confd_client.users.get.side_effect = requests.HTTPError()
+
+        self._send_push()
+
+        mock_timer_cls.assert_called_once()
         assert 'call-id' in self.service._pstn_fallback_timers
 
     def test_cancel_push_does_not_touch_pstn_timer(self):
@@ -741,6 +786,132 @@ class TestPSTNFallback(TestCase):
         dialer._send_contact_to_current_call('sip:contact', bridge_uuid, 'caller-id')
 
         timer.cancel.assert_called_once()
+
+    def test_pstn_fallback_aborts_when_cancelled_before_run(self):
+        # Cancellation arrived between timer firing and the callback executing.
+        self.service._pstn_fallback_cancelled.add('call-id')
+        self.service._incoming_calls['call-id'] = self._make_notified()
+
+        self.service._pstn_fallback('call-id')
+
+        self.ari_client.channels.originate.assert_not_called()
+        # Flag is cleaned up so the set doesn't grow forever.
+        assert 'call-id' not in self.service._pstn_fallback_cancelled
+
+    def test_pstn_fallback_aborts_when_cancelled_during_confd(self):
+        # Mobile registers (cancellation arrives) while we're still doing
+        # the confd lookups inside _pstn_fallback. We must abort before
+        # cancelling the push and before originating.
+        self.service._incoming_calls['call-id'] = self._make_notified()
+
+        def confd_side_effect(*args, **kwargs):
+            self.service._pstn_fallback_cancelled.add('call-id')
+            return {
+                'mobile_fallback_enabled': True,
+                'mobile_phone_number': '+33123456789',
+                'lines': [{'id': 42}],
+            }
+
+        self.confd_client.users.get.side_effect = confd_side_effect
+
+        with patch.object(self.service, 'cancel_push_mobile') as cancel_push:
+            self.service._pstn_fallback('call-id')
+
+        cancel_push.assert_not_called()
+        self.ari_client.channels.originate.assert_not_called()
+
+    def test_pstn_fallback_hangs_up_channel_if_cancelled_during_originate(self):
+        # Cancellation arrives between the confd lookups and the originate.
+        # Once originate returns, we must hang up the just-created channel
+        # and not record it in _pstn_fallback_channels.
+        self.service._incoming_calls['call-id'] = self._make_notified()
+        self.service._bridge_uuid_by_origin_call_id['origin-id'] = 'bridge-uuid'
+        self.service._outgoing_calls['bridge-uuid'] = 'caller-ch'
+        self.confd_client.users.get.return_value = {
+            'mobile_fallback_enabled': True,
+            'mobile_phone_number': '+33123456789',
+            'lines': [{'id': 42}],
+        }
+        self.confd_client.lines.get.return_value = {'context': 'my-outbound-context'}
+
+        originated = Mock()
+        originated.id = 'pstn-channel-id'
+
+        def originate_side_effect(*args, **kwargs):
+            self.service._pstn_fallback_cancelled.add('call-id')
+            return originated
+
+        self.ari_client.channels.originate.side_effect = originate_side_effect
+
+        self.service._pstn_fallback('call-id')
+
+        self.ari_client.channels.hangup.assert_called_with(channelId='pstn-channel-id')
+        assert 'call-id' not in self.service._pstn_fallback_channels
+
+    def test_join_bridge_prunes_call_state(self):
+        # Successful bridge creation should clean up per-call mapping dicts
+        # so they don't grow unbounded.
+        self.service._call_id_by_origin_call_id['origin-id'] = 'call-id'
+        self.service._origin_call_id_by_bridge_uuid['bridge-uuid'] = 'origin-id'
+        self.service._bridge_uuid_by_origin_call_id['origin-id'] = 'bridge-uuid'
+        self.service._call_ring_time['origin-id'] = 30
+        dialer = Mock()
+        self.service._contact_dialers['bridge-uuid'] = dialer
+        self.service._outgoing_calls['bridge-uuid'] = 'caller-ch'
+
+        self.service.join_bridge('mobile-ch', 'bridge-uuid')
+
+        assert 'bridge-uuid' not in self.service._origin_call_id_by_bridge_uuid
+        assert 'origin-id' not in self.service._bridge_uuid_by_origin_call_id
+        assert 'origin-id' not in self.service._call_id_by_origin_call_id
+        assert 'origin-id' not in self.service._call_ring_time
+        assert 'bridge-uuid' not in self.service._outgoing_calls
+
+    def test_notify_channel_gone_prunes_call_state(self):
+        caller_channel_id = '1234567890.42'
+        dialed_channel_id = '1234567890.99'
+
+        self.ari.client.channels.getChannelVar.return_value = {'value': 'pickupmark'}
+        self.ari.client.channels.get.return_value = Mock(
+            json={'caller': {'name': 'Test', 'number': '1001'}}
+        )
+
+        self.service.dial_all_contacts(caller_channel_id, 'origin-id', 'aor')
+        bridge_uuid = next(iter(self.service._contact_dialers))
+        assert 'origin-id' in self.service._bridge_uuid_by_origin_call_id
+
+        dialer = self.service._contact_dialers[bridge_uuid]
+        mock_dialed_channel = Mock()
+        mock_dialed_channel.id = dialed_channel_id
+        dialer._dialed_channels.add(mock_dialed_channel)
+        dialer.stop()
+
+        self.service.notify_channel_gone(dialed_channel_id)
+
+        assert bridge_uuid not in self.service._origin_call_id_by_bridge_uuid
+        assert 'origin-id' not in self.service._bridge_uuid_by_origin_call_id
+        assert 'origin-id' not in self.service._call_id_by_origin_call_id
+        assert 'origin-id' not in self.service._call_ring_time
+        assert bridge_uuid not in self.service._outgoing_calls
+
+    def test_on_calld_stopping_cancels_pstn_timers(self):
+        timer_a = Mock()
+        timer_b = Mock()
+        self.service._pstn_fallback_timers['call-a'] = timer_a
+        self.service._pstn_fallback_timers['call-b'] = timer_b
+
+        self.service.on_calld_stopping()
+
+        timer_a.cancel.assert_called_once()
+        timer_b.cancel.assert_called_once()
+        assert self.service._pstn_fallback_timers == {}
+
+    def test_cancel_pstn_fallback_marks_cancelled(self):
+        # Even when no timer/channel is recorded yet, _cancel_pstn_fallback
+        # must flag the call so a racing _pstn_fallback can abort.
+        self.service._cancel_pstn_fallback('call-id')
+
+        assert 'call-id' in self.service._pstn_fallback_cancelled
 
     def test_pstn_fallback_noop_when_caller_channel_gone(self):
         self.service._incoming_calls['call-id'] = self._make_notified()
