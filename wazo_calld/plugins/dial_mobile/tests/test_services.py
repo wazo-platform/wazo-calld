@@ -316,10 +316,46 @@ class DialMobileServiceTestCase(DialerTestCase):
         )
         assert_that(self.service._contact_dialers, equal_to({}))
 
+    def test_notify_channel_gone_cancels_pstn_timer(self):
+        caller_channel_id = '1234567890.42'
+        dialed_channel_id = '1234567890.99'
+
+        self.ari.client.channels.getChannelVar.return_value = {'value': 'pickupmark'}
+        self.ari.client.channels.get.return_value = Mock(
+            json={'caller': {'name': 'Test', 'number': '1001'}}
+        )
+
+        self.service.dial_all_contacts(
+            caller_channel_id, self.origin_channel_id, self.aor
+        )
+
+        bridge_uuid = next(iter(self.service._contact_dialers))
+        dialer = self.service._contact_dialers[bridge_uuid]
+        mock_dialed_channel = Mock()
+        mock_dialed_channel.id = dialed_channel_id
+        dialer._dialed_channels.add(mock_dialed_channel)
+        dialer.should_stop.set()
+        dialer._thread.join()
+
+        # wire up call_id mapping and PSTN timer
+        self.service._call_id_by_origin_call_id[self.origin_channel_id] = 'call-id'
+        timer = Mock()
+        self.service._pstn_fallback_timers['call-id'] = timer
+
+        # mock cancel_push_mobile so it does NOT cancel the timer — proves
+        # notify_channel_gone cancels it independently
+        with patch.object(self.service, 'cancel_push_mobile'):
+            self.service.notify_channel_gone(dialed_channel_id)
+
+        timer.cancel.assert_called_once()
+
     def test_join_bridge_unknown_future_bridge_will_hangup(self):
+        self.service._origin_call_id_by_bridge_uuid[s.bridge_uuid] = s.origin_call_id
+        self.service._call_id_by_origin_call_id[s.origin_call_id] = s.call_id
+
         with patch.object(self.service, 'cancel_push_mobile') as push_cancel:
             self.service.join_bridge(s.channel_id, s.bridge_uuid)
-            push_cancel.assert_called_once_with(s.channel_id)
+            push_cancel.assert_called_once_with(s.call_id)
 
         self.ari_client.channels.hangup.assert_called_once_with(channelId=s.channel_id)
 
@@ -327,13 +363,15 @@ class DialMobileServiceTestCase(DialerTestCase):
         dialer = Mock()
         self.service._contact_dialers = {s.bridge_uuid: dialer}
         self.service._outgoing_calls = {s.bridge_uuid: s.caller_channel}
+        self.service._origin_call_id_by_bridge_uuid[s.bridge_uuid] = s.origin_call_id
+        self.service._call_id_by_origin_call_id[s.origin_call_id] = s.call_id
         self.ari_client.channels.answer.side_effect = ARINotFound(
             self.ari_client, s.error
         )
 
         with patch.object(self.service, 'cancel_push_mobile') as push_cancel:
             self.service.join_bridge(s.channel_id, s.bridge_uuid)
-            push_cancel.assert_called_once_with(s.channel_id)
+            push_cancel.assert_called_once_with(s.call_id)
 
         dialer.stop.assert_called_once_with()
 
@@ -431,14 +469,15 @@ class TestPSTNFallback(TestCase):
         mock_timer_cls.return_value.start.assert_called_once()
         assert 'call-id' in self.service._pstn_fallback_timers
 
-    def test_pstn_fallback_timer_cancelled_on_cancel_push(self):
+    def test_cancel_push_does_not_touch_pstn_timer(self):
         timer = Mock()
         self.service._pstn_fallback_timers['call-id'] = timer
         self.service._pending_push_mobile['call-id'] = self._make_pending()
 
         self.service.cancel_push_mobile('call-id')
 
-        timer.cancel.assert_called_once()
+        timer.cancel.assert_not_called()
+        assert 'call-id' in self.service._pstn_fallback_timers
 
     def test_pstn_fallback_timer_cancelled_on_join_bridge(self):
         timer = Mock()

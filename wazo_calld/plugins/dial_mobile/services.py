@@ -244,13 +244,9 @@ class DialMobileService:
 
     def join_bridge(self, channel_id, future_bridge_uuid):
         logger.info('%s is joining bridge %s', channel_id, future_bridge_uuid)
-        # cancel pstn fallback timer
-        if origin_call_id := self._origin_call_id_by_bridge_uuid.get(
-            future_bridge_uuid
-        ):
-            if call_id := self._call_id_by_origin_call_id.get(origin_call_id):
-                if timer := self._pstn_fallback_timers.pop(call_id, None):
-                    timer.cancel()
+        call_id = self._call_id_for_bridge(future_bridge_uuid)
+        if call_id:
+            self._cancel_pstn_timer(call_id)
         dialer = self._contact_dialers.pop(future_bridge_uuid, None)
         logger.debug('Removing dialer: %s', str(dialer))
         if not dialer:
@@ -259,7 +255,8 @@ class DialMobileService:
             except ARINotFound:
                 # If its already gone do nothing
                 pass
-            self.cancel_push_mobile(channel_id)
+            if call_id:
+                self.cancel_push_mobile(call_id)
             return
 
         dialer.stop()
@@ -276,7 +273,8 @@ class DialMobileService:
             except ARINotFound:
                 # If its already gone do nothing
                 pass
-            self.cancel_push_mobile(channel_id)
+            if call_id:
+                self.cancel_push_mobile(call_id)
             return
 
         try:
@@ -306,7 +304,7 @@ class DialMobileService:
         )
 
     def notify_channel_gone(self, channel_id):
-        to_remove = set()
+        to_remove: list[tuple[str, bool]] = []
 
         for key, dialer in self._contact_dialers.items():
             try:
@@ -314,12 +312,25 @@ class DialMobileService:
             except _NoSuchChannel:
                 continue
             else:
-                to_remove.add(key)
+                is_caller_gone = channel_id == dialer._caller_channel_id
+                to_remove.append((key, is_caller_gone))
 
-        for key in to_remove:
+        for key, is_caller_gone in to_remove:
             logger.debug('Removing dialer: %s', str(self._contact_dialers[key]))
             del self._contact_dialers[key]
             if call_id := self._call_id_for_bridge(key):
+                if is_caller_gone:
+                    logger.debug(
+                        'Caller channel gone for call %s: cancelling PSTN timer',
+                        call_id,
+                    )
+                else:
+                    logger.debug(
+                        'Dialed mobile contact gone for call %s: '
+                        'mobile was reachable, cancelling PSTN timer',
+                        call_id,
+                    )
+                self._cancel_pstn_timer(call_id)
                 self.cancel_push_mobile(call_id)
 
     def clean_bridge(self, bridge_id):
@@ -415,9 +426,11 @@ class DialMobileService:
 
         self._notifier.push_notification(payload, tenant_uuid, user_uuid)
 
-    def cancel_push_mobile(self, call_id):
+    def _cancel_pstn_timer(self, call_id: str) -> None:
         if timer := self._pstn_fallback_timers.pop(call_id, None):
             timer.cancel()
+
+    def cancel_push_mobile(self, call_id: str) -> None:
         pending_push = self._pending_push_mobile.pop(call_id, None)
         if not pending_push:
             return
@@ -433,6 +446,7 @@ class DialMobileService:
 
     def _pstn_fallback(self, call_id: str) -> None:
         # fallback call to user's mobile number over PSTN if mobile wake up push still pending
+        self._pstn_fallback_timers.pop(call_id, None)  # timer fired; remove stale ref
         pending = self._pending_push_mobile.get(call_id)
         if not pending:
             logger.info(
