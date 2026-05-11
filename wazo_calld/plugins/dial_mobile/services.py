@@ -3,7 +3,6 @@
 
 import logging
 import threading
-import time
 import uuid
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -106,6 +105,7 @@ class _PollingContactDialer:
         self._ringing_time = ringing_time
         self.pickup_mark = pickup_mark
         self._on_contact_dialed = on_contact_dialed
+        self._wakeup = threading.Event()
 
         dialer_id = str(self)
 
@@ -128,8 +128,13 @@ class _PollingContactDialer:
 
         self.logger.debug('Stopping')
         self.should_stop.set()
+        self._wakeup.set()
         self._thread.join()
         self.logger.debug('Stopped')
+
+    def kick(self) -> None:
+        """Wake the run loop to re-check contacts."""
+        self._wakeup.set()
 
     def _run_no_exception(self, *args, **kwargs):
         try:
@@ -141,15 +146,15 @@ class _PollingContactDialer:
         channel = self._ari.channels.get(channelId=channel_id)
         caller_id = '"{name}" <{number}>'.format(**channel.json['caller'])
 
-        while True:
-            contacts = self._get_contacts(channel_id, aor)
-            for contact in contacts:
-                if self.should_stop.is_set():
-                    break
+        # Initial check: contact may already be registered when the call lands.
+        self._dial_current_contacts(channel_id, aor, caller_id)
 
-                self._send_contact_to_current_call(
-                    contact, self.future_bridge_uuid, caller_id
-                )
+        while not self.should_stop.is_set():
+            self._wakeup.wait()
+            self._wakeup.clear()
+
+            if self.should_stop.is_set():
+                break
 
             if not self._channel_is_up(channel_id):
                 self.logger.debug(
@@ -157,15 +162,19 @@ class _PollingContactDialer:
                     channel_id,
                     self._thread.name,
                 )
-                self.should_stop.set()
                 break
 
-            if self.should_stop.is_set():
-                break
-
-            time.sleep(0.25)
+            self._dial_current_contacts(channel_id, aor, caller_id)
 
         self._remove_unanswered_channels()
+
+    def _dial_current_contacts(self, channel_id, aor, caller_id):
+        for contact in self._get_contacts(channel_id, aor):
+            if self.should_stop.is_set():
+                break
+            self._send_contact_to_current_call(
+                contact, self.future_bridge_uuid, caller_id
+            )
 
     def _channel_is_up(self, channel_id):
         try:
@@ -255,6 +264,7 @@ class DialMobileService:
         self._amid_client = amid_client
         self._confd_client = confd_client
         self._contact_dialers = {}
+        self._dialers_by_aor: dict[str, set[_PollingContactDialer]] = {}
         self._outgoing_calls = {}
         self._call_ring_time = {}
         self._incoming_calls: dict[str, IncomingCall] = {}
@@ -312,10 +322,21 @@ class DialMobileService:
             on_contact_dialed=_on_contact_dialed,
         )
         self._contact_dialers[future_bridge_uuid] = dialer
+        self._dialers_by_aor.setdefault(aor, set()).add(dialer)
         self._outgoing_calls[future_bridge_uuid] = caller_channel_id
         self._origin_call_id_by_bridge_uuid[future_bridge_uuid] = origin_channel_id
         self._bridge_uuid_by_origin_call_id[origin_channel_id] = future_bridge_uuid
         dialer.start()
+
+    def notify_contact_available(self, aor: str) -> None:
+        for dialer in self._dialers_by_aor.get(aor, set()):
+            dialer.kick()
+
+    def _unregister_dialer_by_aor(self, dialer: _PollingContactDialer) -> None:
+        for aor, dialers in list(self._dialers_by_aor.items()):
+            dialers.discard(dialer)
+            if not dialers:
+                self._dialers_by_aor.pop(aor, None)
 
     def join_bridge(self, channel_id, future_bridge_uuid):
         logger.info('%s is joining bridge %s', channel_id, future_bridge_uuid)
@@ -335,6 +356,8 @@ class DialMobileService:
                 self._cancel_pstn_fallback(call_id)
 
         dialer = self._contact_dialers.pop(future_bridge_uuid, None)
+        if dialer is not None:
+            self._unregister_dialer_by_aor(dialer)
         logger.debug('Removing dialer: %s', str(dialer))
         if not dialer:
             # No active dialer means the call was already cancelled or answered;
@@ -430,8 +453,10 @@ class DialMobileService:
                 to_remove.append((key, is_caller_gone))
 
         for key, is_caller_gone in to_remove:
-            logger.debug('Removing dialer: %s', str(self._contact_dialers[key]))
+            dialer = self._contact_dialers[key]
+            logger.debug('Removing dialer: %s', str(dialer))
             del self._contact_dialers[key]
+            self._unregister_dialer_by_aor(dialer)
             if call_id := self._call_id_for_bridge(key):
                 if is_caller_gone:
                     logger.debug(

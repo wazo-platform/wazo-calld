@@ -311,8 +311,7 @@ class DialMobileServiceTestCase(DialerTestCase):
         mock_dialed_channel = Mock()
         mock_dialed_channel.id = dialed_channel_id
         dialer._dialed_channels.add(mock_dialed_channel)
-        dialer.should_stop.set()
-        dialer._thread.join()
+        dialer.stop()
 
         self.service.notify_channel_gone(dialed_channel_id)
 
@@ -339,8 +338,7 @@ class DialMobileServiceTestCase(DialerTestCase):
         mock_dialed_channel = Mock()
         mock_dialed_channel.id = dialed_channel_id
         dialer._dialed_channels.add(mock_dialed_channel)
-        dialer.should_stop.set()
-        dialer._thread.join()
+        dialer.stop()
 
         # wire up call_id mapping and PSTN timer
         self.service._call_id_by_origin_call_id[self.origin_channel_id] = 'call-id'
@@ -587,6 +585,38 @@ class TestPSTNFallback(TestCase):
             variables={'variables': {'_WAZO_TENANT_UUID': 'tenant-uuid'}},
         )
 
+    def test_notify_contact_available_kicks_matching_dialers(self):
+        dialer_a = Mock()
+        dialer_b = Mock()
+        dialer_other = Mock()
+        self.service._dialers_by_aor = {
+            'aor-a': {dialer_a, dialer_b},
+            'aor-b': {dialer_other},
+        }
+
+        self.service.notify_contact_available('aor-a')
+
+        dialer_a.kick.assert_called_once_with()
+        dialer_b.kick.assert_called_once_with()
+        dialer_other.kick.assert_not_called()
+
+    def test_notify_contact_available_unknown_aor_is_noop(self):
+        self.service.notify_contact_available('unknown-aor')
+
+    def test_dial_all_contacts_registers_dialer_by_aor(self):
+        self.ari.client.channels.getChannelVar.return_value = {'value': 'pickupmark'}
+        self.ari.client.channels.get.return_value = Mock(
+            json={'caller': {'name': 'Test', 'number': '1001'}}
+        )
+
+        self.service.dial_all_contacts('caller-ch', 'origin-id', 'my-aor')
+
+        bridge_uuid = next(iter(self.service._contact_dialers))
+        dialer = self.service._contact_dialers[bridge_uuid]
+        assert dialer in self.service._dialers_by_aor['my-aor']
+        # Cleanup
+        dialer.stop()
+
     def test_pstn_fallback_records_originated_channel_id(self):
         self.service._incoming_calls['call-id'] = self._make_notified()
         self.service._bridge_uuid_by_origin_call_id['origin-id'] = 'bridge-uuid'
@@ -683,8 +713,7 @@ class TestPSTNFallback(TestCase):
         self.service.dial_all_contacts(caller_channel_id, 'origin-id', 'aor')
         bridge_uuid = next(iter(self.service._contact_dialers))
         dialer = self.service._contact_dialers[bridge_uuid]
-        dialer.should_stop.set()
-        dialer._thread.join()
+        dialer.stop()
 
         with patch.object(self.service, 'cancel_push_mobile'):
             self.service.notify_channel_gone(caller_channel_id)
@@ -706,8 +735,7 @@ class TestPSTNFallback(TestCase):
 
         bridge_uuid = next(iter(self.service._contact_dialers))
         dialer = self.service._contact_dialers[bridge_uuid]
-        dialer.should_stop.set()
-        dialer._thread.join()
+        dialer.stop()
 
         # Simulate the polling thread finding a contact and dialing it.
         dialer._send_contact_to_current_call('sip:contact', bridge_uuid, 'caller-id')

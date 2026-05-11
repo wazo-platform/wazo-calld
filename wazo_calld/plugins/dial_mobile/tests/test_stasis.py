@@ -1,4 +1,4 @@
-# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from unittest import TestCase
@@ -151,3 +151,87 @@ class TestStasisStart(TestCase):
         )
 
         self.service.clean_bridge.assert_called_once_with(s.bridge_uuid)
+
+
+class TestEndpointSubscription(TestCase):
+    def setUp(self):
+        self.core_ari = Mock()
+        self.ari = Mock()
+        self.core_ari.client = self.ari
+        self.service = Mock()
+        self.stasis = DialMobileStasis(self.core_ari, self.service)
+
+    def test_subscribe_wires_endpoint_subscription_on_app_registered(self):
+        self.stasis._subscribe()
+
+        self.ari.on_application_registered.assert_any_call(
+            DialMobileStasis._app_name,
+            self.stasis.subscribe_to_pjsip_endpoint_events,
+        )
+        self.ari.on_application_deregistered.assert_any_call(
+            DialMobileStasis._app_name,
+            self.stasis.unsubscribe_from_pjsip_endpoint_events,
+        )
+
+    def test_subscribe_to_pjsip_endpoint_events(self):
+        self.stasis.subscribe_to_pjsip_endpoint_events()
+
+        self.ari.applications.subscribe.assert_called_once_with(
+            applicationName=DialMobileStasis._app_name,
+            eventSource='endpoint:PJSIP',
+        )
+
+    def test_unsubscribe_from_pjsip_endpoint_events(self):
+        self.stasis.unsubscribe_from_pjsip_endpoint_events()
+
+        self.ari.applications.unsubscribe.assert_called_once_with(
+            applicationName=DialMobileStasis._app_name,
+            eventSource='endpoint:PJSIP',
+        )
+
+
+class TestContactStatusChange(TestCase):
+    def setUp(self):
+        self.core_ari = Mock()
+        self.ari = Mock()
+        self.core_ari.client = self.ari
+        self.service = Mock()
+        self.stasis = DialMobileStasis(self.core_ari, self.service)
+
+    def _event(self, contact_status='Reachable', aor='9vCJK5Ob'):
+        return {
+            'type': 'ContactStatusChange',
+            'application': DialMobileStasis._app_name,
+            'endpoint': {
+                'technology': 'PJSIP',
+                'resource': aor,
+                'state': 'online',
+                'channel_ids': [],
+            },
+            'contact_info': {
+                'uri': f'sip:{aor}@127.0.0.1:54332;transport=WS',
+                'contact_status': contact_status,
+                'aor': aor,
+                'roundtrip_usec': '0',
+            },
+        }
+
+    def test_dialable_statuses_route_to_service(self):
+        for status in ('Created', 'NonQualified', 'Reachable'):
+            self.service.notify_contact_available.reset_mock()
+            self.stasis.on_contact_status_change(Mock(), self._event(status))
+            self.service.notify_contact_available.assert_called_once_with('9vCJK5Ob')
+
+    def test_unreachable_statuses_ignored(self):
+        for status in ('Unreachable', 'Removed', 'Unknown'):
+            self.service.notify_contact_available.reset_mock()
+            self.stasis.on_contact_status_change(Mock(), self._event(status))
+            self.service.notify_contact_available.assert_not_called()
+
+    def test_other_application_ignored(self):
+        event = self._event('Reachable')
+        event['application'] = 'somethingelse'
+
+        self.stasis.on_contact_status_change(Mock(), event)
+
+        self.service.notify_contact_available.assert_not_called()
