@@ -71,7 +71,7 @@ class IncomingCallCancelled(IncomingCallNotified):
 
 IncomingCall = IncomingCallPending | IncomingCallNotified
 
-PSTN_FALLBACK_MAX_TIMEOUT = 10.0
+PSTN_FALLBACK_MIN_TIMEOUT = 10.0
 PSTN_FALLBACK_RING_TIMEOUT_FACTOR = 0.5
 
 
@@ -589,7 +589,7 @@ class DialMobileService:
 
         if self._pstn_fallback_eligible(user_uuid, tenant_uuid):
             fallback_timeout = max(
-                PSTN_FALLBACK_MAX_TIMEOUT,
+                PSTN_FALLBACK_MIN_TIMEOUT,
                 PSTN_FALLBACK_RING_TIMEOUT_FACTOR * int(ring_timeout),
             )
             timer = threading.Timer(
