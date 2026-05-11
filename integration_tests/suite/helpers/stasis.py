@@ -129,6 +129,44 @@ class StasisClient:
         }
         return self._send_stasis_event(body)
 
+    def event_stasis_start_replacing_switchboard_queued_call(
+        self,
+        new_channel_id,
+        replaced_channel_id,
+        tenant_uuid,
+        switchboard_uuid,
+        stasis_app='callcontrol',
+    ):
+        body = {
+            "application": stasis_app,
+            "args": [],
+            "channel": {
+                "accountcode": "",
+                "caller": {"name": "", "number": ""},
+                "connected": {"name": "", "number": ""},
+                "creationtime": "2026-05-11T10:25:14.090-0400",
+                "dialplan": {
+                    "context": "transfer",
+                    "exten": "_attended",
+                    "priority": 1,
+                },
+                "id": new_channel_id,
+                "language": "en",
+                "name": "Local/_attended@transfer-test;2",
+                "state": "Up",
+            },
+            "replace_channel": {
+                "id": replaced_channel_id,
+                "channelvars": {
+                    "WAZO_SWITCHBOARD_QUEUE": switchboard_uuid,
+                    "WAZO_TENANT_UUID": tenant_uuid,
+                },
+            },
+            "timestamp": "2026-05-11T10:25:14.591-0400",
+            "type": "StasisStart",
+        }
+        return self._send_stasis_event(body)
+
     def event_channel_destroyed(
         self,
         channel_id,

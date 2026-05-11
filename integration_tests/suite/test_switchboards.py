@@ -220,6 +220,86 @@ class TestSwitchboardCallsQueued(TestSwitchboards):
 
         until.assert_(calls_are_queued, new_channel_2.id, tries=3)
 
+    def test_given_local_channel_queued_via_stasis_then_listed(self):
+        switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
+        self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
+        local_channel = self.ari.channels.originate(
+            endpoint='Local/recipient_autoanswer@local',
+            app=STASIS_APP,
+            appArgs=[
+                STASIS_APP_INSTANCE,
+                STASIS_APP_QUEUE,
+                VALID_TENANT,
+                switchboard_uuid,
+            ],
+        )
+
+        def assert_function():
+            calls = self.calld.switchboard_queued_calls(switchboard_uuid)
+            assert_that(
+                calls,
+                has_entry(
+                    'items',
+                    contains_inanyorder(has_entry('id', local_channel.id)),
+                ),
+            )
+
+        until.assert_(assert_function, tries=5)
+
+    def test_given_channel_replacing_queued_call_then_listed(self):
+        switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
+        self.confd.set_switchboards(MockSwitchboard(uuid=switchboard_uuid))
+        queued_bus_events = self.bus.accumulator(
+            headers={
+                'switchboard_uuid': switchboard_uuid,
+                'name': 'switchboard_queued_calls_updated',
+            }
+        )
+        real_channel = self.ari.channels.originate(
+            endpoint=ENDPOINT_AUTOANSWER,
+            app=STASIS_APP,
+            appArgs=[
+                STASIS_APP_INSTANCE,
+                STASIS_APP_QUEUE,
+                VALID_TENANT,
+                switchboard_uuid,
+            ],
+        )
+        until.true(queued_bus_events.accumulate, tries=3)
+
+        replacement_channel = self.ari.channels.originate(
+            endpoint=ENDPOINT_AUTOANSWER,
+            app=STASIS_APP,
+            appArgs=[STASIS_APP_INSTANCE],
+        )
+        until.true(self.channel_is_in_stasis, replacement_channel.id, tries=3)
+        queue_bridge = self.ari.bridges.get(
+            bridgeId=f'switchboard-{switchboard_uuid}-queue'
+        )
+        queue_bridge.addChannel(channel=replacement_channel.id)
+
+        self.stasis.event_stasis_start_replacing_switchboard_queued_call(
+            new_channel_id=replacement_channel.id,
+            replaced_channel_id=real_channel.id,
+            tenant_uuid=VALID_TENANT,
+            switchboard_uuid=switchboard_uuid,
+        )
+
+        def replacement_bus_event_published():
+            events = queued_bus_events.accumulate()
+            assert_that(
+                events,
+                has_item(
+                    has_entries(
+                        data=has_entries(
+                            items=has_item(has_entry('id', replacement_channel.id)),
+                        ),
+                    )
+                ),
+            )
+
+        until.assert_(replacement_bus_event_published, tries=5)
+
     def test_given_no_calls_when_new_queued_call_then_bus_event(self):
         switchboard_uuid = random_uuid(prefix='my-switchboard-uuid-')
         bus_events = self.bus.accumulator(

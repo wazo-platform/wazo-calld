@@ -57,6 +57,7 @@ class SwitchboardsStasis:
         try:
             sub_app, *_ = event['args']
         except ValueError:
+            self._stasis_start_replace(event_objects, event)
             return
 
         if sub_app != 'switchboard':
@@ -84,6 +85,35 @@ class SwitchboardsStasis:
         except Exception:
             logger.exception('failed handle a stasis_start %s', event)
             self._ari.channels.continueInDialplan(channelId=event_objects['channel'].id)
+
+    def _stasis_start_replace(self, event_objects, event):
+        replace_channel = event.get('replace_channel')
+        if not replace_channel:
+            return
+        channelvars = replace_channel.get('channelvars') or {}
+        tenant_uuid = channelvars.get('WAZO_TENANT_UUID') or ''
+        queue_uuid = channelvars.get('WAZO_SWITCHBOARD_QUEUE') or ''
+        hold_uuid = channelvars.get('WAZO_SWITCHBOARD_HOLD') or ''
+        if not (queue_uuid or hold_uuid):
+            return
+        channel = event_objects['channel']
+        try:
+            if tenant_uuid:
+                channel.setChannelVar(variable='WAZO_TENANT_UUID', value=tenant_uuid)
+            if queue_uuid:
+                channel.setChannelVar(
+                    variable='WAZO_SWITCHBOARD_QUEUE', value=queue_uuid
+                )
+                queued = self._service.queued_calls(tenant_uuid, queue_uuid)
+                self._notifier.queued_calls(tenant_uuid, queue_uuid, queued)
+            if hold_uuid:
+                channel.setChannelVar(variable='WAZO_SWITCHBOARD_HOLD', value=hold_uuid)
+                held = self._service.held_calls(tenant_uuid, hold_uuid)
+                self._notifier.held_calls(tenant_uuid, hold_uuid, held)
+        except ARINotFound:
+            return
+        except NoSuchSwitchboard:
+            return
 
     def _stasis_start_queue(self, event_objects, event):
         try:
