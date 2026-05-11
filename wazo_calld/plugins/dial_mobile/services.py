@@ -302,10 +302,31 @@ class DialMobileService:
         dialer = self._contact_dialers.pop(future_bridge_uuid, None)
         logger.debug('Removing dialer: %s', str(dialer))
         if not dialer:
+            # No active dialer means the call was already cancelled or answered;
+            # this channel arrived late and has no bridge to join — hang it up.
+            if call_id:
+                incoming = self._incoming_calls.get(call_id)
+                if incoming is not None:
+                    logger.warning(
+                        'join_bridge(channel_id=%s, future_bridge_uuid=%s): call %s: '
+                        'bridge has no dialer but push state is %s; '
+                        'hanging up late channel',
+                        channel_id,
+                        future_bridge_uuid,
+                        call_id,
+                        type(incoming).__name__,
+                    )
+                else:
+                    logger.debug(
+                        'join_bridge: bridge %s has no dialer, call %s already'
+                        ' cleaned up; hanging up late channel %s',
+                        future_bridge_uuid,
+                        call_id,
+                        channel_id,
+                    )
             try:
                 self._ari.channels.hangup(channelId=channel_id)
             except ARINotFound:
-                # If its already gone do nothing
                 pass
             return
 
