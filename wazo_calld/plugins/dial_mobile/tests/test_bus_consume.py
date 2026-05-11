@@ -1,4 +1,4 @@
-# Copyright 2022-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2022-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from unittest import TestCase
@@ -202,7 +202,7 @@ class TestEventHandler(TestCase):
         self.event_handler._on_bridge_enter(event)
 
         self.service.cancel_push_mobile.assert_not_called()
-        self.service.remove_pending_push_mobile.assert_not_called()
+        self.service.complete_pending_push_mobile.assert_not_called()
 
     def test_on_bridge_enter_ignore_not_pjsip(self):
         event = {
@@ -215,7 +215,7 @@ class TestEventHandler(TestCase):
         self.event_handler._on_bridge_enter(event)
 
         self.service.cancel_push_mobile.assert_not_called()
-        self.service.remove_pending_push_mobile.assert_not_called()
+        self.service.complete_pending_push_mobile.assert_not_called()
 
     def test_on_bridge_enter_not_answered_by_mobile(self):
         self.service.has_a_registered_mobile_and_pending_push.return_value = False
@@ -240,7 +240,7 @@ class TestEventHandler(TestCase):
         )
 
         self.service.cancel_push_mobile.assert_called_once_with(s.linkedid)
-        self.service.remove_pending_push_mobile.assert_not_called()
+        self.service.complete_pending_push_mobile.assert_not_called()
 
     def test_on_bridge_enter_answered_by_mobile(self):
         self.service.has_a_registered_mobile_and_pending_push.return_value = True
@@ -265,7 +265,7 @@ class TestEventHandler(TestCase):
         )
 
         self.service.cancel_push_mobile.assert_not_called()
-        self.service.remove_pending_push_mobile.assert_called_once_with(s.linkedid)
+        self.service.complete_pending_push_mobile.assert_called_once_with(s.linkedid)
 
     def test_on_bridge_enter_caller_hung_up(self):
         self.service.has_a_registered_mobile_and_pending_push.side_effect = ARINotFound(
@@ -292,4 +292,4 @@ class TestEventHandler(TestCase):
         )
 
         self.service.cancel_push_mobile.assert_called_once_with(s.linkedid)
-        self.service.remove_pending_push_mobile.assert_not_called()
+        self.service.complete_pending_push_mobile.assert_not_called()

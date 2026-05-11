@@ -11,7 +11,12 @@ from ari.exceptions import ARINotFound
 from hamcrest import assert_that, contains_exactly, empty, equal_to, has_items
 
 from ..notifier import Notifier
-from ..services import DialMobileService, PendingPushMobile, _NoSuchChannel
+from ..services import (
+    DialMobileService,
+    IncomingCallNotified,
+    IncomingCallPending,
+    _NoSuchChannel,
+)
 from ..services import _PollingContactDialer as PollingContactDialer
 
 
@@ -393,8 +398,25 @@ class TestCancelPushNotification(TestCase):
             self.confd_client,
         )
 
+    def _make_notified(self):
+        return IncomingCallNotified(
+            call_id=s.call_id,
+            tenant_uuid=s.tenant_uuid,
+            user_uuid=s.user_uuid,
+            origin_call_id=s.origin_call_id,
+            payload={'peer_caller_id_name': 'Alice', 'peer_caller_id_number': '101'},
+        )
+
     def test_that_nothing_happens_when_not_a_pending_push(self):
         self.service.cancel_push_mobile(s.call_id)
+
+    def test_complete_push_mobile_removes_without_sending_cancellation(self):
+        self.service._incoming_calls[s.call_id] = self._make_notified()
+
+        self.service.complete_pending_push_mobile(s.call_id)
+
+        self.notifier.cancel_push_notification.assert_not_called()
+        assert s.call_id not in self.service._incoming_calls
 
     @patch('wazo_calld.plugins.dial_mobile.services.threading.Timer')
     def test_that_original_payload_is_sent_when_canceling(self, _mock_timer):
@@ -436,8 +458,20 @@ class TestPSTNFallback(TestCase):
             self.confd_client,
         )
 
+    def _make_notified(self, call_id='call-id', origin_call_id='origin-id'):
+        return IncomingCallNotified(
+            call_id=call_id,
+            tenant_uuid='tenant-uuid',
+            user_uuid='user-uuid',
+            origin_call_id=origin_call_id,
+            payload={
+                'peer_caller_id_name': 'Alice',
+                'peer_caller_id_number': '101',
+            },
+        )
+
     def _make_pending(self, call_id='call-id', origin_call_id='origin-id'):
-        return PendingPushMobile(
+        return IncomingCallPending(
             call_id=call_id,
             tenant_uuid='tenant-uuid',
             user_uuid='user-uuid',
@@ -472,12 +506,19 @@ class TestPSTNFallback(TestCase):
     def test_cancel_push_does_not_touch_pstn_timer(self):
         timer = Mock()
         self.service._pstn_fallback_timers['call-id'] = timer
-        self.service._pending_push_mobile['call-id'] = self._make_pending()
+        self.service._incoming_calls['call-id'] = self._make_notified()
 
         self.service.cancel_push_mobile('call-id')
 
         timer.cancel.assert_not_called()
         assert 'call-id' in self.service._pstn_fallback_timers
+
+    def test_cancel_push_noop_when_pending_not_notified(self):
+        self.service._incoming_calls['call-id'] = self._make_pending()
+
+        self.service.cancel_push_mobile('call-id')
+
+        self.notifier.cancel_push_notification.assert_not_called()
 
     def test_pstn_fallback_timer_cancelled_on_join_bridge(self):
         timer = Mock()
@@ -499,7 +540,7 @@ class TestPSTNFallback(TestCase):
         self.ari_client.channels.originate.assert_not_called()
 
     def test_pstn_fallback_noop_when_fallback_disabled(self):
-        self.service._pending_push_mobile['call-id'] = self._make_pending()
+        self.service._incoming_calls['call-id'] = self._make_notified()
         self.confd_client.users.get.return_value = {
             'mobile_fallback_enabled': False,
             'mobile_phone_number': '+33123456789',
@@ -511,7 +552,7 @@ class TestPSTNFallback(TestCase):
         self.ari_client.channels.originate.assert_not_called()
 
     def test_pstn_fallback_noop_when_no_mobile_number(self):
-        self.service._pending_push_mobile['call-id'] = self._make_pending()
+        self.service._incoming_calls['call-id'] = self._make_notified()
         self.service._bridge_uuid_by_origin_call_id['origin-id'] = 'bridge-uuid'
         self.service._outgoing_calls['bridge-uuid'] = 'caller-ch'
         self.confd_client.users.get.return_value = {
@@ -525,7 +566,7 @@ class TestPSTNFallback(TestCase):
         self.ari_client.channels.originate.assert_not_called()
 
     def test_pstn_fallback_originates_local_channel(self):
-        self.service._pending_push_mobile['call-id'] = self._make_pending()
+        self.service._incoming_calls['call-id'] = self._make_notified()
         self.service._bridge_uuid_by_origin_call_id['origin-id'] = 'bridge-uuid'
         self.service._outgoing_calls['bridge-uuid'] = 'caller-ch'
         self.confd_client.users.get.return_value = {
@@ -547,7 +588,7 @@ class TestPSTNFallback(TestCase):
         )
 
     def test_pstn_fallback_noop_when_caller_channel_gone(self):
-        self.service._pending_push_mobile['call-id'] = self._make_pending()
+        self.service._incoming_calls['call-id'] = self._make_notified()
         self.service._bridge_uuid_by_origin_call_id['origin-id'] = 'bridge-uuid'
         self.service._outgoing_calls['bridge-uuid'] = 'caller-ch'
         self.confd_client.users.get.return_value = {

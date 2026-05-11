@@ -5,7 +5,7 @@ import logging
 import threading
 import time
 import uuid
-from collections import namedtuple
+from dataclasses import dataclass
 
 import requests
 from ari.exceptions import ARINotFound, ARIServerError
@@ -15,10 +15,61 @@ from wazo_calld.plugin_helpers.ari_ import Bridge
 
 logger = logging.getLogger(__name__)
 
-PendingPushMobile = namedtuple(
-    'PendingPushMobile',
-    ['call_id', 'tenant_uuid', 'user_uuid', 'origin_call_id', 'payload'],
-)
+
+@dataclass
+class IncomingCallPending:
+    """Push notification not yet sent — initial state."""
+
+    call_id: str
+    tenant_uuid: str
+    user_uuid: str
+    origin_call_id: str
+    payload: dict
+
+    def notified(self) -> 'IncomingCallNotified':
+        return IncomingCallNotified(
+            call_id=self.call_id,
+            tenant_uuid=self.tenant_uuid,
+            user_uuid=self.user_uuid,
+            origin_call_id=self.origin_call_id,
+            payload=self.payload,
+        )
+
+
+@dataclass
+class IncomingCallNotified(IncomingCallPending):
+    """Push sent; waiting for mobile app to register and answer."""
+
+    def received(self) -> 'IncomingCallReceived':
+        return IncomingCallReceived(
+            call_id=self.call_id,
+            tenant_uuid=self.tenant_uuid,
+            user_uuid=self.user_uuid,
+            origin_call_id=self.origin_call_id,
+            payload=self.payload,
+        )
+
+    def cancelled(self) -> 'IncomingCallCancelled':
+        return IncomingCallCancelled(
+            call_id=self.call_id,
+            tenant_uuid=self.tenant_uuid,
+            user_uuid=self.user_uuid,
+            origin_call_id=self.origin_call_id,
+            payload=self.payload,
+        )
+
+
+@dataclass
+class IncomingCallReceived(IncomingCallNotified):
+    """Mobile answered the call — terminal, no push cancellation sent."""
+
+
+@dataclass
+class IncomingCallCancelled(IncomingCallNotified):
+    """Caller hung up or PSTN fallback committed — terminal, push cancellation sent."""
+
+
+IncomingCall = IncomingCallPending | IncomingCallNotified
 
 PSTN_FALLBACK_MAX_TIMEOUT = 10.0
 PSTN_FALLBACK_RING_TIMEOUT_FACTOR = 0.5
@@ -195,7 +246,7 @@ class DialMobileService:
         self._contact_dialers = {}
         self._outgoing_calls = {}
         self._call_ring_time = {}
-        self._pending_push_mobile = {}
+        self._incoming_calls: dict[str, IncomingCall] = {}
         self._notifier = notifier
         self._pstn_fallback_timers: dict[str, threading.Timer] = {}
         self._origin_call_id_by_bridge_uuid: dict[str, str] = {}
@@ -404,13 +455,14 @@ class DialMobileService:
             'mobile_wakeup_timestamp': push_mobile_timestamp,
         }
 
-        self._pending_push_mobile[call_id] = PendingPushMobile(
-            call_id,
-            tenant_uuid,
-            user_uuid,
-            origin_call_id,
-            payload,
+        pending = IncomingCallPending(
+            call_id=call_id,
+            tenant_uuid=tenant_uuid,
+            user_uuid=user_uuid,
+            origin_call_id=origin_call_id,
+            payload=payload,
         )
+        self._incoming_calls[call_id] = pending
 
         self._call_ring_time[origin_call_id] = ring_timeout
         self._call_id_by_origin_call_id[origin_call_id] = call_id
@@ -425,29 +477,57 @@ class DialMobileService:
         timer.start()
 
         self._notifier.push_notification(payload, tenant_uuid, user_uuid)
+        self._incoming_calls[call_id] = pending.notified()
 
     def _cancel_pstn_timer(self, call_id: str) -> None:
         if timer := self._pstn_fallback_timers.pop(call_id, None):
             timer.cancel()
 
     def cancel_push_mobile(self, call_id: str) -> None:
-        pending_push = self._pending_push_mobile.pop(call_id, None)
-        if not pending_push:
-            return
+        incoming_call = self._incoming_calls.pop(call_id, None)
+        match incoming_call:
+            case IncomingCallNotified():
+                self._notifier.cancel_push_notification(
+                    incoming_call.payload,
+                    incoming_call.tenant_uuid,
+                    incoming_call.user_uuid,
+                )
+            case None:
+                logger.warning(
+                    'cancel_push_mobile: no incoming call for call_id %s', call_id
+                )
+            case _:
+                logger.warning(
+                    'cancel_push_mobile: unexpected state %s for call_id %s',
+                    type(incoming_call).__name__,
+                    call_id,
+                )
 
-        self._notifier.cancel_push_notification(
-            pending_push.payload,
-            pending_push.tenant_uuid,
-            pending_push.user_uuid,
-        )
+    def complete_pending_push_mobile(self, call_id: str) -> None:
+        incoming_call = self._incoming_calls.pop(call_id, None)
+        match incoming_call:
+            case IncomingCallNotified():
+                pass
+            case None:
+                logger.warning(
+                    'complete_pending_push_mobile: no incoming call for call_id %s',
+                    call_id,
+                )
+            case _:
+                logger.warning(
+                    'complete_pending_push_mobile: unexpected state %s for call_id %s',
+                    type(incoming_call).__name__,
+                    call_id,
+                )
 
-    def remove_pending_push_mobile(self, call_id):
-        self._pending_push_mobile.pop(call_id, None)
+    def remove_pending_push_mobile(self, call_id: str) -> None:
+        """Deprecated alias for complete_pending_push_mobile."""
+        self.complete_pending_push_mobile(call_id)
 
     def _pstn_fallback(self, call_id: str) -> None:
         # fallback call to user's mobile number over PSTN if mobile wake up push still pending
         self._pstn_fallback_timers.pop(call_id, None)  # timer fired; remove stale ref
-        pending = self._pending_push_mobile.get(call_id)
+        pending = self._incoming_calls.get(call_id)
         if not pending:
             logger.info(
                 "no pending push for call_id %s, aborting PSTN fallback", call_id
@@ -543,7 +623,7 @@ class DialMobileService:
     def has_a_registered_mobile_and_pending_push(
         self, push_call_id, call_id, endpoint, user_uuid
     ):
-        pending_push = self._pending_push_mobile.get(push_call_id)
+        pending_push = self._incoming_calls.get(push_call_id)
         if not pending_push:
             return False
 
