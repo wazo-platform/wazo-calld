@@ -7,12 +7,17 @@ from ari.exceptions import ARINotFound
 from hamcrest import assert_that, has_entries, has_item
 from wazo_test_helpers import until
 
+from .helpers.confd import MockLine, MockUser
 from .helpers.constants import ENDPOINT_AUTOANSWER
 from .helpers.real_asterisk import RealAsteriskIntegrationTest
 
 
 class TestDialMobile(RealAsteriskIntegrationTest):
     asset = 'real_asterisk'
+
+    def setUp(self):
+        super().setUp()
+        self.confd.reset()
 
     def test_that_dial_mobile_join_with_no_bridge_does_not_block(self):
         unknown_bridge_id = str(uuid4())
@@ -130,4 +135,119 @@ class TestDialMobile(RealAsteriskIntegrationTest):
             push_notification_cancelled,
             timeout=5,
             message='Push notification was not cancelled after caller hangup',
+        )
+
+    def test_caller_hangup_cancels_active_pstn_fallback(self):
+        # Regression test: once the PSTN fallback has fired and a PSTN channel
+        # is ringing, hanging up the caller must also hang up the PSTN channel.
+        user_uuid = 'eaa18a7f-3f49-419a-9abb-b445b8ba2e03'
+        tenant_uuid = 'some-tenant-uuid'
+        line_id = 424242
+        self.confd.set_users(
+            MockUser(
+                uuid=user_uuid,
+                line_ids=[line_id],
+                mobile='ring',
+                mobile_fallback_enabled=True,
+                tenant_uuid=tenant_uuid,
+            )
+        )
+        self.confd.set_lines(
+            MockLine(id=line_id, context='local', tenant_uuid=tenant_uuid)
+        )
+
+        chan = self.ari.channels.originate(
+            endpoint=ENDPOINT_AUTOANSWER,
+            app='dial_mobile',
+            appArgs=['dial', 'nonexistent-aor'],
+        )
+
+        def channel_is_up():
+            ch = self.ari.channels.get(channelId=chan.id)
+            assert ch.json['state'] == 'Up'
+
+        until.assert_(
+            channel_is_up, timeout=5, message='Channel never reached Up state'
+        )
+
+        push_events = self.bus.accumulator(headers={'name': 'call_push_notification'})
+        call_id = f'test-pstn-hangup-{uuid4()}'
+        self.bus.publish(
+            {
+                'data': {
+                    'UserEvent': 'Pushmobile',
+                    'Uniqueid': call_id,
+                    'Linkedid': chan.id,
+                    'ChanVariable': {
+                        'WAZO_USERUUID': user_uuid,
+                        'WAZO_TENANT_UUID': tenant_uuid,
+                        'WAZO_SIP_CALL_ID': 'de9eb39fb7585796',
+                        'XIVO_BASE_EXTEN': '8000',
+                        'WAZO_DEREFERENCED_USERUUID': '',
+                    },
+                    'CallerIDName': 'Alice',
+                    'CallerIDNum': '101',
+                    'Event': 'UserEvent',
+                    # WAZO_DST_UUID is read as user_uuid by the push handler.
+                    'WAZO_DST_UUID': user_uuid,
+                    'WAZO_RING_TIME': '20',
+                    'WAZO_VIDEO_ENABLED': '0',
+                    'WAZO_TIMESTAMP': '2026-01-01T00:00:00.000+00:00',
+                    'ConnectedLineName': '',
+                    'ConnectedLineNum': '',
+                    'Priority': '1',
+                    'ChannelStateDesc': 'Ring',
+                    'Language': 'en_US',
+                    'Exten': 's',
+                    'ChannelState': '4',
+                    'Channel': 'PJSIP/test-0000001',
+                    'Context': 'wazo-user-mobile-notification',
+                    'Privilege': 'user,all',
+                    'AccountCode': '',
+                }
+            },
+            headers={'name': 'UserEvent'},
+        )
+
+        def push_notification_sent():
+            assert_that(
+                push_events.accumulate(),
+                has_item(has_entries(name='call_push_notification')),
+            )
+
+        until.assert_(
+            push_notification_sent,
+            timeout=5,
+            message='Push notification event never published',
+        )
+
+        # The PSTN fallback timer is max(10, 0.5 * 20) = 10 s.
+        # Wait until Asterisk has originated the Local/ring@local PSTN leg.
+        def pstn_channel_originated():
+            channels = self.ari.channels.list()
+            pstn = [
+                c for c in channels if c.json['name'].startswith('Local/ring@local')
+            ]
+            return pstn[0] if pstn else None
+
+        pstn_channel = until.true(
+            pstn_channel_originated,
+            timeout=15,
+            message='PSTN fallback channel was never originated',
+        )
+
+        # Caller hangs up after the PSTN has been originated.
+        chan.hangup()
+
+        def pstn_channel_gone():
+            try:
+                self.ari.channels.get(channelId=pstn_channel.id)
+                return False
+            except ARINotFound:
+                return True
+
+        until.true(
+            pstn_channel_gone,
+            timeout=5,
+            message='PSTN fallback channel was not hung up after caller hangup',
         )

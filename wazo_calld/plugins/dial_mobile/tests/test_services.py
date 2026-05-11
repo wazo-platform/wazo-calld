@@ -587,6 +587,133 @@ class TestPSTNFallback(TestCase):
             variables={'variables': {'_WAZO_TENANT_UUID': 'tenant-uuid'}},
         )
 
+    def test_pstn_fallback_records_originated_channel_id(self):
+        self.service._incoming_calls['call-id'] = self._make_notified()
+        self.service._bridge_uuid_by_origin_call_id['origin-id'] = 'bridge-uuid'
+        self.service._outgoing_calls['bridge-uuid'] = 'caller-ch'
+        self.confd_client.users.get.return_value = {
+            'mobile_fallback_enabled': True,
+            'mobile_phone_number': '+33123456789',
+            'lines': [{'id': 42}],
+        }
+        self.confd_client.lines.get.return_value = {'context': 'my-outbound-context'}
+        originated_channel = Mock()
+        originated_channel.id = 'pstn-channel-id'
+        self.ari_client.channels.originate.return_value = originated_channel
+
+        self.service._pstn_fallback('call-id')
+
+        assert self.service._pstn_fallback_channels.get('call-id') == 'pstn-channel-id'
+
+    def test_cancel_pstn_fallback_hangs_up_active_pstn_channel(self):
+        self.service._pstn_fallback_channels['call-id'] = 'pstn-channel-id'
+
+        self.service._cancel_pstn_fallback('call-id')
+
+        self.ari_client.channels.hangup.assert_called_once_with(
+            channelId='pstn-channel-id'
+        )
+        assert 'call-id' not in self.service._pstn_fallback_channels
+
+    def test_cancel_pstn_fallback_swallows_already_gone(self):
+        self.service._pstn_fallback_channels['call-id'] = 'pstn-channel-id'
+        self.ari_client.channels.hangup.side_effect = ARINotFound(
+            self.ari_client, s.error
+        )
+
+        self.service._cancel_pstn_fallback('call-id')
+
+        assert 'call-id' not in self.service._pstn_fallback_channels
+
+    def test_cancel_pstn_fallback_cancels_timer_and_hangs_up_channel(self):
+        timer = Mock()
+        self.service._pstn_fallback_timers['call-id'] = timer
+        self.service._pstn_fallback_channels['call-id'] = 'pstn-channel-id'
+
+        self.service._cancel_pstn_fallback('call-id')
+
+        timer.cancel.assert_called_once()
+        self.ari_client.channels.hangup.assert_called_once_with(
+            channelId='pstn-channel-id'
+        )
+
+    def test_join_bridge_hangs_up_active_pstn_channel(self):
+        # pickup or mobile-answer must tear down an in-progress PSTN call
+        self.service._pstn_fallback_channels['call-id'] = 'pstn-channel-id'
+        self.service._call_id_by_origin_call_id['origin-id'] = 'call-id'
+        self.service._origin_call_id_by_bridge_uuid['bridge-uuid'] = 'origin-id'
+
+        dialer = Mock()
+        self.service._contact_dialers['bridge-uuid'] = dialer
+        self.service._outgoing_calls['bridge-uuid'] = 'caller-ch'
+
+        self.service.join_bridge('answering-ch', 'bridge-uuid')
+
+        self.ari_client.channels.hangup.assert_any_call(channelId='pstn-channel-id')
+
+    def test_join_bridge_pstn_channel_itself_joining_is_not_hung_up(self):
+        # When the PSTN-fallback call answers, its channel enters dial_mobile
+        # with action='join'. We must NOT hang up the channel we're about to
+        # bridge to the caller.
+        self.service._pstn_fallback_channels['call-id'] = 'pstn-channel-id'
+        self.service._call_id_by_origin_call_id['origin-id'] = 'call-id'
+        self.service._origin_call_id_by_bridge_uuid['bridge-uuid'] = 'origin-id'
+
+        dialer = Mock()
+        self.service._contact_dialers['bridge-uuid'] = dialer
+        self.service._outgoing_calls['bridge-uuid'] = 'caller-ch'
+
+        self.service.join_bridge('pstn-channel-id', 'bridge-uuid')
+
+        # PSTN channel must not be hung up
+        for call in self.ari_client.channels.hangup.call_args_list:
+            assert call.kwargs.get('channelId') != 'pstn-channel-id'
+        # Tracking should still be cleared
+        assert 'call-id' not in self.service._pstn_fallback_channels
+
+    def test_notify_channel_gone_caller_gone_hangs_up_active_pstn_channel(self):
+        caller_channel_id = '1234567890.42'
+        self.service._pstn_fallback_channels['call-id'] = 'pstn-channel-id'
+        self.service._call_id_by_origin_call_id['origin-id'] = 'call-id'
+
+        self.ari.client.channels.getChannelVar.return_value = {'value': 'pickupmark'}
+        self.ari.client.channels.get.return_value = Mock(
+            json={'caller': {'name': 'Test', 'number': '1001'}}
+        )
+        self.service.dial_all_contacts(caller_channel_id, 'origin-id', 'aor')
+        bridge_uuid = next(iter(self.service._contact_dialers))
+        dialer = self.service._contact_dialers[bridge_uuid]
+        dialer.should_stop.set()
+        dialer._thread.join()
+
+        with patch.object(self.service, 'cancel_push_mobile'):
+            self.service.notify_channel_gone(caller_channel_id)
+
+        self.ari_client.channels.hangup.assert_any_call(channelId='pstn-channel-id')
+
+    def test_on_contact_dialed_cancels_pstn_fallback(self):
+        # When the mobile registers and we originate the SIP INVITE,
+        # the PSTN fallback must be cancelled.
+        timer = Mock()
+        self.service._pstn_fallback_timers['call-id'] = timer
+        self.service._call_id_by_origin_call_id['origin-id'] = 'call-id'
+
+        self.ari.client.channels.getChannelVar.return_value = {'value': 'pickupmark'}
+        self.ari.client.channels.get.return_value = Mock(
+            json={'caller': {'name': 'Test', 'number': '1001'}}
+        )
+        self.service.dial_all_contacts('caller-ch', 'origin-id', 'aor')
+
+        bridge_uuid = next(iter(self.service._contact_dialers))
+        dialer = self.service._contact_dialers[bridge_uuid]
+        dialer.should_stop.set()
+        dialer._thread.join()
+
+        # Simulate the polling thread finding a contact and dialing it.
+        dialer._send_contact_to_current_call('sip:contact', bridge_uuid, 'caller-id')
+
+        timer.cancel.assert_called_once()
+
     def test_pstn_fallback_noop_when_caller_channel_gone(self):
         self.service._incoming_calls['call-id'] = self._make_notified()
         self.service._bridge_uuid_by_origin_call_id['origin-id'] = 'bridge-uuid'
