@@ -1,15 +1,9 @@
-# Copyright 2019-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
 
 logger = logging.getLogger(__name__)
-
-ARG_LEN_BY_COMMAND = {
-    'dial': 2,
-    'join': 2,
-    'pickup': 3,
-}
 
 
 class DialMobileStasis:
@@ -34,29 +28,27 @@ class DialMobileStasis:
             args,
         )
 
-        if not args or len(args) < ARG_LEN_BY_COMMAND[args[0]]:
-            logger.info('%s called without enough arguments %s', self._app_name, args)
-            return
-
-        action = args[0]
-        origin_channel_id = event['channel']['channelvars']['CHANNEL(linkedid)']
-
-        if action == 'dial':
-            aor = args[1]
-            self._service.dial_all_contacts(channel_id, origin_channel_id, aor)
-        elif action == 'join':
-            future_bridge_uuid = args[1]
-            self._service.join_bridge(channel_id, future_bridge_uuid)
-        elif action == 'pickup':
-            exten, context = args[1], args[2]
-            future_bridge_uuid = self._service.find_bridge_by_exten_context(
-                exten, context
-            )
-            if future_bridge_uuid:
+        match args:
+            case ['dial', aor]:
+                origin_channel_id = event['channel']['channelvars']['CHANNEL(linkedid)']
+                self._service.dial_all_contacts(channel_id, origin_channel_id, aor)
+            case ['join', future_bridge_uuid]:
                 self._service.join_bridge(channel_id, future_bridge_uuid)
-            else:
-                logger.debug('no matching mobile pickup found')
-                self._ari.channels.continueInDialplan(channelId=channel_id)
+            case ['pickup', exten, context]:
+                future_bridge_uuid = self._service.find_bridge_by_exten_context(
+                    exten, context
+                )
+                if future_bridge_uuid:
+                    self._service.join_bridge(channel_id, future_bridge_uuid)
+                else:
+                    logger.debug('no matching mobile pickup found')
+                    self._ari.channels.continueInDialplan(channelId=channel_id)
+            case _:
+                logger.info(
+                    '%s called with unknown or insufficient arguments %s',
+                    self._app_name,
+                    args,
+                )
 
     def on_channel_left_bridge(self, channel, event):
         if event['application'] != self._app_name:
