@@ -3,7 +3,7 @@ CHAN_TEST_DIR ?= ../../chan-test
 test-setup: build-calld build-ari build-call-logd
 
 build-calld: egg-info
-	docker build -t wazoplatform/wazo-calld ..
+	docker build --no-cache -t wazoplatform/wazo-calld ..
 	docker build --no-cache -t wazo-calld-test -f docker/Dockerfile-calld-test ..
 
 build-ari:
