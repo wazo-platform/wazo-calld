@@ -1,4 +1,4 @@
-# Copyright 2017-2025 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -338,7 +338,15 @@ class SwitchboardsService:
 
         result = []
         for channel_id in channel_ids:
-            channel = self._ari.channels.get(channelId=channel_id)
+            try:
+                channel = self._ari.channels.get(channelId=channel_id)
+            except ARINotFound:
+                logger.debug(
+                    'Switchboard %s: channel %s not found in ARI, skipping',
+                    switchboard_uuid,
+                    channel_id,
+                )
+                continue
 
             call = HeldCall(channel.id)
             call.caller_id_name = channel.json['caller']['name']
