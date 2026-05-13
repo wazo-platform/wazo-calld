@@ -551,6 +551,36 @@ class TestPSTNFallback(TestCase):
             self.service._pstn_fallbacks.get('call-id'), PSTNFallbackPending
         )
 
+    def test_send_push_notification_always_creates_call_lock(self):
+        # The per-call lock must be created on every push so concurrent
+        # IncomingCall transitions can be serialized, even when no PSTN
+        # fallback is armed for the call.
+        self.confd_client.users.get.return_value = {
+            'mobile_fallback_enabled': False,
+            'mobile_phone_number': None,
+        }
+
+        self._send_push()
+
+        assert 'call-id' in self.service._call_locks
+
+    def test_call_lock_reused_across_transitions(self):
+        # Reusing the same RLock across transitions is what gives us
+        # mutual exclusion; if a second push call for the same id
+        # somehow arrived, it must not replace the lock another thread
+        # may currently be holding.
+        self.confd_client.users.get.return_value = {
+            'mobile_fallback_enabled': False,
+            'mobile_phone_number': None,
+        }
+        self._send_push()
+        first_lock = self.service._call_locks['call-id']
+
+        self._send_push()
+        second_lock = self.service._call_locks['call-id']
+
+        assert first_lock is second_lock
+
     @patch('wazo_calld.plugins.dial_mobile.services.threading.Timer')
     def test_pstn_fallback_timer_skipped_when_disabled(self, mock_timer_cls):
         self.confd_client.users.get.return_value = {

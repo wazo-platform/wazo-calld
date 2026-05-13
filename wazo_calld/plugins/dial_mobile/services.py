@@ -1,6 +1,7 @@
 # Copyright 2019-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+import contextlib
 import logging
 import threading
 import uuid
@@ -665,27 +666,28 @@ class DialMobileService:
             origin_call_id=origin_call_id,
             payload=payload,
         )
-        self._incoming_calls[call_id] = pending
+        lock = self._call_locks.setdefault(call_id, threading.RLock())
+        with lock:
+            self._incoming_calls[call_id] = pending
 
-        self._call_ring_time[origin_call_id] = ring_timeout
-        self._call_id_by_origin_call_id[origin_call_id] = call_id
+            self._call_ring_time[origin_call_id] = ring_timeout
+            self._call_id_by_origin_call_id[origin_call_id] = call_id
 
-        if self._pstn_fallback_eligible(user_uuid, tenant_uuid):
-            fallback_timeout = max(
-                PSTN_FALLBACK_MIN_TIMEOUT,
-                PSTN_FALLBACK_RING_TIMEOUT_FACTOR * int(ring_timeout),
-            )
-            timer = threading.Timer(
-                fallback_timeout, self._pstn_fallback, args=[call_id]
-            )
-            self._call_locks[call_id] = threading.RLock()
-            self._pstn_fallbacks[call_id] = PSTNFallbackPending(
-                call_id=call_id, timer=timer
-            )
-            timer.start()
+            if self._pstn_fallback_eligible(user_uuid, tenant_uuid):
+                fallback_timeout = max(
+                    PSTN_FALLBACK_MIN_TIMEOUT,
+                    PSTN_FALLBACK_RING_TIMEOUT_FACTOR * int(ring_timeout),
+                )
+                timer = threading.Timer(
+                    fallback_timeout, self._pstn_fallback, args=[call_id]
+                )
+                self._pstn_fallbacks[call_id] = PSTNFallbackPending(
+                    call_id=call_id, timer=timer
+                )
+                timer.start()
 
-        self._notifier.push_notification(payload, tenant_uuid, user_uuid)
-        self._incoming_calls[call_id] = pending.notified()
+            self._notifier.push_notification(payload, tenant_uuid, user_uuid)
+            self._incoming_calls[call_id] = pending.notified()
 
     def _pstn_fallback_eligible(self, user_uuid: str, tenant_uuid: str) -> bool:
         # Check user config once at push time so we don't arm a timer that
@@ -737,59 +739,70 @@ class DialMobileService:
             pass
 
     def cancel_push_mobile(self, call_id: str) -> None:
-        incoming_call = self._incoming_calls.get(call_id)
-        match incoming_call:
-            case IncomingCallReceived() | IncomingCallPushCancelled():
-                logger.debug(
-                    'cancel_push_mobile: call %s already terminal (%s)',
-                    call_id,
-                    type(incoming_call).__name__,
-                )
-            case IncomingCallNotified():
-                self._notifier.cancel_push_notification(
-                    incoming_call.payload,
-                    incoming_call.tenant_uuid,
-                    incoming_call.user_uuid,
-                )
-                self._incoming_calls[call_id] = incoming_call.push_cancelled()
-            case IncomingCallPending():
-                # Push not yet sent (very tight race during send_push_notification);
-                # record the cancellation without dispatching one.
-                logger.info(
-                    'cancel_push_mobile: push not yet sent for call %s, '
-                    'recording cancellation',
-                    call_id,
-                )
-                self._incoming_calls[call_id] = incoming_call.push_cancelled()
-            case None:
-                logger.warning(
-                    'cancel_push_mobile: no incoming call for call_id %s', call_id
-                )
+        with self._incoming_call_lock(call_id):
+            incoming_call = self._incoming_calls.get(call_id)
+            match incoming_call:
+                case IncomingCallReceived() | IncomingCallPushCancelled():
+                    logger.debug(
+                        'cancel_push_mobile: call %s already terminal (%s)',
+                        call_id,
+                        type(incoming_call).__name__,
+                    )
+                case IncomingCallNotified():
+                    self._notifier.cancel_push_notification(
+                        incoming_call.payload,
+                        incoming_call.tenant_uuid,
+                        incoming_call.user_uuid,
+                    )
+                    self._incoming_calls[call_id] = incoming_call.push_cancelled()
+                case IncomingCallPending():
+                    # Push not yet sent (very tight race during send_push_notification);
+                    # record the cancellation without dispatching one.
+                    logger.info(
+                        'cancel_push_mobile: push not yet sent for call %s, '
+                        'recording cancellation',
+                        call_id,
+                    )
+                    self._incoming_calls[call_id] = incoming_call.push_cancelled()
+                case None:
+                    logger.warning(
+                        'cancel_push_mobile: no incoming call for call_id %s',
+                        call_id,
+                    )
 
     def complete_pending_push_mobile(self, call_id: str) -> None:
-        incoming_call = self._incoming_calls.get(call_id)
-        match incoming_call:
-            case IncomingCallReceived():
-                pass
-            case IncomingCallPushCancelled():
-                logger.warning(
-                    'complete_pending_push_mobile: call %s was already cancelled',
-                    call_id,
-                )
-            case IncomingCallNotified():
-                self._incoming_calls[call_id] = incoming_call.received()
-            case IncomingCallPending():
-                logger.warning(
-                    'complete_pending_push_mobile: completing before push was '
-                    'sent for call %s',
-                    call_id,
-                )
-                self._incoming_calls[call_id] = incoming_call.notified().received()
-            case None:
-                logger.warning(
-                    'complete_pending_push_mobile: no incoming call for call_id %s',
-                    call_id,
-                )
+        with self._incoming_call_lock(call_id):
+            incoming_call = self._incoming_calls.get(call_id)
+            match incoming_call:
+                case IncomingCallReceived():
+                    pass
+                case IncomingCallPushCancelled():
+                    logger.warning(
+                        'complete_pending_push_mobile: call %s was already cancelled',
+                        call_id,
+                    )
+                case IncomingCallNotified():
+                    self._incoming_calls[call_id] = incoming_call.received()
+                case IncomingCallPending():
+                    logger.warning(
+                        'complete_pending_push_mobile: completing before push was '
+                        'sent for call %s',
+                        call_id,
+                    )
+                    self._incoming_calls[call_id] = incoming_call.notified().received()
+                case None:
+                    logger.warning(
+                        'complete_pending_push_mobile: no incoming call for call_id %s',
+                        call_id,
+                    )
+
+    def _incoming_call_lock(self, call_id: str):
+        # Returns the per-call RLock for serializing IncomingCall transitions,
+        # or a no-op context manager if the call is unknown (no entry was
+        # created, or the call was already pruned). The lock is created in
+        # `send_push_notification` and reused by the PSTN state machine.
+        lock = self._call_locks.get(call_id)
+        return lock if lock is not None else contextlib.nullcontext()
 
     def _pstn_fallback(self, call_id: str) -> None:
         """Timer-fired callback. Drives the fallback through:
