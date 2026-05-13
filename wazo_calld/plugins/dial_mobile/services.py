@@ -543,10 +543,14 @@ class DialMobileService:
     def notify_channel_gone(self, channel_id):
         # If a PSTN-fallback channel has torn down on its own, transition
         # its state to Cancelled so it isn't double-hung-up later.
-        for tracked_call_id, state in list(self._pstn_fallbacks.items()):
-            match state:
-                case PSTNFallbackDialing(channel_id=cid) if cid == channel_id:
-                    self._pstn_fallbacks[tracked_call_id] = state.cancelled()
+        # Re-read the state under the per-call lock so we don't race with
+        # the timer thread or another cancellation path.
+        for tracked_call_id in list(self._pstn_fallbacks):
+            with self._incoming_call_lock(tracked_call_id):
+                state = self._pstn_fallbacks.get(tracked_call_id)
+                match state:
+                    case PSTNFallbackDialing(channel_id=cid) if cid == channel_id:
+                        self._pstn_fallbacks[tracked_call_id] = state.cancelled()
 
         to_remove: list[tuple[str, bool]] = []
 
@@ -684,8 +688,16 @@ class DialMobileService:
                 self._pstn_fallbacks[call_id] = PSTNFallbackPending(
                     call_id=call_id, timer=timer
                 )
+                logger.info(
+                    'call %s: Arming PSTN fallback timer with timeout=%d',
+                    origin_call_id,
+                    fallback_timeout,
+                )
                 timer.start()
 
+            logger.info(
+                'call %s: Sending incoming call push notification', origin_call_id
+            )
             self._notifier.push_notification(payload, tenant_uuid, user_uuid)
             self._incoming_calls[call_id] = pending.notified()
 
@@ -713,13 +725,27 @@ class DialMobileService:
         if lock is None:
             return
         with lock:
+            logger.info('cancelling PSTN fallback for call %s', call_id)
             match self._pstn_fallbacks.get(call_id):
-                case None | PSTNFallbackCancelled() | PSTNFallbackDialAnswered():
+                case None | PSTNFallbackCancelled() | PSTNFallbackDialAnswered() as state:
+                    logger.debug(
+                        'cancelling PSTN fallback for call %s while in terminal state (%s)',
+                        call_id,
+                        state,
+                    )
                     return
                 case PSTNFallbackPending(timer=timer) as current:
+                    logger.debug(
+                        'cancelling PSTN fallback for call %s while in pending state',
+                        call_id,
+                    )
                     timer.cancel()
                     self._pstn_fallbacks[call_id] = current.cancelled()
                 case PSTNFallbackDialing(channel_id=channel_id) as current:
+                    logger.debug(
+                        'cancelling PSTN fallback for call %s while in dialing state',
+                        call_id,
+                    )
                     self._hangup_pstn_channel(channel_id)
                     self._pstn_fallbacks[call_id] = current.cancelled()
                 case PSTNFallbackTriggering() as current:
@@ -727,7 +753,7 @@ class DialMobileService:
                     # confd lookups and channel checks. Marking the state
                     # Cancelled tells the Phase 3 re-check to abort.
                     logger.debug(
-                        'cancelling PSTN fallback for call %s while in ' 'Triggering',
+                        'cancelling PSTN fallback for call %s while in triggering state',
                         call_id,
                     )
                     self._pstn_fallbacks[call_id] = current.cancelled()
@@ -740,6 +766,7 @@ class DialMobileService:
 
     def cancel_push_mobile(self, call_id: str) -> None:
         with self._incoming_call_lock(call_id):
+            logger.info('call %s: cancelling mobile push', call_id)
             incoming_call = self._incoming_calls.get(call_id)
             match incoming_call:
                 case IncomingCallReceived() | IncomingCallPushCancelled():
@@ -749,6 +776,10 @@ class DialMobileService:
                         type(incoming_call).__name__,
                     )
                 case IncomingCallNotified():
+                    logger.debug(
+                        'call %s: push notification in flight, sending out cancel notification',
+                        call_id,
+                    )
                     self._notifier.cancel_push_notification(
                         incoming_call.payload,
                         incoming_call.tenant_uuid,
@@ -758,7 +789,7 @@ class DialMobileService:
                 case IncomingCallPending():
                     # Push not yet sent (very tight race during send_push_notification);
                     # record the cancellation without dispatching one.
-                    logger.info(
+                    logger.debug(
                         'cancel_push_mobile: push not yet sent for call %s, '
                         'recording cancellation',
                         call_id,
@@ -766,7 +797,7 @@ class DialMobileService:
                     self._incoming_calls[call_id] = incoming_call.push_cancelled()
                 case None:
                     logger.warning(
-                        'cancel_push_mobile: no incoming call for call_id %s',
+                        'cancel_push_mobile: no mobile push state for call_id %s',
                         call_id,
                     )
 
@@ -822,12 +853,13 @@ class DialMobileService:
         # Phase 1: transition Pending → Triggering atomically. From here
         # on, observers (e.g. `_cancel_pstn_fallback`) see Triggering.
         with lock:
+            logger.info('Triggering PSTN fallback for call %s', call_id)
             match self._pstn_fallbacks.get(call_id):
                 case PSTNFallbackPending() as current:
                     self._pstn_fallbacks[call_id] = current.triggering()
                 case _ as state:
                     logger.debug(
-                        'PSTN fallback for call %s not in Pending (got %s); '
+                        'PSTN fallback for call %s not in Pending state (%s); '
                         'aborting',
                         call_id,
                         type(state).__name__,
