@@ -440,10 +440,11 @@ class DialMobileService:
                     self._cancel_pstn_fallback(call_id)
 
         dialer = self._contact_dialers.pop(future_bridge_uuid, None)
-        if dialer is not None:
+        if dialer:
+            logger.debug('Removing dialer: %s', str(dialer))
             self._unregister_dialer_by_aor(dialer)
-        logger.debug('Removing dialer: %s', str(dialer))
-        if not dialer:
+            dialer.stop()
+        else:
             # No active dialer means the call was already cancelled or answered;
             # this channel arrived late and has no bridge to join — hang it up.
             if call_id:
@@ -472,7 +473,6 @@ class DialMobileService:
                 pass
             return
 
-        dialer.stop()
         outgoing_channel_id = self._outgoing_calls.get(future_bridge_uuid)
         try:
             try:
