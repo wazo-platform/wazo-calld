@@ -870,6 +870,35 @@ class TestPSTNFallback(TestCase):
 
         self.ari_client.channels.originate.assert_called_once()
 
+    def test_pstn_fallback_originate_failure_preserves_push(self):
+        # If originate fails, the push must remain active so the mobile can
+        # still register and answer. Cancelling push before a confirmed PSTN
+        # dispatch would silently drop the call when originate raises.
+        self._setup_eligible_fallback()
+        self.ari_client.channels.originate.side_effect = requests.HTTPError()
+
+        with patch.object(self.service, 'cancel_push_mobile') as cancel_push:
+            self.service._pstn_fallback('call-id')
+
+        cancel_push.assert_not_called()
+        assert isinstance(
+            self.service._pstn_fallbacks.get('call-id'), PSTNFallbackCancelled
+        )
+
+    def test_pstn_fallback_originate_success_cancels_push(self):
+        # Push must be cancelled only after a successful originate so that
+        # both legs of the commit succeed or neither does.
+        self._setup_eligible_fallback()
+
+        with patch.object(self.service, 'cancel_push_mobile') as cancel_push:
+            self.service._pstn_fallback('call-id')
+
+        cancel_push.assert_called_once_with('call-id')
+        self.ari_client.channels.originate.assert_called_once()
+        assert isinstance(
+            self.service._pstn_fallbacks.get('call-id'), PSTNFallbackDialing
+        )
+
     def test_join_bridge_prunes_call_state(self):
         # Successful bridge creation should clean up per-call mapping dicts
         # so they don't grow unbounded.

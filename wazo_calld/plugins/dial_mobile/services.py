@@ -895,9 +895,7 @@ class DialMobileService:
                 number=pending.payload['peer_caller_id_number'],
             )
 
-            # Phase 3: commit (cancel-push + originate). Re-check the
-            # state under the lock — a racing cancel may have transitioned
-            # us to Cancelled during phase 2.
+            # Phase 3: commit (originate, then cancel push on success).
             with lock:
                 match self._pstn_fallbacks.get(call_id):
                     case PSTNFallbackTriggering() as triggering:
@@ -909,7 +907,6 @@ class DialMobileService:
                             pending.user_uuid,
                             call_id,
                         )
-                        self.cancel_push_mobile(call_id)
                         try:
                             pstn_channel = self._ari.channels.originate(
                                 endpoint=(
@@ -932,10 +929,11 @@ class DialMobileService:
                         ) as e:
                             logger.exception(
                                 'PSTN fallback: originate failed for call %s; '
-                                'leaving fallback Cancelled',
+                                'leaving push active and fallback Cancelled',
                                 call_id,
                             )
                             raise _PSTNFallbackAbort from e
+                        self.cancel_push_mobile(call_id)
                         self._pstn_fallbacks[call_id] = triggering.dialing(
                             pstn_channel.id
                         )

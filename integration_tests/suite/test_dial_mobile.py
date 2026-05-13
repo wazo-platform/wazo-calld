@@ -291,3 +291,51 @@ class TestDialMobile(RealAsteriskIntegrationTest):
             timeout=5,
             message='PSTN fallback channel was not hung up after caller hangup',
         )
+
+    def test_pstn_fallback_cancels_push_after_dispatch(self):
+        line_id = 424242
+        self.confd.set_users(
+            MockUser(
+                uuid=_TEST_USER_UUID,
+                line_ids=[line_id],
+                mobile='ring',
+                mobile_fallback_enabled=True,
+                tenant_uuid=_TEST_TENANT_UUID,
+            )
+        )
+        self.confd.set_lines(
+            MockLine(id=line_id, context='local', tenant_uuid=_TEST_TENANT_UUID)
+        )
+
+        chan = self._start_dial_mobile_dial()
+        push_events = self.bus.accumulator(headers={'name': 'call_push_notification'})
+        cancel_events = self.bus.accumulator(
+            headers={'name': 'call_cancel_push_notification'}
+        )
+        self._publish_pushmobile(
+            chan, f'test-pstn-cancels-push-{uuid4()}', ring_time='20'
+        )
+        self._wait_push_notification(push_events)
+
+        # Wait for the PSTN leg to be originated first.
+        until.true(
+            lambda: next(iter(self._pstn_channels()), None),
+            timeout=15,
+            message='PSTN fallback channel was never originated',
+        )
+
+        # Cancel-push must have been published as part of the successful
+        # PSTN dispatch.
+        def push_notification_cancelled():
+            assert_that(
+                cancel_events.accumulate(),
+                has_item(has_entries(name='call_cancel_push_notification')),
+            )
+
+        until.assert_(
+            push_notification_cancelled,
+            timeout=5,
+            message='Push notification was not cancelled after PSTN dispatch',
+        )
+
+        chan.hangup()
