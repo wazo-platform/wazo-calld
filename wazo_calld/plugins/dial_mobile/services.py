@@ -889,6 +889,13 @@ class DialMobileService:
                     call_id,
                 )
                 raise _PSTNFallbackAbort from e
+            except (ARIServerError, HTTPError, RequestException) as e:
+                logger.exception(
+                    'PSTN fallback: caller channel lookup failed for call %s; '
+                    'leaving push active and fallback Cancelled',
+                    call_id,
+                )
+                raise _PSTNFallbackAbort from e
 
             caller_id = '"{name}" <{number}>'.format(
                 name=pending.payload['peer_caller_id_name'],

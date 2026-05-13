@@ -992,3 +992,20 @@ class TestPSTNFallback(TestCase):
         self.service._pstn_fallback('call-id')
 
         self.ari_client.channels.originate.assert_not_called()
+
+    def test_pstn_fallback_aborts_cleanly_when_caller_channel_lookup_fails(self):
+        # ARI infrastructure failure (e.g. ARI down, network issue) during
+        # the caller-channel presence check must abort the fallback cleanly
+        # — push stays active, state transitions to Cancelled, Timer thread
+        # does not die with an unhandled exception.
+        self._setup_eligible_fallback()
+        self.ari_client.channels.get.side_effect = requests.HTTPError()
+
+        with patch.object(self.service, 'cancel_push_mobile') as cancel_push:
+            self.service._pstn_fallback('call-id')
+
+        cancel_push.assert_not_called()
+        self.ari_client.channels.originate.assert_not_called()
+        assert isinstance(
+            self.service._pstn_fallbacks.get('call-id'), PSTNFallbackCancelled
+        )
