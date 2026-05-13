@@ -46,6 +46,7 @@ services:
   calld:
     volumes:
       - ./etc/wazo-calld/conf.d/20-real-asterisk.yml:/etc/wazo-calld/conf.d/20-real-asterisk.yml
+      - ./etc/wazo-calld/conf.d/30-dial-mobile.yml:/etc/wazo-calld/conf.d/30-dial-mobile.yml
       - asterisk-voicemail:/var/spool/asterisk/voicemail
 
   volume-init:

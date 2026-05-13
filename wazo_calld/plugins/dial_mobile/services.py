@@ -180,8 +180,8 @@ PSTNFallback = (
 )
 
 
-PSTN_FALLBACK_MIN_TIMEOUT = 10.0
-PSTN_FALLBACK_RING_TIMEOUT_FACTOR = 0.5
+DEFAULT_PSTN_FALLBACK_MIN_TIMEOUT = 10.0
+DEFAULT_PSTN_FALLBACK_RING_TIMEOUT_FACTOR = 0.5
 
 
 class _NoSuchChannel(Exception):
@@ -369,21 +369,32 @@ class _ContactDialer:
 
 
 class DialMobileService:
-    def __init__(self, ari, notifier, amid_client, auth_client, confd_client):
+    def __init__(
+        self,
+        ari,
+        notifier,
+        amid_client,
+        auth_client,
+        confd_client,
+        pstn_fallback_min_timeout: float = DEFAULT_PSTN_FALLBACK_MIN_TIMEOUT,
+        pstn_fallback_ring_timeout_factor: float = DEFAULT_PSTN_FALLBACK_RING_TIMEOUT_FACTOR,
+    ):
         self._ari = ari.client
         self._auth_client = auth_client
         self._amid_client = amid_client
         self._confd_client = confd_client
-        self._contact_dialers = {}
+        self._contact_dialers: dict[str, _ContactDialer] = {}
         self._dialers_by_aor: dict[str, set[_ContactDialer]] = {}
-        self._caller_channel_leg_by_bridge = {}
-        self._call_ring_time = {}
+        self._caller_channel_leg_by_bridge: dict[str, str] = {}
+        self._call_ring_time: dict[str, int] = {}
         self._incoming_calls: dict[str, IncomingCall] = {}
         self._notifier = notifier
         self._pstn_fallbacks: dict[str, PSTNFallback] = {}
         self._call_locks: dict[str, threading.RLock] = {}
         self._origin_call_id_by_bridge_uuid: dict[str, str] = {}
         self._bridge_uuid_by_origin_call_id: dict[str, str] = {}
+        self._pstn_fallback_min_timeout = pstn_fallback_min_timeout
+        self._pstn_fallback_ring_timeout_factor = pstn_fallback_ring_timeout_factor
 
     def find_bridge_by_exten_context(self, exten, context):
         pickup_mark = f'{exten}%{context}'
@@ -710,8 +721,8 @@ class DialMobileService:
 
             if pstn_fallback_enabled:
                 fallback_timeout = max(
-                    PSTN_FALLBACK_MIN_TIMEOUT,
-                    PSTN_FALLBACK_RING_TIMEOUT_FACTOR * int(ring_timeout),
+                    self._pstn_fallback_min_timeout,
+                    self._pstn_fallback_ring_timeout_factor * int(ring_timeout),
                 )
                 timer = threading.Timer(
                     fallback_timeout, self._pstn_fallback, args=[origin_call_id]

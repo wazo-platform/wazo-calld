@@ -12,7 +12,11 @@ from wazo_calld.types import PluginDependencies
 
 from .bus_consume import EventHandler
 from .notifier import Notifier
-from .services import DialMobileService
+from .services import (
+    DEFAULT_PSTN_FALLBACK_MIN_TIMEOUT,
+    DEFAULT_PSTN_FALLBACK_RING_TIMEOUT_FACTOR,
+    DialMobileService,
+)
 from .stasis import DialMobileStasis
 
 
@@ -34,9 +38,20 @@ class Plugin:
         confd_client = ConfdClient(**config['confd'])
         token_changed_subscribe(confd_client.set_token)
 
+        pstn_fallback_config = config.get('dial_mobile', {}).get('pstn_fallback', {})
         notifier = Notifier(bus_publisher)
         service = DialMobileService(
-            ari, notifier, amid_client, auth_client, confd_client
+            ari,
+            notifier,
+            amid_client,
+            auth_client,
+            confd_client,
+            pstn_fallback_min_timeout=pstn_fallback_config.get(
+                'min_timeout', DEFAULT_PSTN_FALLBACK_MIN_TIMEOUT
+            ),
+            pstn_fallback_ring_timeout_factor=pstn_fallback_config.get(
+                'ring_timeout_factor', DEFAULT_PSTN_FALLBACK_RING_TIMEOUT_FACTOR
+            ),
         )
         stasis = DialMobileStasis(ari, service)
         event_handler = EventHandler(service)

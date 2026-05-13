@@ -237,9 +237,10 @@ class TestDialMobile(RealAsteriskIntegrationTest):
         self._publish_pushmobile(chan, f'test-pstn-disabled-{uuid4()}', ring_time='20')
         self._wait_push_notification(push_events)
 
-        # PSTN timer fires at max(10, 0.5 * 20) = 10 s. Wait beyond that and
+        # PSTN timer fires at max(1.0, 0.05 * 20) = 1 s (integration-test
+        # override in conf.d/30-dial-mobile.yml). Wait beyond that and
         # verify no PSTN channel was ever originated.
-        time.sleep(12)
+        time.sleep(3)
         assert (
             self._pstn_channels() == []
         ), 'PSTN fallback originated a call despite mobile_fallback_enabled=False'
@@ -268,11 +269,11 @@ class TestDialMobile(RealAsteriskIntegrationTest):
         self._publish_pushmobile(chan, f'test-pstn-hangup-{uuid4()}', ring_time='20')
         self._wait_push_notification(push_events)
 
-        # PSTN timer fires at max(10, 0.5 * 20) = 10 s. Wait until the
-        # Local/ring@local PSTN leg is originated.
+        # PSTN timer fires at max(1.0, 0.05 * 20) = 1 s (integration-test
+        # override). Wait until the Local/ring@local PSTN leg is originated.
         pstn_channel = until.true(
             lambda: next(iter(self._pstn_channels()), None),
-            timeout=15,
+            timeout=5,
             message='PSTN fallback channel was never originated',
         )
 
@@ -317,10 +318,10 @@ class TestDialMobile(RealAsteriskIntegrationTest):
         )
         self._wait_push_notification(push_events)
 
-        # PSTN timer fires at max(10, 0.5 * 20) = 10 s. Bring confd down
-        # before then and wait past the timer window.
+        # PSTN timer fires at max(1.0, 0.05 * 20) = 1 s (integration-test
+        # override). Bring confd down before then and wait past the timer.
         with self.confd_stopped():
-            time.sleep(12)
+            time.sleep(3)
             assert cancel_events.accumulate() == [], (
                 'cancel_push_notification was published despite confd being '
                 'unavailable; the push should remain active when the fallback '
@@ -360,7 +361,7 @@ class TestDialMobile(RealAsteriskIntegrationTest):
         # Wait for the PSTN leg to be originated first.
         until.true(
             lambda: next(iter(self._pstn_channels()), None),
-            timeout=15,
+            timeout=5,
             message='PSTN fallback channel was never originated',
         )
 

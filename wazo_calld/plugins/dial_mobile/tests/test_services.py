@@ -607,6 +607,40 @@ class TestPSTNFallback(TestCase):
             self.service._pstn_fallbacks.get('call-id'), PSTNFallbackPending
         )
 
+    @patch('wazo_calld.plugins.dial_mobile.services.threading.Timer')
+    def test_pstn_fallback_timer_uses_configured_min_and_factor(self, mock_timer_cls):
+        service = DialMobileService(
+            self.ari,
+            self.notifier,
+            self.amid_client,
+            self.auth_client,
+            self.confd_client,
+            pstn_fallback_min_timeout=1.0,
+            pstn_fallback_ring_timeout_factor=0.05,
+        )
+        self.confd_client.users.get.return_value = {
+            'mobile_fallback_enabled': True,
+            'mobile_phone_number': '+33123456789',
+        }
+
+        service.send_push_notification(
+            tenant_uuid='t-uuid',
+            user_uuid='u-uuid',
+            call_id='call-id',
+            sip_call_id='sip-id',
+            caller_id_name='Alice',
+            caller_id_number='101',
+            video_enabled=False,
+            ring_timeout=20,
+            origin_call_id='call-id',
+            push_mobile_timestamp='ts',
+        )
+
+        # max(1.0, 0.05 * 20) == 1.0
+        mock_timer_cls.assert_called_once_with(
+            1.0, service._pstn_fallback, args=['call-id']
+        )
+
     def test_send_push_notification_always_creates_call_lock(self):
         # The per-call lock must be created on every push so concurrent
         # IncomingCall transitions can be serialized, even when no PSTN
