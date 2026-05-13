@@ -843,6 +843,7 @@ class DialMobileService:
                 )
                 raise _PSTNFallbackAbort
 
+            # get user's dialplan context for outbound dialing; use the main line's context
             lines = user.get('lines', [])
             if not lines:
                 logger.warning(
