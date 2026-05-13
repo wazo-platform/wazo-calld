@@ -923,6 +923,19 @@ class TestPSTNFallback(TestCase):
             self.service._pstn_fallbacks.get('call-id'), PSTNFallbackDialing
         )
 
+    def test_cancel_pstn_fallback_asserts_when_state_present_without_lock(self):
+        # Invariant: _pstn_fallbacks[call_id] and _call_locks[call_id] share
+        # their lifetime (always pruned together in _prune_call_state). If
+        # the lock is missing but a fallback state is present, that's a bug
+        # that would otherwise leak a ringing PSTN channel.
+        self.service._pstn_fallbacks['call-id'] = PSTNFallbackDialing(
+            call_id='call-id',
+            channel_id='pstn-channel-id',
+        )
+
+        with pytest.raises(AssertionError):
+            self.service._cancel_pstn_fallback('call-id')
+
     def test_join_bridge_hangs_up_active_pstn_channel(self):
         # pickup or mobile-answer must tear down an in-progress PSTN call
         self.service._pstn_fallbacks['call-id'] = PSTNFallbackDialing(

@@ -755,6 +755,11 @@ class DialMobileService:
     def _cancel_pstn_fallback(self, call_id: str) -> None:
         lock = self._call_locks.get(call_id)
         if lock is None:
+            assert call_id not in self._pstn_fallbacks, (
+                f'PSTN fallback state for {call_id} present without lock '
+                f'(state={self._pstn_fallbacks[call_id]!r}); _call_locks and '
+                '_pstn_fallbacks lifetimes have drifted'
+            )
             return
         with lock:
             logger.info('cancelling PSTN fallback for call %s', call_id)
