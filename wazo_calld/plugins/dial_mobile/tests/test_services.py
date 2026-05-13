@@ -366,7 +366,7 @@ class DialMobileServiceTestCase(DialerTestCase):
     def test_join_bridge_caller_gone_will_hangup(self):
         dialer = Mock()
         self.service._contact_dialers = {s.bridge_uuid: dialer}
-        self.service._outgoing_calls = {s.bridge_uuid: s.caller_channel}
+        self.service._caller_channel_leg_by_bridge = {s.bridge_uuid: s.caller_channel}
         self.service._origin_call_id_by_bridge_uuid[s.bridge_uuid] = s.origin_call_id
         self.service._call_id_by_origin_call_id[s.origin_call_id] = s.call_id
         self.ari_client.channels.answer.side_effect = ARINotFound(
@@ -586,7 +586,7 @@ class TestPSTNFallback(TestCase):
 
         dialer = Mock()
         self.service._contact_dialers['bridge-uuid'] = dialer
-        self.service._outgoing_calls['bridge-uuid'] = 'caller-ch'
+        self.service._caller_channel_leg_by_bridge['bridge-uuid'] = 'caller-ch'
 
         self.service.join_bridge('mobile-ch', 'bridge-uuid')
 
@@ -612,7 +612,7 @@ class TestPSTNFallback(TestCase):
     def test_pstn_fallback_noop_when_no_mobile_number(self):
         self.service._incoming_calls['call-id'] = self._make_notified()
         self.service._bridge_uuid_by_origin_call_id['origin-id'] = 'bridge-uuid'
-        self.service._outgoing_calls['bridge-uuid'] = 'caller-ch'
+        self.service._caller_channel_leg_by_bridge['bridge-uuid'] = 'caller-ch'
         self.confd_client.users.get.return_value = {
             'mobile_fallback_enabled': True,
             'mobile_phone_number': None,
@@ -626,7 +626,7 @@ class TestPSTNFallback(TestCase):
     def test_pstn_fallback_originates_local_channel(self):
         self.service._incoming_calls['call-id'] = self._make_notified()
         self.service._bridge_uuid_by_origin_call_id['origin-id'] = 'bridge-uuid'
-        self.service._outgoing_calls['bridge-uuid'] = 'caller-ch'
+        self.service._caller_channel_leg_by_bridge['bridge-uuid'] = 'caller-ch'
         self.service._pstn_fallbacks['call-id'] = PSTNFallbackPending(
             call_id='call-id', timer=Mock(), lock=threading.Lock()
         )
@@ -683,7 +683,7 @@ class TestPSTNFallback(TestCase):
     def test_pstn_fallback_records_originated_channel_id(self):
         self.service._incoming_calls['call-id'] = self._make_notified()
         self.service._bridge_uuid_by_origin_call_id['origin-id'] = 'bridge-uuid'
-        self.service._outgoing_calls['bridge-uuid'] = 'caller-ch'
+        self.service._caller_channel_leg_by_bridge['bridge-uuid'] = 'caller-ch'
         self.service._pstn_fallbacks['call-id'] = PSTNFallbackPending(
             call_id='call-id', timer=Mock(), lock=threading.Lock()
         )
@@ -747,7 +747,7 @@ class TestPSTNFallback(TestCase):
 
         dialer = Mock()
         self.service._contact_dialers['bridge-uuid'] = dialer
-        self.service._outgoing_calls['bridge-uuid'] = 'caller-ch'
+        self.service._caller_channel_leg_by_bridge['bridge-uuid'] = 'caller-ch'
 
         self.service.join_bridge('answering-ch', 'bridge-uuid')
 
@@ -767,7 +767,7 @@ class TestPSTNFallback(TestCase):
 
         dialer = Mock()
         self.service._contact_dialers['bridge-uuid'] = dialer
-        self.service._outgoing_calls['bridge-uuid'] = 'caller-ch'
+        self.service._caller_channel_leg_by_bridge['bridge-uuid'] = 'caller-ch'
 
         self.service.join_bridge('pstn-channel-id', 'bridge-uuid')
         # PSTN channel must not be hung up
@@ -829,7 +829,7 @@ class TestPSTNFallback(TestCase):
         # lock without short-circuiting.
         self.service._incoming_calls['call-id'] = self._make_notified()
         self.service._bridge_uuid_by_origin_call_id['origin-id'] = 'bridge-uuid'
-        self.service._outgoing_calls['bridge-uuid'] = 'caller-ch'
+        self.service._caller_channel_leg_by_bridge['bridge-uuid'] = 'caller-ch'
         self.service._pstn_fallbacks['call-id'] = PSTNFallbackPending(
             call_id='call-id', timer=Mock(), lock=threading.Lock()
         )
@@ -872,7 +872,7 @@ class TestPSTNFallback(TestCase):
         self.service._call_ring_time['origin-id'] = 30
         dialer = Mock()
         self.service._contact_dialers['bridge-uuid'] = dialer
-        self.service._outgoing_calls['bridge-uuid'] = 'caller-ch'
+        self.service._caller_channel_leg_by_bridge['bridge-uuid'] = 'caller-ch'
 
         self.service.join_bridge('mobile-ch', 'bridge-uuid')
 
@@ -880,7 +880,7 @@ class TestPSTNFallback(TestCase):
         assert 'origin-id' not in self.service._bridge_uuid_by_origin_call_id
         assert 'origin-id' not in self.service._call_id_by_origin_call_id
         assert 'origin-id' not in self.service._call_ring_time
-        assert 'bridge-uuid' not in self.service._outgoing_calls
+        assert 'bridge-uuid' not in self.service._caller_channel_leg_by_bridge
 
     def test_notify_channel_gone_prunes_call_state(self):
         caller_channel_id = '1234567890.42'
@@ -907,7 +907,7 @@ class TestPSTNFallback(TestCase):
         assert 'origin-id' not in self.service._bridge_uuid_by_origin_call_id
         assert 'origin-id' not in self.service._call_id_by_origin_call_id
         assert 'origin-id' not in self.service._call_ring_time
-        assert bridge_uuid not in self.service._outgoing_calls
+        assert bridge_uuid not in self.service._caller_channel_leg_by_bridge
 
     def test_on_calld_stopping_cancels_pstn_timers(self):
         timer_a = Mock()
@@ -941,7 +941,7 @@ class TestPSTNFallback(TestCase):
     def test_pstn_fallback_noop_when_caller_channel_gone(self):
         self.service._incoming_calls['call-id'] = self._make_notified()
         self.service._bridge_uuid_by_origin_call_id['origin-id'] = 'bridge-uuid'
-        self.service._outgoing_calls['bridge-uuid'] = 'caller-ch'
+        self.service._caller_channel_leg_by_bridge['bridge-uuid'] = 'caller-ch'
         self.confd_client.users.get.return_value = {
             'mobile_fallback_enabled': True,
             'mobile_phone_number': '+33123456789',

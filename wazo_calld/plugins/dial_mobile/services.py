@@ -350,7 +350,7 @@ class DialMobileService:
         self._confd_client = confd_client
         self._contact_dialers = {}
         self._dialers_by_aor: dict[str, set[_PollingContactDialer]] = {}
-        self._outgoing_calls = {}
+        self._caller_channel_leg_by_bridge = {}
         self._call_ring_time = {}
         self._incoming_calls: dict[str, IncomingCall] = {}
         self._notifier = notifier
@@ -407,7 +407,7 @@ class DialMobileService:
         )
         self._contact_dialers[future_bridge_uuid] = dialer
         self._dialers_by_aor.setdefault(aor, set()).add(dialer)
-        self._outgoing_calls[future_bridge_uuid] = caller_channel_id
+        self._caller_channel_leg_by_bridge[future_bridge_uuid] = caller_channel_id
         self._origin_call_id_by_bridge_uuid[future_bridge_uuid] = origin_channel_id
         self._bridge_uuid_by_origin_call_id[origin_channel_id] = future_bridge_uuid
         dialer.start()
@@ -473,7 +473,7 @@ class DialMobileService:
                 pass
             return
 
-        outgoing_channel_id = self._outgoing_calls.get(future_bridge_uuid)
+        outgoing_channel_id = self._caller_channel_leg_by_bridge.get(future_bridge_uuid)
         try:
             try:
                 self._ari.channels.answer(channelId=outgoing_channel_id)
@@ -534,7 +534,7 @@ class DialMobileService:
             self._call_ring_time.pop(origin_call_id, None)
             if call_id is not None:
                 self._pstn_fallbacks.pop(call_id, None)
-        self._outgoing_calls.pop(future_bridge_uuid, None)
+        self._caller_channel_leg_by_bridge.pop(future_bridge_uuid, None)
 
     def notify_channel_gone(self, channel_id):
         # If a PSTN-fallback channel has torn down on its own, transition
@@ -853,7 +853,7 @@ class DialMobileService:
             )
             return
 
-        caller_channel_id = self._outgoing_calls.get(future_bridge_uuid)
+        caller_channel_id = self._caller_channel_leg_by_bridge.get(future_bridge_uuid)
         try:
             self._ari.channels.get(channelId=caller_channel_id)
         except ARINotFound:
