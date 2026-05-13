@@ -773,10 +773,6 @@ class DialMobileService:
                     call_id,
                 )
 
-    def remove_pending_push_mobile(self, call_id: str) -> None:
-        """Deprecated alias for complete_pending_push_mobile."""
-        self.complete_pending_push_mobile(call_id)
-
     def _pstn_fallback(self, call_id: str) -> None:
         """Timer-fired callback. Drives the fallback through:
         Pending → Triggering (early) → Dialing on success, or
