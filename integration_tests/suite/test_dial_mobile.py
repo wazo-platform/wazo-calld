@@ -379,3 +379,86 @@ class TestDialMobile(RealAsteriskIntegrationTest):
         )
 
         chan.hangup()
+
+    def test_cancel_push_via_dial_end_uses_linkedid(self):
+        # Regression test for the linkedid-keyed state invariant: the bus
+        # consumer's DialEnd handler looks up push state by event['Linkedid'].
+        # Internal state is now keyed by Linkedid too, so the lookup must
+        # succeed even when the Pushmobile event's Uniqueid differs from its
+        # Linkedid (the common production case, where Pushmobile is emitted
+        # from a Local;2 leg of a Dial).
+        chan = self._start_dial_mobile_dial()
+        push_events = self.bus.accumulator(headers={'name': 'call_push_notification'})
+        cancel_events = self.bus.accumulator(
+            headers={'name': 'call_cancel_push_notification'}
+        )
+
+        push_uniqueid = f'test-push-uniqueid-{uuid4()}'
+        # _publish_pushmobile sets Uniqueid=push_uniqueid, Linkedid=chan.id —
+        # deliberately distinct values.
+        self._publish_pushmobile(chan, push_uniqueid, ring_time='200')
+        self._wait_push_notification(push_events)
+
+        # Fake a DialEnd for the wazo_wait_for_registration dial that didn't
+        # answer. The bus consumer only reads DestContext, DialStatus, and
+        # Linkedid; the rest of the payload is padding to satisfy AMI
+        # deserialization.
+        self.bus.publish(
+            {
+                'data': {
+                    'Event': 'DialEnd',
+                    'DialStatus': 'NOANSWER',
+                    'DestContext': 'wazo_wait_for_registration',
+                    'Linkedid': chan.id,
+                    'Uniqueid': chan.id,
+                    'Channel': 'PJSIP/test-00000001',
+                    'DestChannel': ('Local/test@wazo_wait_for_registration-00000001;1'),
+                    'DestLinkedid': chan.id,
+                    'DestUniqueid': 'fake-dest-uniqueid',
+                    'CallerIDNum': '101',
+                    'CallerIDName': 'Alice',
+                    'ConnectedLineNum': '<unknown>',
+                    'ConnectedLineName': '<unknown>',
+                    'Context': 'user',
+                    'Exten': 's',
+                    'Priority': '1',
+                    'Language': 'en_US',
+                    'DestExten': 's',
+                    'DestPriority': '1',
+                    'DestLanguage': 'en_US',
+                    'DestCallerIDNum': 's',
+                    'DestCallerIDName': '<unknown>',
+                    'DestConnectedLineNum': '<unknown>',
+                    'DestConnectedLineName': '<unknown>',
+                    'ChannelState': '6',
+                    'ChannelStateDesc': 'Up',
+                    'DestChannelState': '5',
+                    'DestChannelStateDesc': 'Ringing',
+                    'ChanVariable': {},
+                    'DestChanVariable': {},
+                    'AccountCode': '',
+                    'DestAccountCode': '',
+                    'Privilege': 'call,all',
+                }
+            },
+            headers={'name': 'DialEnd'},
+        )
+
+        # The cancel-push event must be published — proving the linkedid-keyed
+        # lookup succeeded despite the Pushmobile's Uniqueid being different.
+        def push_notification_cancelled():
+            assert_that(
+                cancel_events.accumulate(),
+                has_item(has_entries(name='call_cancel_push_notification')),
+            )
+
+        until.assert_(
+            push_notification_cancelled,
+            timeout=5,
+            message=(
+                'cancel_push_notification was not published despite DialEnd '
+                'carrying the matching Linkedid'
+            ),
+        )
+
+        chan.hangup()
