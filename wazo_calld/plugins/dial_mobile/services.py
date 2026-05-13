@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class IncomingCallPending:
-    """Push notification not yet sent — initial state."""
+    """Push notification not yet sent — initial state"""
 
     call_id: str
     tenant_uuid: str
@@ -35,10 +35,19 @@ class IncomingCallPending:
             payload=self.payload,
         )
 
+    def push_cancelled(self) -> 'IncomingCallPushCancelled':
+        return IncomingCallPushCancelled(
+            call_id=self.call_id,
+            tenant_uuid=self.tenant_uuid,
+            user_uuid=self.user_uuid,
+            origin_call_id=self.origin_call_id,
+            payload=self.payload,
+        )
+
 
 @dataclass
 class IncomingCallNotified(IncomingCallPending):
-    """Push sent; waiting for mobile app to register and answer."""
+    """Push sent; waiting for mobile app to register and answer"""
 
     def received(self) -> 'IncomingCallReceived':
         return IncomingCallReceived(
@@ -49,32 +58,28 @@ class IncomingCallNotified(IncomingCallPending):
             payload=self.payload,
         )
 
-    def cancelled(self) -> 'IncomingCallCancelled':
-        return IncomingCallCancelled(
-            call_id=self.call_id,
-            tenant_uuid=self.tenant_uuid,
-            user_uuid=self.user_uuid,
-            origin_call_id=self.origin_call_id,
-            payload=self.payload,
-        )
-
 
 @dataclass
 class IncomingCallReceived(IncomingCallNotified):
-    """Mobile answered the call — terminal, no push cancellation sent."""
+    """Mobile answered the call — terminal, no push cancellation sent"""
 
 
 @dataclass
-class IncomingCallCancelled(IncomingCallNotified):
-    """Caller hung up or PSTN fallback committed — terminal, push cancellation sent."""
+class IncomingCallPushCancelled(IncomingCallPending):
+    """Terminal: the mobile push attempt has been abandoned"""
 
 
-IncomingCall = IncomingCallPending | IncomingCallNotified
+IncomingCall = (
+    IncomingCallPending
+    | IncomingCallNotified
+    | IncomingCallReceived
+    | IncomingCallPushCancelled
+)
 
 
 @dataclass(eq=False)
 class PSTNFallbackPending:
-    """Timer armed; PSTN fallback may fire when it expires."""
+    """Timer armed; PSTN fallback may fire when it expires"""
 
     call_id: str
     timer: threading.Timer
@@ -447,28 +452,22 @@ class DialMobileService:
             self._unregister_dialer_by_aor(dialer)
             dialer.stop()
         else:
-            # No active dialer means the call was already cancelled or answered;
-            # this channel arrived late and has no bridge to join — hang it up.
-            if call_id:
-                incoming = self._incoming_calls.get(call_id)
-                if incoming is not None:
-                    logger.warning(
-                        'join_bridge(channel_id=%s, future_bridge_uuid=%s): call %s: '
-                        'bridge has no dialer but push state is %s; '
-                        'hanging up late channel',
-                        channel_id,
-                        future_bridge_uuid,
-                        call_id,
-                        type(incoming).__name__,
-                    )
-                else:
-                    logger.debug(
-                        'join_bridge: bridge %s has no dialer, call %s already'
-                        ' cleaned up; hanging up late channel %s',
-                        future_bridge_uuid,
-                        call_id,
-                        channel_id,
-                    )
+            # no dialer can mean  bridge is untracked, or call state already torn down
+            # (cancelled or already answered)
+            logger.warning(
+                'join_bridge(channel=%s, bridge=%s): Channel is late, hanging up',
+                channel_id,
+                future_bridge_uuid,
+            )
+            if call_id and (incoming := self._incoming_calls.get(call_id)):
+                logger.warning(
+                    'join_bridge(channel=%s, bridge=%s): call %s has no dialer '
+                    'but call push state is %s',
+                    channel_id,
+                    future_bridge_uuid,
+                    call_id,
+                    str(incoming),
+                )
             try:
                 self._ari.channels.hangup(channelId=channel_id)
             except ARINotFound:
@@ -537,6 +536,7 @@ class DialMobileService:
             if call_id is not None:
                 self._pstn_fallbacks.pop(call_id, None)
                 self._call_locks.pop(call_id, None)
+                self._incoming_calls.pop(call_id, None)
         self._caller_channel_leg_by_bridge.pop(future_bridge_uuid, None)
 
     def notify_channel_gone(self, channel_id):
@@ -737,39 +737,57 @@ class DialMobileService:
             pass
 
     def cancel_push_mobile(self, call_id: str) -> None:
-        incoming_call = self._incoming_calls.pop(call_id, None)
+        incoming_call = self._incoming_calls.get(call_id)
         match incoming_call:
+            case IncomingCallReceived() | IncomingCallPushCancelled():
+                logger.debug(
+                    'cancel_push_mobile: call %s already terminal (%s)',
+                    call_id,
+                    type(incoming_call).__name__,
+                )
             case IncomingCallNotified():
                 self._notifier.cancel_push_notification(
                     incoming_call.payload,
                     incoming_call.tenant_uuid,
                     incoming_call.user_uuid,
                 )
+                self._incoming_calls[call_id] = incoming_call.push_cancelled()
+            case IncomingCallPending():
+                # Push not yet sent (very tight race during send_push_notification);
+                # record the cancellation without dispatching one.
+                logger.info(
+                    'cancel_push_mobile: push not yet sent for call %s, '
+                    'recording cancellation',
+                    call_id,
+                )
+                self._incoming_calls[call_id] = incoming_call.push_cancelled()
             case None:
                 logger.warning(
                     'cancel_push_mobile: no incoming call for call_id %s', call_id
                 )
-            case _:
-                logger.warning(
-                    'cancel_push_mobile: unexpected state %s for call_id %s',
-                    type(incoming_call).__name__,
-                    call_id,
-                )
 
     def complete_pending_push_mobile(self, call_id: str) -> None:
-        incoming_call = self._incoming_calls.pop(call_id, None)
+        incoming_call = self._incoming_calls.get(call_id)
         match incoming_call:
-            case IncomingCallNotified():
+            case IncomingCallReceived():
                 pass
+            case IncomingCallPushCancelled():
+                logger.warning(
+                    'complete_pending_push_mobile: call %s was already cancelled',
+                    call_id,
+                )
+            case IncomingCallNotified():
+                self._incoming_calls[call_id] = incoming_call.received()
+            case IncomingCallPending():
+                logger.warning(
+                    'complete_pending_push_mobile: completing before push was '
+                    'sent for call %s',
+                    call_id,
+                )
+                self._incoming_calls[call_id] = incoming_call.notified().received()
             case None:
                 logger.warning(
                     'complete_pending_push_mobile: no incoming call for call_id %s',
-                    call_id,
-                )
-            case _:
-                logger.warning(
-                    'complete_pending_push_mobile: unexpected state %s for call_id %s',
-                    type(incoming_call).__name__,
                     call_id,
                 )
 
@@ -809,12 +827,15 @@ class DialMobileService:
         # Triggering → Cancelled transition.
         try:
             pending = self._incoming_calls.get(call_id)
-            if not pending:
-                logger.info(
-                    "no pending push for call_id %s, aborting PSTN fallback",
-                    call_id,
-                )
-                raise _PSTNFallbackAbort
+            match pending:
+                case None | IncomingCallReceived() | IncomingCallPushCancelled():
+                    logger.info(
+                        "no actionable push for call_id %s (state=%s); "
+                        "aborting PSTN fallback",
+                        call_id,
+                        type(pending).__name__ if pending else None,
+                    )
+                    raise _PSTNFallbackAbort
 
             try:
                 user = self._confd_client.users.get(
@@ -968,8 +989,9 @@ class DialMobileService:
         self, push_call_id, call_id, endpoint, user_uuid
     ):
         pending_push = self._incoming_calls.get(push_call_id)
-        if not pending_push:
-            return False
+        match pending_push:
+            case None | IncomingCallReceived() | IncomingCallPushCancelled():
+                return False
 
         if user_uuid != pending_push.user_uuid:
             return False

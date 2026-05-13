@@ -16,6 +16,8 @@ from ..services import (
     DialMobileService,
     IncomingCallNotified,
     IncomingCallPending,
+    IncomingCallPushCancelled,
+    IncomingCallReceived,
     PSTNFallbackCancelled,
     PSTNFallbackDialing,
     PSTNFallbackPending,
@@ -410,13 +412,47 @@ class TestCancelPushNotification(TestCase):
     def test_that_nothing_happens_when_not_a_pending_push(self):
         self.service.cancel_push_mobile(s.call_id)
 
-    def test_complete_push_mobile_removes_without_sending_cancellation(self):
+    def test_complete_push_mobile_transitions_to_received(self):
         self.service._incoming_calls[s.call_id] = self._make_notified()
 
         self.service.complete_pending_push_mobile(s.call_id)
 
         self.notifier.cancel_push_notification.assert_not_called()
-        assert s.call_id not in self.service._incoming_calls
+        assert isinstance(self.service._incoming_calls[s.call_id], IncomingCallReceived)
+
+    def test_cancel_push_mobile_transitions_notified_to_cancelled(self):
+        self.service._incoming_calls[s.call_id] = self._make_notified()
+
+        self.service.cancel_push_mobile(s.call_id)
+
+        assert isinstance(
+            self.service._incoming_calls[s.call_id], IncomingCallPushCancelled
+        )
+
+    def test_cancel_push_mobile_transitions_pending_directly_to_cancelled(self):
+        # The Pending → Cancelled transition must be direct (no push to
+        # cancel, since none was sent yet).
+        self.service._incoming_calls[s.call_id] = IncomingCallPending(
+            call_id=s.call_id,
+            tenant_uuid=s.tenant_uuid,
+            user_uuid=s.user_uuid,
+            origin_call_id=s.origin_call_id,
+            payload={},
+        )
+
+        self.service.cancel_push_mobile(s.call_id)
+
+        self.notifier.cancel_push_notification.assert_not_called()
+        assert isinstance(
+            self.service._incoming_calls[s.call_id], IncomingCallPushCancelled
+        )
+
+    def test_cancel_push_mobile_terminal_state_is_idempotent(self):
+        self.service._incoming_calls[s.call_id] = self._make_notified().push_cancelled()
+
+        self.service.cancel_push_mobile(s.call_id)
+        # Already terminal — no second cancellation dispatched.
+        self.notifier.cancel_push_notification.assert_not_called()
 
     @patch('wazo_calld.plugins.dial_mobile.services.threading.Timer')
     def test_that_original_payload_is_sent_when_canceling(self, _mock_timer):
@@ -906,6 +942,7 @@ class TestPSTNFallback(TestCase):
         self.service._origin_call_id_by_bridge_uuid['bridge-uuid'] = 'origin-id'
         self.service._bridge_uuid_by_origin_call_id['origin-id'] = 'bridge-uuid'
         self.service._call_ring_time['origin-id'] = 30
+        self.service._incoming_calls['call-id'] = self._make_notified().received()
         dialer = Mock()
         self.service._contact_dialers['bridge-uuid'] = dialer
         self.service._caller_channel_leg_by_bridge['bridge-uuid'] = 'caller-ch'
@@ -917,6 +954,28 @@ class TestPSTNFallback(TestCase):
         assert 'origin-id' not in self.service._call_id_by_origin_call_id
         assert 'origin-id' not in self.service._call_ring_time
         assert 'bridge-uuid' not in self.service._caller_channel_leg_by_bridge
+        assert 'call-id' not in self.service._incoming_calls
+
+    def test_has_a_registered_mobile_and_pending_push_false_on_terminal_state(
+        self,
+    ):
+        # Once a call reaches Received or Cancelled, it is no longer
+        # considered to have a pending push.
+        self.service._incoming_calls['call-id'] = self._make_notified().received()
+        assert (
+            self.service.has_a_registered_mobile_and_pending_push(
+                'call-id', 'asterisk-call-id', 'PJSIP/aor', 'user-uuid'
+            )
+            is False
+        )
+
+        self.service._incoming_calls['call-id'] = self._make_notified().push_cancelled()
+        assert (
+            self.service.has_a_registered_mobile_and_pending_push(
+                'call-id', 'asterisk-call-id', 'PJSIP/aor', 'user-uuid'
+            )
+            is False
+        )
 
     def test_notify_channel_gone_prunes_call_state(self):
         caller_channel_id = '1234567890.42'
