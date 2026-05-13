@@ -361,7 +361,6 @@ class DialMobileService:
         self._call_locks: dict[str, threading.RLock] = {}
         self._origin_call_id_by_bridge_uuid: dict[str, str] = {}
         self._bridge_uuid_by_origin_call_id: dict[str, str] = {}
-        self._call_id_by_origin_call_id: dict[str, str] = {}
 
     def find_bridge_by_exten_context(self, exten, context):
         pickup_mark = f'{exten}%{context}'
@@ -517,12 +516,7 @@ class DialMobileService:
             self._prune_call_state(future_bridge_uuid)
 
     def _call_id_for_bridge(self, bridge_uuid: str) -> str | None:
-        origin_call_id = self._origin_call_id_by_bridge_uuid.get(bridge_uuid)
-        return (
-            self._call_id_by_origin_call_id.get(origin_call_id)
-            if origin_call_id
-            else None
-        )
+        return self._origin_call_id_by_bridge_uuid.get(bridge_uuid)
 
     def _prune_call_state(self, future_bridge_uuid: str) -> None:
         # Tear down per-call indirection so the maps don't grow unbounded
@@ -532,12 +526,10 @@ class DialMobileService:
         )
         if origin_call_id is not None:
             self._bridge_uuid_by_origin_call_id.pop(origin_call_id, None)
-            call_id = self._call_id_by_origin_call_id.pop(origin_call_id, None)
             self._call_ring_time.pop(origin_call_id, None)
-            if call_id is not None:
-                self._pstn_fallbacks.pop(call_id, None)
-                self._call_locks.pop(call_id, None)
-                self._incoming_calls.pop(call_id, None)
+            self._pstn_fallbacks.pop(origin_call_id, None)
+            self._call_locks.pop(origin_call_id, None)
+            self._incoming_calls.pop(origin_call_id, None)
         self._caller_channel_leg_by_bridge.pop(future_bridge_uuid, None)
 
     def notify_channel_gone(self, channel_id):
@@ -670,12 +662,17 @@ class DialMobileService:
             origin_call_id=origin_call_id,
             payload=payload,
         )
-        lock = self._call_locks.setdefault(call_id, threading.RLock())
+        # Internal state is keyed by the call's linkedid (origin_call_id),
+        # not the Pushmobile-emitting channel's Uniqueid (call_id) — that
+        # way bus consumer paths that only know the linkedid (BridgeEnter,
+        # DialEnd) find the state they need to mutate. call_id is kept on
+        # the dataclass and in the payload because the mobile client uses
+        # it as the call identifier.
+        lock = self._call_locks.setdefault(origin_call_id, threading.RLock())
         with lock:
-            self._incoming_calls[call_id] = pending
+            self._incoming_calls[origin_call_id] = pending
 
             self._call_ring_time[origin_call_id] = ring_timeout
-            self._call_id_by_origin_call_id[origin_call_id] = call_id
 
             if self._pstn_fallback_eligible(user_uuid, tenant_uuid):
                 fallback_timeout = max(
@@ -683,10 +680,10 @@ class DialMobileService:
                     PSTN_FALLBACK_RING_TIMEOUT_FACTOR * int(ring_timeout),
                 )
                 timer = threading.Timer(
-                    fallback_timeout, self._pstn_fallback, args=[call_id]
+                    fallback_timeout, self._pstn_fallback, args=[origin_call_id]
                 )
-                self._pstn_fallbacks[call_id] = PSTNFallbackPending(
-                    call_id=call_id, timer=timer
+                self._pstn_fallbacks[origin_call_id] = PSTNFallbackPending(
+                    call_id=origin_call_id, timer=timer
                 )
                 logger.info(
                     'call %s: Arming PSTN fallback timer with timeout=%d',
@@ -699,7 +696,7 @@ class DialMobileService:
                 'call %s: Sending incoming call push notification', origin_call_id
             )
             self._notifier.push_notification(payload, tenant_uuid, user_uuid)
-            self._incoming_calls[call_id] = pending.notified()
+            self._incoming_calls[origin_call_id] = pending.notified()
 
     def _pstn_fallback_eligible(self, user_uuid: str, tenant_uuid: str) -> bool:
         # Check user config once at push time so we don't arm a timer that
@@ -803,6 +800,7 @@ class DialMobileService:
 
     def complete_pending_push_mobile(self, call_id: str) -> None:
         with self._incoming_call_lock(call_id):
+            logger.info('Completing mobile push flow for call %s', call_id)
             incoming_call = self._incoming_calls.get(call_id)
             match incoming_call:
                 case IncomingCallReceived():

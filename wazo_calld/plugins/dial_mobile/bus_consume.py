@@ -106,4 +106,5 @@ class EventHandler:
         if event['DialStatus'] == 'ANSWER':
             return
 
-        self._service.cancel_push_mobile(event['Uniqueid'])
+        # Internal state is keyed by the call's Linkedid.
+        self._service.cancel_push_mobile(event['Linkedid'])
