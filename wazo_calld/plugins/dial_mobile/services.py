@@ -121,12 +121,7 @@ class PSTNFallbackPending:
 
 @dataclass(eq=False)
 class PSTNFallbackTriggering:
-    """Timer fired; commit (cancel-push + originate) in flight.
-
-    Observable phase marker between `Pending` and `Dialing`. The
-    transition into and out of this state is serialised by the
-    per-call lock held by `_pstn_fallback`.
-    """
+    """Timer fired, but PSTN call not yet dispatched"""
 
     call_id: str
 
@@ -731,10 +726,6 @@ class DialMobileService:
                 timer.start()
 
     def _pstn_fallback_eligible(self, user_uuid: str, tenant_uuid: str) -> bool:
-        # Check user config once at push time so we don't arm a timer that
-        # would no-op when it fires.  On confd errors we err on the safe side
-        # and arm the timer anyway so the existing in-`_pstn_fallback` checks
-        # can re-evaluate when the timer fires.
         try:
             user = self._confd_client.users.get(user_uuid, tenant_uuid=tenant_uuid)
         except (HTTPError, RequestException) as e:
@@ -857,20 +848,15 @@ class DialMobileService:
                         call_id,
                     )
 
-    def _incoming_call_lock(self, call_id: str):
-        # Returns the per-call RLock for serializing IncomingCall transitions,
-        # or a no-op context manager if the call is unknown (no entry was
-        # created, or the call was already pruned). The lock is created in
-        # `send_push_notification` and reused by the PSTN state machine.
+    def _incoming_call_lock(
+        self, call_id: str
+    ) -> threading.RLock | contextlib.nullcontext:
         lock = self._call_locks.get(call_id)
+        # handle missing lock as a no-op context manager
         return lock if lock is not None else contextlib.nullcontext()
 
     def _pstn_fallback(self, call_id: str) -> None:
-        """Timer-fired callback. Drives the fallback through:
-        Pending → Triggering (early) → Dialing on success, or
-        → Cancelled on any preliminary failure / originate failure /
-        racing cancel.
-        """
+        """Timer-fired callback, dispatch PSTN fallback call"""
         lock = self._call_locks.get(call_id)
         if lock is None:
             logger.warning(
