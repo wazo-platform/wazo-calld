@@ -47,8 +47,14 @@ class IncomingCallPending:
 
 
 @dataclass
-class IncomingCallNotified(IncomingCallPending):
+class IncomingCallNotified:
     """Push sent; waiting for mobile app to register and answer"""
+
+    call_id: str
+    tenant_uuid: str
+    user_uuid: str
+    origin_call_id: str
+    payload: dict
 
     def received(self) -> 'IncomingCallReceived':
         return IncomingCallReceived(
@@ -59,15 +65,36 @@ class IncomingCallNotified(IncomingCallPending):
             payload=self.payload,
         )
 
+    def push_cancelled(self) -> 'IncomingCallPushCancelled':
+        return IncomingCallPushCancelled(
+            call_id=self.call_id,
+            tenant_uuid=self.tenant_uuid,
+            user_uuid=self.user_uuid,
+            origin_call_id=self.origin_call_id,
+            payload=self.payload,
+        )
+
 
 @dataclass
-class IncomingCallReceived(IncomingCallNotified):
+class IncomingCallReceived:
     """Mobile answered the call — terminal, no push cancellation sent"""
 
+    call_id: str
+    tenant_uuid: str
+    user_uuid: str
+    origin_call_id: str
+    payload: dict
+
 
 @dataclass
-class IncomingCallPushCancelled(IncomingCallPending):
+class IncomingCallPushCancelled:
     """Terminal: the mobile push attempt has been abandoned"""
+
+    call_id: str
+    tenant_uuid: str
+    user_uuid: str
+    origin_call_id: str
+    payload: dict
 
 
 IncomingCall = (
@@ -662,19 +689,30 @@ class DialMobileService:
             origin_call_id=origin_call_id,
             payload=payload,
         )
-        # Internal state is keyed by the call's linkedid (origin_call_id),
-        # not the Pushmobile-emitting channel's Uniqueid (call_id) — that
-        # way bus consumer paths that only know the linkedid (BridgeEnter,
-        # DialEnd) find the state they need to mutate. call_id is kept on
-        # the dataclass and in the payload because the mobile client uses
-        # it as the call identifier.
         lock = self._call_locks.setdefault(origin_call_id, threading.RLock())
         with lock:
             self._incoming_calls[origin_call_id] = pending
 
             self._call_ring_time[origin_call_id] = ring_timeout
 
-            if self._pstn_fallback_eligible(user_uuid, tenant_uuid):
+        pstn_fallback_enabled = self._pstn_fallback_eligible(user_uuid, tenant_uuid)
+        with lock:
+            match self._incoming_calls.get(origin_call_id):
+                case IncomingCallPending():
+                    logger.info(
+                        'call %s: Sending incoming call push notification',
+                        origin_call_id,
+                    )
+                    self._notifier.push_notification(payload, tenant_uuid, user_uuid)
+                    self._incoming_calls[origin_call_id] = pending.notified()
+                case _:
+                    logger.info(
+                        'call %s cancelled before sending out push notification, aborting',
+                        origin_call_id,
+                    )
+                    return
+
+            if pstn_fallback_enabled:
                 fallback_timeout = max(
                     PSTN_FALLBACK_MIN_TIMEOUT,
                     PSTN_FALLBACK_RING_TIMEOUT_FACTOR * int(ring_timeout),
@@ -691,12 +729,6 @@ class DialMobileService:
                     fallback_timeout,
                 )
                 timer.start()
-
-            logger.info(
-                'call %s: Sending incoming call push notification', origin_call_id
-            )
-            self._notifier.push_notification(payload, tenant_uuid, user_uuid)
-            self._incoming_calls[origin_call_id] = pending.notified()
 
     def _pstn_fallback_eligible(self, user_uuid: str, tenant_uuid: str) -> bool:
         # Check user config once at push time so we don't arm a timer that

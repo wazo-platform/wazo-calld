@@ -638,6 +638,34 @@ class TestPSTNFallback(TestCase):
 
         assert first_lock is second_lock
 
+    def test_push_not_sent_when_cancelled_during_eligibility_lookup(self):
+        # Race: caller hangs up while send_push_notification has released
+        # the per-call lock to query confd for fallback eligibility. The
+        # concurrent cancel_push_mobile must take effect — the push must
+        # not be dispatched and the Cancelled state must not be overwritten.
+        self.confd_client.users.get.return_value = {
+            'mobile_fallback_enabled': False,
+            'mobile_phone_number': None,
+        }
+
+        real_eligible = self.service._pstn_fallback_eligible
+
+        def cancel_then_eligible(user_uuid, tenant_uuid):
+            self.service.cancel_push_mobile('call-id')
+            return real_eligible(user_uuid, tenant_uuid)
+
+        with patch.object(
+            self.service,
+            '_pstn_fallback_eligible',
+            side_effect=cancel_then_eligible,
+        ):
+            self._send_push()
+
+        self.notifier.push_notification.assert_not_called()
+        assert isinstance(
+            self.service._incoming_calls['call-id'], IncomingCallPushCancelled
+        )
+
     @patch('wazo_calld.plugins.dial_mobile.services.threading.Timer')
     def test_pstn_fallback_timer_skipped_when_disabled(self, mock_timer_cls):
         self.confd_client.users.get.return_value = {
