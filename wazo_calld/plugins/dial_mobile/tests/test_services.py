@@ -21,9 +21,9 @@ from ..services import (
     PSTNFallbackCancelled,
     PSTNFallbackDialing,
     PSTNFallbackPending,
+    _ContactDialer,
     _NoSuchChannel,
 )
-from ..services import _PollingContactDialer as PollingContactDialer
 
 
 class DialerTestCase(TestCase):
@@ -35,7 +35,7 @@ class DialerTestCase(TestCase):
         self.ringing_time = 42
         self.pickup_mark = '1003%default'
 
-        self.poller = PollingContactDialer(
+        self.poller = _ContactDialer(
             self.ari,
             self.future_bridge_uuid,
             self.channel_id,
@@ -584,7 +584,6 @@ class TestPSTNFallback(TestCase):
         self._send_push(call_id='channel-uniqueid', origin_call_id='call-linkedid')
 
         self.service.complete_pending_push_mobile('call-linkedid')
-
         from ..services import IncomingCallReceived
 
         assert isinstance(

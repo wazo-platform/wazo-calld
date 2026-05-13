@@ -187,7 +187,7 @@ class _NoSuchChannel(Exception):
     pass
 
 
-class _PollingContactDialer:
+class _ContactDialer:
     def __init__(
         self,
         ari,
@@ -202,7 +202,7 @@ class _PollingContactDialer:
         self.future_bridge_uuid = future_bridge_uuid
         self.should_stop = threading.Event()
         self._thread = threading.Thread(
-            name='PollingContactDialer',
+            name='ContactDialer',
             target=self._run_no_exception,
             args=(channel_id, aor),
         )
@@ -374,7 +374,7 @@ class DialMobileService:
         self._amid_client = amid_client
         self._confd_client = confd_client
         self._contact_dialers = {}
-        self._dialers_by_aor: dict[str, set[_PollingContactDialer]] = {}
+        self._dialers_by_aor: dict[str, set[_ContactDialer]] = {}
         self._caller_channel_leg_by_bridge = {}
         self._call_ring_time = {}
         self._incoming_calls: dict[str, IncomingCall] = {}
@@ -421,7 +421,7 @@ class DialMobileService:
                 )
                 self._cancel_pstn_fallback(call_id)
 
-        dialer = _PollingContactDialer(
+        dialer = _ContactDialer(
             self._ari,
             future_bridge_uuid,
             caller_channel_id,
@@ -442,7 +442,7 @@ class DialMobileService:
         for dialer in self._dialers_by_aor.get(aor, set()):
             dialer.kick()
 
-    def _unregister_dialer_by_aor(self, dialer: _PollingContactDialer) -> None:
+    def _unregister_dialer_by_aor(self, dialer: _ContactDialer) -> None:
         for aor, dialers in list(self._dialers_by_aor.items()):
             dialers.discard(dialer)
             if not dialers:
@@ -848,9 +848,7 @@ class DialMobileService:
                         call_id,
                     )
 
-    def _incoming_call_lock(
-        self, call_id: str
-    ) -> threading.RLock | contextlib.nullcontext:
+    def _incoming_call_lock(self, call_id: str) -> contextlib.AbstractContextManager:
         lock = self._call_locks.get(call_id)
         # handle missing lock as a no-op context manager
         return lock if lock is not None else contextlib.nullcontext()
