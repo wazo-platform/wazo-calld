@@ -106,7 +106,7 @@ class PSTNFallbackTriggering:
 
 @dataclass(eq=False)
 class PSTNFallbackDialing:
-    """PSTN leg has been originated; cancellation must hang it up."""
+    """PSTN leg has been originated, pending answer from destination"""
 
     call_id: str
     channel_id: str
@@ -123,8 +123,7 @@ class PSTNFallbackDialing:
 @dataclass(eq=False)
 class PSTNFallbackDialAnswered:
     """Terminal — the PSTN leg answered and joined the bridge with the
-    caller. Unlike `Cancelled`, this is a success path: the call is
-    live."""
+    caller."""
 
     call_id: str
     channel_id: str
@@ -135,6 +134,12 @@ class PSTNFallbackCancelled:
     """Terminal — fallback was cancelled or completed without dialing."""
 
     call_id: str
+
+
+class _PSTNFallbackAbort(Exception):
+    """Internal control-flow signal: raised inside `_pstn_fallback` for
+    any early exit from the slow path so the surrounding `except`
+    transitions Triggering → Cancelled."""
 
 
 PSTNFallback = (
@@ -716,13 +721,11 @@ class DialMobileService:
                     self._hangup_pstn_channel(channel_id)
                     self._pstn_fallbacks[call_id] = current.cancelled()
                 case PSTNFallbackTriggering() as current:
-                    # `_pstn_fallback` always exits its lock-held section
-                    # in either `Dialing` (success) or `Cancelled`
-                    # (originate raised) — never `Triggering`. If we see
-                    # this, the commit-path invariant has been broken.
-                    logger.error(
-                        'PSTN fallback for call %s observed in Triggering '
-                        'state at cancellation; forcing Cancelled.',
+                    # `_pstn_fallback` is in its (lock-free) Phase 2 —
+                    # confd lookups and channel checks. Marking the state
+                    # Cancelled tells the Phase 3 re-check to abort.
+                    logger.debug(
+                        'cancelling PSTN fallback for call %s while in ' 'Triggering',
                         call_id,
                     )
                     self._pstn_fallbacks[call_id] = current.cancelled()
@@ -775,148 +778,189 @@ class DialMobileService:
         self.complete_pending_push_mobile(call_id)
 
     def _pstn_fallback(self, call_id: str) -> None:
-        """Timer-fired callback. Drives the fallback through its state
-        machine: Pending → Triggering → Dialing (or → Cancelled if a
-        racing cancel arrives before the lock is acquired)."""
-        match self._pstn_fallbacks.get(call_id):
-            case PSTNFallbackPending():
-                pass
-            case _ as state:
-                # Already cancelled, or the entry was never armed.
-                logger.warning(
-                    'pstn fallback triggered while not in pending state (%s), aborting',
-                    state,
-                )
-                return
+        """Timer-fired callback. Drives the fallback through:
+        Pending → Triggering (early) → Dialing on success, or
+        → Cancelled on any preliminary failure / originate failure /
+        racing cancel.
+        """
         lock = self._call_locks.get(call_id)
         if lock is None:
-            logger.warning('pstn fallback triggered but lock not available, aborting')
-            return
-
-        pending = self._incoming_calls.get(call_id)
-        if not pending:
-            logger.info(
-                "no pending push for call_id %s, aborting PSTN fallback", call_id
-            )
-            return
-
-        try:
-            user = self._confd_client.users.get(
-                pending.user_uuid, tenant_uuid=pending.tenant_uuid
-            )
-        except (HTTPError, RequestException) as e:
-            logger.error(
-                'PSTN fallback: cannot fetch user %s: %s', pending.user_uuid, e
-            )
-            return
-
-        if not user.get('mobile_fallback_enabled'):
-            logger.info(
-                'PSTN fallback: user %s has mobile fallback disabled, skipping',
-                pending.user_uuid,
-            )
-            return
-
-        mobile_phone_number = user.get('mobile_phone_number')
-        if not mobile_phone_number:
-            logger.info(
-                'PSTN fallback: user %s has no mobile_phone_number, skipping',
-                pending.user_uuid,
-            )
-            return
-
-        lines = user.get('lines', [])
-        if not lines:
             logger.warning(
-                'PSTN fallback: user %s has no lines, skipping',
-                pending.user_uuid,
-            )
-            return
-
-        try:
-            line = self._confd_client.lines.get(
-                lines[0]['id'], tenant_uuid=pending.tenant_uuid
-            )
-        except (HTTPError, RequestException) as e:
-            logger.error(
-                'PSTN fallback: cannot fetch line for user %s: %s',
-                pending.user_uuid,
-                e,
-            )
-            return
-
-        user_context = line['context']
-
-        future_bridge_uuid = self._bridge_uuid_by_origin_call_id.get(
-            pending.origin_call_id
-        )
-        if not future_bridge_uuid:
-            logger.warning(
-                'PSTN fallback: no bridge found for call %s, skipping', call_id
-            )
-            return
-
-        caller_channel_id = self._caller_channel_leg_by_bridge.get(future_bridge_uuid)
-        try:
-            self._ari.channels.get(channelId=caller_channel_id)
-        except ARINotFound:
-            logger.info(
-                'PSTN fallback: caller channel %s already gone for call %s, '
-                'skipping',
-                caller_channel_id,
+                'PSTN fallback timer fired for call %s but no lock available, '
+                'aborting',
                 call_id,
             )
             return
 
-        caller_id = '"{name}" <{number}>'.format(
-            name=pending.payload['peer_caller_id_name'],
-            number=pending.payload['peer_caller_id_number'],
-        )
-
-        # Commit step. The per-call lock serialises against
-        # `_cancel_pstn_fallback`. Inside the lock we re-read the state:
-        # a racing cancellation may have transitioned us to Cancelled.
-        # The commit always lands on `Dialing` (success) or `Cancelled`
-        # (originate failed) before the lock is released — so no observer
-        # ever sees a lingering `Triggering`.
+        # Phase 1: transition Pending → Triggering atomically. From here
+        # on, observers (e.g. `_cancel_pstn_fallback`) see Triggering.
         with lock:
             match self._pstn_fallbacks.get(call_id):
                 case PSTNFallbackPending() as current:
-                    triggering = current.triggering()
-                    self._pstn_fallbacks[call_id] = triggering
-                case _:
+                    self._pstn_fallbacks[call_id] = current.triggering()
+                case _ as state:
                     logger.debug(
-                        'PSTN fallback cancelled for call %s; not originating',
+                        'PSTN fallback for call %s not in Pending (got %s); '
+                        'aborting',
                         call_id,
+                        type(state).__name__,
                     )
                     return
 
-            logger.info(
-                'PSTN fallback: originating Local/%s@%s for user %s (call %s)',
-                mobile_phone_number,
-                user_context,
-                pending.user_uuid,
-                call_id,
-            )
-            self.cancel_push_mobile(call_id)
-            try:
-                pstn_channel = self._ari.channels.originate(
-                    endpoint=f'Local/{mobile_phone_number}@{user_context}',
-                    app='dial_mobile',
-                    appArgs=['join', future_bridge_uuid],
-                    callerId=caller_id,
-                    originator=caller_channel_id,
-                    variables={'variables': {'_WAZO_TENANT_UUID': pending.tenant_uuid}},
-                )
-            except (ARIServerError, HTTPError, RequestException):
-                logger.exception(
-                    'PSTN fallback: originate failed for call %s; '
-                    'leaving fallback Cancelled',
+        # Phase 2: slow path (confd lookups, channel checks). No lock
+        # held; state is observably Triggering. Any early exit raises
+        # `_PSTNFallbackAbort`, which the handler turns into a
+        # Triggering → Cancelled transition.
+        try:
+            pending = self._incoming_calls.get(call_id)
+            if not pending:
+                logger.info(
+                    "no pending push for call_id %s, aborting PSTN fallback",
                     call_id,
                 )
-                self._pstn_fallbacks[call_id] = triggering.cancelled()
-                return
-            self._pstn_fallbacks[call_id] = triggering.dialing(pstn_channel.id)
+                raise _PSTNFallbackAbort
+
+            try:
+                user = self._confd_client.users.get(
+                    pending.user_uuid, tenant_uuid=pending.tenant_uuid
+                )
+            except (HTTPError, RequestException) as e:
+                logger.error(
+                    'PSTN fallback: cannot fetch user %s: %s',
+                    pending.user_uuid,
+                    e,
+                )
+                raise _PSTNFallbackAbort from e
+
+            if not user.get('mobile_fallback_enabled'):
+                logger.info(
+                    'PSTN fallback: user %s has mobile fallback disabled, skipping',
+                    pending.user_uuid,
+                )
+                raise _PSTNFallbackAbort
+
+            mobile_phone_number = user.get('mobile_phone_number')
+            if not mobile_phone_number:
+                logger.info(
+                    'PSTN fallback: user %s has no mobile_phone_number, skipping',
+                    pending.user_uuid,
+                )
+                raise _PSTNFallbackAbort
+
+            lines = user.get('lines', [])
+            if not lines:
+                logger.warning(
+                    'PSTN fallback: user %s has no lines, skipping',
+                    pending.user_uuid,
+                )
+                raise _PSTNFallbackAbort
+
+            try:
+                line = self._confd_client.lines.get(
+                    lines[0]['id'], tenant_uuid=pending.tenant_uuid
+                )
+            except (HTTPError, RequestException) as e:
+                logger.error(
+                    'PSTN fallback: cannot fetch line for user %s: %s',
+                    pending.user_uuid,
+                    e,
+                )
+                raise _PSTNFallbackAbort from e
+
+            user_context = line['context']
+
+            future_bridge_uuid = self._bridge_uuid_by_origin_call_id.get(
+                pending.origin_call_id
+            )
+            if not future_bridge_uuid:
+                logger.warning(
+                    'PSTN fallback: no bridge found for call %s, skipping',
+                    call_id,
+                )
+                raise _PSTNFallbackAbort
+
+            caller_channel_id = self._caller_channel_leg_by_bridge.get(
+                future_bridge_uuid
+            )
+            try:
+                self._ari.channels.get(channelId=caller_channel_id)
+            except ARINotFound as e:
+                logger.info(
+                    'PSTN fallback: caller channel %s already gone for call %s, '
+                    'skipping',
+                    caller_channel_id,
+                    call_id,
+                )
+                raise _PSTNFallbackAbort from e
+
+            caller_id = '"{name}" <{number}>'.format(
+                name=pending.payload['peer_caller_id_name'],
+                number=pending.payload['peer_caller_id_number'],
+            )
+
+            # Phase 3: commit (cancel-push + originate). Re-check the
+            # state under the lock — a racing cancel may have transitioned
+            # us to Cancelled during phase 2.
+            with lock:
+                match self._pstn_fallbacks.get(call_id):
+                    case PSTNFallbackTriggering() as triggering:
+                        logger.info(
+                            'PSTN fallback: originating Local/%s@%s for user %s '
+                            '(call %s)',
+                            mobile_phone_number,
+                            user_context,
+                            pending.user_uuid,
+                            call_id,
+                        )
+                        self.cancel_push_mobile(call_id)
+                        try:
+                            pstn_channel = self._ari.channels.originate(
+                                endpoint=(
+                                    f'Local/{mobile_phone_number}@{user_context}'
+                                ),
+                                app='dial_mobile',
+                                appArgs=['join', future_bridge_uuid],
+                                callerId=caller_id,
+                                originator=caller_channel_id,
+                                variables={
+                                    'variables': {
+                                        '_WAZO_TENANT_UUID': pending.tenant_uuid
+                                    }
+                                },
+                            )
+                        except (
+                            ARIServerError,
+                            HTTPError,
+                            RequestException,
+                        ) as e:
+                            logger.exception(
+                                'PSTN fallback: originate failed for call %s; '
+                                'leaving fallback Cancelled',
+                                call_id,
+                            )
+                            raise _PSTNFallbackAbort from e
+                        self._pstn_fallbacks[call_id] = triggering.dialing(
+                            pstn_channel.id
+                        )
+                    case _ as state:
+                        logger.debug(
+                            'PSTN fallback for call %s no longer in Triggering '
+                            '(got %s); not originating',
+                            call_id,
+                            type(state).__name__,
+                        )
+        except _PSTNFallbackAbort:
+            # Transition Triggering → Cancelled if we still own that state.
+            with lock:
+                match self._pstn_fallbacks.get(call_id):
+                    case PSTNFallbackTriggering() as triggering:
+                        self._pstn_fallbacks[call_id] = triggering.cancelled()
+                    case _ as state:
+                        # already cancelled
+                        logger.debug(
+                            'PSTN fallback aborted but state already %s', state
+                        )
+                        return
 
     def has_a_registered_mobile_and_pending_push(
         self, push_call_id, call_id, endpoint, user_uuid
