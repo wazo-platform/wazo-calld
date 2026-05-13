@@ -145,7 +145,7 @@ class TestRemoveUnansweredChannels(DialerTestCase):
         channel_2.id = s.channel_2_id
         channel_2.get.return_value = Mock(json={'state': 'Ringing'})
         # set is replaced with a list to enforce the looping order
-        self.poller._dialed_channels = {channel_1, channel_2}  # type: ignore[assignment]
+        self.poller._dialed_channels = {channel_1, channel_2}
 
         self.poller._remove_unanswered_channels()
 

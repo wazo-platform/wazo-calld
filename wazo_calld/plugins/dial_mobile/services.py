@@ -7,6 +7,7 @@ import threading
 import uuid
 from collections.abc import Callable
 from dataclasses import dataclass
+from typing import Any
 
 import requests
 from ari.exceptions import ARINotFound, ARIServerError
@@ -190,12 +191,12 @@ class _NoSuchChannel(Exception):
 class _ContactDialer:
     def __init__(
         self,
-        ari,
-        future_bridge_uuid,
-        channel_id,
-        aor,
-        ringing_time,
-        pickup_mark,
+        ari: Any,
+        future_bridge_uuid: str,
+        channel_id: str,
+        aor: str,
+        ringing_time: int,
+        pickup_mark: str,
         on_contact_dialed: Callable[[], None] | None = None,
     ):
         self._ari = ari
