@@ -292,11 +292,7 @@ class TestDialMobile(RealAsteriskIntegrationTest):
             message='PSTN fallback channel was not hung up after caller hangup',
         )
 
-    def test_pstn_fallback_preserves_push_when_ari_unavailable(self):
-        # Regression test for ARI-side failure during the fallback commit:
-        # if ARI is unreachable when the timer fires, _pstn_fallback must
-        # abort cleanly (push left active, state → Cancelled) rather than
-        # silently dropping the call or leaving the Timer thread stuck.
+    def test_pstn_fallback_preserves_push_when_confd_unavailable(self):
         line_id = 424242
         self.confd.set_users(
             MockUser(
@@ -316,19 +312,25 @@ class TestDialMobile(RealAsteriskIntegrationTest):
         cancel_events = self.bus.accumulator(
             headers={'name': 'call_cancel_push_notification'}
         )
-        self._publish_pushmobile(chan, f'test-pstn-ari-down-{uuid4()}', ring_time='20')
+        self._publish_pushmobile(
+            chan, f'test-pstn-confd-down-{uuid4()}', ring_time='20'
+        )
         self._wait_push_notification(push_events)
 
-        # Stop ARI before the timer fires at max(10, 0.5 * 20) = 10 s, so
-        # the fallback commit hits an ARI-side failure. Wait past the timer
-        # window inside the stop scope.
-        with self.ari_stopped():
+        # PSTN timer fires at max(10, 0.5 * 20) = 10 s. Bring confd down
+        # before then and wait past the timer window.
+        with self.confd_stopped():
             time.sleep(12)
             assert cancel_events.accumulate() == [], (
-                'cancel_push_notification was published despite ARI being '
+                'cancel_push_notification was published despite confd being '
                 'unavailable; the push should remain active when the fallback '
                 'cannot dispatch a PSTN leg'
             )
+            assert (
+                self._pstn_channels() == []
+            ), 'PSTN leg was originated despite confd being unavailable'
+
+        chan.hangup()
 
     def test_pstn_fallback_cancels_push_after_dispatch(self):
         line_id = 424242
