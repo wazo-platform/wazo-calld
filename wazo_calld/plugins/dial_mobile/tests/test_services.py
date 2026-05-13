@@ -344,8 +344,9 @@ class DialMobileServiceTestCase(DialerTestCase):
         self.service._call_id_by_origin_call_id[self.origin_channel_id] = 'call-id'
         timer = Mock()
         self.service._pstn_fallbacks['call-id'] = PSTNFallbackPending(
-            call_id='call-id', timer=timer, lock=threading.Lock()
+            call_id='call-id', timer=timer
         )
+        self.service._call_locks['call-id'] = threading.RLock()
         # mock cancel_push_mobile so it does NOT cancel the timer — proves
         # notify_channel_gone cancels it independently
         with patch.object(self.service, 'cancel_push_mobile'):
@@ -558,8 +559,9 @@ class TestPSTNFallback(TestCase):
     def test_cancel_push_does_not_touch_pstn_timer(self):
         timer = Mock()
         self.service._pstn_fallbacks['call-id'] = PSTNFallbackPending(
-            call_id='call-id', timer=timer, lock=threading.Lock()
+            call_id='call-id', timer=timer
         )
+        self.service._call_locks['call-id'] = threading.RLock()
         self.service._incoming_calls['call-id'] = self._make_notified()
 
         self.service.cancel_push_mobile('call-id')
@@ -579,8 +581,9 @@ class TestPSTNFallback(TestCase):
     def test_pstn_fallback_timer_cancelled_on_join_bridge(self):
         timer = Mock()
         self.service._pstn_fallbacks['call-id'] = PSTNFallbackPending(
-            call_id='call-id', timer=timer, lock=threading.Lock()
+            call_id='call-id', timer=timer
         )
+        self.service._call_locks['call-id'] = threading.RLock()
         self.service._call_id_by_origin_call_id['origin-id'] = 'call-id'
         self.service._origin_call_id_by_bridge_uuid['bridge-uuid'] = 'origin-id'
 
@@ -628,8 +631,9 @@ class TestPSTNFallback(TestCase):
         self.service._bridge_uuid_by_origin_call_id['origin-id'] = 'bridge-uuid'
         self.service._caller_channel_leg_by_bridge['bridge-uuid'] = 'caller-ch'
         self.service._pstn_fallbacks['call-id'] = PSTNFallbackPending(
-            call_id='call-id', timer=Mock(), lock=threading.Lock()
+            call_id='call-id', timer=Mock()
         )
+        self.service._call_locks['call-id'] = threading.RLock()
         self.confd_client.users.get.return_value = {
             'mobile_fallback_enabled': True,
             'mobile_phone_number': '+33123456789',
@@ -685,8 +689,9 @@ class TestPSTNFallback(TestCase):
         self.service._bridge_uuid_by_origin_call_id['origin-id'] = 'bridge-uuid'
         self.service._caller_channel_leg_by_bridge['bridge-uuid'] = 'caller-ch'
         self.service._pstn_fallbacks['call-id'] = PSTNFallbackPending(
-            call_id='call-id', timer=Mock(), lock=threading.Lock()
+            call_id='call-id', timer=Mock()
         )
+        self.service._call_locks['call-id'] = threading.RLock()
         self.confd_client.users.get.return_value = {
             'mobile_fallback_enabled': True,
             'mobile_phone_number': '+33123456789',
@@ -707,8 +712,8 @@ class TestPSTNFallback(TestCase):
         self.service._pstn_fallbacks['call-id'] = PSTNFallbackDialing(
             call_id='call-id',
             channel_id='pstn-channel-id',
-            lock=threading.Lock(),
         )
+        self.service._call_locks['call-id'] = threading.RLock()
 
         self.service._cancel_pstn_fallback('call-id')
 
@@ -723,8 +728,8 @@ class TestPSTNFallback(TestCase):
         self.service._pstn_fallbacks['call-id'] = PSTNFallbackDialing(
             call_id='call-id',
             channel_id='pstn-channel-id',
-            lock=threading.Lock(),
         )
+        self.service._call_locks['call-id'] = threading.RLock()
         self.ari_client.channels.hangup.side_effect = ARINotFound(
             self.ari_client, s.error
         )
@@ -740,8 +745,8 @@ class TestPSTNFallback(TestCase):
         self.service._pstn_fallbacks['call-id'] = PSTNFallbackDialing(
             call_id='call-id',
             channel_id='pstn-channel-id',
-            lock=threading.Lock(),
         )
+        self.service._call_locks['call-id'] = threading.RLock()
         self.service._call_id_by_origin_call_id['origin-id'] = 'call-id'
         self.service._origin_call_id_by_bridge_uuid['bridge-uuid'] = 'origin-id'
 
@@ -760,8 +765,8 @@ class TestPSTNFallback(TestCase):
         self.service._pstn_fallbacks['call-id'] = PSTNFallbackDialing(
             call_id='call-id',
             channel_id='pstn-channel-id',
-            lock=threading.Lock(),
         )
+        self.service._call_locks['call-id'] = threading.RLock()
         self.service._call_id_by_origin_call_id['origin-id'] = 'call-id'
         self.service._origin_call_id_by_bridge_uuid['bridge-uuid'] = 'origin-id'
 
@@ -783,8 +788,8 @@ class TestPSTNFallback(TestCase):
         self.service._pstn_fallbacks['call-id'] = PSTNFallbackDialing(
             call_id='call-id',
             channel_id='pstn-channel-id',
-            lock=threading.Lock(),
         )
+        self.service._call_locks['call-id'] = threading.RLock()
         self.service._call_id_by_origin_call_id['origin-id'] = 'call-id'
 
         self.ari.client.channels.getChannelVar.return_value = {'value': 'pickupmark'}
@@ -806,8 +811,9 @@ class TestPSTNFallback(TestCase):
         # the PSTN fallback must be cancelled.
         timer = Mock()
         self.service._pstn_fallbacks['call-id'] = PSTNFallbackPending(
-            call_id='call-id', timer=timer, lock=threading.Lock()
+            call_id='call-id', timer=timer
         )
+        self.service._call_locks['call-id'] = threading.RLock()
         self.service._call_id_by_origin_call_id['origin-id'] = 'call-id'
 
         self.ari.client.channels.getChannelVar.return_value = {'value': 'pickupmark'}
@@ -831,8 +837,9 @@ class TestPSTNFallback(TestCase):
         self.service._bridge_uuid_by_origin_call_id['origin-id'] = 'bridge-uuid'
         self.service._caller_channel_leg_by_bridge['bridge-uuid'] = 'caller-ch'
         self.service._pstn_fallbacks['call-id'] = PSTNFallbackPending(
-            call_id='call-id', timer=Mock(), lock=threading.Lock()
+            call_id='call-id', timer=Mock()
         )
+        self.service._call_locks['call-id'] = threading.RLock()
         self.confd_client.users.get.return_value = {
             'mobile_fallback_enabled': True,
             'mobile_phone_number': '+33123456789',
@@ -913,10 +920,10 @@ class TestPSTNFallback(TestCase):
         timer_a = Mock()
         timer_b = Mock()
         self.service._pstn_fallbacks['call-a'] = PSTNFallbackPending(
-            call_id='call-a', timer=timer_a, lock=threading.Lock()
+            call_id='call-a', timer=timer_a
         )
         self.service._pstn_fallbacks['call-b'] = PSTNFallbackPending(
-            call_id='call-b', timer=timer_b, lock=threading.Lock()
+            call_id='call-b', timer=timer_b
         )
 
         self.service.on_calld_stopping()
@@ -928,8 +935,9 @@ class TestPSTNFallback(TestCase):
     def test_cancel_pstn_fallback_transitions_pending_to_cancelled(self):
         timer = Mock()
         self.service._pstn_fallbacks['call-id'] = PSTNFallbackPending(
-            call_id='call-id', timer=timer, lock=threading.Lock()
+            call_id='call-id', timer=timer
         )
+        self.service._call_locks['call-id'] = threading.RLock()
 
         self.service._cancel_pstn_fallback('call-id')
 

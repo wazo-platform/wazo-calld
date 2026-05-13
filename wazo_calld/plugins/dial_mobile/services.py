@@ -78,10 +78,9 @@ class PSTNFallbackPending:
 
     call_id: str
     timer: threading.Timer
-    lock: threading.Lock
 
     def triggering(self) -> 'PSTNFallbackTriggering':
-        return PSTNFallbackTriggering(call_id=self.call_id, lock=self.lock)
+        return PSTNFallbackTriggering(call_id=self.call_id)
 
     def cancelled(self) -> 'PSTNFallbackCancelled':
         return PSTNFallbackCancelled(call_id=self.call_id)
@@ -91,17 +90,15 @@ class PSTNFallbackPending:
 class PSTNFallbackTriggering:
     """Timer fired; commit (cancel-push + originate) in flight.
 
-    The lock is held by `_pstn_fallback` during this state, so external
-    observers (`_cancel_pstn_fallback`) block until commit completes.
+    Observable phase marker between `Pending` and `Dialing`. The
+    transition into and out of this state is serialised by the
+    per-call lock held by `_pstn_fallback`.
     """
 
     call_id: str
-    lock: threading.Lock
 
     def dialing(self, channel_id: str) -> 'PSTNFallbackDialing':
-        return PSTNFallbackDialing(
-            call_id=self.call_id, channel_id=channel_id, lock=self.lock
-        )
+        return PSTNFallbackDialing(call_id=self.call_id, channel_id=channel_id)
 
     def cancelled(self) -> 'PSTNFallbackCancelled':
         return PSTNFallbackCancelled(call_id=self.call_id)
@@ -109,15 +106,10 @@ class PSTNFallbackTriggering:
 
 @dataclass(eq=False)
 class PSTNFallbackDialing:
-    """PSTN leg has been originated; cancellation must hang it up.
-
-    Still carries the per-call state lock so `_cancel_pstn_fallback`
-    can acquire the same lock for any non-terminal state.
-    """
+    """PSTN leg has been originated; cancellation must hang it up."""
 
     call_id: str
     channel_id: str
-    lock: threading.Lock
 
     def answered(self) -> 'PSTNFallbackDialAnswered':
         return PSTNFallbackDialAnswered(
@@ -355,6 +347,7 @@ class DialMobileService:
         self._incoming_calls: dict[str, IncomingCall] = {}
         self._notifier = notifier
         self._pstn_fallbacks: dict[str, PSTNFallback] = {}
+        self._call_locks: dict[str, threading.RLock] = {}
         self._origin_call_id_by_bridge_uuid: dict[str, str] = {}
         self._bridge_uuid_by_origin_call_id: dict[str, str] = {}
         self._call_id_by_origin_call_id: dict[str, str] = {}
@@ -426,18 +419,22 @@ class DialMobileService:
     def join_bridge(self, channel_id, future_bridge_uuid):
         logger.info('%s is joining bridge %s', channel_id, future_bridge_uuid)
         call_id = self._call_id_for_bridge(future_bridge_uuid)
-        if call_id:
-            match self._pstn_fallbacks.get(call_id):
-                case PSTNFallbackDialing(channel_id=cid) as fallback_state if (
-                    cid == channel_id
-                ):
-                    # The PSTN-fallback call is itself answering and joining
-                    # the bridge — success path, not a cancellation.
-                    logger.debug('pstn fallback call %s joining bridge', call_id)
-                    self._pstn_fallbacks[call_id] = fallback_state.answered()
-                case _:
-                    logger.debug('cancelling pstn fallback for call %s', call_id)
-                    self._cancel_pstn_fallback(call_id)
+        if call_id and (lock := self._call_locks.get(call_id)):
+            with lock:
+                match self._pstn_fallbacks.get(call_id):
+                    case PSTNFallbackDialing(channel_id=cid) as current if (
+                        cid == channel_id
+                    ):
+                        # PSTN leg itself answering — success.
+                        logger.debug('pstn fallback call %s joining bridge', call_id)
+                        self._pstn_fallbacks[call_id] = current.answered()
+                    case None | PSTNFallbackCancelled() | (PSTNFallbackDialAnswered()):
+                        # Terminal: nothing to do.
+                        pass
+                    case _:
+                        # Different channel / non-Dialing state — cancel.
+                        logger.debug('cancelling pstn fallback for call %s', call_id)
+                        self._cancel_pstn_fallback(call_id)
 
         dialer = self._contact_dialers.pop(future_bridge_uuid, None)
         if dialer:
@@ -534,6 +531,7 @@ class DialMobileService:
             self._call_ring_time.pop(origin_call_id, None)
             if call_id is not None:
                 self._pstn_fallbacks.pop(call_id, None)
+                self._call_locks.pop(call_id, None)
         self._caller_channel_leg_by_bridge.pop(future_bridge_uuid, None)
 
     def notify_channel_gone(self, channel_id):
@@ -675,8 +673,9 @@ class DialMobileService:
             timer = threading.Timer(
                 fallback_timeout, self._pstn_fallback, args=[call_id]
             )
+            self._call_locks[call_id] = threading.RLock()
             self._pstn_fallbacks[call_id] = PSTNFallbackPending(
-                call_id=call_id, timer=timer, lock=threading.Lock()
+                call_id=call_id, timer=timer
             )
             timer.start()
 
@@ -703,14 +702,10 @@ class DialMobileService:
         )
 
     def _cancel_pstn_fallback(self, call_id: str) -> None:
-        # Every non-terminal fallback state carries the same per-call lock
-        state = self._pstn_fallbacks.get(call_id)
-        if state is None or isinstance(
-            state, (PSTNFallbackCancelled, PSTNFallbackDialAnswered)
-        ):
+        lock = self._call_locks.get(call_id)
+        if lock is None:
             return
-
-        with state.lock:
+        with lock:
             match self._pstn_fallbacks.get(call_id):
                 case None | PSTNFallbackCancelled() | PSTNFallbackDialAnswered():
                     return
@@ -784,11 +779,19 @@ class DialMobileService:
         machine: Pending → Triggering → Dialing (or → Cancelled if a
         racing cancel arrives before the lock is acquired)."""
         match self._pstn_fallbacks.get(call_id):
-            case PSTNFallbackPending() as state:
+            case PSTNFallbackPending():
                 pass
-            case _:
+            case _ as state:
                 # Already cancelled, or the entry was never armed.
+                logger.warning(
+                    'pstn fallback triggered while not in pending state (%s), aborting',
+                    state,
+                )
                 return
+        lock = self._call_locks.get(call_id)
+        if lock is None:
+            logger.warning('pstn fallback triggered but lock not available, aborting')
+            return
 
         pending = self._incoming_calls.get(call_id)
         if not pending:
@@ -876,7 +879,7 @@ class DialMobileService:
         # The commit always lands on `Dialing` (success) or `Cancelled`
         # (originate failed) before the lock is released — so no observer
         # ever sees a lingering `Triggering`.
-        with state.lock:
+        with lock:
             match self._pstn_fallbacks.get(call_id):
                 case PSTNFallbackPending() as current:
                     triggering = current.triggering()
