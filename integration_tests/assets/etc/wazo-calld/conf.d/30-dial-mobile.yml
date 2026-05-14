@@ -1,0 +1,4 @@
+dial_mobile:
+  pstn_fallback:
+    min_timeout: 1.0
+    ring_timeout_factor: 0.05

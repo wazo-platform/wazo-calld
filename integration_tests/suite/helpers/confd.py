@@ -1,4 +1,4 @@
-# Copyright 2015-2025 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from __future__ import annotations
@@ -229,13 +229,20 @@ class MockMoh:
 
 class MockUser:
     def __init__(
-        self, uuid, line_ids=None, mobile=None, voicemail=None, tenant_uuid=None
+        self,
+        uuid,
+        line_ids=None,
+        mobile=None,
+        voicemail=None,
+        tenant_uuid=None,
+        mobile_fallback_enabled=False,
     ):
         self._uuid = uuid
         self._line_ids = line_ids or []
         self._mobile = mobile
         self._voicemail = voicemail
         self._tenant_uuid = tenant_uuid
+        self._mobile_fallback_enabled = mobile_fallback_enabled
 
     def uuid(self):
         return self._uuid
@@ -245,6 +252,7 @@ class MockUser:
             'uuid': self._uuid,
             'lines': [{'id': line_id} for line_id in self._line_ids],
             'mobile_phone_number': self._mobile,
+            'mobile_fallback_enabled': self._mobile_fallback_enabled,
             'voicemail': self._voicemail,
             'tenant_uuid': self._tenant_uuid,
         }

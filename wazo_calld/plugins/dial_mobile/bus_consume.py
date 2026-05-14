@@ -1,4 +1,4 @@
-# Copyright 2022-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2022-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -93,7 +93,7 @@ class EventHandler:
             return self._service.cancel_push_mobile(linkedid)
 
         if has_a_registered_mobile_and_pending_push:
-            self._service.remove_pending_push_mobile(linkedid)
+            self._service.complete_pending_push_mobile(linkedid)
         else:
             self._service.cancel_push_mobile(linkedid)
 
@@ -106,4 +106,5 @@ class EventHandler:
         if event['DialStatus'] == 'ANSWER':
             return
 
-        self._service.cancel_push_mobile(event['Uniqueid'])
+        # Internal state is keyed by the call's Linkedid.
+        self._service.cancel_push_mobile(event['Linkedid'])

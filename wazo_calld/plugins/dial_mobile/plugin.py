@@ -1,17 +1,22 @@
-# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from __future__ import annotations
 
 from wazo_amid_client import Client as AmidClient
 from wazo_auth_client import Client as AuthClient
+from wazo_confd_client import Client as ConfdClient
 from xivo.pubsub import CallbackCollector
 
 from wazo_calld.types import PluginDependencies
 
 from .bus_consume import EventHandler
 from .notifier import Notifier
-from .services import DialMobileService
+from .services import (
+    DEFAULT_PSTN_FALLBACK_MIN_TIMEOUT,
+    DEFAULT_PSTN_FALLBACK_RING_TIMEOUT_FACTOR,
+    DialMobileService,
+)
 from .stasis import DialMobileStasis
 
 
@@ -30,8 +35,24 @@ class Plugin:
         auth_client = AuthClient(**config['auth'])
         token_changed_subscribe(auth_client.set_token)
 
+        confd_client = ConfdClient(**config['confd'])
+        token_changed_subscribe(confd_client.set_token)
+
+        pstn_fallback_config = config.get('dial_mobile', {}).get('pstn_fallback', {})
         notifier = Notifier(bus_publisher)
-        service = DialMobileService(ari, notifier, amid_client, auth_client)
+        service = DialMobileService(
+            ari,
+            notifier,
+            amid_client,
+            auth_client,
+            confd_client,
+            pstn_fallback_min_timeout=pstn_fallback_config.get(
+                'min_timeout', DEFAULT_PSTN_FALLBACK_MIN_TIMEOUT
+            ),
+            pstn_fallback_ring_timeout_factor=pstn_fallback_config.get(
+                'ring_timeout_factor', DEFAULT_PSTN_FALLBACK_RING_TIMEOUT_FACTOR
+            ),
+        )
         stasis = DialMobileStasis(ari, service)
         event_handler = EventHandler(service)
 
