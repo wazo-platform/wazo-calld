@@ -10,7 +10,7 @@ from xivo.asterisk.protocol_interface import protocol_interface_from_channel
 
 from wazo_calld.ari_ import DEFAULT_APPLICATION_NAME
 from wazo_calld.auth import master_tenant_uuid
-from wazo_calld.plugin_helpers import ami
+from wazo_calld.plugin_helpers import ami, recording
 from wazo_calld.plugin_helpers.ari_ import (
     AUTO_ANSWER_VARIABLES,
     Channel,
@@ -708,6 +708,9 @@ class CallsService:
         channel_variables: dict = channel.json['channelvars']
 
         if channel_variables['WAZO_CALL_RECORD_ACTIVE'] == '1':
+            # a new party answered an already-recorded call, e.g. after a
+            # blind transfer: replay the announcement so that it is informed
+            recording.play_record_start_announcement(self._ami, channel)
             return
 
         if (
@@ -732,15 +735,8 @@ class CallsService:
             bypass_stasis=True,
         )
 
-        try:
-            recording_beep = channel.getChannelVar(
-                variable='WAZO_RECORDING_START_SOUND'
-            )['value']
-        except ARINotFound:
-            recording_beep = None
-
         ami.record_start(self._ami, channel.id, filename, None)
-        ami.play_beep(self._ami, channel.id, recording_beep or DEFAULT_RECORD_BEEP)
+        recording.play_record_start_announcement(self._ami, channel)
 
     def record_start_user(self, tenant_uuid, call_id, user_uuid):
         self._verify_user(call_id, user_uuid)

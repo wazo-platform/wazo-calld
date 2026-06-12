@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from unittest import TestCase
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 from hamcrest import assert_that, calling, not_, raises
 
@@ -92,6 +92,30 @@ class TestCallsBusEventHandler(TestCase):
             self.handler.ari, pjsip_channel
         )
         self.handler.notifier.call_updated.assert_called_once()
+
+    @patch('wazo_calld.plugins.calls.bus_consume.recording')
+    def test_attended_transfer_announces_recordings(self, mock_recording):
+        event = {
+            'Result': 'Success',
+            'TransfereeUniqueid': 'chan-transferee',
+            'TransferTargetUniqueid': 'chan-target',
+        }
+
+        self.handler._attended_transfer(event)
+
+        mock_recording.announce_active_recordings.assert_called_once_with(
+            self.handler.ari,
+            self.handler.ami,
+            ['chan-transferee', 'chan-target'],
+        )
+
+    @patch('wazo_calld.plugins.calls.bus_consume.recording')
+    def test_attended_transfer_failure_does_not_announce(self, mock_recording):
+        event = {'Result': 'Fail'}
+
+        self.handler._attended_transfer(event)
+
+        mock_recording.announce_active_recordings.assert_not_called()
 
     def test_relay_channel_answered_channel_is_gone(self):
         uniqueid = '123456789.1234'
