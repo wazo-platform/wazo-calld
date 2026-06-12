@@ -12,6 +12,7 @@ from ari.exceptions import ARINotFound
 from wazo_amid_client import Client as AmidClient
 
 from wazo_calld.ari_ import ARIClientProxy
+from wazo_calld.plugin_helpers import recording
 from wazo_calld.plugin_helpers.ari_ import Channel
 from wazo_calld.plugin_helpers.exceptions import BridgeNotFound
 
@@ -235,6 +236,13 @@ class TransferState:
             'transferred call %s moved to bridge %s',
             self.transfer.transferred_call,
             bridge.id,
+        )
+
+    def _announce_recordings(self):
+        recording.announce_active_recordings(
+            self._ari,
+            self._amid,
+            [self.transfer.transferred_call, self.transfer.recipient_call],
         )
 
     def _move_recipient_call_to_transfer_bridge(self):
@@ -851,6 +859,7 @@ class TransferStateBlindTransferred(TransferState):
         self._move_transferred_call_to_transfer_bridge()
         self._move_recipient_call_to_transfer_bridge()
 
+        self._announce_recordings()
         self._notifier.answered(self.transfer)
 
         return TransferStateEnded.from_state(self)
@@ -888,6 +897,7 @@ class TransferStateAnswered(TransferState):
         self._unset_transferred_variables()
         self._unset_recipient_variables()
 
+        self._announce_recordings()
         self._notifier.completed(self.transfer)
 
         return TransferStateEnded.from_state(self)
@@ -912,6 +922,7 @@ class TransferStateAnswered(TransferState):
         except ARINotFound:
             pass
 
+        self._announce_recordings()
         self._notifier.completed(self.transfer)
 
         return TransferStateEnded.from_state(self)
