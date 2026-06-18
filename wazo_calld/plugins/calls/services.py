@@ -713,9 +713,11 @@ class CallsService:
             recording.play_record_start_announcement(self._ami, channel)
             return
 
+        is_automatic_recording = channel_variables.get('WAZO_RECORD_PENDING') == '1'
         if (
             channel_helper.is_queue_auto_recorded()
             or channel_helper.is_group_auto_recorded()
+            or is_automatic_recording
         ):
             logger.debug('bypassing configured toggle permissions for auto-recording')
         elif not self._toggle_record_allowed(channel):
