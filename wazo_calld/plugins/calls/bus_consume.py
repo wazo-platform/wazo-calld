@@ -9,7 +9,7 @@ from wazo_bus.collectd.channels import (
     ChannelEndedCollectdEvent,
 )
 
-from wazo_calld.plugin_helpers import ami
+from wazo_calld.plugin_helpers import ami, recording
 from wazo_calld.plugin_helpers.ari_ import Channel, set_channel_id_var_sync
 from wazo_calld.plugin_helpers.exceptions import WazoAmidError
 
@@ -57,6 +57,7 @@ class CallsBusEventHandler:
         bus_consumer.subscribe('BridgeLeave', self._relay_channel_left_bridge)
         bus_consumer.subscribe('MixMonitorStart', self._mix_monitor_start)
         bus_consumer.subscribe('MixMonitorStop', self._mix_monitor_stop)
+        bus_consumer.subscribe('AttendedTransfer', self._attended_transfer)
         bus_consumer.subscribe('Pickup', self._pickup_occurred)
         bus_consumer.subscribe(
             'users_services_dnd_updated', self._users_services_dnd_updated
@@ -358,6 +359,18 @@ class CallsBusEventHandler:
             self.notifier.call_record_started(call)
         else:
             self.notifier.call_record_resumed(call)
+
+    def _attended_transfer(self, event):
+        if event.get('Result') != 'Success':
+            return
+        recording.announce_active_recordings(
+            self.ari,
+            self.ami,
+            [
+                event.get('TransfereeUniqueid'),
+                event.get('TransferTargetUniqueid'),
+            ],
+        )
 
     def _mix_monitor_stop(self, event):
         channel_id = event['Uniqueid']

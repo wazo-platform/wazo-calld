@@ -566,10 +566,11 @@ class TestRecordingUsesFoundChannel(TestCase):
         make_call_patcher.start()
         self.addCleanup(make_call_patcher.stop)
 
+    @patch('wazo_calld.plugin_helpers.recording.ami')
     @patch('wazo_calld.plugins.calls.services.ami')
     @patch('wazo_calld.plugins.calls.services.set_channel_id_var_sync')
     def test_record_start_uses_found_channel_id(
-        self, mock_set_var: Mock, mock_ami: Mock
+        self, mock_set_var: Mock, mock_ami: Mock, mock_recording_ami: Mock
     ) -> None:
         self.services.record_start(None, self.call_id)
 
@@ -579,8 +580,27 @@ class TestRecordingUsesFoundChannel(TestCase):
         assert_that(
             mock_ami.record_start.call_args[0][1], equal_to(self.found_channel_id)
         )
-        mock_ami.play_beep.assert_called_once()
-        assert_that(mock_ami.play_beep.call_args[0][1], equal_to(self.found_channel_id))
+        mock_recording_ami.play_beep.assert_called_once()
+        assert_that(
+            mock_recording_ami.play_beep.call_args[0][1],
+            equal_to(self.found_channel_id),
+        )
+
+    @patch('wazo_calld.plugin_helpers.recording.ami')
+    @patch('wazo_calld.plugins.calls.services.ami')
+    def test_record_start_replays_announcement_when_already_recording(
+        self, mock_ami: Mock, mock_recording_ami: Mock
+    ) -> None:
+        self.found_channel.json['channelvars']['WAZO_CALL_RECORD_ACTIVE'] = '1'
+
+        self.services.record_start(None, self.call_id)
+
+        mock_ami.record_start.assert_not_called()
+        mock_recording_ami.play_beep.assert_called_once()
+        assert_that(
+            mock_recording_ami.play_beep.call_args[0][1],
+            equal_to(self.found_channel_id),
+        )
 
     @patch('wazo_calld.plugins.calls.services.ami')
     def test_record_stop_uses_found_channel_id(self, mock_ami: Mock) -> None:

@@ -200,6 +200,42 @@ class TestCallRecord(RealAsteriskIntegrationTest):
             not_(raises(CalldError)),
         )
 
+    def test_put_record_start_automatic_allowed_without_toggle_permission(self):
+        # automatic recording (e.g. user outgoing-record preference) flags the
+        # channel with WAZO_RECORD_PENDING and must not require the on-demand
+        # toggle permission
+        channel_id = self.given_call_not_stasis(variables={'WAZO_RECORD_PENDING': '1'})
+        recording_events = self.bus.accumulator(headers={'name': 'recording_started'})
+
+        assert_that(
+            calling(self.calld_client.calls.start_record).with_args(channel_id),
+            not_(raises(CalldError)),
+        )
+
+        def recording_event_received():
+            assert_that(
+                recording_events.accumulate(with_headers=True),
+                has_items(
+                    has_entries(
+                        message=has_entries(
+                            name='recording_started',
+                            data=has_entries(call_id=channel_id),
+                        ),
+                        headers=has_entries(
+                            name='recording_started',
+                            tenant_uuid=VALID_TENANT,
+                        ),
+                    )
+                ),
+            )
+
+        until.assert_(recording_event_received, tries=10)
+
+        assert_that(
+            self.calld_client.calls.list_calls()['items'],
+            has_items(has_entries(call_id=channel_id, record_state='active')),
+        )
+
     def test_put_record_start_errors(self):
         assert_that(
             calling(self.calld_client.calls.start_record).with_args(UNKNOWN_UUID),
