@@ -1,4 +1,4 @@
-# Copyright 2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2024-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from __future__ import annotations
@@ -29,6 +29,7 @@ class AriConnectionConfigDict(TypedDict):
     base_url: str
     username: str
     password: str
+    pool_size: int
 
 
 class AriConfigDict(TypedDict):

@@ -1,4 +1,4 @@
-# Copyright 2015-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from __future__ import annotations
@@ -43,6 +43,7 @@ _DEFAULT_CONFIG: CalldConfigDict = {
             'base_url': 'http://localhost:5039',
             'username': 'xivo',
             'password': 'opensesame',
+            'pool_size': 10,
         },
         'reconnection_delay': 10,
         'startup_connection_delay': 1,
