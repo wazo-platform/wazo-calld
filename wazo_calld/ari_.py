@@ -196,6 +196,10 @@ class ARIClientProxy(ari.client.Client):
 
     def init(self):
         if not self._initialized:
+            logger.info(
+                'Initializing ARI client with connection pool size %s',
+                self._pool_size,
+            )
             http_client = _build_ari_http_client(
                 self._base_url, self._username, self._password, self._pool_size
             )
