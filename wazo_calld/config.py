@@ -43,6 +43,7 @@ _DEFAULT_CONFIG: CalldConfigDict = {
             'base_url': 'http://localhost:5039',
             'username': 'xivo',
             'password': 'opensesame',
+            'pool_size': 10,
         },
         'reconnection_delay': 10,
         'startup_connection_delay': 1,

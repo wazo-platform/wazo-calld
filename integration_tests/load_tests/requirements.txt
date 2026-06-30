@@ -1,0 +1,10 @@
+locust
+kombu
+# Wazo client libraries for the calld/auth REST APIs and bus/ARI access
+https://github.com/wazo-platform/wazo-lib-rest-client/archive/master.zip
+https://github.com/wazo-platform/wazo-calld-client/archive/master.zip
+https://github.com/wazo-platform/wazo-bus/archive/master.zip
+https://github.com/wazo-platform/wazo-test-helpers/archive/master.zip
+# ARI client (channel pool setup), as in test-requirements.txt
+https://github.com/rsichny/swagger-py/archive/master.zip
+https://github.com/wazo-platform/ari-py/archive/master.zip
