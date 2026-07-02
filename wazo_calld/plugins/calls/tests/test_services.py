@@ -651,3 +651,102 @@ class TestRecordingUsesFoundChannel(TestCase):
         )
         mock_ami.play_beep.assert_called_once()
         assert_that(mock_ami.play_beep.call_args[0][1], equal_to(self.found_channel_id))
+
+
+class TestMakeCallFromChannel(TestCase):
+    def setUp(self):
+        self.ari = Mock()
+        self.channel_id = '1622000000.42'
+        self.connected_channel_id = '1622000000.43'
+        self.channel = Mock()
+        self.channel.id = self.channel_id
+        self.channel.json = {
+            'id': self.channel_id,
+            'name': 'PJSIP/abcdef-00000042',
+            'state': 'Up',
+            'caller': {'name': 'Alice', 'number': '1001'},
+            'connected': {'name': 'Bob', 'number': '1002'},
+            'creationtime': '2021-06-15T11:06:45.465-0400',
+            'dialplan': {'context': 'internal', 'exten': '1002', 'priority': 1},
+            'channelvars': {
+                'CHANNEL(linkedid)': '1622000000.42',
+                'CHANNEL(channeltype)': 'PJSIP',
+                'CHANNEL(videonativeformat)': '(nothing)',
+                'WAZO_USERUUID': 'user-uuid',
+                'WAZO_DEREFERENCED_USERUUID': '',
+                'WAZO_TENANT_UUID': 'tenant-uuid',
+                'WAZO_ANSWER_TIME': '2021-06-15T11:06:50.000-0400',
+                'WAZO_ENTRY_EXTEN': '1002',
+                'WAZO_LINE_ID': '42',
+                'WAZO_SIP_CALL_ID': 'the-sip-call-id',
+                'WAZO_USER_OUTGOING_CALL': 'true',
+                'WAZO_CHANNEL_DIRECTION': 'to-wazo',
+                'WAZO_CONVERSATION_DIRECTION': '',
+                'WAZO_CALL_DIRECTION': 'internal',
+                'WAZO_CALL_MUTED': '',
+                'WAZO_CALL_PARKED': '',
+                'WAZO_RECORDING_PAUSED': '',
+                'WAZO_CALL_RECORD_ACTIVE': '1',
+                'XIVO_ON_HOLD': '1',
+            },
+        }
+        self.connected_channel_json = {
+            'id': self.connected_channel_id,
+            'name': 'PJSIP/ghijkl-00000043',
+            'channelvars': {
+                'WAZO_USERUUID': 'peer-user-uuid',
+                'WAZO_CALL_DIRECTION': 'internal',
+            },
+        }
+        self.bridge = Mock()
+        self.bridge.id = 'bridge-id'
+        self.bridge.json = {
+            'id': 'bridge-id',
+            'channels': [self.channel_id, self.connected_channel_id],
+        }
+
+    def test_full_snapshot_and_prefetched_bridges_make_no_ari_requests(self):
+        channels_by_id = {
+            self.channel_id: self.channel.json,
+            self.connected_channel_id: self.connected_channel_json,
+        }
+
+        call = CallsService.make_call_from_channel(
+            self.ari,
+            self.channel,
+            bridges=[self.bridge],
+            channels_by_id=channels_by_id,
+        )
+
+        assert_that(call.id_, equal_to(self.channel_id))
+        assert_that(call.conversation_id, equal_to('1622000000.42'))
+        assert_that(call.user_uuid, equal_to('user-uuid'))
+        assert_that(call.tenant_uuid, equal_to('tenant-uuid'))
+        assert_that(call.on_hold, is_(True))
+        assert_that(call.muted, is_(False))
+        assert_that(call.parked, is_(False))
+        assert_that(call.record_state, equal_to('active'))
+        assert_that(call.bridges, equal_to(['bridge-id']))
+        assert_that(
+            call.talking_to, equal_to({self.connected_channel_id: 'peer-user-uuid'})
+        )
+        assert_that(call.is_caller, is_(True))
+        assert_that(call.is_video, is_(False))
+        assert_that(call.dialed_extension, equal_to('1002'))
+        assert_that(call.sip_call_id, equal_to('the-sip-call-id'))
+        assert_that(call.line_id, equal_to(42))
+        assert_that(call.direction, equal_to('internal'))
+
+        self.ari.channels.getChannelVar.assert_not_called()
+        self.ari.channels.get.assert_not_called()
+        self.ari.bridges.list.assert_not_called()
+
+    def test_defaults_fetch_bridges_once(self):
+        self.ari.bridges.list.return_value = [self.bridge]
+        self.ari.channels.get.return_value = Mock(json=self.connected_channel_json)
+        self.ari.channels.getChannelVar.return_value = {'value': 'peer-user-uuid'}
+
+        call = CallsService.make_call_from_channel(self.ari, self.channel)
+
+        assert_that(call.bridges, equal_to(['bridge-id']))
+        self.ari.bridges.list.assert_called_once_with()

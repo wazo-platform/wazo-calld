@@ -52,6 +52,11 @@ class _BaseTestCalls(IntegrationTest):
             values.setdefault('WAZO_TENANT_UUID', VALID_TENANT)
         self.ari.set_channel_variable(variables)
 
+    def _ari_requests_during(self, func):
+        requests_before = len(self.ari.requests()['requests'])
+        result = func()
+        return result, self.ari.requests()['requests'][requests_before:]
+
 
 class TestListCalls(_BaseTestCalls):
     asset = 'basic_rest'
@@ -157,6 +162,100 @@ class TestListCalls(_BaseTestCalls):
                 )
             ),
         )
+
+    def test_list_calls_with_snapshot_variables_makes_no_channel_variable_requests(
+        self,
+    ):
+        first_id, second_id = new_call_id(), new_call_id()
+        first_channelvars = {
+            'CHANNEL(linkedid)': 'the-conversation-id',
+            'CHANNEL(channeltype)': 'PJSIP',
+            'CHANNEL(videonativeformat)': '(vp8)',
+            'WAZO_USERUUID': 'user1-uuid',
+            'WAZO_DEREFERENCED_USERUUID': '',
+            'WAZO_TENANT_UUID': VALID_TENANT,
+            'WAZO_ENTRY_EXTEN': '1002',
+            'WAZO_LINE_ID': str(SOME_LINE_ID),
+            'WAZO_SIP_CALL_ID': 'a-sip-call-id',
+            'WAZO_USER_OUTGOING_CALL': 'true',
+            'WAZO_CHANNEL_DIRECTION': 'to-wazo',
+            'WAZO_CONVERSATION_DIRECTION': 'internal',
+            'WAZO_CALL_MUTED': '',
+            'WAZO_CALL_PARKED': '',
+            'XIVO_ON_HOLD': '1',
+        }
+        second_channelvars = dict(
+            first_channelvars,
+            **{
+                'WAZO_USERUUID': 'user2-uuid',
+                'WAZO_SIP_CALL_ID': 'another-sip-call-id',
+                'WAZO_USER_OUTGOING_CALL': '',
+                'WAZO_CHANNEL_DIRECTION': 'from-wazo',
+                'XIVO_ON_HOLD': '',
+            },
+        )
+        self.ari.set_channels(
+            MockChannel(id=first_id, state='Up', channelvars=first_channelvars),
+            MockChannel(id=second_id, state='Up', channelvars=second_channelvars),
+        )
+        self.ari.set_bridges(MockBridge(id='bridge-id', channels=[first_id, second_id]))
+        self.confd.set_users(MockUser(uuid='user1-uuid'), MockUser(uuid='user2-uuid'))
+
+        calls, ari_requests = self._ari_requests_during(
+            self.calld_client.calls.list_calls
+        )
+
+        assert_that(
+            calls,
+            has_entries(
+                items=contains_inanyorder(
+                    has_entries(
+                        call_id=first_id,
+                        conversation_id='the-conversation-id',
+                        user_uuid='user1-uuid',
+                        status='Up',
+                        bridges=['bridge-id'],
+                        talking_to={second_id: 'user2-uuid'},
+                        on_hold=True,
+                        muted=False,
+                        sip_call_id='a-sip-call-id',
+                        line_id=SOME_LINE_ID,
+                        dialed_extension='1002',
+                        is_caller=True,
+                        is_video=True,
+                        direction='internal',
+                    ),
+                    has_entries(
+                        call_id=second_id,
+                        user_uuid='user2-uuid',
+                        talking_to={first_id: 'user1-uuid'},
+                        on_hold=False,
+                        sip_call_id='another-sip-call-id',
+                        is_caller=False,
+                        direction='internal',
+                    ),
+                )
+            ),
+        )
+
+        channel_variable_requests = [
+            request
+            for request in ari_requests
+            if request['method'] == 'GET' and request['path'].endswith('/variable')
+        ]
+        assert_that(channel_variable_requests, empty())
+        bridges_list_requests = [
+            request
+            for request in ari_requests
+            if request['method'] == 'GET' and request['path'] == '/ari/bridges'
+        ]
+        assert_that(len(bridges_list_requests), equal_to(1))
+        channels_list_requests = [
+            request
+            for request in ari_requests
+            if request['method'] == 'GET' and request['path'] == '/ari/channels'
+        ]
+        assert_that(len(channels_list_requests), equal_to(1))
 
     def test_call_direction(self):
         first_id, second_id = new_call_id(), new_call_id()
@@ -528,6 +627,95 @@ class TestUserListCalls(_BaseTestCalls):
                 )
             ),
         )
+
+    def test_list_calls_from_user_with_snapshot_variables_makes_no_channel_variable_requests(
+        self,
+    ):
+        user_uuid = 'user-uuid'
+        my_call_id = new_call_id()
+        others_call_id = new_call_id()
+        local_call_id = new_call_id()
+
+        def channelvars(**overrides):
+            variables = {
+                'CHANNEL(linkedid)': 'the-conversation-id',
+                'CHANNEL(channeltype)': 'PJSIP',
+                'CHANNEL(videonativeformat)': '(nothing)',
+                'WAZO_USERUUID': user_uuid,
+                'WAZO_DEREFERENCED_USERUUID': '',
+                'WAZO_TENANT_UUID': VALID_TENANT,
+                'WAZO_ENTRY_EXTEN': '1002',
+                'WAZO_LINE_ID': str(SOME_LINE_ID),
+                'WAZO_SIP_CALL_ID': 'a-sip-call-id',
+                'WAZO_USER_OUTGOING_CALL': '',
+                'WAZO_CHANNEL_DIRECTION': 'to-wazo',
+                'WAZO_CONVERSATION_DIRECTION': 'internal',
+                'WAZO_CALL_MUTED': '',
+                'WAZO_CALL_PARKED': '',
+                'XIVO_ON_HOLD': '',
+            }
+            variables.update(overrides)
+            return variables
+
+        self.ari.set_channels(
+            MockChannel(id=my_call_id, state='Up', channelvars=channelvars()),
+            MockChannel(
+                id=others_call_id,
+                state='Up',
+                channelvars=channelvars(WAZO_USERUUID='user2-uuid'),
+            ),
+            MockChannel(
+                id=local_call_id,
+                name=SOME_LOCAL_CHANNEL_NAME,
+                state='Up',
+                channelvars=channelvars(),
+            ),
+        )
+        self.ari.set_bridges(
+            MockBridge(id='bridge-id', channels=[my_call_id, others_call_id])
+        )
+        self.confd.set_users(MockUser(uuid=user_uuid), MockUser(uuid='user2-uuid'))
+        calld_client = self.make_user_calld(user_uuid)
+
+        calls, ari_requests = self._ari_requests_during(
+            calld_client.calls.list_calls_from_user
+        )
+
+        assert_that(
+            calls,
+            has_entries(
+                items=contains_exactly(
+                    has_entries(
+                        call_id=my_call_id,
+                        user_uuid=user_uuid,
+                        talking_to={others_call_id: 'user2-uuid'},
+                        sip_call_id='a-sip-call-id',
+                        line_id=SOME_LINE_ID,
+                        dialed_extension='1002',
+                        direction='internal',
+                    ),
+                )
+            ),
+        )
+
+        channel_variable_requests = [
+            request
+            for request in ari_requests
+            if request['method'] == 'GET' and request['path'].endswith('/variable')
+        ]
+        assert_that(channel_variable_requests, empty())
+        bridges_list_requests = [
+            request
+            for request in ari_requests
+            if request['method'] == 'GET' and request['path'] == '/ari/bridges'
+        ]
+        assert_that(len(bridges_list_requests), equal_to(1))
+        channels_list_requests = [
+            request
+            for request in ari_requests
+            if request['method'] == 'GET' and request['path'] == '/ari/channels'
+        ]
+        assert_that(len(channels_list_requests), equal_to(1))
 
     def test_given_some_calls_when_list_calls_by_application_then_list_of_calls_is_filtered(
         self,

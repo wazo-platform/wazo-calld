@@ -179,9 +179,13 @@ class GlobalVariableConstantNameAdapter(GlobalVariableConstantAdapterProtocol[T]
 
 
 class Channel:
-    def __init__(self, channel_id, ari):
+    def __init__(self, channel_id, ari, snapshot=None):
         self.id = channel_id
         self._ari = ari
+        # snapshot: the channel JSON dict from channels.list/channels.get or a
+        # stasis event; its 'channelvars' only contains the variables listed
+        # in ari.conf channelvars
+        self._snapshot = snapshot
 
     def __str__(self):
         return self.id
@@ -194,12 +198,15 @@ class Channel:
 
         return channel.json['name']
 
-    def connected_channels(self):
+    def connected_channels(self, bridges=None, channels_by_id=None):
+        if bridges is None:
+            bridges = self._ari.bridges.list()
+        channels_by_id = channels_by_id or {}
         channel_ids = set(
             sum(
                 (
                     bridge.json['channels']
-                    for bridge in self._ari.bridges.list()
+                    for bridge in bridges
                     if self.id in bridge.json['channels']
                 ),
                 list(),
@@ -209,7 +216,10 @@ class Channel:
             channel_ids.remove(self.id)
         except KeyError:
             pass
-        return {Channel(channel_id, self._ari) for channel_id in channel_ids}
+        return {
+            Channel(channel_id, self._ari, snapshot=channels_by_id.get(channel_id))
+            for channel_id in channel_ids
+        }
 
     def conversation_id(self):
         try:
@@ -263,6 +273,9 @@ class Channel:
             return False
 
     def is_local(self):
+        if self._snapshot is not None:
+            return self._snapshot['name'].startswith('Local/')
+
         try:
             channel = self._ari.channels.get(channelId=self.id)
         except ARINotFound:
@@ -302,10 +315,10 @@ class Channel:
 
     def dialed_extension(self):
         try:
-            return self._ari.channels.getChannelVar(
-                channelId=self.id, variable='WAZO_ENTRY_EXTEN'
-            )['value']
+            return self._get_var('WAZO_ENTRY_EXTEN')
         except ARINotFound:
+            if self._snapshot is not None:
+                return self._snapshot['dialplan']['exten']
             try:
                 channel = self._ari.channels.get(channelId=self.id)
                 return channel.json['dialplan']['exten']
@@ -371,6 +384,13 @@ class Channel:
 
     def sip_call_id_unsafe(self):
         '''This method expects a SIP channel'''
+        # WAZO_SIP_CALL_ID is set at channel creation from the immutable SIP
+        # Call-ID and is part of the ari.conf channelvars, avoiding a live
+        # CHANNEL(pjsip,call-id) read when a snapshot is available
+        try:
+            return self._get_var('WAZO_SIP_CALL_ID')
+        except ARINotFound:
+            pass
         try:
             return self._get_var('CHANNEL(pjsip,call-id)')
         except ARINotFound:
@@ -417,6 +437,17 @@ class Channel:
             return
 
     def _get_var(self, var):
+        if self._snapshot is not None:
+            channelvars = self._snapshot.get('channelvars') or {}
+            if var in channelvars:
+                value = channelvars[var]
+                if not value:
+                    # Asterisk embeds unset configured channelvars as '' in
+                    # snapshots while the live API answers 404
+                    raise ARINotFound(
+                        self._ari, f'channel {self.id}: variable {var} not set'
+                    )
+                return value
         return self._ari.channels.getChannelVar(channelId=self.id, variable=var)[
             'value'
         ]

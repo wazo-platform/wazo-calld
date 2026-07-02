@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+* Call listing (`GET /1.0/calls`, `GET /1.0/users/me/calls`) now reads channel
+  variables from the ARI channel snapshots (`channelvars` in `ari.conf`)
+  instead of issuing one ARI request per variable, falling back to live
+  requests for variables missing from the snapshot. No API change. The full
+  reduction in ARI request volume requires the extended `channelvars` list
+  shipped by the platform Asterisk configuration.
+
 ## 26.05
 
 * New admin endpoint `GET /1.0/voicemails/messages` to list all voicemail messages in a tenant.

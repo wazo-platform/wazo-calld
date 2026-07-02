@@ -68,6 +68,9 @@ class CallsService:
         self, application_filter=None, application_instance_filter=None
     ):
         channels = self._ari.channels.list()
+        # keep the unfiltered snapshots: connected channels of a listed call
+        # may be excluded by the application filter
+        channels_by_id = {channel.id: channel.json for channel in channels}
 
         if application_filter:
             try:
@@ -96,7 +99,7 @@ class CallsService:
                     ):
                         app_instance_channels.append(channel)
                 channels = app_instance_channels
-        return channels
+        return channels, channels_by_id
 
     def list_calls(
         self,
@@ -105,12 +108,12 @@ class CallsService:
         application_instance_filter=None,
         recurse=False,
     ):
-        channels = self._list_calls_raw_calls(
+        channels, channels_by_id = self._list_calls_raw_calls(
             application_filter, application_instance_filter
         )
 
         def in_tenant(channel, tenant):
-            channel_helper = Channel(channel.id, self._ari)
+            channel_helper = Channel(channel.id, self._ari, snapshot=channel.json)
             return channel_helper.tenant_uuid() == tenant
 
         if recurse and tenant_uuid and tenant_uuid == master_tenant_uuid:
@@ -119,32 +122,33 @@ class CallsService:
         elif tenant_uuid:
             channels = [c for c in channels if in_tenant(c, tenant_uuid)]
 
-        return [self.make_call_from_channel(self._ari, channel) for channel in channels]
+        bridges = self._ari.bridges.list()
+        return [
+            self.make_call_from_channel(
+                self._ari, channel, bridges=bridges, channels_by_id=channels_by_id
+            )
+            for channel in channels
+        ]
 
     def list_calls_user(
         self, user_uuid, application_filter=None, application_instance_filter=None
     ):
-        channels = self._list_calls_raw_calls(
+        channels, channels_by_id = self._list_calls_raw_calls(
             application_filter, application_instance_filter
         )
 
         def filter(channel):
             if channel.json['name'].startswith('Local/'):
                 return False
-            try:
-                if (
-                    channel.getChannelVar(variable='WAZO_USERUUID')['value']
-                    != user_uuid
-                ):
-                    return False
-            except ARINotFound:
-                return False
-
-            return True
+            channel_helper = Channel(channel.id, self._ari, snapshot=channel.json)
+            return channel_helper.user() == user_uuid
 
         filtered_channels = [c for c in channels if filter(c)]
+        bridges = self._ari.bridges.list()
         return [
-            self.make_call_from_channel(self._ari, channel)
+            self.make_call_from_channel(
+                self._ari, channel, bridges=bridges, channels_by_id=channels_by_id
+            )
             for channel in filtered_channels
         ]
 
@@ -317,7 +321,7 @@ class CallsService:
         except ARINotFound:
             raise NoSuchCall(channel_id)
 
-        channel_helper = Channel(channel.id, self._ari)
+        channel_helper = Channel(channel.id, self._ari, snapshot=channel.json)
         if tenant_uuid and channel_helper.tenant_uuid() != tenant_uuid:
             raise NoSuchCall(channel_id)
 
@@ -347,6 +351,8 @@ class CallsService:
         try:
             channel = self._ari.channels.get(channelId=channel_id)
             set_channel_var_sync(channel, 'WAZO_CALL_MUTED', '1', bypass_stasis=True)
+            # refetch so that the snapshot includes the new WAZO_CALL_MUTED
+            channel = self._ari.channels.get(channelId=channel_id)
         except ARINotFound:
             raise NoSuchCall(call_id)
 
@@ -366,6 +372,8 @@ class CallsService:
         try:
             channel = self._ari.channels.get(channelId=channel_id)
             set_channel_var_sync(channel, 'WAZO_CALL_MUTED', '', bypass_stasis=True)
+            # refetch so that the snapshot includes the new WAZO_CALL_MUTED
+            channel = self._ari.channels.get(channelId=channel_id)
         except ARINotFound:
             raise NoSuchCall(call_id)
 
@@ -425,9 +433,14 @@ class CallsService:
         return new_channel.id
 
     @staticmethod
-    def make_call_from_channel(ari, channel):
+    def make_call_from_channel(ari, channel, bridges=None, channels_by_id=None):
+        if bridges is None:
+            bridges = ari.bridges.list()
         channel_variables = channel.json.get('channelvars', {})
-        channel_helper = Channel(channel.id, ari)
+        channel_helper = Channel(channel.id, ari, snapshot=channel.json)
+        connected_channels = channel_helper.connected_channels(
+            bridges=bridges, channels_by_id=channels_by_id
+        )
         call = Call(channel.id)
         call.conversation_id = channel_helper.conversation_id()
         call.creation_time = channel.json['creationtime']
@@ -452,13 +465,11 @@ class CallsService:
             else 'inactive'
         )
         call.bridges = [
-            bridge.id
-            for bridge in ari.bridges.list()
-            if channel.id in bridge.json['channels']
+            bridge.id for bridge in bridges if channel.id in bridge.json['channels']
         ]
         call.talking_to = {
             connected_channel.id: connected_channel.user()
-            for connected_channel in channel_helper.connected_channels()
+            for connected_channel in connected_channels
         }
         call.is_caller = channel_helper.is_caller()
         call.is_video = (
@@ -472,7 +483,8 @@ class CallsService:
             or (
                 CallsService.conversation_direction_from_channels(
                     ari,
-                    CallsService._get_connected_channel_ids_from_helper(channel_helper),
+                    [channel.id, *(c.id for c in connected_channels)],
+                    channels_by_id=channels_by_id,
                 )
             )
             or 'unknown'
@@ -927,20 +939,24 @@ class CallsService:
             raise NoSuchCall(channel_id)
 
     @staticmethod
-    def conversation_direction_from_channels(ari, channels):
+    def conversation_direction_from_channels(ari, channels, channels_by_id=None):
         all_directions = []
         logger.debug('Determining conversation direction for channels: "%s"', channels)
+        channels_by_id = channels_by_id or {}
 
         for channel_id in channels:
-            try:
-                call_direction = ari.channels.getChannelVar(
-                    channelId=channel_id, variable='WAZO_CALL_DIRECTION'
-                )['value']
-            except ARINotFound:
-                continue
+            channelvars = (channels_by_id.get(channel_id) or {}).get('channelvars', {})
+            if 'WAZO_CALL_DIRECTION' in channelvars:
+                call_direction = channelvars['WAZO_CALL_DIRECTION']
             else:
-                if call_direction:
-                    all_directions.append(call_direction)
+                try:
+                    call_direction = ari.channels.getChannelVar(
+                        channelId=channel_id, variable='WAZO_CALL_DIRECTION'
+                    )['value']
+                except ARINotFound:
+                    continue
+            if call_direction:
+                all_directions.append(call_direction)
 
         return CallsService._conversation_direction_from_directions(all_directions)
 
