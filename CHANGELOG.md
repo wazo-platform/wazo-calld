@@ -2,6 +2,8 @@
 
 ## 26.05
 
+* The call listing endpoints (`GET /calls`, `GET /users/me/calls`) and the call events relayed to the bus now read channel variables from the `channelvars` dict embedded in ARI channel snapshots, falling back to live `getChannelVar` requests for variables missing from the snapshot. This drastically reduces the number of HTTP requests made to Asterisk; the full reduction requires the updated `channelvars` list in the platform `ari.conf` (see wazo-asterisk-config). There is no API change.
+
 * New admin endpoint `GET /1.0/voicemails/messages` to list all voicemail messages in a tenant.
 
 * The `transcription` attribute has been added to voicemail messages. It contains the transcription text when available, or `null` otherwise.
