@@ -13,7 +13,7 @@ import requests
 from ari.exceptions import ARINotFound, ARIServerError
 from requests import HTTPError, RequestException
 
-from wazo_calld.plugin_helpers.ari_ import Bridge
+from wazo_calld.plugin_helpers.ari_ import Bridge, Channel
 
 logger = logging.getLogger(__name__)
 
@@ -197,6 +197,7 @@ class _ContactDialer:
         aor: str,
         ringing_time: int,
         pickup_mark: str,
+        tenant_uuid: str | None = None,
         on_contact_dialed: Callable[[], None] | None = None,
     ):
         self._ari = ari
@@ -213,6 +214,7 @@ class _ContactDialer:
         self._caller_channel_id = channel_id
         self._ringing_time = ringing_time
         self.pickup_mark = pickup_mark
+        self._tenant_uuid = tenant_uuid
         self._on_contact_dialed = on_contact_dialed
         self._wakeup = threading.Event()
 
@@ -302,6 +304,11 @@ class _ContactDialer:
         self.logger.debug(
             'sending %s to the future bridge %s', contact, future_bridge_uuid
         )
+        originate_kwargs = {}
+        if self._tenant_uuid:
+            originate_kwargs['variables'] = {
+                'variables': {'_WAZO_TENANT_UUID': self._tenant_uuid}
+            }
         channel = self._ari.channels.originate(
             endpoint=contact,
             app='dial_mobile',
@@ -309,6 +316,7 @@ class _ContactDialer:
             callerId=caller_id,
             originator=self._caller_channel_id,
             timeout=self._ringing_time,
+            **originate_kwargs,
         )
 
         self.logger.debug('Dialed channel %s', channel.id)
@@ -423,6 +431,18 @@ class DialMobileService:
             logger.warning('PJSIP_ENDPOINT(%s,PICKUPMARK) lookup failed: %s', aor, e)
             pickup_mark = ''
 
+        tenant_uuid = Channel(caller_channel_id, self._ari).tenant_uuid()
+        if not tenant_uuid:
+            incoming_call = self._incoming_calls.get(origin_channel_id)
+            tenant_uuid = incoming_call.tenant_uuid if incoming_call else None
+        if not tenant_uuid:
+            logger.warning(
+                'dial_all_contacts(%s, %s): no tenant_uuid found on caller channel '
+                'or in push state; dialed contacts will have no WAZO_TENANT_UUID',
+                caller_channel_id,
+                aor,
+            )
+
         def _on_contact_dialed() -> None:
             # The mobile has registered and the SIP INVITE has been sent;
             # the PSTN fallback is no longer needed.
@@ -440,6 +460,7 @@ class DialMobileService:
             aor,
             ringing_time,
             pickup_mark,
+            tenant_uuid=tenant_uuid,
             on_contact_dialed=_on_contact_dialed,
         )
         self._contact_dialers[future_bridge_uuid] = dialer

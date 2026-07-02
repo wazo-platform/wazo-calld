@@ -34,6 +34,7 @@ class DialerTestCase(TestCase):
         self.channel_id = '1234567890.42'
         self.ringing_time = 42
         self.pickup_mark = '1003%default'
+        self.tenant_uuid = 'a8b9e2e2-06b2-4227-8c1f-471aec00ba05'
 
         self.poller = _ContactDialer(
             self.ari,
@@ -42,6 +43,7 @@ class DialerTestCase(TestCase):
             self.aor,
             self.ringing_time,
             self.pickup_mark,
+            tenant_uuid=self.tenant_uuid,
         )
 
 
@@ -73,6 +75,31 @@ class TestSendContactToCurrentCall(DialerTestCase):
 
     def test_that_the_call_is_sent_to_dial_mobile_join(self):
         self.poller._send_contact_to_current_call(
+            s.contact, self.future_bridge_uuid, s.caller_id
+        )
+
+        self.ari.channels.originate.assert_called_once_with(
+            endpoint=s.contact,
+            app='dial_mobile',
+            appArgs=['join', self.future_bridge_uuid],
+            callerId=s.caller_id,
+            originator=self.channel_id,
+            timeout=self.ringing_time,
+            variables={'variables': {'_WAZO_TENANT_UUID': self.tenant_uuid}},
+        )
+
+    def test_that_originate_without_tenant_omits_variables(self):
+        poller = _ContactDialer(
+            self.ari,
+            self.future_bridge_uuid,
+            self.channel_id,
+            self.aor,
+            self.ringing_time,
+            self.pickup_mark,
+            tenant_uuid=None,
+        )
+
+        poller._send_contact_to_current_call(
             s.contact, self.future_bridge_uuid, s.caller_id
         )
 
@@ -864,6 +891,51 @@ class TestPSTNFallback(TestCase):
         bridge_uuid = next(iter(self.service._contact_dialers))
         dialer = self.service._contact_dialers[bridge_uuid]
         assert dialer in self.service._dialers_by_aor['my-aor']
+        # Cleanup
+        dialer.stop()
+
+    def test_dial_all_contacts_resolves_tenant_from_caller_channel(self):
+        def get_channel_var(channelId=None, variable=None):
+            if variable == 'WAZO_TENANT_UUID':
+                return {'value': 'the-tenant'}
+            return {'value': 'pickupmark'}
+
+        self.ari.client.channels.getChannelVar.side_effect = get_channel_var
+        self.ari.client.channels.get.return_value = Mock(
+            json={'caller': {'name': 'Test', 'number': '1001'}}
+        )
+
+        self.service.dial_all_contacts('caller-ch', 'call-id', 'my-aor')
+
+        bridge_uuid = next(iter(self.service._contact_dialers))
+        dialer = self.service._contact_dialers[bridge_uuid]
+        assert dialer._tenant_uuid == 'the-tenant'
+        # Cleanup
+        dialer.stop()
+
+    def test_dial_all_contacts_falls_back_to_push_state_tenant(self):
+        def get_channel_var(channelId=None, variable=None):
+            if variable == 'WAZO_TENANT_UUID':
+                raise ARINotFound(s.ari_client, s.original_error)
+            return {'value': 'pickupmark'}
+
+        self.ari.client.channels.getChannelVar.side_effect = get_channel_var
+        self.ari.client.channels.get.return_value = Mock(
+            json={'caller': {'name': 'Test', 'number': '1001'}}
+        )
+        self.service._incoming_calls['call-id'] = IncomingCallPending(
+            call_id='call-id',
+            tenant_uuid='push-tenant',
+            user_uuid='user-uuid',
+            origin_call_id='call-id',
+            payload={},
+        )
+
+        self.service.dial_all_contacts('caller-ch', 'call-id', 'my-aor')
+
+        bridge_uuid = next(iter(self.service._contact_dialers))
+        dialer = self.service._contact_dialers[bridge_uuid]
+        assert dialer._tenant_uuid == 'push-tenant'
         # Cleanup
         dialer.stop()
 
