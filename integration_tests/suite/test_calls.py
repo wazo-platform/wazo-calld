@@ -46,11 +46,46 @@ UNKNOWN_UUID = '00000000-0000-0000-0000-000000000000'
 CONFD_SIP_PROTOCOL = 'sip'
 
 
+def _snapshot_channelvars(**overrides):
+    # a complete channelvars dict, as embedded by Asterisk in channel
+    # snapshots when all the variables read by the call listing are
+    # configured in the ari.conf channelvars option
+    channelvars = {
+        'CHANNEL(channeltype)': 'PJSIP',
+        'CHANNEL(linkedid)': 'the-conversation-id',
+        'CHANNEL(videonativeformat)': '(nothing)',
+        'WAZO_ANSWER_TIME': '',
+        'WAZO_CALL_DIRECTION': '',
+        'WAZO_CALL_MUTED': '',
+        'WAZO_CALL_PARKED': '',
+        'WAZO_CALL_RECORD_ACTIVE': '',
+        'WAZO_CHANNEL_DIRECTION': 'to-wazo',
+        'WAZO_CONVERSATION_DIRECTION': 'internal',
+        'WAZO_DEREFERENCED_USERUUID': '',
+        'WAZO_ENTRY_EXTEN': '',
+        'WAZO_LINE_ID': '',
+        'WAZO_RECORDING_PAUSED': '',
+        'WAZO_SIP_CALL_ID': 'a-sip-call-id',
+        'WAZO_TENANT_UUID': VALID_TENANT,
+        'WAZO_USERUUID': '',
+        'WAZO_USER_OUTGOING_CALL': '',
+        'XIVO_ON_HOLD': '',
+    }
+    channelvars.update(overrides)
+    return channelvars
+
+
 class _BaseTestCalls(IntegrationTest):
     def _set_channel_variable(self, variables):
         for _, values in variables.items():
             values.setdefault('WAZO_TENANT_UUID', VALID_TENANT)
         self.ari.set_channel_variable(variables)
+
+    def _ari_requests_during(self, callable_):
+        requests_before = len(self.ari.requests()['requests'])
+        result = callable_()
+        new_requests = self.ari.requests()['requests'][requests_before:]
+        return result, new_requests
 
 
 class TestListCalls(_BaseTestCalls):
@@ -157,6 +192,120 @@ class TestListCalls(_BaseTestCalls):
                 )
             ),
         )
+
+    def test_given_fully_populated_snapshots_when_list_calls_then_no_per_call_ari_requests(
+        self,
+    ):
+        first_id, second_id = new_call_id(), new_call_id()
+        self.ari.set_channels(
+            MockChannel(
+                id=first_id,
+                name='PJSIP/first-00000001',
+                caller_id_name='Weber',
+                caller_id_number='4185556666',
+                connected_line_name='Denis',
+                connected_line_number='4185557777',
+                creation_time='first-time',
+                state='Up',
+                channelvars=_snapshot_channelvars(
+                    **{
+                        'WAZO_USERUUID': 'user1-uuid',
+                        'WAZO_LINE_ID': str(SOME_LINE_ID),
+                        'WAZO_SIP_CALL_ID': 'first-sip-call-id',
+                        'WAZO_ENTRY_EXTEN': '4185557777',
+                        'WAZO_ANSWER_TIME': 'first-answer-time',
+                        'XIVO_ON_HOLD': '1',
+                    }
+                ),
+            ),
+            MockChannel(
+                id=second_id,
+                name='PJSIP/second-00000002',
+                caller_id_name='Denis',
+                caller_id_number='4185557777',
+                connected_line_name='Weber',
+                connected_line_number='4185556666',
+                creation_time='second-time',
+                state='Ringing',
+                channelvars=_snapshot_channelvars(
+                    **{
+                        'WAZO_USERUUID': 'user2-uuid',
+                        'WAZO_CHANNEL_DIRECTION': 'from-wazo',
+                        'WAZO_SIP_CALL_ID': 'second-sip-call-id',
+                    }
+                ),
+            ),
+        )
+        self.ari.set_bridges(MockBridge(id='bridge-id', channels=[first_id, second_id]))
+        self.confd.set_users(MockUser(uuid='user1-uuid'), MockUser(uuid='user2-uuid'))
+
+        calls, ari_requests = self._ari_requests_during(
+            self.calld_client.calls.list_calls
+        )
+
+        assert_that(
+            calls,
+            has_entries(
+                items=contains_inanyorder(
+                    has_entries(
+                        call_id=first_id,
+                        conversation_id='the-conversation-id',
+                        user_uuid='user1-uuid',
+                        status='Up',
+                        bridges=['bridge-id'],
+                        talking_to={second_id: 'user2-uuid'},
+                        creation_time='first-time',
+                        answer_time='first-answer-time',
+                        caller_id_number='4185556666',
+                        caller_id_name='Weber',
+                        peer_caller_id_number='4185557777',
+                        peer_caller_id_name='Denis',
+                        sip_call_id='first-sip-call-id',
+                        line_id=SOME_LINE_ID,
+                        is_caller=True,
+                        is_video=False,
+                        on_hold=True,
+                        muted=False,
+                        record_state='inactive',
+                        direction='internal',
+                        dialed_extension='4185557777',
+                    ),
+                    has_entries(
+                        call_id=second_id,
+                        conversation_id='the-conversation-id',
+                        user_uuid='user2-uuid',
+                        status='Ringing',
+                        bridges=['bridge-id'],
+                        talking_to={first_id: 'user1-uuid'},
+                        creation_time='second-time',
+                        caller_id_number='4185557777',
+                        caller_id_name='Denis',
+                        peer_caller_id_number='4185556666',
+                        peer_caller_id_name='Weber',
+                        sip_call_id='second-sip-call-id',
+                        line_id=None,
+                        is_caller=False,
+                        on_hold=False,
+                    ),
+                )
+            ),
+        )
+        variable_requests = [
+            request for request in ari_requests if '/variable' in request['path']
+        ]
+        assert_that(variable_requests, empty())
+        channels_list_requests = [
+            request
+            for request in ari_requests
+            if request['method'] == 'GET' and request['path'] == '/ari/channels'
+        ]
+        assert_that(channels_list_requests, contains_exactly(has_entries(method='GET')))
+        bridges_list_requests = [
+            request
+            for request in ari_requests
+            if request['method'] == 'GET' and request['path'] == '/ari/bridges'
+        ]
+        assert_that(bridges_list_requests, contains_exactly(has_entries(method='GET')))
 
     def test_call_direction(self):
         first_id, second_id = new_call_id(), new_call_id()
@@ -528,6 +677,72 @@ class TestUserListCalls(_BaseTestCalls):
                 )
             ),
         )
+
+    def test_given_fully_populated_snapshots_when_list_my_calls_then_no_per_call_ari_requests(
+        self,
+    ):
+        user_uuid = 'user-uuid'
+        my_call_id = new_call_id()
+        others_call_id = new_call_id()
+        local_call_id = new_call_id()
+        self.ari.set_channels(
+            MockChannel(
+                id=my_call_id,
+                name='PJSIP/mine-00000001',
+                channelvars=_snapshot_channelvars(WAZO_USERUUID=user_uuid),
+            ),
+            MockChannel(
+                id=others_call_id,
+                name='PJSIP/other-00000002',
+                channelvars=_snapshot_channelvars(WAZO_USERUUID='user2-uuid'),
+            ),
+            MockChannel(
+                id=local_call_id,
+                name=SOME_LOCAL_CHANNEL_NAME,
+                channelvars=_snapshot_channelvars(WAZO_USERUUID=user_uuid),
+            ),
+        )
+        self.ari.set_bridges(
+            MockBridge(id='bridge-id', channels=[my_call_id, others_call_id])
+        )
+        self.confd.set_users(MockUser(uuid=user_uuid), MockUser(uuid='user2-uuid'))
+        calld_client = self.make_user_calld(user_uuid)
+
+        calls, ari_requests = self._ari_requests_during(
+            calld_client.calls.list_calls_from_user
+        )
+
+        assert_that(
+            calls,
+            has_entries(
+                items=contains_exactly(
+                    has_entries(
+                        call_id=my_call_id,
+                        user_uuid=user_uuid,
+                        bridges=['bridge-id'],
+                        talking_to={others_call_id: 'user2-uuid'},
+                        sip_call_id='a-sip-call-id',
+                        direction='internal',
+                    ),
+                )
+            ),
+        )
+        variable_requests = [
+            request for request in ari_requests if '/variable' in request['path']
+        ]
+        assert_that(variable_requests, empty())
+        channels_list_requests = [
+            request
+            for request in ari_requests
+            if request['method'] == 'GET' and request['path'] == '/ari/channels'
+        ]
+        assert_that(channels_list_requests, contains_exactly(has_entries(method='GET')))
+        bridges_list_requests = [
+            request
+            for request in ari_requests
+            if request['method'] == 'GET' and request['path'] == '/ari/bridges'
+        ]
+        assert_that(bridges_list_requests, contains_exactly(has_entries(method='GET')))
 
     def test_given_some_calls_when_list_calls_by_application_then_list_of_calls_is_filtered(
         self,
