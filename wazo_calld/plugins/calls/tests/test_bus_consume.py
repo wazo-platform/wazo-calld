@@ -7,7 +7,9 @@ from unittest.mock import Mock, patch
 from hamcrest import assert_that, calling, not_, raises
 
 from ..bus_consume import CallsBusEventHandler
+from ..call import Call
 from ..exceptions import NoSuchCall
+from ..notifier import CallNotifier
 
 
 class TestCallsBusEventHandler(TestCase):
@@ -92,6 +94,38 @@ class TestCallsBusEventHandler(TestCase):
             self.handler.ari, pjsip_channel
         )
         self.handler.notifier.call_updated.assert_called_once()
+
+    def test_relay_channel_entered_bridge_without_tenant_does_not_raise(self):
+        bus = Mock()
+        handler = CallsBusEventHandler(
+            Mock(),
+            Mock(),
+            Mock(),
+            Mock(),
+            self.services,
+            Mock(),
+            Mock(),
+            CallNotifier(bus),
+        )
+        pjsip_channel = self._make_channel('chan-1', 'PJSIP/mobile-00000001')
+        bridge = Mock()
+        bridge.json = {'channels': ['chan-1']}
+        handler.ari.bridges.get.return_value = bridge
+        handler.ari.channels.get.return_value = pjsip_channel
+        call = Call('chan-1')  # tenant_uuid is None by default
+        self.services.make_call_from_channel.return_value = call
+        self.services.conversation_direction_from_channels.return_value = 'unknown'
+
+        event = {
+            'Uniqueid': 'chan-1',
+            'BridgeUniqueid': 'bridge-1',
+            'BridgeNumChannels': '2',
+        }
+        assert_that(
+            calling(handler._relay_channel_entered_bridge).with_args(event),
+            not_(raises(Exception)),
+        )
+        bus.publish.assert_not_called()
 
     @patch('wazo_calld.plugins.calls.bus_consume.recording')
     def test_attended_transfer_announces_recordings(self, mock_recording):
