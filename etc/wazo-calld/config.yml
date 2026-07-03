@@ -9,7 +9,7 @@ extra_config_files: /etc/wazo-calld/conf.d/
 debug: false
 
 # Log file.
-logfile: /var/log/wazo-calld.log
+log_filename: /var/log/wazo-calld.log
 
 # REST API server
 rest_api:
