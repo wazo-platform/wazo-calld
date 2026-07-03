@@ -1,4 +1,4 @@
-# Copyright 2015-2025 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from __future__ import annotations
@@ -13,6 +13,11 @@ from ari.exceptions import ARINotFound, ARINotInStasis
 from .exceptions import BridgeNotFound, NotEnoughChannels, TooManyChannels
 
 logger = logging.getLogger(__name__)
+
+logger.warning(
+    'calld-optimized-channel-read patch loaded '
+    '(channel variables read from ARI snapshots)'
+)
 
 AUTO_ANSWER_VARIABLES = {
     # Aastra/Mitel need Alert-Info: info=alert-autoanswer
