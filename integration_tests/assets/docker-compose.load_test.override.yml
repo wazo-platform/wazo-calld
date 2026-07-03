@@ -1,0 +1,31 @@
+# Extra override applied only by the ARI connection-pool load test
+# (integration_tests/load_tests/run.sh), on top of the real_asterisk override.
+# Two things, both load-test only (the regular integration suite is unaffected):
+#   1. mounts a PJSIP endpoint/AOR so dial_mobile's dial_all_contacts() can
+#      resolve PJSIP_ENDPOINT(<aor>,PICKUPMARK); see etc/asterisk/pjsip.conf.
+#   2. injects ~20ms latency on Asterisk's ARI egress with tc/netem. calld is
+#      CPU/GIL-bound (~1 core), so raw load alone cannot push concurrent in-flight
+#      ARI past the pool size of 10; the added per-call I/O wait forces the
+#      pool-full condition so a fix can be validated. The netem sidecar shares
+#      the ari container's network namespace (needs NET_ADMIN) and installs
+#      iproute2 at start. Set ARI_LATENCY_MS=0 to disable.
+services:
+  ari:
+    volumes:
+      - "./etc/asterisk/pjsip.conf:/etc/asterisk/pjsip.conf"
+      # A/B toggle for the /users/me/calls latency test: override the ari.conf
+      # the real_asterisk override mounts with the selected channelvars list.
+      # Defaults to the repo's (optimized/extended) ari.conf; run.sh --ari-conf
+      # baseline points it at load_tests/ari.conf.baseline (the pre-optimization
+      # wazo-26.02 list, so the listing path falls back to live getChannelVar).
+      - "${LOAD_TEST_ARI_CONF:-./etc/asterisk/ari.conf}:/etc/asterisk/ari.conf"
+
+  ari-netem:
+    image: python:3.9-slim-bullseye
+    network_mode: "service:ari"
+    cap_add:
+      - NET_ADMIN
+    command: >
+      sh -c "apt-get update -qq && apt-get install -y -qq iproute2 &&
+             tc qdisc replace dev eth0 root netem delay ${ARI_LATENCY_MS:-20}ms &&
+             tc -s qdisc show dev eth0 && sleep infinity"

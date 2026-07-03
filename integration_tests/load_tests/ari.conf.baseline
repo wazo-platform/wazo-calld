@@ -1,0 +1,23 @@
+; Load-test A/B "baseline" ARI config: the channelvars list as it shipped on
+; wazo-26.02, i.e. WITHOUT the variables added by the snapshot-reading
+; optimization. With this list the ~9 extra variables the call listing needs
+; (WAZO_CALL_DIRECTION, WAZO_CONVERSATION_DIRECTION, WAZO_ANSWER_TIME,
+; WAZO_CHANNEL_DIRECTION, WAZO_USER_OUTGOING_CALL, WAZO_CALL_MUTED,
+; WAZO_CALL_PARKED, CHANNEL(channeltype), CHANNEL(pjsip,call-id)) are absent from
+; channel snapshots, so Channel._get_var falls back to a live getChannelVar per
+; call — the pre-optimization behaviour.
+;
+; The "optimized" side of the A/B is the repo's own
+; assets/etc/asterisk/ari.conf (the extended list). Select this file with
+; run.sh --ari-conf baseline; keep them structurally identical apart from the
+; channelvars line.
+[general]
+enabled = yes
+allowed_origins = *
+channelvars = CHANNEL(linkedid),WAZO_CALL_RECORD_ACTIVE,WAZO_DEREFERENCED_USERUUID,WAZO_ENTRY_CONTEXT,WAZO_ENTRY_EXTEN,WAZO_LINE_ID,WAZO_SIP_CALL_ID,WAZO_SWITCHBOARD_QUEUE,WAZO_SWITCHBOARD_HOLD,WAZO_TENANT_UUID,XIVO_BASE_EXTEN,XIVO_ON_HOLD,WAZO_USERUUID,WAZO_LOCAL_CHAN_MATCH_UUID,WAZO_CALL_RECORD_SIDE,CHANNEL(videonativeformat),WAZO_QUEUE_DTMF_RECORD_TOGGLE_ENABLED,WAZO_QUEUENAME,WAZO_GROUPNAME,WAZO_GROUP_DTMF_RECORD_TOGGLE_ENABLED,WAZO_USER_DTMF_RECORD_TOGGLE_ENABLED,WAZO_RECORD_GROUP_CALLEE,WAZO_RECORD_QUEUE_CALLEE,WAZO_RECORDING_PAUSED,WAZO_RECORDING_UUID
+
+[xivo]
+type = user
+read_only = no
+password = xivo
+password_format = plain
