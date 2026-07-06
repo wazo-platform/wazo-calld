@@ -3,13 +3,21 @@
 
 import threading
 from unittest import TestCase
-from unittest.mock import Mock, patch
+from unittest.mock import ANY, Mock, patch
 from unittest.mock import sentinel as s
 
 import pytest
 import requests
-from ari.exceptions import ARINotFound
-from hamcrest import assert_that, contains_exactly, empty, equal_to, has_items
+from ari.exceptions import ARINotFound, ARINotInStasis
+from hamcrest import (
+    assert_that,
+    contains_exactly,
+    empty,
+    equal_to,
+    has_items,
+    is_not,
+    matches_regexp,
+)
 
 from ..notifier import Notifier
 from ..services import (
@@ -83,7 +91,61 @@ class TestSendContactToCurrentCall(DialerTestCase):
             callerId=s.caller_id,
             originator=self.channel_id,
             timeout=self.ringing_time,
+            channelId=ANY,
+            variables=ANY,
         )
+
+    def test_that_the_channel_id_is_exposed_in_the_invite(self):
+        self.poller._send_contact_to_current_call(
+            s.contact, self.future_bridge_uuid, s.caller_id
+        )
+
+        kwargs = self.ari.channels.originate.call_args.kwargs
+        channel_id = kwargs['channelId']
+        assert_that(
+            kwargs['variables'],
+            equal_to({'variables': {'PJSIP_HEADER(add,X-Wazo-Call-ID)': channel_id}}),
+        )
+
+    def test_that_the_channel_id_has_the_asterisk_uniqueid_format(self):
+        self.poller._send_contact_to_current_call(
+            s.contact, self.future_bridge_uuid, s.caller_id
+        )
+
+        channel_id = self.ari.channels.originate.call_args.kwargs['channelId']
+        assert_that(channel_id, matches_regexp(r'^\d{10}\.\d{1,3}$'))
+
+    def test_that_a_channel_id_collision_is_retried_with_a_new_id(self):
+        self.ari.channels.originate.side_effect = [
+            ARINotInStasis(s.ari_client, s.original_error),
+            Mock(),
+        ]
+
+        with patch(
+            'wazo_calld.plugins.dial_mobile.services.random.randint',
+            side_effect=[42, 43],
+        ):
+            self.poller._send_contact_to_current_call(
+                s.contact, self.future_bridge_uuid, s.caller_id
+            )
+
+        first, second = (
+            call.kwargs['channelId']
+            for call in self.ari.channels.originate.call_args_list
+        )
+        assert_that(second, is_not(equal_to(first)))
+
+    def test_that_a_persistent_channel_id_collision_raises(self):
+        self.ari.channels.originate.side_effect = ARINotInStasis(
+            s.ari_client, s.original_error
+        )
+
+        with pytest.raises(ARINotInStasis):
+            self.poller._send_contact_to_current_call(
+                s.contact, self.future_bridge_uuid, s.caller_id
+            )
+
+        assert_that(len(self.ari.channels.originate.call_args_list), equal_to(3))
 
 
 class TestChannelIsUp(DialerTestCase):

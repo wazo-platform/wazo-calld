@@ -3,19 +3,29 @@
 
 import contextlib
 import logging
+import random
 import threading
+import time
 import uuid
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
 import requests
-from ari.exceptions import ARINotFound, ARIServerError
+from ari.exceptions import ARINotFound, ARINotInStasis, ARIServerError
 from requests import HTTPError, RequestException
 
 from wazo_calld.plugin_helpers.ari_ import Bridge
 
 logger = logging.getLogger(__name__)
+
+
+def _generate_channel_id() -> str:
+    # Channel id predetermined for mobile contact legs. Mimics Asterisk's own
+    # uniqueid format (<epoch>.<small integer>, see main/channel_internal_api.c).
+    # A collision with a live channel id makes the originate fail with a 409,
+    # handled by retrying with a new value.
+    return f'{int(time.time())}.{random.randint(0, 999)}'
 
 
 @dataclass
@@ -302,14 +312,33 @@ class _ContactDialer:
         self.logger.debug(
             'sending %s to the future bridge %s', contact, future_bridge_uuid
         )
-        channel = self._ari.channels.originate(
-            endpoint=contact,
-            app='dial_mobile',
-            appArgs=['join', future_bridge_uuid],
-            callerId=caller_id,
-            originator=self._caller_channel_id,
-            timeout=self._ringing_time,
-        )
+        # Predetermine the channel id and expose it in the INVITE so the
+        # client learns its call_id at the same time as its sip_call_id,
+        # avoiding any mismatch between the two.
+        max_attempts = 3
+        for attempt in range(1, max_attempts + 1):
+            channel_id = _generate_channel_id()
+            try:
+                channel = self._ari.channels.originate(
+                    endpoint=contact,
+                    app='dial_mobile',
+                    appArgs=['join', future_bridge_uuid],
+                    callerId=caller_id,
+                    originator=self._caller_channel_id,
+                    timeout=self._ringing_time,
+                    channelId=channel_id,
+                    variables={
+                        'variables': {
+                            'PJSIP_HEADER(add,X-Wazo-Call-ID)': channel_id,
+                        },
+                    },
+                )
+            except ARINotInStasis:  # 409: a channel with this id already exists
+                if attempt == max_attempts:
+                    raise
+                self.logger.info('channel id %s already in use, retrying', channel_id)
+            else:
+                break
 
         self.logger.debug('Dialed channel %s', channel.id)
         self._called_contacts.add(contact)
