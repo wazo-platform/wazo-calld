@@ -1,4 +1,4 @@
-# Copyright 2016-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import requests
@@ -23,6 +23,11 @@ class CalldComponentsWaitStrategy(ComponentsWaitStrategy):
 class CalldUpWaitStrategy(WaitStrategy):
     def wait(self, integration_test):
         until.true(integration_test.calld_client.is_up, tries=5)
+
+
+class CallLogdUpWaitStrategy(WaitStrategy):
+    def wait(self, integration_test):
+        until.true(integration_test.call_logd.is_up, tries=10)
 
 
 class CalldConnectionsOkWaitStrategy(WaitStrategy):

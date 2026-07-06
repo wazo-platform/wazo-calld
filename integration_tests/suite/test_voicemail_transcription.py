@@ -19,7 +19,7 @@ from .helpers.base import IntegrationTest
 from .helpers.confd import MockVoicemail
 from .helpers.constants import VALID_TENANT, VALID_TENANT_MULTITENANT_1, XIVO_UUID
 from .helpers.real_asterisk import RealAsteriskIntegrationTest
-from .helpers.wait_strategy import CalldEverythingOkWaitStrategy
+from .helpers.wait_strategy import CalldEverythingOkWaitStrategy, CallLogdUpWaitStrategy
 
 
 class TestVoicemailTranscriptionBusConsume(IntegrationTest):
@@ -621,7 +621,6 @@ class TestVoicemailTranscriptionEnrichment(RealAsteriskIntegrationTest):
 
         calld = self.make_user_calld(user_uuid, tenant_uuid=VALID_TENANT)
         # default/8001 has 3 more messages, total = 4
-
         # no filter: both transcribed and non-transcribed included
         result = calld.voicemails.list_voicemail_messages()
         assert_that(
@@ -635,7 +634,6 @@ class TestVoicemailTranscriptionEnrichment(RealAsteriskIntegrationTest):
                 filtered=4,
             ),
         )
-
         # transcribed=True: only transcribed messages
         result = calld.voicemails.list_voicemail_messages(transcribed=True)
         assert_that(
@@ -648,7 +646,6 @@ class TestVoicemailTranscriptionEnrichment(RealAsteriskIntegrationTest):
                 filtered=1,
             ),
         )
-
         # transcribed=False: only non-transcribed messages
         result = calld.voicemails.list_voicemail_messages(transcribed=False)
         assert_that(
@@ -701,6 +698,7 @@ class TestVoicemailTranscriptionEnrichment(RealAsteriskIntegrationTest):
         finally:
             self.start_service('call-logd')
             self.reset_clients()
+            CallLogdUpWaitStrategy().wait(self)
 
     def test_personal_voicemail_transcription_deleted_event(self):
         user_uuid_1 = str(uuid.uuid4())
