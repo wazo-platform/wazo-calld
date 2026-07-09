@@ -98,6 +98,7 @@ class RestApiConfigDict(TypedDict):
     certificate: str | None
     private_key: str | None
     cors: RestApiCorsConfigDict
+    min_threads: int
     max_threads: int
 
 
