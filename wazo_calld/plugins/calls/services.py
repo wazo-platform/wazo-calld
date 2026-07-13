@@ -68,7 +68,6 @@ class CallsService:
         self, application_filter=None, application_instance_filter=None
     ):
         channels = self._ari.channels.list()
-        channels_by_id = {channel.id: channel.json for channel in channels}
 
         if application_filter:
             try:
@@ -97,7 +96,7 @@ class CallsService:
                     ):
                         app_instance_channels.append(channel)
                 channels = app_instance_channels
-        return channels, channels_by_id
+        return channels
 
     def list_calls(
         self,
@@ -106,9 +105,10 @@ class CallsService:
         application_instance_filter=None,
         recurse=False,
     ):
-        channels, channels_by_id = self._list_calls_raw_calls(
+        channels = self._list_calls_raw_calls(
             application_filter, application_instance_filter
         )
+        channels_by_id = {channel.id: channel.json for channel in channels}
 
         def in_tenant(channel, tenant):
             channel_helper = Channel(channel.id, self._ari, snapshot=channel.json)
@@ -131,9 +131,10 @@ class CallsService:
     def list_calls_user(
         self, user_uuid, application_filter=None, application_instance_filter=None
     ):
-        channels, channels_by_id = self._list_calls_raw_calls(
+        channels = self._list_calls_raw_calls(
             application_filter, application_instance_filter
         )
+        channels_by_id = {channel.id: channel.json for channel in channels}
 
         def filter(channel):
             if channel.json['name'].startswith('Local/'):
