@@ -29,6 +29,7 @@ class AriConnectionConfigDict(TypedDict):
     base_url: str
     username: str
     password: str
+    pool_size: int
 
 
 class AriConfigDict(TypedDict):

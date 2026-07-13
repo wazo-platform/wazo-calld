@@ -1,4 +1,4 @@
-# Copyright 2015-2025 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -9,6 +9,7 @@ import urllib.parse
 import ari
 import ari.client
 import swaggerpy.http_client
+from requests.adapters import HTTPAdapter
 from xivo.pubsub import Pubsub
 from xivo.status import Status
 
@@ -17,6 +18,7 @@ from .exceptions import AsteriskARINotInitialized
 logger = logging.getLogger(__name__)
 
 DEFAULT_APPLICATION_NAME = 'callcontrol'
+DEFAULT_ARI_POOL_SIZE = 10
 ALL_STASIS_EVENTS = [
     "ApplicationReplaced",
     "BridgeAttendedTransfer",
@@ -168,19 +170,39 @@ class CachingRepository:
         return channel_cache.get(variable, None)
 
 
+def _build_ari_http_client(
+    base_url: str, username: str, password: str, pool_size: int
+) -> swaggerpy.http_client.SynchronousHttpClient:
+    split = urllib.parse.urlsplit(base_url)
+    http_client = swaggerpy.http_client.SynchronousHttpClient()
+    http_client.set_basic_auth(split.hostname, username, password)
+    # All ARI REST calls share this one session; size its connection pool so a
+    # burst of concurrent calls does not exceed pool_maxsize and get discarded
+    # (urllib3 "Connection pool is full, discarding connection: ari").
+    adapter = HTTPAdapter(pool_maxsize=pool_size)
+    http_client.session.mount('http://', adapter)
+    http_client.session.mount('https://', adapter)
+    return http_client
+
+
 class ARIClientProxy(ari.client.Client):
-    def __init__(self, base_url, username, password):
+    def __init__(self, base_url, username, password, pool_size=DEFAULT_ARI_POOL_SIZE):
         self._base_url = base_url
         self._username = username
         self._password = password
+        self._pool_size = pool_size
         self._initialized = False
         self._registered_app = set()
 
     def init(self):
         if not self._initialized:
-            split = urllib.parse.urlsplit(self._base_url)
-            http_client = swaggerpy.http_client.SynchronousHttpClient()
-            http_client.set_basic_auth(split.hostname, self._username, self._password)
+            logger.info(
+                'Initializing ARI client with connection pool size %s',
+                self._pool_size,
+            )
+            http_client = _build_ari_http_client(
+                self._base_url, self._username, self._password, self._pool_size
+            )
             super().__init__(self._base_url, http_client)
             self._initialized = True
 

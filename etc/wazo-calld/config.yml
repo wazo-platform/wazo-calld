@@ -68,6 +68,9 @@ ari:
     username: xivo
     password: Nasheow8Eag
 
+    # Maximum number of simultaneous ARI HTTP connections
+    pool_size: 10
+
   # How many seconds between each try to reconnect to ARI
   reconnection_delay: 10
 
