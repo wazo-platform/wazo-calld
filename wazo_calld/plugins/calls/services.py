@@ -435,7 +435,10 @@ class CallsService:
         try:
             channel = self._ari.channels.get(channelId=channel.id)
         except ARINotFound:
-            pass
+            logger.warning(
+                'channel %s does not exist anymore and was not refreshed',
+                channel.id,
+            )
         return self.make_call_from_channel(self._ari, channel)
 
     @staticmethod
