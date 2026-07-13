@@ -281,14 +281,10 @@ class CallsService:
                 priority=priority,
                 variables={'variables': variables},
             )
-            try:
-                # the originate response snapshot may predate the application
-                # of the requested channel variables: refresh it
-                channel = self._ari.channels.get(channelId=channel.id)
-            except ARINotFound:
-                pass
 
-        call = self.make_call_from_channel(self._ari, channel)
+        # the originate response snapshot may predate the application of the
+        # requested channel variables: serialize from a refreshed snapshot
+        call = self._refresh_call_from_channel(channel)
         call.dialed_extension = request['destination']['extension']
         return call
 
@@ -362,12 +358,7 @@ class CallsService:
         ami.mute(self._ami, channel_id)
         # NOTE(fblackburn): asterisk should send back an event
         # instead of falsy pretend that channel is muted
-        try:
-            # refresh the snapshot so that it includes the new WAZO_CALL_MUTED value
-            channel = self._ari.channels.get(channelId=channel_id)
-        except ARINotFound:
-            pass
-        call = self.make_call_from_channel(self._ari, channel)
+        call = self._refresh_call_from_channel(channel)
         self._notifier.call_updated(call)
 
     def unmute(self, tenant_uuid, call_id):
@@ -386,12 +377,7 @@ class CallsService:
         ami.unmute(self._ami, call_id)
         # NOTE(fblackburn): asterisk should send back an event
         # instead of falsy pretend that channel is unmuted
-        try:
-            # refresh the snapshot so that it includes the new WAZO_CALL_MUTED value
-            channel = self._ari.channels.get(channelId=channel_id)
-        except ARINotFound:
-            pass
-        call = self.make_call_from_channel(self._ari, channel)
+        call = self._refresh_call_from_channel(channel)
         self._notifier.call_updated(call)
 
     def mute_user(self, tenant_uuid, call_id, user_uuid):
@@ -442,6 +428,15 @@ class CallsService:
         new_channel.on_event('StasisStart', lambda _, __: originate_canceller.close())
         # if the callee refuses, leave the caller as it is
         return new_channel.id
+
+    def _refresh_call_from_channel(self, channel):
+        '''Serialize a call from the latest snapshot of the given channel, so
+        that channel variables set since it was fetched are included.'''
+        try:
+            channel = self._ari.channels.get(channelId=channel.id)
+        except ARINotFound:
+            pass
+        return self.make_call_from_channel(self._ari, channel)
 
     @staticmethod
     def make_call_from_channel(ari, channel, bridges=None, channels_by_id=None):
