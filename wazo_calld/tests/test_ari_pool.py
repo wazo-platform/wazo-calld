@@ -27,7 +27,7 @@ from ..ari_ import _build_ari_http_client
 class _SlowHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         # Hold the connection long enough that all concurrent requests are
-        # in flight at once (this is what netem injected in the load test).
+        # in flight at once
         time.sleep(0.2)
         body = b'{}'
         self.send_response(200)
