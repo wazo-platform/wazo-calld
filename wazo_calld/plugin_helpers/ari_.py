@@ -383,13 +383,13 @@ class Channel:
         '''This method expects a SIP channel'''
         # WAZO_SIP_CALL_ID is a copy of the immutable SIP Call-ID, set at
         # channel creation; reading it from the snapshot avoids evaluating
-        # CHANNEL(pjsip,call-id) over HTTP
+        # CHANNEL(pjsip,call-id) over HTTP. Without a snapshot it is not
+        # consulted at all: the live source of truth is the pjsip read.
         if self._snapshot is not None:
-            sip_call_id = (self._snapshot.get('channelvars') or {}).get(
-                'WAZO_SIP_CALL_ID'
-            )
-            if sip_call_id:
-                return sip_call_id
+            try:
+                return self.get_var('WAZO_SIP_CALL_ID')
+            except ARINotFound:
+                pass
         try:
             return self.get_var('CHANNEL(pjsip,call-id)')
         except ARINotFound:
