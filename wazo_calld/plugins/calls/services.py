@@ -283,7 +283,10 @@ class CallsService:
             )
 
         # the originate response snapshot may predate the application of the
-        # requested channel variables: serialize from a refreshed snapshot
+        # requested channel variables: serialize from a refreshed snapshot.
+        # NOTE: if the channel has already hung up, _refresh_call_from_channel
+        # logs and falls back to the pre-refresh snapshot, so this response
+        # can reflect a call that no longer exists.
         call = self._refresh_call_from_channel(channel)
         call.dialed_extension = request['destination']['extension']
         return call
