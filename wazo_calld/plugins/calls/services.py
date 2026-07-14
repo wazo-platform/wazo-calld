@@ -108,9 +108,10 @@ class CallsService:
         channels = self._list_calls_raw_calls(
             application_filter, application_instance_filter
         )
+        channels_by_id = {channel.id: channel.json for channel in channels}
 
         def in_tenant(channel, tenant):
-            channel_helper = Channel(channel.id, self._ari)
+            channel_helper = Channel(channel.id, self._ari, snapshot=channel.json)
             return channel_helper.tenant_uuid() == tenant
 
         if recurse and tenant_uuid and tenant_uuid == master_tenant_uuid:
@@ -119,7 +120,13 @@ class CallsService:
         elif tenant_uuid:
             channels = [c for c in channels if in_tenant(c, tenant_uuid)]
 
-        return [self.make_call_from_channel(self._ari, channel) for channel in channels]
+        bridges = self._ari.bridges.list() if channels else []
+        return [
+            self.make_call_from_channel(
+                self._ari, channel, bridges=bridges, channels_by_id=channels_by_id
+            )
+            for channel in channels
+        ]
 
     def list_calls_user(
         self, user_uuid, application_filter=None, application_instance_filter=None
@@ -127,24 +134,20 @@ class CallsService:
         channels = self._list_calls_raw_calls(
             application_filter, application_instance_filter
         )
+        channels_by_id = {channel.id: channel.json for channel in channels}
 
         def filter(channel):
             if channel.json['name'].startswith('Local/'):
                 return False
-            try:
-                if (
-                    channel.getChannelVar(variable='WAZO_USERUUID')['value']
-                    != user_uuid
-                ):
-                    return False
-            except ARINotFound:
-                return False
-
-            return True
+            channel_helper = Channel(channel.id, self._ari, snapshot=channel.json)
+            return channel_helper.user() == user_uuid
 
         filtered_channels = [c for c in channels if filter(c)]
+        bridges = self._ari.bridges.list() if filtered_channels else []
         return [
-            self.make_call_from_channel(self._ari, channel)
+            self.make_call_from_channel(
+                self._ari, channel, bridges=bridges, channels_by_id=channels_by_id
+            )
             for channel in filtered_channels
         ]
 
@@ -279,7 +282,12 @@ class CallsService:
                 variables={'variables': variables},
             )
 
-        call = self.make_call_from_channel(self._ari, channel)
+        # the originate response snapshot may predate the application of the
+        # requested channel variables: serialize from a refreshed snapshot.
+        # NOTE: if the channel has already hung up, _refresh_call_from_channel
+        # logs and falls back to the pre-refresh snapshot, so this response
+        # can reflect a call that no longer exists.
+        call = self._refresh_call_from_channel(channel)
         call.dialed_extension = request['destination']['extension']
         return call
 
@@ -353,7 +361,7 @@ class CallsService:
         ami.mute(self._ami, channel_id)
         # NOTE(fblackburn): asterisk should send back an event
         # instead of falsy pretend that channel is muted
-        call = self.make_call_from_channel(self._ari, channel)
+        call = self._refresh_call_from_channel(channel)
         self._notifier.call_updated(call)
 
     def unmute(self, tenant_uuid, call_id):
@@ -372,7 +380,7 @@ class CallsService:
         ami.unmute(self._ami, call_id)
         # NOTE(fblackburn): asterisk should send back an event
         # instead of falsy pretend that channel is unmuted
-        call = self.make_call_from_channel(self._ari, channel)
+        call = self._refresh_call_from_channel(channel)
         self._notifier.call_updated(call)
 
     def mute_user(self, tenant_uuid, call_id, user_uuid):
@@ -424,10 +432,27 @@ class CallsService:
         # if the callee refuses, leave the caller as it is
         return new_channel.id
 
+    def _refresh_call_from_channel(self, channel):
+        '''Serialize a call from the latest snapshot of the given channel, so
+        that channel variables set since it was fetched are included.'''
+        try:
+            channel = self._ari.channels.get(channelId=channel.id)
+        except ARINotFound:
+            logger.warning(
+                'channel %s does not exist anymore and was not refreshed',
+                channel.id,
+            )
+        return self.make_call_from_channel(self._ari, channel)
+
     @staticmethod
-    def make_call_from_channel(ari, channel):
+    def make_call_from_channel(ari, channel, bridges=None, channels_by_id=None):
+        if bridges is None:
+            bridges = ari.bridges.list()
         channel_variables = channel.json.get('channelvars', {})
-        channel_helper = Channel(channel.id, ari)
+        channel_helper = Channel(channel.id, ari, snapshot=channel.json)
+        connected_channels = channel_helper.connected_channels(
+            bridges=bridges, channels_by_id=channels_by_id
+        )
         call = Call(channel.id)
         call.conversation_id = channel_helper.conversation_id()
         call.creation_time = channel.json['creationtime']
@@ -452,13 +477,11 @@ class CallsService:
             else 'inactive'
         )
         call.bridges = [
-            bridge.id
-            for bridge in ari.bridges.list()
-            if channel.id in bridge.json['channels']
+            bridge.id for bridge in bridges if channel.id in bridge.json['channels']
         ]
         call.talking_to = {
             connected_channel.id: connected_channel.user()
-            for connected_channel in channel_helper.connected_channels()
+            for connected_channel in connected_channels
         }
         call.is_caller = channel_helper.is_caller()
         call.is_video = (
@@ -472,7 +495,14 @@ class CallsService:
             or (
                 CallsService.conversation_direction_from_channels(
                     ari,
-                    CallsService._get_connected_channel_ids_from_helper(channel_helper),
+                    [
+                        channel.id,
+                        *(
+                            connected_channel.id
+                            for connected_channel in connected_channels
+                        ),
+                    ],
+                    {channel.id: channel.json, **(channels_by_id or {})},
                 )
             )
             or 'unknown'
@@ -927,20 +957,21 @@ class CallsService:
             raise NoSuchCall(channel_id)
 
     @staticmethod
-    def conversation_direction_from_channels(ari, channels):
+    def conversation_direction_from_channels(ari, channels, channels_by_id=None):
         all_directions = []
         logger.debug('Determining conversation direction for channels: "%s"', channels)
+        channels_by_id = channels_by_id or {}
 
         for channel_id in channels:
+            channel_helper = Channel(
+                channel_id, ari, snapshot=channels_by_id.get(channel_id)
+            )
             try:
-                call_direction = ari.channels.getChannelVar(
-                    channelId=channel_id, variable='WAZO_CALL_DIRECTION'
-                )['value']
+                call_direction = channel_helper.get_var('WAZO_CALL_DIRECTION')
             except ARINotFound:
                 continue
-            else:
-                if call_direction:
-                    all_directions.append(call_direction)
+            if call_direction:
+                all_directions.append(call_direction)
 
         return CallsService._conversation_direction_from_directions(all_directions)
 
