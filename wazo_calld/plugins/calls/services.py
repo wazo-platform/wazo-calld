@@ -960,18 +960,13 @@ class CallsService:
         channels_by_id = channels_by_id or {}
 
         for channel_id in channels:
-            channelvars = (channels_by_id.get(channel_id) or {}).get(
-                'channelvars'
-            ) or {}
-            if 'WAZO_CALL_DIRECTION' in channelvars:
-                call_direction = channelvars['WAZO_CALL_DIRECTION']
-            else:
-                try:
-                    call_direction = ari.channels.getChannelVar(
-                        channelId=channel_id, variable='WAZO_CALL_DIRECTION'
-                    )['value']
-                except ARINotFound:
-                    continue
+            channel_helper = Channel(
+                channel_id, ari, snapshot=channels_by_id.get(channel_id)
+            )
+            try:
+                call_direction = channel_helper.get_var('WAZO_CALL_DIRECTION')
+            except ARINotFound:
+                continue
             if call_direction:
                 all_directions.append(call_direction)
 

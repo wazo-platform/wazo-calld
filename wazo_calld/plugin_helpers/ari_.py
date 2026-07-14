@@ -220,7 +220,7 @@ class Channel:
 
     def conversation_id(self):
         try:
-            linkedid = self._get_var('CHANNEL(linkedid)')
+            linkedid = self.get_var('CHANNEL(linkedid)')
         except ARINotFound:
             return None
         return linkedid
@@ -244,20 +244,20 @@ class Channel:
     def user(self, default=None):
         if self.is_local():
             try:
-                uuid = self._get_var('WAZO_DEREFERENCED_USERUUID')
+                uuid = self.get_var('WAZO_DEREFERENCED_USERUUID')
             except ARINotFound:
                 return default
             return uuid
 
         try:
-            uuid = self._get_var('WAZO_USERUUID')
+            uuid = self.get_var('WAZO_USERUUID')
             return uuid
         except ARINotFound:
             return default
 
     def tenant_uuid(self, default=None):
         try:
-            tenant_uuid = self._get_var('WAZO_TENANT_UUID')
+            tenant_uuid = self.get_var('WAZO_TENANT_UUID')
         except ARINotFound:
             return default
         return tenant_uuid
@@ -282,13 +282,13 @@ class Channel:
 
     def is_caller(self):
         try:
-            user_outgoing_call = self._get_var('WAZO_USER_OUTGOING_CALL')
+            user_outgoing_call = self.get_var('WAZO_USER_OUTGOING_CALL')
             return user_outgoing_call == 'true'
         except ARINotFound:
             pass
 
         try:
-            direction = self._get_var('WAZO_CHANNEL_DIRECTION')
+            direction = self.get_var('WAZO_CHANNEL_DIRECTION')
             return direction == 'to-wazo'
         except ARINotFound:
             pass
@@ -306,13 +306,13 @@ class Channel:
 
     def is_sip(self):
         try:
-            return self._get_var('CHANNEL(channeltype)') == 'PJSIP'
+            return self.get_var('CHANNEL(channeltype)') == 'PJSIP'
         except ARINotFound:
             return False
 
     def dialed_extension(self):
         try:
-            return self._get_var('WAZO_ENTRY_EXTEN')
+            return self.get_var('WAZO_ENTRY_EXTEN')
         except ARINotFound:
             if self._snapshot is not None:
                 return self._snapshot['dialplan']['exten']
@@ -324,28 +324,28 @@ class Channel:
 
     def on_hold(self):
         try:
-            on_hold = self._get_var('XIVO_ON_HOLD')
+            on_hold = self.get_var('XIVO_ON_HOLD')
             return on_hold == '1'
         except ARINotFound:
             return False
 
     def muted(self):
         try:
-            muted = self._get_var('WAZO_CALL_MUTED')
+            muted = self.get_var('WAZO_CALL_MUTED')
             return muted == '1'
         except ARINotFound:
             return False
 
     def parked(self):
         try:
-            parked = self._get_var('WAZO_CALL_PARKED')
+            parked = self.get_var('WAZO_CALL_PARKED')
             return parked == '1'
         except ARINotFound:
             return False
 
     def is_progress(self):
         try:
-            progress = self._get_var('WAZO_CALL_PROGRESS')
+            progress = self.get_var('WAZO_CALL_PROGRESS')
             return progress == '1'
         except ARINotFound:
             return False
@@ -356,7 +356,7 @@ class Channel:
 
     def is_group_auto_recorded(self):
         try:
-            return self._get_var('SHARED(WAZO_RECORD_GROUP_CALLEE)') == '1'
+            return self.get_var('SHARED(WAZO_RECORD_GROUP_CALLEE)') == '1'
         except (ARINotFound, ARINotInStasis):
             return False
         except ARIServerError as e:
@@ -366,7 +366,7 @@ class Channel:
 
     def is_queue_auto_recorded(self):
         try:
-            return self._get_var('SHARED(WAZO_RECORD_QUEUE_CALLEE)') == '1'
+            return self.get_var('SHARED(WAZO_RECORD_QUEUE_CALLEE)') == '1'
         except (ARINotFound, ARINotInStasis):
             return False
         except ARIServerError as e:
@@ -391,20 +391,20 @@ class Channel:
             if sip_call_id:
                 return sip_call_id
         try:
-            return self._get_var('CHANNEL(pjsip,call-id)')
+            return self.get_var('CHANNEL(pjsip,call-id)')
         except ARINotFound:
             return
 
     def line_id(self):
         try:
-            return int(self._get_var('WAZO_LINE_ID'))
+            return int(self.get_var('WAZO_LINE_ID'))
         except ARINotFound:
             return
         except ValueError:
             logger.error(
                 'Channel %s: Malformed WAZO_LINE_ID=%s',
                 self.id,
-                self._get_var('WAZO_LINE_ID'),
+                self.get_var('WAZO_LINE_ID'),
             )
             return
 
@@ -418,7 +418,7 @@ class Channel:
 
     def switchboard_timeout(self):
         try:
-            timeout_str = self._get_var('WAZO_SWITCHBOARD_TIMEOUT')
+            timeout_str = self.get_var('WAZO_SWITCHBOARD_TIMEOUT')
         except ARINotFound:
             return
         if not timeout_str:
@@ -431,11 +431,11 @@ class Channel:
 
     def switchboard_noanswer_fallback_action(self):
         try:
-            return self._get_var('WAZO_SWITCHBOARD_FALLBACK_NOANSWER_ACTION')
+            return self.get_var('WAZO_SWITCHBOARD_FALLBACK_NOANSWER_ACTION')
         except ARINotFound:
             return
 
-    def _get_var(self, var):
+    def get_var(self, var):
         # Variables listed in the ari.conf channelvars option are embedded in
         # every channel snapshot; unset ones are embedded as ''. The live API
         # answers 404 for unset variables, so an empty snapshot value raises
