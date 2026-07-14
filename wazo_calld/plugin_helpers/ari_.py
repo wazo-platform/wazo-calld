@@ -446,10 +446,10 @@ class Channel:
                 value = channelvars[var]
                 if value:
                     return value
-                raise ARINotFound(
-                    self._ari,
-                    f'variable {var} is not set in snapshot of channel {self.id}',
+                logger.debug(
+                    'variable %s is not set in snapshot of channel %s', var, self.id
                 )
+                raise ARINotFound(self._ari, None)
         return self._ari.channels.getChannelVar(channelId=self.id, variable=var)[
             'value'
         ]
