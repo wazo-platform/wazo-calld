@@ -29,7 +29,7 @@ class AriConnectionConfigDict(TypedDict):
     base_url: str
     username: str
     password: str
-    pool_size: int
+    pool_size: int | None
 
 
 class AriConfigDict(TypedDict):
@@ -98,6 +98,7 @@ class RestApiConfigDict(TypedDict):
     certificate: str | None
     private_key: str | None
     cors: RestApiCorsConfigDict
+    min_threads: int
     max_threads: int
 
 
