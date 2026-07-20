@@ -44,7 +44,7 @@ _DEFAULT_CONFIG: CalldConfigDict = {
             'base_url': 'http://localhost:5039',
             'username': 'xivo',
             'password': 'opensesame',
-            'pool_size': 10,
+            'pool_size': None,  # None: use rest_api.max_threads
         },
         'reconnection_delay': 10,
         'startup_connection_delay': 1,
@@ -190,5 +190,9 @@ def _get_reinterpreted_raw_values(config: dict[str, Any]) -> dict[str, Any]:
     log_level = config.get('log_level')
     if log_level:
         result['log_level'] = get_log_level_by_name(log_level)
+
+    if config['ari']['connection']['pool_size'] is None:
+        # Default: one retained ARI connection per REST API worker thread
+        result['ari'] = {'connection': {'pool_size': config['rest_api']['max_threads']}}
 
     return result

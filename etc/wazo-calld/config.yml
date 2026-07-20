@@ -74,8 +74,9 @@ ari:
     username: xivo
     password: Nasheow8Eag
 
-    # Maximum number of simultaneous ARI HTTP connections
-    pool_size: 10
+    # Maximum number of ARI HTTP connections kept alive for reuse.
+    # null: defaults to rest_api.max_threads
+    pool_size: null
 
   # How many seconds between each try to reconnect to ARI
   reconnection_delay: 10
