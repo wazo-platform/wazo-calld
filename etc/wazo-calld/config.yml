@@ -29,10 +29,16 @@ rest_api:
     # Allow JSON preflight requests
     allow_headers: [Content-Type, X-Auth-Token, Wazo-Tenant]
 
-  # Maximum of concurrent threads processing requests
+  # Minimum of concurrent threads processing requests. This many threads
+  # (and database connections) are kept ready at all times.
+  min_threads: 10
+
+  # Maximum of concurrent threads processing requests. The number of threads
+  # (and database connections) scales with demand between min_threads and
+  # max_threads.
   # See the performance documentation for more details
   # https://wazo-platform.org/uc-doc/system/performance/
-  max_threads: 10
+  max_threads: 100
 
 # wazo-auth (authentication daemon) connection settings.
 auth:
@@ -68,8 +74,9 @@ ari:
     username: xivo
     password: Nasheow8Eag
 
-    # Maximum number of simultaneous ARI HTTP connections
-    pool_size: 10
+    # Maximum number of ARI HTTP connections kept alive for reuse.
+    # null: defaults to rest_api.max_threads
+    pool_size: null
 
   # How many seconds between each try to reconnect to ARI
   reconnection_delay: 10

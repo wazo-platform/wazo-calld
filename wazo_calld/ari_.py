@@ -18,7 +18,6 @@ from .exceptions import AsteriskARINotInitialized
 logger = logging.getLogger(__name__)
 
 DEFAULT_APPLICATION_NAME = 'callcontrol'
-DEFAULT_ARI_POOL_SIZE = 10
 ALL_STASIS_EVENTS = [
     "ApplicationReplaced",
     "BridgeAttendedTransfer",
@@ -186,7 +185,7 @@ def _build_ari_http_client(
 
 
 class ARIClientProxy(ari.client.Client):
-    def __init__(self, base_url, username, password, pool_size=DEFAULT_ARI_POOL_SIZE):
+    def __init__(self, base_url, username, password, pool_size):
         self._base_url = base_url
         self._username = username
         self._password = password
