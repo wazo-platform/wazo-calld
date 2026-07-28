@@ -13,6 +13,8 @@ ari:
 
 auth:
   host: auth
+  port: 9497
+  prefix: null
   key_file: /etc/wazo-calld/key.yml
 
 bus:

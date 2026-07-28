@@ -7,6 +7,8 @@ cel_db_uri: postgresql://asterisk:proformatique@call-logd-cel-postgres/asterisk
 
 auth:
   host: auth
+  port: 9497
+  prefix: null
   username: wazo-call-logd
   password: opensesame
   master_tenant_uuid: ffffffff-ffff-ffff-ffff-ffffffffffff

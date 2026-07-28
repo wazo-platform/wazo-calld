@@ -14,6 +14,8 @@ ajam:
 
 auth:
   host: auth
+  port: 9497
+  prefix: null
   # *-service usernames will be rejected by wazo-auth-mock
   # until we setup a valid token for those credentials
   username: wazo-amid-service
