@@ -67,3 +67,10 @@ services:
     volumes:
       - type: tmpfs
         target: /var/lib/rabbitmq
+    healthcheck:
+      # plain TCP check: rabbitmq-diagnostics as root would create a
+      # root-owned erlang cookie and crash the server boot
+      test: ["CMD", "bash", "-c", "</dev/tcp/localhost/5672"]
+      interval: 2s
+      timeout: 10s
+      retries: 60

@@ -12,6 +12,10 @@ services:
 
   amid:
     image: wazoplatform/wazo-amid
+    # amid must not start before rabbitmq is up
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
     expose:
       - "9491"
     volumes:
