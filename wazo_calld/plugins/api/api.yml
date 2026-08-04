@@ -108,6 +108,7 @@ parameters:
   DTMFDigits:
     name: digits
     in: query
-    description: Digits to send via DTMF. Must contain only `0-9*#`.
+    description: Digits to send via DTMF. Must contain only `0-9*#ABCD` (letters are
+      case insensitive).
     required: True
     type: string
