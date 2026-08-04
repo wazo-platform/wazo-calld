@@ -3712,6 +3712,37 @@ class TestCallSendDTMF(RealAsteriskIntegrationTest):
 
         until.assert_(amid_dtmf_events_received, tries=10)
 
+    def test_put_dtmf_letters_are_case_insensitive(self):
+        channel_id = self.given_call_not_stasis()
+
+        event_accumulator = self.bus.accumulator(headers={'name': 'DTMFEnd'})
+
+        self.calld_client.calls.send_dtmf_digits(channel_id, 'aBcD')
+
+        def amid_dtmf_events_received():
+            events = event_accumulator.accumulate(with_headers=True)
+            for expected_digit in 'ABCD':
+                assert_that(
+                    events,
+                    has_item(
+                        has_entries(
+                            message=has_entries(
+                                name='DTMFEnd',
+                                data=has_entries(
+                                    Direction='Received',
+                                    Digit=expected_digit,
+                                    Uniqueid=channel_id,
+                                ),
+                            ),
+                            headers=has_entries(
+                                name='DTMFEnd',
+                            ),
+                        )
+                    ),
+                )
+
+        until.assert_(amid_dtmf_events_received, tries=10)
+
     def test_put_dtmf_tenant_isolation(self):
         user_uuid_1 = str(uuid.uuid4())
         tenant_uuid_1 = str(uuid.uuid4())
