@@ -3176,3 +3176,34 @@ class TestApplicationSendDTMF(BaseApplicationTestCase):
                 )
 
         until.assert_(amid_dtmf_events_received, tries=5)
+
+    def test_put_dtmf_letters_are_case_insensitive(self):
+        app_uuid = self.node_app_uuid
+        channel = self.call_app(app_uuid)
+
+        event_accumulator = self.bus.accumulator(
+            headers={
+                'name': 'DTMFEnd',
+            }
+        )
+
+        self.calld_client.applications.send_dtmf_digits(app_uuid, channel.id, 'aBcD')
+
+        def amid_dtmf_events_received():
+            events = event_accumulator.accumulate()
+            for expected_digit in 'ABCD':
+                assert_that(
+                    events,
+                    has_item(
+                        has_entries(
+                            name='DTMFEnd',
+                            data=has_entries(
+                                Direction='Received',
+                                Digit=expected_digit,
+                                Uniqueid=channel.id,
+                            ),
+                        )
+                    ),
+                )
+
+        until.assert_(amid_dtmf_events_received, tries=5)
