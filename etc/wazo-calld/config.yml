@@ -43,8 +43,7 @@ rest_api:
 # wazo-auth (authentication daemon) connection settings.
 auth:
   host: localhost
-  port: 9497
-  prefix: null
+  port: 80
   https: false
   key_file: /var/lib/wazo-auth-keys/wazo-calld-key.yml
 

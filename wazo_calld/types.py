@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Collection
-from typing import Any, TypedDict
+from typing import Any, NotRequired, TypedDict
 
 from flask_restful import Api
 from xivo.pubsub import Pubsub
@@ -41,7 +41,7 @@ class AriConfigDict(TypedDict):
 class AuthConfigDict(TypedDict):
     host: str
     port: int
-    prefix: str | None
+    prefix: NotRequired[str | None]
     https: bool
     key_file: str
 
