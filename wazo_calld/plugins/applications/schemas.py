@@ -1,4 +1,4 @@
-# Copyright 2018-2025 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from marshmallow import EXCLUDE, Schema, fields, post_load, pre_load
@@ -97,7 +97,13 @@ class ApplicationSchema(Schema):
 
 
 class ApplicationDTMFSchema(BaseSchema):
-    digits = fields.String(validate=Regexp(r'^[0-9*#]+$'))
+    digits = fields.String(validate=Regexp(r'^[0-9*#A-Da-d]+$'))
+
+    @post_load
+    def normalize_digits(self, dtmf_request, **kwargs):
+        if 'digits' in dtmf_request:
+            dtmf_request['digits'] = dtmf_request['digits'].upper()
+        return dtmf_request
 
 
 application_call_request_schema = ApplicationCallRequestSchema()
