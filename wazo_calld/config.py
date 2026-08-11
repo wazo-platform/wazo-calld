@@ -51,8 +51,7 @@ _DEFAULT_CONFIG: CalldConfigDict = {
     },
     'auth': {
         'host': 'localhost',
-        'port': 9497,
-        'prefix': None,
+        'port': 80,
         'https': False,
         'key_file': '/var/lib/wazo-auth-keys/wazo-calld-key.yml',
     },
