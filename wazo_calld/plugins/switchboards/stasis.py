@@ -207,6 +207,8 @@ class SwitchboardsStasis:
 
     def unqueue(self, channel, event):
         switchboard_uuid = channel.json['channelvars']['WAZO_SWITCHBOARD_QUEUE']
+        if not switchboard_uuid:
+            return
         tenant_uuid = channel.json['channelvars']['WAZO_TENANT_UUID']
 
         try:
@@ -218,6 +220,8 @@ class SwitchboardsStasis:
 
     def unhold(self, channel, event):
         switchboard_uuid = channel.json['channelvars']['WAZO_SWITCHBOARD_HOLD']
+        if not switchboard_uuid:
+            return
         tenant_uuid = channel.json['channelvars']['WAZO_TENANT_UUID']
 
         try:
