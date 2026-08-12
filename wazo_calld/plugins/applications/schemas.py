@@ -97,12 +97,11 @@ class ApplicationSchema(Schema):
 
 
 class ApplicationDTMFSchema(BaseSchema):
-    digits = fields.String(validate=Regexp(r'^[0-9*#A-Da-d]+$'))
+    digits = fields.String(validate=Regexp(r'^[0-9*#A-Da-d]+$'), required=True)
 
     @post_load
     def normalize_digits(self, dtmf_request, **kwargs):
-        if 'digits' in dtmf_request:
-            dtmf_request['digits'] = dtmf_request['digits'].upper()
+        dtmf_request['digits'] = dtmf_request['digits'].upper()
         return dtmf_request
 
 

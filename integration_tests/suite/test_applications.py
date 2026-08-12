@@ -3148,6 +3148,14 @@ class TestApplicationSendDTMF(BaseApplicationTestCase):
             raises(CalldError).matching(has_properties(status_code=400)),
         )
 
+        # Missing DTMF
+        assert_that(
+            calling(self.calld_client.applications.send_dtmf_digits).with_args(
+                app_uuid, channel.id, None
+            ),
+            raises(CalldError).matching(has_properties(status_code=400)),
+        )
+
         event_accumulator = self.bus.accumulator(
             headers={
                 'name': 'DTMFEnd',
