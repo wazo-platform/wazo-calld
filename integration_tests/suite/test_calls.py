@@ -3682,6 +3682,14 @@ class TestCallSendDTMF(RealAsteriskIntegrationTest):
             raises(CalldError).matching(has_properties(status_code=400)),
         )
 
+        # Missing DTMF
+        assert_that(
+            calling(self.calld_client.calls.send_dtmf_digits).with_args(
+                channel_id, None
+            ),
+            raises(CalldError).matching(has_properties(status_code=400)),
+        )
+
         event_accumulator = self.bus.accumulator(headers={'name': 'DTMFEnd'})
 
         # Valid DTMF
