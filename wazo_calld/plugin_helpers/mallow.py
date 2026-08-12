@@ -1,7 +1,9 @@
-# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from marshmallow import fields
+
+DTMF_DIGITS_REGEX = r'^[0-9*#A-Da-d]+$'
 
 
 class StrictDict(fields.Dict):

@@ -4,7 +4,7 @@
 from marshmallow import EXCLUDE, Schema, fields, post_load, pre_load
 from xivo.mallow.validate import Length, OneOf, Regexp, validate_string_dict
 
-from wazo_calld.plugin_helpers.mallow import StrictDict
+from wazo_calld.plugin_helpers.mallow import DTMF_DIGITS_REGEX, StrictDict
 
 
 class BaseSchema(Schema):
@@ -97,7 +97,7 @@ class ApplicationSchema(Schema):
 
 
 class ApplicationDTMFSchema(BaseSchema):
-    digits = fields.String(validate=Regexp(r'^[0-9*#A-Da-d]+$'), required=True)
+    digits = fields.String(validate=Regexp(DTMF_DIGITS_REGEX), required=True)
 
     @post_load
     def normalize_digits(self, dtmf_request, **kwargs):
