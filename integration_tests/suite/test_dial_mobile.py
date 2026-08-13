@@ -523,9 +523,7 @@ class TestDialMobile(RealAsteriskIntegrationTest):
         until.assert_(
             push_notification_cancelled,
             timeout=5,
-            message=(
-                'push was not cancelled at join time'
-            ),
+            message=('push was not cancelled at join time'),
         )
 
         chan.hangup()
