@@ -524,8 +524,7 @@ class TestDialMobile(RealAsteriskIntegrationTest):
             push_notification_cancelled,
             timeout=5,
             message=(
-                'push was not cancelled at join time; the push state was '
-                'probably pruned before being resolved'
+                'push was not cancelled at join time'
             ),
         )
 
