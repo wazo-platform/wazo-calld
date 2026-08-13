@@ -476,6 +476,183 @@ class TestCancelPushNotification(TestCase):
         )
 
 
+class TestJoinBridgePushResolution(TestCase):
+    def setUp(self):
+        self.ari = Mock()
+        self.ari.client = self.ari_client = Mock()
+        self.notifier = Mock(Notifier)
+        self.amid_client = Mock()
+        self.auth_client = Mock()
+        self.confd_client = Mock()
+        self.service = DialMobileService(
+            self.ari,
+            self.notifier,
+            self.amid_client,
+            self.auth_client,
+            self.confd_client,
+        )
+
+    def _make_notified(self):
+        return IncomingCallNotified(
+            call_id='call-id',
+            tenant_uuid='tenant-uuid',
+            user_uuid='user-uuid',
+            origin_call_id='call-id',
+            payload={'peer_caller_id_name': 'Alice', 'peer_caller_id_number': '101'},
+        )
+
+    def _mock_answering_channel(
+        self, name='PJSIP/myendpoint-00000001', user_uuid='user-uuid', mobility='mobile'
+    ):
+        self.ari_client.channels.get.return_value = Mock(
+            json={'name': name, 'channelvars': {'WAZO_USERUUID': user_uuid}}
+        )
+        channel_vars = {
+            'PJSIP_AOR(myendpoint,contact)': 'contact1',
+            'PJSIP_CONTACT(contact1,mobility)': mobility,
+        }
+        self.ari_client.channels.getChannelVar.side_effect = (
+            lambda channelId, variable: {'value': channel_vars[variable]}
+        )
+
+    def test_mobile_contact_answering_completes_push_flow(self):
+        self.service._incoming_calls['call-id'] = self._make_notified()
+        self._mock_answering_channel()
+
+        self.service._resolve_pending_push('call-id', 'mobile-ch')
+
+        self.notifier.cancel_push_notification.assert_not_called()
+        assert isinstance(self.service._incoming_calls['call-id'], IncomingCallReceived)
+
+    def test_other_users_device_answering_cancels_push(self):
+        self.service._incoming_calls['call-id'] = self._make_notified()
+        self._mock_answering_channel(user_uuid='other-user-uuid')
+
+        self.service._resolve_pending_push('call-id', 'deskphone-ch')
+
+        self.notifier.cancel_push_notification.assert_called_once()
+        assert isinstance(
+            self.service._incoming_calls['call-id'], IncomingCallPushCancelled
+        )
+
+    def test_non_mobile_contact_answering_cancels_push(self):
+        self.service._incoming_calls['call-id'] = self._make_notified()
+        self._mock_answering_channel(mobility='none')
+
+        self.service._resolve_pending_push('call-id', 'webrtc-ch')
+
+        self.notifier.cancel_push_notification.assert_called_once()
+
+    def test_non_sip_channel_answering_cancels_push(self):
+        # The PSTN fallback leg answers through a Local channel
+        self.service._incoming_calls['call-id'] = self._make_notified()
+        self.ari_client.channels.get.return_value = Mock(
+            json={'name': 'Local/+33123456789@my-outbound-context-0000000a;2'}
+        )
+
+        self.service._resolve_pending_push('call-id', 'local-ch')
+
+        self.notifier.cancel_push_notification.assert_called_once()
+
+    def test_answering_channel_gone_cancels_push(self):
+        self.service._incoming_calls['call-id'] = self._make_notified()
+        self.ari_client.channels.get.side_effect = ARINotFound(
+            s.ari_client, s.original_error
+        )
+
+        self.service._resolve_pending_push('call-id', 'mobile-ch')
+
+        self.notifier.cancel_push_notification.assert_called_once()
+
+    def test_channel_inspection_error_cancels_push_without_raising(self):
+        self.service._incoming_calls['call-id'] = self._make_notified()
+        self.ari_client.channels.get.side_effect = requests.HTTPError()
+
+        self.service._resolve_pending_push('call-id', 'mobile-ch')
+
+        self.notifier.cancel_push_notification.assert_called_once()
+
+    def test_join_bridge_still_bridges_on_channel_inspection_error(self):
+        self.service._incoming_calls['call-id'] = self._make_notified()
+        self.service._call_locks['call-id'] = threading.RLock()
+        self.service._origin_call_id_by_bridge_uuid['bridge-uuid'] = 'call-id'
+        self.service._contact_dialers['bridge-uuid'] = Mock()
+        self.service._caller_channel_leg_by_bridge['bridge-uuid'] = 'caller-ch'
+        self.ari_client.channels.get.side_effect = requests.HTTPError()
+
+        self.service.join_bridge('mobile-ch', 'bridge-uuid')
+
+        self.notifier.cancel_push_notification.assert_called_once()
+        self.ari_client.bridges.createWithId.assert_called_once()
+
+    def test_join_bridge_answering_channel_gone_cancels_push(self):
+        self.service._incoming_calls['call-id'] = self._make_notified()
+        self.service._call_locks['call-id'] = threading.RLock()
+        self.service._origin_call_id_by_bridge_uuid['bridge-uuid'] = 'call-id'
+        self.service._contact_dialers['bridge-uuid'] = Mock()
+        self.service._caller_channel_leg_by_bridge['bridge-uuid'] = 'caller-ch'
+
+        def answer(channelId):
+            if channelId == 'mobile-ch':
+                raise ARINotFound(s.ari_client, s.original_error)
+
+        self.ari_client.channels.answer.side_effect = answer
+
+        self.service.join_bridge('mobile-ch', 'bridge-uuid')
+
+        self.notifier.cancel_push_notification.assert_called_once()
+        self.ari_client.bridges.createWithId.assert_not_called()
+
+    def test_terminal_state_is_not_resolved_again(self):
+        self.service._incoming_calls['call-id'] = self._make_notified().received()
+
+        self.service._resolve_pending_push('call-id', 'mobile-ch')
+
+        self.notifier.cancel_push_notification.assert_not_called()
+        self.ari_client.channels.get.assert_not_called()
+        assert isinstance(self.service._incoming_calls['call-id'], IncomingCallReceived)
+
+    def test_no_push_state_is_a_noop(self):
+        self.service._resolve_pending_push('call-id', 'mobile-ch')
+
+        self.notifier.cancel_push_notification.assert_not_called()
+        self.ari_client.channels.get.assert_not_called()
+
+    def test_join_bridge_resolves_push_before_pruning_state(self):
+        # Regression test: the resolution must run inside join_bridge, while
+        # the push state is still present — the AMI BridgeEnter event always
+        # arrived after join_bridge had pruned the state, so the completion
+        # path never ran and every answered call logged a cancel warning.
+        self.service._incoming_calls['call-id'] = self._make_notified()
+        self.service._call_locks['call-id'] = threading.RLock()
+        self.service._origin_call_id_by_bridge_uuid['bridge-uuid'] = 'call-id'
+        self.service._bridge_uuid_by_origin_call_id['call-id'] = 'bridge-uuid'
+        self.service._contact_dialers['bridge-uuid'] = Mock()
+        self.service._caller_channel_leg_by_bridge['bridge-uuid'] = 'caller-ch'
+        self._mock_answering_channel()
+
+        with patch.object(self.service, 'complete_pending_push_mobile') as complete:
+            self.service.join_bridge('mobile-ch', 'bridge-uuid')
+
+        complete.assert_called_once_with('call-id')
+        self.notifier.cancel_push_notification.assert_not_called()
+        assert 'call-id' not in self.service._incoming_calls
+
+    def test_join_bridge_cancels_push_when_not_answered_by_mobile(self):
+        self.service._incoming_calls['call-id'] = self._make_notified()
+        self.service._call_locks['call-id'] = threading.RLock()
+        self.service._origin_call_id_by_bridge_uuid['bridge-uuid'] = 'call-id'
+        self.service._bridge_uuid_by_origin_call_id['call-id'] = 'bridge-uuid'
+        self.service._contact_dialers['bridge-uuid'] = Mock()
+        self.service._caller_channel_leg_by_bridge['bridge-uuid'] = 'caller-ch'
+        self._mock_answering_channel(user_uuid='other-user-uuid')
+
+        self.service.join_bridge('deskphone-ch', 'bridge-uuid')
+
+        self.notifier.cancel_push_notification.assert_called_once()
+        assert 'call-id' not in self.service._incoming_calls
+
+
 class TestPSTNFallback(TestCase):
     def setUp(self):
         self.ari = Mock()
@@ -1109,27 +1286,6 @@ class TestPSTNFallback(TestCase):
         assert 'call-id' not in self.service._call_ring_time
         assert 'bridge-uuid' not in self.service._caller_channel_leg_by_bridge
         assert 'call-id' not in self.service._incoming_calls
-
-    def test_has_a_registered_mobile_and_pending_push_false_on_terminal_state(
-        self,
-    ):
-        # Once a call reaches Received or Cancelled, it is no longer
-        # considered to have a pending push.
-        self.service._incoming_calls['call-id'] = self._make_notified().received()
-        assert (
-            self.service.has_a_registered_mobile_and_pending_push(
-                'call-id', 'asterisk-call-id', 'PJSIP/aor', 'user-uuid'
-            )
-            is False
-        )
-
-        self.service._incoming_calls['call-id'] = self._make_notified().push_cancelled()
-        assert (
-            self.service.has_a_registered_mobile_and_pending_push(
-                'call-id', 'asterisk-call-id', 'PJSIP/aor', 'user-uuid'
-            )
-            is False
-        )
 
     def test_notify_channel_gone_prunes_call_state(self):
         caller_channel_id = '1234567890.42'

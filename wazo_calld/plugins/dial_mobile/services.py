@@ -12,6 +12,10 @@ from typing import Any
 import requests
 from ari.exceptions import ARINotFound, ARIServerError
 from requests import HTTPError, RequestException
+from xivo.asterisk.protocol_interface import (
+    InvalidChannelError,
+    protocol_interface_from_channel,
+)
 
 from wazo_calld.plugin_helpers.ari_ import Bridge
 
@@ -533,7 +537,12 @@ class DialMobileService:
                     'the answered (%s) left the call before being bridged',
                     channel_id,
                 )
+                if call_id:
+                    self.cancel_push_mobile(call_id)
                 return
+
+            if call_id:
+                self._resolve_pending_push(call_id, channel_id)
 
             bridge = self._ari.bridges.createWithId(
                 type='mixing',
@@ -865,6 +874,59 @@ class DialMobileService:
                         call_id,
                     )
 
+    def _resolve_pending_push(self, call_id: str, channel_id: str) -> None:
+        # Must run before _prune_call_state discards the push state
+        pending_push = self._incoming_calls.get(call_id)
+        match pending_push:
+            case None | IncomingCallReceived() | IncomingCallPushCancelled():
+                return
+
+        try:
+            answered_by_mobile = self._is_users_mobile_channel(
+                channel_id, pending_push.user_uuid
+            )
+        except (ARINotFound, InvalidChannelError):
+            # the answering channel is already gone or has no usable name
+            answered_by_mobile = False
+        except (ARIServerError, HTTPError, RequestException) as e:
+            logger.error(
+                'call %s: cannot inspect answering channel %s, '
+                'cancelling mobile push: %s',
+                call_id,
+                channel_id,
+                e,
+            )
+            answered_by_mobile = False
+
+        if answered_by_mobile:
+            self.complete_pending_push_mobile(call_id)
+        else:
+            self.cancel_push_mobile(call_id)
+
+    def _is_users_mobile_channel(self, channel_id: str, user_uuid: str) -> bool:
+        channel = self._ari.channels.get(channelId=channel_id)
+        protocol, endpoint = protocol_interface_from_channel(channel.json['name'])
+        if protocol.lower() != 'sip':
+            return False
+
+        channel_user_uuid = channel.json.get('channelvars', {}).get('WAZO_USERUUID')
+        if channel_user_uuid != user_uuid:
+            return False
+
+        raw_contacts = self._ari.channels.getChannelVar(
+            channelId=channel_id,
+            variable=f'PJSIP_AOR({endpoint},contact)',
+        )['value']
+        for contact in raw_contacts.split(','):
+            if not contact:
+                continue
+            mobility = self._ari.channels.getChannelVar(
+                channelId=channel_id, variable=f'PJSIP_CONTACT({contact},mobility)'
+            )['value']
+            if mobility == 'mobile':
+                return True
+        return False
+
     def _incoming_call_lock(self, call_id: str) -> contextlib.AbstractContextManager:
         lock = self._call_locks.get(call_id)
         # handle missing lock as a no-op context manager
@@ -1060,28 +1122,3 @@ class DialMobileService:
                             'PSTN fallback aborted but state already %s', state
                         )
                         return
-
-    def has_a_registered_mobile_and_pending_push(
-        self, push_call_id, call_id, endpoint, user_uuid
-    ):
-        pending_push = self._incoming_calls.get(push_call_id)
-        match pending_push:
-            case None | IncomingCallReceived() | IncomingCallPushCancelled():
-                return False
-
-        if user_uuid != pending_push.user_uuid:
-            return False
-
-        raw_contacts = self._ari.channels.getChannelVar(
-            channelId=call_id,
-            variable=f'PJSIP_AOR({endpoint},contact)',
-        )['value']
-        for contact in raw_contacts.split(','):
-            if not contact:
-                continue
-            mobility = self._ari.channels.getChannelVar(
-                channelId=call_id, variable=f'PJSIP_CONTACT({contact},mobility)'
-            )['value']
-            if mobility == 'mobile':
-                return True
-        return False
