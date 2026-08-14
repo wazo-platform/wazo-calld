@@ -1,6 +1,7 @@
 # Copyright 2024-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+import re
 import time
 from uuid import uuid4
 
@@ -460,6 +461,69 @@ class TestDialMobile(RealAsteriskIntegrationTest):
                 'cancel_push_notification was not published despite DialEnd '
                 'carrying the matching Linkedid'
             ),
+        )
+
+        chan.hangup()
+
+    def test_push_resolved_at_join_when_answered_by_non_mobile_channel(self):
+        # Non-regression test: the push state used to be pruned at join
+        # before being resolved. A non-mobile channel answering must publish
+        # a cancel push at join time.
+        line_id = 424242
+        self.confd.set_users(
+            MockUser(
+                uuid=_TEST_USER_UUID,
+                line_ids=[line_id],
+                mobile='ring',
+                mobile_fallback_enabled=False,
+                tenant_uuid=_TEST_TENANT_UUID,
+            )
+        )
+        self.confd.set_lines(
+            MockLine(id=line_id, context='local', tenant_uuid=_TEST_TENANT_UUID)
+        )
+
+        chan = self._start_dial_mobile_dial()
+
+        # The future bridge uuid is only exposed in the dial_all_contacts debug log
+        def find_future_bridge_uuid():
+            match = re.search(
+                re.escape(chan.id)
+                + r' is waiting for a channel to join the bridge ([0-9a-f-]{36})',
+                self.service_logs(),
+            )
+            return match.group(1) if match else None
+
+        future_bridge_uuid = until.true(
+            find_future_bridge_uuid,
+            timeout=5,
+            message='future bridge uuid was never logged by dial_all_contacts',
+        )
+
+        push_events = self.bus.accumulator(headers={'name': 'call_push_notification'})
+        cancel_events = self.bus.accumulator(
+            headers={'name': 'call_cancel_push_notification'}
+        )
+        self._publish_pushmobile(chan, f'test-join-resolve-{uuid4()}', ring_time='200')
+        self._wait_push_notification(push_events)
+
+        # A channel that is not the user's mobile answers the call
+        self.ari.channels.originate(
+            endpoint=ENDPOINT_AUTOANSWER,
+            app='dial_mobile',
+            appArgs=['join', future_bridge_uuid],
+        )
+
+        def push_notification_cancelled():
+            assert_that(
+                cancel_events.accumulate(),
+                has_item(has_entries(name='call_cancel_push_notification')),
+            )
+
+        until.assert_(
+            push_notification_cancelled,
+            timeout=5,
+            message=('push was not cancelled at join time'),
         )
 
         chan.hangup()

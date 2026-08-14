@@ -3,9 +3,8 @@
 
 from unittest import TestCase
 from unittest.mock import Mock
-from unittest.mock import sentinel as s
 
-from ..bus_consume import ARINotFound, EventHandler
+from ..bus_consume import EventHandler
 from ..services import DialMobileService
 
 
@@ -191,105 +190,3 @@ class TestEventHandler(TestCase):
         self.event_handler._on_dial_end(event)
 
         self.service.cancel_push_mobile.assert_not_called()
-
-    def test_on_bridge_enter_not_a_dial_mobile_bridge(self):
-        event = {
-            'Event': 'BridgeEnter',
-            'BridgeType': 'unknown',
-            'BridgeUniqueid': '<UUID>',
-        }
-
-        self.event_handler._on_bridge_enter(event)
-
-        self.service.cancel_push_mobile.assert_not_called()
-        self.service.complete_pending_push_mobile.assert_not_called()
-
-    def test_on_bridge_enter_ignore_not_pjsip(self):
-        event = {
-            'Event': 'BridgeEnter',
-            'BridgeType': 'stasis',
-            'Channel': 'Local/endpoint@wazo-wait-for-mobile-9090832;1',
-            'BridgeUniqueid': 'wazo-dial-mobile-<UUID>',
-        }
-
-        self.event_handler._on_bridge_enter(event)
-
-        self.service.cancel_push_mobile.assert_not_called()
-        self.service.complete_pending_push_mobile.assert_not_called()
-
-    def test_on_bridge_enter_not_answered_by_mobile(self):
-        self.service.has_a_registered_mobile_and_pending_push.return_value = False
-
-        event = {
-            'Event': 'BridgeEnter',
-            'BridgeType': 'stasis',
-            'BridgeUniqueid': 'wazo-dial-mobile-<UUID>',
-            'Channel': 'PJSIP/myendpoint-000000213',
-            'ChanVariable': {'WAZO_USERUUID': s.user_uuid},
-            'Linkedid': s.linkedid,
-            'Uniqueid': s.uniqueid,
-        }
-
-        self.event_handler._on_bridge_enter(event)
-
-        self.service.has_a_registered_mobile_and_pending_push.assert_called_once_with(
-            s.linkedid,
-            s.uniqueid,
-            'myendpoint',
-            s.user_uuid,
-        )
-
-        self.service.cancel_push_mobile.assert_called_once_with(s.linkedid)
-        self.service.complete_pending_push_mobile.assert_not_called()
-
-    def test_on_bridge_enter_answered_by_mobile(self):
-        self.service.has_a_registered_mobile_and_pending_push.return_value = True
-
-        event = {
-            'Event': 'BridgeEnter',
-            'BridgeType': 'stasis',
-            'BridgeUniqueid': 'wazo-dial-mobile-<UUID>',
-            'Channel': 'PJSIP/myendpoint-000000213',
-            'ChanVariable': {'WAZO_USERUUID': s.user_uuid},
-            'Linkedid': s.linkedid,
-            'Uniqueid': s.uniqueid,
-        }
-
-        self.event_handler._on_bridge_enter(event)
-
-        self.service.has_a_registered_mobile_and_pending_push.assert_called_once_with(
-            s.linkedid,
-            s.uniqueid,
-            'myendpoint',
-            s.user_uuid,
-        )
-
-        self.service.cancel_push_mobile.assert_not_called()
-        self.service.complete_pending_push_mobile.assert_called_once_with(s.linkedid)
-
-    def test_on_bridge_enter_caller_hung_up(self):
-        self.service.has_a_registered_mobile_and_pending_push.side_effect = ARINotFound(
-            Mock, Mock
-        )
-
-        event = {
-            'Event': 'BridgeEnter',
-            'BridgeType': 'stasis',
-            'BridgeUniqueid': 'wazo-dial-mobile-<UUID>',
-            'Channel': 'PJSIP/myendpoint-000000213',
-            'ChanVariable': {'WAZO_USERUUID': s.user_uuid},
-            'Linkedid': s.linkedid,
-            'Uniqueid': s.uniqueid,
-        }
-
-        self.event_handler._on_bridge_enter(event)
-
-        self.service.has_a_registered_mobile_and_pending_push.assert_called_once_with(
-            s.linkedid,
-            s.uniqueid,
-            'myendpoint',
-            s.user_uuid,
-        )
-
-        self.service.cancel_push_mobile.assert_called_once_with(s.linkedid)
-        self.service.complete_pending_push_mobile.assert_not_called()
