@@ -157,12 +157,25 @@ class TransfersService:
         )
 
     def originate_recipient(
-        self, initiator_call, context, exten, transfer_id, variables, timeout
+        self,
+        initiator_call,
+        context,
+        exten,
+        transfer_id,
+        variables,
+        timeout,
+        transferred_call=None,
     ):
         initiator_channel = self.ari.channels.get(channelId=initiator_call)
+        caller_id_channel = initiator_channel
+        if transferred_call:
+            try:
+                caller_id_channel = self.ari.channels.get(channelId=transferred_call)
+            except ARINotFound:
+                pass
         caller_id = assemble_caller_id(
-            initiator_channel.json['caller']['name'],
-            initiator_channel.json['caller']['number'],
+            caller_id_channel.json['caller']['name'],
+            caller_id_channel.json['caller']['number'],
         ).encode('utf-8')
         recipient_endpoint = 'Local/{exten}@{context}'.format(
             exten=exten, context=context
