@@ -1040,6 +1040,39 @@ class TestCreateTransfer(TestTransfers):
 
         until.assert_(caller_id_are_right, timeout=10)
 
+    def test_when_create_blind_transfer_then_recipient_sees_transferred_caller_id(self):
+        (
+            transferred_channel_id,
+            initiator_channel_id,
+        ) = self.real_asterisk.given_bridged_call_stasis()
+        transferred_caller_id_name = 'trânsfêrrêd'
+        initiator_caller_id_name = 'înîtîâtôr'
+        self.ari.channels.setChannelVar(
+            channelId=initiator_channel_id,
+            variable='CALLERID(name)',
+            value=initiator_caller_id_name.encode('utf-8'),
+        )
+        self.ari.channels.setChannelVar(
+            channelId=transferred_channel_id,
+            variable='CALLERID(name)',
+            value=transferred_caller_id_name.encode('utf-8'),
+        )
+
+        response = self.calld.create_blind_transfer(
+            transferred_channel_id, initiator_channel_id, **RECIPIENT_CALLER_ID
+        )
+
+        def caller_id_is_right():
+            recipient_channel = self.ari.channels.get(
+                channelId=response['recipient_call']
+            )
+            assert_that(
+                recipient_channel.json['connected']['name'],
+                equal_to(transferred_caller_id_name),
+            )
+
+        until.assert_(caller_id_is_right, timeout=10)
+
     def test_given_no_content_type_when_create_then_ok(self):
         (
             transferred_channel_id,

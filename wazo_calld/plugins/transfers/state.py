@@ -311,6 +311,11 @@ class TransferState:
                 self.transfer.id,
                 variables,
                 timeout,
+                transferred_call=(
+                    self.transfer.transferred_call
+                    if self.transfer.flow == 'blind'
+                    else None
+                ),
             )
         except TransferCreationError as e:
             logger.error('%s %s', e.message, e.details)
