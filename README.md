@@ -1,3 +1,4 @@
+# DO NOT MERGE. USED FOR TESTING
 <p align="center"><img src="https://github.com/wazo-platform/wazo-platform.org/raw/master/static/images/logo.png" height="200"></p>
 
 # wazo-calld
