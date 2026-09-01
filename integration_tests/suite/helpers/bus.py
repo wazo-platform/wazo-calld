@@ -306,6 +306,19 @@ class BusClient(bus_helper.BusClient):
             },
         )
 
+    def send_ami_fully_booted_event(self):
+        self.send_event(
+            {
+                'data': {
+                    'Event': 'FullyBooted',
+                    'Status': 'Fully Booted',
+                }
+            },
+            headers={
+                'name': 'FullyBooted',
+            },
+        )
+
     def send_user_dnd_update(self, user_id, enabled):
         self.send_event(
             {

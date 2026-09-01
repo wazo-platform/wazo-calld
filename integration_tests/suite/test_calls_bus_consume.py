@@ -1,14 +1,15 @@
-# Copyright 2016-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 import uuid
 
-from hamcrest import all_of, assert_that, has_entries, has_item, is_
+from hamcrest import all_of, assert_that, has_entries, has_item, is_, not_
 from wazo_test_helpers import until
 from wazo_test_helpers.hamcrest.timestamp import an_iso_timestamp
 
 from .helpers.ari_ import MockBridge, MockChannel
 from .helpers.base import IntegrationTest
 from .helpers.calld import new_call_id
+from .helpers.confd import MockUser
 from .helpers.constants import SOME_STASIS_APP, VALID_TENANT, XIVO_UUID
 from .helpers.wait_strategy import CalldEverythingOkWaitStrategy
 
@@ -632,3 +633,63 @@ class TestBusConsume(IntegrationTest):
             )
 
         until.assert_(assert_amid_request, tries=5)
+
+    def test_when_asterisk_restarts_then_dnd_members_are_paused_again(self):
+        user_uuid = str(uuid.uuid4())
+        self.confd.set_users(MockUser(uuid=user_uuid, dnd_enabled=True))
+        self.amid.set_queue_status(
+            {
+                'Queue': 'group1',
+                'Location': f'Local/{user_uuid}@usersharedlines',
+                'Paused': '0',
+            }
+        )
+
+        self.bus.send_ami_fully_booted_event()
+
+        def assert_amid_request():
+            assert_that(
+                self.amid.requests()['requests'],
+                has_item(
+                    has_entries(
+                        {
+                            'method': 'POST',
+                            'path': '/1.0/action/QueuePause',
+                            'json': has_entries(
+                                {
+                                    'Interface': f'Local/{user_uuid}@usersharedlines',
+                                    'Paused': True,
+                                }
+                            ),
+                        }
+                    ),
+                ),
+            )
+
+        until.assert_(assert_amid_request, tries=5)
+
+    def test_when_asterisk_restarts_then_members_in_sync_are_left_alone(self):
+        user_uuid = str(uuid.uuid4())
+        self.confd.set_users(MockUser(uuid=user_uuid, dnd_enabled=False))
+        self.amid.set_queue_status(
+            {
+                'Queue': 'group1',
+                'Location': f'Local/{user_uuid}@usersharedlines',
+                'Paused': '0',
+            }
+        )
+
+        self.bus.send_ami_fully_booted_event()
+
+        def assert_synchronization_ran():
+            assert_that(
+                self.amid.requests()['requests'],
+                has_item(has_entries({'path': '/1.0/action/QueueStatus'})),
+            )
+
+        until.assert_(assert_synchronization_ran, tries=5)
+
+        assert_that(
+            self.amid.requests()['requests'],
+            not_(has_item(has_entries({'path': '/1.0/action/QueuePause'}))),
+        )

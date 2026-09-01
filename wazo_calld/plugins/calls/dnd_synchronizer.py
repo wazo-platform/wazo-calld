@@ -1,0 +1,130 @@
+# Copyright 2026 The Wazo Authors  (see the AUTHORS file)
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+from __future__ import annotations
+
+import logging
+import re
+import threading
+
+from wazo_calld.plugin_helpers import ami
+
+logger = logging.getLogger(__name__)
+
+USERS_PAGE_SIZE = 1000
+
+GROUP_MEMBER_INTERFACE_RE = re.compile(r'^Local/(?P<user_uuid>[^@]+)@usersharedlines$')
+
+
+def group_member_interface(user_uuid):
+    return f'Local/{user_uuid}@usersharedlines'
+
+
+class GroupDNDSynchronizer:
+    '''Reconcile the pause state of group members with the DND state in confd.
+
+    A user's DND is propagated to their groups by pausing their queue member,
+    but that pause only lives in Asterisk's memory: group members are static
+    members of queues.conf, so an Asterisk restart brings every member back
+    unpaused. A wazo-calld restart is equally lossy, since DND events published
+    while it was down are never seen.
+
+    '''
+
+    def __init__(self, amid_client, confd_client):
+        self._amid = amid_client
+        self._confd = confd_client
+        self._lock = threading.Lock()
+
+    def pause_member(self, user_uuid):
+        ami.pause_queue_member(self._amid, group_member_interface(user_uuid))
+
+    def unpause_member(self, user_uuid):
+        ami.unpause_queue_member(self._amid, group_member_interface(user_uuid))
+
+    def synchronize(self):
+        if not self._lock.acquire(blocking=False):
+            logger.debug('DND synchronization already running, skipping')
+            return
+
+        try:
+            self._synchronize()
+        finally:
+            self._lock.release()
+
+    def _synchronize(self):
+        dnd_by_user_uuid = self._fetch_dnd_states()
+        paused_by_user_uuid = self._fetch_member_pause_states()
+
+        corrected = 0
+        for user_uuid, paused in paused_by_user_uuid.items():
+            enabled = dnd_by_user_uuid.get(user_uuid, False)
+            if paused == enabled:
+                continue
+
+            logger.debug(
+                'Correcting pause state of user "%s" to "%s"', user_uuid, enabled
+            )
+            if enabled:
+                self.pause_member(user_uuid)
+            else:
+                self.unpause_member(user_uuid)
+            corrected += 1
+
+        logger.info(
+            'DND synchronization completed: %s group members inspected, %s corrected',
+            len(paused_by_user_uuid),
+            corrected,
+        )
+
+    def _fetch_dnd_states(self):
+        result = self._confd.users.list(
+            recurse=True,
+            view='line_presence',
+            limit=USERS_PAGE_SIZE,
+            offset=0,
+        )
+        total = result['total']
+        users = result['items']
+
+        while len(users) < total:
+            response = self._confd.users.list(
+                recurse=True,
+                view='line_presence',
+                limit=USERS_PAGE_SIZE,
+                offset=len(users),
+            )
+            new_users = response['items']
+            if not new_users:
+                logger.warning(
+                    'No new users at offset %d while fetching DND states', len(users)
+                )
+                break
+            users.extend(new_users)
+
+        return {user['uuid']: user['services']['dnd']['enabled'] for user in users}
+
+    def _fetch_member_pause_states(self):
+        '''Map each group member to whether it is paused in Asterisk.
+
+        A user belonging to several groups appears once per group. QueuePause
+        is applied to every queue at once, so a member is only considered
+        unpaused when it is unpaused everywhere.
+
+        '''
+        paused_by_user_uuid: dict[str, bool] = {}
+        for event in ami.queue_status(self._amid):
+            if event.get('Event') != 'QueueMember':
+                continue
+
+            match = GROUP_MEMBER_INTERFACE_RE.match(event.get('Location', ''))
+            if not match:
+                continue
+
+            user_uuid = match.group('user_uuid')
+            paused = event.get('Paused') == '1'
+            paused_by_user_uuid[user_uuid] = (
+                paused_by_user_uuid.get(user_uuid, True) and paused
+            )
+
+        return paused_by_user_uuid

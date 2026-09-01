@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright 2016-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from __future__ import annotations
@@ -16,6 +16,7 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 action_response = ''
+queue_status_response: list = []
 valid_extens: list = []
 _requests: list = []
 
@@ -23,9 +24,11 @@ _requests: list = []
 def _reset() -> None:
     global _requests
     global action_response
+    global queue_status_response
     global valid_extens
     _requests = []
     action_response = ''
+    queue_status_response = []
     valid_extens = []
 
 
@@ -80,9 +83,22 @@ def set_valid_exten():
     return '', 204
 
 
+@app.route("/_set_queue_status", methods=['POST'])
+def set_queue_status():
+    global queue_status_response
+    queue_status_response = request.get_json()
+
+    return '', 204
+
+
 @app.route("/1.0/action/<action>", methods=['POST'])
 def action(action):
     return json.dumps(action_response), 200
+
+
+@app.route("/1.0/action/QueueStatus", methods=['POST'])
+def queue_status():
+    return jsonify(queue_status_response + [{'Event': 'QueueStatusComplete'}]), 200
 
 
 @app.route("/1.0/action/ShowDialplan", methods=['POST'])
