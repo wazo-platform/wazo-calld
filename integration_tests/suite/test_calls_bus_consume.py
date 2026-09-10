@@ -1,8 +1,18 @@
 # Copyright 2016-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
+
 import uuid
 
-from hamcrest import all_of, assert_that, has_entries, has_item, is_, not_
+from hamcrest import (
+    all_of,
+    assert_that,
+    empty,
+    has_entries,
+    has_item,
+    has_length,
+    is_,
+    not_,
+)
 from wazo_test_helpers import until
 from wazo_test_helpers.hamcrest.timestamp import an_iso_timestamp
 
@@ -12,6 +22,10 @@ from .helpers.calld import new_call_id
 from .helpers.confd import MockUser
 from .helpers.constants import SOME_STASIS_APP, VALID_TENANT, XIVO_UUID
 from .helpers.wait_strategy import CalldEverythingOkWaitStrategy
+
+
+def group_member_interface(user_uuid):
+    return f'Local/{user_uuid}@usersharedlines'
 
 
 class TestBusConsume(IntegrationTest):
@@ -586,129 +600,23 @@ class TestBusConsume(IntegrationTest):
 
         until.assert_(assert_function, tries=5)
 
-    def test_when_dnd_enable_event_then_pause_queue_member(self):
-        self.bus.send_user_dnd_update('123', True)
+    def _group_member(self, user_uuid, paused, queue='group1'):
+        return {
+            'Queue': queue,
+            'Location': group_member_interface(user_uuid),
+            'Paused': '1' if paused else '0',
+        }
 
-        def assert_amid_request():
-            assert_that(
-                self.amid.requests()['requests'],
-                has_item(
-                    has_entries(
-                        {
-                            'method': 'POST',
-                            'path': '/1.0/action/QueuePause',
-                            'json': has_entries(
-                                {
-                                    'Interface': 'Local/123@usersharedlines',
-                                    'Paused': True,
-                                }
-                            ),
-                        }
-                    ),
-                ),
-            )
-
-        until.assert_(assert_amid_request, tries=5)
-
-    def test_when_dnd_disable_event_then_unpause_queue_member(self):
-        self.bus.send_user_dnd_update('123', False)
-
-        def assert_amid_request():
-            assert_that(
-                self.amid.requests()['requests'],
-                has_item(
-                    has_entries(
-                        {
-                            'method': 'POST',
-                            'path': '/1.0/action/QueuePause',
-                            'json': has_entries(
-                                {
-                                    'Interface': 'Local/123@usersharedlines',
-                                    'Paused': False,
-                                }
-                            ),
-                        }
-                    ),
-                ),
-            )
-
-        until.assert_(assert_amid_request, tries=5)
-
-    def test_when_asterisk_restarts_then_dnd_members_are_paused_again(self):
-        user_uuid = str(uuid.uuid4())
-        self.confd.set_users(MockUser(uuid=user_uuid, dnd_enabled=True))
-        self.amid.set_queue_status(
-            {
-                'Queue': 'group1',
-                'Location': f'Local/{user_uuid}@usersharedlines',
-                'Paused': '0',
-            }
-        )
-
-        self.bus.send_ami_fully_booted_event()
-
-        def assert_amid_request():
-            assert_that(
-                self.amid.requests()['requests'],
-                has_item(
-                    has_entries(
-                        {
-                            'method': 'POST',
-                            'path': '/1.0/action/QueuePause',
-                            'json': has_entries(
-                                {
-                                    'Interface': f'Local/{user_uuid}@usersharedlines',
-                                    'Paused': True,
-                                }
-                            ),
-                        }
-                    ),
-                ),
-            )
-
-        until.assert_(assert_amid_request, tries=5)
-
-    def test_when_asterisk_restarts_then_members_in_sync_are_left_alone(self):
-        user_uuid = str(uuid.uuid4())
-        self.confd.set_users(MockUser(uuid=user_uuid, dnd_enabled=False))
-        self.amid.set_queue_status(
-            {
-                'Queue': 'group1',
-                'Location': f'Local/{user_uuid}@usersharedlines',
-                'Paused': '0',
-            }
-        )
-
-        self.bus.send_ami_fully_booted_event()
-
-        def assert_synchronization_ran():
+    def _wait_for_dnd_synchronization(self):
+        def queue_status_requested():
             assert_that(
                 self.amid.requests()['requests'],
                 has_item(has_entries({'path': '/1.0/action/QueueStatus'})),
             )
 
-        until.assert_(assert_synchronization_ran, tries=5)
+        until.assert_(queue_status_requested, tries=10)
 
-        assert_that(
-            self.amid.requests()['requests'],
-            not_(has_item(has_entries({'path': '/1.0/action/QueuePause'}))),
-        )
-
-    def test_when_calld_restarts_then_dnd_members_are_paused_again(self):
-        user_uuid = str(uuid.uuid4())
-        self.confd.set_users(MockUser(uuid=user_uuid, dnd_enabled=True))
-        self.amid.set_queue_status(
-            {
-                'Queue': 'group1',
-                'Location': f'Local/{user_uuid}@usersharedlines',
-                'Paused': '0',
-            }
-        )
-
-        self.restart_service('calld')
-        self.reset_clients()
-        self.wait_strategy.wait(self)
-
+    def _assert_queue_pause(self, user_uuid, paused):
         def assert_amid_request():
             assert_that(
                 self.amid.requests()['requests'],
@@ -719,8 +627,8 @@ class TestBusConsume(IntegrationTest):
                             'path': '/1.0/action/QueuePause',
                             'json': has_entries(
                                 {
-                                    'Interface': f'Local/{user_uuid}@usersharedlines',
-                                    'Paused': True,
+                                    'Interface': group_member_interface(user_uuid),
+                                    'Paused': paused,
                                 }
                             ),
                         }
@@ -729,3 +637,161 @@ class TestBusConsume(IntegrationTest):
             )
 
         until.assert_(assert_amid_request, tries=10)
+
+    def _assert_no_queue_pause(self, user_uuid):
+        assert_that(
+            self.amid.requests()['requests'],
+            not_(
+                has_item(
+                    has_entries(
+                        {
+                            'path': '/1.0/action/QueuePause',
+                            'json': has_entries(
+                                {'Interface': group_member_interface(user_uuid)}
+                            ),
+                        }
+                    )
+                )
+            ),
+        )
+
+    def test_when_dnd_enable_event_then_pause_queue_member(self):
+        self.bus.send_user_dnd_update('123', True)
+
+        self._assert_queue_pause('123', paused=True)
+
+    def test_when_dnd_disable_event_then_unpause_queue_member(self):
+        self.bus.send_user_dnd_update('123', False)
+
+        self._assert_queue_pause('123', paused=False)
+
+    def test_when_asterisk_restarts_then_dnd_member_is_paused_again(self):
+        user_uuid = str(uuid.uuid4())
+        self.confd.set_users(MockUser(uuid=user_uuid, dnd_enabled=True))
+        self.amid.set_queue_status(self._group_member(user_uuid, paused=False))
+
+        self.bus.send_ami_fully_booted_event()
+
+        self._assert_queue_pause(user_uuid, paused=True)
+
+    def test_when_asterisk_restarts_then_stale_pause_is_removed(self):
+        user_uuid = str(uuid.uuid4())
+        self.confd.set_users(MockUser(uuid=user_uuid, dnd_enabled=False))
+        self.amid.set_queue_status(self._group_member(user_uuid, paused=True))
+
+        self.bus.send_ami_fully_booted_event()
+
+        self._assert_queue_pause(user_uuid, paused=False)
+
+    def test_when_asterisk_restarts_then_members_in_sync_are_left_alone(self):
+        paused_uuid = str(uuid.uuid4())
+        unpaused_uuid = str(uuid.uuid4())
+        self.confd.set_users(
+            MockUser(uuid=paused_uuid, dnd_enabled=True),
+            MockUser(uuid=unpaused_uuid, dnd_enabled=False),
+        )
+        self.amid.set_queue_status(
+            self._group_member(paused_uuid, paused=True),
+            self._group_member(unpaused_uuid, paused=False),
+        )
+
+        self.bus.send_ami_fully_booted_event()
+        self._wait_for_dnd_synchronization()
+
+        self._assert_no_queue_pause(paused_uuid)
+        self._assert_no_queue_pause(unpaused_uuid)
+
+    def test_when_asterisk_restarts_then_member_unknown_to_confd_is_unpaused(self):
+        user_uuid = str(uuid.uuid4())
+        self.confd.set_users()
+        self.amid.set_queue_status(self._group_member(user_uuid, paused=True))
+
+        self.bus.send_ami_fully_booted_event()
+
+        self._assert_queue_pause(user_uuid, paused=False)
+
+    def test_when_asterisk_restarts_then_non_group_members_are_ignored(self):
+        user_uuid = str(uuid.uuid4())
+        self.confd.set_users(MockUser(uuid=user_uuid, dnd_enabled=True))
+        self.amid.set_queue_status(
+            {'Queue': 'queue1', 'Location': 'Agent/1001', 'Paused': '1'},
+            {'Queue': 'queue1', 'Location': 'PJSIP/abcdef', 'Paused': '1'},
+            {'Queue': 'queue1', 'Location': 'Local/1002@agentcallback', 'Paused': '1'},
+        )
+
+        self.bus.send_ami_fully_booted_event()
+        self._wait_for_dnd_synchronization()
+
+        pause_requests = [
+            request
+            for request in self.amid.requests()['requests']
+            if request['path'] == '/1.0/action/QueuePause'
+        ]
+        assert_that(pause_requests, empty())
+
+    def test_when_asterisk_restarts_then_member_of_several_groups_is_paused_once(self):
+        user_uuid = str(uuid.uuid4())
+        self.confd.set_users(MockUser(uuid=user_uuid, dnd_enabled=True))
+        self.amid.set_queue_status(
+            self._group_member(user_uuid, paused=False, queue='group1'),
+            self._group_member(user_uuid, paused=False, queue='group2'),
+            self._group_member(user_uuid, paused=False, queue='group3'),
+        )
+
+        self.bus.send_ami_fully_booted_event()
+        self._assert_queue_pause(user_uuid, paused=True)
+
+        pause_requests = [
+            request
+            for request in self.amid.requests()['requests']
+            if request['path'] == '/1.0/action/QueuePause'
+        ]
+        assert_that(pause_requests, has_length(1))
+
+    def test_when_asterisk_restarts_then_partially_paused_member_is_paused(self):
+        user_uuid = str(uuid.uuid4())
+        self.confd.set_users(MockUser(uuid=user_uuid, dnd_enabled=True))
+        self.amid.set_queue_status(
+            self._group_member(user_uuid, paused=True, queue='group1'),
+            self._group_member(user_uuid, paused=False, queue='group2'),
+        )
+
+        self.bus.send_ami_fully_booted_event()
+
+        self._assert_queue_pause(user_uuid, paused=True)
+
+    def test_when_asterisk_restarts_then_partially_paused_member_is_unpaused(self):
+        user_uuid = str(uuid.uuid4())
+        self.confd.set_users(MockUser(uuid=user_uuid, dnd_enabled=False))
+        self.amid.set_queue_status(
+            self._group_member(user_uuid, paused=True, queue='group1'),
+            self._group_member(user_uuid, paused=False, queue='group2'),
+        )
+
+        self.bus.send_ami_fully_booted_event()
+
+        self._assert_queue_pause(user_uuid, paused=False)
+
+    def test_when_asterisk_restarts_then_member_paused_everywhere_is_left_alone(self):
+        user_uuid = str(uuid.uuid4())
+        self.confd.set_users(MockUser(uuid=user_uuid, dnd_enabled=True))
+        self.amid.set_queue_status(
+            self._group_member(user_uuid, paused=True, queue='group1'),
+            self._group_member(user_uuid, paused=True, queue='group2'),
+        )
+
+        self.bus.send_ami_fully_booted_event()
+        self._wait_for_dnd_synchronization()
+
+        self._assert_no_queue_pause(user_uuid)
+
+    def test_when_calld_restarts_then_dnd_members_are_paused_again(self):
+        user_uuid = str(uuid.uuid4())
+        self.confd.set_users(MockUser(uuid=user_uuid, dnd_enabled=True))
+        self.amid.set_queue_status(self._group_member(user_uuid, paused=False))
+
+        self.restart_service('calld')
+        self.reset_clients()
+        self.wait_strategy.wait(self)
+
+        self._assert_queue_pause(user_uuid, paused=True)
