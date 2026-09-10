@@ -78,13 +78,13 @@ class GroupDNDSynchronizer:
 
     def _synchronize(self):
         dnd_by_user_uuid = self._fetch_dnd_states()
-        paused_by_user_uuid = self._fetch_member_pause_states()
+        pause_states_by_user_uuid = self._fetch_member_pause_states()
 
         corrected = 0
         skipped = 0
-        for user_uuid, paused in paused_by_user_uuid.items():
+        for user_uuid, pause_states in pause_states_by_user_uuid.items():
             enabled = dnd_by_user_uuid.get(user_uuid, False)
-            if paused == enabled:
+            if pause_states == {enabled}:
                 continue
 
             if self._updated_since_snapshot(user_uuid):
@@ -107,7 +107,7 @@ class GroupDNDSynchronizer:
         logger.info(
             'DND synchronization completed: %s group members inspected, '
             '%s corrected, %s skipped',
-            len(paused_by_user_uuid),
+            len(pause_states_by_user_uuid),
             corrected,
             skipped,
         )
@@ -140,14 +140,16 @@ class GroupDNDSynchronizer:
         return {user['uuid']: user['services']['dnd']['enabled'] for user in users}
 
     def _fetch_member_pause_states(self):
-        '''Map each group member to whether it is paused in Asterisk.
+        '''Map each group member to the pause states it has across its groups.
 
-        A user belonging to several groups appears once per group. QueuePause
-        is applied to every queue at once, so a member is only considered
-        unpaused when it is unpaused everywhere.
+        A user belonging to several groups appears once per group, and those
+        entries can disagree. The states are kept as a set rather than
+        collapsed to a single value: a member paused in only some of its groups
+        matches neither DND setting, and must be corrected in whichever
+        direction confd dictates.
 
         '''
-        paused_by_user_uuid: dict[str, bool] = {}
+        pause_states_by_user_uuid: dict[str, set[bool]] = {}
         for event in ami.queue_status(self._amid):
             if event.get('Event') != 'QueueMember':
                 continue
@@ -158,8 +160,6 @@ class GroupDNDSynchronizer:
 
             user_uuid = match.group('user_uuid')
             paused = event.get('Paused') == '1'
-            paused_by_user_uuid[user_uuid] = (
-                paused_by_user_uuid.get(user_uuid, True) and paused
-            )
+            pause_states_by_user_uuid.setdefault(user_uuid, set()).add(paused)
 
-        return paused_by_user_uuid
+        return pause_states_by_user_uuid

@@ -316,3 +316,41 @@ class TestGroupDNDSynchronizer(TestCase):
                 {'Interface': f'Local/{USER_1}@usersharedlines', 'Paused': False}
             ),
         )
+
+    def test_user_paused_in_only_some_groups_with_dnd_disabled_is_unpaused(self):
+        self._set_confd_users((USER_1, False))
+        self._set_queue_status(
+            queue_member(USER_1, paused=True, queue='group1'),
+            queue_member(USER_1, paused=False, queue='group2'),
+        )
+
+        self.synchronizer.synchronize()
+
+        assert_that(
+            self._queue_pause_actions(),
+            contains_inanyorder(
+                {'Interface': f'Local/{USER_1}@usersharedlines', 'Paused': False}
+            ),
+        )
+
+    def test_user_paused_in_every_group_with_dnd_enabled_is_left_alone(self):
+        self._set_confd_users((USER_1, True))
+        self._set_queue_status(
+            queue_member(USER_1, paused=True, queue='group1'),
+            queue_member(USER_1, paused=True, queue='group2'),
+        )
+
+        self.synchronizer.synchronize()
+
+        assert_that(self._queue_pause_actions(), empty())
+
+    def test_user_unpaused_in_every_group_with_dnd_disabled_is_left_alone(self):
+        self._set_confd_users((USER_1, False))
+        self._set_queue_status(
+            queue_member(USER_1, paused=False, queue='group1'),
+            queue_member(USER_1, paused=False, queue='group2'),
+        )
+
+        self.synchronizer.synchronize()
+
+        assert_that(self._queue_pause_actions(), empty())
