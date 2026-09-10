@@ -693,3 +693,39 @@ class TestBusConsume(IntegrationTest):
             self.amid.requests()['requests'],
             not_(has_item(has_entries({'path': '/1.0/action/QueuePause'}))),
         )
+
+    def test_when_calld_restarts_then_dnd_members_are_paused_again(self):
+        user_uuid = str(uuid.uuid4())
+        self.confd.set_users(MockUser(uuid=user_uuid, dnd_enabled=True))
+        self.amid.set_queue_status(
+            {
+                'Queue': 'group1',
+                'Location': f'Local/{user_uuid}@usersharedlines',
+                'Paused': '0',
+            }
+        )
+
+        self.restart_service('calld')
+        self.reset_clients()
+        self.wait_strategy.wait(self)
+
+        def assert_amid_request():
+            assert_that(
+                self.amid.requests()['requests'],
+                has_item(
+                    has_entries(
+                        {
+                            'method': 'POST',
+                            'path': '/1.0/action/QueuePause',
+                            'json': has_entries(
+                                {
+                                    'Interface': f'Local/{user_uuid}@usersharedlines',
+                                    'Paused': True,
+                                }
+                            ),
+                        }
+                    ),
+                ),
+            )
+
+        until.assert_(assert_amid_request, tries=10)

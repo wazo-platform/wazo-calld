@@ -105,7 +105,11 @@ class Plugin:
         startup_callback_collector = CallbackCollector()
         ari.client_initialized_subscribe(startup_callback_collector.new_source())
         startup_callback_collector.subscribe(calls_stasis.initialize)
-        startup_callback_collector.subscribe(
+
+        dnd_startup_callback_collector = CallbackCollector()
+        ari.client_initialized_subscribe(dnd_startup_callback_collector.new_source())
+        token_changed_subscribe(dnd_startup_callback_collector.new_source())
+        dnd_startup_callback_collector.subscribe(
             calls_bus_event_handler.run_dnd_synchronization
         )
 
