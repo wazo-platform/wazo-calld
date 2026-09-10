@@ -35,46 +35,81 @@ class GroupDNDSynchronizer:
         self._amid = amid_client
         self._confd = confd_client
         self._lock = threading.Lock()
+        self._synchronizing = False
+        self._updated_while_synchronizing: set[str] = set()
 
     def pause_member(self, user_uuid):
+        self._mark_updated(user_uuid)
         ami.pause_queue_member(self._amid, group_member_interface(user_uuid))
 
     def unpause_member(self, user_uuid):
+        self._mark_updated(user_uuid)
         ami.unpause_queue_member(self._amid, group_member_interface(user_uuid))
 
+    def _mark_updated(self, user_uuid):
+        '''Record a DND event applied while a synchronization is in flight.
+
+        Such an event carries a state newer than the snapshots the
+        synchronization is working from, so the synchronization must not
+        overwrite it with what confd reported before the change.
+
+        '''
+        with self._lock:
+            if self._synchronizing:
+                self._updated_while_synchronizing.add(user_uuid)
+
+    def _updated_since_snapshot(self, user_uuid):
+        with self._lock:
+            return user_uuid in self._updated_while_synchronizing
+
     def synchronize(self):
-        if not self._lock.acquire(blocking=False):
-            logger.debug('DND synchronization already running, skipping')
-            return
+        with self._lock:
+            if self._synchronizing:
+                logger.debug('DND synchronization already running, skipping')
+                return
+            self._synchronizing = True
+            self._updated_while_synchronizing = set()
 
         try:
             self._synchronize()
         finally:
-            self._lock.release()
+            with self._lock:
+                self._synchronizing = False
 
     def _synchronize(self):
         dnd_by_user_uuid = self._fetch_dnd_states()
         paused_by_user_uuid = self._fetch_member_pause_states()
 
         corrected = 0
+        skipped = 0
         for user_uuid, paused in paused_by_user_uuid.items():
             enabled = dnd_by_user_uuid.get(user_uuid, False)
             if paused == enabled:
+                continue
+
+            if self._updated_since_snapshot(user_uuid):
+                logger.debug(
+                    'Skipping user "%s": DND was updated during synchronization',
+                    user_uuid,
+                )
+                skipped += 1
                 continue
 
             logger.debug(
                 'Correcting pause state of user "%s" to "%s"', user_uuid, enabled
             )
             if enabled:
-                self.pause_member(user_uuid)
+                ami.pause_queue_member(self._amid, group_member_interface(user_uuid))
             else:
-                self.unpause_member(user_uuid)
+                ami.unpause_queue_member(self._amid, group_member_interface(user_uuid))
             corrected += 1
 
         logger.info(
-            'DND synchronization completed: %s group members inspected, %s corrected',
+            'DND synchronization completed: %s group members inspected, '
+            '%s corrected, %s skipped',
             len(paused_by_user_uuid),
             corrected,
+            skipped,
         )
 
     def _fetch_dnd_states(self):

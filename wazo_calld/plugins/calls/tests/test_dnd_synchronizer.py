@@ -38,7 +38,8 @@ class TestGroupDNDSynchronizer(TestCase):
         self.confd.users.list.return_value = {'items': items, 'total': len(items)}
 
     def _set_queue_status(self, *events):
-        self.amid.action.return_value = list(events) + [
+        self._queue_status_events = list(events)
+        self.amid.action.return_value = self._queue_status_events + [
             {'Event': 'QueueStatusComplete'}
         ]
 
@@ -214,5 +215,104 @@ class TestGroupDNDSynchronizer(TestCase):
                     'QueuePause',
                     {'Interface': f'Local/{USER_1}@usersharedlines', 'Paused': True},
                 )
+            ),
+        )
+
+    def _handle_dnd_event_during_synchronization(self, user_uuid, enabled):
+        '''Apply a DND event between the QueueStatus snapshot and the corrections.'''
+        events = self._queue_status_events + [{'Event': 'QueueStatusComplete'}]
+        handled: list[str] = []
+
+        def action(name, body=None):
+            if name != 'QueueStatus':
+                return None
+            if not handled:
+                handled.append(name)
+                if enabled:
+                    self.synchronizer.pause_member(user_uuid)
+                else:
+                    self.synchronizer.unpause_member(user_uuid)
+            return events
+
+        self.amid.action.side_effect = action
+
+    def test_dnd_enabled_during_synchronization_is_not_unpaused(self):
+        self._set_confd_users((USER_1, False))
+        self._set_queue_status(queue_member(USER_1, paused=True))
+        self._handle_dnd_event_during_synchronization(USER_1, enabled=True)
+
+        self.synchronizer.synchronize()
+
+        assert_that(
+            self._queue_pause_actions(),
+            contains_inanyorder(
+                {'Interface': f'Local/{USER_1}@usersharedlines', 'Paused': True}
+            ),
+        )
+
+    def test_dnd_disabled_during_synchronization_is_not_paused(self):
+        self._set_confd_users((USER_1, True))
+        self._set_queue_status(queue_member(USER_1, paused=False))
+        self._handle_dnd_event_during_synchronization(USER_1, enabled=False)
+
+        self.synchronizer.synchronize()
+
+        assert_that(
+            self._queue_pause_actions(),
+            contains_inanyorder(
+                {'Interface': f'Local/{USER_1}@usersharedlines', 'Paused': False}
+            ),
+        )
+
+    def test_dnd_event_during_synchronization_spares_only_that_user(self):
+        self._set_confd_users((USER_1, False), (USER_2, False))
+        self._set_queue_status(
+            queue_member(USER_1, paused=True),
+            queue_member(USER_2, paused=True),
+        )
+        self._handle_dnd_event_during_synchronization(USER_1, enabled=True)
+
+        self.synchronizer.synchronize()
+
+        assert_that(
+            self._queue_pause_actions(),
+            contains_inanyorder(
+                {'Interface': f'Local/{USER_1}@usersharedlines', 'Paused': True},
+                {'Interface': f'Local/{USER_2}@usersharedlines', 'Paused': False},
+            ),
+        )
+
+    def test_dnd_event_outside_synchronization_is_not_remembered(self):
+        self.synchronizer.pause_member(USER_1)
+        self.amid.action.reset_mock()
+
+        self._set_confd_users((USER_1, False))
+        self._set_queue_status(queue_member(USER_1, paused=True))
+
+        self.synchronizer.synchronize()
+
+        assert_that(
+            self._queue_pause_actions(),
+            contains_inanyorder(
+                {'Interface': f'Local/{USER_1}@usersharedlines', 'Paused': False}
+            ),
+        )
+
+    def test_a_later_synchronization_starts_from_a_clean_slate(self):
+        self._set_confd_users((USER_1, False))
+        self._set_queue_status(queue_member(USER_1, paused=True))
+        self._handle_dnd_event_during_synchronization(USER_1, enabled=True)
+        self.synchronizer.synchronize()
+
+        self.amid.action.reset_mock()
+        self.amid.action.side_effect = None
+        self._set_queue_status(queue_member(USER_1, paused=True))
+
+        self.synchronizer.synchronize()
+
+        assert_that(
+            self._queue_pause_actions(),
+            contains_inanyorder(
+                {'Interface': f'Local/{USER_1}@usersharedlines', 'Paused': False}
             ),
         )
