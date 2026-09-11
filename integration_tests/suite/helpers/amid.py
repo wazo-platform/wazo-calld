@@ -52,6 +52,18 @@ class MockAmidClient:
         response = requests.post(self.url('_set_queue_status'), json=body)
         response.raise_for_status()
 
+    def set_queue_pause_error(
+        self, interface, paused=None, message='Interface not found'
+    ):
+        '''Make the QueuePause action fail for an interface.
+
+        When paused is given, only the requests setting that pause state fail.
+
+        '''
+        body = {'interface': interface, 'paused': paused, 'message': message}
+        response = requests.post(self.url('_set_queue_pause_error'), json=body)
+        response.raise_for_status()
+
     def set_valid_exten(self, context, exten, priority='1'):
         body = {'context': context, 'exten': exten, 'priority': priority}
         response = requests.post(self.url('_set_valid_exten'), json=body)

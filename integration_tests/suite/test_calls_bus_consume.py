@@ -785,6 +785,23 @@ class TestBusConsume(IntegrationTest):
 
         self._assert_no_queue_pause(user_uuid)
 
+    def test_when_a_correction_fails_then_the_other_members_are_corrected(self):
+        failing_uuid = str(uuid.uuid4())
+        other_uuid = str(uuid.uuid4())
+        self.confd.set_users(
+            MockUser(uuid=failing_uuid, dnd_enabled=True),
+            MockUser(uuid=other_uuid, dnd_enabled=True),
+        )
+        self.amid.set_queue_status(
+            self._group_member(failing_uuid, paused=False),
+            self._group_member(other_uuid, paused=False),
+        )
+        self.amid.set_queue_pause_error(group_member_interface(failing_uuid))
+
+        self.bus.send_ami_fully_booted_event()
+
+        self._assert_queue_pause(other_uuid, paused=True)
+
     def test_when_calld_restarts_then_dnd_members_are_paused_again(self):
         user_uuid = str(uuid.uuid4())
         self.confd.set_users(MockUser(uuid=user_uuid, dnd_enabled=True))

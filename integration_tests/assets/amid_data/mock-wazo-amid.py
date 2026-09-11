@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 
 action_response = ''
 queue_status_response: list = []
+queue_pause_errors: list = []
 valid_extens: list = []
 _requests: list = []
 
@@ -25,10 +26,12 @@ def _reset() -> None:
     global _requests
     global action_response
     global queue_status_response
+    global queue_pause_errors
     global valid_extens
     _requests = []
     action_response = ''
     queue_status_response = []
+    queue_pause_errors = []
     valid_extens = []
 
 
@@ -91,6 +94,14 @@ def set_queue_status():
     return '', 204
 
 
+@app.route("/_set_queue_pause_error", methods=['POST'])
+def set_queue_pause_error():
+    global queue_pause_errors
+    queue_pause_errors.append(request.get_json())
+
+    return '', 204
+
+
 @app.route("/1.0/action/<action>", methods=['POST'])
 def action(action):
     return json.dumps(action_response), 200
@@ -99,6 +110,19 @@ def action(action):
 @app.route("/1.0/action/QueueStatus", methods=['POST'])
 def queue_status():
     return jsonify(queue_status_response + [{'Event': 'QueueStatusComplete'}]), 200
+
+
+@app.route("/1.0/action/QueuePause", methods=['POST'])
+def queue_pause():
+    body = request.get_json()
+    for error in queue_pause_errors:
+        if error['interface'] != body.get('Interface'):
+            continue
+        if error['paused'] is not None and error['paused'] != body.get('Paused'):
+            continue
+        return jsonify([{'Response': 'Error', 'Message': error['message']}]), 200
+
+    return jsonify([{'Response': 'Success'}]), 200
 
 
 @app.route("/1.0/action/ShowDialplan", methods=['POST'])

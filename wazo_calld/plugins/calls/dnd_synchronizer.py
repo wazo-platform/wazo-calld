@@ -8,6 +8,7 @@ import re
 import threading
 
 from wazo_calld.plugin_helpers import ami
+from wazo_calld.plugin_helpers.exceptions import WazoAmidError
 
 logger = logging.getLogger(__name__)
 
@@ -82,6 +83,7 @@ class GroupDNDSynchronizer:
 
         corrected = 0
         skipped = 0
+        failed = 0
         for user_uuid, pause_states in pause_states_by_user_uuid.items():
             enabled = dnd_by_user_uuid.get(user_uuid, False)
             if pause_states == {enabled}:
@@ -98,19 +100,32 @@ class GroupDNDSynchronizer:
             logger.debug(
                 'Correcting pause state of user "%s" to "%s"', user_uuid, enabled
             )
-            if enabled:
-                ami.pause_queue_member(self._amid, group_member_interface(user_uuid))
-            else:
-                ami.unpause_queue_member(self._amid, group_member_interface(user_uuid))
+            try:
+                self._correct_pause_state(user_uuid, enabled)
+            except WazoAmidError as e:
+                logger.warning(
+                    'Failed to correct pause state of user "%s": %s',
+                    user_uuid,
+                    e.details['original_error'],
+                )
+                failed += 1
+                continue
             corrected += 1
 
         logger.info(
             'DND synchronization completed: %s group members inspected, '
-            '%s corrected, %s skipped',
+            '%s corrected, %s skipped, %s failed',
             len(pause_states_by_user_uuid),
             corrected,
             skipped,
+            failed,
         )
+
+    def _correct_pause_state(self, user_uuid, enabled):
+        if enabled:
+            ami.pause_queue_member(self._amid, group_member_interface(user_uuid))
+        else:
+            ami.unpause_queue_member(self._amid, group_member_interface(user_uuid))
 
     def _fetch_dnd_states(self):
         result = self._confd.users.list(
