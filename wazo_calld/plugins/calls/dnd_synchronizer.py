@@ -112,8 +112,12 @@ class GroupDNDSynchronizer:
                 self._synchronizing = False
 
     def _synchronize(self):
-        dnd_by_user_uuid = self._fetch_dnd_states()
         pause_states_by_user_uuid = self._fetch_member_pause_states()
+        if not pause_states_by_user_uuid:
+            logger.info('DND synchronization completed: no group member to inspect')
+            return
+
+        dnd_by_user_uuid = self._fetch_dnd_states()
 
         corrected = 0
         skipped = 0

@@ -6,7 +6,7 @@ import uuid
 from hamcrest import (
     all_of,
     assert_that,
-    empty,
+    contains_exactly,
     has_entries,
     has_item,
     has_length,
@@ -642,6 +642,23 @@ class TestBusConsume(IntegrationTest):
 
         until.assert_(assert_amid_request, tries=10)
 
+    def _queue_pause_interfaces(self):
+        return [
+            request['json']['Interface']
+            for request in self.amid.requests()['requests']
+            if request['path'] == '/1.0/action/QueuePause'
+        ]
+
+    def _wait_for_corrections(self, sentinel_uuid):
+        '''Wait until the member reported last by QueueStatus is corrected.
+
+        The synchronization corrects members in the order QueueStatus
+        reported them, so once the last one is done no other correction is
+        coming and the absence of a request can be asserted.
+
+        '''
+        self._assert_queue_pause(sentinel_uuid, paused=True)
+
     def _assert_no_queue_pause(self, user_uuid):
         assert_that(
             self.amid.requests()['requests'],
@@ -690,17 +707,20 @@ class TestBusConsume(IntegrationTest):
     def test_when_asterisk_restarts_then_members_in_sync_are_left_alone(self):
         paused_uuid = str(uuid.uuid4())
         unpaused_uuid = str(uuid.uuid4())
+        sentinel_uuid = str(uuid.uuid4())
         self.confd.set_users(
             MockUser(uuid=paused_uuid, dnd_enabled=True),
             MockUser(uuid=unpaused_uuid, dnd_enabled=False),
+            MockUser(uuid=sentinel_uuid, dnd_enabled=True),
         )
         self.amid.set_queue_status(
             self._group_member(paused_uuid, paused=True),
             self._group_member(unpaused_uuid, paused=False),
+            self._group_member(sentinel_uuid, paused=False),
         )
 
         self.bus.send_ami_fully_booted_event()
-        self._wait_for_dnd_synchronization()
+        self._wait_for_corrections(sentinel_uuid)
 
         self._assert_no_queue_pause(paused_uuid)
         self._assert_no_queue_pause(unpaused_uuid)
@@ -715,23 +735,22 @@ class TestBusConsume(IntegrationTest):
         self._assert_queue_pause(user_uuid, paused=False)
 
     def test_when_asterisk_restarts_then_non_group_members_are_ignored(self):
-        user_uuid = str(uuid.uuid4())
-        self.confd.set_users(MockUser(uuid=user_uuid, dnd_enabled=True))
+        sentinel_uuid = str(uuid.uuid4())
+        self.confd.set_users(MockUser(uuid=sentinel_uuid, dnd_enabled=True))
         self.amid.set_queue_status(
             {'Queue': 'queue1', 'Location': 'Agent/1001', 'Paused': '1'},
             {'Queue': 'queue1', 'Location': 'PJSIP/abcdef', 'Paused': '1'},
             {'Queue': 'queue1', 'Location': 'Local/1002@agentcallback', 'Paused': '1'},
+            self._group_member(sentinel_uuid, paused=False),
         )
 
         self.bus.send_ami_fully_booted_event()
-        self._wait_for_dnd_synchronization()
+        self._wait_for_corrections(sentinel_uuid)
 
-        pause_requests = [
-            request
-            for request in self.amid.requests()['requests']
-            if request['path'] == '/1.0/action/QueuePause'
-        ]
-        assert_that(pause_requests, empty())
+        assert_that(
+            self._queue_pause_interfaces(),
+            contains_exactly(group_member_interface(sentinel_uuid)),
+        )
 
     def test_when_asterisk_restarts_then_member_of_several_groups_is_paused_once(self):
         user_uuid = str(uuid.uuid4())
@@ -778,14 +797,19 @@ class TestBusConsume(IntegrationTest):
 
     def test_when_asterisk_restarts_then_member_paused_everywhere_is_left_alone(self):
         user_uuid = str(uuid.uuid4())
-        self.confd.set_users(MockUser(uuid=user_uuid, dnd_enabled=True))
+        sentinel_uuid = str(uuid.uuid4())
+        self.confd.set_users(
+            MockUser(uuid=user_uuid, dnd_enabled=True),
+            MockUser(uuid=sentinel_uuid, dnd_enabled=True),
+        )
         self.amid.set_queue_status(
             self._group_member(user_uuid, paused=True, queue='group1'),
             self._group_member(user_uuid, paused=True, queue='group2'),
+            self._group_member(sentinel_uuid, paused=False),
         )
 
         self.bus.send_ami_fully_booted_event()
-        self._wait_for_dnd_synchronization()
+        self._wait_for_corrections(sentinel_uuid)
 
         self._assert_no_queue_pause(user_uuid)
 
