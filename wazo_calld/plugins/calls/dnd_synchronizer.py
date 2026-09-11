@@ -41,24 +41,38 @@ class GroupDNDSynchronizer:
         self._updated_while_synchronizing: set[str] = set()
 
     def pause_member(self, user_uuid):
-        self._mark_updated(user_uuid)
-        ami.pause_queue_member(self._amid, group_member_interface(user_uuid))
+        self._apply(user_uuid, ami.pause_queue_member)
 
     def unpause_member(self, user_uuid):
+        self._apply(user_uuid, ami.unpause_queue_member)
+
+    def _apply(self, user_uuid, action):
         self._mark_updated(user_uuid)
-        ami.unpause_queue_member(self._amid, group_member_interface(user_uuid))
+        try:
+            action(self._amid, group_member_interface(user_uuid))
+        except Exception:
+            self._unmark_updated(user_uuid)
+            raise
 
     def _mark_updated(self, user_uuid):
         '''Record a DND event applied while a synchronization is in flight.
 
         Such an event carries a state newer than the snapshots the
         synchronization is working from, so the synchronization must not
-        overwrite it with what confd reported before the change.
+        overwrite it with what confd reported before the change. The mark is
+        taken before the action to close the window where the
+        synchronization would read it too late, and withdrawn again when the
+        action turns out to have failed: an event that never reached
+        Asterisk must not inhibit the correction that repairs it.
 
         '''
         with self._lock:
             if self._synchronizing:
                 self._updated_while_synchronizing.add(user_uuid)
+
+    def _unmark_updated(self, user_uuid):
+        with self._lock:
+            self._updated_while_synchronizing.discard(user_uuid)
 
     def _updated_since_snapshot(self, user_uuid):
         with self._lock:

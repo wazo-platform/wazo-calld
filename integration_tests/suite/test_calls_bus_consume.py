@@ -820,6 +820,21 @@ class TestBusConsume(IntegrationTest):
 
         self._wait_for_dnd_synchronization(count=2)
 
+    def test_when_a_dnd_event_fails_during_a_synchronization_then_it_is_corrected(self):
+        user_uuid = str(uuid.uuid4())
+        self.confd.set_users(MockUser(uuid=user_uuid, dnd_enabled=False))
+        self.amid.set_queue_status(self._group_member(user_uuid, paused=True))
+        self.amid.set_queue_pause_error(group_member_interface(user_uuid), paused=True)
+        self.amid.set_queue_status_delay(5)
+
+        self.bus.send_ami_fully_booted_event()
+        self._wait_for_dnd_synchronization()
+
+        self.bus.send_user_dnd_update(user_uuid, True)
+        self._assert_queue_pause(user_uuid, paused=True)
+
+        self._assert_queue_pause(user_uuid, paused=False)
+
     def test_when_calld_restarts_then_dnd_members_are_paused_again(self):
         user_uuid = str(uuid.uuid4())
         self.confd.set_users(MockUser(uuid=user_uuid, dnd_enabled=True))
