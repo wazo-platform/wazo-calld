@@ -236,6 +236,7 @@ class MockUser:
         voicemail=None,
         tenant_uuid=None,
         mobile_fallback_enabled=False,
+        dnd_enabled=False,
     ):
         self._uuid = uuid
         self._line_ids = line_ids or []
@@ -243,6 +244,7 @@ class MockUser:
         self._voicemail = voicemail
         self._tenant_uuid = tenant_uuid
         self._mobile_fallback_enabled = mobile_fallback_enabled
+        self._dnd_enabled = dnd_enabled
 
     def uuid(self):
         return self._uuid
@@ -255,6 +257,7 @@ class MockUser:
             'mobile_fallback_enabled': self._mobile_fallback_enabled,
             'voicemail': self._voicemail,
             'tenant_uuid': self._tenant_uuid,
+            'services': {'dnd': {'enabled': self._dnd_enabled}},
         }
 
 
