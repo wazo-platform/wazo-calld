@@ -52,6 +52,13 @@ class MockAmidClient:
         response = requests.post(self.url('_set_queue_status'), json=body)
         response.raise_for_status()
 
+    def set_queue_status_delay(self, delay):
+        '''Make the QueueStatus action take that many seconds to answer.'''
+        response = requests.post(
+            self.url('_set_queue_status_delay'), json={'delay': delay}
+        )
+        response.raise_for_status()
+
     def set_queue_pause_error(
         self, interface, paused=None, message='Interface not found'
     ):

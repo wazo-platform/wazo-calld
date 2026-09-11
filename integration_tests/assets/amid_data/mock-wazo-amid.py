@@ -7,6 +7,7 @@ from __future__ import annotations
 import json
 import logging
 import sys
+import time
 
 from flask import Flask, Response, jsonify, request
 
@@ -17,6 +18,7 @@ logger = logging.getLogger(__name__)
 
 action_response = ''
 queue_status_response: list = []
+queue_status_delay: float = 0
 queue_pause_errors: list = []
 valid_extens: list = []
 _requests: list = []
@@ -26,11 +28,13 @@ def _reset() -> None:
     global _requests
     global action_response
     global queue_status_response
+    global queue_status_delay
     global queue_pause_errors
     global valid_extens
     _requests = []
     action_response = ''
     queue_status_response = []
+    queue_status_delay = 0
     queue_pause_errors = []
     valid_extens = []
 
@@ -94,6 +98,14 @@ def set_queue_status():
     return '', 204
 
 
+@app.route("/_set_queue_status_delay", methods=['POST'])
+def set_queue_status_delay():
+    global queue_status_delay
+    queue_status_delay = request.get_json()['delay']
+
+    return '', 204
+
+
 @app.route("/_set_queue_pause_error", methods=['POST'])
 def set_queue_pause_error():
     global queue_pause_errors
@@ -109,6 +121,9 @@ def action(action):
 
 @app.route("/1.0/action/QueueStatus", methods=['POST'])
 def queue_status():
+    if queue_status_delay:
+        time.sleep(queue_status_delay)
+
     return jsonify(queue_status_response + [{'Event': 'QueueStatusComplete'}]), 200
 
 

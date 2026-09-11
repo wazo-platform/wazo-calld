@@ -607,14 +607,18 @@ class TestBusConsume(IntegrationTest):
             'Paused': '1' if paused else '0',
         }
 
-    def _wait_for_dnd_synchronization(self):
-        def queue_status_requested():
-            assert_that(
-                self.amid.requests()['requests'],
-                has_item(has_entries({'path': '/1.0/action/QueueStatus'})),
-            )
+    def _queue_status_requests(self):
+        return [
+            request
+            for request in self.amid.requests()['requests']
+            if request['path'] == '/1.0/action/QueueStatus'
+        ]
 
-        until.assert_(queue_status_requested, tries=10)
+    def _wait_for_dnd_synchronization(self, count=1):
+        def queue_status_requested():
+            assert_that(self._queue_status_requests(), has_length(count))
+
+        until.assert_(queue_status_requested, timeout=15, interval=0.5)
 
     def _assert_queue_pause(self, user_uuid, paused):
         def assert_amid_request():
@@ -801,6 +805,20 @@ class TestBusConsume(IntegrationTest):
         self.bus.send_ami_fully_booted_event()
 
         self._assert_queue_pause(other_uuid, paused=True)
+
+    def test_when_asterisk_reboots_during_a_synchronization_then_it_runs_again(self):
+        user_uuid = str(uuid.uuid4())
+        self.confd.set_users(MockUser(uuid=user_uuid, dnd_enabled=True))
+        self.amid.set_queue_status(self._group_member(user_uuid, paused=False))
+        self.amid.set_queue_status_delay(5)
+
+        self.bus.send_ami_fully_booted_event()
+        self._wait_for_dnd_synchronization()
+
+        self.amid.set_queue_status_delay(0)
+        self.bus.send_ami_fully_booted_event()
+
+        self._wait_for_dnd_synchronization(count=2)
 
     def test_when_calld_restarts_then_dnd_members_are_paused_again(self):
         user_uuid = str(uuid.uuid4())

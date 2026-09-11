@@ -37,6 +37,7 @@ class GroupDNDSynchronizer:
         self._confd = confd_client
         self._lock = threading.Lock()
         self._synchronizing = False
+        self._synchronization_requested = False
         self._updated_while_synchronizing: set[str] = set()
 
     def pause_member(self, user_uuid):
@@ -64,15 +65,34 @@ class GroupDNDSynchronizer:
             return user_uuid in self._updated_while_synchronizing
 
     def synchronize(self):
+        '''Reconcile every group member, then reconcile again if asked to.
+
+        A request arriving while a synchronization is in flight is the case
+        that matters most: Asterisk has booted again and wiped the pause
+        states the running pass is still working towards. Dropping that
+        request would leave the DND members unpaused until an unrelated
+        later boot.
+
+        '''
         with self._lock:
             if self._synchronizing:
-                logger.debug('DND synchronization already running, skipping')
+                logger.debug(
+                    'DND synchronization already running, scheduling another run'
+                )
+                self._synchronization_requested = True
                 return
             self._synchronizing = True
+            self._synchronization_requested = False
             self._updated_while_synchronizing = set()
 
         try:
-            self._synchronize()
+            while True:
+                self._synchronize()
+                with self._lock:
+                    if not self._synchronization_requested:
+                        break
+                    self._synchronization_requested = False
+                    self._updated_while_synchronizing = set()
         finally:
             with self._lock:
                 self._synchronizing = False
