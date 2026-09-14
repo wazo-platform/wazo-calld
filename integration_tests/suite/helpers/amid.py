@@ -1,4 +1,4 @@
-# Copyright 2015-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import requests
@@ -39,6 +39,18 @@ class MockAmidClient:
     def set_no_valid_exten(self):
         result: list = []
         self.set_action_result(result)
+
+    def set_queue_status(self, *members):
+        '''Set the QueueMember events the QueueStatus action will return.
+
+        Each member is a dict, e.g.
+        {'Queue': 'group1', 'Location': 'Local/<uuid>@usersharedlines',
+         'Paused': '0'}
+
+        '''
+        body = [dict(member, Event='QueueMember') for member in members]
+        response = requests.post(self.url('_set_queue_status'), json=body)
+        response.raise_for_status()
 
     def set_valid_exten(self, context, exten, priority='1'):
         body = {'context': context, 'exten': exten, 'priority': priority}

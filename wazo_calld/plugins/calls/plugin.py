@@ -1,4 +1,4 @@
-# Copyright 2015-2025 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from __future__ import annotations
@@ -12,6 +12,7 @@ from wazo_calld.types import PluginDependencies
 
 from .bus_consume import CallsBusEventHandler
 from .dial_echo import DialEchoManager
+from .dnd_synchronizer import GroupDNDSynchronizer
 from .http import (
     CallAnswerResource,
     CallDtmfResource,
@@ -86,9 +87,7 @@ class Plugin:
             amid_client,
         )
 
-        startup_callback_collector = CallbackCollector()
-        ari.client_initialized_subscribe(startup_callback_collector.new_source())
-        startup_callback_collector.subscribe(calls_stasis.initialize)
+        dnd_synchronizer = GroupDNDSynchronizer(amid_client, confd_client)
 
         calls_bus_event_handler = CallsBusEventHandler(
             amid_client,
@@ -99,8 +98,20 @@ class Plugin:
             config['uuid'],
             dial_echo_manager,
             notifier,
+            dnd_synchronizer,
         )
         calls_bus_event_handler.subscribe(bus_consumer)
+
+        startup_callback_collector = CallbackCollector()
+        ari.client_initialized_subscribe(startup_callback_collector.new_source())
+        startup_callback_collector.subscribe(calls_stasis.initialize)
+
+        dnd_startup_callback_collector = CallbackCollector()
+        ari.client_initialized_subscribe(dnd_startup_callback_collector.new_source())
+        token_changed_subscribe(dnd_startup_callback_collector.new_source())
+        dnd_startup_callback_collector.subscribe(
+            calls_bus_event_handler.run_dnd_synchronization
+        )
 
         kwargs = {'resource_class_args': [calls_service]}
         api.add_resource(CallsResource, '/calls', **kwargs)

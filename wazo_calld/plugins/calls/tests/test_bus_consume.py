@@ -1,10 +1,13 @@
-# Copyright 2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2023-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+import threading
 from unittest import TestCase
 from unittest.mock import Mock, patch
 
 from hamcrest import assert_that, calling, not_, raises
+
+from wazo_calld.plugin_helpers.exceptions import WazoAmidError
 
 from ..bus_consume import CallsBusEventHandler
 from ..exceptions import NoSuchCall
@@ -20,6 +23,7 @@ class TestCallsBusEventHandler(TestCase):
         xivo_uuid = Mock()
         dial_echo_manager = Mock()
         notifier = Mock()
+        dnd_synchronizer = Mock()
         self.handler = CallsBusEventHandler(
             ami,
             ari,
@@ -29,6 +33,7 @@ class TestCallsBusEventHandler(TestCase):
             xivo_uuid,
             dial_echo_manager,
             notifier,
+            dnd_synchronizer,
         )
 
     def _make_channel(self, channel_id, name):
@@ -131,3 +136,47 @@ class TestCallsBusEventHandler(TestCase):
             calling(self.handler._relay_channel_answered).with_args(event),
             not_(raises(Exception)),
         )
+
+    def test_dnd_enabled_pauses_the_group_member(self):
+        self.handler._users_services_dnd_updated(
+            {'user_uuid': 'user-uuid', 'enabled': True}
+        )
+
+        self.handler.dnd_synchronizer.pause_member.assert_called_once_with('user-uuid')
+        self.handler.dnd_synchronizer.unpause_member.assert_not_called()
+
+    def test_dnd_disabled_unpauses_the_group_member(self):
+        self.handler._users_services_dnd_updated(
+            {'user_uuid': 'user-uuid', 'enabled': False}
+        )
+
+        self.handler.dnd_synchronizer.unpause_member.assert_called_once_with(
+            'user-uuid'
+        )
+        self.handler.dnd_synchronizer.pause_member.assert_not_called()
+
+    def test_dnd_update_tolerates_a_user_in_no_group(self):
+        error = WazoAmidError(Mock(), Mock())
+        error.details = {'original_error': 'Interface not found'}
+        self.handler.dnd_synchronizer.pause_member.side_effect = error
+
+        assert_that(
+            calling(self.handler._users_services_dnd_updated).with_args(
+                {'user_uuid': 'user-uuid', 'enabled': True}
+            ),
+            not_(raises(Exception)),
+        )
+
+    def test_fully_booted_synchronizes_dnd(self):
+        self.handler._asterisk_fully_booted({'Event': 'FullyBooted'})
+
+        for thread in threading.enumerate():
+            if thread.name == 'group-dnd-synchronizer':
+                thread.join(timeout=5)
+
+        self.handler.dnd_synchronizer.synchronize.assert_called_once_with()
+
+    def test_dnd_synchronization_failure_is_swallowed(self):
+        self.handler.dnd_synchronizer.synchronize.side_effect = Exception('boom')
+
+        assert_that(calling(self.handler._synchronize_dnd), not_(raises(Exception)))
