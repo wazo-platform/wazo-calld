@@ -8,10 +8,12 @@ import re
 import threading
 
 from wazo_calld.plugin_helpers import ami
+from wazo_calld.plugin_helpers.exceptions import WazoAmidError
 
 logger = logging.getLogger(__name__)
 
 USERS_PAGE_SIZE = 1000
+NOT_A_GROUP_MEMBER = 'Interface not found'
 
 GROUP_MEMBER_INTERFACE_RE = re.compile(r'^Local/(?P<user_uuid>[^@]+)@usersharedlines$')
 
@@ -36,17 +38,24 @@ class GroupDNDSynchronizer:
         self._confd = confd_client
         self._lock = threading.Lock()
         self._synchronizing = False
-        self._updated_while_synchronizing: set[str] = set()
+        self._synchronization_requested = False
+        self._updated_while_synchronizing: dict[str, bool] = {}
 
     def pause_member(self, user_uuid):
-        self._mark_updated(user_uuid)
-        ami.pause_queue_member(self._amid, group_member_interface(user_uuid))
+        self._apply(user_uuid, True)
 
     def unpause_member(self, user_uuid):
-        self._mark_updated(user_uuid)
-        ami.unpause_queue_member(self._amid, group_member_interface(user_uuid))
+        self._apply(user_uuid, False)
 
-    def _mark_updated(self, user_uuid):
+    def _apply(self, user_uuid, enabled):
+        self._mark_updated(user_uuid, enabled)
+        try:
+            self._correct_pause_state(user_uuid, enabled)
+        except Exception:
+            self._unmark_updated(user_uuid)
+            raise
+
+    def _mark_updated(self, user_uuid, enabled):
         '''Record a DND event applied while a synchronization is in flight.
 
         Such an event carries a state newer than the snapshots the
@@ -56,38 +65,67 @@ class GroupDNDSynchronizer:
         '''
         with self._lock:
             if self._synchronizing:
-                self._updated_while_synchronizing.add(user_uuid)
+                self._updated_while_synchronizing[user_uuid] = enabled
 
-    def _updated_since_snapshot(self, user_uuid):
+    def _unmark_updated(self, user_uuid):
         with self._lock:
-            return user_uuid in self._updated_while_synchronizing
+            self._updated_while_synchronizing.pop(user_uuid, None)
+
+    def _update_since_snapshot(self, user_uuid):
+        with self._lock:
+            return self._updated_while_synchronizing.get(user_uuid)
 
     def synchronize(self):
         with self._lock:
             if self._synchronizing:
-                logger.debug('DND synchronization already running, skipping')
+                logger.debug(
+                    'DND synchronization already running, scheduling another run'
+                )
+                self._synchronization_requested = True
                 return
             self._synchronizing = True
-            self._updated_while_synchronizing = set()
+            self._synchronization_requested = False
+            self._updated_while_synchronizing = {}
 
-        try:
-            self._synchronize()
-        finally:
-            with self._lock:
-                self._synchronizing = False
+        while True:
+            try:
+                self._synchronize()
+            except Exception:
+                if not self._another_run_requested():
+                    raise
+                logger.exception(
+                    'DND synchronization failed, running the scheduled one anyway'
+                )
+                continue
+            if not self._another_run_requested():
+                return
+
+    def _another_run_requested(self):
+        with self._lock:
+            if self._synchronization_requested:
+                self._synchronization_requested = False
+                self._updated_while_synchronizing = {}
+                return True
+            self._synchronizing = False
+            return False
 
     def _synchronize(self):
-        dnd_by_user_uuid = self._fetch_dnd_states()
         pause_states_by_user_uuid = self._fetch_member_pause_states()
+        if not pause_states_by_user_uuid:
+            logger.info('DND synchronization completed: no group member to inspect')
+            return
+
+        dnd_by_user_uuid = self._fetch_dnd_states()
 
         corrected = 0
         skipped = 0
+        gone = 0
         for user_uuid, pause_states in pause_states_by_user_uuid.items():
             enabled = dnd_by_user_uuid.get(user_uuid, False)
             if pause_states == {enabled}:
                 continue
 
-            if self._updated_since_snapshot(user_uuid):
+            if self._update_since_snapshot(user_uuid) is not None:
                 logger.debug(
                     'Skipping user "%s": DND was updated during synchronization',
                     user_uuid,
@@ -98,19 +136,45 @@ class GroupDNDSynchronizer:
             logger.debug(
                 'Correcting pause state of user "%s" to "%s"', user_uuid, enabled
             )
-            if enabled:
-                ami.pause_queue_member(self._amid, group_member_interface(user_uuid))
-            else:
-                ami.unpause_queue_member(self._amid, group_member_interface(user_uuid))
+            try:
+                applied = enabled
+                while True:
+                    self._correct_pause_state(user_uuid, applied)
+                    update = self._update_since_snapshot(user_uuid)
+                    if update is None or update == applied:
+                        break
+                    logger.debug(
+                        'DND of user "%s" was updated to "%s" while being corrected',
+                        user_uuid,
+                        update,
+                    )
+                    applied = update
+            except WazoAmidError as e:
+                if e.details['original_error'] != NOT_A_GROUP_MEMBER:
+                    raise
+                logger.warning(
+                    'Member "%s" listed by QueueStatus but unknown to QueuePause, '
+                    'skipping',
+                    user_uuid,
+                )
+                gone += 1
+                continue
             corrected += 1
 
         logger.info(
             'DND synchronization completed: %s group members inspected, '
-            '%s corrected, %s skipped',
+            '%s corrected, %s skipped, %s gone',
             len(pause_states_by_user_uuid),
             corrected,
             skipped,
+            gone,
         )
+
+    def _correct_pause_state(self, user_uuid, enabled):
+        if enabled:
+            ami.pause_queue_member(self._amid, group_member_interface(user_uuid))
+        else:
+            ami.unpause_queue_member(self._amid, group_member_interface(user_uuid))
 
     def _fetch_dnd_states(self):
         result = self._confd.users.list(

@@ -176,6 +176,7 @@ class TestCallsBusEventHandler(TestCase):
 
         self.handler.dnd_synchronizer.synchronize.assert_called_once_with()
 
+    @patch('wazo_calld.plugins.calls.bus_consume.DND_SYNCHRONIZATION_RETRY_DELAYS', ())
     def test_dnd_synchronization_failure_is_swallowed(self):
         self.handler.dnd_synchronizer.synchronize.side_effect = Exception('boom')
 

@@ -2,9 +2,9 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from unittest import TestCase
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
-from hamcrest import assert_that, calling, contains_inanyorder, not_, raises
+from hamcrest import assert_that, calling, contains_inanyorder, has_length, not_, raises
 from requests import RequestException
 
 from wazo_calld.plugin_helpers.exceptions import WazoAmidError
@@ -109,6 +109,33 @@ class TestGroupDNDSynchronizer(TestCase):
                 {'Interface': f'Local/{USER_1}@usersharedlines', 'Paused': True}
             ),
         )
+
+    def _queue_status_actions(self):
+        return [
+            c for c in self.amid.action.call_args_list if c.args[0] == 'QueueStatus'
+        ]
+
+    def test_a_request_made_as_a_run_finishes_is_not_lost(self):
+        self._set_confd_users((USER_1, True))
+        self._set_queue_status(queue_member(USER_1, paused=True))
+        deciding_to_finish = self.synchronizer._another_run_requested
+        requested: list[bool] = []
+
+        def request_another_run_as_this_one_finishes():
+            another_run = deciding_to_finish()
+            if not another_run and not requested:
+                requested.append(True)
+                self.synchronizer.synchronize()
+            return another_run
+
+        with patch.object(
+            self.synchronizer,
+            '_another_run_requested',
+            request_another_run_as_this_one_finishes,
+        ):
+            self.synchronizer.synchronize()
+
+        assert_that(self._queue_status_actions(), has_length(2))
 
     def _handle_dnd_event_during_synchronization(self, user_uuid, enabled):
         '''Apply a DND event between the QueueStatus snapshot and the corrections.'''

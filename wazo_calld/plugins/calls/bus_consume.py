@@ -3,6 +3,7 @@
 
 import logging
 import threading
+import time
 
 from ari.exceptions import ARINotFound
 from wazo_bus.collectd.channels import (
@@ -15,10 +16,12 @@ from wazo_calld.plugin_helpers.ari_ import Channel, set_channel_id_var_sync
 from wazo_calld.plugin_helpers.exceptions import WazoAmidError
 
 from .call import Call
-from .dnd_synchronizer import group_member_interface
+from .dnd_synchronizer import NOT_A_GROUP_MEMBER, group_member_interface
 from .exceptions import NoSuchCall
 
 logger = logging.getLogger(__name__)
+
+DND_SYNCHRONIZATION_RETRY_DELAYS = (1, 2, 4, 8, 16, 32, 64, 128, 256)
 
 
 class CallsBusEventHandler:
@@ -425,7 +428,7 @@ class CallsBusEventHandler:
             else:
                 self.dnd_synchronizer.unpause_member(user_uuid)
         except WazoAmidError as e:
-            if e.details['original_error'] == 'Interface not found':
+            if e.details['original_error'] == NOT_A_GROUP_MEMBER:
                 logger.debug(
                     '%s is not a member of any group. Not changing pause status',
                     group_member_interface(user_uuid),
@@ -444,7 +447,19 @@ class CallsBusEventHandler:
         thread.start()
 
     def _synchronize_dnd(self):
-        try:
-            self.dnd_synchronizer.synchronize()
-        except Exception:
-            logger.exception('Failed to synchronize group DND state')
+        retry_delays = iter(DND_SYNCHRONIZATION_RETRY_DELAYS)
+        while True:
+            try:
+                self.dnd_synchronizer.synchronize()
+                return
+            except Exception as e:
+                delay = next(retry_delays, None)
+                if delay is None:
+                    logger.exception('Failed to synchronize group DND state')
+                    return
+                logger.warning(
+                    'Failed to synchronize group DND state: %s. Retrying in %ss',
+                    e,
+                    delay,
+                )
+                time.sleep(delay)

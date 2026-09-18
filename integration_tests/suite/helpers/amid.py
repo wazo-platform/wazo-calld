@@ -52,6 +52,40 @@ class MockAmidClient:
         response = requests.post(self.url('_set_queue_status'), json=body)
         response.raise_for_status()
 
+    def set_queue_status_delay(self, delay):
+        response = requests.post(
+            self.url('_set_queue_status_delay'), json={'delay': delay}
+        )
+        response.raise_for_status()
+
+    def set_queue_status_error(self, message=None):
+        response = requests.post(
+            self.url('_set_queue_status_error'), json={'message': message}
+        )
+        response.raise_for_status()
+
+    def set_queue_pause_error(
+        self, interface, paused=None, message='Interface not found', occurrence=None
+    ):
+        body = {
+            'interface': interface,
+            'paused': paused,
+            'message': message,
+            'occurrence': occurrence,
+        }
+        response = requests.post(self.url('_set_queue_pause_error'), json=body)
+        response.raise_for_status()
+
+    def set_queue_pause_delay(self, interface, delay, paused=None, occurrence=None):
+        body = {
+            'interface': interface,
+            'paused': paused,
+            'delay': delay,
+            'occurrence': occurrence,
+        }
+        response = requests.post(self.url('_set_queue_pause_delay'), json=body)
+        response.raise_for_status()
+
     def set_valid_exten(self, context, exten, priority='1'):
         body = {'context': context, 'exten': exten, 'priority': priority}
         response = requests.post(self.url('_set_valid_exten'), json=body)
