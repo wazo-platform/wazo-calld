@@ -726,14 +726,32 @@ class TestBusConsume(IntegrationTest):
         self._assert_no_queue_pause(paused_uuid)
         self._assert_no_queue_pause(unpaused_uuid)
 
-    def test_when_asterisk_restarts_then_member_unknown_to_confd_is_unpaused(self):
+    def test_when_asterisk_restarts_then_member_unknown_to_confd_is_left_alone(self):
         user_uuid = str(uuid.uuid4())
-        self.confd.set_users()
-        self.amid.set_queue_status(self._group_member(user_uuid, paused=True))
+        sentinel_uuid = str(uuid.uuid4())
+        self.confd.set_users(MockUser(uuid=sentinel_uuid, dnd_enabled=True))
+        self.amid.set_queue_status(
+            self._group_member(user_uuid, paused=True),
+            self._group_member(sentinel_uuid, paused=False),
+        )
 
         self.bus.send_ami_fully_booted_event()
+        self._wait_for_corrections(sentinel_uuid)
 
-        self._assert_queue_pause(user_uuid, paused=False)
+        self._assert_no_queue_pause(user_uuid)
+
+    def test_when_asterisk_restarts_then_users_are_listed_in_a_total_order(self):
+        user_uuid = str(uuid.uuid4())
+        self.confd.set_users(MockUser(uuid=user_uuid, dnd_enabled=True))
+        self.amid.set_queue_status(self._group_member(user_uuid, paused=False))
+
+        self.bus.send_ami_fully_booted_event()
+        self._assert_queue_pause(user_uuid, paused=True)
+
+        assert_that(
+            self.confd.requests()['requests'],
+            has_item(has_entries(path='/1.1/users', query=has_entries(order='uuid'))),
+        )
 
     def test_when_asterisk_restarts_then_non_group_members_are_ignored(self):
         sentinel_uuid = str(uuid.uuid4())

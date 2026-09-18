@@ -121,7 +121,12 @@ class GroupDNDSynchronizer:
         skipped = 0
         gone = 0
         for user_uuid, pause_states in pause_states_by_user_uuid.items():
-            enabled = dnd_by_user_uuid.get(user_uuid, False)
+            enabled = dnd_by_user_uuid.get(user_uuid)
+            if enabled is None:
+                logger.debug('Skipping user "%s": unknown to confd', user_uuid)
+                skipped += 1
+                continue
+
             if pause_states == {enabled}:
                 continue
 
@@ -180,6 +185,7 @@ class GroupDNDSynchronizer:
         result = self._confd.users.list(
             recurse=True,
             view='line_presence',
+            order='uuid',
             limit=USERS_PAGE_SIZE,
             offset=0,
         )
@@ -190,6 +196,7 @@ class GroupDNDSynchronizer:
             response = self._confd.users.list(
                 recurse=True,
                 view='line_presence',
+                order='uuid',
                 limit=USERS_PAGE_SIZE,
                 offset=len(users),
             )
