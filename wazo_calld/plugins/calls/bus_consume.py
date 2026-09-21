@@ -2,6 +2,8 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
+import threading
+import time
 
 from ari.exceptions import ARINotFound
 from wazo_bus.collectd.channels import (
@@ -14,9 +16,12 @@ from wazo_calld.plugin_helpers.ari_ import Channel, set_channel_id_var_sync
 from wazo_calld.plugin_helpers.exceptions import WazoAmidError
 
 from .call import Call
+from .dnd_synchronizer import NOT_A_GROUP_MEMBER, group_member_interface
 from .exceptions import NoSuchCall
 
 logger = logging.getLogger(__name__)
+
+DND_SYNCHRONIZATION_RETRY_DELAYS = (1, 2, 4, 8, 16, 32, 64, 128, 256)
 
 
 class CallsBusEventHandler:
@@ -30,6 +35,7 @@ class CallsBusEventHandler:
         xivo_uuid,
         dial_echo_manager,
         notifier,
+        dnd_synchronizer,
     ):
         self.ami = ami
         self.ari = ari
@@ -39,6 +45,7 @@ class CallsBusEventHandler:
         self.xivo_uuid = xivo_uuid
         self.dial_echo_manager = dial_echo_manager
         self.notifier = notifier
+        self.dnd_synchronizer = dnd_synchronizer
 
     def subscribe(self, bus_consumer):
         bus_consumer.subscribe('Newchannel', self._add_sip_call_id)
@@ -62,6 +69,7 @@ class CallsBusEventHandler:
         bus_consumer.subscribe(
             'users_services_dnd_updated', self._users_services_dnd_updated
         )
+        bus_consumer.subscribe('FullyBooted', self._asterisk_fully_booted)
 
     def _add_sip_call_id(self, event):
         if not event['Channel'].startswith('PJSIP/'):
@@ -414,17 +422,44 @@ class CallsBusEventHandler:
     def _users_services_dnd_updated(self, event):
         user_uuid = event['user_uuid']
         enabled = event['enabled']
-        interface = f'Local/{user_uuid}@usersharedlines'
         try:
             if enabled:
-                ami.pause_queue_member(self.ami, interface)
+                self.dnd_synchronizer.pause_member(user_uuid)
             else:
-                ami.unpause_queue_member(self.ami, interface)
+                self.dnd_synchronizer.unpause_member(user_uuid)
         except WazoAmidError as e:
-            if e.details['original_error'] == 'Interface not found':
+            if e.details['original_error'] == NOT_A_GROUP_MEMBER:
                 logger.debug(
                     '%s is not a member of any group. Not changing pause status',
-                    interface,
+                    group_member_interface(user_uuid),
                 )
                 return
             raise
+
+    def _asterisk_fully_booted(self, event):
+        logger.info('Asterisk fully booted, resynchronizing group DND state')
+        self.run_dnd_synchronization()
+
+    def run_dnd_synchronization(self):
+        thread = threading.Thread(
+            target=self._synchronize_dnd, name='group-dnd-synchronizer', daemon=True
+        )
+        thread.start()
+
+    def _synchronize_dnd(self):
+        retry_delays = iter(DND_SYNCHRONIZATION_RETRY_DELAYS)
+        while True:
+            try:
+                self.dnd_synchronizer.synchronize()
+                return
+            except Exception as e:
+                delay = next(retry_delays, None)
+                if delay is None:
+                    logger.exception('Failed to synchronize group DND state')
+                    return
+                logger.warning(
+                    'Failed to synchronize group DND state: %s. Retrying in %ss',
+                    e,
+                    delay,
+                )
+                time.sleep(delay)
