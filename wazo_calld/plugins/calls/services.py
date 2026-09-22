@@ -454,6 +454,7 @@ class CallsService:
             bridges=bridges, channels_by_id=channels_by_id
         )
         call = Call(channel.id)
+        call.channel_name = channel.json['name']
         call.conversation_id = channel_helper.conversation_id()
         call.creation_time = channel.json['creationtime']
         call.answer_time = channel_variables.get('WAZO_ANSWER_TIME') or None
@@ -520,6 +521,7 @@ class CallsService:
         connected = channel.get('connected')
         caller = channel.get('caller')
         call = Call(channel_id)
+        call.channel_name = channel.get('name')
         call.conversation_id = conversation_id
         call.status = event['channel']['state']
         call.caller_id_name = connected.get('name')
@@ -563,6 +565,7 @@ class CallsService:
     def make_call_from_dead_channel(channel):
         event_variables = channel.json['channelvars']
         call = Call(channel.id)
+        call.channel_name = channel.json['name']
         call.conversation_id = event_variables.get('CHANNEL(linkedid)') or None
         call.is_video = event_variables.get('CHANNEL(videonativeformat)') != '(nothing)'
         call.creation_time = channel.json['creationtime']
