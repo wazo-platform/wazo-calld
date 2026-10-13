@@ -1,4 +1,4 @@
-# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from __future__ import annotations
@@ -28,7 +28,10 @@ class Plugin:
         confd_client = ConfdClient(**config['confd'])
         token_changed_subscribe(confd_client.set_token)
 
+        # loaded in the background from the first token on, never by an event
         confd_cache = ConfdCache(confd_client)
+        token_changed_subscribe(confd_cache.start)
+        self._confd_cache = confd_cache
         notifier = EndpointStatusNotifier(bus_publisher, confd_cache)
 
         status_cache = NotifyingStatusCache(notifier.endpoint_updated, ari.client)
@@ -42,6 +45,8 @@ class Plugin:
 
         event_handler = EventHandler(status_cache, confd_cache)
         event_handler.subscribe(bus_consumer)
+        confd_cache.on_ready(event_handler.replay_registry)
+        confd_cache.on_ready(notifier.replay)
 
         status_aggregator.add_provider(self._provide_status)
 
@@ -65,5 +70,6 @@ class Plugin:
         self._async_tasks_completed = True
 
     def _provide_status(self, status: StatusDict) -> None:
-        value = Status.ok if self._async_tasks_completed else Status.fail
-        status['plugins']['endpoints']['status'] = value
+        ready = self._async_tasks_completed and self._confd_cache.ready
+        status['plugins']['endpoints']['status'] = Status.ok if ready else Status.fail
+        status['plugins']['endpoints']['confd_cache'] = self._confd_cache.status()

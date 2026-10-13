@@ -1,4 +1,4 @@
-# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -106,14 +106,28 @@ class EventHandler:
             except ValueError:
                 return
 
+        with self._confd_cache.lock:
+            if not self._confd_cache.trunks_ready:
+                # replayed by replay_registry once trunks are loaded
+                self._confd_cache.held_registry[(techno, username)] = event
+                return
+
         trunk = self._confd_cache.get_trunk_by_username(techno, username)
-        registered = event['Status'] == 'Registered'
-        if not trunk and not registered:
-            # The trunk as already been dissociated from the trunk
+        if not trunk:
+            # Unknown username, or the endpoint was dissociated from its trunk
             return
 
         with self._endpoint_status_cache.update(techno, trunk['name']) as endpoint:
-            endpoint.registered = registered
+            endpoint.registered = event['Status'] == 'Registered'
+
+    def replay_registry(self, kind):
+        if kind != 'trunks':
+            return
+        with self._confd_cache.lock:
+            events = list(self._confd_cache.held_registry.values())
+            self._confd_cache.held_registry.clear()
+        for event in events:
+            self.on_registry(event)
 
     def _extract_sip_option(self, section, option):
         for key, value in section:
