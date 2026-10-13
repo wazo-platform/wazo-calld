@@ -513,17 +513,6 @@ class TestHeldNotifications(TestCase):
         assert_that(self.cache.get_trunk_by_id(1), none())
         assert_that(self.status.get('PJSIP', 'trunk-1'), none())
 
-    # criterion 12, review BH-6: durations come from the monotonic clock
-    def test_a_wall_clock_step_does_not_bend_the_build_duration(self):
-        def ntp_step():
-            self.confd.clock.wall_offset = -3600.0
-
-        at_request(self.confd, 'lines', 0, ntp_step)
-
-        self.cache.build()
-
-        assert_that(self.cache.status(), has_entries(build_seconds=0.2))
-
     # criterion 11
     def test_a_trunk_renamed_during_build_wins_over_its_later_page(self):
         renamed: dict[str, Any] = {
@@ -746,6 +735,35 @@ class TestObservability(TestCase):
         plugin._provide_status(status)
 
         assert_that(status['plugins']['endpoints']['status'], equal_to('fail'))
+
+    # criterion 12, review BH-6: durations come from the monotonic clock
+    def test_a_wall_clock_step_does_not_bend_the_build_duration(self):
+        confd = FakeConfd([sip_trunk(1)], [line(1)])
+        cache = new_cache(confd)
+
+        def ntp_step():
+            confd.clock.wall_offset = -3600.0
+
+        at_request(confd, 'lines', 0, ntp_step)
+
+        cache.build()
+
+        assert_that(cache.status(), has_entries(build_seconds=0.2))
+
+    # criterion 12, review R2-1: a held trunk deletion is counted while held
+    def test_a_held_trunk_deletion_counts_in_held_notifications(self):
+        confd = FakeConfd([sip_trunk(i) for i in range(150)])
+        cache, _, _, handler = wire(confd)
+        at_request(
+            confd, 'trunks', 0, lambda: handler.on_trunk_endpoint_deleted({'id': 120})
+        )
+        while_held = []
+        at_request(confd, 'trunks', 90, lambda: while_held.append(cache.status()))
+
+        cache.build()
+
+        assert_that(while_held[0], has_entries(held_notifications=1))
+        assert_that(cache.status(), has_entries(held_notifications=0))
 
     # criterion 13
     def test_an_error_body_never_reaches_status_or_logs(self):
