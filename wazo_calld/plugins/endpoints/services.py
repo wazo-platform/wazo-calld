@@ -193,10 +193,16 @@ class ConfdCache:
     }
 
     def __init__(
-        self, confd_client, clock=time.time, sleep=time.sleep, jitter=random.uniform
+        self,
+        confd_client,
+        clock=time.time,
+        monotonic=time.monotonic,
+        sleep=time.sleep,
+        jitter=random.uniform,
     ):
         self._confd = confd_client
-        self._clock = clock
+        self._clock = clock  # timestamps shown in /status
+        self._monotonic = monotonic  # durations
         self._sleep = sleep
         self._jitter = jitter
         # one short lock around index mutations, iterations and the holds; never
@@ -205,9 +211,11 @@ class ConfdCache:
         self._trunks = {}
         self._lines = {}
         self._ready = {'trunks': False, 'lines': False}
-        # ids touched by a bus event during the build, and ids seen in a page
+        # ids touched by a bus event and ids seen in a page, during the build
+        # of their kind only (emptied when it is ready)
         self._touched: dict[str, set[int]] = {'trunks': set(), 'lines': set()}
         self._seen: dict[str, set[int]] = {'trunks': set(), 'lines': set()}
+        self._loaded = {'trunks': 0, 'lines': 0}
         self._total = {'trunks': None, 'lines': None}
         self._ready_callbacks = []
         self._thread = None
@@ -220,8 +228,10 @@ class ConfdCache:
         self._last_error_at = None
         self._started_at = None
         self._ready_at = None
+        self._build_seconds = None
         self.held_endpoints = {}
         self.held_registry = {}
+        self.held_trunk_deletions = {}
 
     @property
     def trunks_ready(self):
@@ -250,17 +260,19 @@ class ConfdCache:
 
     def build(self):
         self._started_at = self._clock()
+        started = self._monotonic()
         self._load('trunks', self._confd.trunks, self._merge_trunk)
         self._load('lines', self._confd.lines, self._merge_line)
         with self.lock:
             self._state = 'ready'
             self._ready_at = self._clock()
+            self._build_seconds = round(self._monotonic() - started, 1)
         _log(
             logging.INFO,
             state='ready',
-            lines=len(self._seen['lines']),
-            trunks=len(self._seen['trunks']),
-            seconds=f'{self._ready_at - self._started_at:.1f}',
+            lines=self._loaded['lines'],
+            trunks=self._loaded['trunks'],
+            seconds=self._build_seconds,
             pages=self._pages,
             retries=self._retries,
         )
@@ -274,9 +286,15 @@ class ConfdCache:
             with self.lock:
                 self._total[kind] = total
                 self._pages += 1
+                seen = self._seen[kind]
                 for item in items:
                     try:
+                        item_id = item['id']
+                        if item_id in seen:
+                            continue  # the page overlap
+                        seen.add(item_id)
                         merge(item)
+                        self._loaded[kind] += 1
                     except Exception:
                         self._skipped += 1
                         _log(
@@ -291,20 +309,21 @@ class ConfdCache:
                     state=self._state,
                     pages=self._pages,
                     **{
-                        f'{kind}_loaded': len(self._seen[kind]),
+                        f'{kind}_loaded': self._loaded[kind],
                         f'{kind}_total': total,
                     },
                 )
             offset += PAGE_STEP
-            # A short page (empty included) is the last one: confd honours
-            # `limit`. It also ends the load when `offset >= total` would, a
-            # full page meaning total >= offset + 100. `total` is only shown in
-            # /status: the integration tests' confd mock omits it.
-            if len(items) < PAGE_LIMIT:
+            # A short page (empty included) is the last one, confd honouring
+            # `limit`; `total`, when given, ends the load if it does not. The
+            # integration tests' confd mock omits `total` on lines.
+            if len(items) < PAGE_LIMIT or (total is not None and offset >= total):
                 break
 
         with self.lock:
             self._ready[kind] = True
+            self._seen[kind] = set()
+            self._touched[kind] = set()
         for callback in self._ready_callbacks:
             try:
                 callback(kind)
@@ -355,12 +374,11 @@ class ConfdCache:
 
     def status(self):
         with self.lock:
-            started, ready_at = self._started_at, self._ready_at
             return {
                 'state': self._state,
-                'trunks_loaded': len(self._seen['trunks']),
+                'trunks_loaded': self._loaded['trunks'],
                 'trunks_total': self._total['trunks'],
-                'lines_loaded': len(self._seen['lines']),
+                'lines_loaded': self._loaded['lines'],
                 'lines_total': self._total['lines'],
                 'pages': self._pages,
                 'skipped_items': self._skipped,
@@ -369,12 +387,11 @@ class ConfdCache:
                 'last_error': self._last_error,
                 'last_error_at': _iso(self._last_error_at),
                 'held_notifications': len(self.held_endpoints)
-                + len(self.held_registry),
-                'started_at': _iso(started),
-                'ready_at': _iso(ready_at),
-                'build_seconds': None
-                if ready_at is None
-                else round(ready_at - started, 1),
+                + len(self.held_registry)
+                + len(self.held_trunk_deletions),
+                'started_at': _iso(self._started_at),
+                'ready_at': _iso(self._ready_at),
+                'build_seconds': self._build_seconds,
             }
 
     def _merge_line(self, line):
@@ -385,9 +402,6 @@ class ConfdCache:
             'name': name,
             'tenant_uuid': line['tenant_uuid'],
         }
-        if line_id in self._seen['lines']:
-            return  # page overlap
-        self._seen['lines'].add(line_id)
         if line_id in self._touched['lines']:
             return  # a bus event already said what this line is
         self._lines.setdefault(techno, {'name': {}, 'username': {}})
@@ -412,7 +426,6 @@ class ConfdCache:
             name = trunk['endpoint_custom']['interface']
             username = name
         else:
-            self._seen['trunks'].add(trunk['id'])
             return  # a trunk with no endpoint has no status to track
 
         trunk_id = trunk['id']
@@ -422,9 +435,6 @@ class ConfdCache:
             'name': name,
             'tenant_uuid': trunk['tenant_uuid'],
         }
-        if trunk_id in self._seen['trunks']:
-            return
-        self._seen['trunks'].add(trunk_id)
         if trunk_id in self._touched['trunks']:
             return
         self._index_trunk(techno, trunk_id, name, username, value)

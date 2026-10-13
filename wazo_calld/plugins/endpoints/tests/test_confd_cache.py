@@ -5,6 +5,7 @@ import logging
 import sys
 import threading
 import time
+from typing import Any
 from unittest import TestCase
 from unittest.mock import Mock, patch
 
@@ -186,6 +187,32 @@ class TestBuilderPaging(TestCase):
         assert_that(cache.list_lines('tenant'), has_length(150))
         assert_that(cache.get_line('PJSIP', 'renamed-95'), none())
 
+    # criterion 2, review SR-1: total still ends the load if confd ignores limit
+    def test_a_confd_ignoring_limit_still_ends_the_load_at_total(self):
+        confd = FakeConfd([], [line(i) for i in range(250)])
+        confd.lines.ignores_paging = True
+        cache = new_cache(confd)
+
+        cache.build()
+
+        assert_that(confd.offsets('lines'), equal_to([0, 90, 180]))
+        assert_that(cache.list_lines('tenant'), has_length(250))
+
+    # review SR-3, BH-3: the build's id sets are dropped at ready
+    def test_the_build_drops_its_id_sets_once_ready(self):
+        confd = FakeConfd([sip_trunk(1), sip_trunk(2)], [line(i) for i in range(150)])
+        cache = new_cache(confd)
+        at_request(confd, 'lines', 0, lambda: new_line_event(cache))
+
+        cache.build()
+
+        assert_that(cache._seen, equal_to({'trunks': set(), 'lines': set()}))
+        assert_that(cache._touched, equal_to({'trunks': set(), 'lines': set()}))
+        assert_that(
+            cache.status(),
+            has_entries(trunks_loaded=2, lines_loaded=150, lines_total=150),
+        )
+
     # criterion 3
     def test_an_item_deleted_between_pages_loses_no_other_item(self):
         lines = [line(i) for i in range(300)]
@@ -286,6 +313,15 @@ class TestBuilderResilience(TestCase):
         ids = sorted(item['id'] for item in self.cache.list_lines('tenant'))
         assert_that(ids, equal_to([i for i in range(150) if i != 3]))
         assert_that(self.cache.status(), has_entries(skipped_items=2))
+
+    # criterion 5, review SR-2: an unreadable item in the overlap counts once
+    def test_an_unreadable_item_in_the_page_overlap_is_counted_once(self):
+        self.confd.lines.items[95] = {'id': 95, 'name': 'no-protocol'}
+
+        self.cache.build()
+
+        assert_that(self.confd.offsets('lines'), equal_to([0, 90]))
+        assert_that(self.cache.status(), has_entries(skipped_items=1, lines_loaded=149))
 
     # criterion 5
     def test_an_odd_payload_is_retried_not_fatal(self):
@@ -460,6 +496,55 @@ class TestHeldNotifications(TestCase):
         )
         assert_that(self.cache.list_lines('tenant'), has_length(1))
 
+    # criterion 11, review BH-4: a trunk deleted before its page loses its state
+    def test_a_trunk_deleted_before_its_page_leaves_no_endpoint_state(self):
+        at_request(
+            self.confd,
+            'trunks',
+            0,
+            lambda: self.handler.on_trunk_endpoint_deleted({'id': 1}),
+        )
+        held = []
+        at_request(self.confd, 'lines', 0, lambda: held.append(self.cache.status()))
+
+        self.cache.build()
+
+        assert_that(held[0], has_entries(held_notifications=0))
+        assert_that(self.cache.get_trunk_by_id(1), none())
+        assert_that(self.status.get('PJSIP', 'trunk-1'), none())
+
+    # criterion 12, review BH-6: durations come from the monotonic clock
+    def test_a_wall_clock_step_does_not_bend_the_build_duration(self):
+        def ntp_step():
+            self.confd.clock.wall_offset = -3600.0
+
+        at_request(self.confd, 'lines', 0, ntp_step)
+
+        self.cache.build()
+
+        assert_that(self.cache.status(), has_entries(build_seconds=0.2))
+
+    # criterion 11
+    def test_a_trunk_renamed_during_build_wins_over_its_later_page(self):
+        renamed: dict[str, Any] = {
+            'trunk': {'id': 1},
+            'line': None,
+            'name': 'renamed-1',
+            'registration_section_options': [],
+            'tenant_uuid': 'tenant',
+        }
+        at_request(
+            self.confd,
+            'trunks',
+            0,
+            lambda: self.handler.on_endpoint_sip_updated(renamed),
+        )
+
+        self.cache.build()
+
+        assert_that(self.cache.get_trunk('PJSIP', 'trunk-1'), none())
+        assert_that(self.cache.get_trunk('PJSIP', 'renamed-1'), has_entries(id=1))
+
     # criterion 11
     def test_trunk_events_during_build_win_over_later_pages(self):
         at_request(
@@ -472,6 +557,11 @@ class TestHeldNotifications(TestCase):
         self.cache.build()
 
         assert_that(self.cache.list_trunks('tenant'), has_length(0))
+
+
+def new_line_event(cache):
+    cache.add_line('sip', 9999, 'event-line', None, 'tenant')
+    cache.delete_line(9999)
 
 
 class TestTimingAndConcurrency(TestCase):

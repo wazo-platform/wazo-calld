@@ -124,8 +124,12 @@ class EventHandler:
         if kind != 'trunks':
             return
         with self._confd_cache.lock:
+            deletions = list(self._confd_cache.held_trunk_deletions.values())
+            self._confd_cache.held_trunk_deletions.clear()
             events = list(self._confd_cache.held_registry.values())
             self._confd_cache.held_registry.clear()
+        for deletion in deletions:
+            self.on_trunk_endpoint_deleted(deletion)
         for event in events:
             self.on_registry(event)
 
@@ -223,7 +227,13 @@ class EventHandler:
         self._confd_cache.delete_line(event['id'])
 
     def on_trunk_endpoint_deleted(self, event):
-        trunk = self._confd_cache.get_trunk_by_id(event['id'])
+        with self._confd_cache.lock:
+            trunk = self._confd_cache.get_trunk_by_id(event['id'])
+            if not trunk and not self._confd_cache.trunks_ready:
+                # its page has not come yet: the name of its endpoint is not
+                # known; replayed by replay_registry once trunks are loaded
+                self._confd_cache.held_trunk_deletions[event['id']] = event
+                return
         self._confd_cache.delete_trunk(event['id'])
         if trunk:
             self._endpoint_status_cache.pop(

@@ -3,13 +3,23 @@
 
 from ..services import ConfdCache
 
+MAX_REQUESTS = 2000  # a build that never ends fails the test instead of hanging it
+
+
+class EndlessBuild(BaseException):
+    """Not an Exception: the builder retries every Exception, this one escapes it."""
+
 
 class FakeClock:
     def __init__(self):
         self.now = 1_000_000.0
+        self.wall_offset = 0.0  # an NTP step moves the wall clock only
         self.sleeps = []
 
     def time(self):
+        return self.now + self.wall_offset
+
+    def monotonic(self):
         return self.now
 
     def sleep(self, seconds):
@@ -24,15 +34,20 @@ class FakeResource:
         self.kind = kind
         self.items = items
         self._confd = confd
+        self.ignores_paging = False
 
     def list(self, **kwargs):
         self._confd.calls.append((self.kind, kwargs))
+        if len(self._confd.calls) > MAX_REQUESTS:
+            raise EndlessBuild(f'more than {MAX_REQUESTS} requests')
         self._confd.before_answer(self.kind, kwargs)
         if self._confd.errors:
             raise self._confd.errors.pop(0)
         self._confd.clock.now += self._confd.page_cost
         if self._confd.payloads:
             return self._confd.payloads.pop(0)
+        if self.ignores_paging:
+            return {'items': list(self.items), 'total': len(self.items)}
         offset = kwargs['offset']
         limit = kwargs['limit']
         return {
@@ -85,6 +100,7 @@ def new_cache(confd):
     return ConfdCache(
         confd,
         clock=confd.clock.time,
+        monotonic=confd.clock.monotonic,
         sleep=confd.clock.sleep,
         jitter=lambda low, high: 1.0,
     )
