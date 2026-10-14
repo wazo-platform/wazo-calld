@@ -68,9 +68,8 @@ services:
       - type: tmpfs
         target: /var/lib/rabbitmq
     healthcheck:
-      # plain TCP check: rabbitmq-diagnostics as root would create a
-      # root-owned erlang cookie and crash the server boot
-      test: ["CMD", "bash", "-c", "</dev/tcp/localhost/5672"]
+      # run as rabbitmq else rabbitmq-diagnostics may create the erlang cookie as root
+      test: ["CMD-SHELL", "gosu rabbitmq rabbitmq-diagnostics -q ping"]
       interval: 2s
       timeout: 10s
       retries: 60
