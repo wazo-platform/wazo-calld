@@ -17,14 +17,17 @@ from unittest import TestCase
 from unittest.mock import Mock, patch
 
 import requests
-from ari.exceptions import ARIServerError
+from ari.exceptions import ARINotFound, ARIServerError
 
 from ..bus_consume import EventHandler
 from ..notifier import Notifier
 from ..services import (
     DialMobileService,
     PSTNFallbackCancelled,
+    PSTNFallbackDialAnswered,
+    PSTNFallbackDialing,
     PSTNFallbackPending,
+    PSTNFallbackTriggering,
     _ContactDialer,
     _event_age,
     _NoSuchChannel,
@@ -228,6 +231,34 @@ class TestPushFirst(ServiceTestCase):
         assert first.done
         assert self.clock.live() == [self._timer('call-1')]
 
+    def test_a_second_push_keeps_a_fallback_past_pending(self):
+        # A fallback that fired is the call's: a second push for the same
+        # call must neither drop it (a live PSTN leg would be untracked) nor
+        # arm a second one.
+        for state in (
+            PSTNFallbackTriggering(call_id='call-1'),
+            PSTNFallbackDialing(call_id='call-1', channel_id='pstn-1'),
+            PSTNFallbackDialAnswered(call_id='call-1', channel_id='pstn-1'),
+        ):
+            with self.subTest(state=type(state).__name__):
+                self.service._call_locks.setdefault('call-1', threading.RLock())
+                self.service._pstn_fallbacks['call-1'] = state
+                live_before = len(self.clock.live())
+
+                self.handler._on_user_event(push_event('call-1', user_uuid='u2'))
+
+                assert self.service._pstn_fallbacks['call-1'] is state
+                assert len(self.clock.live()) == live_before
+                self.notifier.push_notification.assert_called()
+
+    def test_a_second_push_after_a_cancelled_fallback_arms_a_timer(self):
+        self.service._call_locks['call-1'] = threading.RLock()
+        self.service._pstn_fallbacks['call-1'] = PSTNFallbackCancelled('call-1')
+
+        self.handler._on_user_event(push_event('call-1', user_uuid='u2'))
+
+        assert self._timer('call-1').started
+
 
 class TestTimerDecides(ServiceTestCase):
     def _ringing_call(self, call_id='call-1'):
@@ -241,6 +272,8 @@ class TestTimerDecides(ServiceTestCase):
         self.confd_client.users.get.return_value = dict(
             ELIGIBLE_USER, mobile_fallback_enabled=False
         )
+        # with the check removed the run must reach originate
+        self.confd_client.lines.get.return_value = {'context': 'outbound'}
         self._ringing_call()
 
         self._timer('call-1').fire()
@@ -252,6 +285,7 @@ class TestTimerDecides(ServiceTestCase):
         self.confd_client.users.get.return_value = dict(
             ELIGIBLE_USER, mobile_phone_number=''
         )
+        self.confd_client.lines.get.return_value = {'context': 'outbound'}
         self._ringing_call()
 
         self._timer('call-1').fire()
@@ -312,6 +346,23 @@ class TestTimerDecides(ServiceTestCase):
         self.confd_client.users.get.assert_not_called()
         self.ari_client.channels.originate.assert_not_called()
 
+    def test_unanswered_dial_end_hangs_up_a_dialing_pstn_leg(self):
+        # The one ARI call DialEnd keeps on the bus thread: a PSTN leg
+        # already originated for a call whose mobile dial ended unanswered.
+        self.confd_client.users.get.return_value = ELIGIBLE_USER
+        self.confd_client.lines.get.return_value = {'context': 'outbound'}
+        self.ari_client.channels.originate.return_value = Mock(id='pstn-1')
+        self._ringing_call()
+        self._timer('call-1').fire()
+        assert isinstance(self.service._pstn_fallbacks['call-1'], PSTNFallbackDialing)
+
+        self.handler._on_dial_end(dial_end_event('call-1', status='NOANSWER'))
+
+        self.ari_client.channels.hangup.assert_called_once_with(channelId='pstn-1')
+        assert isinstance(
+            self.service._pstn_fallbacks['call-1'], PSTNFallbackCancelled
+        )
+
     def test_answered_dial_end_leaves_the_timer_to_join_bridge(self):
         self._ringing_call()
         timer = self._timer('call-1')
@@ -350,6 +401,37 @@ class TestDialerOwnsItsAriCalls(TestCase):
 
     def tearDown(self):
         self.service.on_calld_stopping()
+
+    def _dialer(self):
+        return _ContactDialer(self.ari_client, 'bridge-uuid', 'caller-ch', 'aor', 30)
+
+    def test_a_dialer_stopped_before_its_run_does_not_ring(self):
+        dialer = self._dialer()
+        dialer.should_stop.set()
+
+        dialer._run_no_exception('caller-ch', 'aor')
+
+        assert self.ari_client.mock_calls == []
+
+    def test_caller_gone_before_the_ring_ends_the_run_quietly(self):
+        self.ari_client.channels.ring.side_effect = ARINotFound(Mock(), Mock())
+        dialer = self._dialer()
+
+        with self.assertLogs(SERVICES, logging.DEBUG) as logs:
+            dialer._run_no_exception('caller-ch', 'aor')
+
+        assert [r.levelno for r in logs.records if r.levelno >= logging.WARNING] == []
+        self.ari_client.channels.getChannelVar.assert_not_called()
+        self.ari_client.channels.originate.assert_not_called()
+
+    def test_a_ring_server_error_is_logged_and_ends_the_run(self):
+        self.ari_client.channels.ring.side_effect = ARIServerError(Mock(), Mock())
+        dialer = self._dialer()
+
+        with self.assertLogs(SERVICES, logging.ERROR):
+            dialer._run_no_exception('caller-ch', 'aor')
+
+        self.ari_client.channels.originate.assert_not_called()
 
     # criterion 5
     def test_dial_all_contacts_makes_no_ari_call(self):
@@ -448,19 +530,63 @@ class TestMobileTokenWorker(TestCase):
         assert self._hints() == ['UNAVAILABLE']
         assert threading.current_thread().name not in self.http_threads
 
+    def _held(self):
+        gate = threading.Event()
+        self.service._token_worker.submit(gate.wait, 5)
+        return gate
+
     def test_last_event_of_a_user_wins(self):
+        gate = self._held()
         self.service.on_mobile_refresh_token_deleted('u1')
         self.service.on_mobile_refresh_token_created('u1')
+        gate.set()
         self._drain()
-        assert self._hints() == ['UNAVAILABLE', 'NOT_INUSE']
+        assert self._hints() == ['NOT_INUSE']
+        self.auth_client.token.list.assert_not_called()
 
         self.amid_client.reset_mock()
+        gate = self._held()
         self.service.on_mobile_refresh_token_created('u1')
         self.service.on_mobile_refresh_token_deleted('u1')
+        gate.set()
         self._drain()
+        assert self._hints() == ['UNAVAILABLE']
+        self.auth_client.token.list.assert_called_once_with('u1', mobile=True)
+
+    def test_queued_events_cost_one_update_per_user(self):
+        gate = self._held()
+        for _ in range(50):
+            self.service.on_mobile_refresh_token_deleted('u1')
+            self.service.on_mobile_refresh_token_created('u1')
+        self.service.on_mobile_refresh_token_created('u2')
+        gate.set()
+        self._drain()
+
+        assert [c.args[1]['Variable'] for c in self.amid_client.action.call_args_list] == [
+            'DEVICE_STATE(Custom:u1-mobile)',
+            'DEVICE_STATE(Custom:u2-mobile)',
+        ]
+        self.auth_client.token.list.assert_not_called()
+
+    def test_an_event_during_its_users_update_runs_after_it(self):
+        in_update = threading.Event()
+        release = threading.Event()
+
+        def slow_setvar(*args, **kwargs):
+            in_update.set()
+            release.wait(5)
+
+        self.amid_client.action.side_effect = slow_setvar
+        self.service.on_mobile_refresh_token_created('u1')
+        assert in_update.wait(5)
+
+        self.service.on_mobile_refresh_token_deleted('u1')
+        release.set()
+        self._drain()
+
         assert self._hints() == ['NOT_INUSE', 'UNAVAILABLE']
 
-    def test_a_failing_job_does_not_stop_the_worker(self):
+    def test_the_next_job_runs_after_an_auth_failure(self):
         self.auth_client.token.list.side_effect = requests.HTTPError()
 
         self.service.on_mobile_refresh_token_deleted('u1')
@@ -480,11 +606,16 @@ class TestMobileTokenWorker(TestCase):
         assert self.amid_client.action.call_count == 2
         assert 'amid down' in logs.output[0]
 
-    def test_stopping_shuts_the_worker_down(self):
+    def test_events_after_stopping_are_dropped_quietly(self):
         self.service.on_calld_stopping()
 
+        self.handler._on_refresh_token_created({'mobile': True, 'user_uuid': 'u1'})
+        self.handler._on_refresh_token_deleted({'mobile': True, 'user_uuid': 'u1'})
+
         with self.assertRaises(RuntimeError):
-            self.service.on_mobile_refresh_token_created('u1')
+            self.service._token_worker.submit(lambda: None)
+        assert self.amid_client.mock_calls == []
+        assert self.auth_client.mock_calls == []
 
 
 class TestPushLogLine(ServiceTestCase):
@@ -510,6 +641,10 @@ class TestEventAge(TestCase):
 
     def test_age_in_seconds(self):
         assert _event_age('2026-01-01T00:00:45.500+00:00', self.now) == '14.5s'
+
+    def test_the_emitters_shape(self):
+        # wazo-agid's wake_mobile: datetime.now(tz=timezone.utc).isoformat()
+        assert _event_age('2026-01-01T00:00:45.500000+00:00', self.now) == '14.5s'
 
     def test_other_offset(self):
         assert _event_age('2026-01-01T01:00:59+01:00', self.now) == '1.0s'
