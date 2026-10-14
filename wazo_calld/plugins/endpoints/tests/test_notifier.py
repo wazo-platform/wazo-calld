@@ -1,6 +1,7 @@
 # Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+import threading
 from unittest import TestCase
 from unittest.mock import Mock
 from unittest.mock import sentinel as s
@@ -15,7 +16,8 @@ from ..services import Endpoint
 
 class TestEndpointStatusNotifier(TestCase):
     def setUp(self):
-        self.confd_cache = Mock()
+        self.confd_cache = Mock(trunks_ready=True, lines_ready=True)
+        self.confd_cache.lock = threading.RLock()
         self.publisher = Mock()
 
         self.notifier = EndpointStatusNotifier(self.publisher, self.confd_cache)

@@ -1,4 +1,4 @@
-# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from unittest import TestCase
@@ -7,11 +7,13 @@ from unittest.mock import sentinel as s
 
 from hamcrest import (
     assert_that,
+    calling,
     contains_inanyorder,
     equal_to,
     has_entries,
     has_properties,
     not_,
+    raises,
 )
 
 from ..services import ConfdCache, Endpoint, EndpointsService, NotifyingStatusCache
@@ -108,7 +110,7 @@ class TestEndpointService(TestCase):
 class TestCachingConfdClient(TestCase):
     def setUp(self):
         self.confd = Mock()
-        self.client = ConfdCache(self.confd)
+        self.client = ConfdCache(self.confd, sleep=lambda seconds: None)
 
     def test_add_line(self):
         self._set_cache([])
@@ -421,6 +423,7 @@ class TestCachingConfdClient(TestCase):
             ],
         }
 
+        self.client.build()
         result = self.client.list_lines(s.tenant_uuid)
 
         assert_that(
@@ -448,12 +451,10 @@ class TestCachingConfdClient(TestCase):
         )
 
     def _set_cache(self, trunks=None, lines=None):
-        if trunks:
-            self.client._update_trunk_cache(trunks)
-        if lines:
-            self.client._update_line_cache(lines)
-
-        self.client._initialized = True
+        trunks, lines = trunks or [], lines or []
+        self.confd.trunks.list.return_value = {'items': trunks, 'total': len(trunks)}
+        self.confd.lines.list.return_value = {'items': lines, 'total': len(lines)}
+        self.client.build()
 
 
 class TestEndpoint(TestCase):
@@ -596,3 +597,20 @@ class TestNotifyingStatusCache(TestCase):
         with self.cache.update(s.not_found, s.name) as e:
             assert_that(e, equal_to(None))
             e.add_call(s.unique_id_1)
+
+    def test_an_error_on_a_tracked_endpoint_is_raised_and_not_notified(self):
+        def failing_update():
+            with self.cache.update(s.techno, s.name) as e:
+                e.registered = True
+                raise RuntimeError('boom')
+
+        assert_that(calling(failing_update), raises(RuntimeError))
+        self.notify.assert_not_called()
+
+    def test_the_notified_endpoint_is_a_snapshot(self):
+        with self.cache.update(s.techno, s.name) as e:
+            e.registered = True
+
+        notified = self.notify.call_args.args[0]
+        e.remove_call(s.unique_id_1)
+        assert_that(notified.current_call_count, equal_to(2))
