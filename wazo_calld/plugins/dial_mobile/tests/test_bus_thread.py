@@ -359,9 +359,7 @@ class TestTimerDecides(ServiceTestCase):
         self.handler._on_dial_end(dial_end_event('call-1', status='NOANSWER'))
 
         self.ari_client.channels.hangup.assert_called_once_with(channelId='pstn-1')
-        assert isinstance(
-            self.service._pstn_fallbacks['call-1'], PSTNFallbackCancelled
-        )
+        assert isinstance(self.service._pstn_fallbacks['call-1'], PSTNFallbackCancelled)
 
     def test_answered_dial_end_leaves_the_timer_to_join_bridge(self):
         self._ringing_call()
@@ -559,10 +557,14 @@ class TestMobileTokenWorker(TestCase):
             self.service.on_mobile_refresh_token_deleted('u1')
             self.service.on_mobile_refresh_token_created('u1')
         self.service.on_mobile_refresh_token_created('u2')
+        # one job per user waits behind the held one, not 101
+        assert self.service._token_worker._work_queue.qsize() == 2
         gate.set()
         self._drain()
 
-        assert [c.args[1]['Variable'] for c in self.amid_client.action.call_args_list] == [
+        assert [
+            c.args[1]['Variable'] for c in self.amid_client.action.call_args_list
+        ] == [
             'DEVICE_STATE(Custom:u1-mobile)',
             'DEVICE_STATE(Custom:u2-mobile)',
         ]

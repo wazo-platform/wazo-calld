@@ -274,7 +274,13 @@ class _ContactDialer:
     def _run(self, channel_id, aor):
         # These ARI calls run here, not on the bus thread that handled the
         # StasisStart: a slow Asterisk must not delay every other bus event.
-        self._ari.channels.ring(channelId=channel_id)
+        if self.should_stop.is_set():
+            return
+        try:
+            self._ari.channels.ring(channelId=channel_id)
+        except ARINotFound:
+            self.logger.debug('caller channel %s gone before ringing', channel_id)
+            return
         self.pickup_mark = self._get_pickup_mark(channel_id, aor)
 
         channel = self._ari.channels.get(channelId=channel_id)
@@ -436,6 +442,10 @@ class DialMobileService:
         self._token_worker = ThreadPoolExecutor(
             max_workers=1, thread_name_prefix='dial_mobile_token'
         )
+        # The latest token event of each user not yet handled: the queue
+        # holds one job per user, however often the user's app re-registers.
+        self._token_events: dict[str, Callable[[str], None]] = {}
+        self._token_events_lock = threading.Lock()
 
     def find_bridge_by_exten_context(self, exten, context):
         pickup_mark = f'{exten}%{context}'
@@ -689,17 +699,33 @@ class DialMobileService:
     # The mobile token handlers run on the bus thread; their auth and amid
     # HTTP calls go to the token worker.
     def on_mobile_refresh_token_created(self, user_uuid):
-        self._token_worker.submit(self._logged, self._set_user_hint, user_uuid, True)
+        self._queue_token_event(user_uuid, self._update_hint_on_created)
 
     def on_mobile_refresh_token_deleted(self, user_uuid):
-        self._token_worker.submit(self._logged, self._update_hint_on_deleted, user_uuid)
+        self._queue_token_event(user_uuid, self._update_hint_on_deleted)
 
-    @staticmethod
-    def _logged(job, *args):
+    def _queue_token_event(self, user_uuid, job):
+        with self._token_events_lock:
+            already_queued = user_uuid in self._token_events
+            self._token_events[user_uuid] = job
+        if already_queued:
+            return
         try:
-            job(*args)
+            self._token_worker.submit(self._run_token_event, user_uuid)
+        except RuntimeError:
+            # the worker is shut down: calld is stopping
+            logger.debug('calld stopping: mobile session hint of %s dropped', user_uuid)
+
+    def _run_token_event(self, user_uuid):
+        with self._token_events_lock:
+            job = self._token_events.pop(user_uuid)
+        try:
+            job(user_uuid)
         except Exception:
-            logger.exception('mobile session hint update failed for %s', args[0])
+            logger.exception('mobile session hint update failed for %s', user_uuid)
+
+    def _update_hint_on_created(self, user_uuid):
+        self._set_user_hint(user_uuid, True)
 
     def _update_hint_on_deleted(self, user_uuid):
         try:
@@ -770,6 +796,12 @@ class DialMobileService:
                     # A second push for this call replaced the push state
                     # the armed timer was for.
                     replaced.cancel()
+                case PSTNFallbackTriggering() | PSTNFallbackDialing() | (
+                    PSTNFallbackDialAnswered()
+                ):
+                    # The call's fallback already fired: it stays the call's,
+                    # and its PSTN leg stays tracked.
+                    return
             timer = threading.Timer(
                 fallback_timeout, self._pstn_fallback, args=[origin_call_id]
             )
@@ -861,8 +893,9 @@ class DialMobileService:
                     )
                     self._incoming_calls[call_id] = incoming_call.push_cancelled()
                 case IncomingCallPending():
-                    # Push not yet sent (very tight race during send_push_notification);
-                    # record the cancellation without dispatching one.
+                    # Push never sent: send_push_notification stores Pending,
+                    # sends and marks Notified under one lock, so only a
+                    # failed send leaves Pending. Nothing to cancel remotely.
                     logger.debug(
                         'cancel_push_mobile: push not yet sent for call %s, '
                         'recording cancellation',
