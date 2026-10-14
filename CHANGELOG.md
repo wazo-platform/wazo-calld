@@ -1,5 +1,20 @@
 # Changelog
 
+## 26.11
+
+* Mobile push notifications for incoming calls are sent without waiting on
+  wazo-confd: the PSTN fallback timer is armed for every push, and the user's
+  `mobile_fallback_enabled` and `mobile_phone_number` are read when it fires.
+  A slow wazo-confd now delays only that check, never the push.
+* The caller's ringing and the pickup mark lookup of a call to a mobile are
+  made from that call's dialer thread, and the mobile session hint updated on
+  mobile refresh token events is set from a worker thread: none of them wait on
+  Asterisk, wazo-amid or wazo-auth on the thread that handles bus events.
+* An unanswered end of the call to a mobile also cancels its PSTN fallback timer.
+* The `Sending incoming call push notification` log line ends with
+  `event_age=<seconds>s`, the age of the `Pushmobile` event when the push is
+  sent.
+
 ## 26.09
 
 * Requests to wazo-auth now default to `localhost:80`, through nginx.
