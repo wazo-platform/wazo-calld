@@ -1,3 +1,8 @@
+# Metrics are not authenticated: only serve them on 127.0.0.1:9500
+location = /api/calld/1.0/metrics {
+    deny all;
+}
+
 location ^~ /api/calld/1.0/guests {
     proxy_pass http://127.0.0.1:9500/1.0/guests;
     include /etc/nginx/wazo-calld-shared.conf;
