@@ -6,7 +6,9 @@ import logging
 import threading
 import uuid
 from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from typing import Any
 
 import requests
@@ -192,6 +194,20 @@ class _NoSuchChannel(Exception):
     pass
 
 
+def _utcnow() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def _event_age(timestamp: str | None, now: datetime) -> str:
+    """Age of a bus event at `now`, from its ISO 8601 `WAZO_TIMESTAMP`."""
+    try:
+        age = now - datetime.fromisoformat(timestamp)  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        # unparseable, missing, or without an offset (naive - aware)
+        return 'unknown'
+    return f'{age.total_seconds():.1f}s'
+
+
 class _ContactDialer:
     def __init__(
         self,
@@ -200,7 +216,6 @@ class _ContactDialer:
         channel_id: str,
         aor: str,
         ringing_time: int,
-        pickup_mark: str,
         on_contact_dialed: Callable[[], None] | None = None,
     ):
         self._ari = ari
@@ -216,7 +231,8 @@ class _ContactDialer:
         self._dialed_channels: set = set()
         self._caller_channel_id = channel_id
         self._ringing_time = ringing_time
-        self.pickup_mark = pickup_mark
+        # Resolved by the dialer's own thread; '' never matches a pickup.
+        self.pickup_mark = ''
         self._on_contact_dialed = on_contact_dialed
         self._wakeup = threading.Event()
 
@@ -256,6 +272,17 @@ class _ContactDialer:
             self.logger.exception('Unhandled exception in %s thread', self._thread.name)
 
     def _run(self, channel_id, aor):
+        # These ARI calls run here, not on the bus thread that handled the
+        # StasisStart: a slow Asterisk must not delay every other bus event.
+        if self.should_stop.is_set():
+            return
+        try:
+            self._ari.channels.ring(channelId=channel_id)
+        except ARINotFound:
+            self.logger.debug('caller channel %s gone before ringing', channel_id)
+            return
+        self.pickup_mark = self._get_pickup_mark(channel_id, aor)
+
         channel = self._ari.channels.get(channelId=channel_id)
         caller_id = '"{name}" <{number}>'.format(**channel.json['caller'])
 
@@ -290,6 +317,18 @@ class _ContactDialer:
             self._send_contact_to_current_call(
                 contact, self.future_bridge_uuid, caller_id
             )
+
+    def _get_pickup_mark(self, channel_id, aor):
+        try:
+            return self._ari.channels.getChannelVar(
+                channelId=channel_id,
+                variable=f'PJSIP_ENDPOINT({aor},PICKUPMARK)',
+            )['value']
+        except ARIServerError as e:
+            self.logger.warning(
+                'PJSIP_ENDPOINT(%s,PICKUPMARK) lookup failed: %s', aor, e
+            )
+            return ''
 
     def _channel_is_up(self, channel_id):
         try:
@@ -399,6 +438,14 @@ class DialMobileService:
         self._bridge_uuid_by_origin_call_id: dict[str, str] = {}
         self._pstn_fallback_min_timeout = pstn_fallback_min_timeout
         self._pstn_fallback_ring_timeout_factor = pstn_fallback_ring_timeout_factor
+        # One thread keeps a user's token events in order: the last one wins.
+        self._token_worker = ThreadPoolExecutor(
+            max_workers=1, thread_name_prefix='dial_mobile_token'
+        )
+        # The latest token event of each user not yet handled: the queue
+        # holds one job per user, however often the user's app re-registers.
+        self._token_events: dict[str, Callable[[str], None]] = {}
+        self._token_events_lock = threading.Lock()
 
     def find_bridge_by_exten_context(self, exten, context):
         pickup_mark = f'{exten}%{context}'
@@ -407,8 +454,8 @@ class DialMobileService:
                 return bridge_uuid
 
     def dial_all_contacts(self, caller_channel_id, origin_channel_id, aor):
-        self._ari.channels.ring(channelId=caller_channel_id)
-
+        # Runs on the bus thread: registers the call's state only. Ringing
+        # the caller and the pickup mark lookup are the dialer's (ARI).
         logger.info('dial_all_contacts(%s, %s)', caller_channel_id, aor)
         future_bridge_uuid = str(uuid.uuid4())
 
@@ -418,14 +465,6 @@ class DialMobileService:
             future_bridge_uuid,
         )
         ringing_time = self._call_ring_time.get(origin_channel_id, 30)
-        try:
-            pickup_mark = self._ari.channels.getChannelVar(
-                channelId=caller_channel_id,
-                variable=f'PJSIP_ENDPOINT({aor},PICKUPMARK)',
-            )['value']
-        except ARIServerError as e:
-            logger.warning('PJSIP_ENDPOINT(%s,PICKUPMARK) lookup failed: %s', aor, e)
-            pickup_mark = ''
 
         def _on_contact_dialed() -> None:
             # The mobile has registered and the SIP INVITE has been sent;
@@ -443,7 +482,6 @@ class DialMobileService:
             caller_channel_id,
             aor,
             ringing_time,
-            pickup_mark,
             on_contact_dialed=_on_contact_dialed,
         )
         self._contact_dialers[future_bridge_uuid] = dialer
@@ -637,6 +675,7 @@ class DialMobileService:
                 pass
 
     def on_calld_stopping(self):
+        self._token_worker.shutdown(wait=False, cancel_futures=True)
         for dialer in self._contact_dialers.values():
             dialer.stop()
         # Cancel any armed PSTN fallback timers so the (non-daemon) Timer
@@ -657,10 +696,38 @@ class DialMobileService:
             },
         )
 
+    # The mobile token handlers run on the bus thread; their auth and amid
+    # HTTP calls go to the token worker.
     def on_mobile_refresh_token_created(self, user_uuid):
-        self._set_user_hint(user_uuid, True)
+        self._queue_token_event(user_uuid, self._update_hint_on_created)
 
     def on_mobile_refresh_token_deleted(self, user_uuid):
+        self._queue_token_event(user_uuid, self._update_hint_on_deleted)
+
+    def _queue_token_event(self, user_uuid, job):
+        with self._token_events_lock:
+            already_queued = user_uuid in self._token_events
+            self._token_events[user_uuid] = job
+        if already_queued:
+            return
+        try:
+            self._token_worker.submit(self._run_token_event, user_uuid)
+        except RuntimeError:
+            # the worker is shut down: calld is stopping
+            logger.debug('calld stopping: mobile session hint of %s dropped', user_uuid)
+
+    def _run_token_event(self, user_uuid):
+        with self._token_events_lock:
+            job = self._token_events.pop(user_uuid)
+        try:
+            job(user_uuid)
+        except Exception:
+            logger.exception('mobile session hint update failed for %s', user_uuid)
+
+    def _update_hint_on_created(self, user_uuid):
+        self._set_user_hint(user_uuid, True)
+
+    def _update_hint_on_deleted(self, user_uuid):
         try:
             response = self._auth_client.token.list(user_uuid, mobile=True)
         except requests.HTTPError as e:
@@ -708,58 +775,51 @@ class DialMobileService:
         lock = self._call_locks.setdefault(origin_call_id, threading.RLock())
         with lock:
             self._incoming_calls[origin_call_id] = pending
-
             self._call_ring_time[origin_call_id] = ring_timeout
-
-        pstn_fallback_enabled = self._pstn_fallback_eligible(user_uuid, tenant_uuid)
-        with lock:
-            match self._incoming_calls.get(origin_call_id):
-                case IncomingCallPending():
-                    logger.info(
-                        'call %s: Sending incoming call push notification',
-                        origin_call_id,
-                    )
-                    self._notifier.push_notification(payload, tenant_uuid, user_uuid)
-                    self._incoming_calls[origin_call_id] = pending.notified()
-                case _:
-                    logger.info(
-                        'call %s cancelled before sending out push notification, aborting',
-                        origin_call_id,
-                    )
-                    return
-
-            if pstn_fallback_enabled:
-                fallback_timeout = max(
-                    self._pstn_fallback_min_timeout,
-                    self._pstn_fallback_ring_timeout_factor * int(ring_timeout),
-                )
-                timer = threading.Timer(
-                    fallback_timeout, self._pstn_fallback, args=[origin_call_id]
-                )
-                self._pstn_fallbacks[origin_call_id] = PSTNFallbackPending(
-                    call_id=origin_call_id, timer=timer
-                )
-                logger.info(
-                    'call %s: Arming PSTN fallback timer with timeout=%d',
-                    origin_call_id,
-                    fallback_timeout,
-                )
-                timer.start()
-
-    def _pstn_fallback_eligible(self, user_uuid: str, tenant_uuid: str) -> bool:
-        try:
-            user = self._confd_client.users.get(user_uuid, tenant_uuid=tenant_uuid)
-        except (HTTPError, RequestException) as e:
-            logger.warning(
-                'PSTN fallback eligibility lookup failed for user %s: %s; '
-                'arming fallback timer optimistically',
-                user_uuid,
-                e,
+            # No confd call here: this runs on the bus thread. The timer is
+            # armed for every push and `_pstn_fallback` decides, on the
+            # timer's thread, whether the user gets a PSTN fallback.
+            logger.info(
+                'call %s: Sending incoming call push notification event_age=%s',
+                origin_call_id,
+                _event_age(push_mobile_timestamp, _utcnow()),
             )
-            return True
-        return bool(
-            user.get('mobile_fallback_enabled') and user.get('mobile_phone_number')
-        )
+            self._notifier.push_notification(payload, tenant_uuid, user_uuid)
+            self._incoming_calls[origin_call_id] = pending.notified()
+
+            fallback_timeout = max(
+                self._pstn_fallback_min_timeout,
+                self._pstn_fallback_ring_timeout_factor * int(ring_timeout),
+            )
+            match self._pstn_fallbacks.get(origin_call_id):
+                case PSTNFallbackPending(timer=replaced):
+                    # A second push for this call replaced the push state
+                    # the armed timer was for.
+                    replaced.cancel()
+                case PSTNFallbackTriggering() | PSTNFallbackDialing() | (
+                    PSTNFallbackDialAnswered()
+                ):
+                    # The call's fallback already fired: it stays the call's,
+                    # and its PSTN leg stays tracked.
+                    return
+            timer = threading.Timer(
+                fallback_timeout, self._pstn_fallback, args=[origin_call_id]
+            )
+            self._pstn_fallbacks[origin_call_id] = PSTNFallbackPending(
+                call_id=origin_call_id, timer=timer
+            )
+            logger.info(
+                'call %s: Arming PSTN fallback timer with timeout=%d',
+                origin_call_id,
+                fallback_timeout,
+            )
+            timer.start()
+
+    def cancel_mobile_call(self, call_id: str) -> None:
+        """The call to the mobile ended unanswered: stop its fallback timer
+        and cancel its push."""
+        self._cancel_pstn_fallback(call_id)
+        self.cancel_push_mobile(call_id)
 
     def _cancel_pstn_fallback(self, call_id: str) -> None:
         lock = self._call_locks.get(call_id)
@@ -833,8 +893,9 @@ class DialMobileService:
                     )
                     self._incoming_calls[call_id] = incoming_call.push_cancelled()
                 case IncomingCallPending():
-                    # Push not yet sent (very tight race during send_push_notification);
-                    # record the cancellation without dispatching one.
+                    # Push never sent: send_push_notification stores Pending,
+                    # sends and marks Notified under one lock, so only a
+                    # failed send leaves Pending. Nothing to cancel remotely.
                     logger.debug(
                         'cancel_push_mobile: push not yet sent for call %s, '
                         'recording cancellation',
