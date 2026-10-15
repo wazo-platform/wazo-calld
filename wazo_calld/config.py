@@ -119,6 +119,9 @@ _DEFAULT_CONFIG: CalldConfigDict = {
         'voicemails': True,
     },
     'max_meeting_participants': 25,
+    'metrics': {
+        'enabled': True,
+    },
 }
 
 
