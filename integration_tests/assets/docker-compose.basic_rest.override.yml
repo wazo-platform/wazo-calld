@@ -10,3 +10,7 @@ services:
       - rabbitmq
     environment:
       TARGETS: "ari:5039 rabbitmq:5672 confd:9486 amid:9491 auth:9497 phoned:9498 calld:9500"
+
+  calld:
+    volumes:
+      - ./etc/wazo-calld/conf.d/40-metrics.yml:/etc/wazo-calld/conf.d/40-metrics.yml
