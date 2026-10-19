@@ -80,10 +80,6 @@ class ConsulConfigDict(TypedDict):
     port: int
 
 
-class MetricsConfigDict(TypedDict):
-    enabled: bool
-
-
 class PhonedConfigDict(TypedDict):
     host: str
     port: int
@@ -133,7 +129,6 @@ class CalldConfigDict(TypedDict):
     consul: ConsulConfigDict
     enabled_plugins: dict[str, bool]
     max_meeting_participants: int
-    metrics: MetricsConfigDict
     phoned: PhonedConfigDict
     remote_credentials: dict[str, Any]
     rest_api: RestApiConfigDict
