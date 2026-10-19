@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright 2015-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from setuptools import find_packages, setup
@@ -30,6 +30,7 @@ setup(
             'endpoints = wazo_calld.plugins.endpoints.plugin:Plugin',
             'faxes = wazo_calld.plugins.faxes.plugin:Plugin',
             'meetings = wazo_calld.plugins.meetings.plugin:Plugin',
+            'metrics = wazo_calld.plugins.metrics.plugin:Plugin',
             'parking_lots = wazo_calld.plugins.parking_lots.plugin:Plugin',
             'relocates = wazo_calld.plugins.relocates.plugin:Plugin',
             'status = wazo_calld.plugins.status.plugin:Plugin',
