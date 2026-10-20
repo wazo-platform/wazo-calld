@@ -657,9 +657,6 @@ class TestEventAge(TestCase):
     def test_unparseable_timestamp(self):
         assert _event_age('not a date', self.now) == 'unknown'
 
-    def test_missing_timestamp(self):
-        assert _event_age(None, self.now) == 'unknown'
-
     def test_timestamp_without_offset(self):
         assert _event_age('2026-01-01T00:00:00', self.now) == 'unknown'
 

@@ -198,12 +198,12 @@ def _utcnow() -> datetime:
     return datetime.now(timezone.utc)
 
 
-def _event_age(timestamp: str | None, now: datetime) -> str:
+def _event_age(timestamp: str, now: datetime) -> str:
     """Age of a bus event at `now`, from its ISO 8601 `WAZO_TIMESTAMP`."""
     try:
-        age = now - datetime.fromisoformat(timestamp)  # type: ignore[arg-type]
+        age = now - datetime.fromisoformat(timestamp)
     except (TypeError, ValueError):
-        # unparseable, missing, or without an offset (naive - aware)
+        # unparseable, or without an offset (naive - aware)
         return 'unknown'
     return f'{age.total_seconds():.1f}s'
 
