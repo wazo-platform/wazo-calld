@@ -149,9 +149,12 @@ class TestPaging(TestCase):
         def list_fn(limit, offset):
             return {'items': items[offset : offset + limit], 'total': len(items)}
 
-        yielded = list(pages(list_fn, sleep=lambda seconds: None))
+        totals: list = []
+
+        yielded = list(pages(list_fn, totals.append, sleep=lambda seconds: None))
 
         assert_that(yielded, equal_to(items))
+        assert_that(totals, equal_to([250, 250, 250]))
 
     def test_an_empty_page_ends_the_load(self):
         confd = FakeConfd()

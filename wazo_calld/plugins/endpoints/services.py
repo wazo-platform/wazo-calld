@@ -193,12 +193,12 @@ def _get_page(list_fn, offset, sleep):
     return retrying(get)
 
 
-def pages(list_fn, sleep=time.sleep, on_page=None):
+def pages(list_fn, on_page, sleep=time.sleep):
     """Yield every item of a confd collection, one small page at a time.
 
-    `list_fn(limit=, offset=)` returns a confd page. Pages overlap so that a
-    deletion between two requests skips no item; an item seen in the overlap is
-    yielded once.
+    `list_fn(limit=, offset=)` returns a confd page; `on_page(total)` runs once
+    each page is consumed. Pages overlap so that a deletion between two
+    requests skips no item; an item seen in the overlap is yielded once.
     """
     offset = 0
     seen = set()
@@ -212,8 +212,7 @@ def pages(list_fn, sleep=time.sleep, on_page=None):
                     continue
                 seen.add(item_id)
             yield item
-        if on_page:
-            on_page(total)
+        on_page(total)
         offset += PAGE_STEP
         # A short page (empty included) is the last one, confd honouring
         # `limit`; `total` ends the load if it does not.
@@ -294,7 +293,7 @@ class ConfdCache:
                     total=total,
                 )
 
-        for item in pages(list_fn, self._sleep, on_page):
+        for item in pages(list_fn, on_page, self._sleep):
             with self._lock:
                 try:
                     merge(item)
