@@ -16,6 +16,7 @@ from hamcrest import (
     has_entries,
     has_length,
     instance_of,
+    less_than,
     none,
     raises,
 )
@@ -67,7 +68,11 @@ def at_request(confd, kind, offset, action):
 
 
 def upper_window(windows):
-    """Make tenacity's random wait the top of its window, and record each window."""
+    """Make tenacity's random wait the top of its window, and record each window.
+
+    Tied to tenacity 8.2.1's layout: `wait_random_exponential` draws through
+    `tenacity.wait.random.uniform`.
+    """
 
     def uniform(low, high):
         windows.append((low, high))
@@ -139,8 +144,7 @@ class TestPaging(TestCase):
         assert_that(cache.list_trunks('tenant'), has_length(2500))
         assert_that(cache.list_lines('tenant'), has_length(4600))
         # one pause after every request, so two requests are never back to back
-        assert_that(confd.clock.sleeps, equal_to([PAGE_PAUSE] * len(confd.calls)))
-        assert_that(PAGE_PAUSE, equal_to(0.2))
+        assert_that(confd.clock.sleeps, equal_to([0.2] * len(confd.calls)))
 
     # criterion 2
     def test_the_generator_yields_each_item_once_despite_the_overlap(self):
@@ -299,6 +303,17 @@ class TestResilience(TestCase):
             ),
         )
 
+    # criterion 5
+    def test_an_item_with_an_unhashable_id_is_skipped_and_counted(self):
+        confd = FakeConfd([], [line(1), {**line(2), 'id': [2]}, line(3)])
+        cache = new_cache(confd)
+
+        cache.build()
+
+        assert_that(cache.ready, equal_to(True))
+        assert_that(cache._skipped, equal_to(1))
+        assert_that(cache._loaded, equal_to({'trunks': 0, 'lines': 2}))
+
     def test_a_trunk_without_endpoint_is_ignored_not_counted(self):
         confd = FakeConfd([{'id': 1, 'tenant_uuid': 'tenant'}, sip_trunk(2)])
         cache = new_cache(confd)
@@ -439,6 +454,26 @@ class TestEventsWinOverPages(TestCase):
         assert_that(cache.get_trunk_by_id(150), has_entries(name='renamed-150'))
         assert_that(cache.get_trunk_by_username('PJSIP', 'u150'), has_entries(id=150))
 
+    # criterion 8
+    def test_a_line_deleted_then_re_added_during_build_keeps_the_new_row(self):
+        lines = [line(i) for i in range(200)]
+        lines[150] = line(150, name='old-150')
+        confd = FakeConfd([], lines)
+        cache, _, _, handler = wire(confd)
+
+        def events():
+            handler.on_line_endpoint_deleted({'id': 150})
+            cache.add_line('sip', 150, 'new-150', None, 'tenant')
+
+        at_request(confd, 'lines', 90, events)
+
+        cache.build()
+
+        names = {item['name'] for item in cache.list_lines('tenant')}
+        assert 'old-150' not in names
+        assert_that(cache.get_line('PJSIP', 'new-150'), has_entries(id=150))
+        assert_that(names, has_length(200))
+
     def test_after_the_build_an_event_is_not_remembered(self):
         confd = FakeConfd([], [line(1)])
         cache = new_cache(confd)
@@ -492,7 +527,7 @@ class TestTimingAndConcurrency(TestCase):
             released.set()
             builder.join(5)
 
-        assert_that(elapsed < 1.0, equal_to(True))
+        assert_that(elapsed, less_than(1.0))
         assert_that(len(confd.calls), equal_to(2))
 
     # criterion 10
@@ -552,6 +587,44 @@ class TestTimingAndConcurrency(TestCase):
 
         assert_that(errors, equal_to([]))
         assert_that(cache.list_lines('tenant'), has_length(20000))
+
+    # criterion 10
+    def test_listing_while_events_write_raises_nothing(self):
+        confd = FakeConfd([sip_trunk(i) for i in range(2000)], [])
+        cache = new_cache(confd)
+        cache.build()
+        errors: list[Exception] = []
+        done = threading.Event()
+
+        def writer():
+            for i in range(2000, 22000):
+                cache.add_line('sip', i, f'line-{i}', None, 'tenant')
+                cache.add_trunk('sip', i, f'trunk-{i}', None, 'tenant')
+            done.set()
+
+        def reader():
+            while not done.is_set():
+                try:
+                    cache.list_lines('tenant')
+                    cache.list_trunks('tenant')
+                except Exception as e:  # pragma: no cover - the failure we test for
+                    errors.append(e)
+                    return
+
+        interval = sys.getswitchinterval()
+        sys.setswitchinterval(1e-6)  # switch threads as often as possible
+        try:
+            threads = [threading.Thread(target=writer)]
+            threads += [threading.Thread(target=reader) for _ in range(2)]
+            for t in threads:
+                t.start()
+            for t in threads:
+                t.join(60)
+        finally:
+            sys.setswitchinterval(interval)
+
+        assert_that(errors, equal_to([]))
+        assert_that(cache.list_trunks('tenant'), has_length(22000))
 
 
 class TestObservability(TestCase):

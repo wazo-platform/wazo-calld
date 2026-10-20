@@ -1,6 +1,6 @@
 # Changelog
 
-## 26.10
+## 26.11
 
 * `GET /lines` and `GET /trunks` answer `503` (`wazo-calld-uninitialized`) while
   the line and trunk cache loads after startup.

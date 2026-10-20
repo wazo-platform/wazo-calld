@@ -5,6 +5,7 @@ import copy
 import logging
 import threading
 import time
+from collections.abc import Hashable
 from contextlib import contextmanager
 
 import tenacity
@@ -207,7 +208,8 @@ def pages(list_fn, on_page, sleep=time.sleep):
         sleep(PAGE_PAUSE)
         for item in items:
             item_id = item.get('id') if isinstance(item, dict) else None
-            if item_id is not None:
+            # an unhashable id is yielded as is: the merge skips and counts it
+            if item_id is not None and isinstance(item_id, Hashable):
                 if item_id in seen:
                     continue
                 seen.add(item_id)
