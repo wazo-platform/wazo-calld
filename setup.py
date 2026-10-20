@@ -30,7 +30,7 @@ setup(
             'endpoints = wazo_calld.plugins.endpoints.plugin:Plugin',
             'faxes = wazo_calld.plugins.faxes.plugin:Plugin',
             'meetings = wazo_calld.plugins.meetings.plugin:Plugin',
-            'metrics = wazo_calld.plugins.metrics.plugin:Plugin',
+            'metrics = xivo.flask.metrics:Plugin',
             'parking_lots = wazo_calld.plugins.parking_lots.plugin:Plugin',
             'relocates = wazo_calld.plugins.relocates.plugin:Plugin',
             'status = wazo_calld.plugins.status.plugin:Plugin',
