@@ -26,6 +26,7 @@ Depends:
  python3-kombu,
  python3-marshmallow,
  python3-stevedore,
+ python3-tenacity,
  python3-werkzeug,
  python3-wsaccel,
  wazo-amid-client-python3,

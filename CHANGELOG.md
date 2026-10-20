@@ -1,5 +1,12 @@
 # Changelog
 
+## 26.11
+
+* `GET /lines` and `GET /trunks` answer `503` (`wazo-calld-uninitialized`) while
+  the line and trunk cache loads after startup.
+* `GET /status`: `plugins.endpoints.status` stays `fail` until the line and
+  trunk cache is loaded.
+
 ## 26.09
 
 * Requests to wazo-auth now default to `localhost:80`, through nginx.

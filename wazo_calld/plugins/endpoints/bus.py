@@ -1,4 +1,4 @@
-# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -107,13 +107,13 @@ class EventHandler:
                 return
 
         trunk = self._confd_cache.get_trunk_by_username(techno, username)
-        registered = event['Status'] == 'Registered'
-        if not trunk and not registered:
-            # The trunk as already been dissociated from the trunk
+        if not trunk:
+            # dissociated from its trunk, or trunks not loaded yet
+            logger.debug('ignoring registry of unknown username %s', username)
             return
 
         with self._endpoint_status_cache.update(techno, trunk['name']) as endpoint:
-            endpoint.registered = registered
+            endpoint.registered = event['Status'] == 'Registered'
 
     def _extract_sip_option(self, section, option):
         for key, value in section:
