@@ -45,8 +45,6 @@ class Plugin:
 
         event_handler = EventHandler(status_cache, confd_cache)
         event_handler.subscribe(bus_consumer)
-        confd_cache.on_ready(event_handler.replay_registry)
-        confd_cache.on_ready(notifier.replay)
 
         status_aggregator.add_provider(self._provide_status)
 
@@ -71,5 +69,5 @@ class Plugin:
 
     def _provide_status(self, status: StatusDict) -> None:
         ready = self._async_tasks_completed and self._confd_cache.ready
-        status['plugins']['endpoints']['status'] = Status.ok if ready else Status.fail
-        status['plugins']['endpoints']['confd_cache'] = self._confd_cache.status()
+        value = Status.ok if ready else Status.fail
+        status['plugins']['endpoints']['status'] = value

@@ -7,13 +7,11 @@ from unittest.mock import sentinel as s
 
 from hamcrest import (
     assert_that,
-    calling,
     contains_inanyorder,
     equal_to,
     has_entries,
     has_properties,
     not_,
-    raises,
 )
 
 from ..services import ConfdCache, Endpoint, EndpointsService, NotifyingStatusCache
@@ -597,20 +595,3 @@ class TestNotifyingStatusCache(TestCase):
         with self.cache.update(s.not_found, s.name) as e:
             assert_that(e, equal_to(None))
             e.add_call(s.unique_id_1)
-
-    def test_an_error_on_a_tracked_endpoint_is_raised_and_not_notified(self):
-        def failing_update():
-            with self.cache.update(s.techno, s.name) as e:
-                e.registered = True
-                raise RuntimeError('boom')
-
-        assert_that(calling(failing_update), raises(RuntimeError))
-        self.notify.assert_not_called()
-
-    def test_the_notified_endpoint_is_a_snapshot(self):
-        with self.cache.update(s.techno, s.name) as e:
-            e.registered = True
-
-        notified = self.notify.call_args.args[0]
-        e.remove_call(s.unique_id_1)
-        assert_that(notified.current_call_count, equal_to(2))

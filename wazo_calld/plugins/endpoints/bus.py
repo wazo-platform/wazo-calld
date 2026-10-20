@@ -106,32 +106,14 @@ class EventHandler:
             except ValueError:
                 return
 
-        with self._confd_cache.lock:
-            if not self._confd_cache.trunks_ready:
-                # replayed by replay_registry once trunks are loaded
-                self._confd_cache.held_registry[(techno, username)] = event
-                return
-
         trunk = self._confd_cache.get_trunk_by_username(techno, username)
         if not trunk:
-            # Unknown username, or the endpoint was dissociated from its trunk
+            # dissociated from its trunk, or trunks not loaded yet
+            logger.debug('ignoring registry of unknown username %s', username)
             return
 
         with self._endpoint_status_cache.update(techno, trunk['name']) as endpoint:
             endpoint.registered = event['Status'] == 'Registered'
-
-    def replay_registry(self, kind):
-        if kind != 'trunks':
-            return
-        with self._confd_cache.lock:
-            deletions = list(self._confd_cache.held_trunk_deletions.values())
-            self._confd_cache.held_trunk_deletions.clear()
-            events = list(self._confd_cache.held_registry.values())
-            self._confd_cache.held_registry.clear()
-        for deletion in deletions:
-            self.on_trunk_endpoint_deleted(deletion)
-        for event in events:
-            self.on_registry(event)
 
     def _extract_sip_option(self, section, option):
         for key, value in section:
@@ -227,13 +209,7 @@ class EventHandler:
         self._confd_cache.delete_line(event['id'])
 
     def on_trunk_endpoint_deleted(self, event):
-        with self._confd_cache.lock:
-            trunk = self._confd_cache.get_trunk_by_id(event['id'])
-            if not trunk and not self._confd_cache.trunks_ready:
-                # its page has not come yet: the name of its endpoint is not
-                # known; replayed by replay_registry once trunks are loaded
-                self._confd_cache.held_trunk_deletions[event['id']] = event
-                return
+        trunk = self._confd_cache.get_trunk_by_id(event['id'])
         self._confd_cache.delete_trunk(event['id'])
         if trunk:
             self._endpoint_status_cache.pop(

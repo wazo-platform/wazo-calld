@@ -1,7 +1,6 @@
 # Copyright 2019-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-import threading
 from contextlib import contextmanager
 from unittest import TestCase
 from unittest.mock import Mock
@@ -31,8 +30,7 @@ class TestBusEvent(TestCase):
                 yield endpoint
 
         self.endpoint_status_cache = StatusCacheMock(StatusCache)
-        self.confd_cache = Mock(ConfdCache, trunks_ready=True)
-        self.confd_cache.lock = threading.RLock()
+        self.confd_cache = Mock(ConfdCache)
         self.handler = EventHandler(self.endpoint_status_cache, self.confd_cache)
 
     def test_on_trunk_registering(self):

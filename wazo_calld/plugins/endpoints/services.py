@@ -3,11 +3,11 @@
 
 import copy
 import logging
-import random
 import threading
 import time
 from contextlib import contextmanager
-from datetime import datetime, timezone
+
+import tenacity
 
 from wazo_calld.plugin_helpers.exceptions import CalldUninitializedError
 
@@ -121,38 +121,30 @@ class NotifyingStatusCache(StatusCache):
     def __init__(self, notify_fn, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._notify_fn = notify_fn
-        # the bus thread and the endpoint cache builder (replaying held
-        # registrations) both update endpoints
-        self._lock = threading.Lock()
 
     @contextmanager
     def update(self, techno, name):
-        with self._lock:
-            endpoint = self.get(techno, name)
-            before = copy.deepcopy(endpoint)
-            try:
-                yield endpoint
-            except Exception:
-                if endpoint:
-                    raise
+        endpoint = self.get(techno, name)
+        before = copy.deepcopy(endpoint)
+        try:
+            yield endpoint
+        except Exception:
+            if not endpoint:
                 logger.info(
                     'updating an endpoint that is not tracked %s %s', techno, name
                 )
-                return
-            if endpoint == before:
-                return
-            snapshot = copy.deepcopy(endpoint)
-        # notified outside the lock, with a copy the other thread cannot change
-        self._notify_fn(snapshot)
+            else:
+                raise
+        else:
+            if endpoint != before:
+                self._notify_fn(endpoint)
 
 
-# Paging of the background build (factory spec 073). Constants until a stack needs tuning.
+# Constants until a stack needs tuning
 PAGE_LIMIT = 100
 PAGE_STEP = 90  # a 10-item overlap: up to 10 deletions between two pages lose nothing
-PAGE_PAUSE = 0.2  # seconds between two requests, so the build never monopolises confd
-RETRY_FIRST = 1.0
-RETRY_CAP = 60.0
-RETRY_JITTER = 0.2
+PAGE_PAUSE = 0.2  # seconds after each request, so a load never monopolises confd
+RETRY_MAX = 60  # seconds, the widest wait between two attempts of one request
 PROGRESS_EVERY = 10  # pages between two progress lines
 
 
@@ -166,24 +158,75 @@ def _log(level, **fields):
     )
 
 
-def _iso(timestamp):
-    if timestamp is None:
-        return None
-    return datetime.fromtimestamp(timestamp, timezone.utc).isoformat()
+def _log_retry(offset):
+    def before_sleep(retry_state):
+        exc = retry_state.outcome.exception()
+        response = getattr(exc, 'response', None)
+        _log(
+            logging.WARNING,
+            event='retry',
+            offset=offset,
+            error=type(exc).__name__,
+            status=getattr(response, 'status_code', None),
+            attempt=retry_state.attempt_number,
+            retry_in=f'{retry_state.next_action.sleep:.1f}',
+        )
+
+    return before_sleep
 
 
-def _error_label(exc):
-    status = getattr(getattr(exc, 'response', None), 'status_code', None)
-    return type(exc).__name__, status
+def _get_page(list_fn, offset, sleep):
+    def get():
+        page = list_fn(limit=PAGE_LIMIT, offset=offset)
+        items, total = page['items'], page.get('total')
+        if not isinstance(items, list) or not isinstance(total, (int, type(None))):
+            raise TypeError('unexpected page shape')
+        return items, total
+
+    # every failure is retried, the same request, forever: a background load
+    # has nothing better to do than wait for confd
+    retrying = tenacity.Retrying(
+        wait=tenacity.wait_random_exponential(multiplier=1, max=RETRY_MAX),
+        sleep=sleep,
+        before_sleep=_log_retry(offset),
+    )
+    return retrying(get)
+
+
+def pages(list_fn, sleep=time.sleep, on_page=None):
+    """Yield every item of a confd collection, one small page at a time.
+
+    `list_fn(limit=, offset=)` returns a confd page. Pages overlap so that a
+    deletion between two requests skips no item; an item seen in the overlap is
+    yielded once.
+    """
+    offset = 0
+    seen = set()
+    while True:
+        items, total = _get_page(list_fn, offset, sleep)
+        sleep(PAGE_PAUSE)
+        for item in items:
+            item_id = item.get('id') if isinstance(item, dict) else None
+            if item_id is not None:
+                if item_id in seen:
+                    continue
+                seen.add(item_id)
+            yield item
+        if on_page:
+            on_page(total)
+        offset += PAGE_STEP
+        # A short page (empty included) is the last one, confd honouring
+        # `limit`; `total` ends the load if it does not.
+        if len(items) < PAGE_LIMIT or (total is not None and offset >= total):
+            return
 
 
 class ConfdCache:
-    """Line and trunk indexes, loaded once in the background by small paced pages.
+    """Line and trunk indexes, loaded once in the background.
 
     Lookups read the indexes only and never call confd: they run on the bus
-    thread, which processes every event in turn. Until an index is ready, the
-    status notifications and registrations it would resolve are held (latest
-    per endpoint) and replayed by the ready callbacks.
+    thread, which processes every event in turn. An index that is not loaded
+    yet resolves nothing.
     """
 
     _asterisk_to_confd_techno_map = {
@@ -192,220 +235,92 @@ class ConfdCache:
         'SCCP': 'sccp',
     }
 
-    def __init__(
-        self,
-        confd_client,
-        clock=time.time,
-        monotonic=time.monotonic,
-        sleep=time.sleep,
-        jitter=random.uniform,
-    ):
+    def __init__(self, confd_client, sleep=time.sleep, monotonic=time.monotonic):
         self._confd = confd_client
-        self._clock = clock  # timestamps shown in /status
-        self._monotonic = monotonic  # durations
         self._sleep = sleep
-        self._jitter = jitter
-        # one short lock around index mutations, iterations and the holds; never
-        # held across a confd request or a publish
-        self.lock = threading.RLock()
+        self._monotonic = monotonic
+        # one short lock around index mutations and iterations; never held
+        # across a confd request or a publish
+        self._lock = threading.RLock()
         self._trunks = {}
         self._lines = {}
         self._ready = {'trunks': False, 'lines': False}
-        # ids touched by a bus event and ids seen in a page, during the build
-        # of their kind only (emptied when it is ready)
+        # ids changed by a bus event while their kind loads: a later page is
+        # older than the event and must not overwrite or resurrect them
         self._touched: dict[str, set[int]] = {'trunks': set(), 'lines': set()}
-        self._seen: dict[str, set[int]] = {'trunks': set(), 'lines': set()}
         self._loaded = {'trunks': 0, 'lines': 0}
-        self._total = {'trunks': None, 'lines': None}
-        self._ready_callbacks = []
-        self._thread = None
-        self._state = 'waiting_token'
         self._pages = 0
         self._skipped = 0
-        self._retries = 0
-        self._failures = 0
-        self._last_error = None
-        self._last_error_at = None
-        self._started_at = None
-        self._ready_at = None
-        self._build_seconds = None
-        self.held_endpoints = {}
-        self.held_registry = {}
-        self.held_trunk_deletions = {}
-
-    @property
-    def trunks_ready(self):
-        return self._ready['trunks']
-
-    @property
-    def lines_ready(self):
-        return self._ready['lines']
+        self._thread = None
 
     @property
     def ready(self):
         return self._ready['trunks'] and self._ready['lines']
 
-    def on_ready(self, callback):
-        """`callback(kind)` runs on the builder thread when 'trunks', then 'lines', is ready."""
-        self._ready_callbacks.append(callback)
-
     def start(self, token=None):
-        with self.lock:
+        with self._lock:
             if self._thread:
                 return
             self._thread = threading.Thread(
                 target=self.build, name='endpoint_cache', daemon=True
             )
-            self._thread.start()
+        self._thread.start()
 
     def build(self):
-        self._started_at = self._clock()
         started = self._monotonic()
         self._load('trunks', self._confd.trunks, self._merge_trunk)
         self._load('lines', self._confd.lines, self._merge_line)
-        with self.lock:
-            self._state = 'ready'
-            self._ready_at = self._clock()
-            self._build_seconds = round(self._monotonic() - started, 1)
         _log(
             logging.INFO,
             state='ready',
             lines=self._loaded['lines'],
             trunks=self._loaded['trunks'],
-            seconds=self._build_seconds,
+            seconds=round(self._monotonic() - started, 1),
             pages=self._pages,
-            retries=self._retries,
         )
 
     def _load(self, kind, resource, merge):
-        with self.lock:
-            self._state = f'loading_{kind}'
-        offset = 0
-        while True:
-            items, total = self._fetch(kind, resource, offset)
-            with self.lock:
-                self._total[kind] = total
-                self._pages += 1
-                seen = self._seen[kind]
-                for item in items:
-                    try:
-                        item_id = item['id']
-                        if item_id in seen:
-                            continue  # the page overlap
-                        seen.add(item_id)
-                        merge(item)
-                        self._loaded[kind] += 1
-                    except Exception:
-                        self._skipped += 1
-                        _log(
-                            logging.WARNING,
-                            state=self._state,
-                            event='skipped_item',
-                            skipped_items=self._skipped,
-                        )
+        def list_fn(**paging):
+            return resource.list(recurse=True, **paging)
+
+        def on_page(total):
+            self._pages += 1
             if self._pages % PROGRESS_EVERY == 0:
                 _log(
                     logging.INFO,
-                    state=self._state,
+                    state=f'loading_{kind}',
                     pages=self._pages,
-                    **{
-                        f'{kind}_loaded': self._loaded[kind],
-                        f'{kind}_total': total,
-                    },
+                    loaded=self._loaded[kind],
+                    total=total,
                 )
-            offset += PAGE_STEP
-            # A short page (empty included) is the last one, confd honouring
-            # `limit`; `total`, when given, ends the load if it does not. The
-            # integration tests' confd mock omits `total` on lines.
-            if len(items) < PAGE_LIMIT or (total is not None and offset >= total):
-                break
 
-        with self.lock:
+        for item in pages(list_fn, self._sleep, on_page):
+            with self._lock:
+                try:
+                    merge(item)
+                except Exception:
+                    self._skipped += 1
+                    _log(logging.WARNING, event='skipped_item', skipped=self._skipped)
+                    continue
+                self._loaded[kind] += 1
+
+        with self._lock:
             self._ready[kind] = True
-            self._seen[kind] = set()
             self._touched[kind] = set()
-        for callback in self._ready_callbacks:
-            try:
-                callback(kind)
-            except Exception:
-                logger.exception('endpoint_cache event=ready_callback_failed')
-
-    def _fetch(self, kind, resource, offset):
-        if self._pages:
-            self._sleep(PAGE_PAUSE)
-        while True:
-            try:
-                page = resource.list(recurse=True, limit=PAGE_LIMIT, offset=offset)
-                items, total = page['items'], page.get('total')
-                if not isinstance(items, list) or not isinstance(
-                    total, (int, type(None))
-                ):
-                    raise TypeError('unexpected page shape')
-            except Exception as e:
-                self._sleep(self._failed(offset, e))
-                continue
-            with self.lock:
-                self._failures = 0
-            return items, total
-
-    def _failed(self, offset, exc):
-        name, status = _error_label(exc)
-        with self.lock:
-            self._failures += 1
-            self._retries += 1
-            self._last_error = name if status is None else f'{name} {status}'
-            self._last_error_at = self._clock()
-            failures = self._failures
-        # the exponent is bounded so a confd down for days never overflows
-        backoff = RETRY_FIRST * 2 ** min(failures - 1, 10)
-        jitter = self._jitter(1 - RETRY_JITTER, 1 + RETRY_JITTER)
-        delay = min(RETRY_CAP, backoff * jitter)
-        _log(
-            logging.WARNING,
-            state=self._state,
-            event='retry',
-            offset=offset,
-            error=name,
-            status=status,
-            consecutive_failures=failures,
-            retry_in=f'{delay:.1f}',
-        )
-        return delay
-
-    def status(self):
-        with self.lock:
-            return {
-                'state': self._state,
-                'trunks_loaded': self._loaded['trunks'],
-                'trunks_total': self._total['trunks'],
-                'lines_loaded': self._loaded['lines'],
-                'lines_total': self._total['lines'],
-                'pages': self._pages,
-                'skipped_items': self._skipped,
-                'retries': self._retries,
-                'consecutive_failures': self._failures,
-                'last_error': self._last_error,
-                'last_error_at': _iso(self._last_error_at),
-                'held_notifications': len(self.held_endpoints)
-                + len(self.held_registry)
-                + len(self.held_trunk_deletions),
-                'started_at': _iso(self._started_at),
-                'ready_at': _iso(self._ready_at),
-                'build_seconds': self._build_seconds,
-            }
 
     def _merge_line(self, line):
-        techno, name, line_id = line['protocol'], line['name'], line['id']
+        line_id = line['id']
+        techno = line['protocol']
         value = {
             'id': line_id,
             'technology': techno,
-            'name': name,
+            'name': line['name'],
             'tenant_uuid': line['tenant_uuid'],
         }
         if line_id in self._touched['lines']:
-            return  # a bus event already said what this line is
+            return
         self._lines.setdefault(techno, {'name': {}, 'username': {}})
-        self._lines[techno]['name'][name] = value
+        self._lines[techno]['name'][value['name']] = value
 
     def _merge_trunk(self, trunk):
         if trunk.get('endpoint_sip'):
@@ -426,25 +341,17 @@ class ConfdCache:
             name = trunk['endpoint_custom']['interface']
             username = name
         else:
-            return  # a trunk with no endpoint has no status to track
+            logger.info(
+                'ignoring trunk %s which is not associated to an endpoint',
+                trunk['id'],
+            )
+            return
 
         trunk_id = trunk['id']
-        value = {
-            'id': trunk_id,
-            'technology': techno,
-            'name': name,
-            'tenant_uuid': trunk['tenant_uuid'],
-        }
+        tenant_uuid = trunk['tenant_uuid']
         if trunk_id in self._touched['trunks']:
             return
-        self._index_trunk(techno, trunk_id, name, username, value)
-
-    def _index_trunk(self, techno, trunk_id, name, username, value):
-        self._trunks.setdefault(techno, {'id': {}, 'name': {}, 'username': {}})
-        self._trunks[techno]['name'][name] = value
-        self._trunks[techno]['id'][trunk_id] = value
-        if username:
-            self._trunks[techno]['username'][username] = value
+        self._add_trunk(techno, trunk_id, name, username, tenant_uuid)
 
     def _touch(self, kind, item_id):
         if not self._ready[kind]:
@@ -457,7 +364,7 @@ class ConfdCache:
             'name': name,
             'tenant_uuid': tenant_uuid,
         }
-        with self.lock:
+        with self._lock:
             self._touch('lines', line_id)
             self._lines.setdefault(techno, {'name': {}, 'username': {}})
             self._lines[techno]['name'][name] = value
@@ -465,23 +372,30 @@ class ConfdCache:
                 self._lines[techno]['username'][username] = value
 
     def add_trunk(self, techno, trunk_id, name, username, tenant_uuid):
+        with self._lock:
+            self._touch('trunks', trunk_id)
+            self._add_trunk(techno, trunk_id, name, username, tenant_uuid)
+
+    def _add_trunk(self, techno, trunk_id, name, username, tenant_uuid):
         value = {
             'id': trunk_id,
             'technology': techno,
             'name': name,
             'tenant_uuid': tenant_uuid,
         }
-        with self.lock:
-            self._touch('trunks', trunk_id)
-            self._index_trunk(techno, trunk_id, name, username, value)
+        self._trunks.setdefault(techno, {'id': {}, 'name': {}, 'username': {}})
+        self._trunks[techno]['name'][name] = value
+        self._trunks[techno]['id'][trunk_id] = value
+        if username:
+            self._trunks[techno]['username'][username] = value
 
     def delete_line(self, line_id):
-        with self.lock:
+        with self._lock:
             self._touch('lines', line_id)
             self._delete(self._lines, line_id)
 
     def delete_trunk(self, trunk_id):
-        with self.lock:
+        with self._lock:
             self._touch('trunks', trunk_id)
             self._delete(self._trunks, trunk_id)
 
@@ -504,7 +418,7 @@ class ConfdCache:
         return self._get_endpoint_by_index(techno, name, self._trunks, index='name')
 
     def get_trunk_by_id(self, trunk_id):
-        with self.lock:
+        with self._lock:
             for indexes in self._trunks.values():
                 if trunk := indexes['id'].get(trunk_id):
                     return trunk
@@ -522,7 +436,7 @@ class ConfdCache:
         return self._list('trunks', self._trunks, tenant_uuid)
 
     def _list(self, kind, endpoints, tenant_uuid):
-        with self.lock:
+        with self._lock:
             if not self._ready[kind]:
                 raise CalldUninitializedError()
             return [
@@ -533,18 +447,18 @@ class ConfdCache:
             ]
 
     def update_line(self, techno, line_id, name, username, tenant_uuid):
-        with self.lock:
+        with self._lock:
             self.delete_line(line_id)
             self.add_line(techno, line_id, name, username, tenant_uuid)
 
     def update_trunk(self, techno, trunk_id, name, username, tenant_uuid):
-        with self.lock:
+        with self._lock:
             self.delete_trunk(trunk_id)
             self.add_trunk(techno, trunk_id, name, username, tenant_uuid)
 
     def _get_endpoint_by_index(self, techno, value, endpoints, index):
         confd_techno = self._asterisk_to_confd_techno_map.get(techno, techno)
-        with self.lock:
+        with self._lock:
             return endpoints.get(confd_techno, {}).get(index, {}).get(value)
 
 

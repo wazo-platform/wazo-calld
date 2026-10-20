@@ -2,19 +2,10 @@
 
 ## 26.10
 
-* The line and trunk cache of the endpoints plugin is now loaded once, in the
-  background, from the first wazo-auth token, by pages of 100 with a short pause
-  between requests; a failed request is retried with a backoff capped at 60
-  seconds. Telephony events no longer request lines or trunks from wazo-confd.
-* `GET /lines` and `GET /trunks` answer `503` (`wazo-calld-uninitialized`) until
-  their part of the cache is loaded.
-* `line_status_updated` and `trunk_status_updated` events are delayed until the
-  cache can resolve their endpoint: the latest state of each endpoint is then
-  published, intermediate states are not.
-* `GET /status`: `plugins.endpoints.status` stays `fail` until the cache is
-  loaded, and the new `plugins.endpoints.confd_cache` shows its progress
-  (state, items loaded and total, pages, retries, last error, held events,
-  build duration).
+* `GET /lines` and `GET /trunks` answer `503` (`wazo-calld-uninitialized`) while
+  the line and trunk cache loads after startup.
+* `GET /status`: `plugins.endpoints.status` stays `fail` until the line and
+  trunk cache is loaded.
 
 ## 26.09
 

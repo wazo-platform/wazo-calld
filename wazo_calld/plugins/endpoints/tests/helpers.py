@@ -13,11 +13,7 @@ class EndlessBuild(BaseException):
 class FakeClock:
     def __init__(self):
         self.now = 1_000_000.0
-        self.wall_offset = 0.0  # an NTP step moves the wall clock only
         self.sleeps = []
-
-    def time(self):
-        return self.now + self.wall_offset
 
     def monotonic(self):
         return self.now
@@ -34,7 +30,6 @@ class FakeResource:
         self.kind = kind
         self.items = items
         self._confd = confd
-        self.ignores_paging = False
 
     def list(self, **kwargs):
         self._confd.calls.append((self.kind, kwargs))
@@ -46,8 +41,6 @@ class FakeResource:
         self._confd.clock.now += self._confd.page_cost
         if self._confd.payloads:
             return self._confd.payloads.pop(0)
-        if self.ignores_paging:
-            return {'items': list(self.items), 'total': len(self.items)}
         offset = kwargs['offset']
         limit = kwargs['limit']
         return {
@@ -97,10 +90,4 @@ def line(line_id, name=None, protocol='sip', tenant_uuid='tenant'):
 
 
 def new_cache(confd):
-    return ConfdCache(
-        confd,
-        clock=confd.clock.time,
-        monotonic=confd.clock.monotonic,
-        sleep=confd.clock.sleep,
-        jitter=lambda low, high: 1.0,
-    )
+    return ConfdCache(confd, sleep=confd.clock.sleep, monotonic=confd.clock.monotonic)
