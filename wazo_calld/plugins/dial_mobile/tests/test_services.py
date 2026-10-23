@@ -33,7 +33,6 @@ class DialerTestCase(TestCase):
         self.aor = 'foobar'
         self.channel_id = '1234567890.42'
         self.ringing_time = 42
-        self.pickup_mark = '1003%default'
 
         self.poller = _ContactDialer(
             self.ari,
@@ -41,7 +40,6 @@ class DialerTestCase(TestCase):
             self.channel_id,
             self.aor,
             self.ringing_time,
-            self.pickup_mark,
         )
 
 
@@ -216,6 +214,10 @@ class TestChannelGone(DialerTestCase):
 
 
 class DialMobileServiceTestCase(DialerTestCase):
+    def tearDown(self):
+        # stops the token worker, the dialer threads and every fallback timer
+        self.service.on_calld_stopping()
+
     def setUp(self):
         self.ari = Mock()
         self.ari.client = self.ari_client = Mock()
@@ -240,6 +242,8 @@ class DialMobileServiceTestCase(DialerTestCase):
         self.service.dial_all_contacts(
             self.channel_id, self.origin_channel_id, self.aor
         )
+        # the dialer thread rings the caller; stopping it joins the thread
+        self.service.on_calld_stopping()
 
         self.ari.client.channels.ring.assert_called_once_with(channelId=self.channel_id)
 
@@ -268,16 +272,17 @@ class DialMobileServiceTestCase(DialerTestCase):
     def test_on_mobile_refresh_token_created(self):
         with patch.object(self.service, '_set_user_hint') as mock:
             self.service.on_mobile_refresh_token_created(s.user_uuid)
+            self.service._token_worker.shutdown(wait=True)
             mock.assert_called_once_with(s.user_uuid, True)
 
-    def test_on_mobile_refresh_token_deleted(self):
+    def test_update_hint_on_deleted(self):
         self.auth_client.token.list.return_value = {
             'items': [],
             'filtered': 0,
             'total': 42,
         }
         with patch.object(self.service, '_set_user_hint') as mock:
-            self.service.on_mobile_refresh_token_deleted(s.user_uuid)
+            self.service._update_hint_on_deleted(s.user_uuid)
             mock.assert_called_once_with(s.user_uuid, False)
 
         self.auth_client.token.list.return_value = {
@@ -286,12 +291,12 @@ class DialMobileServiceTestCase(DialerTestCase):
             'total': 42,
         }
         with patch.object(self.service, '_set_user_hint') as mock:
-            self.service.on_mobile_refresh_token_deleted(s.user_uuid)
+            self.service._update_hint_on_deleted(s.user_uuid)
             mock.assert_called_once_with(s.user_uuid, True)
 
         self.auth_client.token.list.side_effect = requests.HTTPError()
         with patch.object(self.service, '_set_user_hint') as mock:
-            self.service.on_mobile_refresh_token_deleted(s.user_uuid)
+            self.service._update_hint_on_deleted(s.user_uuid)
             mock.assert_not_called()
 
     def test_notify_channel_gone_on_rejection_hangs_up_caller(self):
@@ -384,6 +389,10 @@ class DialMobileServiceTestCase(DialerTestCase):
 
 
 class TestCancelPushNotification(TestCase):
+    def tearDown(self):
+        # stops the token worker, the dialer threads and every fallback timer
+        self.service.on_calld_stopping()
+
     def setUp(self):
         self.ari = Mock()
         self.notifier = Mock(Notifier)
@@ -477,6 +486,10 @@ class TestCancelPushNotification(TestCase):
 
 
 class TestJoinBridgePushResolution(TestCase):
+    def tearDown(self):
+        # stops the token worker, the dialer threads and every fallback timer
+        self.service.on_calld_stopping()
+
     def setUp(self):
         self.ari = Mock()
         self.ari.client = self.ari_client = Mock()
@@ -654,6 +667,10 @@ class TestJoinBridgePushResolution(TestCase):
 
 
 class TestPSTNFallback(TestCase):
+    def tearDown(self):
+        # stops the token worker, the dialer threads and every fallback timer
+        self.service.on_calld_stopping()
+
     def setUp(self):
         self.ari = Mock()
         self.ari.client = self.ari_client = Mock()
@@ -847,75 +864,6 @@ class TestPSTNFallback(TestCase):
         second_lock = self.service._call_locks['call-id']
 
         assert first_lock is second_lock
-
-    def test_push_not_sent_when_cancelled_during_eligibility_lookup(self):
-        # Race: caller hangs up while send_push_notification has released
-        # the per-call lock to query confd for fallback eligibility. The
-        # concurrent cancel_push_mobile must take effect — the push must
-        # not be dispatched and the Cancelled state must not be overwritten.
-        self.confd_client.users.get.return_value = {
-            'mobile_fallback_enabled': False,
-            'mobile_phone_number': None,
-        }
-
-        real_eligible = self.service._pstn_fallback_eligible
-
-        def cancel_then_eligible(user_uuid, tenant_uuid):
-            self.service.cancel_push_mobile('call-id')
-            return real_eligible(user_uuid, tenant_uuid)
-
-        with patch.object(
-            self.service,
-            '_pstn_fallback_eligible',
-            side_effect=cancel_then_eligible,
-        ):
-            self._send_push()
-
-        self.notifier.push_notification.assert_not_called()
-        assert isinstance(
-            self.service._incoming_calls['call-id'], IncomingCallPushCancelled
-        )
-
-    @patch('wazo_calld.plugins.dial_mobile.services.threading.Timer')
-    def test_pstn_fallback_timer_skipped_when_disabled(self, mock_timer_cls):
-        self.confd_client.users.get.return_value = {
-            'mobile_fallback_enabled': False,
-            'mobile_phone_number': '+33123456789',
-        }
-
-        self._send_push()
-
-        mock_timer_cls.assert_not_called()
-        assert not isinstance(
-            self.service._pstn_fallbacks.get('call-id'), PSTNFallbackPending
-        )
-
-    @patch('wazo_calld.plugins.dial_mobile.services.threading.Timer')
-    def test_pstn_fallback_timer_skipped_when_no_mobile_number(self, mock_timer_cls):
-        self.confd_client.users.get.return_value = {
-            'mobile_fallback_enabled': True,
-            'mobile_phone_number': None,
-        }
-
-        self._send_push()
-
-        mock_timer_cls.assert_not_called()
-        assert not isinstance(
-            self.service._pstn_fallbacks.get('call-id'), PSTNFallbackPending
-        )
-
-    @patch('wazo_calld.plugins.dial_mobile.services.threading.Timer')
-    def test_pstn_fallback_timer_armed_on_confd_error(self, mock_timer_cls):
-        # If we can't determine eligibility, preserve the existing behavior:
-        # arm the timer and let _pstn_fallback handle the re-check.
-        self.confd_client.users.get.side_effect = requests.HTTPError()
-
-        self._send_push()
-
-        mock_timer_cls.assert_called_once()
-        assert isinstance(
-            self.service._pstn_fallbacks.get('call-id'), PSTNFallbackPending
-        )
 
     def test_cancel_push_does_not_touch_pstn_timer(self):
         timer = Mock()

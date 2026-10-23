@@ -74,4 +74,4 @@ class EventHandler:
             return
 
         # Internal state is keyed by the call's Linkedid.
-        self._service.cancel_push_mobile(event['Linkedid'])
+        self._service.cancel_mobile_call(event['Linkedid'])
