@@ -29,6 +29,9 @@ rest_api:
     # Allow JSON preflight requests
     allow_headers: [Content-Type, X-Auth-Token, Wazo-Tenant]
 
+    # Let browsers cache a preflight answer, up to their own cap
+    max_age: 7200
+
   # Minimum of concurrent threads processing requests. This many threads
   # (and database connections) are kept ready at all times.
   min_threads: 10
