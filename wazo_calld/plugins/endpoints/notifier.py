@@ -1,8 +1,12 @@
-# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
+
+import logging
 
 from wazo_bus.resources.line.event import LineStatusUpdatedEvent
 from wazo_bus.resources.trunk.event import TrunkStatusUpdatedEvent
+
+logger = logging.getLogger(__name__)
 
 
 class EndpointStatusNotifier:
@@ -44,3 +48,10 @@ class EndpointStatusNotifier:
                 line['tenant_uuid'],
             )
             return self._publisher.publish(event)
+
+        if not self._confd_cache.ready:
+            logger.debug(
+                'dropping status of %s/%s: endpoint cache not loaded yet',
+                endpoint.techno,
+                endpoint.name,
+            )
