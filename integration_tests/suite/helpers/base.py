@@ -15,7 +15,7 @@ from wazo_test_helpers.asset_launching_test_case import (
     NoSuchPort,
     NoSuchService,
 )
-from wazo_test_helpers.auth import AuthClient, MockCredentials, MockUserToken
+from wazo_test_helpers.auth import AuthClient, MockUserToken
 
 from .amid import MockAmidClient
 from .ari_ import ARIClient
@@ -24,12 +24,9 @@ from .call_logd import CallLogdClient
 from .calld import CalldClient, LegacyCalldClient
 from .confd import ConfdClient
 from .constants import (
-    AMID_SERVICE_TOKEN,
-    AMID_SERVICE_USER_UUID,
     ASSET_ROOT,
     CALLD_SERVICE_TENANT,
     CALLD_SERVICE_TOKEN,
-    CALLD_SERVICE_USER_UUID,
     VALID_TENANT,
     VALID_TOKEN,
 )
@@ -68,7 +65,7 @@ class IntegrationTest(AssetLaunchingTestCase):
         try:
             cls.reset_clients()
             cls.reset_bus_client()
-            cls.setup_tokens()
+            cls.setup_tenants()
             cls.wait_strategy.wait(cls)
         except Exception:
             with tempfile.NamedTemporaryFile(delete=False) as logfile:
@@ -78,32 +75,10 @@ class IntegrationTest(AssetLaunchingTestCase):
             raise
 
     @classmethod
-    def setup_tokens(cls):
+    def setup_tenants(cls):
         if isinstance(cls.auth, WrongClient):
             return
 
-        calld_token = MockUserToken(
-            str(CALLD_SERVICE_TOKEN),
-            str(CALLD_SERVICE_USER_UUID),
-            metadata={
-                'uuid': str(CALLD_SERVICE_TOKEN),
-                'tenant_uuid': str(CALLD_SERVICE_TENANT),
-            },
-        )
-        amid_token = MockUserToken(
-            str(AMID_SERVICE_TOKEN),
-            str(AMID_SERVICE_USER_UUID),
-            metadata={
-                'uuid': str(AMID_SERVICE_TOKEN),
-                'tenant_uuid': str(CALLD_SERVICE_TENANT),
-            },
-        )
-        cls.auth.set_token(calld_token)
-        cls.auth.set_token(amid_token)
-        calld_credential = MockCredentials('wazo-calld-service', 'opensesame')
-        amid_credential = MockCredentials('wazo-amid-service', 'opensesame')
-        cls.auth.set_valid_credentials(calld_credential, str(CALLD_SERVICE_TOKEN))
-        cls.auth.set_valid_credentials(amid_credential, str(AMID_SERVICE_TOKEN))
         cls.auth.set_tenants(
             {
                 'uuid': str(CALLD_SERVICE_TENANT),

@@ -1,0 +1,19 @@
+tokens:
+  - token: wazo-calld-service-token
+    auth_id: 0dd433d9-545c-493b-9875-0fe7758a81fb
+    metadata:
+      uuid: wazo-calld-service-token
+      tenant_uuid: 61b625fa-82d0-44df-8134-f07792e67401
+  - token: wazo-amid-service-token
+    auth_id: 0dd433d9-545c-493b-9875-000000000000
+    metadata:
+      uuid: wazo-amid-service-token
+      tenant_uuid: 61b625fa-82d0-44df-8134-f07792e67401
+
+valid_credentials:
+  - username: wazo-calld-service
+    password: opensesame
+    token: wazo-calld-service-token
+  - username: wazo-amid-service
+    password: opensesame
+    token: wazo-amid-service-token
