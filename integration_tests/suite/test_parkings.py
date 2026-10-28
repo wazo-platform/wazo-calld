@@ -188,7 +188,7 @@ class TestParkings(BaseParkingTest):
     @Fixture.parking_lot(**PARKINGLOT_1)
     def test_get_wrong_tenant_uuid(self, parking: ParkingLotSchema):
         calld = self.make_user_calld(
-            user_uuid=random_uuid(), tenant_uuid='eeeeeeee-eeee-eeee-eeee-eeeeeeeeeee1'
+            user_uuid=random_uuid(), tenant_uuid='eeeeeeee-eeee-4eee-aeee-eeeeeeeeeee1'
         )
 
         assert_that(

@@ -337,7 +337,7 @@ class TestStasisTriggers(BaseApplicationTestCase):
         until.assert_(event_received, tries=5)
 
     def test_confd_application_event_then_ari_client_is_reset(self):
-        app_uuid = '00000000-0000-0000-0000-000000000001'
+        app_uuid = '00000000-0000-4000-a000-000000000001'
         event_accumulator = self.bus.accumulator(
             headers={'name': 'application_destination_node_created'}
         )
@@ -376,7 +376,7 @@ class TestStasisTriggers(BaseApplicationTestCase):
         until.assert_(event_received, tries=5)
 
     def test_confd_application_created_event_then_stasis_reconnect(self):
-        app_uuid = '00000000-0000-0000-0000-000000000001'
+        app_uuid = '00000000-0000-4000-a000-000000000001'
         event_accumulator = self.bus.accumulator(
             headers={
                 'name': 'application_destination_node_created',
@@ -488,7 +488,7 @@ class TestApplication(BaseApplicationTestCase):
         )
 
     def test_confd_application_created_event_update_cache(self):
-        app_uuid = '00000000-0000-0000-0000-000000000001'
+        app_uuid = '00000000-0000-4000-a000-000000000001'
         self.bus.send_application_created_event(app_uuid)
 
         def application_created():
@@ -1204,7 +1204,7 @@ class TestApplication(BaseApplicationTestCase):
 
     def test_that_empty_body_for_put_applications_snoop_returns_400(self):
         app_uuid = '00000000-0000-0000-0000-000000000000'
-        snoop_uuid = '00000000-0000-0000-0000-000000000001'
+        snoop_uuid = '00000000-0000-4000-a000-000000000001'
         self.assert_empty_body_returns_400(
             [
                 ('put', f'applications/{app_uuid}/snoops/{snoop_uuid}'),
@@ -2037,7 +2037,7 @@ class TestApplicationMoh(BaseApplicationTestCase):
         )
 
     def test_confd_moh_created_event_update_cache(self):
-        moh_uuid = '00000000-0000-0000-0000-000000000001'
+        moh_uuid = '00000000-0000-4000-a000-000000000001'
         self.confd.set_moh()
         app_uuid = self.no_node_app_uuid
         channel = self.call_app(self.no_node_app_uuid)

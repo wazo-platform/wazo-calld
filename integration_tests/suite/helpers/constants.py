@@ -1,4 +1,4 @@
-# Copyright 2015-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import os
@@ -9,8 +9,8 @@ ASSET_ROOT = os.path.join(os.path.dirname(__file__), '..', '..', 'assets')
 
 INVALID_ACL_TOKEN = 'invalid-acl-token'
 VALID_TENANT = 'ffffffff-ffff-ffff-ffff-ffffffffffff'
-VALID_TENANT_MULTITENANT_1 = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeee2'
-VALID_TENANT_MULTITENANT_2 = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeee3'
+VALID_TENANT_MULTITENANT_1 = 'eeeeeeee-eeee-4eee-aeee-eeeeeeeeeee2'
+VALID_TENANT_MULTITENANT_2 = 'eeeeeeee-eeee-4eee-aeee-eeeeeeeeeee3'
 VALID_TOKEN = 'valid-token'
 VALID_TOKEN_MULTITENANT = 'valid-token-multitenant'
 
