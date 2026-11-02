@@ -1,4 +1,4 @@
-# Copyright 2020-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2020-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import ari
@@ -68,6 +68,12 @@ class RealAsteriskIntegrationTest(IntegrationTest):
                 channel.hangup()
             except (ARINotInStasis, ARINotFound):
                 pass
+
+        until.false(
+            self.ari.channels.list,
+            timeout=10,
+            message='Channels from the previous test are still up',
+        )
 
         for bridge in self.ari.bridges.list():
             try:
