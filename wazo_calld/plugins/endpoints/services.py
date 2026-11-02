@@ -1,4 +1,4 @@
-# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import copy
@@ -9,6 +9,20 @@ from contextlib import contextmanager
 from wazo_calld.plugin_helpers.exceptions import CalldUninitializedError
 
 logger = logging.getLogger(__name__)
+
+CONFD_PAGE_SIZE = 500
+
+
+def _list_all_paginated(list_resource):
+    items = []
+    offset = 0
+    while True:
+        response = list_resource(recurse=True, limit=CONFD_PAGE_SIZE, offset=offset)
+        page = response['items']
+        items.extend(page)
+        if len(page) < CONFD_PAGE_SIZE:
+            return items
+        offset += CONFD_PAGE_SIZE
 
 
 class Endpoint:
@@ -266,10 +280,10 @@ class ConfdCache:
             if self._initialized:
                 return
 
-            trunks = self._confd.trunks.list(recurse=True)['items']
+            trunks = _list_all_paginated(self._confd.trunks.list)
             self._update_trunk_cache(trunks)
 
-            lines = self._confd.lines.list(recurse=True)['items']
+            lines = _list_all_paginated(self._confd.lines.list)
             self._update_line_cache(lines)
 
             self._initialized = True

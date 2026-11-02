@@ -1,12 +1,13 @@
-# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from unittest import TestCase
-from unittest.mock import Mock
+from unittest.mock import Mock, call, patch
 from unittest.mock import sentinel as s
 
 from hamcrest import (
     assert_that,
+    contains_exactly,
     contains_inanyorder,
     equal_to,
     has_entries,
@@ -446,6 +447,69 @@ class TestCachingConfdClient(TestCase):
                 ),
             ),
         )
+
+    @patch('wazo_calld.plugins.endpoints.services.CONFD_PAGE_SIZE', 2)
+    def test_initialize_trunks_paginated(self):
+        self.confd.trunks.list.side_effect = [
+            {'items': [self._trunk(1), self._trunk(2)]},
+            {'items': [self._trunk(3)]},
+        ]
+        self.confd.lines.list.return_value = {'items': [], 'total': 0}
+
+        result = self.client.list_trunks(s.tenant_uuid)
+
+        assert_that(
+            result,
+            contains_inanyorder(
+                has_entries(id=1), has_entries(id=2), has_entries(id=3)
+            ),
+        )
+        assert_that(
+            self.confd.trunks.list.call_args_list,
+            contains_exactly(
+                call(recurse=True, limit=2, offset=0),
+                call(recurse=True, limit=2, offset=2),
+            ),
+        )
+
+    @patch('wazo_calld.plugins.endpoints.services.CONFD_PAGE_SIZE', 2)
+    def test_initialize_lines_paginated(self):
+        self.confd.trunks.list.return_value = {'items': [], 'total': 0}
+        self.confd.lines.list.side_effect = [
+            {'items': [self._line(1), self._line(2)]},
+            {'items': [self._line(3)]},
+        ]
+
+        result = self.client.list_lines(s.tenant_uuid)
+
+        assert_that(
+            result,
+            contains_inanyorder(
+                has_entries(id=1), has_entries(id=2), has_entries(id=3)
+            ),
+        )
+        assert_that(
+            self.confd.lines.list.call_args_list,
+            contains_exactly(
+                call(recurse=True, limit=2, offset=0),
+                call(recurse=True, limit=2, offset=2),
+            ),
+        )
+
+    def _trunk(self, trunk_id):
+        return {
+            'id': trunk_id,
+            'tenant_uuid': s.tenant_uuid,
+            'endpoint_iax': {'name': f'trunk-{trunk_id}'},
+        }
+
+    def _line(self, line_id):
+        return {
+            'id': line_id,
+            'tenant_uuid': s.tenant_uuid,
+            'name': f'line-{line_id}',
+            'protocol': 'sip',
+        }
 
     def _set_cache(self, trunks=None, lines=None):
         if trunks:
