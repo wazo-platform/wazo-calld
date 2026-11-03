@@ -1,8 +1,9 @@
-# Copyright 2020-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2020-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import ari
 from ari.exceptions import ARINotFound, ARINotInStasis
+from hamcrest import assert_that, empty
 from wazo_test_helpers import until
 
 from .amid import AmidClient
@@ -63,11 +64,22 @@ class RealAsteriskIntegrationTest(IntegrationTest):
         super().tearDown()
 
     def reset_ari(self):
-        for channel in self.ari.channels.list():
-            try:
-                channel.hangup()
-            except (ARINotInStasis, ARINotFound):
-                pass
+        def hangup_all():
+            names = []
+            for channel in self.ari.channels.list():
+                names.append(channel.json['name'])
+                try:
+                    channel.hangup()
+                except ARINotFound:
+                    pass
+            assert_that(names, empty())
+
+        until.assert_(
+            hangup_all,
+            timeout=10,
+            interval=0.1,
+            message='Channels from the previous test are still up',
+        )
 
         for bridge in self.ari.bridges.list():
             try:
