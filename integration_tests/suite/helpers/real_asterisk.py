@@ -3,6 +3,7 @@
 
 import ari
 from ari.exceptions import ARINotFound, ARINotInStasis
+from hamcrest import assert_that, empty
 from wazo_test_helpers import until
 
 from .amid import AmidClient
@@ -63,15 +64,20 @@ class RealAsteriskIntegrationTest(IntegrationTest):
         super().tearDown()
 
     def reset_ari(self):
-        for channel in self.ari.channels.list():
-            try:
-                channel.hangup()
-            except (ARINotInStasis, ARINotFound):
-                pass
+        def hangup_all():
+            names = []
+            for channel in self.ari.channels.list():
+                names.append(channel.json['name'])
+                try:
+                    channel.hangup()
+                except ARINotFound:
+                    pass
+            assert_that(names, empty())
 
-        until.false(
-            self.ari.channels.list,
+        until.assert_(
+            hangup_all,
             timeout=10,
+            interval=0.1,
             message='Channels from the previous test are still up',
         )
 
