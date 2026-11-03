@@ -223,8 +223,10 @@ class IntegrationTest(AssetLaunchingTestCase):
     @contextmanager
     def _calld_stopped(cls):
         cls._stop_calld()
-        yield
-        cls._start_calld()
+        try:
+            yield
+        finally:
+            cls._start_calld()
 
     @classmethod
     def _restart_calld(cls):
