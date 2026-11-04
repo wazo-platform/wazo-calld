@@ -303,8 +303,9 @@ class ConfdCache:
             self._lines[techno]['name'][name] = value
 
         logger.info(
-            'line cache updated %s entries',
-            sum(len(names) for names in self._lines.values()),
+            'line cache filled: %s lines fetched from confd, %s cached',
+            len(lines),
+            sum(len(index['name']) for index in self._lines.values()),
         )
 
     def _update_trunk_cache(self, trunks):
@@ -349,8 +350,9 @@ class ConfdCache:
             update(trunk)
 
         logger.info(
-            'trunk cache updated %s entries',
-            sum(len(names) for names in self._trunks.values()),
+            'trunk cache filled: %s trunks fetched from confd, %s cached',
+            len(trunks),
+            sum(len(index['id']) for index in self._trunks.values()),
         )
 
 
