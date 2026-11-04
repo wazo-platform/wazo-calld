@@ -1,10 +1,14 @@
-# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import copy
 import logging
 import threading
+import time
+from collections.abc import Hashable
 from contextlib import contextmanager
+
+import tenacity
 
 from wazo_calld.plugin_helpers.exceptions import CalldUninitializedError
 
@@ -137,19 +141,222 @@ class NotifyingStatusCache(StatusCache):
                 self._notify_fn(endpoint)
 
 
+# Constants until a stack needs tuning
+PAGE_LIMIT = 100
+PAGE_STEP = 90  # a 10-item overlap: up to 10 deletions between two pages lose nothing
+PAGE_PAUSE = 0.2  # seconds after each request, so a load never monopolises confd
+RETRY_MAX = 60  # seconds, the widest wait between two attempts of one request
+PROGRESS_EVERY = 10  # pages between two progress lines
+
+
+def _log(level, **fields):
+    # key=value only: counts, durations, error class and status; never a token,
+    # a URL or a payload
+    logger.log(
+        level,
+        'endpoint_cache %s',
+        ' '.join(f'{key}={value}' for key, value in fields.items()),
+    )
+
+
+def _log_retry(offset):
+    def before_sleep(retry_state):
+        exc = retry_state.outcome.exception()
+        response = getattr(exc, 'response', None)
+        _log(
+            logging.WARNING,
+            event='retry',
+            offset=offset,
+            error=type(exc).__name__,
+            status=getattr(response, 'status_code', None),
+            attempt=retry_state.attempt_number,
+            retry_in=f'{retry_state.next_action.sleep:.1f}',
+        )
+
+    return before_sleep
+
+
+def _get_page(list_fn, offset, sleep):
+    def get():
+        page = list_fn(limit=PAGE_LIMIT, offset=offset)
+        items, total = page['items'], page.get('total')
+        if not isinstance(items, list) or not isinstance(total, (int, type(None))):
+            raise TypeError('unexpected page shape')
+        return items, total
+
+    # every failure is retried, the same request, forever: a background load
+    # has nothing better to do than wait for confd
+    retrying = tenacity.Retrying(
+        wait=tenacity.wait_random_exponential(multiplier=1, max=RETRY_MAX),
+        sleep=sleep,
+        before_sleep=_log_retry(offset),
+    )
+    return retrying(get)
+
+
+def pages(list_fn, on_page, sleep=time.sleep):
+    """Yield every item of a confd collection, one small page at a time.
+
+    `list_fn(limit=, offset=)` returns a confd page; `on_page(total)` runs once
+    each page is consumed. Pages overlap so that a deletion between two
+    requests skips no item; an item seen in the overlap is yielded once.
+    """
+    offset = 0
+    seen = set()
+    while True:
+        items, total = _get_page(list_fn, offset, sleep)
+        sleep(PAGE_PAUSE)
+        for item in items:
+            item_id = item.get('id') if isinstance(item, dict) else None
+            # an unhashable id is yielded as is: the merge skips and counts it
+            if item_id is not None and isinstance(item_id, Hashable):
+                if item_id in seen:
+                    continue
+                seen.add(item_id)
+            yield item
+        on_page(total)
+        offset += PAGE_STEP
+        # A short page (empty included) is the last one, confd honouring
+        # `limit`; `total` ends the load if it does not.
+        if len(items) < PAGE_LIMIT or (total is not None and offset >= total):
+            return
+
+
 class ConfdCache:
+    """Line and trunk indexes, loaded once in the background.
+
+    Lookups read the indexes only and never call confd: they run on the bus
+    thread, which processes every event in turn. An index that is not loaded
+    yet resolves nothing.
+    """
+
     _asterisk_to_confd_techno_map = {
         'PJSIP': 'sip',
         'IAX2': 'iax',
         'SCCP': 'sccp',
     }
 
-    def __init__(self, confd_client):
+    def __init__(self, confd_client, sleep=time.sleep, monotonic=time.monotonic):
         self._confd = confd_client
+        self._sleep = sleep
+        self._monotonic = monotonic
+        # one short lock around index mutations and iterations; never held
+        # across a confd request or a publish
+        self._lock = threading.RLock()
         self._trunks = {}
         self._lines = {}
-        self._initialized = False
-        self._initialization_lock = threading.Lock()
+        self._ready = {'trunks': False, 'lines': False}
+        # ids changed by a bus event while their kind loads: a later page is
+        # older than the event and must not overwrite or resurrect them
+        self._touched: dict[str, set[int]] = {'trunks': set(), 'lines': set()}
+        self._loaded = {'trunks': 0, 'lines': 0}
+        self._pages = 0
+        self._skipped = 0
+        self._thread = None
+
+    @property
+    def ready(self):
+        return self._ready['trunks'] and self._ready['lines']
+
+    def start(self, token=None):
+        with self._lock:
+            if self._thread:
+                return
+            self._thread = threading.Thread(
+                target=self.build, name='endpoint_cache', daemon=True
+            )
+        self._thread.start()
+
+    def build(self):
+        started = self._monotonic()
+        self._load('trunks', self._confd.trunks, self._merge_trunk)
+        self._load('lines', self._confd.lines, self._merge_line)
+        _log(
+            logging.INFO,
+            state='ready',
+            lines=self._loaded['lines'],
+            trunks=self._loaded['trunks'],
+            seconds=round(self._monotonic() - started, 1),
+            pages=self._pages,
+        )
+
+    def _load(self, kind, resource, merge):
+        def list_fn(**paging):
+            return resource.list(recurse=True, **paging)
+
+        def on_page(total):
+            self._pages += 1
+            if self._pages % PROGRESS_EVERY == 0:
+                _log(
+                    logging.INFO,
+                    state=f'loading_{kind}',
+                    pages=self._pages,
+                    loaded=self._loaded[kind],
+                    total=total,
+                )
+
+        for item in pages(list_fn, on_page, self._sleep):
+            with self._lock:
+                try:
+                    merge(item)
+                except Exception:
+                    self._skipped += 1
+                    _log(logging.WARNING, event='skipped_item', skipped=self._skipped)
+                    continue
+                self._loaded[kind] += 1
+
+        with self._lock:
+            self._ready[kind] = True
+            self._touched[kind] = set()
+
+    def _merge_line(self, line):
+        line_id = line['id']
+        techno = line['protocol']
+        value = {
+            'id': line_id,
+            'technology': techno,
+            'name': line['name'],
+            'tenant_uuid': line['tenant_uuid'],
+        }
+        if line_id in self._touched['lines']:
+            return
+        self._lines.setdefault(techno, {'name': {}, 'username': {}})
+        self._lines[techno]['name'][value['name']] = value
+
+    def _merge_trunk(self, trunk):
+        if trunk.get('endpoint_sip'):
+            techno = 'sip'
+            name = trunk['endpoint_sip']['name']
+            for key, value in trunk['endpoint_sip']['registration_section_options']:
+                if key == 'client_uri':
+                    username = value
+                    break
+            else:
+                username = None
+        elif trunk.get('endpoint_iax'):
+            techno = 'iax'
+            name = trunk['endpoint_iax']['name']
+            username = name
+        elif trunk.get('endpoint_custom'):
+            techno = 'custom'
+            name = trunk['endpoint_custom']['interface']
+            username = name
+        else:
+            logger.info(
+                'ignoring trunk %s which is not associated to an endpoint',
+                trunk['id'],
+            )
+            return
+
+        trunk_id = trunk['id']
+        tenant_uuid = trunk['tenant_uuid']
+        if trunk_id in self._touched['trunks']:
+            return
+        self._add_trunk(techno, trunk_id, name, username, tenant_uuid)
+
+    def _touch(self, kind, item_id):
+        if not self._ready[kind]:
+            self._touched[kind].add(item_id)
 
     def add_line(self, techno, line_id, name, username, tenant_uuid):
         value = {
@@ -158,13 +365,19 @@ class ConfdCache:
             'name': name,
             'tenant_uuid': tenant_uuid,
         }
-        self._lines.setdefault(techno, {'name': {}, 'username': {}})
-        self._lines[techno]['name'][name] = value
-        if username:
-            self._lines[techno].setdefault('username', {})
-            self._lines[techno]['username'][username] = value
+        with self._lock:
+            self._touch('lines', line_id)
+            self._lines.setdefault(techno, {'name': {}, 'username': {}})
+            self._lines[techno]['name'][name] = value
+            if username:
+                self._lines[techno]['username'][username] = value
 
     def add_trunk(self, techno, trunk_id, name, username, tenant_uuid):
+        with self._lock:
+            self._touch('trunks', trunk_id)
+            self._add_trunk(techno, trunk_id, name, username, tenant_uuid)
+
+    def _add_trunk(self, techno, trunk_id, name, username, tenant_uuid):
         value = {
             'id': trunk_id,
             'technology': techno,
@@ -175,32 +388,29 @@ class ConfdCache:
         self._trunks[techno]['name'][name] = value
         self._trunks[techno]['id'][trunk_id] = value
         if username:
-            self._trunks[techno].setdefault('username', {})
             self._trunks[techno]['username'][username] = value
 
     def delete_line(self, line_id):
-        to_remove = []
-
-        for techno, items in self._lines.items():
-            for index, items in items.items():
-                for identifier, line in items.items():
-                    if line['id'] == line_id:
-                        to_remove.append((techno, index, identifier))
-
-        for techno, index, identifier in to_remove:
-            del self._lines[techno][index][identifier]
+        with self._lock:
+            self._touch('lines', line_id)
+            self._delete(self._lines, line_id)
 
     def delete_trunk(self, trunk_id):
-        to_remove = []
+        with self._lock:
+            self._touch('trunks', trunk_id)
+            self._delete(self._trunks, trunk_id)
 
-        for techno, items in self._trunks.items():
-            for index, items in items.items():
-                for identifier, trunk in items.items():
-                    if trunk['id'] == trunk_id:
+    @staticmethod
+    def _delete(endpoints, item_id):
+        to_remove = []
+        for techno, indexes in endpoints.items():
+            for index, items in indexes.items():
+                for identifier, item in items.items():
+                    if item['id'] == item_id:
                         to_remove.append((techno, index, identifier))
 
         for techno, index, identifier in to_remove:
-            del self._trunks[techno][index][identifier]
+            del endpoints[techno][index][identifier]
 
     def get_line(self, techno, name):
         return self._get_endpoint_by_index(techno, name, self._lines, index='name')
@@ -209,11 +419,10 @@ class ConfdCache:
         return self._get_endpoint_by_index(techno, name, self._trunks, index='name')
 
     def get_trunk_by_id(self, trunk_id):
-        for techno in self._trunks.keys():
-            if trunk := self._get_endpoint_by_index(
-                techno, trunk_id, self._trunks, index='id'
-            ):
-                return trunk
+        with self._lock:
+            for indexes in self._trunks.values():
+                if trunk := indexes['id'].get(trunk_id):
+                    return trunk
         return None
 
     def get_trunk_by_username(self, techno, username):
@@ -222,122 +431,36 @@ class ConfdCache:
         )
 
     def list_lines(self, tenant_uuid):
-        if not self._initialized:
-            self._initialize()
-
-        results = []
-        for index_lines in self._lines.values():
-            for line in index_lines['name'].values():
-                if line['tenant_uuid'] != tenant_uuid:
-                    continue
-                results.append(line)
-        return results
+        return self._list('lines', self._lines, tenant_uuid)
 
     def list_trunks(self, tenant_uuid):
-        if not self._initialized:
-            self._initialize()
+        return self._list('trunks', self._trunks, tenant_uuid)
 
-        results = []
-        for index_trunks in self._trunks.values():
-            for trunk in index_trunks['name'].values():
-                if trunk['tenant_uuid'] != tenant_uuid:
-                    continue
-                results.append(trunk)
-        return results
+    def _list(self, kind, endpoints, tenant_uuid):
+        with self._lock:
+            if not self._ready[kind]:
+                raise CalldUninitializedError()
+            return [
+                item
+                for indexes in endpoints.values()
+                for item in indexes['name'].values()
+                if item['tenant_uuid'] == tenant_uuid
+            ]
 
     def update_line(self, techno, line_id, name, username, tenant_uuid):
-        self.delete_line(line_id)
-        self.add_line(techno, line_id, name, username, tenant_uuid)
+        with self._lock:
+            self.delete_line(line_id)
+            self.add_line(techno, line_id, name, username, tenant_uuid)
 
     def update_trunk(self, techno, trunk_id, name, username, tenant_uuid):
-        self.delete_trunk(trunk_id)
-        self.add_trunk(techno, trunk_id, name, username, tenant_uuid)
+        with self._lock:
+            self.delete_trunk(trunk_id)
+            self.add_trunk(techno, trunk_id, name, username, tenant_uuid)
 
     def _get_endpoint_by_index(self, techno, value, endpoints, index):
-        if not self._initialized:
-            self._initialize()
-
         confd_techno = self._asterisk_to_confd_techno_map.get(techno, techno)
-        return endpoints.get(confd_techno, {index: {}})[index].get(value, None)
-
-    def _initialize(self):
-        with self._initialization_lock:
-            # The initialization migh have happened while we were waiting on the lock
-            if self._initialized:
-                return
-
-            trunks = self._confd.trunks.list(recurse=True)['items']
-            self._update_trunk_cache(trunks)
-
-            lines = self._confd.lines.list(recurse=True)['items']
-            self._update_line_cache(lines)
-
-            self._initialized = True
-
-    def _update_line_cache(self, lines):
-        for line in lines:
-            techno = line['protocol']
-            name = line['name']
-            value = {
-                'id': line['id'],
-                'technology': techno,
-                'name': name,
-                'tenant_uuid': line['tenant_uuid'],
-            }
-
-            self._lines.setdefault(techno, {'name': {}})
-            self._lines[techno]['name'][name] = value
-
-        logger.info(
-            'line cache updated %s entries',
-            sum(len(names) for names in self._lines.values()),
-        )
-
-    def _update_trunk_cache(self, trunks):
-        def update(trunk):
-            if trunk.get('endpoint_sip'):
-                techno = 'sip'
-                name = trunk['endpoint_sip']['name']
-                for key, value in trunk['endpoint_sip']['registration_section_options']:
-                    if key == 'client_uri':
-                        username = value
-                        break
-                else:
-                    username = None
-            elif trunk.get('endpoint_iax'):
-                techno = 'iax'
-                name = trunk['endpoint_iax']['name']
-                username = name
-            elif trunk.get('endpoint_custom'):
-                techno = 'custom'
-                name = trunk['endpoint_custom']['interface']
-                username = name
-            else:
-                logger.info(
-                    'ignoring trunk %s which is not associated to an endpoint',
-                    trunk['id'],
-                )
-                return
-
-            value = {
-                'id': trunk['id'],
-                'technology': techno,
-                'name': name,
-                'tenant_uuid': trunk['tenant_uuid'],
-            }
-
-            self._trunks.setdefault(techno, {'id': {}, 'name': {}, 'username': {}})
-            self._trunks[techno]['name'][name] = value
-            self._trunks[techno]['id'][trunk['id']] = value
-            self._trunks[techno]['username'][username] = value
-
-        for trunk in trunks:
-            update(trunk)
-
-        logger.info(
-            'trunk cache updated %s entries',
-            sum(len(names) for names in self._trunks.values()),
-        )
+        with self._lock:
+            return endpoints.get(confd_techno, {}).get(index, {}).get(value)
 
 
 class EndpointsService:

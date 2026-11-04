@@ -1,4 +1,4 @@
-# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from hamcrest import assert_that, has_entries, has_item
@@ -291,7 +291,14 @@ class TestTrunkBusConsume(IntegrationTest):
                 tenant_uuid=tenant_uuid,
             )
         )
-        self.bus.send_trunk_endpoint_associated_event(trunk_id, endpoint_id=3)
+        # calld loaded its trunks at startup: it learns this one from the event
+        self.bus.send_trunk_endpoint_sip_associated_event(
+            tenant_uuid,
+            trunk_id,
+            endpoint_id=3,
+            endpoint_name=name,
+            client_uri=client_uri,
+        )
 
         def trunk_exists():
             expected = {

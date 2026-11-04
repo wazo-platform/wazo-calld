@@ -270,14 +270,23 @@ class BusClient(bus_helper.BusClient):
             headers={'name': 'line_endpoint_sip_associated'},
         )
 
-    def send_trunk_endpoint_associated_event(self, trunk_id, endpoint_id):
+    def send_trunk_endpoint_sip_associated_event(
+        self, tenant_uuid, trunk_id, endpoint_id, endpoint_name, client_uri
+    ):
         payload = {
-            'data': {'trunk_id': trunk_id, 'endpoint_id': endpoint_id},
-            'name': 'trunk_endpoint_associated',
+            'data': {
+                'trunk': {'id': trunk_id, 'tenant_uuid': tenant_uuid},
+                'endpoint_sip': {
+                    'id': endpoint_id,
+                    'name': endpoint_name,
+                    'registration_section_options': [['client_uri', client_uri]],
+                },
+            },
+            'name': 'trunk_endpoint_sip_associated',
         }
         self.send_event(
             payload,
-            headers={'name': 'trunk_endpoint_associated'},
+            headers={'name': 'trunk_endpoint_sip_associated'},
         )
 
     def send_user_missed_call_userevent(

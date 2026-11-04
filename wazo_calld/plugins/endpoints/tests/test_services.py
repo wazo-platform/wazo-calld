@@ -1,4 +1,4 @@
-# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from unittest import TestCase
@@ -108,7 +108,7 @@ class TestEndpointService(TestCase):
 class TestCachingConfdClient(TestCase):
     def setUp(self):
         self.confd = Mock()
-        self.client = ConfdCache(self.confd)
+        self.client = ConfdCache(self.confd, sleep=lambda seconds: None)
 
     def test_add_line(self):
         self._set_cache([])
@@ -421,6 +421,7 @@ class TestCachingConfdClient(TestCase):
             ],
         }
 
+        self.client.build()
         result = self.client.list_lines(s.tenant_uuid)
 
         assert_that(
@@ -448,12 +449,10 @@ class TestCachingConfdClient(TestCase):
         )
 
     def _set_cache(self, trunks=None, lines=None):
-        if trunks:
-            self.client._update_trunk_cache(trunks)
-        if lines:
-            self.client._update_line_cache(lines)
-
-        self.client._initialized = True
+        trunks, lines = trunks or [], lines or []
+        self.confd.trunks.list.return_value = {'items': trunks, 'total': len(trunks)}
+        self.confd.lines.list.return_value = {'items': lines, 'total': len(lines)}
+        self.client.build()
 
 
 class TestEndpoint(TestCase):
