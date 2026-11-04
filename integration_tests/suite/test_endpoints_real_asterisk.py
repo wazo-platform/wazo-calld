@@ -3,7 +3,18 @@
 
 import time
 
-from hamcrest import assert_that, has_entries, has_item, has_items, is_in, not_
+from ari.exceptions import ARINotFound
+from hamcrest import (
+    assert_that,
+    calling,
+    equal_to,
+    has_entries,
+    has_item,
+    has_items,
+    is_in,
+    not_,
+    raises,
+)
 from wazo_test_helpers import until
 
 from .helpers.amid import AmidClient
@@ -38,7 +49,10 @@ class TestEndpointIdentityFromAsterisk(RealAsteriskIntegrationTest):
         self.confd.reset()
 
     def asterisk(self, command):
-        self.docker_exec(['asterisk', '-rx', command], 'ari')
+        returncode = self.docker_exec(
+            ['asterisk', '-rx', command], 'ari', return_attr='returncode'
+        )
+        assert_that(returncode, equal_to(0), command)
 
     def status_events(self, accumulator, endpoint_id, registered):
         return [
@@ -93,6 +107,14 @@ class TestEndpointIdentityFromAsterisk(RealAsteriskIntegrationTest):
                     has_entries(attribute='__WAZO_TENANT_UUID', value=TENANT),
                 ),
             )
+
+    def test_ari_answers_404_for_an_endpoint_unknown_to_asterisk(self):
+        assert_that(
+            calling(self.ari.asterisk.getObject).with_args(
+                configClass='res_pjsip', objectType='endpoint', id='no-such-endpoint'
+            ),
+            raises(ARINotFound),
+        )
 
     def test_the_outbound_registrations_name_their_client_uri_and_endpoint(self):
         amid = AmidClient(

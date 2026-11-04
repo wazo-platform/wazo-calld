@@ -11,7 +11,7 @@ from wazo_bus.resources.line.event import LineStatusUpdatedEvent
 from wazo_bus.resources.trunk.event import TrunkStatusUpdatedEvent
 
 from ..bus import EventHandler
-from ..identity import EndpointIdentities, IdentityMap
+from ..identity import RELOAD_WINDOW_SECONDS, EndpointIdentities, IdentityMap
 from ..notifier import EndpointStatusNotifier
 from ..services import Endpoint, NotifyingStatusCache, StatusCache
 from .test_identity import TENANT, FakeClock, ari_tuples, wazo_tuples
@@ -483,12 +483,25 @@ class TestStatusPublishedFromIdentity(TestCase):
 
         self.handler.on_line_endpoint_deleted({'id': 1})
         self.get_object.return_value = wazo_tuples(line_id=2)
+        self.clock.now += RELOAD_WINDOW_SECONDS
         self.peer_status('abc')
 
         assert_that(
             self.published_ids(),
             equal_to([('line_status_updated', 1), ('line_status_updated', 2)]),
         )
+
+    def test_a_dissociated_name_is_not_read_from_asterisk_before_its_reload(self):
+        self.get_object.return_value = wazo_tuples(trunk_id=5)
+        self.peer_status('abc')
+        self.published()
+
+        # Asterisk still answers trunk 5 until its configuration is reloaded
+        self.handler.on_trunk_endpoint_dissociated({'trunk': {'id': 5}})
+        self.peer_status('abc')
+
+        assert_that(self.published(), equal_to([]))
+        assert_that(self.get_object.call_count, equal_to(1))
 
     def test_a_dissociation_evicts_the_identity(self):
         self.get_object.return_value = wazo_tuples(line_id=1)
@@ -500,6 +513,7 @@ class TestStatusPublishedFromIdentity(TestCase):
         self.handler.on_line_endpoint_dissociated({'line': {'id': 1}})
         self.handler.on_trunk_endpoint_dissociated({'trunk': {'id': 5}})
         self.get_object.return_value = ari_tuples(__WAZO_TENANT_UUID=TENANT)
+        self.clock.now += RELOAD_WINDOW_SECONDS
         self.peer_status('line-a')
         self.peer_status('abc')
 

@@ -13,10 +13,11 @@ from __future__ import annotations
 
 import logging
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass
 from threading import Lock
-from typing import Final, Literal, Union
+from typing import Final, Literal, TypeGuard, Union
 
 from ari.exceptions import ARINotFound
 from requests import RequestException
@@ -31,6 +32,10 @@ logger = logging.getLogger(__name__)
 FAILURE_MARK_SECONDS = 30
 # Failed lookups are logged once per failure class in this interval, with a count.
 FAILURE_LOG_INTERVAL_SECONDS = 60
+# A name evicted by a wazo-confd event is not read from ARI before this delay:
+# Asterisk reloads its configuration after wazo-confd's event, and a read in
+# between would answer the identity the event just removed.
+RELOAD_WINDOW_SECONDS = 30
 
 LINE: Final = 'line'
 TRUNK: Final = 'trunk'
@@ -53,7 +58,8 @@ class _Marker:
 # The endpoint exists for Asterisk or wazo-confd but is neither a line nor a trunk
 # (a meeting guest, a template, an unknown name).
 NOT_A_LINE_OR_TRUNK = _Marker()
-# The last lookup failed less than FAILURE_MARK_SECONDS ago.
+# The last lookup failed less than FAILURE_MARK_SECONDS ago, or the name was
+# evicted less than RELOAD_WINDOW_SECONDS ago.
 RECENTLY_FAILED = _Marker()
 # The client URI was absent from the last registration list.
 UNKNOWN_URI = _Marker()
@@ -69,7 +75,9 @@ class IdentityMap:
     One lock covers reads and writes, never a request. A lookup reads the map's
     sequence before its request; an eviction of the endpoint's name or of the
     identity's id after that point drops the lookup's answer, so a stale answer
-    never outlives the event that evicted it.
+    never outlives the event that evicted it. The eviction stamps are only
+    compared with the sequence of a lookup in flight, so they are dropped
+    whenever no lookup is in flight.
     """
 
     def __init__(self, clock: Callable[[], float] = time.monotonic):
@@ -77,23 +85,37 @@ class IdentityMap:
         self._lock = Lock()
         self._entries: dict[Key, Entry] = {}
         self._keys_by_id: dict[tuple[Kind, int], set[Key]] = {}
-        self._failures: dict[Key, float] = {}
+        # names not read before that time: a failed lookup, or an eviction by id
+        self._not_before: dict[Key, float] = {}
         self._sequence = 0
+        self._lookups_in_flight = 0
         self._name_evicted_at: dict[Key, int] = {}
         self._id_evicted_at: dict[tuple[Kind, int], int] = {}
         self._client_uris: dict[str, str] = {}
         self._unknown_uris: set[str] = set()
         self._uris_generation = 0
+        self._uris_not_before = 0.0
 
     def lookup(self, key: Key) -> tuple[Entry | None, int]:
         with self._lock:
-            entry = self._entries.get(key)
-            if entry is None and key in self._failures:
-                if self._clock() < self._failures[key]:
-                    entry = RECENTLY_FAILED
-                else:
-                    del self._failures[key]
-            return entry, self._sequence
+            return self._lookup(key), self._sequence
+
+    @contextmanager
+    def missed(self, key: Key) -> Iterator[tuple[Entry | None, int]]:
+        """A lookup that, on a miss, stays in flight until the block ends."""
+        with self._lock:
+            entry = self._lookup(key)
+            generation = self._sequence
+            self._lookups_in_flight += entry is None
+        try:
+            yield entry, generation
+        finally:
+            if entry is None:
+                with self._lock:
+                    self._lookups_in_flight -= 1
+                    if not self._lookups_in_flight:
+                        self._name_evicted_at.clear()
+                        self._id_evicted_at.clear()
 
     def store(self, key: Key, entry: Entry, generation: int) -> bool:
         with self._lock:
@@ -105,11 +127,10 @@ class IdentityMap:
                 self._keys_by_id.setdefault((entry.kind, entry.id), set()).add(key)
             return True
 
-    def mark_failed(self, key: Key, generation: int) -> None:
+    def mark_failed(self, key: Key) -> None:
+        # an event that wrote the name meanwhile wins: an entry is read before a mark
         with self._lock:
-            if self._evicted_since(key, None, generation):
-                return
-            self._failures[key] = self._clock() + FAILURE_MARK_SECONDS
+            self._not_before[key] = self._clock() + FAILURE_MARK_SECONDS
 
     def write(self, key: Key, identity: EndpointIdentity) -> None:
         with self._lock:
@@ -122,14 +143,12 @@ class IdentityMap:
         with self._lock:
             return self._evict_id(kind, id_)
 
-    def evict_name(self, techno: str, name: str) -> None:
-        with self._lock:
-            self._evict_name((techno, name))
-
     def client_uri_endpoint(self, uri: str) -> tuple[str | _Marker | None, int]:
         with self._lock:
             if uri in self._unknown_uris:
                 return UNKNOWN_URI, self._uris_generation
+            if self._clock() < self._uris_not_before:
+                return RECENTLY_FAILED, self._uris_generation
             return self._client_uris.get(uri), self._uris_generation
 
     def replace_client_uris(
@@ -142,11 +161,25 @@ class IdentityMap:
             if asked not in endpoints_by_uri:
                 self._unknown_uris.add(asked)
 
+    def mark_client_uris_failed(self, generation: int) -> None:
+        with self._lock:
+            if generation == self._uris_generation:
+                self._uris_not_before = self._clock() + FAILURE_MARK_SECONDS
+
     def forget_client_uris(self) -> None:
         with self._lock:
             self._client_uris = {}
             self._unknown_uris = set()
             self._uris_generation += 1
+            self._uris_not_before = 0.0
+
+    def _lookup(self, key: Key) -> Entry | None:
+        entry = self._entries.get(key)
+        if entry is None and key in self._not_before:
+            if self._clock() < self._not_before[key]:
+                return RECENTLY_FAILED
+            del self._not_before[key]
+        return entry
 
     def _evicted_since(self, key: Key, entry: Entry | None, generation: int) -> bool:
         if self._name_evicted_at.get(key, 0) > generation:
@@ -162,12 +195,12 @@ class IdentityMap:
         for key in keys:
             self._entries.pop(key, None)
             self._name_evicted_at[key] = self._sequence
+            self._not_before[key] = self._clock() + RELOAD_WINDOW_SECONDS
         return list(keys)
 
     def _evict_name(self, key: Key) -> None:
         self._sequence += 1
         self._name_evicted_at[key] = self._sequence
-        self._failures.pop(key, None)
         self._remove(key)
 
     def _remove(self, key: Key) -> None:
@@ -246,16 +279,16 @@ class EndpointIdentities:
         if techno not in self._readers:
             return None
         key = (techno, name)
-        entry, generation = self._map.lookup(key)
-        if entry is None:
-            source, read = self._readers[techno]
-            try:
-                entry = read(name)
-            except LOOKUP_FAILURES as e:
-                self._failures.failed(source, e, name)
-                self._map.mark_failed(key, generation)
-                return None
-            self._map.store(key, entry, generation)
+        with self._map.missed(key) as (entry, generation):
+            if entry is None:
+                source, read = self._readers[techno]
+                try:
+                    entry = read(name)
+                except LOOKUP_FAILURES as e:
+                    self._failures.failed(source, e, name)
+                    self._map.mark_failed(key)
+                    return None
+                self._map.store(key, entry, generation)
         return entry if isinstance(entry, EndpointIdentity) else None
 
     def endpoint_of_client_uri(self, uri: str) -> str | None:
@@ -270,6 +303,7 @@ class EndpointIdentities:
             registrations = self._amid.action('PJSIPShowRegistrationsOutbound')
         except LOOKUP_FAILURES as e:
             self._failures.failed('wazo-amid', e, uri)
+            self._map.mark_client_uris_failed(generation)
             return None
         # a registration configured without an endpoint names none
         endpoints_by_uri = {
@@ -299,9 +333,9 @@ class EndpointIdentities:
         tenant_uuid = attributes.get('__WAZO_TENANT_UUID')
         if line_id is None and trunk_id is None:
             return NOT_A_LINE_OR_TRUNK
-        if line_id is not None and trunk_id is None and tenant_uuid:
+        if _is_id(line_id) and trunk_id is None and tenant_uuid:
             return EndpointIdentity(LINE, int(line_id), tenant_uuid)
-        if trunk_id is not None and line_id is None and tenant_uuid:
+        if _is_id(trunk_id) and line_id is None and tenant_uuid:
             return EndpointIdentity(TRUNK, int(trunk_id), tenant_uuid)
         logger.error(
             'inconsistent endpoint identity: endpoint=%s line_id=%s trunk_id=%s tenant_uuid=%s',
@@ -315,15 +349,18 @@ class EndpointIdentities:
     def _read_iax(self, name: str) -> Entry:
         endpoints = self._confd.endpoints_iax.list(name=name, recurse=True)['items']
         for endpoint in endpoints:
-            if endpoint.get('trunk'):
-                return EndpointIdentity(
-                    TRUNK, endpoint['trunk']['id'], endpoint['tenant_uuid']
-                )
+            trunk = endpoint.get('trunk')
+            if trunk and endpoint.get('tenant_uuid'):
+                return EndpointIdentity(TRUNK, trunk['id'], endpoint['tenant_uuid'])
         return NOT_A_LINE_OR_TRUNK
 
     def _read_sccp(self, name: str) -> Entry:
         lines = self._confd.lines.list(name=name, recurse=True)['items']
         for line in lines:
-            if line['protocol'] == 'sccp':
+            if line.get('protocol') == 'sccp' and line.get('tenant_uuid'):
                 return EndpointIdentity(LINE, line['id'], line['tenant_uuid'])
         return NOT_A_LINE_OR_TRUNK
+
+
+def _is_id(value: str | None) -> TypeGuard[str]:
+    return value is not None and value.isdigit()

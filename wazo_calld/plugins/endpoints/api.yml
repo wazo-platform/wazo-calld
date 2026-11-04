@@ -101,7 +101,8 @@ definitions:
     properties:
       technology:
         type: string
-        description: The technology of that endpoint only (SIP, SCCP or custom)
+        description: The technology of that endpoint only (SIP, SCCP or custom),
+          null for a line without an endpoint
       name:
         type: string
         description: The name of that given endpoint in Asterisk
