@@ -1,12 +1,18 @@
-# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import copy
 import logging
-import threading
 from contextlib import contextmanager
 
-from wazo_calld.plugin_helpers.exceptions import CalldUninitializedError
+from requests import HTTPError, RequestException
+
+from wazo_calld.plugin_helpers.exceptions import (
+    CalldUninitializedError,
+    WazoConfdUnreachable,
+)
+
+from .exceptions import InvalidListParameters
 
 logger = logging.getLogger(__name__)
 
@@ -137,239 +143,71 @@ class NotifyingStatusCache(StatusCache):
                 self._notify_fn(endpoint)
 
 
-class ConfdCache:
-    _asterisk_to_confd_techno_map = {
-        'PJSIP': 'sip',
-        'IAX2': 'iax',
-        'SCCP': 'sccp',
-    }
-
-    def __init__(self, confd_client):
-        self._confd = confd_client
-        self._trunks = {}
-        self._lines = {}
-        self._initialized = False
-        self._initialization_lock = threading.Lock()
-
-    def add_line(self, techno, line_id, name, username, tenant_uuid):
-        value = {
-            'id': line_id,
-            'technology': techno,
-            'name': name,
-            'tenant_uuid': tenant_uuid,
-        }
-        self._lines.setdefault(techno, {'name': {}, 'username': {}})
-        self._lines[techno]['name'][name] = value
-        if username:
-            self._lines[techno].setdefault('username', {})
-            self._lines[techno]['username'][username] = value
-
-    def add_trunk(self, techno, trunk_id, name, username, tenant_uuid):
-        value = {
-            'id': trunk_id,
-            'technology': techno,
-            'name': name,
-            'tenant_uuid': tenant_uuid,
-        }
-        self._trunks.setdefault(techno, {'id': {}, 'name': {}, 'username': {}})
-        self._trunks[techno]['name'][name] = value
-        self._trunks[techno]['id'][trunk_id] = value
-        if username:
-            self._trunks[techno].setdefault('username', {})
-            self._trunks[techno]['username'][username] = value
-
-    def delete_line(self, line_id):
-        to_remove = []
-
-        for techno, items in self._lines.items():
-            for index, items in items.items():
-                for identifier, line in items.items():
-                    if line['id'] == line_id:
-                        to_remove.append((techno, index, identifier))
-
-        for techno, index, identifier in to_remove:
-            del self._lines[techno][index][identifier]
-
-    def delete_trunk(self, trunk_id):
-        to_remove = []
-
-        for techno, items in self._trunks.items():
-            for index, items in items.items():
-                for identifier, trunk in items.items():
-                    if trunk['id'] == trunk_id:
-                        to_remove.append((techno, index, identifier))
-
-        for techno, index, identifier in to_remove:
-            del self._trunks[techno][index][identifier]
-
-    def get_line(self, techno, name):
-        return self._get_endpoint_by_index(techno, name, self._lines, index='name')
-
-    def get_trunk(self, techno, name):
-        return self._get_endpoint_by_index(techno, name, self._trunks, index='name')
-
-    def get_trunk_by_id(self, trunk_id):
-        for techno in self._trunks.keys():
-            if trunk := self._get_endpoint_by_index(
-                techno, trunk_id, self._trunks, index='id'
-            ):
-                return trunk
-        return None
-
-    def get_trunk_by_username(self, techno, username):
-        return self._get_endpoint_by_index(
-            techno, username, self._trunks, index='username'
-        )
-
-    def list_lines(self, tenant_uuid):
-        if not self._initialized:
-            self._initialize()
-
-        results = []
-        for index_lines in self._lines.values():
-            for line in index_lines['name'].values():
-                if line['tenant_uuid'] != tenant_uuid:
-                    continue
-                results.append(line)
-        return results
-
-    def list_trunks(self, tenant_uuid):
-        if not self._initialized:
-            self._initialize()
-
-        results = []
-        for index_trunks in self._trunks.values():
-            for trunk in index_trunks['name'].values():
-                if trunk['tenant_uuid'] != tenant_uuid:
-                    continue
-                results.append(trunk)
-        return results
-
-    def update_line(self, techno, line_id, name, username, tenant_uuid):
-        self.delete_line(line_id)
-        self.add_line(techno, line_id, name, username, tenant_uuid)
-
-    def update_trunk(self, techno, trunk_id, name, username, tenant_uuid):
-        self.delete_trunk(trunk_id)
-        self.add_trunk(techno, trunk_id, name, username, tenant_uuid)
-
-    def _get_endpoint_by_index(self, techno, value, endpoints, index):
-        if not self._initialized:
-            self._initialize()
-
-        confd_techno = self._asterisk_to_confd_techno_map.get(techno, techno)
-        return endpoints.get(confd_techno, {index: {}})[index].get(value, None)
-
-    def _initialize(self):
-        with self._initialization_lock:
-            # The initialization migh have happened while we were waiting on the lock
-            if self._initialized:
-                return
-
-            trunks = self._confd.trunks.list(recurse=True)['items']
-            self._update_trunk_cache(trunks)
-
-            lines = self._confd.lines.list(recurse=True)['items']
-            self._update_line_cache(lines)
-
-            self._initialized = True
-
-    def _update_line_cache(self, lines):
-        for line in lines:
-            techno = line['protocol']
-            name = line['name']
-            value = {
-                'id': line['id'],
-                'technology': techno,
-                'name': name,
-                'tenant_uuid': line['tenant_uuid'],
-            }
-
-            self._lines.setdefault(techno, {'name': {}})
-            self._lines[techno]['name'][name] = value
-
-        logger.info(
-            'line cache updated %s entries',
-            sum(len(names) for names in self._lines.values()),
-        )
-
-    def _update_trunk_cache(self, trunks):
-        def update(trunk):
-            if trunk.get('endpoint_sip'):
-                techno = 'sip'
-                name = trunk['endpoint_sip']['name']
-                for key, value in trunk['endpoint_sip']['registration_section_options']:
-                    if key == 'client_uri':
-                        username = value
-                        break
-                else:
-                    username = None
-            elif trunk.get('endpoint_iax'):
-                techno = 'iax'
-                name = trunk['endpoint_iax']['name']
-                username = name
-            elif trunk.get('endpoint_custom'):
-                techno = 'custom'
-                name = trunk['endpoint_custom']['interface']
-                username = name
-            else:
-                logger.info(
-                    'ignoring trunk %s which is not associated to an endpoint',
-                    trunk['id'],
-                )
-                return
-
-            value = {
-                'id': trunk['id'],
-                'technology': techno,
-                'name': name,
-                'tenant_uuid': trunk['tenant_uuid'],
-            }
-
-            self._trunks.setdefault(techno, {'id': {}, 'name': {}, 'username': {}})
-            self._trunks[techno]['name'][name] = value
-            self._trunks[techno]['id'][trunk['id']] = value
-            self._trunks[techno]['username'][username] = value
-
-        for trunk in trunks:
-            update(trunk)
-
-        logger.info(
-            'trunk cache updated %s entries',
-            sum(len(names) for names in self._trunks.values()),
-        )
-
-
 class EndpointsService:
     _techno_map = {
         'sip': 'PJSIP',
         'iax': 'IAX2',
     }
 
-    def __init__(self, confd_cache, status_cache):
-        self._confd = confd_cache
+    def __init__(self, confd_client, status_cache):
+        self._confd = confd_client
         self.status_cache = status_cache
 
-    def list_lines(self, tenant_uuid):
-        confd_endpoints = self._confd.list_lines(tenant_uuid)
-        return self._list_endpoints(confd_endpoints)
+    def list_lines(self, tenant_uuid, **params):
+        result = self._list(self._confd.lines, tenant_uuid, params)
+        items = [self._line_item(line) for line in result['items']]
+        total = self._total(result)
+        return self._with_status(items), total, total
 
-    def list_trunks(self, tenant_uuid):
-        confd_endpoints = self._confd.list_trunks(tenant_uuid)
-        return self._list_endpoints(confd_endpoints)
+    def list_trunks(self, tenant_uuid, **params):
+        result = self._list(self._confd.trunks, tenant_uuid, params)
+        items = [self._trunk_item(trunk) for trunk in result['items']]
+        total = self._total(result)
+        return self._with_status(items), total, total
 
-    def _list_endpoints(self, confd_endpoints):
-        results = []
-        for confd_endpoint in confd_endpoints:
-            endpoint = dict(confd_endpoint)
-            ast_techno = self._techno_map.get(
-                endpoint['technology'], endpoint['technology']
-            )
-            ast_endpoint = self.status_cache.get(ast_techno, confd_endpoint['name'])
+    def _list(self, resource, tenant_uuid, params):
+        try:
+            return resource.list(tenant_uuid=tenant_uuid, **params)
+        except HTTPError as e:
+            if e.response is not None and e.response.status_code == 400:
+                raise InvalidListParameters(e.response.json())
+            raise
+        except RequestException as e:
+            raise WazoConfdUnreachable(self._confd, e)
+
+    @staticmethod
+    def _total(result):
+        # wazo-confd counts the items matching the search before paging; a list
+        # answered without that count (wazo-confd-mock) is counted as returned
+        return result.get('total', len(result['items']))
+
+    @staticmethod
+    def _line_item(line):
+        return {
+            'id': line['id'],
+            'technology': line['protocol'],
+            'name': line['name'],
+            'tenant_uuid': line['tenant_uuid'],
+        }
+
+    @staticmethod
+    def _trunk_item(trunk):
+        item = {'id': trunk['id'], 'name': None, 'tenant_uuid': trunk['tenant_uuid']}
+        if trunk.get('endpoint_sip'):
+            item.update(technology='sip', name=trunk['endpoint_sip']['name'])
+        elif trunk.get('endpoint_iax'):
+            item.update(technology='iax', name=trunk['endpoint_iax']['name'])
+        elif trunk.get('endpoint_custom'):
+            item.update(technology='custom', name=trunk['endpoint_custom']['interface'])
+        return item
+
+    def _with_status(self, items):
+        for item in items:
+            if 'technology' not in item:
+                continue
+            ast_techno = self._techno_map.get(item['technology'], item['technology'])
+            ast_endpoint = self.status_cache.get(ast_techno, item['name'])
             if ast_endpoint:
-                endpoint['registered'] = ast_endpoint.registered
-                endpoint['current_call_count'] = ast_endpoint.current_call_count
-            results.append(endpoint)
-
-        count = len(results)
-        return results, count, count
+                item['registered'] = ast_endpoint.registered
+                item['current_call_count'] = ast_endpoint.current_call_count
+        return items

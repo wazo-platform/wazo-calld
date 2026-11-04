@@ -1,4 +1,4 @@
-# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from unittest import TestCase
@@ -7,14 +7,55 @@ from unittest.mock import sentinel as s
 
 from hamcrest import (
     assert_that,
-    contains_inanyorder,
+    calling,
+    contains_exactly,
     equal_to,
     has_entries,
     has_properties,
     not_,
+    raises,
 )
+from requests import HTTPError, ReadTimeout
 
-from ..services import ConfdCache, Endpoint, EndpointsService, NotifyingStatusCache
+from wazo_calld.plugin_helpers.exceptions import WazoConfdUnreachable
+
+from ..exceptions import InvalidListParameters
+from ..services import Endpoint, EndpointsService, NotifyingStatusCache
+
+CONFD_LINES = [
+    {
+        'id': 1,
+        'protocol': 'sip',
+        'name': 'line-a',
+        'tenant_uuid': s.tenant_uuid,
+        'endpoint_sip': {'name': 'line-a'},
+    },
+    {'id': 2, 'protocol': 'sccp', 'name': '1001', 'tenant_uuid': s.tenant_uuid},
+    {'id': 3, 'protocol': 'custom', 'name': 'dahdi/i1/1', 'tenant_uuid': s.tenant_uuid},
+]
+
+CONFD_TRUNKS = [
+    {'id': 1, 'tenant_uuid': s.tenant_uuid, 'endpoint_sip': {'name': 'trunk-a'}},
+    {'id': 2, 'tenant_uuid': s.tenant_uuid, 'endpoint_iax': {'name': 'iax-a'}},
+    {
+        'id': 3,
+        'tenant_uuid': s.tenant_uuid,
+        'endpoint_custom': {'interface': 'dahdi/g1'},
+    },
+    {
+        'id': 4,
+        'tenant_uuid': s.tenant_uuid,
+        'endpoint_sip': None,
+        'endpoint_iax': None,
+        'endpoint_custom': None,
+    },
+]
+
+
+def http_error(status, body=None):
+    response = Mock(status_code=status)
+    response.json.return_value = body
+    return HTTPError(response=response)
 
 
 class TestEndpointService(TestCase):
@@ -22,438 +63,147 @@ class TestEndpointService(TestCase):
         self.ari = Mock()
         self.ari.endpoints.list.return_value = []
         self.status_cache = NotifyingStatusCache(Mock(), self.ari)
-        self.confd_cache = Mock(ConfdCache)
-
-        self.service = EndpointsService(self.confd_cache, self.status_cache)
-
-    def test_list_lines(self):
-        self.confd_cache.list_lines.return_value = [
-            {
-                'id': 1,
-                'technology': 'sip',
-                'name': s.name_1,
-                'tenant_uuid': s.tenant_uuid,
-            },
-            {
-                'id': 2,
-                'technology': 'iax',
-                'name': s.name_2,
-                'tenant_uuid': s.tenant_uuid,
-            },
-            {
-                'id': 3,
-                'technology': 'custom',
-                'name': s.name_2,
-                'tenant_uuid': s.tenant_uuid,
-            },
-        ]
-
-        self.status_cache.add_endpoint(
-            Endpoint('PJSIP', s.name_1, registered=True, channel_ids=[123, 456]),
-        )
-
-        items, filtered, total = self.service.list_lines(s.tenant_uuid)
-
-        assert_that(filtered, equal_to(3))
-        assert_that(total, equal_to(3))
-        assert_that(
-            items,
-            contains_inanyorder(
-                has_entries(id=1, registered=True, current_call_count=2),
-                has_entries(id=2),
-                has_entries(id=3),
-            ),
-        )
-
-    def test_list_trunks(self):
-        self.confd_cache.list_trunks.return_value = [
-            {
-                'id': 1,
-                'technology': 'sip',
-                'name': s.name_1,
-                'tenant_uuid': s.tenant_uuid,
-            },
-            {
-                'id': 2,
-                'technology': 'iax',
-                'name': s.name_2,
-                'tenant_uuid': s.tenant_uuid,
-            },
-            {
-                'id': 3,
-                'technology': 'custom',
-                'name': s.name_2,
-                'tenant_uuid': s.tenant_uuid,
-            },
-        ]
-
-        self.status_cache.add_endpoint(
-            Endpoint('PJSIP', s.name_1, registered=True, channel_ids=[123, 456]),
-        )
-
-        items, filtered, total = self.service.list_trunks(s.tenant_uuid)
-
-        assert_that(filtered, equal_to(3))
-        assert_that(total, equal_to(3))
-        assert_that(
-            items,
-            contains_inanyorder(
-                has_entries(id=1, registered=True, current_call_count=2),
-                has_entries(id=2),
-                has_entries(id=3),
-            ),
-        )
-
-
-class TestCachingConfdClient(TestCase):
-    def setUp(self):
         self.confd = Mock()
-        self.client = ConfdCache(self.confd)
+        self.confd.lines.list.return_value = {'total': 30, 'items': CONFD_LINES}
+        self.confd.trunks.list.return_value = {'total': 40, 'items': CONFD_TRUNKS}
 
-    def test_add_line(self):
-        self._set_cache([])
+        self.service = EndpointsService(self.confd, self.status_cache)
 
-        self.client.add_line('sip', s.line_id, s.name, s.username, s.tenant_uuid)
-
-        expected = {
-            'id': s.line_id,
-            'technology': 'sip',
-            'name': s.name,
-            'tenant_uuid': s.tenant_uuid,
-        }
-
-        result = self.client.get_line('sip', s.name)
-        assert_that(result, equal_to(expected))
-
-    def test_add_trunk(self):
-        self._set_cache([])
-
-        self.client.add_trunk('sip', s.trunk_id, s.name, s.username, s.tenant_uuid)
-
-        expected = {
-            'id': s.trunk_id,
-            'technology': 'sip',
-            'name': s.name,
-            'tenant_uuid': s.tenant_uuid,
-        }
-
-        result = self.client.get_trunk('sip', s.name)
-        assert_that(result, equal_to(expected))
-
-        result = self.client.get_trunk_by_username('sip', s.username)
-        assert_that(result, equal_to(expected))
-
-    def test_delete_line(self):
-        self._set_cache(
-            lines=[
-                {
-                    'id': s.line_id,
-                    'protocol': 'sip',
-                    'name': s.name,
-                    'endpoint_sip': {
-                        'name': s.name,
-                        'auth_section_options': [['username', s.username]],
-                    },
-                    'tenant_uuid': s.tenant_uuid,
-                },
-            ]
+    def test_list_lines_reads_one_page_of_the_tenant(self):
+        self.status_cache.add_endpoint(
+            Endpoint('PJSIP', 'line-a', registered=True, channel_ids=[123, 456]),
         )
 
-        self.client.delete_line(s.line_id)
+        items, total, filtered = self.service.list_lines(s.tenant_uuid)
 
-        result = self.client.get_line('sip', s.name)
-        assert_that(result, equal_to(None))
-
-    def test_delete_trunk(self):
-        self._set_cache(
-            trunks=[
-                {
-                    'id': s.trunk_id,
-                    'endpoint_sip': {
-                        'name': s.name,
-                        'registration_section_options': [['client_uri', s.username]],
-                    },
-                    'tenant_uuid': s.tenant_uuid,
-                },
-            ]
-        )
-
-        self.client.delete_trunk(s.trunk_id)
-
-        result = self.client.get_trunk('sip', s.name)
-        assert_that(result, equal_to(None))
-
-        result = self.client.get_trunk_by_username('sip', s.username)
-        assert_that(result, equal_to(None))
-
-    def test_update_line(self):
-        self._set_cache(
-            lines=[
-                {
-                    'id': s.line_id,
-                    'protocol': 'sip',
-                    'name': s.name,
-                    'endpoint_sip': {
-                        'name': s.name,
-                        'auth_section_options': [['username', s.username]],
-                    },
-                    'tenant_uuid': s.tenant_uuid,
-                },
-            ]
-        )
-
-        self.client.update_line(
-            'sip', s.line_id, s.new_name, s.new_username, s.tenant_uuid
-        )
-
-        result = self.client.get_line('sip', s.new_name)
+        self.confd.lines.list.assert_called_once_with(tenant_uuid=s.tenant_uuid)
+        assert_that(total, equal_to(30))
+        assert_that(filtered, equal_to(30))
         assert_that(
-            result,
-            has_entries(
-                id=s.line_id,
-                technology='sip',
-                name=s.new_name,
-                tenant_uuid=s.tenant_uuid,
+            items,
+            contains_exactly(
+                equal_to(
+                    {
+                        'id': 1,
+                        'technology': 'sip',
+                        'name': 'line-a',
+                        'tenant_uuid': s.tenant_uuid,
+                        'registered': True,
+                        'current_call_count': 2,
+                    }
+                ),
+                equal_to(
+                    {
+                        'id': 2,
+                        'technology': 'sccp',
+                        'name': '1001',
+                        'tenant_uuid': s.tenant_uuid,
+                    }
+                ),
+                has_entries(id=3, technology='custom', name='dahdi/i1/1'),
             ),
         )
 
-        result = self.client.get_line('sip', s.name)
-        assert_that(result, equal_to(None))
-
-    def test_update_trunk(self):
-        self._set_cache(
-            trunks=[
-                {
-                    'id': s.trunk_id,
-                    'endpoint_sip': {
-                        'name': s.name,
-                        'registration_section_options': [['client_uri', s.username]],
-                    },
-                    'tenant_uuid': s.tenant_uuid,
-                },
-            ]
+    def test_list_trunks_reads_one_page_of_the_tenant(self):
+        self.status_cache.add_endpoint(
+            Endpoint('PJSIP', 'trunk-a', registered=True, channel_ids=[1]),
+        )
+        self.status_cache.add_endpoint(
+            Endpoint('IAX2', 'iax-a', registered=None, channel_ids=[1, 2, 3]),
         )
 
-        self.client.update_trunk(
-            'sip', s.trunk_id, s.new_name, s.new_username, s.tenant_uuid
-        )
+        items, total, filtered = self.service.list_trunks(s.tenant_uuid)
 
-        result = self.client.get_trunk('sip', s.new_name)
+        self.confd.trunks.list.assert_called_once_with(tenant_uuid=s.tenant_uuid)
+        assert_that(total, equal_to(40))
+        assert_that(filtered, equal_to(40))
         assert_that(
-            result,
-            has_entries(
-                id=s.trunk_id,
-                technology='sip',
-                name=s.new_name,
-                tenant_uuid=s.tenant_uuid,
-            ),
-        )
-
-        result = self.client.get_trunk('sip', s.name)
-        assert_that(result, equal_to(None))
-
-    def test_get_line(self):
-        self._set_cache(
-            lines=[
-                {
-                    'id': 1,
-                    'name': s.name_1,
-                    'protocol': 'sip',
-                    'tenant_uuid': s.tenant_uuid_1,
-                },
-                {
-                    'id': 2,
-                    'name': s.name_2,
-                    'protocol': 'sccp',
-                    'tenant_uuid': s.tenant_uuid_2,
-                },
-            ]
-        )
-
-        result = self.client.get_line('PJSIP', s.name_1)
-        assert_that(
-            result,
-            has_entries(
-                id=1, name=s.name_1, technology='sip', tenant_uuid=s.tenant_uuid_1
-            ),
-        )
-
-        result = self.client.get_line('SCCP', s.name_2)
-        assert_that(
-            result,
-            has_entries(
-                id=2, name=s.name_2, technology='sccp', tenant_uuid=s.tenant_uuid_2
-            ),
-        )
-
-        result = self.client.get_line('PJSIP', s.name_2)
-        assert_that(result, equal_to(None))
-
-    def test_list_lines(self):
-        self._set_cache(
-            lines=[
-                {
-                    'id': 1,
-                    'name': s.name_1,
-                    'protocol': 'sip',
-                    'tenant_uuid': s.tenant_uuid,
-                },
-                {
-                    'id': 2,
-                    'name': s.name_2,
-                    'protocol': 'sccp',
-                    'tenant_uuid': s.tenant_uuid,
-                },
-                {
-                    'id': 3,
-                    'name': s.interface,
-                    'protocol': 'custom',
-                    'tenant_uuid': s.tenant_uuid,
-                },
-                {
-                    'id': 4,
-                    'protocol': 'sip',
-                    'name': 'ignored',
-                    'tenant_uuid': s.other_tenant_uuid,
-                },
-            ]
-        )
-
-        result = self.client.list_lines(s.tenant_uuid)
-
-        assert_that(
-            result,
-            contains_inanyorder(
-                has_entries(id=1),
-                has_entries(id=2),
-                has_entries(id=3),
-            ),
-        )
-
-    def test_list_trunks(self):
-        self._set_cache(
-            [
-                {
-                    'id': 1,
-                    'endpoint_sip': {
-                        'name': s.name_1,
-                        'registration_section_options': [['client_uri', s.username_1]],
-                    },
-                    'tenant_uuid': s.tenant_uuid,
-                },
-                {
-                    'id': 2,
-                    'endpoint_iax': {'name': s.name},
-                    'tenant_uuid': s.tenant_uuid,
-                },
-                {
-                    'id': 3,
-                    'endpoint_custom': {'interface': s.interface},
-                    'tenant_uuid': s.tenant_uuid,
-                },
-                {
-                    'id': 4,
-                    'endpoint_sip': {
-                        'name': s.ignored_name,
-                        'registration_section_options': [
-                            ['client_uri', s.ignored_username]
-                        ],
-                    },
-                    'tenant_uuid': s.other_tenant_uuid,
-                },
-                {
-                    'id': 5,
-                    'endpoint_sip': None,
-                    'endpoint_iax': None,
-                    'endpoint_custom': None,
-                    'tenant_uuid': s.tenant_uuid,
-                },
-            ]
-        )
-
-        result = self.client.list_trunks(s.tenant_uuid)
-
-        assert_that(
-            result,
-            contains_inanyorder(
-                has_entries(id=1),
-                has_entries(id=2),
-                has_entries(id=3),
-            ),
-        )
-
-    def test_initialize_lines(self):
-        self.confd.trunks.list.return_value = {'items': [], 'total': 0}
-        self.confd.lines.list.return_value = {
-            "total": 3,
-            "items": [
-                {
-                    "id": 20,
-                    "tenant_uuid": s.tenant_uuid,
-                    "name": s.name_1,
-                    "protocol": "sip",
-                    "endpoint_sip": {
-                        "id": 18,
-                        "name": s.name_1,
-                        'auth_section_options': [['username', '5h8osw24']],
-                    },
-                    "endpoint_sccp": None,
-                    "endpoint_custom": None,
-                },
-                {
-                    "id": 33,
-                    "tenant_uuid": s.tenant_uuid,
-                    "name": s.name_2,
-                    "protocol": "sccp",
-                    "endpoint_sip": None,
-                    "endpoint_sccp": {"id": 5},
-                    "endpoint_custom": None,
-                },
-                {
-                    "id": 38,
-                    "tenant_uuid": s.tenant_uuid,
-                    "name": s.interface,
-                    "protocol": "custom",
-                    "endpoint_sip": None,
-                    "endpoint_sccp": None,
-                    "endpoint_custom": {"id": 3, "interface": s.interface},
-                },
-            ],
-        }
-
-        result = self.client.list_lines(s.tenant_uuid)
-
-        assert_that(
-            result,
-            contains_inanyorder(
+            items,
+            contains_exactly(
                 has_entries(
-                    id=20,
-                    name=s.name_1,
+                    id=1,
                     technology='sip',
-                    tenant_uuid=s.tenant_uuid,
+                    name='trunk-a',
+                    registered=True,
+                    current_call_count=1,
                 ),
                 has_entries(
-                    id=33,
-                    name=s.name_2,
-                    technology='sccp',
-                    tenant_uuid=s.tenant_uuid,
+                    id=2,
+                    technology='iax',
+                    name='iax-a',
+                    registered=None,
+                    current_call_count=3,
                 ),
-                has_entries(
-                    id=38,
-                    name=s.interface,
-                    technology='custom',
-                    tenant_uuid=s.tenant_uuid,
-                ),
+                has_entries(id=3, technology='custom', name='dahdi/g1'),
+                equal_to({'id': 4, 'name': None, 'tenant_uuid': s.tenant_uuid}),
             ),
         )
 
-    def _set_cache(self, trunks=None, lines=None):
-        if trunks:
-            self.client._update_trunk_cache(trunks)
-        if lines:
-            self.client._update_line_cache(lines)
+    def test_a_list_without_total_is_counted_as_returned(self):
+        self.confd.lines.list.return_value = {'items': CONFD_LINES}
 
-        self.client._initialized = True
+        _, total, filtered = self.service.list_lines(s.tenant_uuid)
+
+        assert_that((total, filtered), equal_to((3, 3)))
+
+    def test_list_parameters_are_passed_to_confd_as_given(self):
+        params = {
+            'limit': 2,
+            'offset': 4,
+            'order': 'name',
+            'direction': 'desc',
+            'search': 'abc',
+        }
+
+        self.service.list_lines(s.tenant_uuid, **params)
+        self.service.list_trunks(s.tenant_uuid, **params)
+
+        self.confd.lines.list.assert_called_once_with(
+            tenant_uuid=s.tenant_uuid, **params
+        )
+        self.confd.trunks.list.assert_called_once_with(
+            tenant_uuid=s.tenant_uuid, **params
+        )
+
+    def test_a_confd_400_is_invalid_list_parameters(self):
+        self.confd.lines.list.side_effect = http_error(
+            400, ["Input Error - field 'order': Must be one of: name."]
+        )
+
+        assert_that(
+            calling(self.service.list_lines).with_args(s.tenant_uuid, order='x'),
+            raises(InvalidListParameters),
+        )
+        try:
+            self.service.list_lines(s.tenant_uuid, order='x')
+        except InvalidListParameters as e:
+            assert_that(
+                e,
+                has_properties(
+                    status_code=400,
+                    message="Input Error - field 'order': Must be one of: name.",
+                ),
+            )
+
+    def test_a_confd_timeout_is_confd_unreachable(self):
+        self.confd.trunks.list.side_effect = ReadTimeout()
+
+        assert_that(
+            calling(self.service.list_trunks).with_args(s.tenant_uuid),
+            raises(WazoConfdUnreachable),
+        )
+
+    def test_another_confd_error_is_not_hidden(self):
+        self.confd.lines.list.side_effect = http_error(500, {'message': 'boom'})
+
+        assert_that(
+            calling(self.service.list_lines).with_args(s.tenant_uuid),
+            raises(HTTPError),
+        )
+        assert_that(
+            calling(self.service.list_lines).with_args(s.tenant_uuid),
+            not_(raises(WazoConfdUnreachable)),
+        )
 
 
 class TestEndpoint(TestCase):

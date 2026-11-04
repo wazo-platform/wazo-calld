@@ -1,8 +1,9 @@
-# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from __future__ import annotations
 
+from wazo_amid_client import Client as AmidClient
 from wazo_confd_client import Client as ConfdClient
 from xivo.pubsub import CallbackCollector
 from xivo.status import Status
@@ -11,8 +12,9 @@ from wazo_calld.types import PluginDependencies, StatusDict
 
 from .bus import EventHandler
 from .http import LineEndpoints, TrunkEndpoints
+from .identity import EndpointIdentities, IdentityMap
 from .notifier import EndpointStatusNotifier
-from .services import ConfdCache, EndpointsService, NotifyingStatusCache
+from .services import EndpointsService, NotifyingStatusCache
 
 
 class Plugin:
@@ -28,11 +30,17 @@ class Plugin:
         confd_client = ConfdClient(**config['confd'])
         token_changed_subscribe(confd_client.set_token)
 
-        confd_cache = ConfdCache(confd_client)
-        notifier = EndpointStatusNotifier(bus_publisher, confd_cache)
+        amid_client = AmidClient(**config['amid'])
+        token_changed_subscribe(amid_client.set_token)
+
+        identity_map = IdentityMap()
+        identities = EndpointIdentities(
+            identity_map, ari.client, confd_client, amid_client
+        )
+        notifier = EndpointStatusNotifier(bus_publisher, identities)
 
         status_cache = NotifyingStatusCache(notifier.endpoint_updated, ari.client)
-        endpoints_service = EndpointsService(confd_cache, status_cache)
+        endpoints_service = EndpointsService(confd_client, status_cache)
 
         self._async_tasks_completed = False
         startup_callback_collector = CallbackCollector()
@@ -40,7 +48,7 @@ class Plugin:
         startup_callback_collector.subscribe(status_cache.initialize)
         startup_callback_collector.subscribe(self._set_async_tasks_completed)
 
-        event_handler = EventHandler(status_cache, confd_cache)
+        event_handler = EventHandler(status_cache, identity_map, identities)
         event_handler.subscribe(bus_consumer)
 
         status_aggregator.add_provider(self._provide_status)

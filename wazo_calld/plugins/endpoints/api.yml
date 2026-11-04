@@ -5,7 +5,7 @@ paths:
       description: |
         **Required ACL:** `calld.lines.read`
 
-        List the status of line endpoints that are configured on Asterisk
+        List the status of the lines of the tenant, as wazo-confd lists them
 
         Supported technologies:
 
@@ -13,15 +13,34 @@ paths:
 
         Lines with unsupported technologies will be listed but there status
         will be null
+
+        The list parameters are passed to wazo-confd's `GET /lines`: `order`
+        and `search` use its columns (`context`, `provisioning_code`,
+        `provisioning_extension`, `position`, `device_slot`, `protocol`,
+        `device_id`, `name`, `caller_id_name`, `caller_id_num`, `exten`;
+        sorted by `name` by default). Without `limit`, every line of the
+        tenant is returned.
       tags:
         - lines
       parameters:
         - $ref: '#/parameters/TenantUUID'
+        - name: limit
+          in: query
+          type: integer
+          minimum: 1
+          required: false
+          description: Maximum number of items to return in the list
+        - $ref: '#/parameters/offset'
+        - $ref: '#/parameters/order'
+        - $ref: '#/parameters/direction'
+        - $ref: '#/parameters/search'
       responses:
         '200':
           description: A list of line status
           schema:
             $ref: '#/definitions/EndpointLines'
+        '400':
+          $ref: '#/responses/InvalidRequest'
         '503':
           $ref: '#/responses/AnotherServiceUnavailable'
   /trunks:
@@ -30,23 +49,42 @@ paths:
       description: |
         **Required ACL:** `calld.trunks.read`
 
-        List the status of trunk endpoints that are configured on Asterisk
+        List the status of the trunks of the tenant, as wazo-confd lists them
 
         Supported technologies:
 
           * SIP
 
         Trunks with unsupported technologies will be listed but there status
-        will be null
+        will be null. A trunk without an endpoint is listed with the
+        technology `unknown`, a null name and a null status.
+
+        The list parameters are passed to wazo-confd's `GET /trunks`: `order`
+        and `search` use its columns (`id`, `context`, `description`, `name`,
+        `label`, `outgoing_caller_id_format`; sorted by `id` by default), where
+        `name` is the trunk's name, not its endpoint's. Without `limit`, every
+        trunk of the tenant is returned.
       tags:
         - trunks
       parameters:
         - $ref: '#/parameters/TenantUUID'
+        - name: limit
+          in: query
+          type: integer
+          minimum: 1
+          required: false
+          description: Maximum number of items to return in the list
+        - $ref: '#/parameters/offset'
+        - $ref: '#/parameters/order'
+        - $ref: '#/parameters/direction'
+        - $ref: '#/parameters/search'
       responses:
         '200':
           description: A list of trunk status
           schema:
             $ref: '#/definitions/EndpointTrunks'
+        '400':
+          $ref: '#/responses/InvalidRequest'
         '503':
           $ref: '#/responses/AnotherServiceUnavailable'
 definitions:
@@ -77,16 +115,18 @@ definitions:
           $ref: '#/definitions/EndpointLine'
       total:
         type: integer
-        description: The number of line endpoint
+        description: The number of lines matching the searched terms, as
+          counted by wazo-confd before paging
       filtered:
         type: integer
-        description: The number of line endpoint matching the searched terms
+        description: Equal to `total`
   EndpointTrunk:
     type: object
     properties:
       technology:
         type: string
-        description: The technology of that endpoint only (SIP, IAX or custom)
+        description: The technology of that endpoint only (SIP, IAX or custom),
+          `unknown` for a trunk without an endpoint
       name:
         type: string
         description: The name of that given endpoint in Asterisk
@@ -108,7 +148,8 @@ definitions:
           $ref: '#/definitions/EndpointTrunk'
       total:
         type: integer
-        description: The number of trunk endpoint
+        description: The number of trunks matching the searched terms, as
+          counted by wazo-confd before paging
       filtered:
         type: integer
-        description: The number of trunk endpoint matching the searched terms
+        description: Equal to `total`

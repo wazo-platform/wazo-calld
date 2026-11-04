@@ -1,12 +1,13 @@
-# Copyright 2019-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+from flask import request
 from xivo.tenant_flask_helpers import Tenant
 
 from wazo_calld.auth import required_acl
 from wazo_calld.http import AuthResource
 
-from .schemas import line_endpoint_schema, trunk_endpoint_schema
+from .schemas import endpoint_list_schema, line_endpoint_schema, trunk_endpoint_schema
 
 
 class LineEndpoints(AuthResource):
@@ -16,8 +17,11 @@ class LineEndpoints(AuthResource):
     @required_acl('calld.lines.read')
     def get(self):
         tenant_uuid = Tenant.autodetect().uuid
+        params = endpoint_list_schema.load(request.args)
 
-        items, total, filtered = self._endpoints_service.list_lines(tenant_uuid)
+        items, total, filtered = self._endpoints_service.list_lines(
+            tenant_uuid, **params
+        )
         result = {
             'items': line_endpoint_schema.dump(items, many=True),
             'total': total,
@@ -34,8 +38,11 @@ class TrunkEndpoints(AuthResource):
     @required_acl('calld.trunks.read')
     def get(self):
         tenant_uuid = Tenant.autodetect().uuid
+        params = endpoint_list_schema.load(request.args)
 
-        items, total, filtered = self._endpoints_service.list_trunks(tenant_uuid)
+        items, total, filtered = self._endpoints_service.list_trunks(
+            tenant_uuid, **params
+        )
         result = {
             'items': trunk_endpoint_schema.dump(items, many=True),
             'total': total,

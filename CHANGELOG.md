@@ -1,5 +1,10 @@
 # Changelog
 
+## 26.11
+
+* `GET /lines` and `GET /trunks` accept `limit`, `offset`, `order`, `direction` and `search`, passed to wazo-confd.
+  `GET /trunks` now lists trunks without an endpoint, with `technology` `unknown`.
+
 ## 26.09
 
 * Requests to wazo-auth now default to `localhost:80`, through nginx.

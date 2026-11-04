@@ -1,10 +1,18 @@
-# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from hamcrest import assert_that, has_entries, has_item
+from hamcrest import (
+    assert_that,
+    contains_exactly,
+    equal_to,
+    has_entries,
+    has_item,
+    is_in,
+    not_,
+)
 from wazo_test_helpers import until
 
-from .helpers.ari_ import MockEndpoint
+from .helpers.ari_ import MockEndpoint, MockPJSIPEndpointConfig
 from .helpers.base import IntegrationTest
 from .helpers.calld import new_call_id
 from .helpers.confd import MockLine, MockTrunk
@@ -12,7 +20,16 @@ from .helpers.constants import VALID_TENANT, XIVO_UUID
 from .helpers.wait_strategy import CalldEverythingOkWaitStrategy
 
 
-class TestTrunkBusConsume(IntegrationTest):
+def outbound_registration(client_uri, endpoint_name):
+    return {
+        'Event': 'OutboundRegistrationDetail',
+        'ObjectType': 'registration',
+        'ClientUri': client_uri,
+        'Endpoint': endpoint_name,
+    }
+
+
+class EndpointsBusConsumeTest(IntegrationTest):
     asset = 'basic_rest'
     wait_strategy = CalldEverythingOkWaitStrategy()
 
@@ -22,6 +39,12 @@ class TestTrunkBusConsume(IntegrationTest):
         self.ari.reset()
         self.confd.reset()
 
+    def assert_no_line_or_trunk_list_from_confd(self):
+        paths = [request['path'] for request in self.confd.requests()['requests']]
+        assert_that(paths, not_(has_item(is_in(['/1.1/lines', '/1.1/trunks']))))
+
+
+class TestTrunkBusConsume(EndpointsBusConsumeTest):
     def test_when_ami_hangup_then_bus_event(self):
         call_id = new_call_id()
         trunk_id = 42
@@ -31,17 +54,8 @@ class TestTrunkBusConsume(IntegrationTest):
         self.ari.set_endpoints(
             MockEndpoint('PJSIP', name, 'online', channel_ids=[call_id, new_call_id()])
         )
-        self.confd.set_trunks(
-            MockTrunk(
-                trunk_id,
-                endpoint_sip={
-                    'name': name,
-                    'registration_section_options': [
-                        ['client_uri', 'sip:the-username@hostname']
-                    ],
-                },
-                tenant_uuid=tenant_uuid,
-            )
+        self.ari.set_pjsip_endpoint_configs(
+            MockPJSIPEndpointConfig(name, tenant_uuid, trunk_id=trunk_id)
         )
 
         self.restart_service('calld')
@@ -69,6 +83,7 @@ class TestTrunkBusConsume(IntegrationTest):
             )
 
         until.assert_(assert_function, tries=5)
+        self.assert_no_line_or_trunk_list_from_confd()
 
     def test_when_ami_newchannel_then_bus_event(self):
         trunk_id = 42
@@ -83,15 +98,8 @@ class TestTrunkBusConsume(IntegrationTest):
                 channel_ids=[new_call_id(), new_call_id()],
             )
         )
-        self.confd.set_trunks(
-            MockTrunk(
-                trunk_id,
-                endpoint_sip={
-                    'name': name,
-                    'registration_section_options': [['client_uri', 'the-username']],
-                },
-                tenant_uuid=tenant_uuid,
-            )
+        self.ari.set_pjsip_endpoint_configs(
+            MockPJSIPEndpointConfig(name, tenant_uuid, trunk_id=trunk_id)
         )
 
         self.restart_service('calld')
@@ -121,6 +129,7 @@ class TestTrunkBusConsume(IntegrationTest):
             )
 
         until.assert_(assert_function, tries=5)
+        self.assert_no_line_or_trunk_list_from_confd()
 
     def test_when_ami_peerstatus_then_bus_event(self):
         trunk_id = 42
@@ -130,15 +139,8 @@ class TestTrunkBusConsume(IntegrationTest):
         self.ari.set_endpoints(
             MockEndpoint('PJSIP', name, 'offline'),
         )
-        self.confd.set_trunks(
-            MockTrunk(
-                trunk_id,
-                endpoint_sip={
-                    'name': name,
-                    'registration_section_options': [['client_uri', 'the-username']],
-                },
-                tenant_uuid=tenant_uuid,
-            )
+        self.ari.set_pjsip_endpoint_configs(
+            MockPJSIPEndpointConfig(name, tenant_uuid, trunk_id=trunk_id)
         )
 
         self.restart_service('calld')
@@ -187,6 +189,7 @@ class TestTrunkBusConsume(IntegrationTest):
             )
 
         until.assert_(assert_not_registered, tries=5)
+        self.assert_no_line_or_trunk_list_from_confd()
 
     def test_when_ami_registry_then_bus_event(self):
         trunk_id = 42
@@ -197,15 +200,11 @@ class TestTrunkBusConsume(IntegrationTest):
         self.ari.set_endpoints(
             MockEndpoint('PJSIP', name, 'offline'),
         )
-        self.confd.set_trunks(
-            MockTrunk(
-                trunk_id,
-                endpoint_sip={
-                    'name': name,
-                    'registration_section_options': [['client_uri', client_uri]],
-                },
-                tenant_uuid=tenant_uuid,
-            )
+        self.ari.set_pjsip_endpoint_configs(
+            MockPJSIPEndpointConfig(name, tenant_uuid, trunk_id=trunk_id)
+        )
+        self.amid.set_action_result(
+            [outbound_registration(client_uri, name), {'Event': 'Complete'}]
         )
 
         self.restart_service('calld')
@@ -264,6 +263,7 @@ class TestTrunkBusConsume(IntegrationTest):
             )
 
         until.assert_(assert_not_registered, tries=5)
+        self.assert_no_line_or_trunk_list_from_confd()
 
     def test_when_trunk_associated_events_can_be_published(self):
         trunk_id = 42
@@ -291,6 +291,10 @@ class TestTrunkBusConsume(IntegrationTest):
                 tenant_uuid=tenant_uuid,
             )
         )
+        self.ari.set_pjsip_endpoint_configs(
+            MockPJSIPEndpointConfig(name, tenant_uuid, trunk_id=trunk_id)
+        )
+        self.amid.set_action_result([outbound_registration(client_uri, name)])
         self.bus.send_trunk_endpoint_associated_event(trunk_id, endpoint_id=3)
 
         def trunk_exists():
@@ -349,16 +353,7 @@ class TestTrunkBusConsume(IntegrationTest):
         until.assert_(trunk_registered, timeout=5)
 
 
-class TestLineBusConsume(IntegrationTest):
-    asset = 'basic_rest'
-    wait_strategy = CalldEverythingOkWaitStrategy()
-
-    def setUp(self):
-        super().setUp()
-        self.amid.reset()
-        self.ari.reset()
-        self.confd.reset()
-
+class TestLineBusConsume(EndpointsBusConsumeTest):
     def test_when_ami_hangup_then_bus_event(self):
         call_id = new_call_id()
         line_id = 42
@@ -368,17 +363,8 @@ class TestLineBusConsume(IntegrationTest):
         self.ari.set_endpoints(
             MockEndpoint('PJSIP', name, 'online', channel_ids=[call_id, new_call_id()])
         )
-        self.confd.set_lines(
-            MockLine(
-                line_id,
-                name=name,
-                protocol='sip',
-                endpoint_sip={
-                    'name': name,
-                    'auth_section_options': [['username', 'the-username']],
-                },
-                tenant_uuid=tenant_uuid,
-            )
+        self.ari.set_pjsip_endpoint_configs(
+            MockPJSIPEndpointConfig(name, tenant_uuid, line_id=line_id)
         )
 
         self.restart_service('calld')
@@ -406,6 +392,7 @@ class TestLineBusConsume(IntegrationTest):
             )
 
         until.assert_(assert_function, tries=5)
+        self.assert_no_line_or_trunk_list_from_confd()
 
     def test_when_ami_newchannel_then_bus_event(self):
         line_id = 42
@@ -420,17 +407,8 @@ class TestLineBusConsume(IntegrationTest):
                 channel_ids=[new_call_id(), new_call_id()],
             )
         )
-        self.confd.set_lines(
-            MockLine(
-                line_id,
-                name=name,
-                protocol='sip',
-                endpoint_sip={
-                    'name': name,
-                    'auth_section_options': [['username', 'the-username']],
-                },
-                tenant_uuid=tenant_uuid,
-            )
+        self.ari.set_pjsip_endpoint_configs(
+            MockPJSIPEndpointConfig(name, tenant_uuid, line_id=line_id)
         )
 
         self.restart_service('calld')
@@ -460,6 +438,7 @@ class TestLineBusConsume(IntegrationTest):
             )
 
         until.assert_(assert_function, tries=5)
+        self.assert_no_line_or_trunk_list_from_confd()
 
     def test_when_ami_peerstatus_then_bus_event(self):
         line_id = 42
@@ -469,17 +448,8 @@ class TestLineBusConsume(IntegrationTest):
         self.ari.set_endpoints(
             MockEndpoint('PJSIP', name, 'offline'),
         )
-        self.confd.set_lines(
-            MockLine(
-                line_id,
-                name=name,
-                protocol='sip',
-                endpoint_sip={
-                    'name': name,
-                    'auth_section_options': [['username', 'the-username']],
-                },
-                tenant_uuid=tenant_uuid,
-            )
+        self.ari.set_pjsip_endpoint_configs(
+            MockPJSIPEndpointConfig(name, tenant_uuid, line_id=line_id)
         )
 
         self.restart_service('calld')
@@ -528,6 +498,7 @@ class TestLineBusConsume(IntegrationTest):
             )
 
         until.assert_(assert_not_registered, tries=5)
+        self.assert_no_line_or_trunk_list_from_confd()
 
     def test_when_line_associated_events_can_be_published(self):
         line_id = 42
@@ -597,3 +568,47 @@ class TestLineBusConsume(IntegrationTest):
             )
 
         until.assert_(line_registered, timeout=5)
+
+
+class TestEndpointsList(EndpointsBusConsumeTest):
+    def list_endpoints(self, resource, **params):
+        command = getattr(self.calld_client, resource)
+        response = command.session.get(
+            command._client.url(resource),
+            params=params,
+            headers=command._get_headers(tenant_uuid=VALID_TENANT),
+        )
+        return response.status_code, response.json()
+
+    def test_list_parameters_reach_confd_for_the_tenant_only(self):
+        self.list_endpoints('lines', limit=1, offset=2, search='abc')
+        self.list_endpoints('trunks', order='name', direction='desc')
+
+        requests = [
+            request
+            for request in self.confd.requests()['requests']
+            if request['path'] in ('/1.1/lines', '/1.1/trunks')
+        ]
+        assert_that(
+            requests,
+            contains_exactly(
+                has_entries(
+                    path='/1.1/lines',
+                    query=has_entries(
+                        limit='1', offset='2', search='abc', recurse='False'
+                    ),
+                    headers=has_entries({'Wazo-Tenant': VALID_TENANT}),
+                ),
+                has_entries(
+                    path='/1.1/trunks',
+                    query=has_entries(order='name', direction='desc', recurse='False'),
+                    headers=has_entries({'Wazo-Tenant': VALID_TENANT}),
+                ),
+            ),
+        )
+
+    def test_an_invalid_limit_is_refused_before_confd(self):
+        status, body = self.list_endpoints('lines', limit=0)
+
+        assert_that(status, equal_to(400))
+        self.assert_no_line_or_trunk_list_from_confd()

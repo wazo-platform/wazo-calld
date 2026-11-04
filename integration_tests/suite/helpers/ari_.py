@@ -1,4 +1,4 @@
-# Copyright 2015-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import requests
@@ -55,6 +55,18 @@ class ARIClient:
         body = {
             'response': 'endpoints',
             'content': [endpoint.to_dict() for endpoint in mock_endpoints],
+        }
+        response = requests.post(url, json=body)
+        response.raise_for_status()
+
+    def set_pjsip_endpoint_configs(self, *mock_configs):
+        url = self.url('_set_response')
+        body = {
+            'response': 'config_objects',
+            'content': {
+                f'res_pjsip/endpoint/{config.name}': config.to_dict()
+                for config in mock_configs
+            },
         }
         response = requests.post(url, json=body)
         response.raise_for_status()
@@ -187,3 +199,20 @@ class MockEndpoint:
             'state': self._state,
             'channel_ids': self._channel_ids or [],
         }
+
+
+class MockPJSIPEndpointConfig:
+    def __init__(self, name, tenant_uuid, line_id=None, trunk_id=None):
+        self.name = name
+        self._variables = {'__WAZO_TENANT_UUID': tenant_uuid}
+        if line_id is not None:
+            self._variables['WAZO_LINE_ID'] = str(line_id)
+        if trunk_id is not None:
+            self._variables['WAZO_TRUNK_ID'] = str(trunk_id)
+
+    def to_dict(self):
+        tuples = [{'attribute': 'type', 'value': 'endpoint'}]
+        for name, value in self._variables.items():
+            tuples.append({'attribute': 'set_var', 'value': f'{name}={value}'})
+            tuples.append({'attribute': name, 'value': value})
+        return tuples

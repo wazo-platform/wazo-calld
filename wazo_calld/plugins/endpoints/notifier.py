@@ -1,8 +1,10 @@
-# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from wazo_bus.resources.line.event import LineStatusUpdatedEvent
 from wazo_bus.resources.trunk.event import TrunkStatusUpdatedEvent
+
+from .identity import TRUNK
 
 
 class EndpointStatusNotifier:
@@ -12,35 +14,27 @@ class EndpointStatusNotifier:
         'SCCP': 'sccp',
     }
 
-    def __init__(self, publisher, confd_cache):
+    def __init__(self, publisher, identities):
         self._publisher = publisher
-        self._confd_cache = confd_cache
+        self._identities = identities
 
     def endpoint_updated(self, endpoint):
-        techno = self._asterisk_to_confd_techno_map.get(
-            endpoint.techno, endpoint.techno
+        identity = self._identities.identity_of(endpoint.techno, endpoint.name)
+        if not identity:
+            return
+
+        techno = self._asterisk_to_confd_techno_map[endpoint.techno]
+        event_class = (
+            TrunkStatusUpdatedEvent
+            if identity.kind == TRUNK
+            else LineStatusUpdatedEvent
         )
-
-        trunk = self._confd_cache.get_trunk(endpoint.techno, endpoint.name)
-        if trunk:
-            event = TrunkStatusUpdatedEvent(
-                trunk['id'],
-                techno,
-                endpoint.name,
-                endpoint.registered,
-                endpoint.current_call_count,
-                trunk['tenant_uuid'],
-            )
-            return self._publisher.publish(event)
-
-        line = self._confd_cache.get_line(endpoint.techno, endpoint.name)
-        if line:
-            event = LineStatusUpdatedEvent(
-                line['id'],
-                techno,
-                endpoint.name,
-                endpoint.registered,
-                endpoint.current_call_count,
-                line['tenant_uuid'],
-            )
-            return self._publisher.publish(event)
+        event = event_class(
+            identity.id,
+            techno,
+            endpoint.name,
+            endpoint.registered,
+            endpoint.current_call_count,
+            identity.tenant_uuid,
+        )
+        return self._publisher.publish(event)

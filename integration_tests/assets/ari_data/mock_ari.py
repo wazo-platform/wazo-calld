@@ -17,6 +17,7 @@ _EMPTY_RESPONSES: dict[str, dict | list] = {
     'bridges': {},
     'channel_variables': {},
     'channels': {},
+    'config_objects': {},
     'endpoints': [],
     'global_variables': {},
     'originates': [],
@@ -197,6 +198,19 @@ def get_endpoint(tech: str, resource: str) -> Response | tuple[str, int]:
                 json.dumps(result), 200, {'Content-Type': 'application/json'}
             )
     return '', 404
+
+
+@app.route(
+    '/ari/asterisk/config/dynamic/<config_class>/<object_type>/<object_id>',
+    methods=['GET'],
+)
+def get_config_object(
+    config_class: str, object_type: str, object_id: str
+) -> Response | tuple[str, int]:
+    key = f'{config_class}/{object_type}/{object_id}'
+    if key not in _responses['config_objects']:
+        return '', 404
+    return jsonify(_responses['config_objects'][key])
 
 
 @app.route('/ari/channels/<channel_id>/variable', methods=['GET'])
