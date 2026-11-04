@@ -1,6 +1,7 @@
 # Copyright 2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+import threading
 from unittest import TestCase
 from unittest.mock import Mock, patch
 
@@ -12,7 +13,12 @@ from requests import ConnectTimeout, HTTPError
 from wazo_calld.http import ErrorCatchingResource
 
 from ..http import LineEndpoints, TrunkEndpoints
-from ..services import Endpoint, EndpointsService, NotifyingStatusCache
+from ..services import (
+    CONFD_LIST_CONCURRENCY,
+    Endpoint,
+    EndpointsService,
+    NotifyingStatusCache,
+)
 
 TENANT = '00000000-0000-4000-8000-000000000001'
 
@@ -161,3 +167,38 @@ class TestEndpointsHTTP(TestCase):
 
         assert_that(response.status_code, equal_to(503))
         assert_that(response.json, has_entries(error_id='wazo-confd-unreachable'))
+
+    def test_a_list_beyond_the_cap_is_503_confd_busy(self):
+        release = threading.Event()
+        entered = threading.Semaphore(0)
+
+        def slow_list(**kwargs):
+            entered.release()
+            release.wait(5)
+            return {'total': 0, 'items': []}
+
+        self.confd.lines.list.side_effect = slow_list
+        threads = [
+            threading.Thread(target=self.client.get, args=('/lines',))
+            for _ in range(CONFD_LIST_CONCURRENCY)
+        ]
+        for thread in threads:
+            thread.start()
+        for _ in threads:
+            assert entered.acquire(timeout=5)
+        try:
+            response = self.client.get('/trunks')
+        finally:
+            release.set()
+            for thread in threads:
+                thread.join(5)
+
+        assert_that(response.status_code, equal_to(503))
+        assert_that(
+            response.json,
+            has_entries(
+                error_id='wazo-calld-confd-busy',
+                message='too many concurrent requests to wazo-confd, retry later',
+            ),
+        )
+        self.confd.trunks.list.assert_not_called()

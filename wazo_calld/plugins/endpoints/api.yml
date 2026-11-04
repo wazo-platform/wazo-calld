@@ -42,7 +42,11 @@ paths:
         '400':
           $ref: '#/responses/InvalidRequest'
         '503':
-          $ref: '#/responses/AnotherServiceUnavailable'
+          description: Another service is unavailable (`wazo-confd-unreachable`),
+            or too many requests to wazo-confd are in flight
+            (`wazo-calld-confd-busy`, retry later)
+          schema:
+            $ref: '#/definitions/Error'
   /trunks:
     get:
       summary: List trunk endpoint statuses
@@ -86,7 +90,11 @@ paths:
         '400':
           $ref: '#/responses/InvalidRequest'
         '503':
-          $ref: '#/responses/AnotherServiceUnavailable'
+          description: Another service is unavailable (`wazo-confd-unreachable`),
+            or too many requests to wazo-confd are in flight
+            (`wazo-calld-confd-busy`, retry later)
+          schema:
+            $ref: '#/definitions/Error'
 definitions:
   EndpointLine:
     type: object

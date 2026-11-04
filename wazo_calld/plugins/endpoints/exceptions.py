@@ -12,3 +12,12 @@ class InvalidListParameters(APIException):
             error_id='invalid-list-parameters',
             details={'wazo_confd_errors': confd_errors},
         )
+
+
+class ConfdBusy(APIException):
+    def __init__(self):
+        super().__init__(
+            status_code=503,
+            message='too many concurrent requests to wazo-confd, retry later',
+            error_id='wazo-calld-confd-busy',
+        )

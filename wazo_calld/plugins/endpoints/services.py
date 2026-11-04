@@ -3,6 +3,7 @@
 
 import copy
 import logging
+import threading
 from contextlib import contextmanager
 
 from requests import HTTPError, RequestException
@@ -12,9 +13,14 @@ from wazo_calld.plugin_helpers.exceptions import (
     WazoConfdUnreachable,
 )
 
-from .exceptions import InvalidListParameters
+from .exceptions import ConfdBusy, InvalidListParameters
 
 logger = logging.getLogger(__name__)
+
+# wazo-confd list requests in flight at once for GET /lines and GET /trunks; a
+# request beyond it is refused at once rather than queued behind lists that can
+# each read a whole tenant
+CONFD_LIST_CONCURRENCY = 4
 
 
 class Endpoint:
@@ -152,6 +158,7 @@ class EndpointsService:
     def __init__(self, confd_client, status_cache):
         self._confd = confd_client
         self.status_cache = status_cache
+        self._confd_slots = threading.BoundedSemaphore(CONFD_LIST_CONCURRENCY)
 
     def list_lines(self, tenant_uuid, **params):
         result = self._list(self._confd.lines, tenant_uuid, params)
@@ -166,6 +173,8 @@ class EndpointsService:
         return self._with_status(items), total, total
 
     def _list(self, resource, tenant_uuid, params):
+        if not self._confd_slots.acquire(blocking=False):
+            raise ConfdBusy()
         try:
             return resource.list(tenant_uuid=tenant_uuid, **params)
         except HTTPError as e:
@@ -174,6 +183,8 @@ class EndpointsService:
             raise
         except RequestException as e:
             raise WazoConfdUnreachable(self._confd, e)
+        finally:
+            self._confd_slots.release()
 
     @staticmethod
     def _total(result):

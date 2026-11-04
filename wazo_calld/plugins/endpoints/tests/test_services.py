@@ -1,6 +1,7 @@
 # Copyright 2019-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+import threading
 from unittest import TestCase
 from unittest.mock import Mock
 from unittest.mock import sentinel as s
@@ -19,8 +20,13 @@ from requests import HTTPError, ReadTimeout
 
 from wazo_calld.plugin_helpers.exceptions import WazoConfdUnreachable
 
-from ..exceptions import InvalidListParameters
-from ..services import Endpoint, EndpointsService, NotifyingStatusCache
+from ..exceptions import ConfdBusy, InvalidListParameters
+from ..services import (
+    CONFD_LIST_CONCURRENCY,
+    Endpoint,
+    EndpointsService,
+    NotifyingStatusCache,
+)
 
 CONFD_LINES = [
     {
@@ -204,6 +210,91 @@ class TestEndpointService(TestCase):
             calling(self.service.list_lines).with_args(s.tenant_uuid),
             not_(raises(WazoConfdUnreachable)),
         )
+
+
+class TestConfdConcurrencyCap(TestCase):
+    def setUp(self):
+        self.confd = Mock()
+        self.release = threading.Event()
+        self.entered = threading.Semaphore(0)
+        self.service = EndpointsService(
+            self.confd, NotifyingStatusCache(Mock(), Mock())
+        )
+
+    def _slow_list(self, **kwargs):
+        self.entered.release()
+        self.release.wait(5)
+        return {'total': 0, 'items': []}
+
+    def _hold(self, count):
+        self.confd.lines.list.side_effect = self._slow_list
+        self.confd.trunks.list.side_effect = self._slow_list
+        threads = [
+            threading.Thread(
+                target=self.service.list_lines
+                if index % 2
+                else self.service.list_trunks,
+                args=(s.tenant_uuid,),
+            )
+            for index in range(count)
+        ]
+        for thread in threads:
+            thread.start()
+        for _ in range(count):
+            assert self.entered.acquire(timeout=5)
+        return threads
+
+    def _release(self, threads):
+        self.release.set()
+        for thread in threads:
+            thread.join(5)
+
+    def test_the_cap_is_four(self):
+        assert_that(CONFD_LIST_CONCURRENCY, equal_to(4))
+
+    def test_a_list_beyond_the_cap_is_refused_without_calling_confd(self):
+        threads = self._hold(CONFD_LIST_CONCURRENCY)
+        try:
+            assert_that(
+                calling(self.service.list_lines).with_args(s.tenant_uuid),
+                raises(ConfdBusy),
+            )
+            assert_that(
+                calling(self.service.list_trunks).with_args(s.tenant_uuid),
+                raises(ConfdBusy),
+            )
+            calls = self.confd.lines.list.call_count + self.confd.trunks.list.call_count
+            assert_that(calls, equal_to(CONFD_LIST_CONCURRENCY))
+        finally:
+            self._release(threads)
+
+        items, _, _ = self.service.list_lines(s.tenant_uuid)
+
+        assert_that(items, equal_to([]))
+
+    def test_below_the_cap_a_list_passes(self):
+        threads = self._hold(CONFD_LIST_CONCURRENCY - 1)
+        try:
+            self.release.set()
+            items, _, _ = self.service.list_trunks(s.tenant_uuid)
+        finally:
+            self._release(threads)
+
+        assert_that(items, equal_to([]))
+
+    def test_a_failed_list_releases_its_slot(self):
+        self.confd.lines.list.side_effect = ReadTimeout()
+        for _ in range(CONFD_LIST_CONCURRENCY + 1):
+            assert_that(
+                calling(self.service.list_lines).with_args(s.tenant_uuid),
+                raises(WazoConfdUnreachable),
+            )
+
+        self.confd.lines.list.side_effect = None
+        self.confd.lines.list.return_value = {'total': 0, 'items': []}
+        items, _, _ = self.service.list_lines(s.tenant_uuid)
+
+        assert_that(items, equal_to([]))
 
 
 class TestEndpoint(TestCase):

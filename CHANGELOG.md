@@ -2,7 +2,8 @@
 
 ## 26.11
 
-* `GET /lines` and `GET /trunks` accept `limit`, `offset`, `order`, `direction` and `search`, passed to wazo-confd.
+* `GET /lines` and `GET /trunks` accept `limit`, `offset`, `order`, `direction` and `search`, passed to wazo-confd;
+  they may answer 503 (`wazo-calld-confd-busy`) when too many requests to wazo-confd are in flight.
   `GET /trunks` now lists trunks without an endpoint, with `technology` `unknown`.
 
 ## 26.09
