@@ -1,4 +1,4 @@
-# Copyright 2015-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
@@ -220,6 +220,16 @@ class LegacyCalldClient:
         response = self.get_status_result(token)
         assert_that(response.status_code, equal_to(200))
         return response.json()
+
+    def get_lines_result(self, token=None, tenant_uuid=None, **params):
+        url = self.url('lines')
+        headers = self._headers(token=token, tenant_uuid=tenant_uuid)
+        return requests.get(url, headers=headers, params=params)
+
+    def get_trunks_result(self, token=None, tenant_uuid=None, **params):
+        url = self.url('trunks')
+        headers = self._headers(token=token, tenant_uuid=tenant_uuid)
+        return requests.get(url, headers=headers, params=params)
 
     def get_voicemail_result(self, voicemail_id, token=None):
         url = self.url('voicemails', voicemail_id)
