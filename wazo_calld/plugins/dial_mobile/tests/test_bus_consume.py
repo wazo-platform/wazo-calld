@@ -130,7 +130,7 @@ class TestEventHandler(TestCase):
 
         self.event_handler._on_dial_end(event)
 
-        self.service.cancel_push_mobile.assert_called_with('1647871892.53')
+        self.service.cancel_mobile_call.assert_called_with('1647871892.53')
 
     def test_cancel_push_on_dial_end_answered(self):
         event = {
@@ -189,4 +189,4 @@ class TestEventHandler(TestCase):
 
         self.event_handler._on_dial_end(event)
 
-        self.service.cancel_push_mobile.assert_not_called()
+        self.service.cancel_mobile_call.assert_not_called()
