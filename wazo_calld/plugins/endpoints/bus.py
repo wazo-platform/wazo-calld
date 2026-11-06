@@ -1,9 +1,12 @@
-# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
 
 logger = logging.getLogger(__name__)
+
+# Asterisk reports a status for these channel technologies only
+STATUS_TECHNOS = ('PJSIP', 'IAX2')
 
 
 class EventHandler:
@@ -67,7 +70,7 @@ class EventHandler:
 
     def on_hangup(self, event):
         techno, name = self._techno_name_from_channel(event['Channel'])
-        if techno == 'Local':
+        if not self._has_status(techno, name):
             return
 
         unique_id = event['Uniqueid']
@@ -77,7 +80,7 @@ class EventHandler:
 
     def on_new_channel(self, event):
         techno, name = self._techno_name_from_channel(event['Channel'])
-        if techno == 'Local':
+        if not self._has_status(techno, name):
             return
 
         unique_id = event['Uniqueid']
@@ -276,6 +279,13 @@ class EventHandler:
                 None,
                 event['tenant_uuid'],
             )
+
+    def _has_status(self, techno, name):
+        if techno in STATUS_TECHNOS:
+            return True
+
+        logger.debug('endpoint status is not supported for %s/%s', techno, name)
+        return False
 
     def _techno_name_from_channel(self, channel):
         techno, end = channel.split('/', 1)

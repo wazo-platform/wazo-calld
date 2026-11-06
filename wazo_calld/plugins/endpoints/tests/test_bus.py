@@ -6,7 +6,15 @@ from unittest import TestCase
 from unittest.mock import Mock
 from unittest.mock import sentinel as s
 
-from hamcrest import assert_that, calling, has_properties, not_, raises
+from hamcrest import (
+    assert_that,
+    calling,
+    contains_string,
+    has_item,
+    has_properties,
+    not_,
+    raises,
+)
 
 from ..bus import EventHandler
 from ..services import ConfdCache, Endpoint, StatusCache
@@ -261,6 +269,24 @@ class TestBusEvent(TestCase):
         self.handler.on_new_channel(event)
 
         self.endpoint_status_cache.assert_not_called()
+
+    def test_on_new_channel_ignores_sccp_channels(self):
+        event = {'Channel': 'SCCP/jggaby2y-00000001', 'Uniqueid': '1574445784.4'}
+
+        with self.assertLogs('wazo_calld.plugins.endpoints.bus', 'DEBUG') as logs:
+            self.handler.on_new_channel(event)
+
+        self.endpoint_status_cache.assert_not_called()
+        assert_that(logs.output, has_item(contains_string('SCCP/jggaby2y')))
+
+    def test_on_hangup_ignores_sccp_channels(self):
+        event = {'Channel': 'SCCP/jggaby2y-00000001', 'Uniqueid': '1574445784.4'}
+
+        with self.assertLogs('wazo_calld.plugins.endpoints.bus', 'DEBUG') as logs:
+            self.handler.on_hangup(event)
+
+        self.endpoint_status_cache.assert_not_called()
+        assert_that(logs.output, has_item(contains_string('SCCP/jggaby2y')))
 
     def test_on_line_endpoint_sip_associated(self):
         line_id = 42
