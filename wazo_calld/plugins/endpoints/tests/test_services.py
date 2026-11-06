@@ -105,6 +105,81 @@ class TestEndpointService(TestCase):
             ),
         )
 
+    def _given_lines(self, *names):
+        self.confd_cache.list_lines.return_value = [
+            {'id': id_, 'technology': 'sip', 'name': name, 'tenant_uuid': s.tenant}
+            for id_, name in enumerate(names, start=1)
+        ]
+
+    def test_list_lines_paginated(self):
+        self._given_lines('c', 'a', 'd', 'b')
+
+        items, total, filtered = self.service.list_lines(
+            s.tenant, order='name', limit=2, offset=1
+        )
+
+        assert_that(
+            items, contains_exactly(has_entries(name='b'), has_entries(name='c'))
+        )
+        assert_that(total, equal_to(4))
+        assert_that(filtered, equal_to(4))
+
+    def test_list_lines_offset_without_limit(self):
+        self._given_lines('c', 'a', 'b')
+
+        items, _, _ = self.service.list_lines(s.tenant, order='name', offset=1)
+
+        assert_that(
+            items, contains_exactly(has_entries(name='b'), has_entries(name='c'))
+        )
+
+    def test_list_lines_direction_desc(self):
+        self._given_lines('a', 'c', 'b')
+
+        items, _, _ = self.service.list_lines(s.tenant, order='id', direction='desc')
+
+        assert_that(
+            items,
+            contains_exactly(has_entries(id=3), has_entries(id=2), has_entries(id=1)),
+        )
+
+    def test_list_lines_without_status_sorted_last_in_both_directions(self):
+        self._given_lines('a', 'b', 'c')
+        self.status_cache.add_endpoint(Endpoint('PJSIP', 'a', False, []))
+        self.status_cache.add_endpoint(Endpoint('PJSIP', 'c', True, []))
+
+        ascending, _, _ = self.service.list_lines(s.tenant, order='registered')
+        descending, _, _ = self.service.list_lines(
+            s.tenant, order='registered', direction='desc'
+        )
+
+        assert_that(
+            ascending,
+            contains_exactly(
+                has_entries(name='a'), has_entries(name='c'), has_entries(name='b')
+            ),
+        )
+        assert_that(
+            descending,
+            contains_exactly(
+                has_entries(name='c'), has_entries(name='a'), has_entries(name='b')
+            ),
+        )
+
+    def test_list_trunks_paginated(self):
+        self.confd_cache.list_trunks.return_value = [
+            {'id': 1, 'technology': 'sip', 'name': 'b', 'tenant_uuid': s.tenant},
+            {'id': 2, 'technology': 'sip', 'name': 'a', 'tenant_uuid': s.tenant},
+        ]
+
+        items, total, filtered = self.service.list_trunks(
+            s.tenant, order='name', limit=1
+        )
+
+        assert_that(items, contains_exactly(has_entries(name='a')))
+        assert_that(total, equal_to(2))
+        assert_that(filtered, equal_to(2))
+
 
 class TestCachingConfdClient(TestCase):
     def setUp(self):

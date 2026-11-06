@@ -5,6 +5,7 @@ import copy
 import logging
 import threading
 from contextlib import contextmanager
+from operator import itemgetter
 
 from wazo_calld.plugin_helpers.exceptions import CalldUninitializedError
 
@@ -89,14 +90,12 @@ class StatusCache:
     def add_new_sip_endpoint(self, endpoint_name):
         if self._endpoints is None:
             raise CalldUninitializedError()
-
         # endpoint is unlikely to exist in ARI yet, so create it as unregistered
         self.add_endpoint(Endpoint('PJSIP', endpoint_name, False, []))
 
     def add_new_iax_endpoint(self, endpoint_name):
         if self._endpoints is None:
             raise CalldUninitializedError()
-
         # endpoint is unlikely to exist in ARI yet, so create it as unregistered
         self.add_endpoint(Endpoint('IAX2', endpoint_name, False, []))
 
@@ -366,15 +365,17 @@ class EndpointsService:
         self._confd = confd_cache
         self.status_cache = status_cache
 
-    def list_lines(self, tenant_uuid):
+    def list_lines(self, tenant_uuid, **params):
         confd_endpoints = self._confd.list_lines(tenant_uuid)
-        return self._list_endpoints(confd_endpoints)
+        return self._list_endpoints(confd_endpoints, **params)
 
-    def list_trunks(self, tenant_uuid):
+    def list_trunks(self, tenant_uuid, **params):
         confd_endpoints = self._confd.list_trunks(tenant_uuid)
-        return self._list_endpoints(confd_endpoints)
+        return self._list_endpoints(confd_endpoints, **params)
 
-    def _list_endpoints(self, confd_endpoints):
+    def _list_endpoints(
+        self, confd_endpoints, order=None, direction='asc', limit=None, offset=0
+    ):
         results = []
         for confd_endpoint in confd_endpoints:
             endpoint = dict(confd_endpoint)
@@ -388,4 +389,15 @@ class EndpointsService:
             results.append(endpoint)
 
         count = len(results)
-        return results, count, count
+        if order:
+            results = _sorted(results, order, direction)
+        end = offset + limit if limit is not None else None
+        return results[offset:end], count, count
+
+
+def _sorted(endpoints, order, direction):
+    # endpoints without a value (e.g. no status) stay last in both directions
+    present = [endpoint for endpoint in endpoints if endpoint.get(order) is not None]
+    missing = [endpoint for endpoint in endpoints if endpoint.get(order) is None]
+    present.sort(key=itemgetter(order), reverse=direction == 'desc')
+    return present + missing
