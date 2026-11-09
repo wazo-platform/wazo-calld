@@ -528,7 +528,9 @@ class TestApplication(BaseApplicationTestCase):
         until.assert_(application_deleted, tries=5)
 
     def test_given_no_confd_when_node_app_then_return_503(self):
+        initialized_line = 'Stasis applications initialized'
         with self.confd_stopped():
+            initialized_before = self.service_logs().count(initialized_line)
             self._restart_calld()
             assert_that(
                 calling(self.calld_client.applications.get).with_args(
@@ -536,6 +538,14 @@ class TestApplication(BaseApplicationTestCase):
                 ),
                 raises(CalldError).matching(has_properties(status_code=503)),
             )
+
+        # The confd mock restarts empty, so the applications themselves are
+        # gone: the retry is seen by the stasis initializing once confd is back.
+        until.true(
+            lambda: self.service_logs().count(initialized_line) > initialized_before,
+            tries=10,
+            message='the applications stasis did not initialize after wazo-confd',
+        )
 
     def test_delete_call(self):
         channel = self.call_app(self.node_app_uuid)
