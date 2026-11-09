@@ -1,16 +1,19 @@
-# Copyright 2018-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from __future__ import annotations
+
+from functools import partial
 
 from wazo_amid_client import Client as AmidClient
 from wazo_auth_client import Client as AuthClient
 from wazo_confd_client import Client as ConfdClient
 from xivo.pubsub import CallbackCollector
 
+from wazo_calld.plugin_helpers.retry_thread import RetryThread
 from wazo_calld.types import PluginDependencies
 
-from .caches import ConfdApplicationsCache, ConfdIsReadyThread, MohCache
+from .caches import ConfdApplicationsCache, MohCache, confd_is_ready
 from .http import (
     ApplicationCallAnswer,
     ApplicationCallHoldStartList,
@@ -83,7 +86,9 @@ class Plugin:
             confd_apps_cache,
             moh_cache,
         )
-        confd_is_ready_thread = ConfdIsReadyThread(confd_client)
+        confd_is_ready_thread = RetryThread(
+            'wazo-confd', partial(confd_is_ready, confd_client), delays=[1]
+        )
         startup_callback_collector = CallbackCollector()
         next_token_changed_subscribe(startup_callback_collector.new_source())
         ari.client_initialized_subscribe(startup_callback_collector.new_source())
