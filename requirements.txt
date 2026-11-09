@@ -19,4 +19,5 @@ python-consul==1.1.0
 pyyaml==6.0 # from xivo-lib-python
 requests==2.28.1
 stevedore==4.0.2
+tenacity==8.2.1
 werkzeug==2.2.2
