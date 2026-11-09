@@ -1,0 +1,13 @@
+services:
+  sync:
+    depends_on:
+      - auth
+      - confd
+      - calld
+      - rabbitmq
+    environment:
+      TARGETS: "calld:9500 rabbitmq:5672 confd:9486 auth:9497"
+
+  calld:
+    volumes:
+      - ./etc/wazo-calld/conf.d/60-slow-ari-retry.yml:/etc/wazo-calld/conf.d/60-slow-ari-retry.yml:ro

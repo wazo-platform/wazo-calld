@@ -14,6 +14,7 @@ from xivo.pubsub import Pubsub
 from xivo.status import Status
 
 from .exceptions import AsteriskARINotInitialized
+from .plugin_helpers.retry_thread import RetryThread
 
 logger = logging.getLogger(__name__)
 
@@ -250,12 +251,13 @@ class CoreARI:
         self._apps = []
         self.config = config
         self._is_running = False
-        self._should_delay_reconnect = True
-        self._should_stop = False
         self._pubsub = Pubsub()
         self._bus_consumer = bus_consumer
         self.client = ARIClientProxy(**config['connection'])
-        self._initialization_thread = threading.Thread(target=self.run)
+        self._initialization_thread = RetryThread(
+            'ARI', self.client.init, delays=[config['startup_connection_delay']]
+        )
+        self._initialization_thread.subscribe(self._publish_client_initialized)
 
     def init_client(self):
         self._subscribe_to_bus_events()
@@ -282,23 +284,8 @@ class CoreARI:
     def client_initialized_subscribe(self, callback):
         self._pubsub.subscribe('client_initialized', callback)
 
-    def run(self):
-        while not self._should_stop:
-            try:
-                initialized = self.client.init()
-            except Exception:
-                initialized = False
-
-            if initialized:
-                self._pubsub.publish('client_initialized', message=None)
-                break
-
-            connection_delay = self.config['startup_connection_delay']
-            logger.warning(
-                'ARI not initialized, retrying in %s seconds...', connection_delay
-            )
-            time.sleep(connection_delay)
-        self._should_delay_reconnect = False
+    def _publish_client_initialized(self):
+        self._pubsub.publish('client_initialized', message=None)
 
     def reregister_applications(self, _event):
         logger.info('Asterisk started, registering all stasis applications')
@@ -327,5 +314,4 @@ class CoreARI:
         status['ari']['status'] = Status.ok if ok else Status.fail
 
     def stop(self):
-        self._should_stop = True
-        self._initialization_thread.join()
+        self._initialization_thread.stop()
