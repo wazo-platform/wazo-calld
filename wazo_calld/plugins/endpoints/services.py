@@ -426,5 +426,5 @@ def _sorted(endpoints, order, direction):
     # endpoints without a value (e.g. no status) stay last in both directions
     present = [endpoint for endpoint in endpoints if endpoint.get(order) is not None]
     missing = [endpoint for endpoint in endpoints if endpoint.get(order) is None]
-    present.sort(key=itemgetter(order), reverse=direction == 'desc')
+    present.sort(key=itemgetter(order, 'id'), reverse=direction == 'desc')
     return present + missing

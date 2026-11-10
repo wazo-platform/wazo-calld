@@ -620,6 +620,16 @@ class TestCachingConfdClient(TestCase):
             contains_exactly(has_entries(id=3), has_entries(id=2), has_entries(id=1)),
         )
 
+    def test_list_lines_ties_ordered_by_id(self):
+        self._set_cache(lines=[self._line(3), self._line(1), self._line(2)])
+
+        result, _ = self.client.list_lines(s.tenant_uuid, order='technology')
+
+        assert_that(
+            result,
+            contains_exactly(has_entries(id=1), has_entries(id=2), has_entries(id=3)),
+        )
+
     def test_list_trunks_paginated(self):
         self._set_cache([self._trunk(1), self._trunk(2), self._trunk(3)])
 
