@@ -1,5 +1,10 @@
 # Changelog
 
+## 26.11
+
+* `GET /lines` and `GET /trunks` accept the `limit`, `offset`, `order` and
+  `direction` parameters. Items are now sorted by `name` by default.
+
 ## 26.09
 
 * Requests to wazo-auth now default to `localhost:80`, through nginx.

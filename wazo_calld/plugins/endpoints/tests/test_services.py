@@ -28,26 +28,29 @@ class TestEndpointService(TestCase):
         self.service = EndpointsService(self.confd_cache, self.status_cache)
 
     def test_list_lines(self):
-        self.confd_cache.list_lines.return_value = [
-            {
-                'id': 1,
-                'technology': 'sip',
-                'name': s.name_1,
-                'tenant_uuid': s.tenant_uuid,
-            },
-            {
-                'id': 2,
-                'technology': 'iax',
-                'name': s.name_2,
-                'tenant_uuid': s.tenant_uuid,
-            },
-            {
-                'id': 3,
-                'technology': 'custom',
-                'name': s.name_2,
-                'tenant_uuid': s.tenant_uuid,
-            },
-        ]
+        self.confd_cache.list_lines.return_value = (
+            [
+                {
+                    'id': 1,
+                    'technology': 'sip',
+                    'name': s.name_1,
+                    'tenant_uuid': s.tenant_uuid,
+                },
+                {
+                    'id': 2,
+                    'technology': 'iax',
+                    'name': s.name_2,
+                    'tenant_uuid': s.tenant_uuid,
+                },
+                {
+                    'id': 3,
+                    'technology': 'custom',
+                    'name': s.name_2,
+                    'tenant_uuid': s.tenant_uuid,
+                },
+            ],
+            3,
+        )
 
         self.status_cache.add_endpoint(
             Endpoint('PJSIP', s.name_1, registered=True, channel_ids=[123, 456]),
@@ -67,26 +70,29 @@ class TestEndpointService(TestCase):
         )
 
     def test_list_trunks(self):
-        self.confd_cache.list_trunks.return_value = [
-            {
-                'id': 1,
-                'technology': 'sip',
-                'name': s.name_1,
-                'tenant_uuid': s.tenant_uuid,
-            },
-            {
-                'id': 2,
-                'technology': 'iax',
-                'name': s.name_2,
-                'tenant_uuid': s.tenant_uuid,
-            },
-            {
-                'id': 3,
-                'technology': 'custom',
-                'name': s.name_2,
-                'tenant_uuid': s.tenant_uuid,
-            },
-        ]
+        self.confd_cache.list_trunks.return_value = (
+            [
+                {
+                    'id': 1,
+                    'technology': 'sip',
+                    'name': s.name_1,
+                    'tenant_uuid': s.tenant_uuid,
+                },
+                {
+                    'id': 2,
+                    'technology': 'iax',
+                    'name': s.name_2,
+                    'tenant_uuid': s.tenant_uuid,
+                },
+                {
+                    'id': 3,
+                    'technology': 'custom',
+                    'name': s.name_2,
+                    'tenant_uuid': s.tenant_uuid,
+                },
+            ],
+            3,
+        )
 
         self.status_cache.add_endpoint(
             Endpoint('PJSIP', s.name_1, registered=True, channel_ids=[123, 456]),
@@ -104,6 +110,80 @@ class TestEndpointService(TestCase):
                 has_entries(id=3),
             ),
         )
+
+    def _line(self, name):
+        return {'id': 1, 'technology': 'sip', 'name': name, 'tenant_uuid': s.tenant}
+
+    def test_list_lines_confd_order_paged_by_confd_cache(self):
+        self.confd_cache.list_lines.return_value = ([self._line('b')], 4)
+        self.status_cache.add_endpoint(Endpoint('PJSIP', 'b', True, []))
+
+        items, total, filtered = self.service.list_lines(
+            s.tenant, order='name', direction='desc', limit=1, offset=2
+        )
+
+        self.confd_cache.list_lines.assert_called_once_with(
+            s.tenant, order='name', direction='desc', limit=1, offset=2
+        )
+        assert_that(items, contains_exactly(has_entries(name='b', registered=True)))
+        assert_that(total, equal_to(4))
+        assert_that(filtered, equal_to(4))
+
+    def test_list_lines_status_order_paged_after_merge(self):
+        lines = [self._line('a'), self._line('b'), self._line('c')]
+        self.confd_cache.list_lines.return_value = (lines, 3)
+        self.status_cache.add_endpoint(Endpoint('PJSIP', 'a', False, []))
+        self.status_cache.add_endpoint(Endpoint('PJSIP', 'c', True, []))
+
+        items, total, filtered = self.service.list_lines(
+            s.tenant, order='registered', direction='desc', limit=2
+        )
+
+        self.confd_cache.list_lines.assert_called_once_with(s.tenant)
+        assert_that(
+            items, contains_exactly(has_entries(name='c'), has_entries(name='a'))
+        )
+        assert_that(total, equal_to(3))
+        assert_that(filtered, equal_to(3))
+
+    def test_list_lines_without_status_sorted_last_in_both_directions(self):
+        lines = [self._line('a'), self._line('b'), self._line('c')]
+        self.confd_cache.list_lines.return_value = (lines, 3)
+        self.status_cache.add_endpoint(Endpoint('PJSIP', 'a', False, []))
+        self.status_cache.add_endpoint(Endpoint('PJSIP', 'c', True, []))
+
+        ascending, _, _ = self.service.list_lines(s.tenant, order='registered')
+        descending, _, _ = self.service.list_lines(
+            s.tenant, order='registered', direction='desc'
+        )
+
+        assert_that(
+            ascending,
+            contains_exactly(
+                has_entries(name='a'), has_entries(name='c'), has_entries(name='b')
+            ),
+        )
+        assert_that(
+            descending,
+            contains_exactly(
+                has_entries(name='c'), has_entries(name='a'), has_entries(name='b')
+            ),
+        )
+
+    def test_list_trunks_confd_order_paged_by_confd_cache(self):
+        trunk = {'id': 2, 'technology': 'sip', 'name': 'a', 'tenant_uuid': s.tenant}
+        self.confd_cache.list_trunks.return_value = ([trunk], 2)
+
+        items, total, filtered = self.service.list_trunks(
+            s.tenant, order='name', limit=1
+        )
+
+        self.confd_cache.list_trunks.assert_called_once_with(
+            s.tenant, order='name', direction='asc', limit=1, offset=0
+        )
+        assert_that(items, contains_exactly(has_entries(name='a')))
+        assert_that(total, equal_to(2))
+        assert_that(filtered, equal_to(2))
 
 
 class TestCachingConfdClient(TestCase):
@@ -320,7 +400,7 @@ class TestCachingConfdClient(TestCase):
             ]
         )
 
-        result = self.client.list_lines(s.tenant_uuid)
+        result, _ = self.client.list_lines(s.tenant_uuid)
 
         assert_that(
             result,
@@ -372,7 +452,7 @@ class TestCachingConfdClient(TestCase):
             ]
         )
 
-        result = self.client.list_trunks(s.tenant_uuid)
+        result, _ = self.client.list_trunks(s.tenant_uuid)
 
         assert_that(
             result,
@@ -422,7 +502,7 @@ class TestCachingConfdClient(TestCase):
             ],
         }
 
-        result = self.client.list_lines(s.tenant_uuid)
+        result, _ = self.client.list_lines(s.tenant_uuid)
 
         assert_that(
             result,
@@ -456,7 +536,7 @@ class TestCachingConfdClient(TestCase):
         ]
         self.confd.lines.list.return_value = {'items': [], 'total': 0}
 
-        result = self.client.list_trunks(s.tenant_uuid)
+        result, _ = self.client.list_trunks(s.tenant_uuid)
 
         assert_that(
             result,
@@ -480,7 +560,7 @@ class TestCachingConfdClient(TestCase):
             {'items': [self._line(3)]},
         ]
 
-        result = self.client.list_lines(s.tenant_uuid)
+        result, _ = self.client.list_lines(s.tenant_uuid)
 
         assert_that(
             result,
@@ -495,6 +575,70 @@ class TestCachingConfdClient(TestCase):
                 call(recurse=True, limit=2, offset=2),
             ),
         )
+
+    def _given_named_lines(self, *names):
+        self._set_cache(
+            lines=[
+                {
+                    'id': id_,
+                    'name': name,
+                    'protocol': 'sip',
+                    'tenant_uuid': s.tenant_uuid,
+                }
+                for id_, name in enumerate(names, start=1)
+            ]
+        )
+
+    def test_list_lines_paginated(self):
+        self._given_named_lines('c', 'a', 'd', 'b')
+
+        result, total = self.client.list_lines(
+            s.tenant_uuid, order='name', limit=2, offset=1
+        )
+
+        assert_that(
+            result, contains_exactly(has_entries(name='b'), has_entries(name='c'))
+        )
+        assert_that(total, equal_to(4))
+
+    def test_list_lines_offset_without_limit(self):
+        self._given_named_lines('c', 'a', 'b')
+
+        result, _ = self.client.list_lines(s.tenant_uuid, order='name', offset=1)
+
+        assert_that(
+            result, contains_exactly(has_entries(name='b'), has_entries(name='c'))
+        )
+
+    def test_list_lines_direction_desc(self):
+        self._given_named_lines('a', 'c', 'b')
+
+        result, _ = self.client.list_lines(s.tenant_uuid, order='id', direction='desc')
+
+        assert_that(
+            result,
+            contains_exactly(has_entries(id=3), has_entries(id=2), has_entries(id=1)),
+        )
+
+    def test_list_lines_ties_ordered_by_id(self):
+        self._set_cache(lines=[self._line(3), self._line(1), self._line(2)])
+
+        result, _ = self.client.list_lines(s.tenant_uuid, order='technology')
+
+        assert_that(
+            result,
+            contains_exactly(has_entries(id=1), has_entries(id=2), has_entries(id=3)),
+        )
+
+    def test_list_trunks_paginated(self):
+        self._set_cache([self._trunk(1), self._trunk(2), self._trunk(3)])
+
+        result, total = self.client.list_trunks(
+            s.tenant_uuid, order='id', direction='desc', limit=2
+        )
+
+        assert_that(result, contains_exactly(has_entries(id=3), has_entries(id=2)))
+        assert_that(total, equal_to(3))
 
     def _trunk(self, trunk_id):
         return {

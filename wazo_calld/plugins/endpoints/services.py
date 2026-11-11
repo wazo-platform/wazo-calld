@@ -5,12 +5,14 @@ import copy
 import logging
 import threading
 from contextlib import contextmanager
+from operator import itemgetter
 
 from wazo_calld.plugin_helpers.exceptions import CalldUninitializedError
 
 logger = logging.getLogger(__name__)
 
 CONFD_PAGE_SIZE = 500
+STATUS_ORDERS = ('registered', 'current_call_count')
 
 
 def _list_all_paginated(list_resource):
@@ -89,14 +91,12 @@ class StatusCache:
     def add_new_sip_endpoint(self, endpoint_name):
         if self._endpoints is None:
             raise CalldUninitializedError()
-
         # endpoint is unlikely to exist in ARI yet, so create it as unregistered
         self.add_endpoint(Endpoint('PJSIP', endpoint_name, False, []))
 
     def add_new_iax_endpoint(self, endpoint_name):
         if self._endpoints is None:
             raise CalldUninitializedError()
-
         # endpoint is unlikely to exist in ARI yet, so create it as unregistered
         self.add_endpoint(Endpoint('IAX2', endpoint_name, False, []))
 
@@ -235,7 +235,9 @@ class ConfdCache:
             techno, username, self._trunks, index='username'
         )
 
-    def list_lines(self, tenant_uuid):
+    def list_lines(
+        self, tenant_uuid, order=None, direction='asc', limit=None, offset=0
+    ):
         if not self._initialized:
             self._initialize()
 
@@ -245,9 +247,11 @@ class ConfdCache:
                 if line['tenant_uuid'] != tenant_uuid:
                     continue
                 results.append(line)
-        return results
+        return _paginate(results, order, direction, limit, offset)
 
-    def list_trunks(self, tenant_uuid):
+    def list_trunks(
+        self, tenant_uuid, order=None, direction='asc', limit=None, offset=0
+    ):
         if not self._initialized:
             self._initialize()
 
@@ -257,7 +261,7 @@ class ConfdCache:
                 if trunk['tenant_uuid'] != tenant_uuid:
                     continue
                 results.append(trunk)
-        return results
+        return _paginate(results, order, direction, limit, offset)
 
     def update_line(self, techno, line_id, name, username, tenant_uuid):
         self.delete_line(line_id)
@@ -366,15 +370,37 @@ class EndpointsService:
         self._confd = confd_cache
         self.status_cache = status_cache
 
-    def list_lines(self, tenant_uuid):
-        confd_endpoints = self._confd.list_lines(tenant_uuid)
-        return self._list_endpoints(confd_endpoints)
+    def list_lines(self, tenant_uuid, **params):
+        return self._list_endpoints(self._confd.list_lines, tenant_uuid, **params)
 
-    def list_trunks(self, tenant_uuid):
-        confd_endpoints = self._confd.list_trunks(tenant_uuid)
-        return self._list_endpoints(confd_endpoints)
+    def list_trunks(self, tenant_uuid, **params):
+        return self._list_endpoints(self._confd.list_trunks, tenant_uuid, **params)
 
-    def _list_endpoints(self, confd_endpoints):
+    def _list_endpoints(
+        self,
+        list_confd_endpoints,
+        tenant_uuid,
+        order=None,
+        direction='asc',
+        limit=None,
+        offset=0,
+    ):
+        if order not in STATUS_ORDERS:
+            page, count = list_confd_endpoints(
+                tenant_uuid,
+                order=order,
+                direction=direction,
+                limit=limit,
+                offset=offset,
+            )
+            return self._with_status(page), count, count
+
+        confd_endpoints, _ = list_confd_endpoints(tenant_uuid)
+        endpoints = self._with_status(confd_endpoints)
+        page, count = _paginate(endpoints, order, direction, limit, offset)
+        return page, count, count
+
+    def _with_status(self, confd_endpoints):
         results = []
         for confd_endpoint in confd_endpoints:
             endpoint = dict(confd_endpoint)
@@ -386,6 +412,19 @@ class EndpointsService:
                 endpoint['registered'] = ast_endpoint.registered
                 endpoint['current_call_count'] = ast_endpoint.current_call_count
             results.append(endpoint)
+        return results
 
-        count = len(results)
-        return results, count, count
+
+def _paginate(items, order, direction, limit, offset):
+    if order:
+        items = _sorted(items, order, direction)
+    end = offset + limit if limit is not None else None
+    return items[offset:end], len(items)
+
+
+def _sorted(endpoints, order, direction):
+    # endpoints without a value (e.g. no status) stay last in both directions
+    present = [endpoint for endpoint in endpoints if endpoint.get(order) is not None]
+    missing = [endpoint for endpoint in endpoints if endpoint.get(order) is None]
+    present.sort(key=itemgetter(order, 'id'), reverse=direction == 'desc')
+    return present + missing

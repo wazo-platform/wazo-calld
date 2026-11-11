@@ -17,6 +17,10 @@ paths:
         - lines
       parameters:
         - $ref: '#/parameters/TenantUUID'
+        - $ref: '#/parameters/EndpointOrder'
+        - $ref: '#/parameters/direction'
+        - $ref: '#/parameters/limit'
+        - $ref: '#/parameters/offset'
       responses:
         '200':
           description: A list of line status
@@ -42,6 +46,10 @@ paths:
         - trunks
       parameters:
         - $ref: '#/parameters/TenantUUID'
+        - $ref: '#/parameters/EndpointOrder'
+        - $ref: '#/parameters/direction'
+        - $ref: '#/parameters/limit'
+        - $ref: '#/parameters/offset'
       responses:
         '200':
           description: A list of trunk status
@@ -112,3 +120,17 @@ definitions:
       filtered:
         type: integer
         description: The number of trunk endpoint matching the searched terms
+parameters:
+  EndpointOrder:
+    required: false
+    name: order
+    in: query
+    type: string
+    enum:
+    - id
+    - name
+    - technology
+    - registered
+    - current_call_count
+    default: name
+    description: Name of the field to use for sorting the list of items returned.
