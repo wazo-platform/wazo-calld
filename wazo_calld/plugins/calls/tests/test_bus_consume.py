@@ -98,6 +98,33 @@ class TestCallsBusEventHandler(TestCase):
         )
         self.handler.notifier.call_updated.assert_called_once()
 
+    def _given_channel(self, channel_id, name, tenant_uuid='tenant-uuid'):
+        self.handler.ari.channels.get.return_value = self._make_channel(
+            channel_id, name
+        )
+        self.handler.ari.channels.getChannelVar.return_value = {'value': tenant_uuid}
+
+    def test_relay_dtmf(self):
+        self._given_channel('chan-1', 'PJSIP/abc-00000001')
+
+        self.handler._relay_dtmf({'Uniqueid': 'chan-1', 'Digit': '1'})
+
+        self.handler.notifier.call_dtmf.assert_called_once()
+
+    def test_channel_hold(self):
+        self._given_channel('chan-1', 'PJSIP/abc-00000001')
+
+        self.handler._channel_hold({'Uniqueid': 'chan-1'})
+
+        self.handler.notifier.call_hold.assert_called_once()
+
+    def test_channel_unhold(self):
+        self._given_channel('chan-1', 'PJSIP/abc-00000001')
+
+        self.handler._channel_unhold({'Uniqueid': 'chan-1'})
+
+        self.handler.notifier.call_resume.assert_called_once()
+
     @patch('wazo_calld.plugins.calls.bus_consume.recording')
     def test_attended_transfer_announces_recordings(self, mock_recording):
         event = {
