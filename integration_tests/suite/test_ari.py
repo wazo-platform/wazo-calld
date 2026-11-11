@@ -1,12 +1,25 @@
-# Copyright 2016-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from hamcrest import assert_that, calling, has_entries, has_items, has_properties
+import os
+import time
+
+import yaml
+from hamcrest import (
+    assert_that,
+    calling,
+    has_entries,
+    has_items,
+    has_properties,
+    less_than,
+    not_,
+)
 from wazo_calld_client.exceptions import CalldError
 from wazo_test_helpers import until
 from wazo_test_helpers.hamcrest.raises import raises
 
 from .helpers.base import IntegrationTest
+from .helpers.constants import ASSET_ROOT
 from .helpers.real_asterisk import RealAsteriskIntegrationTest
 from .helpers.wait_strategy import CalldEverythingOkWaitStrategy, CalldUpWaitStrategy
 
@@ -25,6 +38,61 @@ class TestNoARI(IntegrationTest):
                 )
             ),
         )
+
+
+def _ari_password():
+    # Read from the asset itself, so the check follows the password it mounts.
+    path = os.path.join(ASSET_ROOT, 'etc', 'wazo-calld', 'conf.d', '50-base.yml')
+    with open(path) as f:
+        return yaml.safe_load(f)['ari']['connection']['password']
+
+
+class TestARIUnavailableAtStartup(IntegrationTest):
+    asset = 'basic_rest'
+
+    def test_given_ari_stopped_when_calld_starts_then_it_initializes_once_ari_is_back(
+        self,
+    ):
+        retry_line = 'ARI not ready, retrying in 1 seconds...'
+        with self.ari_stopped():
+            retries_before = self.service_logs().count(retry_line)
+            self._restart_calld()
+
+            until.true(
+                lambda: self.service_logs().count(retry_line) >= retries_before + 2,
+                timeout=60,  # an attempt on a stopped container's name lasts ~8 s
+                message='wazo-calld did not retry ARI twice',
+            )
+
+        def calls_listed():
+            assert_that(
+                calling(self.calld_client.calls.list_calls),
+                not_(raises(CalldError)),
+            )
+
+        # an attempt in flight when ARI comes back may last ~8 s, then 1 s of delay
+        until.assert_(calls_listed, tries=10, interval=3)
+        assert _ari_password() not in self.service_logs(), 'the ARI password was logged'
+
+
+class TestStopWhileARIUnavailable(IntegrationTest):
+    asset = 'no_ari_slow_retry'
+    wait_strategy = CalldUpWaitStrategy()
+
+    def test_given_ari_unavailable_when_calld_stops_then_it_does_not_wait_the_retry_delay(
+        self,
+    ):
+        until.true(
+            lambda: 'ARI not ready, retrying in 60 seconds...' in self.service_logs(),
+            timeout=30,
+            message='wazo-calld did not wait for ARI',
+        )
+
+        started = time.monotonic()
+        self.stop_service('calld')
+        elapsed = time.monotonic() - started
+
+        assert_that(elapsed, less_than(5))
 
 
 class TestARIReconnection(RealAsteriskIntegrationTest):
