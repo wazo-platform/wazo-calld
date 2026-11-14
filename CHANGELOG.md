@@ -2,6 +2,11 @@
 
 ## 26.11
 
+* Mobile push notifications (incoming call / cancel) are now published on a
+  dedicated bus connection. Previously they shared calld's main publisher
+  connection; when RabbitMQ applied per-connection flow-control to that busy
+  connection, pushes were delayed or dropped (phantom / missed calls on mobile).
+
 * `GET /lines` and `GET /trunks` accept the `limit`, `offset`, `order` and
   `direction` parameters. Items are now sorted by `name` by default.
 

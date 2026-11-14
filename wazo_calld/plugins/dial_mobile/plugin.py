@@ -8,6 +8,7 @@ from wazo_auth_client import Client as AuthClient
 from wazo_confd_client import Client as ConfdClient
 from xivo.pubsub import CallbackCollector
 
+from wazo_calld.bus import CoreBusPublisher
 from wazo_calld.types import PluginDependencies
 
 from .bus_consume import EventHandler
@@ -27,7 +28,22 @@ class Plugin:
         bus_consumer = dependencies['bus_consumer']
         token_changed_subscribe = dependencies['token_changed_subscribe']
         config = dependencies['config']
-        bus_publisher = dependencies['bus_publisher']
+
+        # Mobile push/cancel notifications are published on a DEDICATED bus
+        # publisher (its own AMQP connection) rather than the shared
+        # dependencies['bus_publisher']. RabbitMQ applies flow-control per
+        # connection: calld's shared publisher carries calld's whole outbound
+        # event stream, and when the broker throttles that connection every
+        # publish on it stalls -- including the incoming-call push, which then
+        # reaches the mobile tens of seconds late (phantom call) or not at all
+        # (missed call). A dedicated connection carrying only the low-rate
+        # push/cancel traffic is not flow-controlled, so pushes go out promptly.
+        #
+        # Like the shared publisher built in controller.py, this is a non-threaded
+        # BusPublisher: it connects lazily on first publish and has no start()/stop()
+        # lifecycle to manage. Argument order mirrors controller.py:
+        # from_config(service_uuid, bus_config).
+        push_bus_publisher = CoreBusPublisher.from_config(config['uuid'], config['bus'])
 
         amid_client = AmidClient(**config['amid'])
         token_changed_subscribe(amid_client.set_token)
@@ -39,7 +55,7 @@ class Plugin:
         token_changed_subscribe(confd_client.set_token)
 
         pstn_fallback_config = config.get('dial_mobile', {}).get('pstn_fallback', {})
-        notifier = Notifier(bus_publisher)
+        notifier = Notifier(push_bus_publisher)
         service = DialMobileService(
             ari,
             notifier,
