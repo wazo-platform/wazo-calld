@@ -111,6 +111,7 @@ _DEFAULT_CONFIG: CalldConfigDict = {
         'endpoints': True,
         'faxes': True,
         'meetings': True,
+        'metrics': False,
         'parking_lots': True,
         'relocates': True,
         'status': True,
